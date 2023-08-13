@@ -1,7 +1,12 @@
 const Sequelize = require('sequelize')
+const Logger = require('../../Logger')
 const Database = require('../../Database')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
+const { createNewSortInstance } = require('../../libs/fastSort')
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 
 module.exports = {
   decode(text) {
@@ -381,5 +386,109 @@ module.exports = {
    */
   getLibraryItemsForCollection(collection) {
     return libraryItemsBookFilters.getLibraryItemsForCollection(collection)
+  },
+
+  /**
+   * Get filter data used in filter menus
+   * @param {oldLibrary} oldLibrary 
+   * @returns {Promise<object>}
+   */
+  async getFilterData(oldLibrary) {
+    const cachedFilterData = Database.libraryFilterData[oldLibrary.id]
+    if (cachedFilterData) {
+      const cacheElapsed = Date.now() - cachedFilterData.loadedAt
+      // Cache library filters for 30 mins
+      // TODO: Keep cached filter data up-to-date on updates
+      if (cacheElapsed < 1000 * 60 * 30) {
+        return cachedFilterData
+      }
+    }
+    const start = Date.now() // Temp for checking load times
+
+    const data = {
+      authors: [],
+      genres: new Set(),
+      tags: new Set(),
+      series: [],
+      narrators: new Set(),
+      languages: new Set(),
+      publishers: new Set(),
+      numIssues: 0
+    }
+
+    if (oldLibrary.isPodcast) {
+      const podcasts = await Database.models.podcast.findAll({
+        include: {
+          model: Database.models.libraryItem,
+          attributes: [],
+          where: {
+            libraryId: oldLibrary.id
+          }
+        },
+        attributes: ['tags', 'genres']
+      })
+      for (const podcast of podcasts) {
+        if (podcast.tags?.length) {
+          podcast.tags.forEach((tag) => data.tags.add(tag))
+        }
+        if (podcast.genres?.length) {
+          podcast.genres.forEach((genre) => data.genres.add(genre))
+        }
+      }
+    } else {
+      const books = await Database.models.book.findAll({
+        include: {
+          model: Database.models.libraryItem,
+          attributes: ['isMissing', 'isInvalid'],
+          where: {
+            libraryId: oldLibrary.id
+          }
+        },
+        attributes: ['tags', 'genres', 'publisher', 'narrators', 'language']
+      })
+      for (const book of books) {
+        if (book.libraryItem.isMissing || book.libraryItem.isInvalid) data.numIssues++
+        if (book.tags?.length) {
+          book.tags.forEach((tag) => data.tags.add(tag))
+        }
+        if (book.genres?.length) {
+          book.genres.forEach((genre) => data.genres.add(genre))
+        }
+        if (book.narrators?.length) {
+          book.narrators.forEach((narrator) => data.narrators.add(narrator))
+        }
+        if (book.publisher) data.publishers.add(book.publisher)
+        if (book.language) data.languages.add(book.language)
+      }
+
+      const series = await Database.models.series.findAll({
+        where: {
+          libraryId: oldLibrary.id
+        },
+        attributes: ['id', 'name']
+      })
+      series.forEach((s) => data.series.push({ id: s.id, name: s.name }))
+
+      const authors = await Database.models.author.findAll({
+        where: {
+          libraryId: oldLibrary.id
+        },
+        attributes: ['id', 'name']
+      })
+      authors.forEach((a) => data.authors.push({ id: a.id, name: a.name }))
+    }
+
+    data.authors = naturalSort(data.authors).asc(au => au.name)
+    data.genres = naturalSort([...data.genres]).asc()
+    data.tags = naturalSort([...data.tags]).asc()
+    data.series = naturalSort(data.series).asc(se => se.name)
+    data.narrators = naturalSort([...data.narrators]).asc()
+    data.publishers = naturalSort([...data.publishers]).asc()
+    data.languages = naturalSort([...data.languages]).asc()
+    data.loadedAt = Date.now()
+    Database.libraryFilterData[oldLibrary.id] = data
+
+    Logger.debug(`Loaded filterdata in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+    return data
   }
 }

@@ -914,5 +914,16 @@ module.exports = {
       libraryItem.media = book
       return libraryItem
     })
+  },
+
+  /**
+   * Get library items for series
+   * @param {oldSeries} oldSeries 
+   * @param {[oldUser]} oldUser 
+   * @returns {Promise<oldLibraryItem[]>}
+   */
+  async getLibraryItemsForSeries(oldSeries, oldUser) {
+    const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
+    return libraryItems.map(li => Database.models.libraryItem.getOldLibraryItem(li))
   }
 }

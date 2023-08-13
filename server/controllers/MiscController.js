@@ -229,6 +229,10 @@ class MiscController {
     let tagMerged = false
     let numItemsUpdated = 0
 
+    // Update filter data
+    Database.removeTagFromFilterData(tag)
+    Database.addTagToFilterData(newTag)
+
     const libraryItemsWithTag = await libraryItemFilters.getAllLibraryItemsWithTags([tag, newTag])
     for (const libraryItem of libraryItemsWithTag) {
       let existingTags = libraryItem.media.tags
@@ -274,6 +278,9 @@ class MiscController {
 
     // Get all items with tag
     const libraryItemsWithTag = await libraryItemFilters.getAllLibraryItemsWithTags([tag])
+
+    // Update filterdata
+    Database.removeTagFromFilterData(tag)
 
     let numItemsUpdated = 0
     // Remove tag from items
@@ -356,6 +363,10 @@ class MiscController {
     let genreMerged = false
     let numItemsUpdated = 0
 
+    // Update filter data
+    Database.removeGenreFromFilterData(genre)
+    Database.addGenreToFilterData(newGenre)
+
     const libraryItemsWithGenre = await libraryItemFilters.getAllLibraryItemsWithGenres([genre, newGenre])
     for (const libraryItem of libraryItemsWithGenre) {
       let existingGenres = libraryItem.media.genres
@@ -398,6 +409,9 @@ class MiscController {
     }
 
     const genre = Buffer.from(decodeURIComponent(req.params.genre), 'base64').toString()
+
+    // Update filter data
+    Database.removeGenreFromFilterData(genre)
 
     // Get all items with genre
     const libraryItemsWithGenre = await libraryItemFilters.getAllLibraryItemsWithGenres([genre])

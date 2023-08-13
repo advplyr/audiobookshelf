@@ -265,7 +265,7 @@ class PlaybackSessionManager {
   }
 
   async syncSession(user, session, syncData) {
-    const libraryItem = Database.libraryItems.find(li => li.id === session.libraryItemId)
+    const libraryItem = await Database.models.libraryItem.getOldById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
       return null

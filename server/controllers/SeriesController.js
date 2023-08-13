@@ -1,6 +1,7 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class SeriesController {
   constructor() { }
@@ -25,7 +26,7 @@ class SeriesController {
       const libraryItemsInSeries = req.libraryItemsInSeries
       const libraryItemsFinished = libraryItemsInSeries.filter(li => {
         const mediaProgress = req.user.getMediaProgress(li.id)
-        return mediaProgress && mediaProgress.isFinished
+        return mediaProgress?.isFinished
       })
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map(li => li.id),
@@ -62,18 +63,17 @@ class SeriesController {
     res.json(req.series.toJSON())
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     const series = Database.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)
 
     /**
      * Filter out any library items not accessible to user
      */
-    const libraryItems = Database.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
-    const libraryItemsAccessible = libraryItems.filter(li => req.user.checkCanAccessLibraryItem(li))
-    if (libraryItems.length && !libraryItemsAccessible.length) {
-      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to any of the books`, req.user)
-      return res.sendStatus(403)
+    const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
+    if (!libraryItems.length) {
+      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" with no accessible books`, req.user)
+      return res.sendStatus(404)
     }
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
@@ -85,7 +85,7 @@ class SeriesController {
     }
 
     req.series = series
-    req.libraryItemsInSeries = libraryItemsAccessible
+    req.libraryItemsInSeries = libraryItems
     next()
   }
 }

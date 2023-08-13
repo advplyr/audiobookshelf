@@ -6,6 +6,7 @@ const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RssFeedManager {
   constructor() { }
@@ -18,15 +19,15 @@ class RssFeedManager {
         return false
       }
     } else if (feedObj.entityType === 'libraryItem') {
-      if (!Database.libraryItems.some(li => li.id === feedObj.entityId)) {
+      const libraryItemExists = await Database.models.libraryItem.checkExistsById(feedObj.entityId)
+      if (!libraryItemExists) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'series') {
       const series = Database.series.find(s => s.id === feedObj.entityId)
-      const hasSeriesBook = series ? Database.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length) : false
-      if (!hasSeriesBook) {
-        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found or has no audio tracks`)
+      if (!series) {
+        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found`)
         return false
       }
     } else {
@@ -102,9 +103,9 @@ class RssFeedManager {
         await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = await Database.models.collection.getOldById(feed.entityId)
+      const collection = await Database.models.collection.findByPk(feed.entityId)
       if (collection) {
-        const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
+        const collectionExpanded = await collection.getOldJsonExpanded()
 
         // Find most recently updated item in collection
         let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
@@ -125,8 +126,9 @@ class RssFeedManager {
       const series = Database.series.find(s => s.id === feed.entityId)
       if (series) {
         const seriesJson = series.toJSON()
+
         // Get books in series that have audio tracks
-        seriesJson.books = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+        seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter(li => li.media.numTracks)
 
         // Find most recently updated item in series
         let mostRecentlyUpdatedAt = seriesJson.updatedAt

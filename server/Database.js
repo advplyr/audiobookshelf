@@ -22,6 +22,9 @@ class Database {
     this.authors = []
     this.series = []
 
+    // Cached library filter data
+    this.libraryFilterData = {}
+
     this.serverSettings = null
     this.notificationSettings = null
     this.emailSettings = null
@@ -435,6 +438,34 @@ class Database {
   createDevice(oldDevice) {
     if (!this.sequelize) return false
     return this.models.device.createFromOld(oldDevice)
+  }
+
+  removeTagFromFilterData(tag) {
+    for (const libraryId in this.libraryFilterData) {
+      this.libraryFilterData[libraryId].tags = this.libraryFilterData[libraryId].tags.filter(t => t !== tag)
+    }
+  }
+
+  addTagToFilterData(tag) {
+    for (const libraryId in this.libraryFilterData) {
+      if (!this.libraryFilterData[libraryId].tags.includes(tag)) {
+        this.libraryFilterData[libraryId].tags.push(tag)
+      }
+    }
+  }
+
+  removeGenreFromFilterData(genre) {
+    for (const libraryId in this.libraryFilterData) {
+      this.libraryFilterData[libraryId].genres = this.libraryFilterData[libraryId].genres.filter(g => g !== genre)
+    }
+  }
+
+  addGenreToFilterData(genre) {
+    for (const libraryId in this.libraryFilterData) {
+      if (!this.libraryFilterData[libraryId].genres.includes(genre)) {
+        this.libraryFilterData[libraryId].genres.push(genre)
+      }
+    }
   }
 }
 

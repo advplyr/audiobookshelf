@@ -70,21 +70,21 @@ class ApiRouter {
     //
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
-    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))
+    this.router.get('/libraries/:id', LibraryController.middlewareNew.bind(this), LibraryController.findOne.bind(this))
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
     this.router.get('/libraries/:id/items2', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryItemsNew.bind(this))
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
-    this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
-    this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
+    this.router.delete('/libraries/:id/issues', LibraryController.middlewareNew.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
+    this.router.get('/libraries/:id/episode-downloads', LibraryController.middlewareNew.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
-    this.router.get('/libraries/:id/series/:seriesId', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
+    this.router.get('/libraries/:id/series/:seriesId', LibraryController.middlewareNew.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middlewareNew.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
-    this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
+    this.router.get('/libraries/:id/playlists', LibraryController.middlewareNew.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
     this.router.get('/libraries/:id/personalized2', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalizedOptimal.bind(this))
-    this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
+    this.router.get('/libraries/:id/filterdata', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
@@ -447,11 +447,14 @@ class ApiRouter {
     }
 
     await Database.removeLibraryItem(libraryItem.id)
-    SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
+
+    SocketAuthority.emitter('item_removed', {
+      id: libraryItem.id
+    })
   }
 
   async checkRemoveEmptySeries(seriesToCheck, excludeLibraryItemId = null) {
-    if (!seriesToCheck || !seriesToCheck.length) return
+    if (!seriesToCheck?.length) return
 
     for (const series of seriesToCheck) {
       const otherLibraryItemsInSeries = Database.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))

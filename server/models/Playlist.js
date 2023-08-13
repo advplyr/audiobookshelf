@@ -1,8 +1,7 @@
-const { DataTypes, Model, Op } = require('sequelize')
+const { DataTypes, Model, Op, literal } = require('sequelize')
 const Logger = require('../Logger')
 
 const oldPlaylist = require('../objects/Playlist')
-const { areEquivalent } = require('../utils/index')
 
 module.exports = (sequelize) => {
   class Playlist extends Model {
@@ -101,49 +100,6 @@ module.exports = (sequelize) => {
       return this.create(playlist)
     }
 
-    static async fullUpdateFromOld(oldPlaylist, playlistMediaItems) {
-      const existingPlaylist = await this.findByPk(oldPlaylist.id, {
-        include: sequelize.models.playlistMediaItem
-      })
-      if (!existingPlaylist) return false
-
-      let hasUpdates = false
-      const playlist = this.getFromOld(oldPlaylist)
-
-      for (const pmi of playlistMediaItems) {
-        const existingPmi = existingPlaylist.playlistMediaItems.find(i => i.mediaItemId === pmi.mediaItemId)
-        if (!existingPmi) {
-          await sequelize.models.playlistMediaItem.create(pmi)
-          hasUpdates = true
-        } else if (existingPmi.order != pmi.order) {
-          await existingPmi.update({ order: pmi.order })
-          hasUpdates = true
-        }
-      }
-      for (const pmi of existingPlaylist.playlistMediaItems) {
-        // Pmi was removed
-        if (!playlistMediaItems.some(i => i.mediaItemId === pmi.mediaItemId)) {
-          await pmi.destroy()
-          hasUpdates = true
-        }
-      }
-
-      let hasPlaylistUpdates = false
-      for (const key in playlist) {
-        let existingValue = existingPlaylist[key]
-        if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-        if (!areEquivalent(playlist[key], existingValue)) {
-          hasPlaylistUpdates = true
-        }
-      }
-      if (hasPlaylistUpdates) {
-        existingPlaylist.update(playlist)
-        hasUpdates = true
-      }
-      return hasUpdates
-    }
-
     static getFromOld(oldPlaylist) {
       return {
         id: oldPlaylist.id,
@@ -196,7 +152,7 @@ module.exports = (sequelize) => {
      * Get playlists for user and optionally for library
      * @param {string} userId 
      * @param {[string]} libraryId optional
-     * @returns {Promise<oldPlaylist[]>}
+     * @returns {Promise<Playlist[]>}
      */
     static async getPlaylistsForUserAndLibrary(userId, libraryId = null) {
       if (!userId && !libraryId) return []
@@ -225,9 +181,12 @@ module.exports = (sequelize) => {
             }
           ]
         },
-        order: [['playlistMediaItems', 'order', 'ASC']]
+        order: [
+          [literal('name COLLATE NOCASE'), 'ASC'],
+          ['playlistMediaItems', 'order', 'ASC']
+        ]
       })
-      return playlists.map(p => this.getOldPlaylist(p))
+      return playlists
     }
 
     /**

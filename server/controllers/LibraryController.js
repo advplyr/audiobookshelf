@@ -5,12 +5,14 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 
 const Database = require('../Database')
+const libraryFilters = require('../utils/queries/libraryFilters')
 
 class LibraryController {
   constructor() { }
@@ -80,9 +82,11 @@ class LibraryController {
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
     if (includeArray.includes('filterdata')) {
+      const filterdata = await libraryFilters.getFilterData(req.library)
+
       return res.json({
-        filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
-        issues: req.libraryItems.filter(li => li.hasIssues).length,
+        filterdata,
+        issues: filterdata.numIssues,
         numUserPlaylists: await Database.models.playlist.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         library: req.library
       })
@@ -90,9 +94,15 @@ class LibraryController {
     return res.json(req.library)
   }
 
+  /**
+   * GET: /api/libraries/:id/episode-downloads
+   * Get podcast episodes in download queue
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getEpisodeDownloadQueue(req, res) {
     const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
-    return res.json(libraryDownloadQueueDetails)
+    res.json(libraryDownloadQueueDetails)
   }
 
   async update(req, res) {
@@ -214,8 +224,12 @@ class LibraryController {
     res.json(payload)
   }
 
-  // api/libraries/:id/items
-  // TODO: Optimize this method, items are iterated through several times but can be combined
+  /**
+   * GET: /api/libraries/:id/items
+   * TODO: Remove after implementing getLibraryItemsNew
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getLibraryItems(req, res) {
     let libraryItems = req.libraryItems
 
@@ -431,7 +445,7 @@ class LibraryController {
   }
 
   /**
-   * api/libraries/:id/series
+   * GET: /api/libraries/:id/series
    * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
    * 
    * @param {*} req 
@@ -498,7 +512,7 @@ class LibraryController {
   }
 
   /**
-   * api/libraries/:id/series/:seriesId
+   * GET: /api/libraries/:id/series/:seriesId
    *
    * Optional includes (e.g. `?include=rssfeed,progress`)
    * rssfeed: adds `rssFeed` to series object if a feed is open
@@ -513,7 +527,7 @@ class LibraryController {
     const series = Database.series.find(se => se.id === req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
-    const libraryItemsInSeries = req.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+    const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
 
     const seriesJson = series.toJSON()
     if (include.includes('progress')) {
@@ -533,7 +547,12 @@ class LibraryController {
     res.json(seriesJson)
   }
 
-  // api/libraries/:id/collections
+  /**
+   * GET: /api/libraries/:id/collections
+   * Get all collections for library
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getCollectionsForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
@@ -563,10 +582,15 @@ class LibraryController {
     res.json(payload)
   }
 
-  // api/libraries/:id/playlists
+  /**
+   * GET: /api/libraries/:id/playlists
+   * Get playlists for user in library
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getUserPlaylistsForLibrary(req, res) {
     let playlistsForUser = await Database.models.playlist.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
-    playlistsForUser = playlistsForUser.map(p => p.toJSONExpanded(Database.libraryItems))
+    playlistsForUser = await Promise.all(playlistsForUser.map(async p => p.getOldJsonExpanded()))
 
     const payload = {
       results: [],
@@ -584,8 +608,14 @@ class LibraryController {
     res.json(payload)
   }
 
+  /**
+   * GET: /api/libraries/:id/filterdata
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getLibraryFilterData(req, res) {
-    res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
+    const filterData = await libraryFilters.getFilterData(req.library)
+    res.json(filterData)
   }
 
   /**
