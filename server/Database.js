@@ -102,7 +102,7 @@ class Database {
     require('./models/MediaProgress')(this.sequelize)
     require('./models/Series')(this.sequelize)
     require('./models/BookSeries')(this.sequelize)
-    require('./models/Author')(this.sequelize)
+    require('./models/Author').init(this.sequelize)
     require('./models/BookAuthor')(this.sequelize)
     require('./models/Collection')(this.sequelize)
     require('./models/CollectionBook')(this.sequelize)
