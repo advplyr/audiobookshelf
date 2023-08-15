@@ -1,151 +1,97 @@
 const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
-const { areEquivalent } = require('../utils/index')
 
-module.exports = (sequelize) => {
-  class Collection extends Model {
-    /**
-     * Get all old collections
-     * @returns {Promise<oldCollection[]>}
-     */
-    static async getOldCollections() {
-      const collections = await this.findAll({
-        include: {
-          model: sequelize.models.book,
-          include: sequelize.models.libraryItem
+
+class Collection extends Model {
+  constructor(values, options) {
+    super(values, options)
+
+    /** @type {UUIDV4} */
+    this.id
+    /** @type {string} */
+    this.name
+    /** @type {string} */
+    this.description
+    /** @type {UUIDV4} */
+    this.libraryId
+    /** @type {Date} */
+    this.updatedAt
+    /** @type {Date} */
+    this.createdAt
+  }
+  /**
+   * Get all old collections
+   * @returns {Promise<oldCollection[]>}
+   */
+  static async getOldCollections() {
+    const collections = await this.findAll({
+      include: {
+        model: this.sequelize.models.book,
+        include: this.sequelize.models.libraryItem
+      },
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
+    return collections.map(c => this.getOldCollection(c))
+  }
+
+  /**
+   * Get all old collections toJSONExpanded, items filtered for user permissions
+   * @param {[oldUser]} user
+   * @param {[string]} libraryId
+   * @param {[string[]]} include
+   * @returns {Promise<object[]>} oldCollection.toJSONExpanded
+   */
+  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
+    let collectionWhere = null
+    if (libraryId) {
+      collectionWhere = {
+        libraryId
+      }
+    }
+
+    // Optionally include rssfeed for collection
+    const collectionIncludes = []
+    if (include.includes('rssfeed')) {
+      collectionIncludes.push({
+        model: this.sequelize.models.feed
+      })
+    }
+
+    const collections = await this.findAll({
+      where: collectionWhere,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.libraryItem
+            },
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            },
+
+          ]
         },
-        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
-      })
-      return collections.map(c => this.getOldCollection(c))
-    }
-
-    /**
-     * Get all old collections toJSONExpanded, items filtered for user permissions
-     * @param {[oldUser]} user
-     * @param {[string]} libraryId
-     * @param {[string[]]} include
-     * @returns {Promise<object[]>} oldCollection.toJSONExpanded
-     */
-    static async getOldCollectionsJsonExpanded(user, libraryId, include) {
-      let collectionWhere = null
-      if (libraryId) {
-        collectionWhere = {
-          libraryId
-        }
-      }
-
-      // Optionally include rssfeed for collection
-      const collectionIncludes = []
-      if (include.includes('rssfeed')) {
-        collectionIncludes.push({
-          model: sequelize.models.feed
-        })
-      }
-
-      const collections = await this.findAll({
-        where: collectionWhere,
-        include: [
-          {
-            model: sequelize.models.book,
-            include: [
-              {
-                model: sequelize.models.libraryItem
-              },
-              {
-                model: sequelize.models.author,
-                through: {
-                  attributes: []
-                }
-              },
-              {
-                model: sequelize.models.series,
-                through: {
-                  attributes: ['sequence']
-                }
-              },
-
-            ]
-          },
-          ...collectionIncludes
-        ],
-        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
-      })
-      // TODO: Handle user permission restrictions on initial query
-      return collections.map(c => {
-        const oldCollection = this.getOldCollection(c)
-
-        // Filter books using user permissions
-        const books = c.books?.filter(b => {
-          if (user) {
-            if (b.tags?.length && !user.checkCanAccessLibraryItemWithTags(b.tags)) {
-              return false
-            }
-            if (b.explicit === true && !user.canAccessExplicitContent) {
-              return false
-            }
-          }
-          return true
-        }) || []
-
-        // Map to library items
-        const libraryItems = books.map(b => {
-          const libraryItem = b.libraryItem
-          delete b.libraryItem
-          libraryItem.media = b
-          return sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
-        })
-
-        // Users with restricted permissions will not see this collection
-        if (!books.length && oldCollection.books.length) {
-          return null
-        }
-
-        const collectionExpanded = oldCollection.toJSONExpanded(libraryItems)
-
-        // Map feed if found
-        if (c.feeds?.length) {
-          collectionExpanded.rssFeed = sequelize.models.feed.getOldFeed(c.feeds[0])
-        }
-
-        return collectionExpanded
-      }).filter(c => c)
-    }
-
-    /**
-     * Get old collection toJSONExpanded, items filtered for user permissions
-     * @param {[oldUser]} user
-     * @param {[string[]]} include
-     * @returns {Promise<object>} oldCollection.toJSONExpanded
-     */
-    async getOldJsonExpanded(user, include) {
-      this.books = await this.getBooks({
-        include: [
-          {
-            model: sequelize.models.libraryItem
-          },
-          {
-            model: sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          },
-
-        ],
-        order: [Sequelize.literal('`collectionBook.order` ASC')]
-      }) || []
-
-      const oldCollection = sequelize.models.collection.getOldCollection(this)
+        ...collectionIncludes
+      ],
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
+    // TODO: Handle user permission restrictions on initial query
+    return collections.map(c => {
+      const oldCollection = this.getOldCollection(c)
 
       // Filter books using user permissions
-      // TODO: Handle user permission restrictions on initial query
-      const books = this.books?.filter(b => {
+      const books = c.books?.filter(b => {
         if (user) {
           if (b.tags?.length && !user.checkCanAccessLibraryItemWithTags(b.tags)) {
             return false
@@ -162,7 +108,7 @@ module.exports = (sequelize) => {
         const libraryItem = b.libraryItem
         delete b.libraryItem
         libraryItem.media = b
-        return sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+        return this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
       })
 
       // Users with restricted permissions will not see this collection
@@ -172,151 +118,225 @@ module.exports = (sequelize) => {
 
       const collectionExpanded = oldCollection.toJSONExpanded(libraryItems)
 
-      if (include?.includes('rssfeed')) {
-        const feeds = await this.getFeeds()
-        if (feeds?.length) {
-          collectionExpanded.rssFeed = sequelize.models.feed.getOldFeed(feeds[0])
-        }
+      // Map feed if found
+      if (c.feeds?.length) {
+        collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(c.feeds[0])
       }
 
       return collectionExpanded
+    }).filter(c => c)
+  }
+
+  /**
+   * Get old collection toJSONExpanded, items filtered for user permissions
+   * @param {[oldUser]} user
+   * @param {[string[]]} include
+   * @returns {Promise<object>} oldCollection.toJSONExpanded
+   */
+  async getOldJsonExpanded(user, include) {
+    this.books = await this.getBooks({
+      include: [
+        {
+          model: this.sequelize.models.libraryItem
+        },
+        {
+          model: this.sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: this.sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        },
+
+      ],
+      order: [Sequelize.literal('`collectionBook.order` ASC')]
+    }) || []
+
+    const oldCollection = this.sequelize.models.collection.getOldCollection(this)
+
+    // Filter books using user permissions
+    // TODO: Handle user permission restrictions on initial query
+    const books = this.books?.filter(b => {
+      if (user) {
+        if (b.tags?.length && !user.checkCanAccessLibraryItemWithTags(b.tags)) {
+          return false
+        }
+        if (b.explicit === true && !user.canAccessExplicitContent) {
+          return false
+        }
+      }
+      return true
+    }) || []
+
+    // Map to library items
+    const libraryItems = books.map(b => {
+      const libraryItem = b.libraryItem
+      delete b.libraryItem
+      libraryItem.media = b
+      return this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+    })
+
+    // Users with restricted permissions will not see this collection
+    if (!books.length && oldCollection.books.length) {
+      return null
     }
 
-    /**
-     * Get old collection from Collection
-     * @param {Collection} collectionExpanded 
-     * @returns {oldCollection}
-     */
-    static getOldCollection(collectionExpanded) {
-      const libraryItemIds = collectionExpanded.books?.map(b => b.libraryItem?.id || null).filter(lid => lid) || []
-      return new oldCollection({
-        id: collectionExpanded.id,
-        libraryId: collectionExpanded.libraryId,
-        name: collectionExpanded.name,
-        description: collectionExpanded.description,
-        books: libraryItemIds,
-        lastUpdate: collectionExpanded.updatedAt.valueOf(),
-        createdAt: collectionExpanded.createdAt.valueOf()
-      })
-    }
+    const collectionExpanded = oldCollection.toJSONExpanded(libraryItems)
 
-    static createFromOld(oldCollection) {
-      const collection = this.getFromOld(oldCollection)
-      return this.create(collection)
-    }
-
-    static getFromOld(oldCollection) {
-      return {
-        id: oldCollection.id,
-        name: oldCollection.name,
-        description: oldCollection.description,
-        libraryId: oldCollection.libraryId
+    if (include?.includes('rssfeed')) {
+      const feeds = await this.getFeeds()
+      if (feeds?.length) {
+        collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
       }
     }
 
-    static removeById(collectionId) {
-      return this.destroy({
-        where: {
-          id: collectionId
-        }
-      })
-    }
+    return collectionExpanded
+  }
 
-    /**
-     * Get old collection by id
-     * @param {string} collectionId 
-     * @returns {Promise<oldCollection|null>} returns null if not found
-     */
-    static async getOldById(collectionId) {
-      if (!collectionId) return null
-      const collection = await this.findByPk(collectionId, {
-        include: {
-          model: sequelize.models.book,
-          include: sequelize.models.libraryItem
-        },
-        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
-      })
-      if (!collection) return null
-      return this.getOldCollection(collection)
-    }
+  /**
+   * Get old collection from Collection
+   * @param {Collection} collectionExpanded 
+   * @returns {oldCollection}
+   */
+  static getOldCollection(collectionExpanded) {
+    const libraryItemIds = collectionExpanded.books?.map(b => b.libraryItem?.id || null).filter(lid => lid) || []
+    return new oldCollection({
+      id: collectionExpanded.id,
+      libraryId: collectionExpanded.libraryId,
+      name: collectionExpanded.name,
+      description: collectionExpanded.description,
+      books: libraryItemIds,
+      lastUpdate: collectionExpanded.updatedAt.valueOf(),
+      createdAt: collectionExpanded.createdAt.valueOf()
+    })
+  }
 
-    /**
-     * Get old collection from current
-     * @returns {Promise<oldCollection>}
-     */
-    async getOld() {
-      this.books = await this.getBooks({
-        include: [
-          {
-            model: sequelize.models.libraryItem
-          },
-          {
-            model: sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          },
+  static createFromOld(oldCollection) {
+    const collection = this.getFromOld(oldCollection)
+    return this.create(collection)
+  }
 
-        ],
-        order: [Sequelize.literal('`collectionBook.order` ASC')]
-      }) || []
-
-      return sequelize.models.collection.getOldCollection(this)
-    }
-
-    /**
-     * Remove all collections belonging to library
-     * @param {string} libraryId 
-     * @returns {Promise<number>} number of collections destroyed
-     */
-    static async removeAllForLibrary(libraryId) {
-      if (!libraryId) return 0
-      return this.destroy({
-        where: {
-          libraryId
-        }
-      })
-    }
-
-    static async getAllForBook(bookId) {
-      const collections = await this.findAll({
-        include: {
-          model: sequelize.models.book,
-          where: {
-            id: bookId
-          },
-          required: true,
-          include: sequelize.models.libraryItem
-        },
-        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
-      })
-      return collections.map(c => this.getOldCollection(c))
+  static getFromOld(oldCollection) {
+    return {
+      id: oldCollection.id,
+      name: oldCollection.name,
+      description: oldCollection.description,
+      libraryId: oldCollection.libraryId
     }
   }
 
-  Collection.init({
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-    },
-    name: DataTypes.STRING,
-    description: DataTypes.TEXT
-  }, {
-    sequelize,
-    modelName: 'collection'
-  })
+  static removeById(collectionId) {
+    return this.destroy({
+      where: {
+        id: collectionId
+      }
+    })
+  }
 
-  const { library } = sequelize.models
+  /**
+   * Get old collection by id
+   * @param {string} collectionId 
+   * @returns {Promise<oldCollection|null>} returns null if not found
+   */
+  static async getOldById(collectionId) {
+    if (!collectionId) return null
+    const collection = await this.findByPk(collectionId, {
+      include: {
+        model: this.sequelize.models.book,
+        include: this.sequelize.models.libraryItem
+      },
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
+    if (!collection) return null
+    return this.getOldCollection(collection)
+  }
 
-  library.hasMany(Collection)
-  Collection.belongsTo(library)
+  /**
+   * Get old collection from current
+   * @returns {Promise<oldCollection>}
+   */
+  async getOld() {
+    this.books = await this.getBooks({
+      include: [
+        {
+          model: this.sequelize.models.libraryItem
+        },
+        {
+          model: this.sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: this.sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        },
 
-  return Collection
+      ],
+      order: [Sequelize.literal('`collectionBook.order` ASC')]
+    }) || []
+
+    return this.sequelize.models.collection.getOldCollection(this)
+  }
+
+  /**
+   * Remove all collections belonging to library
+   * @param {string} libraryId 
+   * @returns {Promise<number>} number of collections destroyed
+   */
+  static async removeAllForLibrary(libraryId) {
+    if (!libraryId) return 0
+    return this.destroy({
+      where: {
+        libraryId
+      }
+    })
+  }
+
+  static async getAllForBook(bookId) {
+    const collections = await this.findAll({
+      include: {
+        model: this.sequelize.models.book,
+        where: {
+          id: bookId
+        },
+        required: true,
+        include: this.sequelize.models.libraryItem
+      },
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
+    return collections.map(c => this.getOldCollection(c))
+  }
+
+  /**
+   * Initialize model
+   * @param {import('../Database').sequelize} sequelize 
+   */
+  static init(sequelize) {
+    super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      name: DataTypes.STRING,
+      description: DataTypes.TEXT
+    }, {
+      sequelize,
+      modelName: 'collection'
+    })
+
+    const { library } = sequelize.models
+
+    library.hasMany(Collection)
+    Collection.belongsTo(library)
+  }
 }
+
+module.exports = Collection

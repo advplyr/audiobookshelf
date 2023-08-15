@@ -1,41 +1,57 @@
 const { DataTypes, Model } = require('sequelize')
 
-module.exports = (sequelize) => {
-  class BookAuthor extends Model {
-    static removeByIds(authorId = null, bookId = null) {
-      const where = {}
-      if (authorId) where.authorId = authorId
-      if (bookId) where.bookId = bookId
-      return this.destroy({
-        where
-      })
-    }
+class BookAuthor extends Model {
+  constructor(values, options) {
+    super(values, options)
+
+    /** @type {UUIDV4} */
+    this.id
+    /** @type {UUIDV4} */
+    this.bookId
+    /** @type {UUIDV4} */
+    this.authorId
+    /** @type {Date} */
+    this.createdAt
   }
 
-  BookAuthor.init({
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-    }
-  }, {
-    sequelize,
-    modelName: 'bookAuthor',
-    timestamps: true,
-    updatedAt: false
-  })
+  static removeByIds(authorId = null, bookId = null) {
+    const where = {}
+    if (authorId) where.authorId = authorId
+    if (bookId) where.bookId = bookId
+    return this.destroy({
+      where
+    })
+  }
 
-  // Super Many-to-Many
-  // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
-  const { book, author } = sequelize.models
-  book.belongsToMany(author, { through: BookAuthor })
-  author.belongsToMany(book, { through: BookAuthor })
+  /**
+   * Initialize model
+   * @param {import('../Database').sequelize} sequelize 
+   */
+  static init(sequelize) {
+    super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      }
+    }, {
+      sequelize,
+      modelName: 'bookAuthor',
+      timestamps: true,
+      updatedAt: false
+    })
 
-  book.hasMany(BookAuthor)
-  BookAuthor.belongsTo(book)
+    // Super Many-to-Many
+    // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
+    const { book, author } = sequelize.models
+    book.belongsToMany(author, { through: BookAuthor })
+    author.belongsToMany(book, { through: BookAuthor })
 
-  author.hasMany(BookAuthor)
-  BookAuthor.belongsTo(author)
+    book.hasMany(BookAuthor)
+    BookAuthor.belongsTo(book)
 
-  return BookAuthor
+    author.hasMany(BookAuthor)
+    BookAuthor.belongsTo(author)
+  }
 }
+module.exports = BookAuthor
