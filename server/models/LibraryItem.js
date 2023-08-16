@@ -486,6 +486,10 @@ class LibraryItem extends Model {
             }
           ]
         }
+      ],
+      order: [
+        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
       ]
     })
     if (!libraryItem) return null
@@ -733,6 +737,50 @@ class LibraryItem extends Model {
    */
   static async checkExistsById(libraryItemId) {
     return (await this.count({ where: { id: libraryItemId } })) > 0
+  }
+
+  /**
+   * 
+   * @param {WhereOptions} where 
+   * @returns {Object} oldLibraryItem
+   */
+  static async findOneOld(where) {
+    const libraryItem = await this.findOne({
+      where,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: this.sequelize.models.podcast,
+          include: [
+            {
+              model: this.sequelize.models.podcastEpisode
+            }
+          ]
+        }
+      ],
+      order: [
+        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+      ]
+    })
+    if (!libraryItem) return null
+    return this.getOldLibraryItem(libraryItem)
   }
 
   getMedia(options) {

@@ -1,3 +1,4 @@
+const Sequelize = require('sequelize')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
@@ -589,28 +590,49 @@ class Scanner {
     //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
     const updateGroup = { ...fileUpdateGroup }
     for (const itemDir in updateGroup) {
-      if (itemDir == fileUpdateGroup[itemDir]) continue; // Media in root path
+      if (itemDir == fileUpdateGroup[itemDir]) continue // Media in root path
 
       const itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
-      if (!itemDirNestedFiles.length) continue;
+      if (!itemDirNestedFiles.length) continue
 
       const firstNest = itemDirNestedFiles[0].split('/').shift()
       const altDir = `${itemDir}/${firstNest}`
 
       const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
-      const childLibraryItem = Database.libraryItems.find(li => li.path !== fullPath && li.path.startsWith(fullPath))
+      const childLibraryItem = await Database.models.libraryItem.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [Sequelize.Op.not]: fullPath
+          },
+          path: {
+            [Sequelize.Op.startsWith]: fullPath
+          }
+        }
+      })
       if (!childLibraryItem) {
         continue
       }
+
       const altFullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), altDir)
-      const altChildLibraryItem = Database.libraryItems.find(li => li.path !== altFullPath && li.path.startsWith(altFullPath))
+      const altChildLibraryItem = await Database.models.libraryItem.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [Sequelize.Op.not]: altFullPath
+          },
+          path: {
+            [Sequelize.Op.startsWith]: altFullPath
+          }
+        }
+      })
       if (altChildLibraryItem) {
         continue
       }
 
       delete fileUpdateGroup[itemDir]
       fileUpdateGroup[altDir] = itemDirNestedFiles.map((f) => f.split('/').slice(1).join('/'))
-      Logger.warn(`[Scanner] Some files were modified in a parent directory of a library item "${childLibraryItem.title}" - ignoring`)
+      Logger.warn(`[Scanner] Some files were modified in a parent directory of a library item "${childLibraryItem.path}" - ignoring`)
     }
 
     // Second pass: Check for new/updated/removed items
@@ -619,10 +641,21 @@ class Scanner {
       const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
       const dirIno = await getIno(fullPath)
 
+      const itemDirParts = itemDir.split('/').slice(0, -1)
+      const potentialChildDirs = []
+      for (let i = 0; i < itemDirParts.length; i++) {
+        potentialChildDirs.push(Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir.split('/').slice(0, -1 - i).join('/')))
+      }
+
       // Check if book dir group is already an item
-      let existingLibraryItem = Database.libraryItems.find(li => fullPath.startsWith(li.path))
+      let existingLibraryItem = await Database.models.libraryItem.findOneOld({
+        path: potentialChildDirs
+      })
+
       if (!existingLibraryItem) {
-        existingLibraryItem = Database.libraryItems.find(li => li.ino === dirIno)
+        existingLibraryItem = await Database.models.libraryItem.findOneOld({
+          ino: dirIno
+        })
         if (existingLibraryItem) {
           Logger.debug(`[Scanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
           // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
@@ -655,9 +688,16 @@ class Scanner {
       }
 
       // Check if a library item is a subdirectory of this dir
-      var childItem = Database.libraryItems.find(li => (li.path + '/').startsWith(fullPath + '/'))
+      const childItem = await Database.models.libraryItem.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [Sequelize.Op.startsWith]: fullPath
+          }
+        }
+      })
       if (childItem) {
-        Logger.warn(`[Scanner] Files were modified in a parent directory of a library item "${childItem.media.metadata.title}" - ignoring`)
+        Logger.warn(`[Scanner] Files were modified in a parent directory of a library item "${childItem.path}" - ignoring`)
         itemGroupingResults[itemDir] = ScanResult.NOTHING
         continue
       }
