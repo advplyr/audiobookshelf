@@ -188,7 +188,7 @@ class Library extends Model {
   static async getOldById(libraryId) {
     if (!libraryId) return null
     const library = await this.findByPk(libraryId, {
-      include: sequelize.models.libraryFolder
+      include: this.sequelize.models.libraryFolder
     })
     if (!library) return null
     return this.getOldLibrary(library)
