@@ -135,7 +135,7 @@ class LibraryItemController {
       if (seriesRemoved.length) {
         // Check remove empty series
         Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
-        await this.checkRemoveEmptySeries(seriesRemoved)
+        await this.checkRemoveEmptySeries(libraryItem.media.id, seriesRemoved.map(se => se.id))
       }
 
       if (isPodcastAutoDownloadUpdated) {
@@ -351,8 +351,21 @@ class LibraryItemController {
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
 
+      let seriesRemoved = []
+      if (libraryItem.isBook && mediaPayload.metadata?.series) {
+        const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+        seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
+      }
+
       if (libraryItem.media.update(mediaPayload)) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
+
+        if (seriesRemoved.length) {
+          // Check remove empty series
+          Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
+          await this.checkRemoveEmptySeries(libraryItem.media.id, seriesRemoved.map(se => se.id))
+        }
+
         await Database.updateLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
         itemsUpdated++

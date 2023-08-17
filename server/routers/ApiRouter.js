@@ -371,6 +371,7 @@ class ApiRouter {
 
     // Remove series if empty
     if (mediaType === 'book') {
+      // TODO: update filter data
       const bookSeries = await Database.models.bookSeries.findAll({
         where: {
           bookId: mediaItemIds[0]
@@ -440,17 +441,33 @@ class ApiRouter {
     })
   }
 
-  async checkRemoveEmptySeries(seriesToCheck, excludeLibraryItemId = null) {
-    if (!seriesToCheck?.length) return
+  /**
+   * Used when a series is removed from a book
+   * Series is removed if it only has 1 book
+   * TODO: Update filter data
+   * @param {UUIDV4} bookId
+   * @param {UUIDV4[]} seriesIds 
+   */
+  async checkRemoveEmptySeries(bookId, seriesIds) {
+    if (!seriesIds?.length) return
 
-    for (const series of seriesToCheck) {
-      const otherLibraryItemsInSeries = Database.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))
-      if (!otherLibraryItemsInSeries.length) {
-        // Close open RSS feed for series
-        await this.rssFeedManager.closeFeedForEntityId(series.id)
-        Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-        await Database.removeSeries(series.id)
-        // TODO: Socket events for series?
+    const bookSeries = await Database.models.bookSeries.findAll({
+      where: {
+        bookId,
+        seriesId: seriesIds
+      },
+      include: [
+        {
+          model: Database.models.series,
+          include: {
+            model: Database.models.book
+          }
+        }
+      ]
+    })
+    for (const bs of bookSeries) {
+      if (bs.series.books.length === 1) {
+        await this.removeEmptySeries(bs.series)
       }
     }
   }

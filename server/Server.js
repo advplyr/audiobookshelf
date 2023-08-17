@@ -114,7 +114,6 @@ class Server {
 
     await this.backupManager.init()
     await this.logManager.init()
-    await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()
 
     const libraries = await Database.models.library.getAllOldLibraries()
