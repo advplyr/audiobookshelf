@@ -352,34 +352,6 @@ class ApiRouter {
   //
   // Helper Methods
   //
-  userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    const json = user.toJSONForBrowser(hideRootToken)
-
-    json.mediaProgress = json.mediaProgress.map(lip => {
-      const libraryItem = Database.libraryItems.find(li => li.id === lip.libraryItemId)
-      if (!libraryItem) {
-        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
-        lip.media = null
-      } else {
-        if (lip.episodeId) {
-          const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(lip.episodeId) : null
-          if (!episode) {
-            Logger.warn(`[ApiRouter] Episode ${lip.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
-            lip.media = null
-          } else {
-            lip.media = libraryItem.media.toJSONExpanded()
-            lip.episode = episode.toJSON()
-          }
-        } else {
-          lip.media = libraryItem.media.toJSONExpanded()
-        }
-      }
-      return lip
-    }).filter(lip => !!lip)
-
-    return json
-  }
-
   /**
    * Remove library item and associated entities
    * @param {string} mediaType 

@@ -32,13 +32,60 @@ class UserController {
     })
   }
 
+  /**
+   * GET: /api/users/:id
+   * Get a single user toJSONForBrowser
+   * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
+   * 
+   * @param {import("express").Request} req 
+   * @param {import("express").Response} res 
+   */
   async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error('User other than admin attempting to get user', req.user)
       return res.sendStatus(403)
     }
 
-    res.json(this.userJsonWithItemProgressDetails(req.reqUser, !req.user.isRoot))
+    // Get user media progress with associated mediaItem
+    const mediaProgresses = await Database.models.mediaProgress.findAll({
+      where: {
+        userId: req.reqUser.id
+      },
+      include: [
+        {
+          model: Database.models.book,
+          attributes: ['id', 'title', 'coverPath', 'updatedAt']
+        },
+        {
+          model: Database.models.podcastEpisode,
+          attributes: ['id', 'title'],
+          include: {
+            model: Database.models.podcast,
+            attributes: ['id', 'title', 'coverPath', 'updatedAt']
+          }
+        }
+      ]
+    })
+
+    const oldMediaProgresses = mediaProgresses.map(mp => {
+      const oldMediaProgress = mp.getOldMediaProgress()
+      oldMediaProgress.displayTitle = mp.mediaItem?.title
+      if (mp.mediaItem?.podcast) {
+        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
+        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
+      } else if (mp.mediaItem) {
+        oldMediaProgress.coverPath = mp.mediaItem.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
+      }
+      return oldMediaProgress
+    })
+
+    const userJson = req.reqUser.toJSONForBrowser(!req.user.isRoot)
+
+    userJson.mediaProgress = oldMediaProgresses
+
+    res.json(userJson)
   }
 
   async create(req, res) {
