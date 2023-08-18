@@ -124,7 +124,7 @@ class LibraryItemController {
     // Book specific - Get all series being removed from this item
     let seriesRemoved = []
     if (libraryItem.isBook && mediaPayload.metadata?.series) {
-      const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+      const seriesIdsInUpdate = mediaPayload.metadata.series?.map(se => se.id) || []
       seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
     }
 

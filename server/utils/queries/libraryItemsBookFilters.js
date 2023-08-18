@@ -278,7 +278,7 @@ module.exports = {
    * @returns {object} { booksToExclude, bookSeriesToInclude }
    */
   async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
-    const allSeries = await Database.models.series.findAll({
+    const allSeries = await Database.seriesModel.findAll({
       attributes: [
         'id',
         'name',
@@ -642,7 +642,7 @@ module.exports = {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
 
-    const { rows: series, count } = await Database.models.series.findAndCountAll({
+    const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: [
         {
           libraryId
@@ -751,7 +751,7 @@ module.exports = {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
     // Step 1: Get the first book of every series that hasnt been started yet
-    const seriesNotStarted = await Database.models.series.findAll({
+    const seriesNotStarted = await Database.seriesModel.findAll({
       where: [
         {
           libraryId

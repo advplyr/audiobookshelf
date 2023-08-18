@@ -221,7 +221,7 @@ module.exports = {
       }))
     }
 
-    const { rows: series, count } = await Database.models.series.findAndCountAll({
+    const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: seriesWhere,
       limit,
       offset: 0,
@@ -291,7 +291,7 @@ module.exports = {
   async getNewestAuthors(library, user, limit) {
     if (library.mediaType !== 'book') return { authors: [], count: 0 }
 
-    const { rows: authors, count } = await Database.models.author.findAndCountAll({
+    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: library.id,
         createdAt: {
@@ -461,7 +461,7 @@ module.exports = {
         if (book.language) data.languages.add(book.language)
       }
 
-      const series = await Database.models.series.findAll({
+      const series = await Database.seriesModel.findAll({
         where: {
           libraryId: oldLibrary.id
         },
@@ -469,7 +469,7 @@ module.exports = {
       })
       series.forEach((s) => data.series.push({ id: s.id, name: s.name }))
 
-      const authors = await Database.models.author.findAll({
+      const authors = await Database.authorModel.findAll({
         where: {
           libraryId: oldLibrary.id
         },

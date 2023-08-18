@@ -34,6 +34,16 @@ class Database {
     return this.sequelize?.models || {}
   }
 
+  /** @type {typeof import('./models/Author')} */
+  get authorModel() {
+    return this.models.author
+  }
+
+  /** @type {typeof import('./models/Series')} */
+  get seriesModel() {
+    return this.models.series
+  }
+
   async checkHasDb() {
     if (!await fs.pathExists(this.dbPath)) {
       Logger.info(`[Database] absdatabase.sqlite not found at ${this.dbPath}`)
@@ -480,6 +490,66 @@ class Database {
         this.libraryFilterData[libraryId].narrators.push(narrator)
       }
     }
+  }
+
+  removeSeriesFromFilterData(libraryId, seriesId) {
+    if (!this.libraryFilterData[libraryId]) return
+    this.libraryFilterData[libraryId].series = this.libraryFilterData[libraryId].series.filter(se => se.id !== seriesId)
+  }
+
+  addSeriesToFilterData(libraryId, seriesName, seriesId) {
+    if (!this.libraryFilterData[libraryId]) return
+    // Check if series is already added
+    if (this.libraryFilterData[libraryId].series.some(se => se.id === seriesId)) return
+    this.libraryFilterData[libraryId].series.push({
+      id: seriesId,
+      name: seriesName
+    })
+  }
+
+  removeAuthorFromFilterData(libraryId, authorId) {
+    if (!this.libraryFilterData[libraryId]) return
+    this.libraryFilterData[libraryId].authors = this.libraryFilterData[libraryId].authors.filter(au => au.id !== authorId)
+  }
+
+  addAuthorToFilterData(libraryId, authorName, authorId) {
+    if (!this.libraryFilterData[libraryId]) return
+    // Check if author is already added
+    if (this.libraryFilterData[libraryId].authors.some(au => au.id === authorId)) return
+    this.libraryFilterData[libraryId].authors.push({
+      id: authorId,
+      name: authorName
+    })
+  }
+
+  /**
+   * Used when updating items to make sure author id exists
+   * If library filter data is set then use that for check
+   * otherwise lookup in db
+   * @param {string} libraryId 
+   * @param {string} authorId 
+   * @returns {Promise<boolean>}
+   */
+  async checkAuthorExists(libraryId, authorId) {
+    if (!this.libraryFilterData[libraryId]) {
+      return this.authorModel.checkExistsById(authorId)
+    }
+    return this.libraryFilterData[libraryId].authors.some(au => au.id === authorId)
+  }
+
+  /**
+   * Used when updating items to make sure series id exists
+   * If library filter data is set then use that for check
+   * otherwise lookup in db
+   * @param {string} libraryId 
+   * @param {string} seriesId 
+   * @returns {Promise<boolean>}
+   */
+  async checkSeriesExists(libraryId, seriesId) {
+    if (!this.libraryFilterData[libraryId]) {
+      return this.seriesModel.checkExistsById(seriesId)
+    }
+    return this.libraryFilterData[libraryId].series.some(se => se.id === seriesId)
   }
 }
 

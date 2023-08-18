@@ -113,6 +113,8 @@ class AuthorController {
       // Remove old author
       await Database.removeAuthor(req.author.id)
       SocketAuthority.emitter('author_removed', req.author.toJSON())
+      // Update filter data
+      Database.removeAuthorFromFilterData(req.author.libraryId, req.author.id)
 
       // Send updated num books for merged author
       const numBooks = await Database.models.libraryItem.getForAuthor(existingAuthor).length

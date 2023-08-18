@@ -76,6 +76,15 @@ class Series extends Model {
   }
 
   /**
+   * Check if series exists
+   * @param {string} seriesId 
+   * @returns {Promise<boolean>}
+   */
+  static async checkExistsById(seriesId) {
+    return (await this.count({ where: { id: seriesId } })) > 0
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize 
    */

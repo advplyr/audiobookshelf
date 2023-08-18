@@ -486,6 +486,8 @@ class Scanner {
           _author = new Author()
           _author.setData(tempMinAuthor, libraryItem.libraryId)
           newAuthors.push(_author)
+          // Update filter data
+          Database.addAuthorToFilterData(libraryItem.libraryId, _author.name, _author.id)
         }
 
         return {
@@ -502,11 +504,17 @@ class Scanner {
       const newSeries = []
       libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
         let _series = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
-        if (!_series) _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
+        if (!_series) {
+          // Check new unsaved series
+          _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
+        }
+
         if (!_series) { // Must create new series
           _series = new Series()
           _series.setData(tempMinSeries, libraryItem.libraryId)
           newSeries.push(_series)
+          // Update filter data
+          Database.addSeriesToFilterData(libraryItem.libraryId, _series.name, _series.id)
         }
         return {
           id: _series.id,
@@ -924,6 +932,8 @@ class Scanner {
           author.setData({ name: authorName }, libraryItem.libraryId)
           await Database.createAuthor(author)
           SocketAuthority.emitter('author_added', author.toJSON())
+          // Update filter data
+          Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
         }
         authorPayload.push(author.toJSONMinimal())
       }
@@ -940,6 +950,8 @@ class Scanner {
           seriesItem = new Series()
           seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)
           await Database.createSeries(seriesItem)
+          // Update filter data
+          Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
           SocketAuthority.emitter('series_added', seriesItem.toJSON())
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))

@@ -472,10 +472,20 @@ class ApiRouter {
     }
   }
 
+  /**
+   * Remove an empty series & close an open RSS feed
+   * @param {import('../models/Series')} series 
+   */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
     await Database.removeSeries(series.id)
+    // Remove series from library filter data
+    Database.removeSeriesFromFilterData(series.libraryId, series.id)
+    SocketAuthority.emitter('series_removed', {
+      id: series.id,
+      libraryId: series.libraryId
+    })
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -546,13 +556,19 @@ class ApiRouter {
       const mediaMetadata = mediaPayload.metadata
 
       // Create new authors if in payload
-      if (mediaMetadata.authors && mediaMetadata.authors.length) {
+      if (mediaMetadata.authors?.length) {
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
           if (!authorName) {
             Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
             continue
+          }
+
+          // Ensure the ID for the author exists
+          if (mediaMetadata.authors[i].id && !(await Database.checkAuthorExists(libraryId, mediaMetadata.authors[i].id))) {
+            Logger.warn(`[ApiRouter] Author id "${mediaMetadata.authors[i].id}" does not exist`)
+            mediaMetadata.authors[i].id = null
           }
 
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
@@ -562,6 +578,8 @@ class ApiRouter {
               author.setData(mediaMetadata.authors[i], libraryId)
               Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
               newAuthors.push(author)
+              // Update filter data
+              Database.addAuthorToFilterData(libraryId, author.name, author.id)
             }
 
             // Update ID in original payload
@@ -584,6 +602,12 @@ class ApiRouter {
             continue
           }
 
+          // Ensure the ID for the series exists
+          if (mediaMetadata.series[i].id && !(await Database.checkSeriesExists(libraryId, mediaMetadata.series[i].id))) {
+            Logger.warn(`[ApiRouter] Series id "${mediaMetadata.series[i].id}" does not exist`)
+            mediaMetadata.series[i].id = null
+          }
+
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
             let seriesItem = Database.series.find(se => se.libraryId === libraryId && se.checkNameEquals(seriesName))
             if (!seriesItem) {
@@ -591,6 +615,8 @@ class ApiRouter {
               seriesItem.setData(mediaMetadata.series[i], libraryId)
               Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
+              // Update filter data
+              Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
             }
 
             // Update ID in original payload

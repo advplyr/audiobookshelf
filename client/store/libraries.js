@@ -234,6 +234,10 @@ export const mutations = {
   setNumUserPlaylists(state, numUserPlaylists) {
     state.numUserPlaylists = numUserPlaylists
   },
+  removeSeriesFromFilterData(state, seriesId) {
+    if (!seriesId || !state.filterData) return
+    state.filterData.series = state.filterData.series.filter(se => se.id !== seriesId)
+  },
   updateFilterDataWithItem(state, libraryItem) {
     if (!libraryItem || !state.filterData) return
     if (state.currentLibraryId !== libraryItem.libraryId) return

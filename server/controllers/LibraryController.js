@@ -859,12 +859,12 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/authors
    * Get authors for library
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async getAuthors(req, res) {
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
-    const authors = await Database.models.author.findAll({
+    const authors = await Database.authorModel.findAll({
       where: {
         libraryId: req.library.id
       },
