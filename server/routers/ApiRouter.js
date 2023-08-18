@@ -78,6 +78,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middlewareNew.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middlewareNew.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
+    this.router.get('/libraries/:id/series2', LibraryController.middlewareNew.bind(this), LibraryController.getAllSeriesForLibraryNew.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middlewareNew.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middlewareNew.bind(this), LibraryController.getCollectionsForLibrary.bind(this))

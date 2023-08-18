@@ -8,6 +8,7 @@ const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
+const seriesFilters = require('../utils/queries/seriesFilters')
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -520,11 +521,41 @@ class LibraryController {
   }
 
   /**
+ * GET: /api/libraries/:id/series2
+ * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
+ * 
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ */
+  async getAllSeriesForLibraryNew(req, res) {
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
+    const payload = {
+      results: [],
+      total: 0,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1',
+      include: include.join(',')
+    }
+
+    const offset = payload.page * payload.limit
+    const { series, count } = await seriesFilters.getFilteredSeries(req.library, req.user, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
+
+    payload.total = count
+    payload.results = series
+    res.json(payload)
+  }
+
+  /**
    * GET: /api/libraries/:id/series
    * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
    * 
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async getAllSeriesForLibrary(req, res) {
     const libraryItems = req.libraryItems

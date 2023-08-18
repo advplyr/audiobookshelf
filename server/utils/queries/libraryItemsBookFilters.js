@@ -6,7 +6,7 @@ module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
    * @param {oldUser} user 
-   * @returns {object} { bookWhere:Sequelize.WhereOptions, replacements:string[] }
+   * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
     const bookWhere = []

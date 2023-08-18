@@ -1,5 +1,5 @@
 const uuidv4 = require("uuid").v4
-const { getTitleIgnorePrefix } = require('../../utils/index')
+const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
 class Series {
   constructor(series) {
@@ -33,6 +33,7 @@ class Series {
     return {
       id: this.id,
       name: this.name,
+      nameIgnorePrefix: getTitlePrefixAtEnd(this.name),
       description: this.description,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,

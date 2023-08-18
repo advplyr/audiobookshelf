@@ -100,7 +100,24 @@ class Series extends Model {
       description: DataTypes.TEXT
     }, {
       sequelize,
-      modelName: 'series'
+      modelName: 'series',
+      indexes: [
+        {
+          fields: [{
+            name: 'name',
+            collate: 'NOCASE'
+          }]
+        },
+        {
+          fields: [{
+            name: 'nameIgnorePrefix',
+            collate: 'NOCASE'
+          }]
+        },
+        {
+          fields: ['libraryId']
+        }
+      ]
     })
 
     const { library } = sequelize.models

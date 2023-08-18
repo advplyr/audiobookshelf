@@ -41,11 +41,11 @@ module.exports = {
 
   /**
    * Get library items for continue listening & continue reading shelves
-   * @param {oldLibrary} library 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {string[]} include 
    * @param {number} limit 
-   * @returns {object} { items:LibraryItem[], count:number }
+   * @returns {Promise<{ items:import('../../models/LibraryItem')[], count:number }>}
    */
   async getMediaItemsInProgress(library, user, include, limit) {
     if (library.mediaType === 'book') {
@@ -176,14 +176,14 @@ module.exports = {
 
   /**
    * Get series for recent series shelf
-   * @param {oldLibrary} library 
-   * @param {oldUser} user
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user
    * @param {string[]} include 
    * @param {number} limit 
-   * @returns {object} { series:oldSeries[], count:number}
+   * @returns {{ series:import('../../objects/entities/Series')[], count:number}} 
    */
   async getSeriesMostRecentlyAdded(library, user, include, limit) {
-    if (library.mediaType !== 'book') return { series: [], count: 0 }
+    if (!library.isBook) return { series: [], count: 0 }
 
     const seriesIncludes = []
     if (include.includes('rssfeed')) {
@@ -390,7 +390,7 @@ module.exports = {
 
   /**
    * Get filter data used in filter menus
-   * @param {oldLibrary} oldLibrary 
+   * @param {import('../../objects/Library')} oldLibrary 
    * @returns {Promise<object>}
    */
   async getFilterData(oldLibrary) {
