@@ -372,8 +372,13 @@ class PodcastManager {
     }
   }
 
-  generateOPMLFileText(libraryItems) {
-    return opmlGenerator.generate(libraryItems)
+  /**
+   * OPML file string for podcasts in a library
+   * @param {import('../models/Podcast')[]} podcasts 
+   * @returns {string} XML string
+   */
+  generateOPMLFileText(podcasts) {
+    return opmlGenerator.generate(podcasts)
   }
 
   getDownloadQueueDetails(libraryId = null) {

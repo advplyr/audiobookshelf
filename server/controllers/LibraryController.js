@@ -1047,8 +1047,28 @@ class LibraryController {
     res.json(payload)
   }
 
-  getOPMLFile(req, res) {
-    const opmlText = this.podcastManager.generateOPMLFileText(req.libraryItems)
+  /**
+   * GET: /api/libraries/:id/opml
+   * Get OPML file for a podcast library
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async getOPMLFile(req, res) {
+    const userPermissionPodcastWhere = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(req.user)
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: ['id', 'feedURL', 'title', 'description', 'itunesPageURL', 'language'],
+      where: userPermissionPodcastWhere.podcastWhere,
+      replacements: userPermissionPodcastWhere.replacements,
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    })
+
+    const opmlText = this.podcastManager.generateOPMLFileText(podcasts)
     res.type('application/xml')
     res.send(opmlText)
   }

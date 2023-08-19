@@ -95,7 +95,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/matchall', LibraryController.middlewareNew.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middlewareNew.bind(this), LibraryController.scan.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middlewareNew.bind(this), LibraryController.getRecentEpisodes.bind(this))
-    this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
+    this.router.get('/libraries/:id/opml', LibraryController.middlewareNew.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
