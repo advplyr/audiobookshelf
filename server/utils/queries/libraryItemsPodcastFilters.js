@@ -455,5 +455,75 @@ module.exports = {
     })
 
     return episodeResults
+  },
+
+  /**
+   * Get stats for podcast library
+   * @param {string} libraryId 
+   * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
+   */
+  async getPodcastLibraryStats(libraryId) {
+    const [statResults] = await Database.sequelize.query(`SELECT SUM(json_extract(pe.audioFile, '$.duration')) AS totalDuration, SUM(li.size) AS totalSize, COUNT(DISTINCT(li.id)) AS totalItems, COUNT(pe.id) AS numAudioFiles FROM libraryItems li, podcasts p LEFT OUTER JOIN podcastEpisodes pe ON pe.podcastId = p.id WHERE p.id = li.mediaId AND li.libraryId = :libraryId;`, {
+      replacements: {
+        libraryId
+      }
+    })
+    return statResults[0]
+  },
+
+  /**
+   * Genres with num podcasts
+   * @param {string} libraryId 
+   * @returns {{genre:string, count:number}[]}
+   */
+  async getGenresWithCount(libraryId) {
+    const genres = []
+    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.genres) WHERE json_valid(p.genres) AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC;`, {
+      replacements: {
+        libraryId
+      },
+      raw: true
+    })
+    for (const row of genreResults) {
+      genres.push({
+        genre: row.value,
+        count: row.numItems
+      })
+    }
+    return genres
+  },
+
+  /**
+   * Get longest podcasts in library
+   * @param {string} libraryId 
+   * @param {number} limit 
+   * @returns {Promise<{ id:string, title:string, duration:number }[]>}
+   */
+  async getLongestPodcasts(libraryId, limit) {
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: [
+        'id',
+        'title',
+        [Sequelize.literal(`(SELECT SUM(json_extract(pe.audioFile, '$.duration')) FROM podcastEpisodes pe WHERE pe.podcastId = podcast.id)`), 'duration']
+      ],
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId
+        }
+      },
+      order: [
+        ['duration', 'DESC']
+      ],
+      limit
+    })
+    return podcasts.map(podcast => {
+      return {
+        id: podcast.libraryItem.id,
+        title: podcast.title,
+        duration: podcast.dataValues.duration
+      }
+    })
   }
 }

@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
+const authorFilters = require('./authorFilters')
 
 module.exports = {
   /**
@@ -1098,27 +1099,7 @@ module.exports = {
     }
 
     // Search authors
-    const authors = await Database.authorModel.findAll({
-      where: {
-        name: {
-          [Sequelize.Op.substring]: query
-        },
-        libraryId: oldLibrary.id
-      },
-      attributes: {
-        include: [
-          [Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'numBooks']
-        ]
-      },
-      limit,
-      offset
-    })
-    const authorMatches = []
-    for (const author of authors) {
-      const oldAuthor = author.getOldAuthor().toJSON()
-      oldAuthor.numBooks = author.dataValues.numBooks
-      authorMatches.push(oldAuthor)
-    }
+    const authorMatches = await authorFilters.search(oldLibrary.id, query)
 
     return {
       book: itemMatches,
@@ -1127,5 +1108,71 @@ module.exports = {
       series: seriesMatches,
       authors: authorMatches
     }
+  },
+
+  /**
+   * Genres with num books
+   * @param {string} libraryId 
+   * @returns {{genre:string, count:number}[]}
+   */
+  async getGenresWithCount(libraryId) {
+    const genres = []
+    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC;`, {
+      replacements: {
+        libraryId
+      },
+      raw: true
+    })
+    for (const row of genreResults) {
+      genres.push({
+        genre: row.value,
+        count: row.numItems
+      })
+    }
+    return genres
+  },
+
+  /**
+   * Get stats for book library
+   * @param {string} libraryId 
+   * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
+   */
+  async getBookLibraryStats(libraryId) {
+    const [statResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, SUM(json_array_length(b.audioFiles)) AS numAudioFiles, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.libraryId = :libraryId;`, {
+      replacements: {
+        libraryId
+      }
+    })
+    return statResults[0]
+  },
+
+  /**
+   * Get longest books in library
+   * @param {string} libraryId 
+   * @param {number} limit 
+   * @returns {Promise<{ id:string, title:string, duration:number }[]>}
+   */
+  async getLongestBooks(libraryId, limit) {
+    const books = await Database.bookModel.findAll({
+      attributes: ['id', 'title', 'duration'],
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId
+        }
+      },
+      order: [
+        ['duration', 'DESC']
+      ],
+      limit
+    })
+    return books.map(book => {
+      return {
+        id: book.libraryItem.id,
+        title: book.title,
+        duration: book.duration
+      }
+    })
   }
 }

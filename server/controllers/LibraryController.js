@@ -17,6 +17,7 @@ const naturalSort = createNewSortInstance({
 const Database = require('../Database')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
+const authorFilters = require('../utils/queries/authorFilters')
 
 class LibraryController {
   constructor() { }
@@ -809,23 +810,44 @@ class LibraryController {
     res.json(matches)
   }
 
+  /**
+   * GET: /api/libraries/:id/stats
+   * Get stats for library
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async stats(req, res) {
-    var libraryItems = req.libraryItems
-    var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
-    var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
-    var durationStats = libraryHelpers.getItemDurationStats(libraryItems)
-    var sizeStats = libraryHelpers.getItemSizeStats(libraryItems)
-    var stats = {
-      totalItems: libraryItems.length,
-      totalAuthors: Object.keys(authorsWithCount).length,
-      totalGenres: Object.keys(genresWithCount).length,
-      totalDuration: durationStats.totalDuration,
-      longestItems: durationStats.longestItems,
-      numAudioTracks: durationStats.numAudioTracks,
-      totalSize: libraryHelpers.getLibraryItemsTotalSize(libraryItems),
-      largestItems: sizeStats.largestItems,
-      authorsWithCount,
-      genresWithCount
+    const stats = {
+      largestItems: await libraryItemFilters.getLargestItems(req.library.id, 10)
+    }
+
+    if (req.library.isBook) {
+      const authors = await authorFilters.getAuthorsWithCount(req.library.id)
+      const genres = await libraryItemsBookFilters.getGenresWithCount(req.library.id)
+      const bookStats = await libraryItemsBookFilters.getBookLibraryStats(req.library.id)
+      const longestBooks = await libraryItemsBookFilters.getLongestBooks(req.library.id, 10)
+
+      stats.totalAuthors = authors.length
+      stats.authorsWithCount = authors
+      stats.totalGenres = genres.length
+      stats.genresWithCount = genres
+      stats.totalItems = bookStats.totalItems
+      stats.longestItems = longestBooks
+      stats.totalSize = bookStats.totalSize
+      stats.totalDuration = bookStats.totalDuration
+      stats.numAudioTracks = bookStats.numAudioFiles
+    } else {
+      const genres = await libraryItemsPodcastFilters.getGenresWithCount(req.library.id)
+      const podcastStats = await libraryItemsPodcastFilters.getPodcastLibraryStats(req.library.id)
+      const longestPodcasts = await libraryItemsPodcastFilters.getLongestPodcasts(req.library.id, 10)
+
+      stats.totalGenres = genres.length
+      stats.genresWithCount = genres
+      stats.totalItems = podcastStats.totalItems
+      stats.longestItems = longestPodcasts
+      stats.totalSize = podcastStats.totalSize
+      stats.totalDuration = podcastStats.totalDuration
+      stats.numAudioTracks = podcastStats.numAudioFiles
     }
     res.json(stats)
   }

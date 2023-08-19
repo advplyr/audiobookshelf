@@ -180,5 +180,41 @@ module.exports = {
     } else {
       return libraryItemsPodcastFilters.search(oldUser, oldLibrary, query, limit, 0)
     }
+  },
+
+  /**
+   * Get largest items in library
+   * @param {string} libraryId 
+   * @param {number} limit 
+   * @returns {Promise<{ id:string, title:string, size:number }[]>}
+   */
+  async getLargestItems(libraryId, limit) {
+    const libraryItems = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'mediaId', 'mediaType', 'size'],
+      where: {
+        libraryId
+      },
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['id', 'title']
+        },
+        {
+          model: Database.podcastModel,
+          attributes: ['id', 'title']
+        }
+      ],
+      order: [
+        ['size', 'DESC']
+      ],
+      limit
+    })
+    return libraryItems.map(libraryItem => {
+      return {
+        id: libraryItem.id,
+        title: libraryItem.media.title,
+        size: libraryItem.size
+      }
+    })
   }
 }
