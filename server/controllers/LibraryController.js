@@ -804,7 +804,7 @@ class LibraryController {
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     const query = req.query.q.trim().toLowerCase()
 
-    const matches = await libraryItemFilters.search(req.library, query, limit)
+    const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)
   }
 

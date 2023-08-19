@@ -6,8 +6,8 @@ const Logger = require('../../Logger')
 module.exports = {
   /**
    * User permissions to restrict podcasts for explicit content & tags
-   * @param {oldUser} user 
-   * @returns {object} { podcastWhere:Sequelize.WhereOptions, replacements:string[] }
+   * @param {import('../../objects/user/User')} user 
+   * @returns {{ podcastWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionPodcastWhereQuery(user) {
     const podcastWhere = []
@@ -295,39 +295,45 @@ module.exports = {
 
   /**
    * Search podcasts
+   * @param {import('../../objects/user/User')} oldUser
    * @param {import('../../objects/Library')} oldLibrary 
    * @param {string} query 
    * @param {number} limit 
    * @param {number} offset 
    * @returns {{podcast:object[], tags:object[]}}
    */
-  async search(oldLibrary, query, limit, offset) {
+  async search(oldUser, oldLibrary, query, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
-      where: {
-        [Sequelize.Op.or]: [
-          {
-            title: {
-              [Sequelize.Op.substring]: query
+      where: [
+        {
+          [Sequelize.Op.or]: [
+            {
+              title: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              author: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              itunesId: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              itunesArtistId: {
+                [Sequelize.Op.substring]: query
+              }
             }
-          },
-          {
-            author: {
-              [Sequelize.Op.substring]: query
-            }
-          },
-          {
-            itunesId: {
-              [Sequelize.Op.substring]: query
-            }
-          },
-          {
-            itunesArtistId: {
-              [Sequelize.Op.substring]: query
-            }
-          }
-        ]
-      },
+          ]
+        },
+        ...userPermissionPodcastWhere.podcastWhere
+      ],
+      replacements: userPermissionPodcastWhere.replacements,
       include: [
         {
           model: Database.libraryItemModel,

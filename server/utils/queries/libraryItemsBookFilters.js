@@ -5,7 +5,7 @@ const Logger = require('../../Logger')
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
-   * @param {oldUser} user 
+   * @param {import('../../objects/user/User')} user 
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
@@ -929,39 +929,46 @@ module.exports = {
 
   /**
    * Search books, authors, series
+   * @param {import('../../objects/user/User')} oldUser
    * @param {import('../../objects/Library')} oldLibrary 
    * @param {string} query 
    * @param {number} limit 
    * @param {number} offset 
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
-  async search(oldLibrary, query, limit, offset) {
+  async search(oldUser, oldLibrary, query, limit, offset) {
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(oldUser)
+
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
-      where: {
-        [Sequelize.Op.or]: [
-          {
-            title: {
-              [Sequelize.Op.substring]: query
+      where: [
+        {
+          [Sequelize.Op.or]: [
+            {
+              title: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              subtitle: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              asin: {
+                [Sequelize.Op.substring]: query
+              }
+            },
+            {
+              isbn: {
+                [Sequelize.Op.substring]: query
+              }
             }
-          },
-          {
-            subtitle: {
-              [Sequelize.Op.substring]: query
-            }
-          },
-          {
-            asin: {
-              [Sequelize.Op.substring]: query
-            }
-          },
-          {
-            isbn: {
-              [Sequelize.Op.substring]: query
-            }
-          }
-        ]
-      },
+          ]
+        },
+        ...userPermissionBookWhere.bookWhere
+      ],
+      replacements: userPermissionBookWhere.replacements,
       include: [
         {
           model: Database.libraryItemModel,
@@ -1060,11 +1067,13 @@ module.exports = {
         },
         libraryId: oldLibrary.id
       },
+      replacements: userPermissionBookWhere.replacements,
       include: {
         separate: true,
         model: Database.models.bookSeries,
         include: {
           model: Database.bookModel,
+          where: userPermissionBookWhere.bookWhere,
           include: {
             model: Database.libraryItemModel
           }
