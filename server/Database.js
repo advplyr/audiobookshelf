@@ -44,6 +44,21 @@ class Database {
     return this.models.series
   }
 
+  /** @type {typeof import('./models/Book')} */
+  get bookModel() {
+    return this.models.book
+  }
+
+  /** @type {typeof import('./models/Podcast')} */
+  get podcastModel() {
+    return this.models.podcast
+  }
+
+  /** @type {typeof import('./models/LibraryItem')} */
+  get libraryItemModel() {
+    return this.models.libraryItem
+  }
+
   async checkHasDb() {
     if (!await fs.pathExists(this.dbPath)) {
       Logger.info(`[Database] absdatabase.sqlite not found at ${this.dbPath}`)

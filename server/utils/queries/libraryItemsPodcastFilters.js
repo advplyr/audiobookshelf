@@ -291,5 +291,104 @@ module.exports = {
       libraryItems,
       count
     }
+  },
+
+  /**
+   * Search podcasts
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} query 
+   * @param {number} limit 
+   * @param {number} offset 
+   * @returns {{podcast:object[], tags:object[]}}
+   */
+  async search(oldLibrary, query, limit, offset) {
+    // Search title, author, itunesId, itunesArtistId
+    const podcasts = await Database.podcastModel.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          {
+            title: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            author: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            itunesId: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            itunesArtistId: {
+              [Sequelize.Op.substring]: query
+            }
+          }
+        ]
+      },
+      include: [
+        {
+          model: Database.libraryItemModel,
+          where: {
+            libraryId: oldLibrary.id
+          }
+        }
+      ],
+      subQuery: false,
+      distinct: true,
+      limit,
+      offset
+    })
+
+    const itemMatches = []
+
+    for (const podcast of podcasts) {
+      const libraryItem = podcast.libraryItem
+      delete podcast.libraryItem
+      libraryItem.media = podcast
+
+      let matchText = null
+      let matchKey = null
+      for (const key of ['title', 'author', 'itunesId', 'itunesArtistId']) {
+        if (podcast[key]?.toLowerCase().includes(query)) {
+          matchText = podcast[key]
+          matchKey = key
+          break
+        }
+      }
+
+      if (matchKey) {
+        itemMatches.push({
+          matchText,
+          matchKey,
+          libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
+        })
+      }
+    }
+
+    // Search tags
+    const tagMatches = []
+    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.tags) WHERE json_valid(p.tags) AND json_each.value LIKE :query AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+      replacements: {
+        query: `%${query}%`,
+        libraryId: oldLibrary.id,
+        limit,
+        offset
+      },
+      raw: true
+    })
+    for (const row of tagResults) {
+      tagMatches.push({
+        name: row.value,
+        numItems: row.numItems
+      })
+    }
+
+    return {
+      podcast: itemMatches,
+      tags: tagMatches
+    }
   }
 }

@@ -86,7 +86,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/personalized2', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalizedOptimal.bind(this))
     this.router.get('/libraries/:id/filterdata', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryFilterData.bind(this))
-    this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
+    this.router.get('/libraries/:id/search', LibraryController.middlewareNew.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middlewareNew.bind(this), LibraryController.getAuthors.bind(this))
     this.router.get('/libraries/:id/narrators', LibraryController.middlewareNew.bind(this), LibraryController.getNarrators.bind(this))

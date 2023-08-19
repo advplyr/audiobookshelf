@@ -1,5 +1,7 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
+const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 
 module.exports = {
   /**
@@ -127,7 +129,7 @@ module.exports = {
   /**
  * Get all library items that have narrators
  * @param {string[]} narrators 
- * @returns {Promise<LibraryItem[]>}
+ * @returns {Promise<import('../../models/LibraryItem')[]>}
  */
   async getAllLibraryItemsWithNarrators(narrators) {
     const libraryItems = []
@@ -162,5 +164,20 @@ module.exports = {
       libraryItems.push(libraryItem)
     }
     return libraryItems
+  },
+
+  /**
+   * Search library items
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} query
+   * @param {number} limit 
+   * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[], podcast:object[]}}
+   */
+  search(oldLibrary, query, limit) {
+    if (oldLibrary.isBook) {
+      return libraryItemsBookFilters.search(oldLibrary, query, limit, 0)
+    } else {
+      return libraryItemsPodcastFilters.search(oldLibrary, query, limit, 0)
+    }
   }
 }

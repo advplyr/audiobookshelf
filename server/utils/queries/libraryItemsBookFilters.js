@@ -918,12 +918,205 @@ module.exports = {
 
   /**
    * Get library items for series
-   * @param {oldSeries} oldSeries 
-   * @param {[oldUser]} oldUser 
-   * @returns {Promise<oldLibraryItem[]>}
+   * @param {import('../../objects/entities/Series')} oldSeries 
+   * @param {import('../../objects/user/User')} [oldUser] 
+   * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
   async getLibraryItemsForSeries(oldSeries, oldUser) {
     const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
     return libraryItems.map(li => Database.models.libraryItem.getOldLibraryItem(li))
+  },
+
+  /**
+   * Search books, authors, series
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} query 
+   * @param {number} limit 
+   * @param {number} offset 
+   * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
+   */
+  async search(oldLibrary, query, limit, offset) {
+    // Search title, subtitle, asin, isbn
+    const books = await Database.bookModel.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          {
+            title: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            subtitle: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            asin: {
+              [Sequelize.Op.substring]: query
+            }
+          },
+          {
+            isbn: {
+              [Sequelize.Op.substring]: query
+            }
+          }
+        ]
+      },
+      include: [
+        {
+          model: Database.libraryItemModel,
+          where: {
+            libraryId: oldLibrary.id
+          }
+        },
+        {
+          model: Database.models.bookSeries,
+          include: {
+            model: Database.seriesModel
+          },
+          separate: true
+        },
+        {
+          model: Database.models.bookAuthor,
+          include: {
+            model: Database.authorModel
+          },
+          separate: true
+        }
+      ],
+      subQuery: false,
+      distinct: true,
+      limit,
+      offset
+    })
+
+    const itemMatches = []
+
+    for (const book of books) {
+      const libraryItem = book.libraryItem
+      delete book.libraryItem
+      libraryItem.media = book
+
+      let matchText = null
+      let matchKey = null
+      for (const key of ['title', 'subtitle', 'asin', 'isbn']) {
+        if (book[key]?.toLowerCase().includes(query)) {
+          matchText = book[key]
+          matchKey = key
+          break
+        }
+      }
+
+      if (matchKey) {
+        itemMatches.push({
+          matchText,
+          matchKey,
+          libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
+        })
+      }
+    }
+
+    // Search narrators
+    const narratorMatches = []
+    const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+      replacements: {
+        query: `%${query}%`,
+        libraryId: oldLibrary.id,
+        limit,
+        offset
+      },
+      raw: true
+    })
+    for (const row of narratorResults) {
+      narratorMatches.push({
+        name: row.value,
+        numBooks: row.numBooks
+      })
+    }
+
+    // Search tags
+    const tagMatches = []
+    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+      replacements: {
+        query: `%${query}%`,
+        libraryId: oldLibrary.id,
+        limit,
+        offset
+      },
+      raw: true
+    })
+    for (const row of tagResults) {
+      tagMatches.push({
+        name: row.value,
+        numItems: row.numItems
+      })
+    }
+
+    // Search series
+    const allSeries = await Database.seriesModel.findAll({
+      where: {
+        name: {
+          [Sequelize.Op.substring]: query
+        },
+        libraryId: oldLibrary.id
+      },
+      include: {
+        separate: true,
+        model: Database.models.bookSeries,
+        include: {
+          model: Database.bookModel,
+          include: {
+            model: Database.libraryItemModel
+          }
+        }
+      },
+      subQuery: false,
+      distinct: true,
+      limit,
+      offset
+    })
+    const seriesMatches = []
+    for (const series of allSeries) {
+      const books = series.bookSeries.map((bs) => {
+        const libraryItem = bs.book.libraryItem
+        libraryItem.media = bs.book
+        return Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSON()
+      })
+      seriesMatches.push({
+        series: series.getOldSeries().toJSON(),
+        books
+      })
+    }
+
+    // Search authors
+    const authors = await Database.authorModel.findAll({
+      where: {
+        name: {
+          [Sequelize.Op.substring]: query
+        },
+        libraryId: oldLibrary.id
+      },
+      attributes: {
+        include: [
+          [Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'numBooks']
+        ]
+      },
+      limit,
+      offset
+    })
+    const authorMatches = []
+    for (const author of authors) {
+      const oldAuthor = author.getOldAuthor().toJSON()
+      oldAuthor.numBooks = author.dataValues.numBooks
+      authorMatches.push(oldAuthor)
+    }
+
+    return {
+      book: itemMatches,
+      narrators: narratorMatches,
+      tags: tagMatches,
+      series: seriesMatches,
+      authors: authorMatches
+    }
   }
 }

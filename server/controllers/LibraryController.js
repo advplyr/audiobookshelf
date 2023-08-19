@@ -790,80 +790,22 @@ class LibraryController {
     })
   }
 
-  // GET: Global library search
-  search(req, res) {
+  /**
+   * GET: /api/libraries/:id/search
+   * Search library items with query
+   * ?q=search
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async search(req, res) {
     if (!req.query.q) {
       return res.status(400).send('No query string')
     }
-    const libraryItems = req.libraryItems
-    const maxResults = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    const query = req.query.q.trim().toLowerCase()
 
-    const itemMatches = []
-    const authorMatches = {}
-    const narratorMatches = {}
-    const seriesMatches = {}
-    const tagMatches = {}
-
-    libraryItems.forEach((li) => {
-      const queryResult = li.searchQuery(req.query.q)
-      if (queryResult.matchKey) {
-        itemMatches.push({
-          libraryItem: li.toJSONExpanded(),
-          matchKey: queryResult.matchKey,
-          matchText: queryResult.matchText
-        })
-      }
-      if (queryResult.series?.length) {
-        queryResult.series.forEach((se) => {
-          if (!seriesMatches[se.id]) {
-            const _series = Database.series.find(_se => _se.id === se.id)
-            if (_series) seriesMatches[se.id] = { series: _series.toJSON(), books: [li.toJSON()] }
-          } else {
-            seriesMatches[se.id].books.push(li.toJSON())
-          }
-        })
-      }
-      if (queryResult.authors?.length) {
-        queryResult.authors.forEach((au) => {
-          if (!authorMatches[au.id]) {
-            const _author = Database.authors.find(_au => _au.id === au.id)
-            if (_author) {
-              authorMatches[au.id] = _author.toJSON()
-              authorMatches[au.id].numBooks = 1
-            }
-          } else {
-            authorMatches[au.id].numBooks++
-          }
-        })
-      }
-      if (queryResult.tags?.length) {
-        queryResult.tags.forEach((tag) => {
-          if (!tagMatches[tag]) {
-            tagMatches[tag] = { name: tag, books: [li.toJSON()] }
-          } else {
-            tagMatches[tag].books.push(li.toJSON())
-          }
-        })
-      }
-      if (queryResult.narrators?.length) {
-        queryResult.narrators.forEach((narrator) => {
-          if (!narratorMatches[narrator]) {
-            narratorMatches[narrator] = { name: narrator, books: [li.toJSON()] }
-          } else {
-            narratorMatches[narrator].books.push(li.toJSON())
-          }
-        })
-      }
-    })
-    const itemKey = req.library.mediaType
-    const results = {
-      [itemKey]: itemMatches.slice(0, maxResults),
-      tags: Object.values(tagMatches).slice(0, maxResults),
-      authors: Object.values(authorMatches).slice(0, maxResults),
-      series: Object.values(seriesMatches).slice(0, maxResults),
-      narrators: Object.values(narratorMatches).slice(0, maxResults)
-    }
-    res.json(results)
+    const matches = await libraryItemFilters.search(req.library, query, limit)
+    res.json(matches)
   }
 
   async stats(req, res) {
