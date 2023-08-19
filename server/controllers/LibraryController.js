@@ -474,8 +474,8 @@ class LibraryController {
   /**
    * DELETE: /libraries/:id/issues
    * Remove all library items missing or invalid
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async removeLibraryItemsWithIssues(req, res) {
     const libraryItemsWithIssues = await Database.models.libraryItem.findAll({
@@ -510,7 +510,7 @@ class LibraryController {
     Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
     for (const libraryItem of libraryItemsWithIssues) {
       let mediaItemIds = []
-      if (library.isPodcast) {
+      if (req.library.isPodcast) {
         mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
@@ -523,13 +523,13 @@ class LibraryController {
   }
 
   /**
- * GET: /api/libraries/:id/series2
+ * GET: /api/libraries/:id/series
  * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
  * 
  * @param {import('express').Request} req 
  * @param {import('express').Response} res 
  */
-  async getAllSeriesForLibraryNew(req, res) {
+  async getAllSeriesForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
     const payload = {
@@ -548,73 +548,6 @@ class LibraryController {
     const { series, count } = await seriesFilters.getFilteredSeries(req.library, req.user, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
 
     payload.total = count
-    payload.results = series
-    res.json(payload)
-  }
-
-  /**
-   * GET: /api/libraries/:id/series
-   * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
-   */
-  async getAllSeriesForLibrary(req, res) {
-    const libraryItems = req.libraryItems
-
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
-
-    const payload = {
-      results: [],
-      total: 0,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
-      sortBy: req.query.sort,
-      sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter,
-      minified: req.query.minified === '1',
-      include: include.join(',')
-    }
-
-    let series = libraryHelpers.getSeriesFromBooks(libraryItems, Database.series, null, payload.filterBy, req.user, payload.minified, req.library.settings.hideSingleBookSeries)
-
-    const direction = payload.sortDesc ? 'desc' : 'asc'
-    series = naturalSort(series).by([
-      {
-        [direction]: (se) => {
-          if (payload.sortBy === 'numBooks') {
-            return se.books.length
-          } else if (payload.sortBy === 'totalDuration') {
-            return se.totalDuration
-          } else if (payload.sortBy === 'addedAt') {
-            return se.addedAt
-          } else if (payload.sortBy === 'lastBookUpdated') {
-            return Math.max(...(se.books).map(x => x.updatedAt), 0)
-          } else if (payload.sortBy === 'lastBookAdded') {
-            return Math.max(...(se.books).map(x => x.addedAt), 0)
-          } else { // sort by name
-            return Database.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
-          }
-        }
-      }
-    ])
-
-    payload.total = series.length
-
-    if (payload.limit) {
-      const startIndex = payload.page * payload.limit
-      series = series.slice(startIndex, startIndex + payload.limit)
-    }
-
-    // add rssFeed when "include=rssfeed" is in query string
-    if (include.includes('rssfeed')) {
-      series = await Promise.all(series.map(async (se) => {
-        const feedData = await this.rssFeedManager.findFeedForEntityId(se.id)
-        se.rssFeed = feedData?.toJSONMinified() || null
-        return se
-      }))
-    }
-
     payload.results = series
     res.json(payload)
   }
@@ -718,8 +651,8 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/filterdata
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async getLibraryFilterData(req, res) {
     const filterData = await libraryFilters.getFilterData(req.library)
@@ -727,37 +660,23 @@ class LibraryController {
   }
 
   /**
-   * GET: /api/libraries/:id/personalized2
-   * TODO: new endpoint
-   * @param {*} req 
-   * @param {*} res 
+   * GET: /api/libraries/:id/personalized
+   * Home page shelves
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async getUserPersonalizedShelves(req, res) {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
-    const shelves = await Database.models.libraryItem.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
+    const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
     res.json(shelves)
-  }
-
-  /**
-   * GET: /api/libraries/:id/personalized
-   * TODO: remove after personalized2 is ready
-   * @param {*} req 
-   * @param {*} res 
-   */
-  async getLibraryUserPersonalizedOptimal(req, res) {
-    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
-
-    const categories = await libraryHelpers.buildPersonalizedShelves(this, req.user, req.libraryItems, req.library, limitPerShelf, include)
-    res.json(categories)
   }
 
   /**
    * POST: /api/libraries/order
    * Change the display order of libraries
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async reorder(req, res) {
     if (!req.user.isAdminOrUp) {

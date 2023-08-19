@@ -78,13 +78,11 @@ class ApiRouter {
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middlewareNew.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middlewareNew.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
-    this.router.get('/libraries/:id/series2', LibraryController.middlewareNew.bind(this), LibraryController.getAllSeriesForLibraryNew.bind(this))
-    this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
+    this.router.get('/libraries/:id/series', LibraryController.middlewareNew.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middlewareNew.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middlewareNew.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
     this.router.get('/libraries/:id/playlists', LibraryController.middlewareNew.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
-    this.router.get('/libraries/:id/personalized2', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
-    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalizedOptimal.bind(this))
+    this.router.get('/libraries/:id/personalized', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/filterdata', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middlewareNew.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middlewareNew.bind(this), LibraryController.stats.bind(this))
@@ -445,9 +443,9 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   * TODO: Update filter data
-   * @param {UUIDV4} bookId
-   * @param {UUIDV4[]} seriesIds 
+   * 
+   * @param {string} bookId
+   * @param {string[]} seriesIds 
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return

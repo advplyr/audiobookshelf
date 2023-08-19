@@ -7,7 +7,7 @@ module.exports = {
   /**
    * Get all library items that have tags
    * @param {string[]} tags 
-   * @returns {Promise<LibraryItem[]>}
+   * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
   async getAllLibraryItemsWithTags(tags) {
     const libraryItems = []

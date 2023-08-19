@@ -15,8 +15,8 @@ module.exports = {
 
   /**
    * Get library items using filter and sort
-   * @param {oldLibrary} library 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {object} options 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */

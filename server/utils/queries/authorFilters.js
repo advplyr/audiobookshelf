@@ -1,5 +1,4 @@
 const Sequelize = require('sequelize')
-const Logger = require('../../Logger')
 const Database = require('../../Database')
 
 module.exports = {

@@ -317,8 +317,6 @@ export default {
       // TODO: Temp use new library items API for everything except collapse sub-series
       if (entityPath === 'items' && !this.collapseBookSeries && !(this.filterName === 'Series' && this.collapseSeries)) {
         entityPath += '2'
-      } else if (entityPath === 'series') {
-        entityPath += '2'
       }
 
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
