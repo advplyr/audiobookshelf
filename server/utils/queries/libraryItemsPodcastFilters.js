@@ -283,7 +283,7 @@ module.exports = {
       const podcast = ep.podcast.toJSON()
       delete podcast.libraryItem
       libraryItem.media = podcast
-      libraryItem.recentEpisode = ep.getOldPodcastEpisode(libraryItem.id)
+      libraryItem.recentEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSON()
       return libraryItem
     })
 
@@ -396,5 +396,64 @@ module.exports = {
       podcast: itemMatches,
       tags: tagMatches
     }
+  },
+
+  /**
+   * Most recent podcast episodes not finished
+   * @param {import('../../objects/user/User')} oldUser 
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {number} limit 
+   * @param {number} offset 
+   * @returns {Promise<object[]>}
+   */
+  async getRecentEpisodes(oldUser, oldLibrary, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+
+    const episodes = await Database.podcastEpisodeModel.findAll({
+      where: {
+        '$mediaProgresses.isFinished$': {
+          [Sequelize.Op.or]: [null, false]
+        }
+      },
+      replacements: userPermissionPodcastWhere.replacements,
+      include: [
+        {
+          model: Database.podcastModel,
+          where: userPermissionPodcastWhere.podcastWhere,
+          required: true,
+          include: {
+            model: Database.libraryItemModel,
+            where: {
+              libraryId: oldLibrary.id
+            }
+          }
+        },
+        {
+          model: Database.mediaProgressModel,
+          where: {
+            userId: oldUser.id
+          },
+          required: false
+        }
+      ],
+      order: [
+        ['publishedAt', 'DESC']
+      ],
+      subQuery: false,
+      limit,
+      offset
+    })
+
+    const episodeResults = episodes.map((ep) => {
+      const libraryItem = ep.podcast.libraryItem
+      libraryItem.media = ep.podcast
+      const oldPodcast = Database.podcastModel.getOldPodcast(libraryItem)
+      const oldPodcastEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSONExpanded()
+      oldPodcastEpisode.podcast = oldPodcast
+      oldPodcastEpisode.libraryId = libraryItem.libraryId
+      return oldPodcastEpisode
+    })
+
+    return episodeResults
   }
 }

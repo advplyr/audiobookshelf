@@ -16,6 +16,7 @@ const naturalSort = createNewSortInstance({
 
 const Database = require('../Database')
 const libraryFilters = require('../utils/queries/libraryFilters')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 
 class LibraryController {
   constructor() { }
@@ -1024,7 +1025,12 @@ class LibraryController {
     Logger.info('[LibraryController] Scan complete')
   }
 
-  // GET: api/libraries/:id/recent-episode
+  /**
+   * GET: /api/libraries/:id/recent-episodes
+   * Used for latest page
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async getRecentEpisodes(req, res) {
     if (!req.library.isPodcast) {
       return res.sendStatus(404)
@@ -1032,35 +1038,12 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      total: 0,
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
       page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
     }
 
-    var allUnfinishedEpisodes = []
-    for (const libraryItem of req.libraryItems) {
-      const unfinishedEpisodes = libraryItem.media.episodes.filter(ep => {
-        const userProgress = req.user.getMediaProgress(libraryItem.id, ep.id)
-        return !userProgress || !userProgress.isFinished
-      }).map(_ep => {
-        const ep = _ep.toJSONExpanded()
-        ep.podcast = libraryItem.media.toJSONMinified()
-        ep.libraryItemId = libraryItem.id
-        ep.libraryId = libraryItem.libraryId
-        return ep
-      })
-      allUnfinishedEpisodes.push(...unfinishedEpisodes)
-    }
-
-    payload.total = allUnfinishedEpisodes.length
-
-    allUnfinishedEpisodes = sort(allUnfinishedEpisodes).desc(ep => ep.publishedAt)
-
-    if (payload.limit) {
-      var startIndex = payload.page * payload.limit
-      allUnfinishedEpisodes = allUnfinishedEpisodes.slice(startIndex, startIndex + payload.limit)
-    }
-    payload.episodes = allUnfinishedEpisodes
+    const offset = payload.page * payload.limit
+    payload.episodes = await libraryItemsPodcastFilters.getRecentEpisodes(req.user, req.library, payload.limit, offset)
     res.json(payload)
   }
 
