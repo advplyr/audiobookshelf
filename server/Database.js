@@ -69,6 +69,10 @@ class Database {
     return this.models.mediaProgress
   }
 
+  /**
+   * Check if db file exists
+   * @returns {boolean}
+   */
   async checkHasDb() {
     if (!await fs.pathExists(this.dbPath)) {
       Logger.info(`[Database] absdatabase.sqlite not found at ${this.dbPath}`)
@@ -77,6 +81,10 @@ class Database {
     return true
   }
 
+  /**
+   * Connect to db, build models and run migrations
+   * @param {boolean} [force=false] Used for testing, drops & re-creates all tables
+   */
   async init(force = false) {
     this.dbPath = Path.join(global.ConfigPath, 'absdatabase.sqlite')
 
@@ -93,6 +101,10 @@ class Database {
     await this.loadData()
   }
 
+  /**
+   * Connect to db
+   * @returns {boolean}
+   */
   async connect() {
     Logger.info(`[Database] Initializing db at "${this.dbPath}"`)
     this.sequelize = new Sequelize({
@@ -115,12 +127,18 @@ class Database {
     }
   }
 
+  /**
+   * Disconnect from db
+   */
   async disconnect() {
     Logger.info(`[Database] Disconnecting sqlite db`)
     await this.sequelize.close()
     this.sequelize = null
   }
 
+  /**
+   * Reconnect to db and init
+   */
   async reconnect() {
     Logger.info(`[Database] Reconnecting sqlite db`)
     await this.init()
@@ -575,6 +593,28 @@ class Database {
       return this.seriesModel.checkExistsById(seriesId)
     }
     return this.libraryFilterData[libraryId].series.some(se => se.id === seriesId)
+  }
+
+  /**
+   * Reset numIssues for library
+   * @param {string} libraryId 
+   */
+  async resetLibraryIssuesFilterData(libraryId) {
+    if (!this.libraryFilterData[libraryId]) return // Do nothing if filter data is not set
+
+    this.libraryFilterData[libraryId].numIssues = await this.libraryItemModel.count({
+      where: {
+        libraryId,
+        [Sequelize.Op.or]: [
+          {
+            isMissing: true
+          },
+          {
+            isInvalid: true
+          }
+        ]
+      }
+    })
   }
 }
 

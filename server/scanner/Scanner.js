@@ -564,22 +564,27 @@ class Scanner {
       const library = await Database.models.library.getOldById(libraryId)
       if (!library) {
         Logger.error(`[Scanner] Library not found in files changed ${libraryId}`)
-        continue;
+        continue
       }
       const folder = library.getFolderById(folderId)
       if (!folder) {
         Logger.error(`[Scanner] Folder is not in library in files changed "${folderId}", Library "${library.name}"`)
-        continue;
+        continue
       }
       const relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
       const fileUpdateGroup = groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths, false)
 
       if (!Object.keys(fileUpdateGroup).length) {
         Logger.info(`[Scanner] No important changes to scan for in folder "${folderId}"`)
-        continue;
+        continue
       }
       const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[Scanner] Folder scan results`, folderScanResults)
+
+      // If something was updated then reset numIssues filter data for library
+      if (Object.values(folderScanResults).some(scanResult => scanResult !== ScanResult.NOTHING && scanResult !== ScanResult.UPTODATE)) {
+        await Database.resetLibraryIssuesFilterData(libraryId)
+      }
     }
 
     this.scanningFilesChanged = false
@@ -700,7 +705,7 @@ class Scanner {
         attributes: ['id', 'path'],
         where: {
           path: {
-            [Sequelize.Op.startsWith]: fullPath
+            [Sequelize.Op.startsWith]: fullPath + '/'
           }
         }
       })

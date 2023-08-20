@@ -78,6 +78,7 @@ class LibraryItemController {
         Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
       })
     }
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
 
@@ -332,6 +333,8 @@ class LibraryItemController {
         })
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
 
@@ -456,9 +459,11 @@ class LibraryItemController {
         await this.scanner.scanLibraryItemByRequest(libraryItem)
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
   }
 
-  // POST: api/items/:id/scan (admin)
+  // POST: api/items/:id/scan
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to scan library item`, req.user)
@@ -471,6 +476,7 @@ class LibraryItemController {
     }
 
     const result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
     })

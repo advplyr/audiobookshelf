@@ -191,6 +191,8 @@ class LibraryController {
         return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
       }
       SocketAuthority.emitter('library_updated', library.toJSON(), userFilter)
+
+      await Database.resetLibraryIssuesFilterData(library.id)
     }
     return res.json(library.toJSON())
   }
@@ -249,6 +251,12 @@ class LibraryController {
     await Database.models.library.resetDisplayOrder()
 
     SocketAuthority.emitter('library_removed', libraryJson)
+
+    // Remove library filter data
+    if (Database.libraryFilterData[library.id]) {
+      delete Database.libraryFilterData[library.id]
+    }
+
     return res.json(libraryJson)
   }
 
@@ -480,6 +488,7 @@ class LibraryController {
   async removeLibraryItemsWithIssues(req, res) {
     const libraryItemsWithIssues = await Database.models.libraryItem.findAll({
       where: {
+        libraryId: req.library.id,
         [Sequelize.Op.or]: [
           {
             isMissing: true
@@ -517,6 +526,11 @@ class LibraryController {
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" with issue`)
       await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+    }
+
+    // Set numIssues to 0 for library filter data
+    if (Database.libraryFilterData[req.library.id]) {
+      Database.libraryFilterData[req.library.id].numIssues = 0
     }
 
     res.sendStatus(200)
@@ -963,6 +977,7 @@ class LibraryController {
     }
     res.sendStatus(200)
     await this.scanner.scan(req.library, options)
+    await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')
   }
 
@@ -1039,9 +1054,9 @@ class LibraryController {
 
   /**
    * Middleware that is not using libraryItems from memory
-   * @param {*} req 
-   * @param {*} res 
-   * @param {*} next 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   * @param {import('express').NextFunction} next 
    */
   async middlewareNew(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
