@@ -71,7 +71,7 @@ module.exports = {
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(li => li.hasIssues)
     } else if (filterBy === 'feed-open') {
-      const libraryItemIdsWithFeed = await Database.models.feed.findAllLibraryItemIds()
+      const libraryItemIdsWithFeed = await Database.feedModel.findAllLibraryItemIds()
       filtered = filtered.filter(li => libraryItemIdsWithFeed.includes(li.id))
     } else if (filterBy === 'abridged') {
       filtered = filtered.filter(li => !!li.media.metadata?.abridged)

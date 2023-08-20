@@ -67,7 +67,7 @@ class Scanner {
   }
 
   async scanLibraryItemByRequest(libraryItem) {
-    const library = await Database.models.library.getOldById(libraryItem.libraryId)
+    const library = await Database.libraryModel.getOldById(libraryItem.libraryId)
     if (!library) {
       Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
       return ScanResult.NOTHING
@@ -561,7 +561,7 @@ class Scanner {
 
     for (const folderId in folderGroups) {
       const libraryId = folderGroups[folderId].libraryId
-      const library = await Database.models.library.getOldById(libraryId)
+      const library = await Database.libraryModel.getOldById(libraryId)
       if (!library) {
         Logger.error(`[Scanner] Library not found in files changed ${libraryId}`)
         continue
@@ -612,7 +612,7 @@ class Scanner {
       const altDir = `${itemDir}/${firstNest}`
 
       const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
-      const childLibraryItem = await Database.models.libraryItem.findOne({
+      const childLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {
@@ -628,7 +628,7 @@ class Scanner {
       }
 
       const altFullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), altDir)
-      const altChildLibraryItem = await Database.models.libraryItem.findOne({
+      const altChildLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {
@@ -661,12 +661,12 @@ class Scanner {
       }
 
       // Check if book dir group is already an item
-      let existingLibraryItem = await Database.models.libraryItem.findOneOld({
+      let existingLibraryItem = await Database.libraryItemModel.findOneOld({
         path: potentialChildDirs
       })
 
       if (!existingLibraryItem) {
-        existingLibraryItem = await Database.models.libraryItem.findOneOld({
+        existingLibraryItem = await Database.libraryItemModel.findOneOld({
           ino: dirIno
         })
         if (existingLibraryItem) {
@@ -701,7 +701,7 @@ class Scanner {
       }
 
       // Check if a library item is a subdirectory of this dir
-      const childItem = await Database.models.libraryItem.findOne({
+      const childItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {

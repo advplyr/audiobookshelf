@@ -22,11 +22,11 @@ class PlaylistController {
     }
 
     // Create Playlist record
-    const newPlaylist = await Database.models.playlist.createFromOld(oldPlaylist)
+    const newPlaylist = await Database.playlistModel.createFromOld(oldPlaylist)
 
     // Lookup all library items in playlist
     const libraryItemIds = oldPlaylist.items.map(i => i.libraryItemId).filter(i => i)
-    const libraryItemsInPlaylist = await Database.models.libraryItem.findAll({
+    const libraryItemsInPlaylist = await Database.libraryItemModel.findAll({
       where: {
         id: libraryItemIds
       }
@@ -62,7 +62,7 @@ class PlaylistController {
    * @param {*} res 
    */
   async findAllForUser(req, res) {
-    const playlistsForUser = await Database.models.playlist.findAll({
+    const playlistsForUser = await Database.playlistModel.findAll({
       where: {
         userId: req.user.id
       }
@@ -106,7 +106,7 @@ class PlaylistController {
     // If array of items is passed in then update order of playlist media items
     const libraryItemIds = req.body.items?.map(i => i.libraryItemId).filter(i => i) || []
     if (libraryItemIds.length) {
-      const libraryItems = await Database.models.libraryItem.findAll({
+      const libraryItems = await Database.libraryItemModel.findAll({
         where: {
           id: libraryItemIds
         }
@@ -173,14 +173,14 @@ class PlaylistController {
    * @param {*} res 
    */
   async addItem(req, res) {
-    const oldPlaylist = await Database.models.playlist.getById(req.playlist.id)
+    const oldPlaylist = await Database.playlistModel.getById(req.playlist.id)
     const itemToAdd = req.body
 
     if (!itemToAdd.libraryItemId) {
       return res.status(400).send('Request body has no libraryItemId')
     }
 
-    const libraryItem = await Database.models.libraryItem.getOldById(itemToAdd.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getOldById(itemToAdd.libraryItemId)
     if (!libraryItem) {
       return res.status(400).send('Library item not found')
     }
@@ -217,7 +217,7 @@ class PlaylistController {
    * @param {*} res 
    */
   async removeItem(req, res) {
-    const oldLibraryItem = await Database.models.libraryItem.getOldById(req.params.libraryItemId)
+    const oldLibraryItem = await Database.libraryItemModel.getOldById(req.params.libraryItemId)
     if (!oldLibraryItem) {
       return res.status(404).send('Library item not found')
     }
@@ -281,7 +281,7 @@ class PlaylistController {
     }
 
     // Find all library items
-    const libraryItems = await Database.models.libraryItem.findAll({
+    const libraryItems = await Database.libraryItemModel.findAll({
       where: {
         id: libraryItemIds
       }
@@ -345,7 +345,7 @@ class PlaylistController {
     }
 
     // Find all library items
-    const libraryItems = await Database.models.libraryItem.findAll({
+    const libraryItems = await Database.libraryItemModel.findAll({
       where: {
         id: libraryItemIds
       }
@@ -391,7 +391,7 @@ class PlaylistController {
    * @param {*} res 
    */
   async createFromCollection(req, res) {
-    const collection = await Database.models.collection.findByPk(req.params.collectionId)
+    const collection = await Database.collectionModel.findByPk(req.params.collectionId)
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
@@ -416,7 +416,7 @@ class PlaylistController {
     })
 
     // Create Playlist record
-    const newPlaylist = await Database.models.playlist.createFromOld(oldPlaylist)
+    const newPlaylist = await Database.playlistModel.createFromOld(oldPlaylist)
 
     // Create PlaylistMediaItem records
     const mediaItemsToAdd = []
@@ -438,7 +438,7 @@ class PlaylistController {
 
   async middleware(req, res, next) {
     if (req.params.id) {
-      const playlist = await Database.models.playlist.findByPk(req.params.id)
+      const playlist = await Database.playlistModel.findByPk(req.params.id)
       if (!playlist) {
         return res.status(404).send('Playlist not found')
       }

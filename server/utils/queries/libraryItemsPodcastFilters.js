@@ -112,7 +112,7 @@ module.exports = {
     const libraryItemIncludes = []
     if (includeRSSFeed) {
       libraryItemIncludes.push({
-        model: Database.models.feed,
+        model: Database.feedModel,
         required: filterGroup === 'feed-open'
       })
     }
@@ -146,7 +146,7 @@ module.exports = {
     replacements = { ...replacements, ...userPermissionPodcastWhere.replacements }
     podcastWhere.push(...userPermissionPodcastWhere.podcastWhere)
 
-    const { rows: podcasts, count } = await Database.models.podcast.findAndCountAll({
+    const { rows: podcasts, count } = await Database.podcastModel.findAndCountAll({
       where: podcastWhere,
       replacements,
       distinct: true,
@@ -158,7 +158,7 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           required: true,
           where: libraryItemWhere,
           include: libraryItemIncludes
@@ -219,7 +219,7 @@ module.exports = {
     }
     if (filterGroup === 'progress') {
       podcastEpisodeIncludes.push({
-        model: Database.models.mediaProgress,
+        model: Database.mediaProgressModel,
         where: {
           userId: user.id
         },
@@ -255,16 +255,16 @@ module.exports = {
 
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const { rows: podcastEpisodes, count } = await Database.models.podcastEpisode.findAndCountAll({
+    const { rows: podcastEpisodes, count } = await Database.podcastEpisodeModel.findAndCountAll({
       where: podcastEpisodeWhere,
       replacements: userPermissionPodcastWhere.replacements,
       include: [
         {
-          model: Database.models.podcast,
+          model: Database.podcastModel,
           where: userPermissionPodcastWhere.podcastWhere,
           include: [
             {
-              model: Database.models.libraryItem,
+              model: Database.libraryItemModel,
               where: libraryItemWhere
             }
           ]

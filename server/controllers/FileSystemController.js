@@ -17,7 +17,7 @@ class FileSystemController {
     })
 
     // Do not include existing mapped library paths in response
-    const libraryFoldersPaths = await Database.models.libraryFolder.getAllLibraryFolderPaths()
+    const libraryFoldersPaths = await Database.libraryModelFolder.getAllLibraryFolderPaths()
     libraryFoldersPaths.forEach((path) => {
       let dir = path || ''
       if (dir.includes(global.appRoot)) dir = dir.replace(global.appRoot, '')

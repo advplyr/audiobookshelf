@@ -51,7 +51,7 @@ class LibraryController {
 
     const library = new Library()
 
-    let currentLargestDisplayOrder = await Database.models.library.getMaxDisplayOrder()
+    let currentLargestDisplayOrder = await Database.libraryModel.getMaxDisplayOrder()
     if (isNaN(currentLargestDisplayOrder)) currentLargestDisplayOrder = 0
     newLibraryPayload.displayOrder = currentLargestDisplayOrder + 1
     library.setData(newLibraryPayload)
@@ -70,7 +70,7 @@ class LibraryController {
   }
 
   async findAll(req, res) {
-    const libraries = await Database.models.library.getAllOldLibraries()
+    const libraries = await Database.libraryModel.getAllOldLibraries()
 
     const librariesAccessible = req.user.librariesAccessible || []
     if (librariesAccessible.length) {
@@ -92,7 +92,7 @@ class LibraryController {
       return res.json({
         filterdata,
         issues: filterdata.numIssues,
-        numUserPlaylists: await Database.models.playlist.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
+        numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         library: req.library
       })
     }
@@ -144,17 +144,17 @@ class LibraryController {
       for (const folder of library.folders) {
         if (!req.body.folders.some(f => f.id === folder.id)) {
           // Remove library items in folder
-          const libraryItemsInFolder = await Database.models.libraryItem.findAll({
+          const libraryItemsInFolder = await Database.libraryItemModel.findAll({
             where: {
               libraryFolderId: folder.id
             },
             attributes: ['id', 'mediaId', 'mediaType'],
             include: [
               {
-                model: Database.models.podcast,
+                model: Database.podcastModel,
                 attributes: ['id'],
                 include: {
-                  model: Database.models.podcastEpisode,
+                  model: Database.podcastEpisodeModel,
                   attributes: ['id']
                 }
               }
@@ -210,23 +210,23 @@ class LibraryController {
     this.watcher.removeLibrary(library)
 
     // Remove collections for library
-    const numCollectionsRemoved = await Database.models.collection.removeAllForLibrary(library.id)
+    const numCollectionsRemoved = await Database.collectionModel.removeAllForLibrary(library.id)
     if (numCollectionsRemoved) {
       Logger.info(`[Server] Removed ${numCollectionsRemoved} collections for library "${library.name}"`)
     }
 
     // Remove items in this library
-    const libraryItemsInLibrary = await Database.models.libraryItem.findAll({
+    const libraryItemsInLibrary = await Database.libraryItemModel.findAll({
       where: {
         libraryId: library.id
       },
       attributes: ['id', 'mediaId', 'mediaType'],
       include: [
         {
-          model: Database.models.podcast,
+          model: Database.podcastModel,
           attributes: ['id'],
           include: {
-            model: Database.models.podcastEpisode,
+            model: Database.podcastEpisodeModel,
             attributes: ['id']
           }
         }
@@ -248,7 +248,7 @@ class LibraryController {
     await Database.removeLibrary(library.id)
 
     // Re-order libraries
-    await Database.models.library.resetDisplayOrder()
+    await Database.libraryModel.resetDisplayOrder()
 
     SocketAuthority.emitter('library_removed', libraryJson)
 
@@ -278,7 +278,7 @@ class LibraryController {
     }
     payload.offset = payload.page * payload.limit
 
-    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library, req.user, payload)
+    const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
     payload.results = libraryItems
     payload.total = count
 
@@ -486,7 +486,7 @@ class LibraryController {
    * @param {import('express').Response} res 
    */
   async removeLibraryItemsWithIssues(req, res) {
-    const libraryItemsWithIssues = await Database.models.libraryItem.findAll({
+    const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
       where: {
         libraryId: req.library.id,
         [Sequelize.Op.or]: [
@@ -501,10 +501,10 @@ class LibraryController {
       attributes: ['id', 'mediaId', 'mediaType'],
       include: [
         {
-          model: Database.models.podcast,
+          model: Database.podcastModel,
           attributes: ['id'],
           include: {
-            model: Database.models.podcastEpisode,
+            model: Database.podcastEpisodeModel,
             attributes: ['id']
           }
         }
@@ -624,7 +624,7 @@ class LibraryController {
     }
 
     // TODO: Create paginated queries
-    let collections = await Database.models.collection.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
+    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
 
     payload.total = collections.length
 
@@ -644,7 +644,7 @@ class LibraryController {
    * @param {*} res 
    */
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = await Database.models.playlist.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
+    let playlistsForUser = await Database.playlistModel.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
     playlistsForUser = await Promise.all(playlistsForUser.map(async p => p.getOldJsonExpanded()))
 
     const payload = {
@@ -697,7 +697,7 @@ class LibraryController {
       Logger.error('[LibraryController] ReorderLibraries invalid user', req.user)
       return res.sendStatus(403)
     }
-    const libraries = await Database.models.library.getAllOldLibraries()
+    const libraries = await Database.libraryModel.getAllOldLibraries()
 
     const orderdata = req.body
     let hasUpdates = false
@@ -799,7 +799,7 @@ class LibraryController {
       },
       replacements,
       include: {
-        model: Database.models.book,
+        model: Database.bookModel,
         attributes: ['id', 'tags', 'explicit'],
         where: bookWhere,
         required: true,
@@ -832,12 +832,12 @@ class LibraryController {
    */
   async getNarrators(req, res) {
     // Get all books with narrators
-    const booksWithNarrators = await Database.models.book.findAll({
+    const booksWithNarrators = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('narrators')), {
         [Sequelize.Op.gt]: 0
       }),
       include: {
-        model: Database.models.libraryItem,
+        model: Database.libraryItemModel,
         attributes: ['id', 'libraryId'],
         where: {
           libraryId: req.library.id
@@ -904,7 +904,7 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       itemsUpdated.push(oldLibraryItem)
     }
 
@@ -944,7 +944,7 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       itemsUpdated.push(oldLibraryItem)
     }
 
@@ -1041,7 +1041,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const library = await Database.models.library.getOldById(req.params.id)
+    const library = await Database.libraryModel.getOldById(req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }
@@ -1064,7 +1064,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const library = await Database.models.library.getOldById(req.params.id)
+    const library = await Database.libraryModel.getOldById(req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }

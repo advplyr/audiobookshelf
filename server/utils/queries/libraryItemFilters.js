@@ -11,7 +11,7 @@ module.exports = {
    */
   async getAllLibraryItemsWithTags(tags) {
     const libraryItems = []
-    const booksWithTag = await Database.models.book.findAll({
+    const booksWithTag = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -20,16 +20,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -41,7 +41,7 @@ module.exports = {
       libraryItem.media = book
       libraryItems.push(libraryItem)
     }
-    const podcastsWithTag = await Database.models.podcast.findAll({
+    const podcastsWithTag = await Database.podcastModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -50,10 +50,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.podcastEpisode
+          model: Database.podcastEpisodeModel
         }
       ]
     })
@@ -72,7 +72,7 @@ module.exports = {
    */
   async getAllLibraryItemsWithGenres(genres) {
     const libraryItems = []
-    const booksWithGenre = await Database.models.book.findAll({
+    const booksWithGenre = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -81,16 +81,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -102,7 +102,7 @@ module.exports = {
       libraryItem.media = book
       libraryItems.push(libraryItem)
     }
-    const podcastsWithGenre = await Database.models.podcast.findAll({
+    const podcastsWithGenre = await Database.podcastModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -111,10 +111,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.podcastEpisode
+          model: Database.podcastEpisodeModel
         }
       ]
     })
@@ -133,7 +133,7 @@ module.exports = {
  */
   async getAllLibraryItemsWithNarrators(narrators) {
     const libraryItems = []
-    const booksWithGenre = await Database.models.book.findAll({
+    const booksWithGenre = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(narrators) WHERE json_valid(narrators) AND json_each.value IN (:narrators))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -142,16 +142,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }

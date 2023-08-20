@@ -150,7 +150,7 @@ class PodcastManager {
       return false
     }
 
-    const libraryItem = await Database.models.libraryItem.getOldById(this.currentDownload.libraryItem.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false

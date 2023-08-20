@@ -19,7 +19,7 @@ class PodcastController {
     }
     const payload = req.body
 
-    const library = await Database.models.library.getOldById(payload.libraryId)
+    const library = await Database.libraryModel.getOldById(payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
       return res.status(404).send('Library not found')
@@ -34,7 +34,7 @@ class PodcastController {
     const podcastPath = filePathToPOSIX(payload.path)
 
     // Check if a library item with this podcast folder exists already
-    const existingLibraryItem = (await Database.models.libraryItem.count({
+    const existingLibraryItem = (await Database.libraryItemModel.count({
       where: {
         path: podcastPath
       }
@@ -272,13 +272,13 @@ class PodcastController {
     }
 
     // Update/remove playlists that had this podcast episode
-    const playlistMediaItems = await Database.models.playlistMediaItem.findAll({
+    const playlistMediaItems = await Database.playlistMediaItemModel.findAll({
       where: {
         mediaItemId: episodeId
       },
       include: {
-        model: Database.models.playlist,
-        include: Database.models.playlistMediaItem
+        model: Database.playlistModel,
+        include: Database.playlistMediaItemModel
       }
     })
     for (const pmi of playlistMediaItems) {
@@ -297,7 +297,7 @@ class PodcastController {
     }
 
     // Remove media progress for this episode
-    const mediaProgressRemoved = await Database.models.mediaProgress.destroy({
+    const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: episode.id
       }
@@ -312,7 +312,7 @@ class PodcastController {
   }
 
   async middleware(req, res, next) {
-    const item = await Database.models.libraryItem.getOldById(req.params.id)
+    const item = await Database.libraryItemModel.getOldById(req.params.id)
     if (!item?.media) return res.sendStatus(404)
 
     if (!item.isPodcast) {

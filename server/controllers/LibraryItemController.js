@@ -314,7 +314,7 @@ class LibraryItemController {
       return res.status(400).send('Invalid request body')
     }
 
-    const itemsToDelete = await Database.models.libraryItem.getAllOldLibraryItems({
+    const itemsToDelete = await Database.libraryItemModel.getAllOldLibraryItems({
       id: libraryItemIds
     })
 
@@ -349,7 +349,7 @@ class LibraryItemController {
 
     for (const updatePayload of updatePayloads) {
       const mediaPayload = updatePayload.mediaPayload
-      const libraryItem = await Database.models.libraryItem.getOldById(updatePayload.id)
+      const libraryItem = await Database.libraryItemModel.getOldById(updatePayload.id)
       if (!libraryItem) return null
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
@@ -387,7 +387,7 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    const libraryItems = await Database.models.libraryItem.getAllOldLibraryItems({
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
       id: libraryItemIds
     })
     res.json({
@@ -700,7 +700,7 @@ class LibraryItemController {
   }
 
   async middleware(req, res, next) {
-    req.libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
+    req.libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item

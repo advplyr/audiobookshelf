@@ -106,7 +106,7 @@ class ToolsController {
     }
 
     if (req.params.id) {
-      const item = await Database.models.libraryItem.getOldById(req.params.id)
+      const item = await Database.libraryItemModel.getOldById(req.params.id)
       if (!item?.media) return res.sendStatus(404)
 
       // Check user can access this library item

@@ -22,10 +22,10 @@ class CollectionController {
     }
 
     // Create collection record
-    await Database.models.collection.createFromOld(newCollection)
+    await Database.collectionModel.createFromOld(newCollection)
 
     // Get library items in collection
-    const libraryItemsInCollection = await Database.models.libraryItem.getForCollection(newCollection)
+    const libraryItemsInCollection = await Database.libraryItemModel.getForCollection(newCollection)
 
     // Create collectionBook records
     let order = 1
@@ -50,7 +50,7 @@ class CollectionController {
   }
 
   async findAll(req, res) {
-    const collectionsExpanded = await Database.models.collection.getOldCollectionsJsonExpanded(req.user)
+    const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
     res.json({
       collections: collectionsExpanded
     })
@@ -96,8 +96,8 @@ class CollectionController {
     if (req.body.books?.length) {
       const collectionBooks = await req.collection.getCollectionBooks({
         include: {
-          model: Database.models.book,
-          include: Database.models.libraryItem
+          model: Database.bookModel,
+          include: Database.libraryItemModel
         },
         order: [['order', 'ASC']]
       })
@@ -143,7 +143,7 @@ class CollectionController {
    * @param {*} res 
    */
   async addBook(req, res) {
-    const libraryItem = await Database.models.libraryItem.getOldById(req.body.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.body.id)
     if (!libraryItem) {
       return res.status(404).send('Book not found')
     }
@@ -158,7 +158,7 @@ class CollectionController {
     }
 
     // Create collectionBook record
-    await Database.models.collectionBook.create({
+    await Database.collectionBookModel.create({
       collectionId: req.collection.id,
       bookId: libraryItem.media.id,
       order: collectionBooks.length + 1
@@ -176,7 +176,7 @@ class CollectionController {
    * @param {*} res 
    */
   async removeBook(req, res) {
-    const libraryItem = await Database.models.libraryItem.getOldById(req.params.bookId)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.bookId)
     if (!libraryItem) {
       return res.sendStatus(404)
     }
@@ -227,14 +227,14 @@ class CollectionController {
     }
 
     // Get library items associated with ids
-    const libraryItems = await Database.models.libraryItem.findAll({
+    const libraryItems = await Database.libraryItemModel.findAll({
       where: {
         id: {
           [Sequelize.Op.in]: bookIdsToAdd
         }
       },
       include: {
-        model: Database.models.book
+        model: Database.bookModel
       }
     })
 
@@ -285,14 +285,14 @@ class CollectionController {
     }
 
     // Get library items associated with ids
-    const libraryItems = await Database.models.libraryItem.findAll({
+    const libraryItems = await Database.libraryItemModel.findAll({
       where: {
         id: {
           [Sequelize.Op.in]: bookIdsToRemove
         }
       },
       include: {
-        model: Database.models.book
+        model: Database.bookModel
       }
     })
 
@@ -327,7 +327,7 @@ class CollectionController {
 
   async middleware(req, res, next) {
     if (req.params.id) {
-      const collection = await Database.models.collection.findByPk(req.params.id)
+      const collection = await Database.collectionModel.findByPk(req.params.id)
       if (!collection) {
         return res.status(404).send('Collection not found')
       }

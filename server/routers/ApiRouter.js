@@ -359,7 +359,7 @@ class ApiRouter {
    */
   async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
     // Remove media progress for this library item from all users
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     for (const user of users) {
       for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
         await Database.removeMediaProgress(mediaProgress.id)
@@ -371,14 +371,14 @@ class ApiRouter {
     // Remove series if empty
     if (mediaType === 'book') {
       // TODO: update filter data
-      const bookSeries = await Database.models.bookSeries.findAll({
+      const bookSeries = await Database.bookSeriesModel.findAll({
         where: {
           bookId: mediaItemIds[0]
         },
         include: {
-          model: Database.models.series,
+          model: Database.seriesModel,
           include: {
-            model: Database.models.book
+            model: Database.bookModel
           }
         }
       })
@@ -390,7 +390,7 @@ class ApiRouter {
     }
 
     // remove item from playlists
-    const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
+    const playlistsWithItem = await Database.playlistModel.getPlaylistsForMediaItemIds(mediaItemIds)
     for (const playlist of playlistsWithItem) {
       let numMediaItems = playlist.playlistMediaItems.length
 
@@ -450,16 +450,16 @@ class ApiRouter {
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
 
-    const bookSeries = await Database.models.bookSeries.findAll({
+    const bookSeries = await Database.bookSeriesModel.findAll({
       where: {
         bookId,
         seriesId: seriesIds
       },
       include: [
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           include: {
-            model: Database.models.book
+            model: Database.bookModel
           }
         }
       ]
@@ -495,7 +495,7 @@ class ApiRouter {
   async getAllSessionsWithUserData() {
     const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
-    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
+    const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
     return sessions.map(se => {
       return {
         ...se,

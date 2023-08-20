@@ -34,7 +34,7 @@ module.exports = {
     const seriesIncludes = []
     if (include.includes('rssfeed')) {
       seriesIncludes.push({
-        model: Database.models.feed
+        model: Database.feedModel
       })
     }
 
@@ -149,13 +149,13 @@ module.exports = {
       replacements: userPermissionBookWhere.replacements,
       include: [
         {
-          model: Database.models.bookSeries,
+          model: Database.bookSeriesModel,
           include: {
-            model: Database.models.book,
+            model: Database.bookModel,
             where: userPermissionBookWhere.bookWhere,
             include: [
               {
-                model: Database.models.libraryItem
+                model: Database.libraryItemModel
               }
             ]
           },
@@ -176,7 +176,7 @@ module.exports = {
       }
 
       if (s.feeds?.length) {
-        oldSeries.rssFeed = Database.models.feed.getOldFeed(s.feeds[0]).toJSONMinified()
+        oldSeries.rssFeed = Database.feedModel.getOldFeed(s.feeds[0]).toJSONMinified()
       }
 
       // TODO: Sort books by sequence in query
@@ -192,7 +192,7 @@ module.exports = {
         const libraryItem = bs.book.libraryItem.toJSON()
         delete bs.book.libraryItem
         libraryItem.media = bs.book
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem).toJSONMinified()
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONMinified()
         return oldLibraryItem
       })
       allOldSeries.push(oldSeries)

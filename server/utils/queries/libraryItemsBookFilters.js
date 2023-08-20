@@ -290,7 +290,7 @@ module.exports = {
       where: seriesWhere,
       include: [
         {
-          model: Database.models.book,
+          model: Database.bookModel,
           attributes: ['id', 'title'],
           through: {
             attributes: ['id', 'seriesId', 'bookId', 'sequence']
@@ -374,10 +374,10 @@ module.exports = {
     }
 
     let seriesInclude = {
-      model: Database.models.bookSeries,
+      model: Database.bookSeriesModel,
       attributes: ['id', 'seriesId', 'sequence', 'createdAt'],
       include: {
-        model: Database.models.series,
+        model: Database.seriesModel,
         attributes: ['id', 'name', 'nameIgnorePrefix']
       },
       order: [
@@ -387,10 +387,10 @@ module.exports = {
     }
 
     let authorInclude = {
-      model: Database.models.bookAuthor,
+      model: Database.bookAuthorModel,
       attributes: ['authorId', 'createdAt'],
       include: {
-        model: Database.models.author,
+        model: Database.authorModel,
         attributes: ['id', 'name']
       },
       order: [
@@ -405,13 +405,13 @@ module.exports = {
     const bookIncludes = []
     if (includeRSSFeed) {
       libraryItemIncludes.push({
-        model: Database.models.feed,
+        model: Database.feedModel,
         required: filterGroup === 'feed-open'
       })
     }
     if (filterGroup === 'feed-open' && !includeRSSFeed) {
       libraryItemIncludes.push({
-        model: Database.models.feed,
+        model: Database.feedModel,
         required: true
       })
     } else if (filterGroup === 'ebooks' && filterValue === 'supplementary') {
@@ -421,7 +421,7 @@ module.exports = {
       }
     } else if (filterGroup === 'missing' && filterValue === 'authors') {
       authorInclude = {
-        model: Database.models.author,
+        model: Database.authorModel,
         attributes: ['id'],
         through: {
           attributes: []
@@ -429,7 +429,7 @@ module.exports = {
       }
     } else if ((filterGroup === 'series' && filterValue === 'no-series') || (filterGroup === 'missing' && filterValue === 'series')) {
       seriesInclude = {
-        model: Database.models.series,
+        model: Database.seriesModel,
         attributes: ['id'],
         through: {
           attributes: []
@@ -437,7 +437,7 @@ module.exports = {
       }
     } else if (filterGroup === 'authors') {
       bookIncludes.push({
-        model: Database.models.author,
+        model: Database.authorModel,
         attributes: ['id', 'name'],
         where: {
           id: filterValue
@@ -448,7 +448,7 @@ module.exports = {
       })
     } else if (filterGroup === 'series') {
       bookIncludes.push({
-        model: Database.models.series,
+        model: Database.seriesModel,
         attributes: ['id', 'name'],
         where: {
           id: filterValue
@@ -472,7 +472,7 @@ module.exports = {
       ]
     } else if (filterGroup === 'progress' && user) {
       bookIncludes.push({
-        model: Database.models.mediaProgress,
+        model: Database.mediaProgressModel,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
         where: {
           userId: user.id
@@ -513,7 +513,7 @@ module.exports = {
         where: seriesBookWhere,
         include: [
           {
-            model: Database.models.libraryItem,
+            model: Database.libraryItemModel,
             required: true,
             where: libraryItemWhere,
             include: libraryItemIncludes
@@ -542,7 +542,7 @@ module.exports = {
       }
     }
 
-    const { rows: books, count } = await Database.models.book.findAndCountAll({
+    const { rows: books, count } = await Database.bookModel.findAndCountAll({
       where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
@@ -553,7 +553,7 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           required: true,
           where: libraryItemWhere,
           include: libraryItemIncludes
@@ -633,7 +633,7 @@ module.exports = {
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
-        model: Database.models.feed
+        model: Database.feedModel
       })
     }
 
@@ -670,7 +670,7 @@ module.exports = {
         ...userPermissionBookWhere.replacements
       },
       include: {
-        model: Database.models.bookSeries,
+        model: Database.bookSeriesModel,
         attributes: ['bookId', 'sequence'],
         separate: true,
         subQuery: false,
@@ -683,21 +683,21 @@ module.exports = {
           }
         },
         include: {
-          model: Database.models.book,
+          model: Database.bookModel,
           where: bookWhere,
           include: [
             {
-              model: Database.models.libraryItem,
+              model: Database.libraryItemModel,
               include: libraryItemIncludes
             },
             {
-              model: Database.models.author,
+              model: Database.authorModel,
               through: {
                 attributes: []
               }
             },
             {
-              model: Database.models.mediaProgress,
+              model: Database.mediaProgressModel,
               where: {
                 userId: user.id
               },
@@ -765,12 +765,12 @@ module.exports = {
       },
       attributes: ['id'],
       include: {
-        model: Database.models.bookSeries,
+        model: Database.bookSeriesModel,
         attributes: ['bookId', 'sequence'],
         separate: true,
         required: true,
         include: {
-          model: Database.models.book,
+          model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere
         },
         order: [
@@ -789,12 +789,12 @@ module.exports = {
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
-        model: Database.models.feed
+        model: Database.feedModel
       })
     }
 
     // Step 2: Get books not started and not in a series OR is the first book of a series not started (ordered randomly)
-    const { rows: books, count } = await Database.models.book.findAndCountAll({
+    const { rows: books, count } = await Database.bookModel.findAndCountAll({
       where: [
         {
           '$mediaProgresses.isFinished$': {
@@ -817,32 +817,32 @@ module.exports = {
       replacements: userPermissionBookWhere.replacements,
       include: [
         {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           where: {
             libraryId
           },
           include: libraryItemIncludes
         },
         {
-          model: Database.models.mediaProgress,
+          model: Database.mediaProgressModel,
           where: {
             userId: user.id
           },
           required: false
         },
         {
-          model: Database.models.bookAuthor,
+          model: Database.bookAuthorModel,
           attributes: ['authorId'],
           include: {
-            model: Database.models.author
+            model: Database.authorModel
           },
           separate: true
         },
         {
-          model: Database.models.bookSeries,
+          model: Database.bookSeriesModel,
           attributes: ['seriesId', 'sequence'],
           include: {
-            model: Database.models.series
+            model: Database.seriesModel
           },
           separate: true
         }
@@ -884,10 +884,10 @@ module.exports = {
       return []
     }
 
-    const books = await Database.models.book.findAll({
+    const books = await Database.bookModel.findAll({
       include: [
         {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           where: {
             id: {
               [Sequelize.Op.in]: collection.books
@@ -895,13 +895,13 @@ module.exports = {
           }
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -925,7 +925,7 @@ module.exports = {
    */
   async getLibraryItemsForSeries(oldSeries, oldUser) {
     const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
-    return libraryItems.map(li => Database.models.libraryItem.getOldLibraryItem(li))
+    return libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
   },
 
   /**
@@ -978,14 +978,14 @@ module.exports = {
           }
         },
         {
-          model: Database.models.bookSeries,
+          model: Database.bookSeriesModel,
           include: {
             model: Database.seriesModel
           },
           separate: true
         },
         {
-          model: Database.models.bookAuthor,
+          model: Database.bookAuthorModel,
           include: {
             model: Database.authorModel
           },
@@ -1071,7 +1071,7 @@ module.exports = {
       replacements: userPermissionBookWhere.replacements,
       include: {
         separate: true,
-        model: Database.models.bookSeries,
+        model: Database.bookSeriesModel,
         include: {
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere,

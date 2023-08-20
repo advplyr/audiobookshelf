@@ -34,6 +34,16 @@ class Database {
     return this.sequelize?.models || {}
   }
 
+  /** @type {typeof import('./models/User')} */
+  get userModel() {
+    return this.models.user
+  }
+
+  /** @type {typeof import('./models/Library')} */
+  get libraryModel() {
+    return this.models.library
+  }
+
   /** @type {typeof import('./models/Author')} */
   get authorModel() {
     return this.models.author
@@ -49,9 +59,24 @@ class Database {
     return this.models.book
   }
 
+  /** @type {typeof import('./models/BookSeries')} */
+  get bookSeriesModel() {
+    return this.models.bookSeries
+  }
+
+  /** @type {typeof import('./models/BookAuthor')} */
+  get bookAuthorModel() {
+    return this.models.bookAuthor
+  }
+
   /** @type {typeof import('./models/Podcast')} */
   get podcastModel() {
     return this.models.podcast
+  }
+
+  /** @type {typeof import('./models/PodcastEpisode')} */
+  get podcastEpisodeModel() {
+    return this.models.podcastEpisode
   }
 
   /** @type {typeof import('./models/LibraryItem')} */
@@ -67,6 +92,36 @@ class Database {
   /** @type {typeof import('./models/MediaProgress')} */
   get mediaProgressModel() {
     return this.models.mediaProgress
+  }
+
+  /** @type {typeof import('./models/Collection')} */
+  get collectionModel() {
+    return this.models.collection
+  }
+
+  /** @type {typeof import('./models/CollectionBook')} */
+  get collectionBookModel() {
+    return this.models.collectionBook
+  }
+
+  /** @type {typeof import('./models/Playlist')} */
+  get playlistModel() {
+    return this.models.playlist
+  }
+
+  /** @type {typeof import('./models/PlaylistMediaItem')} */
+  get playlistMediaItemModel() {
+    return this.models.playlistMediaItem
+  }
+
+  /** @type {typeof import('./models/Feed')} */
+  get feedModel() {
+    return this.models.feed
+  }
+
+  /** @type {typeof import('./models/Feed')} */
+  get feedEpisodeModel() {
+    return this.models.feedEpisode
   }
 
   /**
