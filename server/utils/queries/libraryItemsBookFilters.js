@@ -1099,7 +1099,7 @@ module.exports = {
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(oldLibrary.id, query)
+    const authorMatches = await authorFilters.search(oldLibrary.id, query, limit, offset)
 
     return {
       book: itemMatches,

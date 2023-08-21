@@ -39,9 +39,11 @@ module.exports = {
    * Search authors
    * @param {string} libraryId 
    * @param {string} query 
+   * @param {number} limit
+   * @param {number} offset
    * @returns {object[]} oldAuthor with numBooks
    */
-  async search(libraryId, query) {
+  async search(libraryId, query, limit, offset) {
     const authors = await Database.authorModel.findAll({
       where: {
         name: {
