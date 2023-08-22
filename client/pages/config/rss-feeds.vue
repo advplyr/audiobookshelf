@@ -43,15 +43,13 @@
             </td>
             <!--  -->
             <td class="text-center hidden md:table-cell">
-              <ui-tooltip v-if="feed.updatedAt" direction="top"
-                :text="$formatDatetime(feed.updatedAt, dateFormat, timeFormat)">
-                <p class=" text-gray-200">{{ $dateDistanceFromNow(feed.updatedAt) }}</p>
+              <ui-tooltip v-if="feed.updatedAt" direction="top" :text="$formatDatetime(feed.updatedAt, dateFormat, timeFormat)">
+                <p class="text-gray-200">{{ $dateDistanceFromNow(feed.updatedAt) }}</p>
               </ui-tooltip>
             </td>
             <!--  -->
             <td class="text-center">
-              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="error" outlined
-                @click.stop="deleteFeedClick(feed)" />
+              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="error" outlined @click.stop="deleteFeedClick(feed)" />
             </td>
           </tr>
         </table>
@@ -67,7 +65,7 @@ export default {
     return {
       showFeedModal: false,
       selectedFeed: null,
-      feeds: [],
+      feeds: []
     }
   },
   computed: {

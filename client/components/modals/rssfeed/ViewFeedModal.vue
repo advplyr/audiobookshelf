@@ -1,15 +1,12 @@
 <template>
   <modals-modal v-model="show" name="rss-feed-view-modal" :processing="processing" :width="700" :height="'unset'">
-    <div ref="wrapper"
-      class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+    <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div v-if="feed" class="w-full">
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedGeneral }}</p>
 
         <div class="w-full relative">
           <ui-text-input v-model="feed.feedUrl" readonly />
-          <span
-            class="material-icons absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer"
-            @click="copyToClipboard(feed.feedUrl)">content_copy</span>
+          <span class="material-icons absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feed.feedUrl)">content_copy</span>
         </div>
 
         <div v-if="feed.meta" class="mt-5">
@@ -27,8 +24,7 @@
           </div>
           <div v-if="feed.meta.ownerEmail" class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail
-              }}</span>
+              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
             </div>
             <div>{{ feed.meta.ownerEmail }}</div>
           </div>
@@ -55,7 +51,7 @@ export default {
     value: Boolean,
     feed: {
       type: Object,
-      default: () => { }
+      default: () => {}
     }
   },
   data() {
@@ -74,14 +70,14 @@ export default {
     },
     _feed() {
       return this.feed || {}
-    },
+    }
   },
   methods: {
     copyToClipboard(str) {
       this.$copyToClipboard(str, this)
-    },
+    }
   },
-  mounted() { }
+  mounted() {}
 }
 </script>
 

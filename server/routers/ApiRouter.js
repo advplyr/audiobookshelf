@@ -298,7 +298,7 @@ class ApiRouter {
     //
     // RSS Feed Routes (Admin and up)
     //
-    this.router.get('/feeds', RSSFeedController.getAll.bind(this))
+    this.router.get('/feeds', RSSFeedController.middleware.bind(this), RSSFeedController.getAll.bind(this))
     this.router.post('/feeds/item/:itemId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForItem.bind(this))
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
