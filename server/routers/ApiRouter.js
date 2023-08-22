@@ -296,9 +296,10 @@ class ApiRouter {
     this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
     this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
 
-    // 
+    //
     // RSS Feed Routes (Admin and up)
     //
+    this.router.get('/feeds', RSSFeedController.getAll.bind(this))
     this.router.post('/feeds/item/:itemId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForItem.bind(this))
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
@@ -354,8 +355,8 @@ class ApiRouter {
   //
   /**
    * Remove library item and associated entities
-   * @param {string} mediaType 
-   * @param {string} libraryItemId 
+   * @param {string} mediaType
+   * @param {string} libraryItemId
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
    */
   async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
@@ -446,7 +447,7 @@ class ApiRouter {
    * Series is removed if it only has 1 book
    * TODO: Update filter data
    * @param {UUIDV4} bookId
-   * @param {UUIDV4[]} seriesIds 
+   * @param {UUIDV4[]} seriesIds
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return

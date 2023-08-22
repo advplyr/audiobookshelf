@@ -52,7 +52,7 @@ class RssFeedManager {
 
   /**
    * Find open feed for an entity (e.g. collection id, playlist id, library item id)
-   * @param {string} entityId 
+   * @param {string} entityId
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedForEntityId(entityId) {
@@ -61,7 +61,7 @@ class RssFeedManager {
 
   /**
    * Find open feed for a slug
-   * @param {string} slug 
+   * @param {string} slug
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedBySlug(slug) {
@@ -70,7 +70,7 @@ class RssFeedManager {
 
   /**
    * Find open feed for a slug
-   * @param {string} slug 
+   * @param {string} slug
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeed(id) {
@@ -261,6 +261,12 @@ class RssFeedManager {
     const feed = await this.findFeedForEntityId(entityId)
     if (!feed) return
     return this.handleCloseFeed(feed)
+  }
+
+  async getFeeds() {
+    const feeds = await Database.models.feed.getOldFeeds()
+    Logger.info(`[RssFeedManager] Fetched all feeds`)
+    return feeds
   }
 }
 module.exports = RssFeedManager
