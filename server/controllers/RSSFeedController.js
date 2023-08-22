@@ -5,6 +5,14 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 class RSSFeedController {
   constructor() { }
 
+  async getAll(req, res) {
+    const feeds = await this.rssFeedManager.getFeeds()
+    res.json({
+      feeds: feeds.map(f => f.toJSON()),
+      minified:  feeds.map(f => f.toJSONMinified())
+    })
+  }
+
   // POST: api/feeds/item/:itemId/open
   async openRSSFeedForItem(req, res) {
     const options = req.body || {}

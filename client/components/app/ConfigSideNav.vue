@@ -99,6 +99,11 @@ export default {
           id: 'config-item-metadata-utils',
           title: this.$strings.HeaderItemMetadataUtils,
           path: '/config/item-metadata-utils'
+        },
+        {
+          id: 'config-rss-feeds',
+          title: this.$strings.HeaderRSSFeeds,
+          path: '/config/rss-feeds'
         }
       ]
 
