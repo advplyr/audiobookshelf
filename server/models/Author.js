@@ -84,6 +84,15 @@ class Author extends Model {
   }
 
   /**
+   * Check if author exists
+   * @param {string} authorId 
+   * @returns {Promise<boolean>}
+   */
+  static async checkExistsById(authorId) {
+    return (await this.count({ where: { id: authorId } })) > 0
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize 
    */

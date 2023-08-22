@@ -22,7 +22,7 @@
             </div>
           </template>
         </div>
-        <div class="w-80 my-6 mx-auto">
+        <div v-if="isBookLibrary" class="w-80 my-6 mx-auto">
           <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop10Authors }}</h1>
           <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
           <template v-for="(author, index) in top10Authors">
@@ -114,43 +114,49 @@ export default {
       return this.$store.state.user.user
     },
     totalItems() {
-      return this.libraryStats ? this.libraryStats.totalItems : 0
+      return this.libraryStats?.totalItems || 0
     },
     genresWithCount() {
-      return this.libraryStats ? this.libraryStats.genresWithCount : []
+      return this.libraryStats?.genresWithCount || []
     },
     top5Genres() {
-      return this.genresWithCount.slice(0, 5)
+      return this.genresWithCount?.slice(0, 5) || []
     },
     top10LongestItems() {
-      return this.libraryStats ? this.libraryStats.longestItems || [] : []
+      return this.libraryStats?.longestItems || []
     },
     longestItemDuration() {
       if (!this.top10LongestItems.length) return 0
       return this.top10LongestItems[0].duration
     },
     top10LargestItems() {
-      return this.libraryStats ? this.libraryStats.largestItems || [] : []
+      return this.libraryStats?.largestItems || []
     },
     largestItemSize() {
       if (!this.top10LargestItems.length) return 0
       return this.top10LargestItems[0].size
     },
     authorsWithCount() {
-      return this.libraryStats ? this.libraryStats.authorsWithCount : []
+      return this.libraryStats?.authorsWithCount || []
     },
     mostUsedAuthorCount() {
       if (!this.authorsWithCount.length) return 0
       return this.authorsWithCount[0].count
     },
     top10Authors() {
-      return this.authorsWithCount.slice(0, 10)
+      return this.authorsWithCount?.slice(0, 10) || []
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
     currentLibraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
+    },
+    currentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+    },
+    isBookLibrary() {
+      return this.currentLibraryMediaType === 'book'
     }
   },
   methods: {

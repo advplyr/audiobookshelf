@@ -17,7 +17,7 @@ class RSSFeedController {
   async openRSSFeedForItem(req, res) {
     const options = req.body || {}
 
-    const item = await Database.models.libraryItem.getOldById(req.params.itemId)
+    const item = await Database.libraryItemModel.getOldById(req.params.itemId)
     if (!item) return res.sendStatus(404)
 
     // Check user can access this library item
@@ -54,7 +54,7 @@ class RSSFeedController {
   async openRSSFeedForCollection(req, res) {
     const options = req.body || {}
 
-    const collection = await Database.models.collection.findByPk(req.params.collectionId)
+    const collection = await Database.collectionModel.findByPk(req.params.collectionId)
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist

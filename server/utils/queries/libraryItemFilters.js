@@ -1,15 +1,17 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
+const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 
 module.exports = {
   /**
    * Get all library items that have tags
    * @param {string[]} tags 
-   * @returns {Promise<LibraryItem[]>}
+   * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
   async getAllLibraryItemsWithTags(tags) {
     const libraryItems = []
-    const booksWithTag = await Database.models.book.findAll({
+    const booksWithTag = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -18,16 +20,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -39,7 +41,7 @@ module.exports = {
       libraryItem.media = book
       libraryItems.push(libraryItem)
     }
-    const podcastsWithTag = await Database.models.podcast.findAll({
+    const podcastsWithTag = await Database.podcastModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -48,10 +50,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.podcastEpisode
+          model: Database.podcastEpisodeModel
         }
       ]
     })
@@ -70,7 +72,7 @@ module.exports = {
    */
   async getAllLibraryItemsWithGenres(genres) {
     const libraryItems = []
-    const booksWithGenre = await Database.models.book.findAll({
+    const booksWithGenre = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -79,16 +81,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -100,7 +102,7 @@ module.exports = {
       libraryItem.media = book
       libraryItems.push(libraryItem)
     }
-    const podcastsWithGenre = await Database.models.podcast.findAll({
+    const podcastsWithGenre = await Database.podcastModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -109,10 +111,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.podcastEpisode
+          model: Database.podcastEpisodeModel
         }
       ]
     })
@@ -127,11 +129,11 @@ module.exports = {
   /**
  * Get all library items that have narrators
  * @param {string[]} narrators 
- * @returns {Promise<LibraryItem[]>}
+ * @returns {Promise<import('../../models/LibraryItem')[]>}
  */
   async getAllLibraryItemsWithNarrators(narrators) {
     const libraryItems = []
-    const booksWithGenre = await Database.models.book.findAll({
+    const booksWithGenre = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(narrators) WHERE json_valid(narrators) AND json_each.value IN (:narrators))`), {
         [Sequelize.Op.gte]: 1
       }),
@@ -140,16 +142,16 @@ module.exports = {
       },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.libraryItemModel
         },
         {
-          model: Database.models.author,
+          model: Database.authorModel,
           through: {
             attributes: []
           }
         },
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           through: {
             attributes: ['sequence']
           }
@@ -162,5 +164,57 @@ module.exports = {
       libraryItems.push(libraryItem)
     }
     return libraryItems
+  },
+
+  /**
+   * Search library items
+   * @param {import('../../objects/user/User')} oldUser 
+   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} query
+   * @param {number} limit 
+   * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[], podcast:object[]}}
+   */
+  search(oldUser, oldLibrary, query, limit) {
+    if (oldLibrary.isBook) {
+      return libraryItemsBookFilters.search(oldUser, oldLibrary, query, limit, 0)
+    } else {
+      return libraryItemsPodcastFilters.search(oldUser, oldLibrary, query, limit, 0)
+    }
+  },
+
+  /**
+   * Get largest items in library
+   * @param {string} libraryId 
+   * @param {number} limit 
+   * @returns {Promise<{ id:string, title:string, size:number }[]>}
+   */
+  async getLargestItems(libraryId, limit) {
+    const libraryItems = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'mediaId', 'mediaType', 'size'],
+      where: {
+        libraryId
+      },
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['id', 'title']
+        },
+        {
+          model: Database.podcastModel,
+          attributes: ['id', 'title']
+        }
+      ],
+      order: [
+        ['size', 'DESC']
+      ],
+      limit
+    })
+    return libraryItems.map(libraryItem => {
+      return {
+        id: libraryItem.id,
+        title: libraryItem.media.title,
+        size: libraryItem.size
+      }
+    })
   }
 }

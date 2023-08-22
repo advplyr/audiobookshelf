@@ -628,6 +628,11 @@ export default {
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },
     async init(bookshelf) {
+      if (this.entityName === 'series') {
+        this.booksPerFetch = 50
+      } else {
+        this.booksPerFetch = 100
+      }
       this.checkUpdateSearchParams()
       this.initSizeData(bookshelf)
 

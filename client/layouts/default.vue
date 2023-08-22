@@ -343,6 +343,10 @@ export default {
       }
       this.$store.commit('libraries/removeCollection', collection)
     },
+    seriesRemoved({ id, libraryId }) {
+      if (this.currentLibraryId !== libraryId) return
+      this.$store.commit('libraries/removeSeriesFromFilterData', id)
+    },
     playlistAdded(playlist) {
       if (playlist.userId !== this.user.id || this.currentLibraryId !== playlist.libraryId) return
       this.$store.commit('libraries/addUpdateUserPlaylist', playlist)
@@ -441,6 +445,9 @@ export default {
       this.socket.on('collection_added', this.collectionAdded)
       this.socket.on('collection_updated', this.collectionUpdated)
       this.socket.on('collection_removed', this.collectionRemoved)
+
+      // Series Listeners
+      this.socket.on('series_removed', this.seriesRemoved)
 
       // User Playlist Listeners
       this.socket.on('playlist_added', this.playlistAdded)

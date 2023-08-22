@@ -13,13 +13,13 @@ class RssFeedManager {
 
   async validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
-      const collection = await Database.models.collection.getOldById(feedObj.entityId)
+      const collection = await Database.collectionModel.getOldById(feedObj.entityId)
       if (!collection) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'libraryItem') {
-      const libraryItemExists = await Database.models.libraryItem.checkExistsById(feedObj.entityId)
+      const libraryItemExists = await Database.libraryItemModel.checkExistsById(feedObj.entityId)
       if (!libraryItemExists) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
         return false
@@ -41,7 +41,7 @@ class RssFeedManager {
    * Validate all feeds and remove invalid
    */
   async init() {
-    const feeds = await Database.models.feed.getOldFeeds()
+    const feeds = await Database.feedModel.getOldFeeds()
     for (const feed of feeds) {
       // Remove invalid feeds
       if (!await this.validateFeedEntity(feed)) {
@@ -56,7 +56,7 @@ class RssFeedManager {
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedForEntityId(entityId) {
-    return Database.models.feed.findOneOld({ entityId })
+    return Database.feedModel.findOneOld({ entityId })
   }
 
   /**
@@ -65,7 +65,7 @@ class RssFeedManager {
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedBySlug(slug) {
-    return Database.models.feed.findOneOld({ slug })
+    return Database.feedModel.findOneOld({ slug })
   }
 
   /**
@@ -74,7 +74,7 @@ class RssFeedManager {
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeed(id) {
-    return Database.models.feed.findByPkOld(id)
+    return Database.feedModel.findByPkOld(id)
   }
 
   async getFeed(req, res) {
@@ -103,7 +103,7 @@ class RssFeedManager {
         await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = await Database.models.collection.findByPk(feed.entityId)
+      const collection = await Database.collectionModel.findByPk(feed.entityId)
       if (collection) {
         const collectionExpanded = await collection.getOldJsonExpanded()
 

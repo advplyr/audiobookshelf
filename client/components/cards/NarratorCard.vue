@@ -36,7 +36,7 @@ export default {
       return this.narrator?.name || ''
     },
     numBooks() {
-      return this.narrator?.books?.length || 0
+      return this.narrator?.numBooks || this.narrator?.books?.length || 0
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']

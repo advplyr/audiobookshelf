@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
+const oldPodcastEpisode = require('../objects/entities/PodcastEpisode')
 
 class PodcastEpisode extends Model {
   constructor(values, options) {
@@ -44,6 +45,10 @@ class PodcastEpisode extends Model {
     this.updatedAt
   }
 
+  /**
+   * @param {string} libraryItemId 
+   * @returns {oldPodcastEpisode}
+   */
   getOldPodcastEpisode(libraryItemId = null) {
     let enclosure = null
     if (this.enclosureURL) {
@@ -53,7 +58,7 @@ class PodcastEpisode extends Model {
         length: this.enclosureSize !== null ? String(this.enclosureSize) : null
       }
     }
-    return {
+    return new oldPodcastEpisode({
       libraryItemId: libraryItemId || null,
       podcastId: this.podcastId,
       id: this.id,
@@ -72,7 +77,7 @@ class PodcastEpisode extends Model {
       publishedAt: this.publishedAt?.valueOf() || null,
       addedAt: this.createdAt.valueOf(),
       updatedAt: this.updatedAt.valueOf()
-    }
+    })
   }
 
   static createFromOld(oldEpisode) {

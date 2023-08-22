@@ -54,7 +54,7 @@ class Podcast extends Model {
 
   static getOldPodcast(libraryItemExpanded) {
     const podcastExpanded = libraryItemExpanded.media
-    const podcastEpisodes = podcastExpanded.podcastEpisodes?.map(ep => ep.getOldPodcastEpisode(libraryItemExpanded.id)).sort((a, b) => a.index - b.index)
+    const podcastEpisodes = podcastExpanded.podcastEpisodes?.map(ep => ep.getOldPodcastEpisode(libraryItemExpanded.id).toJSON()).sort((a, b) => a.index - b.index)
     return {
       id: podcastExpanded.id,
       libraryItemId: libraryItemExpanded.id,

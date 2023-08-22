@@ -15,8 +15,8 @@ module.exports = {
 
   /**
    * Get library items using filter and sort
-   * @param {oldLibrary} library 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {object} options 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
@@ -41,20 +41,20 @@ module.exports = {
 
   /**
    * Get library items for continue listening & continue reading shelves
-   * @param {oldLibrary} library 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {string[]} include 
    * @param {number} limit 
-   * @returns {object} { items:LibraryItem[], count:number }
+   * @returns {Promise<{ items:import('../../models/LibraryItem')[], count:number }>}
    */
   async getMediaItemsInProgress(library, user, include, limit) {
     if (library.mediaType === 'book') {
       const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'in-progress', 'progress', true, false, include, limit, 0)
       return {
         items: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
           }
           return oldLibraryItem
         }),
@@ -65,7 +65,7 @@ module.exports = {
       return {
         count,
         items: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           oldLibraryItem.recentEpisode = li.recentEpisode
           return oldLibraryItem
         })
@@ -86,9 +86,9 @@ module.exports = {
       const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'recent', null, 'addedAt', true, false, include, limit, 0)
       return {
         libraryItems: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
             oldLibraryItem.media.size = li.size
@@ -101,9 +101,9 @@ module.exports = {
       const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredLibraryItems(library.id, user, 'recent', null, 'addedAt', true, include, limit, 0)
       return {
         libraryItems: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
             oldLibraryItem.media.size = li.size
@@ -127,9 +127,9 @@ module.exports = {
     const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, user, include, limit, 0)
     return {
       libraryItems: libraryItems.map(li => {
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
         }
         if (li.series) {
           oldLibraryItem.media.metadata.series = li.series
@@ -153,9 +153,9 @@ module.exports = {
       const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'finished', 'progress', true, false, include, limit, 0)
       return {
         items: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
           }
           return oldLibraryItem
         }),
@@ -166,7 +166,7 @@ module.exports = {
       return {
         count,
         items: libraryItems.map(li => {
-          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           oldLibraryItem.recentEpisode = li.recentEpisode
           return oldLibraryItem
         })
@@ -176,19 +176,19 @@ module.exports = {
 
   /**
    * Get series for recent series shelf
-   * @param {oldLibrary} library 
-   * @param {oldUser} user
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user
    * @param {string[]} include 
    * @param {number} limit 
-   * @returns {object} { series:oldSeries[], count:number}
+   * @returns {{ series:import('../../objects/entities/Series')[], count:number}} 
    */
   async getSeriesMostRecentlyAdded(library, user, include, limit) {
-    if (library.mediaType !== 'book') return { series: [], count: 0 }
+    if (!library.isBook) return { series: [], count: 0 }
 
     const seriesIncludes = []
     if (include.includes('rssfeed')) {
       seriesIncludes.push({
-        model: Database.models.feed
+        model: Database.feedModel
       })
     }
 
@@ -221,7 +221,7 @@ module.exports = {
       }))
     }
 
-    const { rows: series, count } = await Database.models.series.findAndCountAll({
+    const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: seriesWhere,
       limit,
       offset: 0,
@@ -230,12 +230,12 @@ module.exports = {
       replacements: userPermissionBookWhere.replacements,
       include: [
         {
-          model: Database.models.bookSeries,
+          model: Database.bookSeriesModel,
           include: {
-            model: Database.models.book,
+            model: Database.bookModel,
             where: userPermissionBookWhere.bookWhere,
             include: {
-              model: Database.models.libraryItem
+              model: Database.libraryItemModel
             }
           },
           separate: true
@@ -252,7 +252,7 @@ module.exports = {
       const oldSeries = s.getOldSeries().toJSON()
 
       if (s.feeds?.length) {
-        oldSeries.rssFeed = Database.models.feed.getOldFeed(s.feeds[0]).toJSONMinified()
+        oldSeries.rssFeed = Database.feedModel.getOldFeed(s.feeds[0]).toJSONMinified()
       }
 
       // TODO: Sort books by sequence in query
@@ -268,7 +268,7 @@ module.exports = {
         const libraryItem = bs.book.libraryItem.toJSON()
         delete bs.book.libraryItem
         libraryItem.media = bs.book
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem).toJSONMinified()
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONMinified()
         return oldLibraryItem
       })
       allOldSeries.push(oldSeries)
@@ -291,7 +291,7 @@ module.exports = {
   async getNewestAuthors(library, user, limit) {
     if (library.mediaType !== 'book') return { authors: [], count: 0 }
 
-    const { rows: authors, count } = await Database.models.author.findAndCountAll({
+    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: library.id,
         createdAt: {
@@ -299,7 +299,7 @@ module.exports = {
         }
       },
       include: {
-        model: Database.models.bookAuthor,
+        model: Database.bookAuthorModel,
         required: true // Must belong to a book
       },
       limit,
@@ -332,9 +332,9 @@ module.exports = {
     const { libraryItems, count } = await libraryItemsBookFilters.getDiscoverLibraryItems(library.id, user, include, limit)
     return {
       libraryItems: libraryItems.map(li => {
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
         }
         return oldLibraryItem
       }),
@@ -356,7 +356,7 @@ module.exports = {
     return {
       count,
       libraryItems: libraryItems.map(li => {
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
         oldLibraryItem.recentEpisode = li.recentEpisode
         return oldLibraryItem
       })
@@ -390,7 +390,7 @@ module.exports = {
 
   /**
    * Get filter data used in filter menus
-   * @param {oldLibrary} oldLibrary 
+   * @param {import('../../objects/Library')} oldLibrary 
    * @returns {Promise<object>}
    */
   async getFilterData(oldLibrary) {
@@ -417,9 +417,9 @@ module.exports = {
     }
 
     if (oldLibrary.isPodcast) {
-      const podcasts = await Database.models.podcast.findAll({
+      const podcasts = await Database.podcastModel.findAll({
         include: {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           attributes: [],
           where: {
             libraryId: oldLibrary.id
@@ -436,9 +436,9 @@ module.exports = {
         }
       }
     } else {
-      const books = await Database.models.book.findAll({
+      const books = await Database.bookModel.findAll({
         include: {
-          model: Database.models.libraryItem,
+          model: Database.libraryItemModel,
           attributes: ['isMissing', 'isInvalid'],
           where: {
             libraryId: oldLibrary.id
@@ -461,7 +461,7 @@ module.exports = {
         if (book.language) data.languages.add(book.language)
       }
 
-      const series = await Database.models.series.findAll({
+      const series = await Database.seriesModel.findAll({
         where: {
           libraryId: oldLibrary.id
         },
@@ -469,7 +469,7 @@ module.exports = {
       })
       series.forEach((s) => data.series.push({ id: s.id, name: s.name }))
 
-      const authors = await Database.models.author.findAll({
+      const authors = await Database.authorModel.findAll({
         where: {
           libraryId: oldLibrary.id
         },

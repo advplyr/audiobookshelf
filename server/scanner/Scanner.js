@@ -67,7 +67,7 @@ class Scanner {
   }
 
   async scanLibraryItemByRequest(libraryItem) {
-    const library = await Database.models.library.getOldById(libraryItem.libraryId)
+    const library = await Database.libraryModel.getOldById(libraryItem.libraryId)
     if (!library) {
       Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
       return ScanResult.NOTHING
@@ -486,6 +486,8 @@ class Scanner {
           _author = new Author()
           _author.setData(tempMinAuthor, libraryItem.libraryId)
           newAuthors.push(_author)
+          // Update filter data
+          Database.addAuthorToFilterData(libraryItem.libraryId, _author.name, _author.id)
         }
 
         return {
@@ -502,11 +504,17 @@ class Scanner {
       const newSeries = []
       libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
         let _series = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
-        if (!_series) _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
+        if (!_series) {
+          // Check new unsaved series
+          _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
+        }
+
         if (!_series) { // Must create new series
           _series = new Series()
           _series.setData(tempMinSeries, libraryItem.libraryId)
           newSeries.push(_series)
+          // Update filter data
+          Database.addSeriesToFilterData(libraryItem.libraryId, _series.name, _series.id)
         }
         return {
           id: _series.id,
@@ -553,25 +561,30 @@ class Scanner {
 
     for (const folderId in folderGroups) {
       const libraryId = folderGroups[folderId].libraryId
-      const library = await Database.models.library.getOldById(libraryId)
+      const library = await Database.libraryModel.getOldById(libraryId)
       if (!library) {
         Logger.error(`[Scanner] Library not found in files changed ${libraryId}`)
-        continue;
+        continue
       }
       const folder = library.getFolderById(folderId)
       if (!folder) {
         Logger.error(`[Scanner] Folder is not in library in files changed "${folderId}", Library "${library.name}"`)
-        continue;
+        continue
       }
       const relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
       const fileUpdateGroup = groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths, false)
 
       if (!Object.keys(fileUpdateGroup).length) {
         Logger.info(`[Scanner] No important changes to scan for in folder "${folderId}"`)
-        continue;
+        continue
       }
       const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[Scanner] Folder scan results`, folderScanResults)
+
+      // If something was updated then reset numIssues filter data for library
+      if (Object.values(folderScanResults).some(scanResult => scanResult !== ScanResult.NOTHING && scanResult !== ScanResult.UPTODATE)) {
+        await Database.resetLibraryIssuesFilterData(libraryId)
+      }
     }
 
     this.scanningFilesChanged = false
@@ -599,7 +612,7 @@ class Scanner {
       const altDir = `${itemDir}/${firstNest}`
 
       const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
-      const childLibraryItem = await Database.models.libraryItem.findOne({
+      const childLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {
@@ -615,7 +628,7 @@ class Scanner {
       }
 
       const altFullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), altDir)
-      const altChildLibraryItem = await Database.models.libraryItem.findOne({
+      const altChildLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {
@@ -648,12 +661,12 @@ class Scanner {
       }
 
       // Check if book dir group is already an item
-      let existingLibraryItem = await Database.models.libraryItem.findOneOld({
+      let existingLibraryItem = await Database.libraryItemModel.findOneOld({
         path: potentialChildDirs
       })
 
       if (!existingLibraryItem) {
-        existingLibraryItem = await Database.models.libraryItem.findOneOld({
+        existingLibraryItem = await Database.libraryItemModel.findOneOld({
           ino: dirIno
         })
         if (existingLibraryItem) {
@@ -688,11 +701,11 @@ class Scanner {
       }
 
       // Check if a library item is a subdirectory of this dir
-      const childItem = await Database.models.libraryItem.findOne({
+      const childItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
           path: {
-            [Sequelize.Op.startsWith]: fullPath
+            [Sequelize.Op.startsWith]: fullPath + '/'
           }
         }
       })
@@ -924,6 +937,8 @@ class Scanner {
           author.setData({ name: authorName }, libraryItem.libraryId)
           await Database.createAuthor(author)
           SocketAuthority.emitter('author_added', author.toJSON())
+          // Update filter data
+          Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
         }
         authorPayload.push(author.toJSONMinimal())
       }
@@ -940,6 +955,8 @@ class Scanner {
           seriesItem = new Series()
           seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)
           await Database.createSeries(seriesItem)
+          // Update filter data
+          Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
           SocketAuthority.emitter('series_added', seriesItem.toJSON())
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))

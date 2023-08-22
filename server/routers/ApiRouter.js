@@ -78,23 +78,22 @@ class ApiRouter {
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middlewareNew.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middlewareNew.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
-    this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
+    this.router.get('/libraries/:id/series', LibraryController.middlewareNew.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middlewareNew.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middlewareNew.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
     this.router.get('/libraries/:id/playlists', LibraryController.middlewareNew.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
-    this.router.get('/libraries/:id/personalized2', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
-    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalizedOptimal.bind(this))
+    this.router.get('/libraries/:id/personalized', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/filterdata', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryFilterData.bind(this))
-    this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
-    this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
+    this.router.get('/libraries/:id/search', LibraryController.middlewareNew.bind(this), LibraryController.search.bind(this))
+    this.router.get('/libraries/:id/stats', LibraryController.middlewareNew.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middlewareNew.bind(this), LibraryController.getAuthors.bind(this))
     this.router.get('/libraries/:id/narrators', LibraryController.middlewareNew.bind(this), LibraryController.getNarrators.bind(this))
     this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middlewareNew.bind(this), LibraryController.updateNarrator.bind(this))
     this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middlewareNew.bind(this), LibraryController.removeNarrator.bind(this))
-    this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
-    this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
-    this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
-    this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
+    this.router.get('/libraries/:id/matchall', LibraryController.middlewareNew.bind(this), LibraryController.matchAll.bind(this))
+    this.router.post('/libraries/:id/scan', LibraryController.middlewareNew.bind(this), LibraryController.scan.bind(this))
+    this.router.get('/libraries/:id/recent-episodes', LibraryController.middlewareNew.bind(this), LibraryController.getRecentEpisodes.bind(this))
+    this.router.get('/libraries/:id/opml', LibraryController.middlewareNew.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
@@ -361,7 +360,7 @@ class ApiRouter {
    */
   async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
     // Remove media progress for this library item from all users
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     for (const user of users) {
       for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
         await Database.removeMediaProgress(mediaProgress.id)
@@ -373,14 +372,14 @@ class ApiRouter {
     // Remove series if empty
     if (mediaType === 'book') {
       // TODO: update filter data
-      const bookSeries = await Database.models.bookSeries.findAll({
+      const bookSeries = await Database.bookSeriesModel.findAll({
         where: {
           bookId: mediaItemIds[0]
         },
         include: {
-          model: Database.models.series,
+          model: Database.seriesModel,
           include: {
-            model: Database.models.book
+            model: Database.bookModel
           }
         }
       })
@@ -392,7 +391,7 @@ class ApiRouter {
     }
 
     // remove item from playlists
-    const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
+    const playlistsWithItem = await Database.playlistModel.getPlaylistsForMediaItemIds(mediaItemIds)
     for (const playlist of playlistsWithItem) {
       let numMediaItems = playlist.playlistMediaItems.length
 
@@ -445,23 +444,23 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   * TODO: Update filter data
-   * @param {UUIDV4} bookId
-   * @param {UUIDV4[]} seriesIds
+   * 
+   * @param {string} bookId
+   * @param {string[]} seriesIds 
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
 
-    const bookSeries = await Database.models.bookSeries.findAll({
+    const bookSeries = await Database.bookSeriesModel.findAll({
       where: {
         bookId,
         seriesId: seriesIds
       },
       include: [
         {
-          model: Database.models.series,
+          model: Database.seriesModel,
           include: {
-            model: Database.models.book
+            model: Database.bookModel
           }
         }
       ]
@@ -473,10 +472,20 @@ class ApiRouter {
     }
   }
 
+  /**
+   * Remove an empty series & close an open RSS feed
+   * @param {import('../models/Series')} series 
+   */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
     await Database.removeSeries(series.id)
+    // Remove series from library filter data
+    Database.removeSeriesFromFilterData(series.libraryId, series.id)
+    SocketAuthority.emitter('series_removed', {
+      id: series.id,
+      libraryId: series.libraryId
+    })
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -487,7 +496,7 @@ class ApiRouter {
   async getAllSessionsWithUserData() {
     const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
-    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
+    const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
     return sessions.map(se => {
       return {
         ...se,
@@ -547,13 +556,19 @@ class ApiRouter {
       const mediaMetadata = mediaPayload.metadata
 
       // Create new authors if in payload
-      if (mediaMetadata.authors && mediaMetadata.authors.length) {
+      if (mediaMetadata.authors?.length) {
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
           if (!authorName) {
             Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
             continue
+          }
+
+          // Ensure the ID for the author exists
+          if (mediaMetadata.authors[i].id && !(await Database.checkAuthorExists(libraryId, mediaMetadata.authors[i].id))) {
+            Logger.warn(`[ApiRouter] Author id "${mediaMetadata.authors[i].id}" does not exist`)
+            mediaMetadata.authors[i].id = null
           }
 
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
@@ -563,6 +578,8 @@ class ApiRouter {
               author.setData(mediaMetadata.authors[i], libraryId)
               Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
               newAuthors.push(author)
+              // Update filter data
+              Database.addAuthorToFilterData(libraryId, author.name, author.id)
             }
 
             // Update ID in original payload
@@ -585,6 +602,12 @@ class ApiRouter {
             continue
           }
 
+          // Ensure the ID for the series exists
+          if (mediaMetadata.series[i].id && !(await Database.checkSeriesExists(libraryId, mediaMetadata.series[i].id))) {
+            Logger.warn(`[ApiRouter] Series id "${mediaMetadata.series[i].id}" does not exist`)
+            mediaMetadata.series[i].id = null
+          }
+
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
             let seriesItem = Database.series.find(se => se.libraryId === libraryId && se.checkNameEquals(seriesName))
             if (!seriesItem) {
@@ -592,6 +615,8 @@ class ApiRouter {
               seriesItem.setData(mediaMetadata.series[i], libraryId)
               Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
+              // Update filter data
+              Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
             }
 
             // Update ID in original payload

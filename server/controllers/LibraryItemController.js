@@ -78,6 +78,7 @@ class LibraryItemController {
         Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
       })
     }
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
 
@@ -124,7 +125,7 @@ class LibraryItemController {
     // Book specific - Get all series being removed from this item
     let seriesRemoved = []
     if (libraryItem.isBook && mediaPayload.metadata?.series) {
-      const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+      const seriesIdsInUpdate = mediaPayload.metadata.series?.map(se => se.id) || []
       seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
     }
 
@@ -313,7 +314,7 @@ class LibraryItemController {
       return res.status(400).send('Invalid request body')
     }
 
-    const itemsToDelete = await Database.models.libraryItem.getAllOldLibraryItems({
+    const itemsToDelete = await Database.libraryItemModel.getAllOldLibraryItems({
       id: libraryItemIds
     })
 
@@ -332,6 +333,8 @@ class LibraryItemController {
         })
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
 
@@ -346,7 +349,7 @@ class LibraryItemController {
 
     for (const updatePayload of updatePayloads) {
       const mediaPayload = updatePayload.mediaPayload
-      const libraryItem = await Database.models.libraryItem.getOldById(updatePayload.id)
+      const libraryItem = await Database.libraryItemModel.getOldById(updatePayload.id)
       if (!libraryItem) return null
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
@@ -384,7 +387,7 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    const libraryItems = await Database.models.libraryItem.getAllOldLibraryItems({
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
       id: libraryItemIds
     })
     res.json({
@@ -456,9 +459,11 @@ class LibraryItemController {
         await this.scanner.scanLibraryItemByRequest(libraryItem)
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
   }
 
-  // POST: api/items/:id/scan (admin)
+  // POST: api/items/:id/scan
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to scan library item`, req.user)
@@ -471,6 +476,7 @@ class LibraryItemController {
     }
 
     const result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
     })
@@ -694,7 +700,7 @@ class LibraryItemController {
   }
 
   async middleware(req, res, next) {
-    req.libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
+    req.libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item
