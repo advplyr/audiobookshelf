@@ -1,23 +1,29 @@
 const xml = require('../../libs/xml')
 
-module.exports.generate = (libraryItems, indent = true) => {
+/**
+ * Generate OPML file string for podcasts in a library
+ * @param {import('../../models/Podcast')[]} podcasts 
+ * @param {boolean} [indent=true] 
+ * @returns {string}
+ */
+module.exports.generate = (podcasts, indent = true) => {
   const bodyItems = []
-  libraryItems.forEach((item) => {
-    if (!item.media.metadata.feedUrl) return
+  podcasts.forEach((podcast) => {
+    if (!podcast.feedURL) return
     const feedAttributes = {
       type: 'rss',
-      text: item.media.metadata.title,
-      title: item.media.metadata.title,
-      xmlUrl: item.media.metadata.feedUrl
+      text: podcast.title,
+      title: podcast.title,
+      xmlUrl: podcast.feedURL
     }
-    if (item.media.metadata.description) {
-      feedAttributes.description = item.media.metadata.description
+    if (podcast.description) {
+      feedAttributes.description = podcast.description
     }
-    if (item.media.metadata.itunesPageUrl) {
-      feedAttributes.htmlUrl = item.media.metadata.itunesPageUrl
+    if (podcast.itunesPageUrl) {
+      feedAttributes.htmlUrl = podcast.itunesPageUrl
     }
-    if (item.media.metadata.language) {
-      feedAttributes.language = item.media.metadata.language
+    if (podcast.language) {
+      feedAttributes.language = podcast.language
     }
     bodyItems.push({
       outline: {

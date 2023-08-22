@@ -103,7 +103,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.podcastResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.podcastResults.length + this.narratorResults.length
     }
   },
   methods: {

@@ -150,7 +150,7 @@ class PodcastManager {
       return false
     }
 
-    const libraryItem = await Database.models.libraryItem.getOldById(this.currentDownload.libraryItem.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
@@ -372,8 +372,13 @@ class PodcastManager {
     }
   }
 
-  generateOPMLFileText(libraryItems) {
-    return opmlGenerator.generate(libraryItems)
+  /**
+   * OPML file string for podcasts in a library
+   * @param {import('../models/Podcast')[]} podcasts 
+   * @returns {string} XML string
+   */
+  generateOPMLFileText(podcasts) {
+    return opmlGenerator.generate(podcasts)
   }
 
   getDownloadQueueDetails(libraryId = null) {

@@ -77,7 +77,7 @@ class CronManager {
   async initPodcastCrons() {
     const cronExpressionMap = {}
 
-    const podcastsWithAutoDownload = await Database.models.podcast.findAll({
+    const podcastsWithAutoDownload = await Database.podcastModel.findAll({
       where: {
         autoDownloadEpisodes: true,
         autoDownloadSchedule: {
@@ -85,7 +85,7 @@ class CronManager {
         }
       },
       include: {
-        model: Database.models.libraryItem
+        model: Database.libraryItemModel
       }
     })
 
@@ -139,7 +139,7 @@ class CronManager {
     // Get podcast library items to check
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = await Database.models.libraryItem.getOldById(libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getOldById(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[CronManager] Library item ${libraryItemId} not found for episode check cron ${expression}`)
         podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter(lid => lid !== libraryItemId) // Filter it out

@@ -32,7 +32,7 @@ class Auth {
     await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     if (users.length) {
       for (const user of users) {
         user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
@@ -100,7 +100,7 @@ class Auth {
           return resolve(null)
         }
 
-        const user = await Database.models.user.getUserByIdOrOldId(payload.userId)
+        const user = await Database.userModel.getUserByIdOrOldId(payload.userId)
         if (user && user.username === payload.username) {
           resolve(user)
         } else {
@@ -116,7 +116,7 @@ class Auth {
    * @returns {object}
    */
   async getUserLoginResponsePayload(user) {
-    const libraryIds = await Database.models.library.getAllLibraryIds()
+    const libraryIds = await Database.libraryModel.getAllLibraryIds()
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
@@ -131,7 +131,7 @@ class Auth {
     const username = (req.body.username || '').toLowerCase()
     const password = req.body.password || ''
 
-    const user = await Database.models.user.getUserByUsername(username)
+    const user = await Database.userModel.getUserByUsername(username)
 
     if (!user?.isActive) {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
@@ -178,7 +178,7 @@ class Auth {
   async userChangePassword(req, res) {
     var { password, newPassword } = req.body
     newPassword = newPassword || ''
-    const matchingUser = await Database.models.user.getUserById(req.user.id)
+    const matchingUser = await Database.userModel.getUserById(req.user.id)
 
     // Only root can have an empty password
     if (matchingUser.type !== 'root' && !newPassword) {

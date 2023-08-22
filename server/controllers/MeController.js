@@ -59,7 +59,7 @@ class MeController {
 
   // PATCH: api/me/progress/:id
   async createUpdateMediaProgress(req, res) {
-    const libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -75,7 +75,7 @@ class MeController {
   // PATCH: api/me/progress/:id/:episodeId
   async createUpdateEpisodeMediaProgress(req, res) {
     const episodeId = req.params.episodeId
-    const libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -101,7 +101,7 @@ class MeController {
 
     let shouldUpdate = false
     for (const itemProgress of itemProgressPayloads) {
-      const libraryItem = await Database.models.libraryItem.getOldById(itemProgress.libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getOldById(itemProgress.libraryItemId)
       if (libraryItem) {
         if (req.user.createUpdateMediaProgress(libraryItem, itemProgress, itemProgress.episodeId)) {
           const mediaProgress = req.user.getMediaProgress(libraryItem.id, itemProgress.episodeId)
@@ -122,7 +122,7 @@ class MeController {
 
   // POST: api/me/item/:id/bookmark
   async createBookmark(req, res) {
-    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
 
     const { time, title } = req.body
     const bookmark = req.user.createBookmark(req.params.id, time, title)
@@ -133,7 +133,7 @@ class MeController {
 
   // PATCH: api/me/item/:id/bookmark
   async updateBookmark(req, res) {
-    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
 
     const { time, title } = req.body
     if (!req.user.findBookmark(req.params.id, time)) {
@@ -151,7 +151,7 @@ class MeController {
 
   // DELETE: api/me/item/:id/bookmark/:time
   async removeBookmark(req, res) {
-    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
 
     const time = Number(req.params.time)
     if (isNaN(time)) return res.sendStatus(500)

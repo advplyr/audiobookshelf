@@ -38,7 +38,7 @@ class MiscController {
     const libraryId = req.body.library
     const folderId = req.body.folder
 
-    const library = await Database.models.library.getOldById(libraryId)
+    const library = await Database.libraryModel.getOldById(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
@@ -177,7 +177,7 @@ class MiscController {
     }
 
     const tags = []
-    const books = await Database.models.book.findAll({
+    const books = await Database.bookModel.findAll({
       attributes: ['tags'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('tags')), {
         [Sequelize.Op.gt]: 0
@@ -189,7 +189,7 @@ class MiscController {
       }
     }
 
-    const podcasts = await Database.models.podcast.findAll({
+    const podcasts = await Database.podcastModel.findAll({
       attributes: ['tags'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('tags')), {
         [Sequelize.Op.gt]: 0
@@ -248,7 +248,7 @@ class MiscController {
         await libraryItem.media.update({
           tags: libraryItem.media.tags
         })
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
       }
@@ -289,7 +289,7 @@ class MiscController {
       await libraryItem.media.update({
         tags: libraryItem.media.tags
       })
-      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
     }
@@ -311,7 +311,7 @@ class MiscController {
       return res.sendStatus(404)
     }
     const genres = []
-    const books = await Database.models.book.findAll({
+    const books = await Database.bookModel.findAll({
       attributes: ['genres'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('genres')), {
         [Sequelize.Op.gt]: 0
@@ -323,7 +323,7 @@ class MiscController {
       }
     }
 
-    const podcasts = await Database.models.podcast.findAll({
+    const podcasts = await Database.podcastModel.findAll({
       attributes: ['genres'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('genres')), {
         [Sequelize.Op.gt]: 0
@@ -382,7 +382,7 @@ class MiscController {
         await libraryItem.media.update({
           genres: libraryItem.media.genres
         })
-        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
       }
@@ -423,7 +423,7 @@ class MiscController {
       await libraryItem.media.update({
         genres: libraryItem.media.genres
       })
-      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
     }

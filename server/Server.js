@@ -114,10 +114,9 @@ class Server {
 
     await this.backupManager.init()
     await this.logManager.init()
-    await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()
 
-    const libraries = await Database.models.library.getAllOldLibraries()
+    const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
 
     if (Database.serverSettings.scannerDisableWatcher) {
@@ -254,7 +253,7 @@ class Server {
    */
   async cleanUserData() {
     // Get all media progress without an associated media item
-    const mediaProgressToRemove = await Database.models.mediaProgress.findAll({
+    const mediaProgressToRemove = await Database.mediaProgressModel.findAll({
       where: {
         '$podcastEpisode.id$': null,
         '$book.id$': null
@@ -262,18 +261,18 @@ class Server {
       attributes: ['id'],
       include: [
         {
-          model: Database.models.book,
+          model: Database.bookModel,
           attributes: ['id']
         },
         {
-          model: Database.models.podcastEpisode,
+          model: Database.podcastEpisodeModel,
           attributes: ['id']
         }
       ]
     })
     if (mediaProgressToRemove.length) {
       // Remove media progress
-      const mediaProgressRemoved = await Database.models.mediaProgress.destroy({
+      const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
         where: {
           id: {
             [Sequelize.Op.in]: mediaProgressToRemove.map(mp => mp.id)
@@ -286,7 +285,7 @@ class Server {
     }
 
     // Remove series from hide from continue listening that no longer exist
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     for (const _user of users) {
       let hasUpdated = false
       if (_user.seriesHideFromContinueListening.length) {

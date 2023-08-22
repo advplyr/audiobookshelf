@@ -17,7 +17,7 @@ class UserController {
     const includes = (req.query.include || '').split(',').map(i => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-    const allUsers = await Database.models.user.getOldUsers()
+    const allUsers = await Database.userModel.getOldUsers()
     const users = allUsers.map(u => u.toJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
@@ -32,20 +32,67 @@ class UserController {
     })
   }
 
+  /**
+   * GET: /api/users/:id
+   * Get a single user toJSONForBrowser
+   * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
+   * 
+   * @param {import("express").Request} req 
+   * @param {import("express").Response} res 
+   */
   async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error('User other than admin attempting to get user', req.user)
       return res.sendStatus(403)
     }
 
-    res.json(this.userJsonWithItemProgressDetails(req.reqUser, !req.user.isRoot))
+    // Get user media progress with associated mediaItem
+    const mediaProgresses = await Database.mediaProgressModel.findAll({
+      where: {
+        userId: req.reqUser.id
+      },
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['id', 'title', 'coverPath', 'updatedAt']
+        },
+        {
+          model: Database.podcastEpisodeModel,
+          attributes: ['id', 'title'],
+          include: {
+            model: Database.podcastModel,
+            attributes: ['id', 'title', 'coverPath', 'updatedAt']
+          }
+        }
+      ]
+    })
+
+    const oldMediaProgresses = mediaProgresses.map(mp => {
+      const oldMediaProgress = mp.getOldMediaProgress()
+      oldMediaProgress.displayTitle = mp.mediaItem?.title
+      if (mp.mediaItem?.podcast) {
+        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
+        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
+      } else if (mp.mediaItem) {
+        oldMediaProgress.coverPath = mp.mediaItem.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
+      }
+      return oldMediaProgress
+    })
+
+    const userJson = req.reqUser.toJSONForBrowser(!req.user.isRoot)
+
+    userJson.mediaProgress = oldMediaProgresses
+
+    res.json(userJson)
   }
 
   async create(req, res) {
     const account = req.body
     const username = account.username
 
-    const usernameExists = await Database.models.user.getUserByUsername(username)
+    const usernameExists = await Database.userModel.getUserByUsername(username)
     if (usernameExists) {
       return res.status(500).send('Username already taken')
     }
@@ -80,7 +127,7 @@ class UserController {
     var shouldUpdateToken = false
 
     if (account.username !== undefined && account.username !== user.username) {
-      const usernameExists = await Database.models.user.getUserByUsername(account.username)
+      const usernameExists = await Database.userModel.getUserByUsername(account.username)
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -122,7 +169,7 @@ class UserController {
     // Todo: check if user is logged in and cancel streams
 
     // Remove user playlists
-    const userPlaylists = await Database.models.playlist.findAll({
+    const userPlaylists = await Database.playlistModel.findAll({
       where: {
         userId: user.id
       }
@@ -186,7 +233,7 @@ class UserController {
     }
 
     if (req.params.id) {
-      req.reqUser = await Database.models.user.getUserById(req.params.id)
+      req.reqUser = await Database.userModel.getUserById(req.params.id)
       if (!req.reqUser) {
         return res.sendStatus(404)
       }
