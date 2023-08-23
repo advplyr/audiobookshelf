@@ -318,6 +318,7 @@ export default {
       if (this.orderBy === 'media.duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
       if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
       if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} Episodes`
+      if (this.orderBy === 'media.metadata.publishedYear' && this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
       return null
     },
     episodeProgress() {
