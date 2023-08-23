@@ -8,6 +8,7 @@ services:
       - 13378:80
     volumes:
       - ./audiobooks:/audiobooks
+      - ./podcasts:/podcasts
       - ./metadata:/metadata
       - ./config:/config
     restart: unless-stopped
