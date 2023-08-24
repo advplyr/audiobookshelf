@@ -4,7 +4,7 @@ class Podcast extends Model {
   constructor(values, options) {
     super(values, options)
 
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.id
     /** @type {string} */
     this.title
@@ -42,9 +42,9 @@ class Podcast extends Model {
     this.maxEpisodesToKeep
     /** @type {string} */
     this.coverPath
-    /** @type {Object} */
+    /** @type {string[]} */
     this.tags
-    /** @type {Object} */
+    /** @type {string[]} */
     this.genres
     /** @type {Date} */
     this.createdAt

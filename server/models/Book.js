@@ -1,11 +1,28 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 
+/**
+ * @typedef EBookFileObject
+ * @property {string} ino
+ * @property {string} ebookFormat
+ * @property {number} addedAt
+ * @property {number} updatedAt
+ * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
+ */
+
+/**
+ * @typedef ChapterObject
+ * @property {number} id
+ * @property {number} start
+ * @property {number} end
+ * @property {string} title
+ */
+
 class Book extends Model {
   constructor(values, options) {
     super(values, options)
 
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.id
     /** @type {string} */
     this.title
@@ -33,17 +50,17 @@ class Book extends Model {
     this.coverPath
     /** @type {number} */
     this.duration
-    /** @type {Object} */
+    /** @type {string[]} */
     this.narrators
     /** @type {Object} */
     this.audioFiles
-    /** @type {Object} */
+    /** @type {EBookFileObject} */
     this.ebookFile
-    /** @type {Object} */
+    /** @type {ChapterObject[]} */
     this.chapters
-    /** @type {Object} */
+    /** @type {string[]} */
     this.tags
-    /** @type {Object} */
+    /** @type {string[]} */
     this.genres
     /** @type {Date} */
     this.updatedAt

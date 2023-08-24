@@ -1,11 +1,19 @@
 const { DataTypes, Model } = require('sequelize')
 const oldPodcastEpisode = require('../objects/entities/PodcastEpisode')
 
+/**
+ * @typedef ChapterObject
+ * @property {number} id
+ * @property {number} start
+ * @property {number} end
+ * @property {string} title
+ */
+
 class PodcastEpisode extends Model {
   constructor(values, options) {
     super(values, options)
 
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.id
     /** @type {number} */
     this.index
@@ -33,11 +41,11 @@ class PodcastEpisode extends Model {
     this.publishedAt
     /** @type {Object} */
     this.audioFile
-    /** @type {Object} */
+    /** @type {ChapterObject[]} */
     this.chapters
     /** @type {Object} */
     this.extraData
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.podcastId
     /** @type {Date} */
     this.createdAt

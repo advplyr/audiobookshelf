@@ -4,12 +4,20 @@ const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const { areEquivalent } = require('../utils/index')
 
+/**
+ * @typedef LibraryFileObject
+ * @property {string} ino
+ * @property {boolean} isSupplementary
+ * @property {number} addedAt
+ * @property {number} updatedAt
+ * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
+ */
 
 class LibraryItem extends Model {
   constructor(values, options) {
     super(values, options)
 
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.id
     /** @type {string} */
     this.ino
@@ -17,7 +25,7 @@ class LibraryItem extends Model {
     this.path
     /** @type {string} */
     this.relPath
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.mediaId
     /** @type {string} */
     this.mediaType
@@ -39,13 +47,13 @@ class LibraryItem extends Model {
     this.lastScan
     /** @type {string} */
     this.lastScanVersion
-    /** @type {Object} */
+    /** @type {LibraryFileObject[]} */
     this.libraryFiles
     /** @type {Object} */
     this.extraData
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.libraryId
-    /** @type {UUIDV4} */
+    /** @type {string} */
     this.libraryFolderId
     /** @type {Date} */
     this.createdAt
