@@ -60,13 +60,13 @@ install_ffmpeg() {
   fi
 
   $WGET
-  tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1
+  tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1 --no-same-owner
   rm ffmpeg-git-amd64-static.tar.xz
 
   # Temp downloading tone library to the ffmpeg dir
   echo "Getting tone.."
   $WGET_TONE
-  tar xvf tone-0.1.5-linux-x64.tar.gz --strip-components=1
+  tar xvf tone-0.1.5-linux-x64.tar.gz --strip-components=1 --no-same-owner
   rm tone-0.1.5-linux-x64.tar.gz
 
   echo "Good to go on Ffmpeg (& tone)... hopefully"
