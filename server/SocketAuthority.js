@@ -34,9 +34,12 @@ class SocketAuthority {
     return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
   }
 
-  // Emits event to all authorized clients
-  //  optional filter function to only send event to specific users
-  //  TODO: validate that filter is actually a function
+  /**
+   * Emits event to all authorized clients
+   * @param {string} evt 
+   * @param {any} data 
+   * @param {Function} [filter] optional filter function to only send event to specific users
+   */
   emitter(evt, data, filter = null) {
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {

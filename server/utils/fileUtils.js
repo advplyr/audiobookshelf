@@ -92,6 +92,12 @@ function bytesPretty(bytes, decimals = 0) {
 }
 module.exports.bytesPretty = bytesPretty
 
+/**
+ * Get array of files inside dir
+ * @param {string} path 
+ * @param {string} [relPathToReplace] 
+ * @returns {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]}
+ */
 async function recurseFiles(path, relPathToReplace = null) {
   path = filePathToPOSIX(path)
   if (!path.endsWith('/')) path = path + '/'

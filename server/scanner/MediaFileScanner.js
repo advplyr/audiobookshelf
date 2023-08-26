@@ -4,13 +4,18 @@ const AudioFile = require('../objects/files/AudioFile')
 const VideoFile = require('../objects/files/VideoFile')
 
 const prober = require('../utils/prober')
-const toneProber = require('../utils/toneProber')
 const Logger = require('../Logger')
 const { LogLevel } = require('../utils/constants')
 
 class MediaFileScanner {
   constructor() { }
 
+  /**
+   * Get track and disc number from audio filename
+   * @param {{title:string, subtitle:string, series:string, sequence:string, publishedYear:string, narrators:string}} mediaMetadataFromScan 
+   * @param {import('../objects/files/LibraryFile')} audioLibraryFile 
+   * @returns {{trackNumber:number, discNumber:number}}
+   */
   getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, audioLibraryFile) {
     const { title, author, series, publishedYear } = mediaMetadataFromScan
     const { filename, path } = audioLibraryFile.metadata
@@ -102,7 +107,12 @@ class MediaFileScanner {
     }
   }
 
-  // Returns array of { MediaFile, elapsed, averageScanDuration } from audio file scan objects
+  /**
+   * Returns array of { MediaFile, elapsed, averageScanDuration } from audio file scan objects
+   * @param {import('../objects/LibraryItem')} libraryItem 
+   * @param {import('../objects/files/LibraryFile')[]} mediaLibraryFiles 
+   * @returns {Promise<object>}
+   */
   async executeMediaFileScans(libraryItem, mediaLibraryFiles) {
     const mediaType = libraryItem.mediaType
 
@@ -206,11 +216,10 @@ class MediaFileScanner {
 
   /**
   * Scans media files for a library item and adds them as audio tracks and sets library item metadata
-  * @async
-  * @param {Array<LibraryFile>} mediaLibraryFiles - Media files for this library item
-  * @param {LibraryItem} libraryItem
-  * @param {LibraryScan} [libraryScan=null] - Optional when doing a library scan to use LibraryScan config/logs
-  * @return {Promise<Boolean>} True if any updates were made
+  * @param {import('../objects/files/LibraryFile')[]} mediaLibraryFiles
+  * @param {import('../objects/LibraryItem')} libraryItem
+  * @param {import('./LibraryScan')} [libraryScan=null] - Optional when doing a library scan to use LibraryScan config/logs
+  * @return {Promise<boolean>} True if any updates were made
   */
   async scanMediaFiles(mediaLibraryFiles, libraryItem, libraryScan = null) {
     const preferAudioMetadata = libraryScan ? !!libraryScan.preferAudioMetadata : !!global.ServerSettings.scannerPreferAudioMetadata

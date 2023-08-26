@@ -695,7 +695,7 @@ class Scanner {
         Logger.debug(`[Scanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
         itemGroupingResults[itemDir] = await this.scanLibraryItem(library, folder, existingLibraryItem)
         continue
-      } else if (library.settings.audiobooksOnly && !fileUpdateGroup[itemDir].some(checkFilepathIsAudioFile)) {
+      } else if (library.settings.audiobooksOnly && !fileUpdateGroup[itemDir].some?.(checkFilepathIsAudioFile)) {
         Logger.debug(`[Scanner] Folder update for relative path "${itemDir}" has no audio files`)
         continue
       }
