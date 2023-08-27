@@ -64,7 +64,7 @@ class AudioFile {
       channelLayout: this.channelLayout,
       chapters: this.chapters,
       embeddedCoverArt: this.embeddedCoverArt,
-      metaTags: this.metaTags ? this.metaTags.toJSON() : {},
+      metaTags: this.metaTags?.toJSON() || {},
       mimeType: this.mimeType
     }
   }
@@ -163,11 +163,16 @@ class AudioFile {
     return new AudioFile(this.toJSON())
   }
 
+  /**
+   * 
+   * @param {AudioFile} scannedAudioFile 
+   * @returns {boolean} true if updates were made
+   */
   updateFromScan(scannedAudioFile) {
     let hasUpdated = false
 
     const newjson = scannedAudioFile.toJSON()
-    const ignoreKeys = ['manuallyVerified', 'exclude', 'addedAt', 'updatedAt']
+    const ignoreKeys = ['manuallyVerified', 'ctimeMs', 'addedAt', 'updatedAt']
 
     for (const key in newjson) {
       if (key === 'metadata') {

@@ -977,6 +977,8 @@ class LibraryController {
     }
     res.sendStatus(200)
     await this.scanner.scan(req.library, options)
+    // TODO: New library scanner
+    // await this.libraryScanner.scan(req.library, options)
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')
   }

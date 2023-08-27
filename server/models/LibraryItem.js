@@ -3,6 +3,8 @@ const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const { areEquivalent } = require('../utils/index')
+const Book = require('./Book')
+const Podcast = require('./Podcast')
 
 /**
  * @typedef LibraryFileObject
@@ -791,6 +793,11 @@ class LibraryItem extends Model {
     return this.getOldLibraryItem(libraryItem)
   }
 
+  /**
+   * 
+   * @param {import('sequelize').FindOptions} options 
+   * @returns {Promise<Book|Podcast>}
+   */
   getMedia(options) {
     if (!this.mediaType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`

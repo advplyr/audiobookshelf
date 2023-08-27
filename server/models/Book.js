@@ -18,6 +18,31 @@ const Logger = require('../Logger')
  * @property {string} title
  */
 
+/**
+ * @typedef AudioFileObject
+ * @property {number} index
+ * @property {string} ino
+ * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
+ * @property {number} addedAt
+ * @property {number} updatedAt
+ * @property {number} trackNumFromMeta
+ * @property {number} discNumFromMeta
+ * @property {number} trackNumFromFilename
+ * @property {number} discNumFromFilename
+ * @property {boolean} manuallyVerified
+ * @property {string} format
+ * @property {number} duration
+ * @property {number} bitRate
+ * @property {string} language
+ * @property {string} codec
+ * @property {string} timeBase
+ * @property {number} channels
+ * @property {string} channelLayout
+ * @property {ChapterObject[]} chapters
+ * @property {Object} metaTags
+ * @property {string} mimeType
+ */
+
 class Book extends Model {
   constructor(values, options) {
     super(values, options)
@@ -52,7 +77,7 @@ class Book extends Model {
     this.duration
     /** @type {string[]} */
     this.narrators
-    /** @type {Object} */
+    /** @type {AudioFileObject[]} */
     this.audioFiles
     /** @type {EBookFileObject} */
     this.ebookFile

@@ -7,7 +7,12 @@ const fs = require('../libs/fsExtra')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const { ScanResult, LogLevel } = require('../utils/constants')
+const AudioFileScanner = require('./AudioFileScanner')
+const ScanOptions = require('./ScanOptions')
+const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
+const AudioFile = require('../objects/files/AudioFile')
+const Book = require('../models/Book')
 
 class LibraryScanner {
   constructor(coverManager, taskManager) {
@@ -102,7 +107,7 @@ class LibraryScanner {
       where: {
         libraryId: libraryScan.libraryId
       },
-      attributes: ['id', 'mediaId', 'mediaType', 'path', 'relPath', 'ino', 'isMissing', 'mtime', 'ctime', 'birthtime', 'libraryFiles', 'libraryFolderId']
+      attributes: ['id', 'mediaId', 'mediaType', 'path', 'relPath', 'ino', 'isMissing', 'isFile', 'mtime', 'ctime', 'birthtime', 'libraryFiles', 'libraryFolderId', 'size']
     })
 
     const libraryItemIdsMissing = []
@@ -129,8 +134,8 @@ class LibraryScanner {
         }
       } else {
         await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
-        if (libraryItemData.hasChanges) {
-          await this.rescanLibraryItem(existingLibraryItem, libraryItemData)
+        if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
+          await this.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan)
         }
       }
     }
@@ -222,9 +227,92 @@ class LibraryScanner {
    * 
    * @param {import('../models/LibraryItem')} existingLibraryItem 
    * @param {LibraryItemScanData} libraryItemData 
+   * @param {LibraryScan} libraryScan
    */
-  async rescanLibraryItem(existingLibraryItem, libraryItemData) {
+  async rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan) {
 
+    if (existingLibraryItem.mediaType === 'book') {
+      /** @type {Book} */
+      const media = await existingLibraryItem.getMedia({
+        include: [
+          {
+            model: Database.authorModel,
+            through: {
+              attributes: ['createdAt']
+            }
+          },
+          {
+            model: Database.seriesModel,
+            through: {
+              attributes: ['sequence', 'createdAt']
+            }
+          }
+        ]
+      })
+
+      let hasMediaChanges = libraryItemData.hasAudioFileChanges
+      if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length) {
+        // Filter out audio files that were removed
+        media.audioFiles = media.audioFiles.filter(af => libraryItemData.checkAudioFileRemoved(af))
+
+        // Update audio files that were modified
+        if (libraryItemData.audioLibraryFilesModified.length) {
+          let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified)
+          media.audioFiles = media.audioFiles.map((audioFileObj) => {
+            let matchedScannedAudioFile = scannedAudioFiles.find(saf => saf.metadata.path === audioFileObj.metadata.path)
+            if (!matchedScannedAudioFile) {
+              matchedScannedAudioFile = scannedAudioFiles.find(saf => saf.ino === audioFileObj.ino)
+            }
+
+            if (matchedScannedAudioFile) {
+              scannedAudioFiles = scannedAudioFiles.filter(saf => saf !== matchedScannedAudioFile)
+              const audioFile = new AudioFile(audioFileObj)
+              audioFile.updateFromScan(matchedScannedAudioFile)
+              return audioFile.toJSON()
+            }
+            return audioFileObj
+          })
+          // Modified audio files that were not found on the book
+          if (scannedAudioFiles.length) {
+            media.audioFiles.push(...scannedAudioFiles)
+          }
+        }
+
+        // Add new audio files scanned in
+        if (libraryItemData.audioLibraryFilesAdded.length) {
+          const scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesAdded)
+          media.audioFiles.push(...scannedAudioFiles)
+        }
+
+        // Add audio library files that are not already set on the book (safety check)
+        let audioLibraryFilesToAdd = []
+        for (const audioLibraryFile of libraryItemData.audioLibraryFiles) {
+          if (!media.audioFiles.some(af => af.ino === audioLibraryFile.ino)) {
+            libraryScan.addLog(LogLevel.DEBUG, `Existing audio library file "${audioLibraryFile.metadata.relPath}" was not set on book "${media.title}" so setting it now`)
+            audioLibraryFilesToAdd.push(audioLibraryFile)
+          }
+        }
+        if (audioLibraryFilesToAdd.length) {
+          const scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, audioLibraryFilesToAdd)
+          media.audioFiles.push(...scannedAudioFiles)
+        }
+
+        media.audioFiles = AudioFileScanner.runSmartTrackOrder(media, media.audioFiles)
+
+        media.duration = 0
+        media.audioFiles.forEach((af) => {
+          if (!isNaN(af.duration)) {
+            media.duration += af.duration
+          }
+        })
+
+        media.changed('audioFiles', true)
+      }
+
+      if (hasMediaChanges) {
+        await media.save()
+      }
+    }
   }
 }
 module.exports = LibraryScanner

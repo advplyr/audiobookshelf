@@ -1,6 +1,7 @@
 const packageJson = require('../../package.json')
 const { LogLevel } = require('../utils/constants')
 const LibraryItem = require('../models/LibraryItem')
+const globals = require('../utils/globals')
 
 class LibraryItemScanData {
   constructor(data) {
@@ -33,11 +34,41 @@ class LibraryItemScanData {
     /** @type {boolean} */
     this.hasPathChange
     /** @type {LibraryItem.LibraryFileObject[]} */
-    this.libraryFilesRemoved
+    this.libraryFilesRemoved = []
     /** @type {LibraryItem.LibraryFileObject[]} */
-    this.libraryFilesAdded
+    this.libraryFilesAdded = []
     /** @type {LibraryItem.LibraryFileObject[]} */
-    this.libraryFilesModified
+    this.libraryFilesModified = []
+  }
+
+  /** @type {boolean} */
+  get hasLibraryFileChanges() {
+    return this.libraryFilesRemoved.length + this.libraryFilesModified.length + this.libraryFilesAdded.length
+  }
+
+  /** @type {boolean} */
+  get hasAudioFileChanges() {
+    return this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get audioLibraryFilesModified() {
+    return this.libraryFilesModified.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get audioLibraryFilesRemoved() {
+    return this.libraryFilesRemoved.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get audioLibraryFilesAdded() {
+    return this.libraryFilesAdded.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get audioLibraryFiles() {
+    return this.libraryFiles.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /**
@@ -46,7 +77,7 @@ class LibraryItemScanData {
    * @param {import('./LibraryScan')} libraryScan
    */
   async checkLibraryItemData(existingLibraryItem, libraryScan) {
-    const keysToCompare = ['libraryFolderId', 'ino', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'path', 'relPath', 'isFile']
+    const keysToCompare = ['libraryFolderId', 'ino', 'path', 'relPath', 'isFile']
     this.hasChanges = false
     this.hasPathChange = false
     for (const key of keysToCompare) {
@@ -59,6 +90,23 @@ class LibraryItemScanData {
           this.hasPathChange = true
         }
       }
+    }
+
+    // Check mtime, ctime and birthtime
+    if (existingLibraryItem.mtime.valueOf() !== this.mtimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "mtime" changed from "${existingLibraryItem.mtime.valueOf()}" to "${this.mtimeMs}"`)
+      existingLibraryItem.mtime = this.mtimeMs
+      this.hasChanges = true
+    }
+    if (existingLibraryItem.birthtime.valueOf() !== this.birthtimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "birthtime" changed from "${existingLibraryItem.birthtime.valueOf()}" to "${this.birthtimeMs}"`)
+      existingLibraryItem.birthtime = this.birthtimeMs
+      this.hasChanges = true
+    }
+    if (existingLibraryItem.ctime.valueOf() !== this.ctimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "ctime" changed from "${existingLibraryItem.ctime.valueOf()}" to "${this.ctimeMs}"`)
+      existingLibraryItem.ctime = this.ctimeMs
+      this.hasChanges = true
     }
 
     this.libraryFilesRemoved = []
@@ -98,15 +146,24 @@ class LibraryItemScanData {
       }
     }
 
+    this.libraryFilesAdded = libraryFilesAdded
+
     if (this.hasChanges) {
+      existingLibraryItem.size = 0
+      existingLibraryItem.libraryFiles.forEach((lf) => existingLibraryItem.size += lf.metadata.size)
+
       existingLibraryItem.lastScan = Date.now()
       existingLibraryItem.lastScanVersion = packageJson.version
+
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.path}" changed: [${existingLibraryItem.changed()?.join(',') || ''}]`)
+
+      if (this.hasLibraryFileChanges) {
+        existingLibraryItem.changed('libraryFiles', true)
+      }
       await existingLibraryItem.save()
     } else {
       libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.path}" is up-to-date`)
     }
-
-    this.libraryFilesAdded = libraryFilesAdded
   }
 
   /**
@@ -126,6 +183,10 @@ class LibraryItemScanData {
     }
 
     for (const key in existingLibraryFile.metadata) {
+      if (existingLibraryFile.metadata.relPath === 'metadata.json' || existingLibraryFile.metadata.relPath === 'metadata.abs') {
+        if (key === 'mtimeMs' || key === 'size') continue
+      }
+
       if (existingLibraryFile.metadata[key] !== scannedLibraryFile.metadata[key]) {
         if (key !== 'path' && key !== 'relPath') {
           libraryScan.addLog(LogLevel.DEBUG, `Library file "${existingLibraryFile.metadata.path}" for library item "${libraryItemPath}" key "${key}" changed from "${existingLibraryFile.metadata[key]}" to "${scannedLibraryFile.metadata[key]}"`)
@@ -142,6 +203,21 @@ class LibraryItemScanData {
     }
 
     return hasChanges
+  }
+
+  /**
+   * Check if existing audio file on Book was removed
+   * @param {import('../models/Book').AudioFileObject} existingAudioFile 
+   * @returns {boolean} true if audio file was removed
+   */
+  checkAudioFileRemoved(existingAudioFile) {
+    if (!this.audioLibraryFilesRemoved.length) return false
+    // First check exact path
+    if (this.audioLibraryFilesRemoved.some(af => af.metadata.path === existingAudioFile.metadata.path)) {
+      return true
+    }
+    // Fallback to check inode value
+    return this.audioLibraryFilesRemoved.some(af => af.ino === existingAudioFile.ino)
   }
 }
 module.exports = LibraryItemScanData

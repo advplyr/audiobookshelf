@@ -16,10 +16,9 @@ const Logger = require('./Logger')
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./scanner/Scanner')
+const LibraryScanner = require('./scanner/LibraryScanner')
 const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
-
-const routes = require('./routes/index')
 
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
@@ -78,6 +77,7 @@ class Server {
     this.rssFeedManager = new RssFeedManager()
 
     this.scanner = new Scanner(this.coverManager, this.taskManager)
+    this.libraryScanner = new LibraryScanner(this.coverManager, this.taskManager)
     this.cronManager = new CronManager(this.scanner, this.podcastManager)
 
     // Routers

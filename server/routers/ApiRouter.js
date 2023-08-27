@@ -40,6 +40,7 @@ class ApiRouter {
   constructor(Server) {
     this.auth = Server.auth
     this.scanner = Server.scanner
+    this.libraryScanner = Server.libraryScanner
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
     this.backupManager = Server.backupManager
