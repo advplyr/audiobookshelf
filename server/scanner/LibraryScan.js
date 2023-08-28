@@ -13,6 +13,7 @@ class LibraryScan {
   constructor() {
     this.id = null
     this.type = null
+    /** @type {import('../objects/Library')} */
     this.library = null
     this.verbose = false
 
@@ -117,7 +118,7 @@ class LibraryScan {
     }
 
     if (this.verbose) {
-      Logger.debug(`[LibraryScan] "${this.libraryName}":`, args)
+      Logger.debug(`[LibraryScan] "${this.libraryName}":`, ...args)
     }
     this.logs.push(logObj)
   }

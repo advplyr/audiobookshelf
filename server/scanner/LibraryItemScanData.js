@@ -71,6 +71,16 @@ class LibraryItemScanData {
     return this.libraryFiles.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get imageLibraryFiles() {
+    return this.libraryFiles.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get ebookLibraryFiles() {
+    return this.libraryFiles.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
   /**
    * 
    * @param {LibraryItem} existingLibraryItem 
@@ -124,7 +134,7 @@ class LibraryItemScanData {
       }
 
       if (!matchingLibraryFile) { // Library file removed
-        libraryScan.addLog(LogLevel.INFO, `Library file "${existingLibraryFile.metadata.path}" was removed from library item "${existingLibraryItem.path}"`)
+        libraryScan.addLog(LogLevel.INFO, `Library file "${existingLibraryFile.metadata.path}" was removed from library item "${existingLibraryItem.relPath}"`)
         this.libraryFilesRemoved.push(existingLibraryFile)
         existingLibraryItem.libraryFiles = existingLibraryItem.libraryFiles.filter(lf => lf !== existingLibraryFile)
         this.hasChanges = true
@@ -141,7 +151,11 @@ class LibraryItemScanData {
     if (libraryFilesAdded.length) {
       this.hasChanges = true
       for (const libraryFile of libraryFilesAdded) {
-        libraryScan.addLog(LogLevel.INFO, `New library file found with path "${libraryFile.metadata.path}" for library item "${existingLibraryItem.path}"`)
+        libraryScan.addLog(LogLevel.INFO, `New library file found with path "${libraryFile.metadata.path}" for library item "${existingLibraryItem.relPath}"`)
+        if (libraryFile.isEBookFile) {
+          // Set all new ebook files as supplementary
+          libraryFile.isSupplementary = true
+        }
         existingLibraryItem.libraryFiles.push(libraryFile.toJSON())
       }
     }
@@ -155,14 +169,15 @@ class LibraryItemScanData {
       existingLibraryItem.lastScan = Date.now()
       existingLibraryItem.lastScanVersion = packageJson.version
 
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.path}" changed: [${existingLibraryItem.changed()?.join(',') || ''}]`)
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" changed: [${existingLibraryItem.changed()?.join(',') || ''}]`)
+      libraryScan.resultsUpdated++
 
       if (this.hasLibraryFileChanges) {
         existingLibraryItem.changed('libraryFiles', true)
       }
       await existingLibraryItem.save()
     } else {
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.path}" is up-to-date`)
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
     }
   }
 
@@ -218,6 +233,21 @@ class LibraryItemScanData {
     }
     // Fallback to check inode value
     return this.audioLibraryFilesRemoved.some(af => af.ino === existingAudioFile.ino)
+  }
+
+  /**
+   * Check if existing ebook file on Book was removed
+   * @param {import('../models/Book').EBookFileObject} ebookFile 
+   * @returns {boolean} true if ebook file was removed
+   */
+  checkEbookFileRemoved(ebookFile) {
+    if (!this.ebookLibraryFiles.length) return true
+
+    if (this.ebookLibraryFiles.some(lf => lf.metadata.path === ebookFile.metadata.path)) {
+      return false
+    }
+
+    return !this.ebookLibraryFiles.some(lf => lf.ino === ebookFile.ino)
   }
 }
 module.exports = LibraryItemScanData

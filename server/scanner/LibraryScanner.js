@@ -7,6 +7,7 @@ const fs = require('../libs/fsExtra')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const { ScanResult, LogLevel } = require('../utils/constants')
+const globals = require('../utils/globals')
 const AudioFileScanner = require('./AudioFileScanner')
 const ScanOptions = require('./ScanOptions')
 const LibraryScan = require('./LibraryScan')
@@ -128,11 +129,13 @@ class LibraryScanner {
           libraryScan.addLog(LogLevel.INFO, `Library item "${existingLibraryItem.relPath}" folder exists but has no episodes`)
         } else {
           libraryScan.addLog(LogLevel.WARN, `Library Item "${existingLibraryItem.path}" (inode: ${existingLibraryItem.ino}) is missing`)
+          libraryScan.resultsMissing++
           if (!existingLibraryItem.isMissing) {
             libraryItemIdsMissing.push(existingLibraryItem.id)
           }
         }
       } else {
+        libraryItemDataFound = libraryItemDataFound.filter(lidf => lidf !== libraryItemData)
         await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
         if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
           await this.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan)
@@ -152,6 +155,11 @@ class LibraryScanner {
           id: libraryItemIdsMissing
         }
       })
+    }
+
+    // Add new library items
+    if (libraryItemDataFound.length) {
+
     }
   }
 
@@ -230,7 +238,6 @@ class LibraryScanner {
    * @param {LibraryScan} libraryScan
    */
   async rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan) {
-
     if (existingLibraryItem.mediaType === 'book') {
       /** @type {Book} */
       const media = await existingLibraryItem.getMedia({
@@ -309,9 +316,76 @@ class LibraryScanner {
         media.changed('audioFiles', true)
       }
 
+      // Check if cover was removed
+      if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath)) {
+        media.coverPath = null
+        hasMediaChanges = true
+      }
+
+      // Check if cover is not set and image files were found
+      if (!media.coverPath && libraryItemData.imageLibraryFiles.length) {
+        // Prefer using a cover image with the name "cover" otherwise use the first image
+        const coverMatch = libraryItemData.imageLibraryFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
+        media.coverPath = coverMatch?.metadata.path || libraryItemData.imageLibraryFiles[0].metadata.path
+        hasMediaChanges = true
+      }
+
+      // Check if ebook was removed
+      if (media.ebookFile && (libraryScan.library.settings.audiobooksOnly || libraryItemData.checkEbookFileRemoved(media.ebookFile))) {
+        media.ebookFile = null
+        hasMediaChanges = true
+      }
+
+      // Check if ebook is not set and ebooks were found
+      if (!media.ebookFile && !libraryScan.library.settings.audiobooksOnly && libraryItemData.ebookLibraryFiles.length) {
+        // Prefer to use an epub ebook then fallback to the first ebook found
+        let ebookLibraryFile = libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub')
+        if (!ebookLibraryFile) ebookLibraryFile = libraryItemData.ebookLibraryFiles[0]
+        // Ebook file is the same as library file except for additional `ebookFormat`
+        ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
+        media.ebookFile = ebookLibraryFile
+        media.changed('ebookFile', true)
+        hasMediaChanges = true
+      }
+
+      // Check/update the isSupplementary flag on libraryFiles for the LibraryItem
+      let libraryItemUpdated = false
+      for (const libraryFile of existingLibraryItem.libraryFiles) {
+        if (globals.SupportedEbookTypes.includes(libraryFile.metadata.ext.slice(1).toLowerCase())) {
+          if (media.ebookFile && libraryFile.ino === media.ebookFile.ino) {
+            if (libraryFile.isSupplementary !== false) {
+              libraryFile.isSupplementary = false
+              libraryItemUpdated = true
+            }
+          } else if (libraryFile.isSupplementary !== true) {
+            libraryFile.isSupplementary = true
+            libraryItemUpdated = true
+          }
+        }
+      }
+      if (libraryItemUpdated) {
+        existingLibraryItem.changed('libraryFiles', true)
+        await existingLibraryItem.save()
+      }
+
+      // TODO: Update chapters & metadata
+
       if (hasMediaChanges) {
         await media.save()
       }
+    }
+  }
+
+  /**
+   * 
+   * @param {LibraryItemScanData} libraryItemData 
+   * @param {LibraryScan} libraryScan
+   */
+  async scanNewLibraryItem(libraryItemData, libraryScan) {
+
+    if (libraryScan.libraryMediaType === 'book') {
+      let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryScan.libraryMediaType, libraryItemData, libraryItemData.audioLibraryFiles)
+      // TODO: Create new book
     }
   }
 }

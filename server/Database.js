@@ -25,8 +25,11 @@ class Database {
     // Cached library filter data
     this.libraryFilterData = {}
 
+    /** @type {import('./objects/settings/ServerSettings')} */
     this.serverSettings = null
+    /** @type {import('./objects/settings/NotificationSettings')} */
     this.notificationSettings = null
+    /** @type {import('./objects/settings/EmailSettings')} */
     this.emailSettings = null
   }
 
