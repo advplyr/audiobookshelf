@@ -303,8 +303,8 @@ export default {
     },
     parseImageFilename(filename) {
       var basename = Path.basename(filename, Path.extname(filename))
-      var numbersinpath = basename.match(/\d{1,5}/g)
-      if (!numbersinpath || !numbersinpath.length) {
+      var numbersinpath = basename.match(/\d+/g)
+      if (!numbersinpath?.length) {
         return {
           index: -1,
           filename
