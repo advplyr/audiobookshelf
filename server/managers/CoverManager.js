@@ -6,7 +6,7 @@ const imageType = require('../libs/imageType')
 const filePerms = require('../utils/filePerms')
 
 const globals = require('../utils/globals')
-const { downloadFile, filePathToPOSIX } = require('../utils/fileUtils')
+const { downloadFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 
 class CoverManager {
@@ -180,6 +180,7 @@ class CoverManager {
         updated: false
       }
     }
+
     // Cover path does not exist
     if (!await fs.pathExists(coverPath)) {
       Logger.error(`[CoverManager] validate cover path does not exist "${coverPath}"`)
@@ -187,8 +188,17 @@ class CoverManager {
         error: 'Cover path does not exist'
       }
     }
+
+    // Cover path is not a file
+    if (!await checkPathIsFile(coverPath)) {
+      Logger.error(`[CoverManager] validate cover path is not a file "${coverPath}"`)
+      return {
+        error: 'Cover path is not a file'
+      }
+    }
+
     // Check valid image at path
-    var imgtype = await this.checkFileIsValidImage(coverPath, true)
+    var imgtype = await this.checkFileIsValidImage(coverPath, false)
     if (imgtype.error) {
       return imgtype
     }

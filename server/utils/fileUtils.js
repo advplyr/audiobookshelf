@@ -59,6 +59,20 @@ async function getFileSize(path) {
 }
 module.exports.getFileSize = getFileSize
 
+/**
+ * 
+ * @param {string} filepath 
+ * @returns {boolean}
+ */
+async function checkPathIsFile(filepath) {
+  try {
+    const stat = await fs.stat(filepath)
+    return stat.isFile()
+  } catch (err) {
+    return false
+  }
+}
+module.exports.checkPathIsFile = checkPathIsFile
 
 function getIno(path) {
   return fs.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {

@@ -283,9 +283,8 @@ export default {
       }
       if (success) {
         this.$toast.success('Update Successful')
-        // this.$emit('close')
-      } else {
-        this.imageUrl = this.media.coverPath || ''
+      } else if (this.media.coverPath) {
+        this.imageUrl = this.media.coverPath
       }
       this.isProcessing = false
     },
