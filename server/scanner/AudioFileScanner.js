@@ -41,11 +41,13 @@ class AudioFileScanner {
 
   /**
    * Order audio files by track/disc number
-   * @param {import('../models/Book')} book 
+   * @param {string} libraryItemRelPath 
    * @param {import('../models/Book').AudioFileObject[]} audioFiles 
    * @returns {import('../models/Book').AudioFileObject[]}
    */
-  runSmartTrackOrder(book, audioFiles) {
+  runSmartTrackOrder(libraryItemRelPath, audioFiles) {
+    if (!audioFiles.length) return []
+
     let discsFromFilename = []
     let tracksFromFilename = []
     let discsFromMeta = []
@@ -79,14 +81,14 @@ class AudioFileScanner {
     }
 
     if (discKey !== null) {
-      Logger.debug(`[AudioFileScanner] Smart track order for "${book.title}" using disc key ${discKey} and track key ${trackKey}`)
+      Logger.debug(`[AudioFileScanner] Smart track order for "${libraryItemRelPath}" using disc key ${discKey} and track key ${trackKey}`)
       audioFiles.sort((a, b) => {
         let Dx = a[discKey] - b[discKey]
         if (Dx === 0) Dx = a[trackKey] - b[trackKey]
         return Dx
       })
     } else {
-      Logger.debug(`[AudioFileScanner] Smart track order for "${book.title}" using track key ${trackKey}`)
+      Logger.debug(`[AudioFileScanner] Smart track order for "${libraryItemRelPath}" using track key ${trackKey}`)
       audioFiles.sort((a, b) => a[trackKey] - b[trackKey])
     }
 

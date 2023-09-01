@@ -82,6 +82,11 @@ function getIno(path) {
 }
 module.exports.getIno = getIno
 
+/**
+ * Read contents of file
+ * @param {string} path 
+ * @returns {string}
+ */
 async function readTextFile(path) {
   try {
     var data = await fs.readFile(path)

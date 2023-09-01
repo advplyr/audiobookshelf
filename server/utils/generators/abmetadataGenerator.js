@@ -24,7 +24,7 @@ const CurrentAbMetadataVersion = 2
 
 const commaSeparatedToArray = (v) => {
   if (!v) return []
-  return v.split(',').map(_v => _v.trim()).filter(_v => _v)
+  return [...new Set(v.split(',').map(_v => _v.trim()).filter(_v => _v))]
 }
 
 const podcastMetadataMapper = {
@@ -401,7 +401,10 @@ function checkArraysChanged(abmetadataArray, mediaArray) {
 function parseJsonMetadataText(text) {
   try {
     const abmetadataData = JSON.parse(text)
-    if (abmetadataData.metadata?.series?.length) {
+    if (!abmetadataData.metadata) abmetadataData.metadata = {}
+
+    if (abmetadataData.metadata.series?.length) {
+      abmetadataData.metadata.series = [...new Set(abmetadataData.metadata.series.map(t => t?.trim()).filter(t => t))]
       abmetadataData.metadata.series = abmetadataData.metadata.series.map(series => {
         let sequence = null
         let name = series
@@ -418,12 +421,31 @@ function parseJsonMetadataText(text) {
         }
       })
     }
+    // clean tags & remove dupes
+    if (abmetadataData.tags?.length) {
+      abmetadataData.tags = [...new Set(abmetadataData.tags.map(t => t?.trim()).filter(t => t))]
+    }
+    // TODO: Clean chapters
+    if (abmetadataData.chapters?.length) {
+
+    }
+    // clean remove dupes
+    if (abmetadataData.metadata.authors?.length) {
+      abmetadataData.metadata.authors = [...new Set(abmetadataData.metadata.authors.map(t => t?.trim()).filter(t => t))]
+    }
+    if (abmetadataData.metadata.narrators?.length) {
+      abmetadataData.metadata.narrators = [...new Set(abmetadataData.metadata.narrators.map(t => t?.trim()).filter(t => t))]
+    }
+    if (abmetadataData.metadata.genres?.length) {
+      abmetadataData.metadata.genres = [...new Set(abmetadataData.metadata.genres.map(t => t?.trim()).filter(t => t))]
+    }
     return abmetadataData
   } catch (error) {
     Logger.error(`[abmetadataGenerator] Invalid metadata.json JSON`, error)
     return null
   }
 }
+module.exports.parseJson = parseJsonMetadataText
 
 function cleanChaptersArray(chaptersArray, mediaTitle) {
   const chapters = []

@@ -147,10 +147,22 @@ const getTitleParts = (title) => {
   return [title, null]
 }
 
+/**
+ * Remove sortingPrefixes from title
+ * @example "The Good Book" => "Good Book"
+ * @param {string} title 
+ * @returns {string}
+ */
 module.exports.getTitleIgnorePrefix = (title) => {
   return getTitleParts(title)[0]
 }
 
+/**
+ * Put sorting prefix at the end of title 
+ * @example "The Good Book" => "Good Book, The"
+ * @param {string} title 
+ * @returns {string}
+ */
 module.exports.getTitlePrefixAtEnd = (title) => {
   let [sort, prefix] = getTitleParts(title)
   return prefix ? `${sort}, ${prefix}` : title

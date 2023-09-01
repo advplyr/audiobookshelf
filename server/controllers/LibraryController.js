@@ -889,8 +889,7 @@ class LibraryController {
     }
 
     // Update filter data
-    Database.removeNarratorFromFilterData(narratorName)
-    Database.addNarratorToFilterData(updatedName)
+    Database.replaceNarratorInFilterData(narratorName, updatedName)
 
     const itemsUpdated = []
 

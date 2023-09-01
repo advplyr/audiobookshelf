@@ -10,6 +10,8 @@ class LibraryItemScanData {
     /** @type {string} */
     this.libraryId = data.libraryId
     /** @type {string} */
+    this.mediaType = data.mediaType
+    /** @type {string} */
     this.ino = data.ino
     /** @type {number} */
     this.mtimeMs = data.mtimeMs
@@ -23,7 +25,7 @@ class LibraryItemScanData {
     this.relPath = data.relPath
     /** @type {boolean} */
     this.isFile = data.isFile
-    /** @type {{title:string, subtitle:string, series:string, sequence:string, publishedYear:string, narrators:string}} */
+    /** @type {{author:string, title:string, subtitle:string, series:string, sequence:string, publishedYear:string, narrators:string}} */
     this.mediaMetadata = data.mediaMetadata
     /** @type {import('../objects/files/LibraryFile')[]} */
     this.libraryFiles = data.libraryFiles
@@ -39,6 +41,30 @@ class LibraryItemScanData {
     this.libraryFilesAdded = []
     /** @type {LibraryItem.LibraryFileObject[]} */
     this.libraryFilesModified = []
+  }
+
+  /**
+   * Used to create a library item
+   */
+  get libraryItemObject() {
+    let size = 0
+    this.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+    return {
+      ino: this.ino,
+      path: this.path,
+      relPath: this.relPath,
+      mediaType: this.mediaType,
+      isFile: this.isFile,
+      mtime: this.mtimeMs,
+      ctime: this.ctime,
+      birthtime: this.birthtimeMs,
+      lastScan: Date.now(),
+      lastScanVersion: packageJson.version,
+      libraryFiles: this.libraryFiles,
+      libraryId: this.libraryId,
+      libraryFolderId: this.libraryFolderId,
+      size
+    }
   }
 
   /** @type {boolean} */
@@ -79,6 +105,31 @@ class LibraryItemScanData {
   /** @type {LibraryItem.LibraryFileObject[]} */
   get ebookLibraryFiles() {
     return this.libraryFiles.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject} */
+  get descTxtLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.filename === 'desc.txt')
+  }
+
+  /** @type {LibraryItem.LibraryFileObject} */
+  get readerTxtLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.filename === 'reader.txt')
+  }
+
+  /** @type {LibraryItem.LibraryFileObject} */
+  get metadataAbsLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+  }
+
+  /** @type {LibraryItem.LibraryFileObject} */
+  get metadataJsonLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.json')
+  }
+
+  /** @type {LibraryItem.LibraryFileObject} */
+  get metadataOpfLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.opf')
   }
 
   /**

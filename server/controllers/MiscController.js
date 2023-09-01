@@ -230,8 +230,7 @@ class MiscController {
     let numItemsUpdated = 0
 
     // Update filter data
-    Database.removeTagFromFilterData(tag)
-    Database.addTagToFilterData(newTag)
+    Database.replaceTagInFilterData(tag, newTag)
 
     const libraryItemsWithTag = await libraryItemFilters.getAllLibraryItemsWithTags([tag, newTag])
     for (const libraryItem of libraryItemsWithTag) {
@@ -364,8 +363,7 @@ class MiscController {
     let numItemsUpdated = 0
 
     // Update filter data
-    Database.removeGenreFromFilterData(genre)
-    Database.addGenreToFilterData(newGenre)
+    Database.replaceGenreInFilterData(genre, newGenre)
 
     const libraryItemsWithGenre = await libraryItemFilters.getAllLibraryItemsWithGenres([genre, newGenre])
     for (const libraryItem of libraryItemsWithGenre) {

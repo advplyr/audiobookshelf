@@ -551,16 +551,35 @@ class Database {
     return this.models.device.createFromOld(oldDevice)
   }
 
+  replaceTagInFilterData(oldTag, newTag) {
+    for (const libraryId in this.libraryFilterData) {
+      const indexOf = this.libraryFilterData[libraryId].tags.findIndex(n => n === oldTag)
+      if (indexOf >= 0) {
+        this.libraryFilterData[libraryId].tags.splice(indexOf, 1, newTag)
+      }
+    }
+  }
+
   removeTagFromFilterData(tag) {
     for (const libraryId in this.libraryFilterData) {
       this.libraryFilterData[libraryId].tags = this.libraryFilterData[libraryId].tags.filter(t => t !== tag)
     }
   }
 
-  addTagToFilterData(tag) {
+  addTagsToFilterData(libraryId, tags) {
+    if (!this.libraryFilterData[libraryId] || !tags?.length) return
+    tags.forEach((t) => {
+      if (!this.libraryFilterData[libraryId].tags.includes(t)) {
+        this.libraryFilterData[libraryId].tags.push(t)
+      }
+    })
+  }
+
+  replaceGenreInFilterData(oldGenre, newGenre) {
     for (const libraryId in this.libraryFilterData) {
-      if (!this.libraryFilterData[libraryId].tags.includes(tag)) {
-        this.libraryFilterData[libraryId].tags.push(tag)
+      const indexOf = this.libraryFilterData[libraryId].genres.findIndex(n => n === oldGenre)
+      if (indexOf >= 0) {
+        this.libraryFilterData[libraryId].genres.splice(indexOf, 1, newGenre)
       }
     }
   }
@@ -571,10 +590,20 @@ class Database {
     }
   }
 
-  addGenreToFilterData(genre) {
+  addGenresToFilterData(libraryId, genres) {
+    if (!this.libraryFilterData[libraryId] || !genres?.length) return
+    genres.forEach((g) => {
+      if (!this.libraryFilterData[libraryId].genres.includes(g)) {
+        this.libraryFilterData[libraryId].genres.push(g)
+      }
+    })
+  }
+
+  replaceNarratorInFilterData(oldNarrator, newNarrator) {
     for (const libraryId in this.libraryFilterData) {
-      if (!this.libraryFilterData[libraryId].genres.includes(genre)) {
-        this.libraryFilterData[libraryId].genres.push(genre)
+      const indexOf = this.libraryFilterData[libraryId].narrators.findIndex(n => n === oldNarrator)
+      if (indexOf >= 0) {
+        this.libraryFilterData[libraryId].narrators.splice(indexOf, 1, newNarrator)
       }
     }
   }
@@ -585,12 +614,13 @@ class Database {
     }
   }
 
-  addNarratorToFilterData(narrator) {
-    for (const libraryId in this.libraryFilterData) {
-      if (!this.libraryFilterData[libraryId].narrators.includes(narrator)) {
-        this.libraryFilterData[libraryId].narrators.push(narrator)
+  addNarratorsToFilterData(libraryId, narrators) {
+    if (!this.libraryFilterData[libraryId] || !narrators?.length) return
+    narrators.forEach((n) => {
+      if (!this.libraryFilterData[libraryId].narrators.includes(n)) {
+        this.libraryFilterData[libraryId].narrators.push(n)
       }
-    }
+    })
   }
 
   removeSeriesFromFilterData(libraryId, seriesId) {
@@ -621,6 +651,16 @@ class Database {
       id: authorId,
       name: authorName
     })
+  }
+
+  addPublisherToFilterData(libraryId, publisher) {
+    if (!this.libraryFilterData[libraryId] || !publisher || this.libraryFilterData[libraryId].publishers.includes(publisher)) return
+    this.libraryFilterData[libraryId].publishers.push(publisher)
+  }
+
+  addLanguageToFilterData(libraryId, language) {
+    if (!this.libraryFilterData[libraryId] || !language || this.libraryFilterData[libraryId].languages.includes(language)) return
+    this.libraryFilterData[libraryId].languages.push(language)
   }
 
   /**

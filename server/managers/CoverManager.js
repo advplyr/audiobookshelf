@@ -270,5 +270,33 @@ class CoverManager {
     }
     return false
   }
+
+  static async saveEmbeddedCoverArtNew(audioFiles, libraryItemId, libraryItemPath) {
+    let audioFileWithCover = audioFiles.find(af => af.embeddedCoverArt)
+    if (!audioFileWithCover) return null
+
+    let coverDirPath = null
+    if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
+      coverDirPath = libraryItemPath
+    } else {
+      coverDirPath = Path.posix.join(this.ItemMetadataPath, libraryItemId)
+    }
+    await fs.ensureDir(coverDirPath)
+
+    const coverFilename = audioFileWithCover.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
+    const coverFilePath = Path.join(coverDirPath, coverFilename)
+
+    const coverAlreadyExists = await fs.pathExists(coverFilePath)
+    if (coverAlreadyExists) {
+      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${libraryItemPath}" - bail`)
+      return null
+    }
+
+    const success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
+    if (success) {
+      return coverFilePath
+    }
+    return null
+  }
 }
 module.exports = CoverManager

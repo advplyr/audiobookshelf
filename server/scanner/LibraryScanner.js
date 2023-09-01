@@ -8,12 +8,14 @@ const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const { ScanResult, LogLevel } = require('../utils/constants')
 const globals = require('../utils/globals')
+const libraryFilters = require('../utils/queries/libraryFilters')
 const AudioFileScanner = require('./AudioFileScanner')
 const ScanOptions = require('./ScanOptions')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const AudioFile = require('../objects/files/AudioFile')
 const Book = require('../models/Book')
+const BookScanner = require('./BookScanner')
 
 class LibraryScanner {
   constructor(coverManager, taskManager) {
@@ -91,6 +93,10 @@ class LibraryScanner {
    * @param {import('./LibraryScan')} libraryScan 
    */
   async scanLibrary(libraryScan) {
+    // Make sure library filter data is set
+    //   this is used to check for existing authors & series
+    await libraryFilters.getFilterData(libraryScan.library)
+
     /** @type {LibraryItemScanData[]} */
     let libraryItemDataFound = []
 
@@ -159,8 +165,15 @@ class LibraryScanner {
 
     // Add new library items
     if (libraryItemDataFound.length) {
-
+      for (const libraryItemData of libraryItemDataFound) {
+        const newLibraryItem = await this.scanNewLibraryItem(libraryItemData, libraryScan)
+        if (newLibraryItem) {
+          libraryScan.resultsAdded++
+        }
+      }
     }
+
+    // TODO: Socket emitter
   }
 
   /**
@@ -217,6 +230,7 @@ class LibraryScanner {
       items.push(new LibraryItemScanData({
         libraryFolderId: folder.id,
         libraryId: folder.libraryId,
+        mediaType: library.mediaType,
         ino: libraryItemFolderStats.ino,
         mtimeMs: libraryItemFolderStats.mtimeMs || 0,
         ctimeMs: libraryItemFolderStats.ctimeMs || 0,
@@ -304,7 +318,7 @@ class LibraryScanner {
           media.audioFiles.push(...scannedAudioFiles)
         }
 
-        media.audioFiles = AudioFileScanner.runSmartTrackOrder(media, media.audioFiles)
+        media.audioFiles = AudioFileScanner.runSmartTrackOrder(existingLibraryItem.relPath, media.audioFiles)
 
         media.duration = 0
         media.audioFiles.forEach((af) => {
@@ -373,6 +387,8 @@ class LibraryScanner {
       if (hasMediaChanges) {
         await media.save()
       }
+    } else {
+      // TODO: Scan updated podcast
     }
   }
 
@@ -382,10 +398,15 @@ class LibraryScanner {
    * @param {LibraryScan} libraryScan
    */
   async scanNewLibraryItem(libraryItemData, libraryScan) {
-
     if (libraryScan.libraryMediaType === 'book') {
-      let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryScan.libraryMediaType, libraryItemData, libraryItemData.audioLibraryFiles)
-      // TODO: Create new book
+      const newLibraryItem = await BookScanner.scanNewBookLibraryItem(libraryItemData, libraryScan)
+      if (newLibraryItem) {
+        libraryScan.addLog(LogLevel.INFO, `Created new library item "${newLibraryItem.relPath}"`)
+      }
+      return newLibraryItem
+    } else {
+      // TODO: Scan new podcast
+      return null
     }
   }
 }
