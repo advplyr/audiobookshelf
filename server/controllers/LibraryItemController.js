@@ -322,6 +322,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
+    const libraryId = itemsToDelete[0].libraryId
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
       Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
@@ -334,7 +335,7 @@ class LibraryItemController {
       }
     }
 
-    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
+    await Database.resetLibraryIssuesFilterData(libraryId)
     res.sendStatus(200)
   }
 
@@ -452,6 +453,7 @@ class LibraryItemController {
 
     res.sendStatus(200)
 
+    const libraryId = libraryItems[0].libraryId
     for (const libraryItem of libraryItems) {
       if (libraryItem.isFile) {
         Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
@@ -460,7 +462,7 @@ class LibraryItemController {
       }
     }
 
-    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
+    await Database.resetLibraryIssuesFilterData(libraryId)
   }
 
   // POST: api/items/:id/scan
