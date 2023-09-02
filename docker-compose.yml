@@ -7,8 +7,8 @@ services:
     ports:
       - 13378:80
     volumes:
-      - ./audiobooks:/audiobooks
-      - ./podcasts:/podcasts
-      - ./metadata:/metadata
-      - ./config:/config
+      - C:\Users\winni\Downloads\Torrents\Completed:/audiobooks
+      - E:\Audiobooks\Audiobooks:/podcasts
+      - C:\audiobookshelf\metadata:/metadata
+      - C:\audiobookshelf\config:/config
     restart: unless-stopped
