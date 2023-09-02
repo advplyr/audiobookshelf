@@ -27,6 +27,11 @@ class LibraryScan {
     this.resultsAdded = 0
     this.resultsUpdated = 0
 
+    /** @type {string[]} */
+    this.authorsRemovedFromBooks = []
+    /** @type {string[]} */
+    this.seriesRemovedFromBooks = []
+
     this.logs = []
   }
 

@@ -56,7 +56,7 @@ class LibraryItemScanData {
       mediaType: this.mediaType,
       isFile: this.isFile,
       mtime: this.mtimeMs,
-      ctime: this.ctime,
+      ctime: this.ctimeMs,
       birthtime: this.birthtimeMs,
       lastScan: Date.now(),
       lastScanVersion: packageJson.version,
@@ -74,7 +74,7 @@ class LibraryItemScanData {
 
   /** @type {boolean} */
   get hasAudioFileChanges() {
-    return this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified
+    return (this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified.length) > 0
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
@@ -136,6 +136,7 @@ class LibraryItemScanData {
    * 
    * @param {LibraryItem} existingLibraryItem 
    * @param {import('./LibraryScan')} libraryScan
+   * @returns {boolean} true if changes found
    */
   async checkLibraryItemData(existingLibraryItem, libraryScan) {
     const keysToCompare = ['libraryFolderId', 'ino', 'path', 'relPath', 'isFile']
@@ -154,18 +155,18 @@ class LibraryItemScanData {
     }
 
     // Check mtime, ctime and birthtime
-    if (existingLibraryItem.mtime.valueOf() !== this.mtimeMs) {
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "mtime" changed from "${existingLibraryItem.mtime.valueOf()}" to "${this.mtimeMs}"`)
+    if (existingLibraryItem.mtime?.valueOf() !== this.mtimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "mtime" changed from "${existingLibraryItem.mtime?.valueOf()}" to "${this.mtimeMs}"`)
       existingLibraryItem.mtime = this.mtimeMs
       this.hasChanges = true
     }
-    if (existingLibraryItem.birthtime.valueOf() !== this.birthtimeMs) {
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "birthtime" changed from "${existingLibraryItem.birthtime.valueOf()}" to "${this.birthtimeMs}"`)
+    if (existingLibraryItem.birthtime?.valueOf() !== this.birthtimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "birthtime" changed from "${existingLibraryItem.birthtime?.valueOf()}" to "${this.birthtimeMs}"`)
       existingLibraryItem.birthtime = this.birthtimeMs
       this.hasChanges = true
     }
-    if (existingLibraryItem.ctime.valueOf() !== this.ctimeMs) {
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "ctime" changed from "${existingLibraryItem.ctime.valueOf()}" to "${this.ctimeMs}"`)
+    if (existingLibraryItem.ctime?.valueOf() !== this.ctimeMs) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" key "ctime" changed from "${existingLibraryItem.ctime?.valueOf()}" to "${this.ctimeMs}"`)
       existingLibraryItem.ctime = this.ctimeMs
       this.hasChanges = true
     }
@@ -221,14 +222,15 @@ class LibraryItemScanData {
       existingLibraryItem.lastScanVersion = packageJson.version
 
       libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" changed: [${existingLibraryItem.changed()?.join(',') || ''}]`)
-      libraryScan.resultsUpdated++
 
       if (this.hasLibraryFileChanges) {
         existingLibraryItem.changed('libraryFiles', true)
       }
       await existingLibraryItem.save()
+      return true
     } else {
       libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
+      return false
     }
   }
 
@@ -249,10 +251,6 @@ class LibraryItemScanData {
     }
 
     for (const key in existingLibraryFile.metadata) {
-      if (existingLibraryFile.metadata.relPath === 'metadata.json' || existingLibraryFile.metadata.relPath === 'metadata.abs') {
-        if (key === 'mtimeMs' || key === 'size') continue
-      }
-
       if (existingLibraryFile.metadata[key] !== scannedLibraryFile.metadata[key]) {
         if (key !== 'path' && key !== 'relPath') {
           libraryScan.addLog(LogLevel.DEBUG, `Library file "${existingLibraryFile.metadata.path}" for library item "${libraryItemPath}" key "${key}" changed from "${existingLibraryFile.metadata[key]}" to "${scannedLibraryFile.metadata[key]}"`)

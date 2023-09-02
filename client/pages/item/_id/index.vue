@@ -761,6 +761,7 @@ export default {
     if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
@@ -769,6 +770,7 @@ export default {
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
   },
   beforeDestroy() {
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
     this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)

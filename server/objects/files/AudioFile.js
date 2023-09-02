@@ -118,7 +118,12 @@ class AudioFile {
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
 
-    this.metadata = libraryFile.metadata.clone()
+    if (libraryFile.metadata instanceof FileMetadata) {
+      this.metadata = libraryFile.metadata.clone()
+    } else {
+      this.metadata = new FileMetadata(libraryFile.metadata)
+    }
+
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
 

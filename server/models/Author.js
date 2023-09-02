@@ -84,6 +84,17 @@ class Author extends Model {
   }
 
   /**
+   * Get oldAuthor by id
+   * @param {string} authorId 
+   * @returns {oldAuthor}
+   */
+  static async getOldById(authorId) {
+    const author = await this.findByPk(authorId)
+    if (!author) return null
+    return author.getOldAuthor()
+  }
+
+  /**
    * Check if author exists
    * @param {string} authorId 
    * @returns {Promise<boolean>}

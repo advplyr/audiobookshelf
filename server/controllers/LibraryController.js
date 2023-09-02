@@ -573,18 +573,19 @@ class LibraryController {
    * rssfeed: adds `rssFeed` to series object if a feed is open
    * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
    * 
-   * @param {*} req 
-   * @param {*} res - Series
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res - Series
    */
   async getSeriesForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
-    const series = Database.series.find(se => se.id === req.params.seriesId)
+    const series = await Database.seriesModel.findByPk(req.params.seriesId)
     if (!series) return res.sendStatus(404)
+    const oldSeries = series.getOldSeries()
 
-    const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
+    const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(oldSeries, req.user)
 
-    const seriesJson = series.toJSON()
+    const seriesJson = oldSeries.toJSON()
     if (include.includes('progress')) {
       const libraryItemsFinished = libraryItemsInSeries.filter(li => !!req.user.getMediaProgress(li.id)?.isFinished)
       seriesJson.progress = {

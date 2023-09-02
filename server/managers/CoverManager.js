@@ -279,7 +279,7 @@ class CoverManager {
     if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
       coverDirPath = libraryItemPath
     } else {
-      coverDirPath = Path.posix.join(this.ItemMetadataPath, libraryItemId)
+      coverDirPath = Path.posix.join(global.MetadataPath, 'items', libraryItemId)
     }
     await fs.ensureDir(coverDirPath)
 

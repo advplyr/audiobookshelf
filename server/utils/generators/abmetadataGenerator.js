@@ -324,6 +324,10 @@ function parseAbMetadataText(text, mediaType) {
 
   mediaDetails.chapters.sort((a, b) => a.start - b.start)
 
+  if (mediaDetails.chapters.length) {
+    mediaDetails.chapters = cleanChaptersArray(mediaDetails.chapters, mediaDetails.metadata.title) || []
+  }
+
   return mediaDetails
 }
 module.exports.parse = parseAbMetadataText
@@ -425,9 +429,8 @@ function parseJsonMetadataText(text) {
     if (abmetadataData.tags?.length) {
       abmetadataData.tags = [...new Set(abmetadataData.tags.map(t => t?.trim()).filter(t => t))]
     }
-    // TODO: Clean chapters
     if (abmetadataData.chapters?.length) {
-
+      abmetadataData.chapters = cleanChaptersArray(abmetadataData.chapters, abmetadataData.metadata.title)
     }
     // clean remove dupes
     if (abmetadataData.metadata.authors?.length) {

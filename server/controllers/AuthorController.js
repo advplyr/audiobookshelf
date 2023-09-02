@@ -234,8 +234,8 @@ class AuthorController {
     return this.cacheManager.handleAuthorCache(res, author, options)
   }
 
-  middleware(req, res, next) {
-    const author = Database.authors.find(au => au.id === req.params.id)
+  async middleware(req, res, next) {
+    const author = await Database.authorModel.getOldById(req.params.id)
     if (!author) return res.sendStatus(404)
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
