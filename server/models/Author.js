@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, literal } = require('sequelize')
 
 const oldAuthor = require('../objects/entities/Author')
 
@@ -86,7 +86,7 @@ class Author extends Model {
   /**
    * Get oldAuthor by id
    * @param {string} authorId 
-   * @returns {oldAuthor}
+   * @returns {Promise<oldAuthor>}
    */
   static async getOldById(authorId) {
     const author = await this.findByPk(authorId)
@@ -101,6 +101,26 @@ class Author extends Model {
    */
   static async checkExistsById(authorId) {
     return (await this.count({ where: { id: authorId } })) > 0
+  }
+
+  /**
+   * Get old author by name and libraryId. name case insensitive
+   * TODO: Look for authors ignoring punctuation
+   * 
+   * @param {string} authorName 
+   * @param {string} libraryId 
+   * @returns {Promise<oldAuthor>}
+   */
+  static async getOldByNameAndLibrary(authorName, libraryId) {
+    const author = (await this.findOne({
+      where: [
+        literal(`name = '${authorName}' COLLATE NOCASE`),
+        {
+          libraryId
+        }
+      ]
+    }))?.getOldAuthor()
+    return author
   }
 
   /**

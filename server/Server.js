@@ -289,8 +289,15 @@ class Server {
     for (const _user of users) {
       let hasUpdated = false
       if (_user.seriesHideFromContinueListening.length) {
+        const seriesHiding = (await Database.seriesModel.findAll({
+          where: {
+            id: _user.seriesHideFromContinueListening
+          },
+          attributes: ['id'],
+          raw: true
+        })).map(se => se.id)
         _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {
-          if (!Database.series.some(se => se.id === seriesId)) { // Series removed
+          if (!seriesHiding.includes(seriesId)) { // Series removed
             hasUpdated = true
             return false
           }

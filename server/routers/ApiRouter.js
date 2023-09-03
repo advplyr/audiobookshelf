@@ -1,3 +1,4 @@
+const sequelize = require('sequelize')
 const express = require('express')
 const Path = require('path')
 
@@ -217,7 +218,6 @@ class ApiRouter {
     //
     // Series Routes
     //
-    this.router.get('/series/search', SeriesController.search.bind(this))
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
 
@@ -572,7 +572,7 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = Database.authors.find(au => au.libraryId === libraryId && au.checkNameEquals(authorName))
+            let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryId)
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i], libraryId)
@@ -609,7 +609,7 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = Database.series.find(se => se.libraryId === libraryId && se.checkNameEquals(seriesName))
+            let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i], libraryId)

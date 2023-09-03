@@ -9,7 +9,7 @@ class RSSFeedController {
     const feeds = await this.rssFeedManager.getFeeds()
     res.json({
       feeds: feeds.map(f => f.toJSON()),
-      minified:  feeds.map(f => f.toJSONMinified())
+      minified: feeds.map(f => f.toJSONMinified())
     })
   }
 
@@ -88,7 +88,7 @@ class RSSFeedController {
   async openRSSFeedForSeries(req, res) {
     const options = req.body || {}
 
-    const series = Database.series.find(se => se.id === req.params.seriesId)
+    const series = await Database.seriesModel.getOldById(req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist

@@ -479,8 +479,8 @@ class Scanner {
     // Create or match all new authors and series
     if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
       const newAuthors = []
-      libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
-        let _author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name))
+      libraryItem.media.metadata.authors = Promise.all(libraryItem.media.metadata.authors.map(async (tempMinAuthor) => {
+        let _author = await Database.authorModel.getOldByNameAndLibrary(tempMinAuthor.name, libraryItem.libraryId)
         if (!_author) _author = newAuthors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
         if (!_author) { // Must create new author
           _author = new Author()
@@ -494,7 +494,7 @@ class Scanner {
           id: _author.id,
           name: _author.name
         }
-      })
+      }))
       if (newAuthors.length) {
         await Database.createBulkAuthors(newAuthors)
         SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
@@ -502,8 +502,8 @@ class Scanner {
     }
     if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
       const newSeries = []
-      libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
-        let _series = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
+      libraryItem.media.metadata.series = await Promise.all(libraryItem.media.metadata.series.map(async (tempMinSeries) => {
+        let _series = await Database.seriesModel.getOldByNameAndLibrary(tempMinSeries.name, libraryItem.libraryId)
         if (!_series) {
           // Check new unsaved series
           _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
@@ -521,7 +521,7 @@ class Scanner {
           name: _series.name,
           sequence: tempMinSeries.sequence
         }
-      })
+      }))
       if (newSeries.length) {
         await Database.createBulkSeries(newSeries)
         SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
@@ -931,7 +931,7 @@ class Scanner {
       }
       const authorPayload = []
       for (const authorName of matchData.author) {
-        let author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(authorName))
+        let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryItem.libraryId)
         if (!author) {
           author = new Author()
           author.setData({ name: authorName }, libraryItem.libraryId)
@@ -950,7 +950,7 @@ class Scanner {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesPayload = []
       for (const seriesMatchItem of matchData.series) {
-        let seriesItem = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(seriesMatchItem.series))
+        let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
         if (!seriesItem) {
           seriesItem = new Series()
           seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)

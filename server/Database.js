@@ -19,8 +19,6 @@ class Database {
     // TODO: below data should be loaded from the DB as needed
     this.libraryItems = []
     this.settings = []
-    this.authors = []
-    this.series = []
 
     // Cached library filter data
     this.libraryFilterData = {}
@@ -274,12 +272,6 @@ class Database {
     this.libraryItems = await this.models.libraryItem.loadAllLibraryItems()
     Logger.info(`[Database] Loaded ${this.libraryItems.length} library items`)
 
-    this.authors = await this.models.author.getOldAuthors()
-    Logger.info(`[Database] Loaded ${this.authors.length} authors`)
-
-    this.series = await this.models.series.getAllOldSeries()
-    Logger.info(`[Database] Loaded ${this.series.length} series`)
-
     // Set if root user has been created
     this.hasRootUser = await this.models.user.getHasRootUser()
 
@@ -456,31 +448,26 @@ class Database {
   async createSeries(oldSeries) {
     if (!this.sequelize) return false
     await this.models.series.createFromOld(oldSeries)
-    this.series.push(oldSeries)
   }
 
   async createBulkSeries(oldSeriesObjs) {
     if (!this.sequelize) return false
     await this.models.series.createBulkFromOld(oldSeriesObjs)
-    this.series.push(...oldSeriesObjs)
   }
 
   async removeSeries(seriesId) {
     if (!this.sequelize) return false
     await this.models.series.removeById(seriesId)
-    this.series = this.series.filter(se => se.id !== seriesId)
   }
 
   async createAuthor(oldAuthor) {
     if (!this.sequelize) return false
     await this.models.author.createFromOld(oldAuthor)
-    this.authors.push(oldAuthor)
   }
 
   async createBulkAuthors(oldAuthors) {
     if (!this.sequelize) return false
     await this.models.author.createBulkFromOld(oldAuthors)
-    this.authors.push(...oldAuthors)
   }
 
   updateAuthor(oldAuthor) {
@@ -491,24 +478,17 @@ class Database {
   async removeAuthor(authorId) {
     if (!this.sequelize) return false
     await this.models.author.removeById(authorId)
-    this.authors = this.authors.filter(au => au.id !== authorId)
   }
 
   async createBulkBookAuthors(bookAuthors) {
     if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
-    this.authors.push(...bookAuthors)
   }
 
   async removeBulkBookAuthors(authorId = null, bookId = null) {
     if (!this.sequelize) return false
     if (!authorId && !bookId) return
     await this.models.bookAuthor.removeByIds(authorId, bookId)
-    this.authors = this.authors.filter(au => {
-      if (authorId && au.authorId !== authorId) return true
-      if (bookId && au.bookId !== bookId) return true
-      return false
-    })
   }
 
   getPlaybackSessions(where = null) {

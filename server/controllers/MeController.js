@@ -281,7 +281,7 @@ class MeController {
 
   // GET: api/me/series/:id/remove-from-continue-listening
   async removeSeriesFromContinueListening(req, res) {
-    const series = Database.series.find(se => se.id === req.params.id)
+    const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) {
       Logger.error(`[MeController] removeSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)
@@ -297,7 +297,7 @@ class MeController {
 
   // GET: api/me/series/:id/readd-to-continue-listening
   async readdSeriesFromContinueListening(req, res) {
-    const series = Database.series.find(se => se.id === req.params.id)
+    const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) {
       Logger.error(`[MeController] readdSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)

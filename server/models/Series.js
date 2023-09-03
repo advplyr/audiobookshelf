@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, literal } = require('sequelize')
 
 const oldSeries = require('../objects/entities/Series')
 
@@ -76,12 +76,42 @@ class Series extends Model {
   }
 
   /**
+   * Get oldSeries by id
+   * @param {string} seriesId 
+   * @returns {Promise<oldSeries>}
+   */
+  static async getOldById(seriesId) {
+    const series = await this.findByPk(seriesId)
+    if (!series) return null
+    return series.getOldSeries()
+  }
+
+  /**
    * Check if series exists
    * @param {string} seriesId 
    * @returns {Promise<boolean>}
    */
   static async checkExistsById(seriesId) {
     return (await this.count({ where: { id: seriesId } })) > 0
+  }
+
+  /**
+   * Get old series by name and libraryId. name case insensitive
+   * 
+   * @param {string} seriesName 
+   * @param {string} libraryId 
+   * @returns {Promise<oldSeries>}
+   */
+  static async getOldByNameAndLibrary(seriesName, libraryId) {
+    const series = (await this.findOne({
+      where: [
+        literal(`name = '${seriesName}' COLLATE NOCASE`),
+        {
+          libraryId
+        }
+      ]
+    }))?.getOldSeries()
+    return series
   }
 
   /**
