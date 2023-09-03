@@ -390,11 +390,12 @@ module.exports = {
 
   /**
    * Get filter data used in filter menus
-   * @param {import('../../objects/Library')} oldLibrary 
+   * @param {string} mediaType 
+   * @param {string} libraryId
    * @returns {Promise<object>}
    */
-  async getFilterData(oldLibrary) {
-    const cachedFilterData = Database.libraryFilterData[oldLibrary.id]
+  async getFilterData(mediaType, libraryId) {
+    const cachedFilterData = Database.libraryFilterData[libraryId]
     if (cachedFilterData) {
       const cacheElapsed = Date.now() - cachedFilterData.loadedAt
       // Cache library filters for 30 mins
@@ -416,13 +417,13 @@ module.exports = {
       numIssues: 0
     }
 
-    if (oldLibrary.isPodcast) {
+    if (mediaType === 'podcast') {
       const podcasts = await Database.podcastModel.findAll({
         include: {
           model: Database.libraryItemModel,
           attributes: [],
           where: {
-            libraryId: oldLibrary.id
+            libraryId: libraryId
           }
         },
         attributes: ['tags', 'genres']
@@ -441,7 +442,7 @@ module.exports = {
           model: Database.libraryItemModel,
           attributes: ['isMissing', 'isInvalid'],
           where: {
-            libraryId: oldLibrary.id
+            libraryId: libraryId
           }
         },
         attributes: ['tags', 'genres', 'publisher', 'narrators', 'language']
@@ -463,7 +464,7 @@ module.exports = {
 
       const series = await Database.seriesModel.findAll({
         where: {
-          libraryId: oldLibrary.id
+          libraryId: libraryId
         },
         attributes: ['id', 'name']
       })
@@ -471,7 +472,7 @@ module.exports = {
 
       const authors = await Database.authorModel.findAll({
         where: {
-          libraryId: oldLibrary.id
+          libraryId: libraryId
         },
         attributes: ['id', 'name']
       })
@@ -486,7 +487,7 @@ module.exports = {
     data.publishers = naturalSort([...data.publishers]).asc()
     data.languages = naturalSort([...data.languages]).asc()
     data.loadedAt = Date.now()
-    Database.libraryFilterData[oldLibrary.id] = data
+    Database.libraryFilterData[libraryId] = data
 
     Logger.debug(`Loaded filterdata in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     return data

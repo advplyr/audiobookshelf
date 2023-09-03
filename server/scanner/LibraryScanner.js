@@ -7,18 +7,15 @@ const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
-const { ScanResult, LogLevel } = require('../utils/constants')
+const { LogLevel } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
+const LibraryItemScanner = require('./LibraryItemScanner')
 const ScanOptions = require('./ScanOptions')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
-const BookScanner = require('./BookScanner')
 
 class LibraryScanner {
-  constructor(coverManager, taskManager) {
-    this.coverManager = coverManager
-    this.taskManager = taskManager
-
+  constructor() {
     this.cancelLibraryScan = {}
     this.librariesScanning = []
   }
@@ -93,7 +90,7 @@ class LibraryScanner {
   async scanLibrary(libraryScan) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(libraryScan.library)
+    await libraryFilters.getFilterData(libraryScan.library.mediaType, libraryScan.libraryId)
 
     /** @type {LibraryItemScanData[]} */
     let libraryItemDataFound = []
@@ -151,7 +148,7 @@ class LibraryScanner {
         if (await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)) {
           libraryScan.resultsUpdated++
           if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
-            const libraryItem = await this.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan)
+            const libraryItem = await LibraryItemScanner.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
             const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
             oldLibraryItemsUpdated.push(oldLibraryItem)
           } else {
@@ -177,68 +174,8 @@ class LibraryScanner {
       SocketAuthority.emitter('items_updated', oldLibraryItemsUpdated.map(li => li.toJSONExpanded()))
     }
 
-    // Check authors that were removed from a book and remove them if they no longer have any books
-    //  keep authors without books that have a asin, description or imagePath
-    if (libraryScan.authorsRemovedFromBooks.length) {
-      const bookAuthorsToRemove = (await Database.authorModel.findAll({
-        where: [
-          {
-            id: libraryScan.authorsRemovedFromBooks,
-            asin: {
-              [sequelize.Op.or]: [null, ""]
-            },
-            description: {
-              [sequelize.Op.or]: [null, ""]
-            },
-            imagePath: {
-              [sequelize.Op.or]: [null, ""]
-            }
-          },
-          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
-        ],
-        attributes: ['id'],
-        raw: true
-      })).map(au => au.id)
-      if (bookAuthorsToRemove.length) {
-        await Database.authorModel.destroy({
-          where: {
-            id: bookAuthorsToRemove
-          }
-        })
-        bookAuthorsToRemove.forEach((authorId) => {
-          Database.removeAuthorFromFilterData(libraryScan.libraryId, authorId)
-          // TODO: Clients were expecting full author in payload but its unnecessary
-          SocketAuthority.emitter('author_removed', { id: authorId, libraryId: libraryScan.libraryId })
-        })
-        libraryScan.addLog(LogLevel.INFO, `Removed ${bookAuthorsToRemove.length} authors`)
-      }
-    }
-
-    // Check series that were removed from books and remove them if they no longer have any books
-    if (libraryScan.seriesRemovedFromBooks.length) {
-      const bookSeriesToRemove = (await Database.seriesModel.findAll({
-        where: [
-          {
-            id: libraryScan.seriesRemovedFromBooks
-          },
-          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
-        ],
-        attributes: ['id'],
-        raw: true
-      })).map(se => se.id)
-      if (bookSeriesToRemove.length) {
-        await Database.seriesModel.destroy({
-          where: {
-            id: bookSeriesToRemove
-          }
-        })
-        bookSeriesToRemove.forEach((seriesId) => {
-          Database.removeSeriesFromFilterData(libraryScan.libraryId, seriesId)
-          SocketAuthority.emitter('series_removed', { id: seriesId, libraryId: libraryScan.libraryId })
-        })
-        libraryScan.addLog(LogLevel.INFO, `Removed ${bookSeriesToRemove.length} series`)
-      }
-    }
+    // Authors and series that were removed from books should be removed if they are now empty
+    await LibraryItemScanner.checkAuthorsAndSeriesRemovedFromBooks(libraryScan.libraryId, libraryScan)
 
     // Update missing library items
     if (libraryItemIdsMissing.length) {
@@ -260,7 +197,7 @@ class LibraryScanner {
     if (libraryItemDataFound.length) {
       let newOldLibraryItems = []
       for (const libraryItemData of libraryItemDataFound) {
-        const newLibraryItem = await this.scanNewLibraryItem(libraryItemData, libraryScan)
+        const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library.settings, libraryScan)
         if (newLibraryItem) {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
           newOldLibraryItems.push(oldLibraryItem)
@@ -353,38 +290,5 @@ class LibraryScanner {
     }
     return items
   }
-
-  /**
-   * 
-   * @param {import('../models/LibraryItem')} existingLibraryItem 
-   * @param {LibraryItemScanData} libraryItemData 
-   * @param {LibraryScan} libraryScan
-   */
-  async rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan) {
-    if (existingLibraryItem.mediaType === 'book') {
-      const libraryItem = await BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, libraryScan)
-      return libraryItem
-    } else {
-      // TODO: Scan updated podcast
-    }
-  }
-
-  /**
-   * 
-   * @param {LibraryItemScanData} libraryItemData 
-   * @param {LibraryScan} libraryScan
-   */
-  async scanNewLibraryItem(libraryItemData, libraryScan) {
-    if (libraryScan.libraryMediaType === 'book') {
-      const newLibraryItem = await BookScanner.scanNewBookLibraryItem(libraryItemData, libraryScan)
-      if (newLibraryItem) {
-        libraryScan.addLog(LogLevel.INFO, `Created new library item "${newLibraryItem.relPath}"`)
-      }
-      return newLibraryItem
-    } else {
-      // TODO: Scan new podcast
-      return null
-    }
-  }
 }
-module.exports = LibraryScanner
+module.exports = new LibraryScanner()

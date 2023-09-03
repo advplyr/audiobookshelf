@@ -8,6 +8,7 @@ const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
+const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 
 class LibraryItemController {
   constructor() { }
@@ -475,7 +476,14 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
+    let result = 0
+    if (req.libraryItem.isPodcast) {
+      // TODO: New library item scanner for podcast
+      result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
+    } else {
+      result = await LibraryItemScanner.scanLibraryItem(req.libraryItem.id)
+    }
+
     await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)

@@ -2,6 +2,16 @@ const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibrary = require('../objects/Library')
 
+/**
+ * @typedef LibrarySettingsObject
+ * @property {number} coverAspectRatio BookCoverAspectRatio
+ * @property {boolean} disableWatcher
+ * @property {boolean} skipMatchingMediaWithAsin
+ * @property {boolean} skipMatchingMediaWithIsbn
+ * @property {string} autoScanCronExpression
+ * @property {boolean} audiobooksOnly
+ * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book 
+ */
 
 class Library extends Model {
   constructor(values, options) {
@@ -23,7 +33,7 @@ class Library extends Model {
     this.lastScan
     /** @type {string} */
     this.lastScanVersion
-    /** @type {Object} */
+    /** @type {LibrarySettingsObject} */
     this.settings
     /** @type {Object} */
     this.extraData

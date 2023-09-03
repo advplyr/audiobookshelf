@@ -1,6 +1,6 @@
 const uuidv4 = require("uuid").v4
 const Path = require('path')
-const { Sequelize } = require('sequelize')
+const sequelize = require('sequelize')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parsers/parseOpfMetadata')
@@ -14,6 +14,7 @@ const { readTextFile, filePathToPOSIX, getFileTimestampsWithIno } = require('../
 const AudioFile = require('../objects/files/AudioFile')
 const CoverManager = require('../managers/CoverManager')
 const LibraryFile = require('../objects/files/LibraryFile')
+const SocketAuthority = require('../SocketAuthority')
 const fsExtra = require("../libs/fsExtra")
 
 /**
@@ -45,10 +46,11 @@ class BookScanner {
   /**
    * @param {import('../models/LibraryItem')} existingLibraryItem 
    * @param {import('./LibraryItemScanData')} libraryItemData 
+   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {import('./LibraryScan')} libraryScan 
-   * @returns {import('../models/LibraryItem')}
+   * @returns {Promise<import('../models/LibraryItem')>}
    */
-  async rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, libraryScan) {
+  async rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
     /** @type {import('../models/Book')} */
     const media = await existingLibraryItem.getMedia({
       include: [
@@ -146,13 +148,13 @@ class BookScanner {
     }
 
     // Check if ebook was removed
-    if (media.ebookFile && (libraryScan.library.settings.audiobooksOnly || libraryItemData.checkEbookFileRemoved(media.ebookFile))) {
+    if (media.ebookFile && (librarySettings.audiobooksOnly || libraryItemData.checkEbookFileRemoved(media.ebookFile))) {
       media.ebookFile = null
       hasMediaChanges = true
     }
 
     // Check if ebook is not set and ebooks were found
-    if (!media.ebookFile && !libraryScan.library.settings.audiobooksOnly && libraryItemData.ebookLibraryFiles.length) {
+    if (!media.ebookFile && !librarySettings.audiobooksOnly && libraryItemData.ebookLibraryFiles.length) {
       // Prefer to use an epub ebook then fallback to the first ebook found
       let ebookLibraryFile = libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub')
       if (!ebookLibraryFile) ebookLibraryFile = libraryItemData.ebookLibraryFiles[0]
@@ -179,7 +181,7 @@ class BookScanner {
         // Check for authors added
         for (const authorName of bookMetadata.authors) {
           if (!media.authors.some(au => au.name === authorName)) {
-            const existingAuthor = Database.libraryFilterData[libraryScan.libraryId].authors.find(au => au.name === authorName)
+            const existingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
             if (existingAuthor) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,
@@ -191,10 +193,10 @@ class BookScanner {
               const newAuthor = await Database.authorModel.create({
                 name: authorName,
                 lastFirst: parseNameString.nameToLastFirst(authorName),
-                libraryId: libraryScan.libraryId
+                libraryId: libraryItemData.libraryId
               })
               await media.addAuthor(newAuthor)
-              Database.addAuthorToFilterData(libraryScan.libraryId, newAuthor.name, newAuthor.id)
+              Database.addAuthorToFilterData(libraryItemData.libraryId, newAuthor.name, newAuthor.id)
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new author "${authorName}"`)
               authorsUpdated = true
             }
@@ -213,7 +215,7 @@ class BookScanner {
         // Check for series added
         for (const seriesObj of bookMetadata.series) {
           if (!media.series.some(se => se.name === seriesObj.name)) {
-            const existingSeries = Database.libraryFilterData[libraryScan.libraryId].series.find(se => se.name === seriesObj.name)
+            const existingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
             if (existingSeries) {
               await Database.bookSeriesModel.create({
                 bookId: media.id,
@@ -226,10 +228,10 @@ class BookScanner {
               const newSeries = await Database.seriesModel.create({
                 name: seriesObj.name,
                 nameIgnorePrefix: getTitleIgnorePrefix(seriesObj.name),
-                libraryId: libraryScan.libraryId
+                libraryId: libraryItemData.libraryId
               })
-              await media.addSeries(newSeries)
-              Database.addSeriesToFilterData(libraryScan.libraryId, newSeries.name, newSeries.id)
+              await media.addSeries(newSeries, { through: { sequence: seriesObj.sequence } })
+              Database.addSeriesToFilterData(libraryItemData.libraryId, newSeries.name, newSeries.id)
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
               seriesUpdated = true
             }
@@ -304,7 +306,7 @@ class BookScanner {
       media.authors = await media.getAuthors({
         joinTableAttributes: ['createdAt'],
         order: [
-          Sequelize.literal(`bookAuthor.createdAt ASC`)
+          sequelize.literal(`bookAuthor.createdAt ASC`)
         ]
       })
     }
@@ -312,7 +314,7 @@ class BookScanner {
       media.series = await media.getSeries({
         joinTableAttributes: ['sequence', 'createdAt'],
         order: [
-          Sequelize.literal(`bookSeries.createdAt ASC`)
+          sequelize.literal(`bookSeries.createdAt ASC`)
         ]
       })
     }
@@ -356,16 +358,17 @@ class BookScanner {
   /**
    * 
    * @param {import('./LibraryItemScanData')} libraryItemData 
+   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {import('./LibraryScan')} libraryScan 
    * @returns {import('../models/LibraryItem')}
    */
-  async scanNewBookLibraryItem(libraryItemData, libraryScan) {
+  async scanNewBookLibraryItem(libraryItemData, librarySettings, libraryScan) {
     // Scan audio files found
-    let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryScan.libraryMediaType, libraryItemData, libraryItemData.audioLibraryFiles)
+    let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryItemData.mediaType, libraryItemData, libraryItemData.audioLibraryFiles)
     scannedAudioFiles = AudioFileScanner.runSmartTrackOrder(libraryItemData.relPath, scannedAudioFiles)
 
     // Find ebook file (prefer epub)
-    let ebookLibraryFile = libraryScan.library.settings.audiobooksOnly ? null : libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub') || libraryItemData.ebookLibraryFiles[0]
+    let ebookLibraryFile = librarySettings.audiobooksOnly ? null : libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub') || libraryItemData.ebookLibraryFiles[0]
 
     // Do not add library items that have no valid audio files and no ebook file
     if (!ebookLibraryFile && !scannedAudioFiles.length) {
@@ -393,7 +396,7 @@ class BookScanner {
     }
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
-        const matchingAuthor = Database.libraryFilterData[libraryScan.libraryId].authors.find(au => au.name === authorName)
+        const matchingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
         if (matchingAuthor) {
           bookObject.bookAuthors.push({
             authorId: matchingAuthor.id
@@ -402,7 +405,7 @@ class BookScanner {
           // New author
           bookObject.bookAuthors.push({
             author: {
-              libraryId: libraryScan.libraryId,
+              libraryId: libraryItemData.libraryId,
               name: authorName,
               lastFirst: parseNameString.nameToLastFirst(authorName)
             }
@@ -413,7 +416,7 @@ class BookScanner {
     if (bookMetadata.series.length) {
       for (const seriesObj of bookMetadata.series) {
         if (!seriesObj.name) continue
-        const matchingSeries = Database.libraryFilterData[libraryScan.libraryId].series.find(se => se.name === seriesObj.name)
+        const matchingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
         if (matchingSeries) {
           bookObject.bookSeries.push({
             seriesId: matchingSeries.id,
@@ -425,7 +428,7 @@ class BookScanner {
             series: {
               name: seriesObj.name,
               nameIgnorePrefix: getTitleIgnorePrefix(seriesObj.name),
-              libraryId: libraryScan.libraryId
+              libraryId: libraryItemData.libraryId
             }
           })
         }
@@ -476,22 +479,22 @@ class BookScanner {
     if (libraryItem.book.bookSeries?.length) {
       for (const bs of libraryItem.book.bookSeries) {
         if (bs.series) {
-          Database.addSeriesToFilterData(libraryScan.libraryId, bs.series.name, bs.series.id)
+          Database.addSeriesToFilterData(libraryItemData.libraryId, bs.series.name, bs.series.id)
         }
       }
     }
     if (libraryItem.book.bookAuthors?.length) {
       for (const ba of libraryItem.book.bookAuthors) {
         if (ba.author) {
-          Database.addAuthorToFilterData(libraryScan.libraryId, ba.author.name, ba.author.id)
+          Database.addAuthorToFilterData(libraryItemData.libraryId, ba.author.name, ba.author.id)
         }
       }
     }
-    Database.addNarratorsToFilterData(libraryScan.libraryId, libraryItem.book.narrators)
-    Database.addGenresToFilterData(libraryScan.libraryId, libraryItem.book.genres)
-    Database.addTagsToFilterData(libraryScan.libraryId, libraryItem.book.tags)
-    Database.addPublisherToFilterData(libraryScan.libraryId, libraryItem.book.publisher)
-    Database.addLanguageToFilterData(libraryScan.libraryId, libraryItem.book.language)
+    Database.addNarratorsToFilterData(libraryItemData.libraryId, libraryItem.book.narrators)
+    Database.addGenresToFilterData(libraryItemData.libraryId, libraryItem.book.genres)
+    Database.addTagsToFilterData(libraryItemData.libraryId, libraryItem.book.tags)
+    Database.addPublisherToFilterData(libraryItemData.libraryId, libraryItem.book.publisher)
+    Database.addLanguageToFilterData(libraryItemData.libraryId, libraryItem.book.language)
 
     // Load for emitting to client
     libraryItem.media = await libraryItem.getMedia({
@@ -947,6 +950,79 @@ class BookScanner {
         libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
         return metadataLibraryFile
       })
+    }
+  }
+
+  /**
+   * Check authors that were removed from a book and remove them if they no longer have any books
+   * keep authors without books that have a asin, description or imagePath
+   * @param {string} libraryId 
+   * @param {import('./ScanLogger')} scanLogger 
+   * @returns {Promise}
+   */
+  async checkAuthorsRemovedFromBooks(libraryId, scanLogger) {
+    const bookAuthorsToRemove = (await Database.authorModel.findAll({
+      where: [
+        {
+          id: scanLogger.authorsRemovedFromBooks,
+          asin: {
+            [sequelize.Op.or]: [null, ""]
+          },
+          description: {
+            [sequelize.Op.or]: [null, ""]
+          },
+          imagePath: {
+            [sequelize.Op.or]: [null, ""]
+          }
+        },
+        sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
+      ],
+      attributes: ['id'],
+      raw: true
+    })).map(au => au.id)
+    if (bookAuthorsToRemove.length) {
+      await Database.authorModel.destroy({
+        where: {
+          id: bookAuthorsToRemove
+        }
+      })
+      bookAuthorsToRemove.forEach((authorId) => {
+        Database.removeAuthorFromFilterData(libraryId, authorId)
+        // TODO: Clients were expecting full author in payload but its unnecessary
+        SocketAuthority.emitter('author_removed', { id: authorId, libraryId })
+      })
+      scanLogger.addLog(LogLevel.INFO, `Removed ${bookAuthorsToRemove.length} authors`)
+    }
+  }
+
+  /**
+   * Check series that were removed from books and remove them if they no longer have any books
+   * @param {string} libraryId 
+   * @param {import('./ScanLogger')} scanLogger 
+   * @returns {Promise}
+   */
+  async checkSeriesRemovedFromBooks(libraryId, scanLogger) {
+    const bookSeriesToRemove = (await Database.seriesModel.findAll({
+      where: [
+        {
+          id: scanLogger.seriesRemovedFromBooks
+        },
+        sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
+      ],
+      attributes: ['id'],
+      raw: true
+    })).map(se => se.id)
+    if (bookSeriesToRemove.length) {
+      await Database.seriesModel.destroy({
+        where: {
+          id: bookSeriesToRemove
+        }
+      })
+      bookSeriesToRemove.forEach((seriesId) => {
+        Database.removeSeriesFromFilterData(libraryId, seriesId)
+        SocketAuthority.emitter('series_removed', { id: seriesId, libraryId })
+      })
+      scanLogger.addLog(LogLevel.INFO, `Removed ${bookSeriesToRemove.length} series`)
     }
   }
 }

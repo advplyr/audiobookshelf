@@ -45,6 +45,11 @@ class Database {
     return this.models.library
   }
 
+  /** @type {typeof import('./models/LibraryFolder')} */
+  get libraryFolderModel() {
+    return this.models.libraryFolder
+  }
+
   /** @type {typeof import('./models/Author')} */
   get authorModel() {
     return this.models.author

@@ -9,11 +9,13 @@ const libraryHelpers = require('../utils/libraryHelpers')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const seriesFilters = require('../utils/queries/seriesFilters')
+const fileUtils = require('../utils/fileUtils')
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 
+const LibraryScanner = require('../scanner/LibraryScanner')
 const Database = require('../Database')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
@@ -33,7 +35,7 @@ class LibraryController {
     // Validate folder paths exist or can be created & resolve rel paths
     //   returns 400 if a folder fails to access
     newLibraryPayload.folders = newLibraryPayload.folders.map(f => {
-      f.fullPath = Path.resolve(f.fullPath)
+      f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
       return f
     })
     for (const folder of newLibraryPayload.folders) {
@@ -87,7 +89,7 @@ class LibraryController {
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
     if (includeArray.includes('filterdata')) {
-      const filterdata = await libraryFilters.getFilterData(req.library)
+      const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
 
       return res.json({
         filterdata,
@@ -119,7 +121,7 @@ class LibraryController {
       const newFolderPaths = []
       req.body.folders = req.body.folders.map(f => {
         if (!f.id) {
-          f.fullPath = Path.resolve(f.fullPath)
+          f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
           newFolderPaths.push(f.fullPath)
         }
         return f
@@ -670,7 +672,7 @@ class LibraryController {
    * @param {import('express').Response} res 
    */
   async getLibraryFilterData(req, res) {
-    const filterData = await libraryFilters.getFilterData(req.library)
+    const filterData = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
     res.json(filterData)
   }
 
@@ -976,9 +978,13 @@ class LibraryController {
       forceRescan: req.query.force == 1
     }
     res.sendStatus(200)
-    await this.scanner.scan(req.library, options)
-    // TODO: New library scanner
-    // await this.libraryScanner.scan(req.library, options)
+    if (req.library.mediaType === 'podcast') {
+      // TODO: New library scanner for podcasts
+      await this.scanner.scan(req.library, options)
+    } else {
+      await LibraryScanner.scan(req.library, options)
+    }
+
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')
   }
