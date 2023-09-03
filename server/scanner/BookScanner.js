@@ -1,4 +1,5 @@
 const uuidv4 = require("uuid").v4
+const Path = require('path')
 const { Sequelize } = require('sequelize')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
@@ -9,9 +10,10 @@ const parseNameString = require('../utils/parsers/parseNameString')
 const globals = require('../utils/globals')
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
-const { readTextFile } = require('../utils/fileUtils')
+const { readTextFile, filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const AudioFile = require('../objects/files/AudioFile')
 const CoverManager = require('../managers/CoverManager')
+const LibraryFile = require('../objects/files/LibraryFile')
 const fsExtra = require("../libs/fsExtra")
 
 /**
@@ -161,26 +163,6 @@ class BookScanner {
       hasMediaChanges = true
     }
 
-    // Check/update the isSupplementary flag on libraryFiles for the LibraryItem
-    let libraryItemUpdated = false
-    for (const libraryFile of existingLibraryItem.libraryFiles) {
-      if (globals.SupportedEbookTypes.includes(libraryFile.metadata.ext.slice(1).toLowerCase())) {
-        if (media.ebookFile && libraryFile.ino === media.ebookFile.ino) {
-          if (libraryFile.isSupplementary !== false) {
-            libraryFile.isSupplementary = false
-            libraryItemUpdated = true
-          }
-        } else if (libraryFile.isSupplementary !== true) {
-          libraryFile.isSupplementary = true
-          libraryItemUpdated = true
-        }
-      }
-    }
-    if (libraryItemUpdated) {
-      existingLibraryItem.changed('libraryFiles', true)
-      await existingLibraryItem.save()
-    }
-
     // TODO: When metadata file is stored in /metadata/items/{libraryItemId}.[abs|json] we should load this
     // TODO: store an additional array of metadata keys that the user has changed manually so we know what not to override
     const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, libraryItemData, libraryScan)
@@ -317,11 +299,6 @@ class BookScanner {
       }
     }
 
-    // Save Book changes to db
-    if (hasMediaChanges) {
-      await media.save()
-    }
-
     // Load authors/series again if updated (for sending back to client)
     if (authorsUpdated) {
       media.authors = await media.getAuthors({
@@ -340,10 +317,39 @@ class BookScanner {
       })
     }
 
+    existingLibraryItem.media = media
+
+    let libraryItemUpdated = false
+
+    // Save Book changes to db
+    if (hasMediaChanges) {
+      await media.save()
+      await this.saveMetadataFile(existingLibraryItem, libraryScan)
+      libraryItemUpdated = global.ServerSettings.storeMetadataWithItem && !existingLibraryItem.isFile
+    }
+
+    // Check/update the isSupplementary flag on libraryFiles for the LibraryItem
+    for (const libraryFile of existingLibraryItem.libraryFiles) {
+      if (globals.SupportedEbookTypes.includes(libraryFile.metadata.ext.slice(1).toLowerCase())) {
+        if (media.ebookFile && libraryFile.ino === media.ebookFile.ino) {
+          if (libraryFile.isSupplementary !== false) {
+            libraryFile.isSupplementary = false
+            libraryItemUpdated = true
+          }
+        } else if (libraryFile.isSupplementary !== true) {
+          libraryFile.isSupplementary = true
+          libraryItemUpdated = true
+        }
+      }
+    }
+    if (libraryItemUpdated) {
+      existingLibraryItem.changed('libraryFiles', true)
+      await existingLibraryItem.save()
+    }
+
     libraryScan.seriesRemovedFromBooks.push(...bookSeriesRemoved)
     libraryScan.authorsRemovedFromBooks.push(...bookAuthorsRemoved)
 
-    existingLibraryItem.media = media
     return existingLibraryItem
   }
 
@@ -508,6 +514,12 @@ class BookScanner {
         [Database.seriesModel, 'bookSeries', 'createdAt', 'ASC']
       ]
     })
+
+    await this.saveMetadataFile(libraryItem, libraryScan)
+    if (global.ServerSettings.storeMetadataWithItem && !libraryItem.isFile) {
+      libraryItem.changed('libraryFiles', true)
+      await libraryItem.save()
+    }
 
     return libraryItem
   }
@@ -691,7 +703,7 @@ class BookScanner {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile || libraryItemData.metadataAbsLibraryFile
     const metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     if (metadataText) {
-      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataLibraryFile.metadata.relPath}" - preferring`)
+      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataLibraryFile.metadata.path}" - preferring`)
       let abMetadata = null
       if (!!libraryItemData.metadataJsonLibraryFile) {
         abMetadata = abmetadataGenerator.parseJson(metadataText)
@@ -707,7 +719,7 @@ class BookScanner {
           bookMetadata.chapters = abMetadata.chapters
         }
         for (const key in abMetadata.metadata) {
-          if (bookMetadata[key] === undefined || abMetadata.metadata[key] === undefined) continue
+          if (abMetadata.metadata[key] === undefined) continue
           bookMetadata[key] = abMetadata.metadata[key]
         }
       }
@@ -803,7 +815,7 @@ class BookScanner {
       // Build chapters from audio files
       let currChapterId = 0
       let currStartTime = 0
-      includedAudioFiles.forEach((file) => {
+      audioFiles.forEach((file) => {
         if (file.duration) {
           let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
 
@@ -823,6 +835,119 @@ class BookScanner {
       })
     }
     return chapters
+  }
+
+  /**
+   * 
+   * @param {import('../models/LibraryItem')} libraryItem 
+   * @param {import('./LibraryScan')} libraryScan
+   * @returns {Promise}
+   */
+  async saveMetadataFile(libraryItem, libraryScan) {
+    let metadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+    let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
+    if (storeMetadataWithItem && !libraryItem.isFile) {
+      metadataPath = libraryItem.path
+    } else {
+      // Make sure metadata book dir exists
+      storeMetadataWithItem = false
+      await fsExtra.ensureDir(metadataPath)
+    }
+
+    const metadataFileFormat = global.ServerSettings.metadataFileFormat
+    const metadataFilePath = Path.join(metadataPath, `metadata.${metadataFileFormat}`)
+    if (metadataFileFormat === 'json') {
+      // Remove metadata.abs if it exists
+      if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.abs`))) {
+        libraryScan.addLog(LogLevel.DEBUG, `Removing metadata.abs for item "${libraryItem.media.title}"`)
+        await fsExtra.remove(Path.join(metadataPath, `metadata.abs`))
+        libraryItem.libraryFiles = libraryItem.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.abs`)))
+      }
+
+      // TODO: Update to not use `metadata` so it fits the updated model
+      const jsonObject = {
+        tags: libraryItem.media.tags || [],
+        chapters: libraryItem.media.chapters?.map(c => ({ ...c })) || [],
+        metadata: {
+          title: libraryItem.media.title,
+          subtitle: libraryItem.media.subtitle,
+          authors: libraryItem.media.authors.map(a => a.name),
+          narrators: libraryItem.media.narrators,
+          series: libraryItem.media.series.map(se => {
+            const sequence = se.bookSeries?.sequence || ''
+            if (!sequence) return se.name
+            return `${se.name} #${sequence}`
+          }),
+          genres: libraryItem.media.genres || [],
+          publishedYear: libraryItem.media.publishedYear,
+          publishedDate: libraryItem.media.publishedDate,
+          publisher: libraryItem.media.publisher,
+          description: libraryItem.media.description,
+          isbn: libraryItem.media.isbn,
+          asin: libraryItem.media.asin,
+          language: libraryItem.media.language,
+          explicit: !!libraryItem.media.explicit,
+          abridged: !!libraryItem.media.abridged
+        }
+      }
+      return fsExtra.writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2)).then(async () => {
+        // Add metadata.json to libraryFiles array if it is new
+        let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+        if (storeMetadataWithItem && !metadataLibraryFile) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+          metadataLibraryFile = newLibraryFile.toJSON()
+          libraryItem.libraryFiles.push(metadataLibraryFile)
+        } else if (storeMetadataWithItem) {
+          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+          if (fileTimestamps) {
+            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+            metadataLibraryFile.metadata.size = fileTimestamps.size
+            metadataLibraryFile.ino = fileTimestamps.ino
+          }
+        }
+        libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
+
+        return metadataLibraryFile
+      }).catch((error) => {
+        libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
+        return null
+      })
+    } else {
+      // Remove metadata.json if it exists
+      if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.json`))) {
+        libraryScan.addLog(LogLevel.DEBUG, `Removing metadata.json for item "${libraryItem.media.title}"`)
+        await fsExtra.remove(Path.join(metadataPath, `metadata.json`))
+        libraryItem.libraryFiles = libraryItem.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.json`)))
+      }
+
+      return abmetadataGenerator.generateFromNewModel(libraryItem, metadataFilePath).then(async (success) => {
+        if (!success) {
+          libraryScan.addLog(LogLevel.ERROR, `Failed saving abmetadata to "${metadataFilePath}"`)
+          return null
+        }
+        // Add metadata.abs to libraryFiles array if it is new
+        let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+        if (storeMetadataWithItem && !metadataLibraryFile) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.abs`)
+          metadataLibraryFile = newLibraryFile.toJSON()
+          libraryItem.libraryFiles.push(metadataLibraryFile)
+        } else if (storeMetadataWithItem) {
+          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+          if (fileTimestamps) {
+            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+            metadataLibraryFile.metadata.size = fileTimestamps.size
+            metadataLibraryFile.ino = fileTimestamps.ino
+          }
+        }
+
+        libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
+        return metadataLibraryFile
+      })
+    }
   }
 }
 module.exports = new BookScanner()

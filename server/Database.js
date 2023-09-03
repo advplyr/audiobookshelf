@@ -325,9 +325,9 @@ class Database {
     return Promise.all(oldUsers.map(u => this.updateUser(u)))
   }
 
-  async removeUser(userId) {
+  removeUser(userId) {
     if (!this.sequelize) return false
-    await this.models.user.removeById(userId)
+    return this.models.user.removeById(userId)
   }
 
   upsertMediaProgress(oldMediaProgress) {
@@ -345,9 +345,9 @@ class Database {
     return Promise.all(oldBooks.map(oldBook => this.models.book.saveFromOld(oldBook)))
   }
 
-  async createLibrary(oldLibrary) {
+  createLibrary(oldLibrary) {
     if (!this.sequelize) return false
-    await this.models.library.createFromOld(oldLibrary)
+    return this.models.library.createFromOld(oldLibrary)
   }
 
   updateLibrary(oldLibrary) {
@@ -355,9 +355,9 @@ class Database {
     return this.models.library.updateFromOld(oldLibrary)
   }
 
-  async removeLibrary(libraryId) {
+  removeLibrary(libraryId) {
     if (!this.sequelize) return false
-    await this.models.library.removeById(libraryId)
+    return this.models.library.removeById(libraryId)
   }
 
   createBulkCollectionBooks(collectionBooks) {

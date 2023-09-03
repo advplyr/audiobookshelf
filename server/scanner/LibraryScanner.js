@@ -153,7 +153,6 @@ class LibraryScanner {
           if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
             const libraryItem = await this.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan)
             const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-            await oldLibraryItem.saveMetadata() // Save metadata.json
             oldLibraryItemsUpdated.push(oldLibraryItem)
           } else {
             // TODO: Temporary while using old model to socket emit
@@ -264,7 +263,6 @@ class LibraryScanner {
         const newLibraryItem = await this.scanNewLibraryItem(libraryItemData, libraryScan)
         if (newLibraryItem) {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
-          await oldLibraryItem.saveMetadata() // Save metadata.json
           newOldLibraryItems.push(oldLibraryItem)
 
           libraryScan.resultsAdded++
