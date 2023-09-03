@@ -209,9 +209,35 @@ class LibraryScanner {
         bookAuthorsToRemove.forEach((authorId) => {
           Database.removeAuthorFromFilterData(libraryScan.libraryId, authorId)
           // TODO: Clients were expecting full author in payload but its unnecessary
-          SocketAuthority.emitter('author_removed', { id: authorId })
+          SocketAuthority.emitter('author_removed', { id: authorId, libraryId: libraryScan.libraryId })
         })
         libraryScan.addLog(LogLevel.INFO, `Removed ${bookAuthorsToRemove.length} authors`)
+      }
+    }
+
+    // Check series that were removed from books and remove them if they no longer have any books
+    if (libraryScan.seriesRemovedFromBooks.length) {
+      const bookSeriesToRemove = (await Database.seriesModel.findAll({
+        where: [
+          {
+            id: libraryScan.seriesRemovedFromBooks
+          },
+          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
+        ],
+        attributes: ['id'],
+        raw: true
+      })).map(se => se.id)
+      if (bookSeriesToRemove.length) {
+        await Database.seriesModel.destroy({
+          where: {
+            id: bookSeriesToRemove
+          }
+        })
+        bookSeriesToRemove.forEach((seriesId) => {
+          Database.removeSeriesFromFilterData(libraryScan.libraryId, seriesId)
+          SocketAuthority.emitter('series_removed', { id: seriesId, libraryId: libraryScan.libraryId })
+        })
+        libraryScan.addLog(LogLevel.INFO, `Removed ${bookSeriesToRemove.length} series`)
       }
     }
 

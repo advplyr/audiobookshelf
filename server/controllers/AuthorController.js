@@ -153,17 +153,6 @@ class AuthorController {
     }
   }
 
-  async search(req, res) {
-    var q = (req.query.q || '').toLowerCase()
-    if (!q) return res.json([])
-    var limit = (req.query.limit && !isNaN(req.query.limit)) ? Number(req.query.limit) : 25
-    var authors = Database.authors.filter(au => au.name?.toLowerCase().includes(q))
-    authors = authors.slice(0, limit)
-    res.json({
-      results: authors
-    })
-  }
-
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'

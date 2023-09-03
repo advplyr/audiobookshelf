@@ -209,7 +209,6 @@ class ApiRouter {
     //
     // Author Routes
     //
-    this.router.get('/authors/search', AuthorController.search.bind(this))
     this.router.get('/authors/:id', AuthorController.middleware.bind(this), AuthorController.findOne.bind(this))
     this.router.patch('/authors/:id', AuthorController.middleware.bind(this), AuthorController.update.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
