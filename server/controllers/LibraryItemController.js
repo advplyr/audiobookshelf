@@ -12,7 +12,15 @@ const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 class LibraryItemController {
   constructor() { }
 
-  // Example expand with authors: api/items/:id?expanded=1&include=authors
+  /**
+   * GET: /api/items/:id
+   * Optional query params:
+   * ?include=progress,rssfeed,downloads
+   * ?expanded=1
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
     if (req.query.expanded == 1) {
@@ -29,17 +37,7 @@ class LibraryItemController {
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 
-      if (item.mediaType == 'book') {
-        if (includeEntities.includes('authors')) {
-          item.media.metadata.authors = item.media.metadata.authors.map(au => {
-            var author = Database.authors.find(_au => _au.id === au.id)
-            if (!author) return null
-            return {
-              ...author
-            }
-          }).filter(au => au)
-        }
-      } else if (includeEntities.includes('downloads')) {
+      if (item.mediaType === 'podcast' && includeEntities.includes('downloads')) {
         const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
         item.episodeDownloadsQueued = downloadsInQueue.map(d => d.toJSONForClient())
         if (this.podcastManager.currentDownload?.libraryItemId === req.libraryItem.id) {

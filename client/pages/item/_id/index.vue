@@ -160,7 +160,7 @@ export default {
     }
 
     // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors,downloads,rssfeed`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed`).catch((error) => {
       console.error('Failed', error)
       return false
     })

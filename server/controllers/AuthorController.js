@@ -1,4 +1,4 @@
-
+const sequelize = require('sequelize')
 const fs = require('../libs/fsExtra')
 const { createNewSortInstance } = require('../libs/fastSort')
 
@@ -93,7 +93,18 @@ class AuthorController {
     const authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
     // Check if author name matches another author and merge the authors
-    const existingAuthor = authorNameUpdate ? Database.authors.find(au => au.id !== req.author.id && payload.name === au.name) : false
+    let existingAuthor = null
+    if (authorNameUpdate) {
+      const author = await Database.authorModel.findOne({
+        where: {
+          id: {
+            [sequelize.Op.not]: req.author.id
+          },
+          name: payload.name
+        }
+      })
+      existingAuthor = author?.getOldAuthor()
+    }
     if (existingAuthor) {
       const bookAuthorsToCreate = []
       const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
