@@ -8,8 +8,6 @@ const filePerms = require('../utils/filePerms')
 
 class AuthorFinder {
   constructor() {
-    this.AuthorPath = Path.join(global.MetadataPath, 'authors')
-
     this.audnexus = new Audnexus()
   }
 
@@ -37,7 +35,7 @@ class AuthorFinder {
   }
 
   async saveAuthorImage(authorId, url) {
-    var authorDir = this.AuthorPath
+    var authorDir = Path.join(global.MetadataPath, 'authors')
     var relAuthorDir = Path.posix.join('/metadata', 'authors')
 
     if (!await fs.pathExists(authorDir)) {
@@ -61,4 +59,4 @@ class AuthorFinder {
     }
   }
 }
-module.exports = AuthorFinder
+module.exports = new AuthorFinder()

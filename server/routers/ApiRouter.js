@@ -29,11 +29,6 @@ const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
 const MiscController = require('../controllers/MiscController')
 
-const BookFinder = require('../finders/BookFinder')
-const AuthorFinder = require('../finders/AuthorFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
-const MusicFinder = require('../finders/MusicFinder')
-
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
@@ -54,11 +49,6 @@ class ApiRouter {
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
     this.taskManager = Server.taskManager
-
-    this.bookFinder = new BookFinder()
-    this.authorFinder = new AuthorFinder()
-    this.podcastFinder = new PodcastFinder()
-    this.musicFinder = new MusicFinder()
 
     this.router = express()
     this.router.disable('x-powered-by')

@@ -3,7 +3,6 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 // Utils
-const { LogLevel } = require('../utils/constants')
 const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
 
 const BookFinder = require('../finders/BookFinder')
@@ -11,44 +10,11 @@ const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
+const LibraryScanner = require('./LibraryScanner')
 
 class Scanner {
-  constructor(coverManager, taskManager) {
+  constructor(coverManager) {
     this.coverManager = coverManager
-    this.taskManager = taskManager
-
-    this.cancelLibraryScan = {}
-    this.librariesScanning = []
-
-    this.bookFinder = new BookFinder()
-    this.podcastFinder = new PodcastFinder()
-  }
-
-  async searchForCover(libraryItem, libraryScan = null) {
-    const options = {
-      titleDistance: 2,
-      authorDistance: 2
-    }
-    const scannerCoverProvider = Database.serverSettings.scannerCoverProvider
-    const results = await this.bookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
-    if (results.length) {
-      if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
-      else Logger.debug(`[Scanner] Found best cover for "${libraryItem.media.metadata.title}"`)
-
-      // If the first cover result fails, attempt to download the second
-      for (let i = 0; i < results.length && i < 2; i++) {
-
-        // Downloads and updates the book cover
-        const result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
-
-        if (result.error) {
-          Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
-        } else {
-          return true
-        }
-      }
-    }
-    return false
   }
 
   async quickMatchLibraryItem(libraryItem, options = {}) {
@@ -71,7 +37,7 @@ class Scanner {
       var searchISBN = options.isbn || libraryItem.media.metadata.isbn
       var searchASIN = options.asin || libraryItem.media.metadata.asin
 
-      var results = await this.bookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
+      var results = await BookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
@@ -92,7 +58,7 @@ class Scanner {
 
       updatePayload = await this.quickMatchBookBuildUpdatePayload(libraryItem, matchData, options)
     } else if (libraryItem.isPodcast) { // Podcast quick match
-      var results = await this.podcastFinder.search(searchTitle)
+      var results = await PodcastFinder.search(searchTitle)
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
@@ -315,62 +281,80 @@ class Scanner {
     return false
   }
 
-  async matchLibraryItems(library) {
-    if (library.mediaType === 'podcast') {
-      Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
-      return
-    }
-
-    const itemsInLibrary = Database.libraryItems.filter(li => li.libraryId === library.id)
-    if (!itemsInLibrary.length) {
-      Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
-      return
-    }
-
-    const provider = library.provider
-
-    var libraryScan = new LibraryScan()
-    libraryScan.setData(library, null, 'match')
-    this.librariesScanning.push(libraryScan.getScanEmitData)
-    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
-
-    Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
-
-    for (let i = 0; i < itemsInLibrary.length; i++) {
-      var libraryItem = itemsInLibrary[i]
+  async matchLibraryItemsChunk(library, libraryItems, libraryScan) {
+    for (let i = 0; i < libraryItems.length; i++) {
+      const libraryItem = libraryItems[i]
 
       if (libraryItem.media.metadata.asin && library.settings.skipMatchingMediaWithAsin) {
         Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
-          }" because it already has an ASIN (${i + 1} of ${itemsInLibrary.length})`)
-        continue;
+          }" because it already has an ASIN (${i + 1} of ${libraryItems.length})`)
+        continue
       }
 
       if (libraryItem.media.metadata.isbn && library.settings.skipMatchingMediaWithIsbn) {
         Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
-          }" because it already has an ISBN (${i + 1} of ${itemsInLibrary.length})`)
-        continue;
+          }" because it already has an ISBN (${i + 1} of ${libraryItems.length})`)
+        continue
       }
 
-      Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.metadata.title}" (${i + 1} of ${itemsInLibrary.length})`)
-      var result = await this.quickMatchLibraryItem(libraryItem, { provider })
+      Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.metadata.title}" (${i + 1} of ${libraryItems.length})`)
+      const result = await this.quickMatchLibraryItem(libraryItem, { provider: library.provider })
       if (result.warning) {
         Logger.warn(`[Scanner] matchLibraryItems: Match warning ${result.warning} for library item "${libraryItem.media.metadata.title}"`)
       } else if (result.updated) {
         libraryScan.resultsUpdated++
       }
 
-      if (this.cancelLibraryScan[libraryScan.libraryId]) {
+      if (LibraryScanner.cancelLibraryScan[libraryScan.libraryId]) {
         Logger.info(`[Scanner] matchLibraryItems: Library match scan canceled for "${libraryScan.libraryName}"`)
-        delete this.cancelLibraryScan[libraryScan.libraryId]
-        var scanData = libraryScan.getScanEmitData
-        scanData.results = null
-        SocketAuthority.emitter('scan_complete', scanData)
-        this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-        return
+        return false
       }
     }
 
-    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    return true
+  }
+
+  async matchLibraryItems(library) {
+    if (library.mediaType === 'podcast') {
+      Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
+      return
+    }
+
+    if (LibraryScanner.isLibraryScanning(library.id)) {
+      Logger.error(`[Scanner] Library "${library.name}" is already scanning`)
+      return
+    }
+
+    const limit = 100
+    let offset = 0
+
+    const libraryScan = new LibraryScan()
+    libraryScan.setData(library, null, 'match')
+    LibraryScanner.librariesScanning.push(libraryScan.getScanEmitData)
+    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
+
+    Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+
+    let hasMoreChunks = true
+    while (hasMoreChunks) {
+      const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
+      if (!libraryItems.length) {
+        Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
+        SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
+        return
+      }
+      offset += limit
+      hasMoreChunks = libraryItems.length < limit
+      let oldLibraryItems = libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
+
+      const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)
+      if (!shouldContinue) {
+        break
+      }
+    }
+
+    delete LibraryScanner.cancelLibraryScan[libraryScan.libraryId]
+    LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter(ls => ls.id !== library.id)
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 }

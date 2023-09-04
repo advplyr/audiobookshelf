@@ -411,7 +411,9 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
-    const libraryItems = req.body.libraryItemIds.map(lid => Database.getLibraryItem(lid)).filter(li => li)
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+      id: req.body.libraryItemIds
+    })
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }

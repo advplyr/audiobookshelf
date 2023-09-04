@@ -15,9 +15,6 @@ class Database {
     this.isNew = false // New absdatabase.sqlite created
     this.hasRootUser = false // Used to show initialization page in web ui
 
-    // Temporarily using format of old DB
-    // TODO: below data should be loaded from the DB as needed
-    this.libraryItems = []
     this.settings = []
 
     // Cached library filter data
@@ -255,8 +252,6 @@ class Database {
       await dbMigration.migrate(this.models)
     }
 
-    const startTime = Date.now()
-
     const settingsData = await this.models.setting.getOldSettings()
     this.settings = settingsData.settings
     this.emailSettings = settingsData.emailSettings
@@ -272,15 +267,8 @@ class Database {
       await dbMigration.migrationPatch2(this)
     }
 
-    Logger.info(`[Database] Loading db data...`)
-
-    this.libraryItems = await this.models.libraryItem.loadAllLibraryItems()
-    Logger.info(`[Database] Loaded ${this.libraryItems.length} library items`)
-
     // Set if root user has been created
     this.hasRootUser = await this.models.user.getHasRootUser()
-
-    Logger.info(`[Database] Db data loaded in ${((Date.now() - startTime) / 1000).toFixed(2)}s`)
 
     if (packageJson.version !== this.serverSettings.version) {
       Logger.info(`[Database] Server upgrade detected from ${this.serverSettings.version} to ${packageJson.version}`)
@@ -380,20 +368,10 @@ class Database {
     return this.models.playlistMediaItem.bulkCreate(playlistMediaItems)
   }
 
-  getLibraryItem(libraryItemId) {
-    if (!this.sequelize || !libraryItemId) return false
-
-    // Temp support for old library item ids from mobile
-    if (libraryItemId.startsWith('li_')) return this.libraryItems.find(li => li.oldLibraryItemId === libraryItemId)
-
-    return this.libraryItems.find(li => li.id === libraryItemId)
-  }
-
   async createLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
     await oldLibraryItem.saveMetadata()
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
-    this.libraryItems.push(oldLibraryItem)
   }
 
   async updateLibraryItem(oldLibraryItem) {
@@ -420,14 +398,12 @@ class Database {
     for (const oldLibraryItem of oldLibraryItems) {
       await oldLibraryItem.saveMetadata()
       await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
-      this.libraryItems.push(oldLibraryItem)
     }
   }
 
   async removeLibraryItem(libraryItemId) {
     if (!this.sequelize) return false
     await this.models.libraryItem.removeById(libraryItemId)
-    this.libraryItems = this.libraryItems.filter(li => li.id !== libraryItemId)
   }
 
   async createFeed(oldFeed) {

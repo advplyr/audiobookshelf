@@ -16,6 +16,7 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryFile = require('../objects/files/LibraryFile')
 const SocketAuthority = require('../SocketAuthority')
 const fsExtra = require("../libs/fsExtra")
+// const BookFinder = require('../finders/BookFinder')
 
 /**
  * Metadata for books pulled from files
@@ -1049,5 +1050,32 @@ class BookScanner {
       scanLogger.addLog(LogLevel.INFO, `Removed ${bookSeriesToRemove.length} series`)
     }
   }
+
+  // async searchForCover(libraryItem, libraryScan = null) {
+  //   const options = {
+  //     titleDistance: 2,
+  //     authorDistance: 2
+  //   }
+  //   const scannerCoverProvider = Database.serverSettings.scannerCoverProvider
+  //   const results = await BookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
+  //   if (results.length) {
+  //     if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
+  //     else Logger.debug(`[Scanner] Found best cover for "${libraryItem.media.metadata.title}"`)
+
+  //     // If the first cover result fails, attempt to download the second
+  //     for (let i = 0; i < results.length && i < 2; i++) {
+
+  //       // Downloads and updates the book cover
+  //       const result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
+
+  //       if (result.error) {
+  //         Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
+  //       } else {
+  //         return true
+  //       }
+  //     }
+  //   }
+  //   return false
+  // }
 }
 module.exports = new BookScanner()

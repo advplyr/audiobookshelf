@@ -93,7 +93,7 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSession(user, sessionJson, deviceInfo) {
-    const libraryItem = Database.getLibraryItem(sessionJson.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
     const episode = (sessionJson.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)

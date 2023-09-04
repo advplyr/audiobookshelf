@@ -22,4 +22,4 @@ class PodcastFinder {
     return results.map(r => r.cover).filter(r => r)
   }
 }
-module.exports = PodcastFinder
+module.exports = new PodcastFinder()

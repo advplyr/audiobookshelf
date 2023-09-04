@@ -5,6 +5,7 @@ const { createNewSortInstance } = require('../libs/fastSort')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const AuthorFinder = require('../finders/AuthorFinder')
 
 const { reqSupportsWebp } = require('../utils/index')
 
@@ -70,7 +71,7 @@ class AuthorController {
         await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
         await this.coverManager.removeFile(req.author.imagePath)
       } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
-        const imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imagePath)
+        const imageData = await AuthorFinder.saveAuthorImage(req.author.id, payload.imagePath)
         if (imageData) {
           if (req.author.imagePath) {
             await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
@@ -168,9 +169,9 @@ class AuthorController {
     let authorData = null
     const region = req.body.region || 'us'
     if (req.body.asin) {
-      authorData = await this.authorFinder.findAuthorByASIN(req.body.asin, region)
+      authorData = await AuthorFinder.findAuthorByASIN(req.body.asin, region)
     } else {
-      authorData = await this.authorFinder.findAuthorByName(req.body.q, region)
+      authorData = await AuthorFinder.findAuthorByName(req.body.q, region)
     }
     if (!authorData) {
       return res.status(404).send('Author not found')
@@ -187,7 +188,7 @@ class AuthorController {
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
       this.cacheManager.purgeImageCache(req.author.id)
 
-      const imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
+      const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path
         hasUpdates = true

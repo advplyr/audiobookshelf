@@ -118,12 +118,13 @@ class LibraryItem extends Model {
    * @param {number} limit
    * @returns {Promise<Model<LibraryItem>[]>} LibraryItem
    */
-  static getLibraryItemsIncrement(offset, limit) {
+  static getLibraryItemsIncrement(offset, limit, where = null) {
     return this.findAll({
       benchmark: true,
       logging: (sql, timeMs) => {
         console.log(`[Query] Elapsed ${timeMs}ms.`)
       },
+      where,
       include: [
         {
           model: this.sequelize.models.book,

@@ -9,4 +9,4 @@ class MusicFinder {
     return this.musicBrainz.searchTrack(options)
   }
 }
-module.exports = MusicFinder
+module.exports = new MusicFinder()

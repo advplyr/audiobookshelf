@@ -253,4 +253,4 @@ class BookFinder {
     return this.audnexus.getChaptersByASIN(asin, region)
   }
 }
-module.exports = BookFinder
+module.exports = new BookFinder()

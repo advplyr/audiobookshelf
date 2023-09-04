@@ -87,7 +87,7 @@ class RssFeedManager {
 
     // Check if feed needs to be updated
     if (feed.entityType === 'libraryItem') {
-      const libraryItem = Database.getLibraryItem(feed.entityId)
+      const libraryItem = await Database.libraryItemModel.getOldById(feed.entityId)
 
       let mostRecentlyUpdatedAt = libraryItem.updatedAt
       if (libraryItem.isPodcast) {

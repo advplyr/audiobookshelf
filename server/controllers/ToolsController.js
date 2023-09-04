@@ -66,7 +66,7 @@ class ToolsController {
 
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = Database.getLibraryItem(libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getOldById(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not found`)
         return res.sendStatus(404)

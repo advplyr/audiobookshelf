@@ -193,7 +193,8 @@ class MeController {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
         continue
       }
-      const libraryItem = Database.getLibraryItem(localProgress.libraryItemId)
+
+      const libraryItem = await Database.libraryItemModel.getOldById(localProgress.libraryItemId)
       if (!libraryItem) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item`, localProgress)
         continue
@@ -245,13 +246,15 @@ class MeController {
   }
 
   // GET: api/me/items-in-progress
-  getAllLibraryItemsInProgress(req, res) {
+  async getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
     let itemsInProgress = []
+    // TODO: More efficient to do this in a single query
     for (const mediaProgress of req.user.mediaProgress) {
       if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || mediaProgress.ebookProgress > 0)) {
-        const libraryItem = Database.getLibraryItem(mediaProgress.libraryItemId)
+
+        const libraryItem = await Database.libraryItemModel.getOldById(mediaProgress.libraryItemId)
         if (libraryItem) {
           if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
             const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)
