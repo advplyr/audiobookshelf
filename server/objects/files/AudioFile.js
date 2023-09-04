@@ -6,6 +6,7 @@ class AudioFile {
   constructor(data) {
     this.index = null
     this.ino = null
+    /** @type {FileMetadata} */
     this.metadata = null
     this.addedAt = null
     this.updatedAt = null
@@ -27,6 +28,7 @@ class AudioFile {
     this.embeddedCoverArt = null
 
     // Tags scraped from the audio file
+    /** @type {AudioMetaTags} */
     this.metaTags = null
 
     this.manuallyVerified = false

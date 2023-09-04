@@ -445,7 +445,12 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
-    const libraryItems = req.body.libraryItemIds.map(lid => Database.getLibraryItem(lid)).filter(li => li)
+    const libraryItems = await Database.libraryItemModel.findAll({
+      where: {
+        id: req.body.libraryItemIds
+      },
+      attributes: ['id', 'libraryId', 'isFile']
+    })
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }
@@ -457,7 +462,7 @@ class LibraryItemController {
       if (libraryItem.isFile) {
         Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
       } else {
-        await this.scanner.scanLibraryItemByRequest(libraryItem)
+        await LibraryItemScanner.scanLibraryItem(libraryItem.id)
       }
     }
 
@@ -476,14 +481,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    let result = 0
-    if (req.libraryItem.isPodcast) {
-      // TODO: New library item scanner for podcast
-      result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
-    } else {
-      result = await LibraryItemScanner.scanLibraryItem(req.libraryItem.id)
-    }
-
+    const result = await LibraryItemScanner.scanLibraryItem(req.libraryItem.id)
     await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)

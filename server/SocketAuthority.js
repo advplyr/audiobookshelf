@@ -95,7 +95,7 @@ class SocketAuthority {
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
 
       // Scanning
-      socket.on('cancel_scan', this.cancelScan.bind(this))
+      socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
 
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
@@ -209,7 +209,7 @@ class SocketAuthority {
 
   cancelScan(id) {
     Logger.debug('[SocketAuthority] Cancel scan', id)
-    this.Server.scanner.setCancelLibraryScan(id)
+    this.Server.cancelLibraryScan(id)
   }
 }
 module.exports = new SocketAuthority()

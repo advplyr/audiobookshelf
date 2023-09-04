@@ -35,6 +35,7 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
+const LibraryScanner = require('./scanner/LibraryScanner')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -76,7 +77,7 @@ class Server {
     this.rssFeedManager = new RssFeedManager()
 
     this.scanner = new Scanner(this.coverManager, this.taskManager)
-    this.cronManager = new CronManager(this.scanner, this.podcastManager)
+    this.cronManager = new CronManager(this.podcastManager)
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -90,6 +91,10 @@ class Server {
 
   authMiddleware(req, res, next) {
     this.auth.authMiddleware(req, res, next)
+  }
+
+  cancelLibraryScan(libraryId) {
+    LibraryScanner.setCancelLibraryScan(libraryId)
   }
 
   /**
@@ -122,7 +127,6 @@ class Server {
       this.watcher.disabled = true
     } else {
       this.watcher.initWatcher(libraries)
-      this.watcher.on('files', this.filesChanged.bind(this))
     }
   }
 
@@ -239,11 +243,6 @@ class Server {
     await Database.createRootUser(rootUsername, rootPash, this.auth)
 
     res.sendStatus(200)
-  }
-
-  async filesChanged(fileUpdates) {
-    Logger.info('[Server]', fileUpdates.length, 'Files Changed')
-    await this.scanner.scanFilesChanged(fileUpdates)
   }
 
   /**

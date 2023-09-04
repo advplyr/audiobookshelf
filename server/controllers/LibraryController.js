@@ -978,12 +978,8 @@ class LibraryController {
       forceRescan: req.query.force == 1
     }
     res.sendStatus(200)
-    if (req.library.mediaType === 'podcast') {
-      // TODO: New library scanner for podcasts
-      await this.scanner.scan(req.library, options)
-    } else {
-      await LibraryScanner.scan(req.library, options)
-    }
+
+    await LibraryScanner.scan(req.library, options)
 
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')

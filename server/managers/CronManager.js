@@ -2,10 +2,10 @@ const Sequelize = require('sequelize')
 const cron = require('../libs/nodeCron')
 const Logger = require('../Logger')
 const Database = require('../Database')
+const LibraryScanner = require('../scanner/LibraryScanner')
 
 class CronManager {
-  constructor(scanner, podcastManager) {
-    this.scanner = scanner
+  constructor(podcastManager) {
     this.podcastManager = podcastManager
 
     this.libraryScanCrons = []
@@ -39,7 +39,7 @@ class CronManager {
     Logger.debug(`[CronManager] Init library scan cron for ${library.name} on schedule ${library.settings.autoScanCronExpression}`)
     const libScanCron = cron.schedule(library.settings.autoScanCronExpression, () => {
       Logger.debug(`[CronManager] Library scan cron executing for ${library.name}`)
-      this.scanner.scan(library)
+      LibraryScanner.scan(library)
     })
     this.libraryScanCrons.push({
       libraryId: library.id,

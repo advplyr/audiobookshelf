@@ -303,7 +303,7 @@ module.exports = {
    * @returns {{podcast:object[], tags:object[]}}
    */
   async search(oldUser, oldLibrary, query, limit, offset) {
-    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
       where: [

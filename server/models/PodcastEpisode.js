@@ -39,7 +39,7 @@ class PodcastEpisode extends Model {
     this.enclosureType
     /** @type {Date} */
     this.publishedAt
-    /** @type {Object} */
+    /** @type {import('./Book').AudioFileObject} */
     this.audioFile
     /** @type {ChapterObject[]} */
     this.chapters

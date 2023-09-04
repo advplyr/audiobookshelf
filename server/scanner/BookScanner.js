@@ -360,7 +360,7 @@ class BookScanner {
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {import('./LibraryScan')} libraryScan 
-   * @returns {import('../models/LibraryItem')}
+   * @returns {Promise<import('../models/LibraryItem')>}
    */
   async scanNewBookLibraryItem(libraryItemData, librarySettings, libraryScan) {
     // Scan audio files found
@@ -439,6 +439,7 @@ class BookScanner {
     libraryItemObj.id = uuidv4() // Generate library item id ahead of time to use for saving extracted cover image
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
+    libraryItemObj.extraData = {}
 
     // Set isSupplementary flag on ebook library files
     for (const libraryFile of libraryItemObj.libraryFiles) {
@@ -738,6 +739,8 @@ class BookScanner {
       const coverMatch = libraryItemData.imageLibraryFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
       bookMetadata.coverPath = coverMatch?.metadata.path || libraryItemData.imageLibraryFiles[0].metadata.path
     }
+
+    bookMetadata.titleIgnorePrefix = getTitleIgnorePrefix(bookMetadata.title)
 
     return bookMetadata
   }

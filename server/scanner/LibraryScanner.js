@@ -7,7 +7,7 @@ const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
-const { LogLevel } = require('../utils/constants')
+const { LogLevel, ScanResult } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const LibraryItemScanner = require('./LibraryItemScanner')
 const ScanOptions = require('./ScanOptions')
@@ -18,6 +18,10 @@ class LibraryScanner {
   constructor() {
     this.cancelLibraryScan = {}
     this.librariesScanning = []
+
+    this.scanningFilesChanged = false
+    /** @type {import('../Watcher').PendingFileUpdate[][]} */
+    this.pendingFileUpdatesToScan = []
   }
 
   /**
@@ -26,6 +30,16 @@ class LibraryScanner {
    */
   isLibraryScanning(libraryId) {
     return this.librariesScanning.some(ls => ls.id === libraryId)
+  }
+
+  /**
+   * 
+   * @param {string} libraryId 
+   */
+  setCancelLibraryScan(libraryId) {
+    const libraryScanning = this.librariesScanning.find(ls => ls.id === libraryId)
+    if (!libraryScanning) return
+    this.cancelLibraryScan[libraryId] = true
   }
 
   /**
@@ -289,6 +303,230 @@ class LibraryScanner {
       }))
     }
     return items
+  }
+
+  /**
+   * Scan files changed from Watcher
+   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates 
+   */
+  async scanFilesChanged(fileUpdates) {
+    if (!fileUpdates?.length) return
+
+    // If already scanning files from watcher then add these updates to queue
+    if (this.scanningFilesChanged) {
+      this.pendingFileUpdatesToScan.push(fileUpdates)
+      Logger.debug(`[LibraryScanner] Already scanning files from watcher - file updates pushed to queue (size ${this.pendingFileUpdatesToScan.length})`)
+      return
+    }
+    this.scanningFilesChanged = true
+
+    // files grouped by folder
+    const folderGroups = this.getFileUpdatesGrouped(fileUpdates)
+
+    for (const folderId in folderGroups) {
+      const libraryId = folderGroups[folderId].libraryId
+      // const library = await Database.libraryModel.getOldById(libraryId)
+      const library = await Database.libraryModel.findByPk(libraryId, {
+        include: {
+          model: Database.libraryFolderModel,
+          where: {
+            id: folderId
+          }
+        }
+      })
+      if (!library) {
+        Logger.error(`[LibraryScanner] Library "${libraryId}" not found in files changed ${libraryId}`)
+        continue
+      }
+      const folder = library.libraryFolders[0]
+
+      const relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
+      const fileUpdateGroup = scanUtils.groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths)
+
+      if (!Object.keys(fileUpdateGroup).length) {
+        Logger.info(`[LibraryScanner] No important changes to scan for in folder "${folderId}"`)
+        continue
+      }
+      const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
+      Logger.debug(`[LibraryScanner] Folder scan results`, folderScanResults)
+
+      // If something was updated then reset numIssues filter data for library
+      if (Object.values(folderScanResults).some(scanResult => scanResult !== ScanResult.NOTHING && scanResult !== ScanResult.UPTODATE)) {
+        await Database.resetLibraryIssuesFilterData(libraryId)
+      }
+    }
+
+    this.scanningFilesChanged = false
+
+    if (this.pendingFileUpdatesToScan.length) {
+      Logger.debug(`[LibraryScanner] File updates finished scanning with more updates in queue (${this.pendingFileUpdatesToScan.length})`)
+      this.scanFilesChanged(this.pendingFileUpdatesToScan.shift())
+    }
+  }
+
+  /**
+   * Group array of PendingFileUpdate from Watcher by folder
+   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates 
+   * @returns {Record<string,{libraryId:string, folderId:string, fileUpdates:import('../Watcher').PendingFileUpdate[]}>}
+   */
+  getFileUpdatesGrouped(fileUpdates) {
+    const folderGroups = {}
+    fileUpdates.forEach((file) => {
+      if (folderGroups[file.folderId]) {
+        folderGroups[file.folderId].fileUpdates.push(file)
+      } else {
+        folderGroups[file.folderId] = {
+          libraryId: file.libraryId,
+          folderId: file.folderId,
+          fileUpdates: [file]
+        }
+      }
+    })
+    return folderGroups
+  }
+
+  /**
+   * Scan grouped paths for library folder coming from Watcher
+   * @param {import('../models/Library')} library 
+   * @param {import('../models/LibraryFolder')} folder 
+   * @param {Record<string, string[]>} fileUpdateGroup 
+   * @returns {Promise<Record<string,number>>}
+   */
+  async scanFolderUpdates(library, folder, fileUpdateGroup) {
+    // Make sure library filter data is set
+    //   this is used to check for existing authors & series
+    await libraryFilters.getFilterData(library.mediaType, library.id)
+    Logger.debug(`[Scanner] Scanning file update groups in folder "${folder.id}" of library "${library.name}"`)
+    Logger.debug(`[Scanner] scanFolderUpdates fileUpdateGroup`, fileUpdateGroup)
+
+    // First pass - Remove files in parent dirs of items and remap the fileupdate group
+    //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
+    const updateGroup = { ...fileUpdateGroup }
+    for (const itemDir in updateGroup) {
+      if (itemDir == fileUpdateGroup[itemDir]) continue // Media in root path
+
+      const itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
+      if (!itemDirNestedFiles.length) continue
+
+      const firstNest = itemDirNestedFiles[0].split('/').shift()
+      const altDir = `${itemDir}/${firstNest}`
+
+      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
+      const childLibraryItem = await Database.libraryItemModel.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [sequelize.Op.not]: fullPath
+          },
+          path: {
+            [sequelize.Op.startsWith]: fullPath
+          }
+        }
+      })
+      if (!childLibraryItem) {
+        continue
+      }
+
+      const altFullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), altDir)
+      const altChildLibraryItem = await Database.libraryItemModel.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [sequelize.Op.not]: altFullPath
+          },
+          path: {
+            [sequelize.Op.startsWith]: altFullPath
+          }
+        }
+      })
+      if (altChildLibraryItem) {
+        continue
+      }
+
+      delete fileUpdateGroup[itemDir]
+      fileUpdateGroup[altDir] = itemDirNestedFiles.map((f) => f.split('/').slice(1).join('/'))
+      Logger.warn(`[LibraryScanner] Some files were modified in a parent directory of a library item "${childLibraryItem.path}" - ignoring`)
+    }
+
+    // Second pass: Check for new/updated/removed items
+    const itemGroupingResults = {}
+    for (const itemDir in fileUpdateGroup) {
+      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
+      const dirIno = await fileUtils.getIno(fullPath)
+
+      const itemDirParts = itemDir.split('/').slice(0, -1)
+      const potentialChildDirs = []
+      for (let i = 0; i < itemDirParts.length; i++) {
+        potentialChildDirs.push(Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir.split('/').slice(0, -1 - i).join('/')))
+      }
+
+      // Check if book dir group is already an item
+      let existingLibraryItem = await Database.libraryItemModel.findOneOld({
+        path: potentialChildDirs
+      })
+
+      if (!existingLibraryItem) {
+        existingLibraryItem = await Database.libraryItemModel.findOneOld({
+          ino: dirIno
+        })
+        if (existingLibraryItem) {
+          Logger.debug(`[LibraryScanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
+          // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
+          existingLibraryItem.path = fullPath
+          existingLibraryItem.relPath = itemDir
+        }
+      }
+      if (existingLibraryItem) {
+        // Is the item exactly - check if was deleted
+        if (existingLibraryItem.path === fullPath) {
+          const exists = await fs.pathExists(fullPath)
+          if (!exists) {
+            Logger.info(`[LibraryScanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
+            existingLibraryItem.setMissing()
+            await Database.updateLibraryItem(existingLibraryItem)
+            SocketAuthority.emitter('item_updated', existingLibraryItem.toJSONExpanded())
+
+            itemGroupingResults[itemDir] = ScanResult.REMOVED
+            continue
+          }
+        }
+
+        // Scan library item for updates
+        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
+        // itemGroupingResults[itemDir] = await this.scanLibraryItem(library, folder, existingLibraryItem)
+        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id)
+        continue
+      } else if (library.settings.audiobooksOnly && !fileUpdateGroup[itemDir].some?.(scanUtils.checkFilepathIsAudioFile)) {
+        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
+        continue
+      }
+
+      // Check if a library item is a subdirectory of this dir
+      const childItem = await Database.libraryItemModel.findOne({
+        attributes: ['id', 'path'],
+        where: {
+          path: {
+            [sequelize.Op.startsWith]: fullPath + '/'
+          }
+        }
+      })
+      if (childItem) {
+        Logger.warn(`[LibraryScanner] Files were modified in a parent directory of a library item "${childItem.path}" - ignoring`)
+        itemGroupingResults[itemDir] = ScanResult.NOTHING
+        continue
+      }
+
+      Logger.debug(`[LibraryScanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
+      const isSingleMediaItem = itemDir === fileUpdateGroup[itemDir]
+      const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
+      if (newLibraryItem) {
+        const oldNewLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
+        SocketAuthority.emitter('item_added', oldNewLibraryItem.toJSONExpanded())
+      }
+      itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
+    }
+
+    return itemGroupingResults
   }
 }
 module.exports = new LibraryScanner()
