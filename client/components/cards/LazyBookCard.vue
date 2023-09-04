@@ -219,7 +219,7 @@ export default {
       return this.mediaMetadata.series
     },
     seriesSequence() {
-      return this.series ? this.series.sequence : null
+      return this.series?.sequence || null
     },
     libraryId() {
       return this._libraryItem.libraryId

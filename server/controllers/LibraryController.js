@@ -262,7 +262,7 @@ class LibraryController {
     return res.json(libraryJson)
   }
 
-  async getLibraryItemsNew(req, res) {
+  async getLibraryItems(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
     const payload = {
@@ -280,203 +280,15 @@ class LibraryController {
     }
     payload.offset = payload.page * payload.limit
 
-    const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
-    payload.results = libraryItems
-    payload.total = count
-
-    res.json(payload)
-  }
-
-  /**
-   * GET: /api/libraries/:id/items
-   * TODO: Remove after implementing getLibraryItemsNew
-   * @param {*} req 
-   * @param {*} res 
-   */
-  async getLibraryItems(req, res) {
-    let libraryItems = req.libraryItems
-
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
-
-    const payload = {
-      results: [],
-      total: libraryItems.length,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
-      sortBy: req.query.sort,
-      sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter,
-      mediaType: req.library.mediaType,
-      minified: req.query.minified === '1',
-      collapseseries: req.query.collapseseries === '1',
-      include: include.join(',')
+    // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
+    if (payload.filterBy?.split('.')[0] === 'series' && payload.collapseseries) {
+      const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
+      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
+    } else {
+      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
+      payload.results = libraryItems
+      payload.total = count
     }
-    const mediaIsBook = payload.mediaType === 'book'
-    const mediaIsPodcast = payload.mediaType === 'podcast'
-
-    // Step 1 - Filter the retrieved library items
-    let filterSeries = null
-    if (payload.filterBy) {
-      libraryItems = await libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user)
-      payload.total = libraryItems.length
-
-      // Determining if we are filtering titles by a series, and if so, which series
-      filterSeries = (mediaIsBook && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
-      if (filterSeries === 'no-series') filterSeries = null
-    }
-
-    // Step 2 - If selected, collapse library items by the series they belong to.
-    // If also filtering by series, will not collapse the filtered series as this would lead
-    // to series having a collapsed series that is just that series.
-    if (payload.collapseseries) {
-      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, Database.series, filterSeries, req.library.settings.hideSingleBookSeries)
-
-      if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
-        libraryItems = collapsedItems
-        payload.total = libraryItems.length
-      }
-    }
-
-    // Step 3 - Sort the retrieved library items.
-    const sortArray = []
-
-    // When on the series page, sort by sequence only
-    if (filterSeries && !payload.sortBy) {
-      sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
-      // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
-      sortArray.push({
-        asc: (li) => {
-          if (Database.serverSettings.sortingIgnorePrefix) {
-            return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
-          } else {
-            return li.collapsedSeries?.name || li.media.metadata.title
-          }
-        }
-      })
-    }
-
-    if (payload.sortBy) {
-      let sortKey = payload.sortBy
-
-      // Handle server setting sortingIgnorePrefix
-      const sortByTitle = sortKey === 'media.metadata.title'
-      if (sortByTitle && Database.serverSettings.sortingIgnorePrefix) {
-        // BookMetadata.js has titleIgnorePrefix getter
-        sortKey += 'IgnorePrefix'
-      }
-
-      // If series are collapsed and not sorting by title or sequence, 
-      // sort all collapsed series to the end in alphabetical order
-      const sortBySequence = filterSeries && (sortKey === 'sequence')
-      if (payload.collapseseries && !(sortByTitle || sortBySequence)) {
-        sortArray.push({
-          asc: (li) => {
-            if (li.collapsedSeries) {
-              return Database.serverSettings.sortingIgnorePrefix ?
-                li.collapsedSeries.nameIgnorePrefix :
-                li.collapsedSeries.name
-            } else {
-              return ''
-            }
-          }
-        })
-      }
-
-      // Sort series based on the sortBy attribute
-      const direction = payload.sortDesc ? 'desc' : 'asc'
-      sortArray.push({
-        [direction]: (li) => {
-          if (mediaIsBook && sortBySequence) {
-            return li.media.metadata.getSeries(filterSeries).sequence
-          } else if (mediaIsBook && sortByTitle && li.collapsedSeries) {
-            return Database.serverSettings.sortingIgnorePrefix ?
-              li.collapsedSeries.nameIgnorePrefix :
-              li.collapsedSeries.name
-          } else {
-            // Supports dot notation strings i.e. "media.metadata.title"
-            return sortKey.split('.').reduce((a, b) => a[b], li)
-          }
-        }
-      })
-
-      // Secondary sort when sorting by book author use series sort title
-      if (mediaIsBook && payload.sortBy.includes('author')) {
-        sortArray.push({
-          asc: (li) => {
-            if (li.media.metadata.series && li.media.metadata.series.length) {
-              return li.media.metadata.getSeriesSortTitle(li.media.metadata.series[0])
-            }
-            return null
-          }
-        })
-      }
-    }
-
-    if (sortArray.length) {
-      libraryItems = naturalSort(libraryItems).by(sortArray)
-    }
-
-    // Step 3.5: Limit items
-    if (payload.limit) {
-      const startIndex = payload.page * payload.limit
-      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
-    }
-
-    // Step 4 - Transform the items to pass to the client side
-    payload.results = await Promise.all(libraryItems.map(async li => {
-      const json = payload.minified ? li.toJSONMinified() : li.toJSON()
-
-      if (li.collapsedSeries) {
-        json.collapsedSeries = {
-          id: li.collapsedSeries.id,
-          name: li.collapsedSeries.name,
-          nameIgnorePrefix: li.collapsedSeries.nameIgnorePrefix,
-          libraryItemIds: li.collapsedSeries.books.map(b => b.id),
-          numBooks: li.collapsedSeries.books.length
-        }
-
-        // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
-        // series represents in the filtered series
-        if (filterSeries) {
-          json.collapsedSeries.seriesSequenceList =
-            naturalSort(li.collapsedSeries.books.filter(b => b.filterSeriesSequence).map(b => b.filterSeriesSequence)).asc()
-              .reduce((ranges, currentSequence) => {
-                let lastRange = ranges.at(-1)
-                let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
-                if (isNumber) currentSequence = parseFloat(currentSequence)
-
-                if (lastRange && isNumber && lastRange.isNumber && ((lastRange.end + 1) == currentSequence)) {
-                  lastRange.end = currentSequence
-                }
-                else {
-                  ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNumber })
-                }
-
-                return ranges
-              }, [])
-              .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
-              .join(', ')
-        }
-      } else {
-        // add rssFeed object if "include=rssfeed" was put in query string (only for non-collapsed series)
-        if (include.includes('rssfeed')) {
-          const feedData = await this.rssFeedManager.findFeedForEntityId(json.id)
-          json.rssFeed = feedData ? feedData.toJSONMinified() : null
-        }
-
-        // add numEpisodesIncomplete if "include=numEpisodesIncomplete" was put in query string (only for podcasts)
-        if (mediaIsPodcast && include.includes('numepisodesincomplete')) {
-          json.numEpisodesIncomplete = req.user.getNumEpisodesIncompleteForPodcast(li)
-        }
-
-        if (filterSeries) {
-          // If filtering by series, make sure to include the series metadata
-          json.media.metadata.series = li.media.metadata.getSeries(filterSeries)
-        }
-      }
-
-      return json
-    }))
 
     res.json(payload)
   }
@@ -885,7 +697,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const narratorName = libraryHelpers.decode(req.params.narratorId)
+    const narratorName = libraryFilters.decode(req.params.narratorId)
     const updatedName = req.body.name
     if (!updatedName) {
       return res.status(400).send('Invalid request payload. Name not specified.')
@@ -932,7 +744,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const narratorName = libraryHelpers.decode(req.params.narratorId)
+    const narratorName = libraryFilters.decode(req.params.narratorId)
 
     // Update filter data
     Database.removeNarratorFromFilterData(narratorName)
@@ -1031,35 +843,12 @@ class LibraryController {
   }
 
   /**
-   * TODO: Replace with middlewareNew
-   * @param {*} req 
-   * @param {*} res 
-   * @param {*} next 
-   */
-  async middleware(req, res, next) {
-    if (!req.user.checkCanAccessLibrary(req.params.id)) {
-      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
-      return res.sendStatus(403)
-    }
-
-    const library = await Database.libraryModel.getOldById(req.params.id)
-    if (!library) {
-      return res.status(404).send('Library not found')
-    }
-    req.library = library
-    req.libraryItems = Database.libraryItems.filter(li => {
-      return li.libraryId === library.id && req.user.checkCanAccessLibraryItem(li)
-    })
-    next()
-  }
-
-  /**
    * Middleware that is not using libraryItems from memory
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
    * @param {import('express').NextFunction} next 
    */
-  async middlewareNew(req, res, next) {
+  async middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(403)
