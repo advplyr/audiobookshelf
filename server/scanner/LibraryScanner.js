@@ -10,7 +10,6 @@ const scanUtils = require('../utils/scandir')
 const { LogLevel, ScanResult } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const LibraryItemScanner = require('./LibraryItemScanner')
-const ScanOptions = require('./ScanOptions')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 
@@ -58,11 +57,8 @@ class LibraryScanner {
       return
     }
 
-    const scanOptions = new ScanOptions()
-    scanOptions.setData(options, Database.serverSettings)
-
     const libraryScan = new LibraryScan()
-    libraryScan.setData(library, scanOptions)
+    libraryScan.setData(library)
     libraryScan.verbose = true
     this.librariesScanning.push(libraryScan.getScanEmitData)
 
@@ -471,7 +467,7 @@ class LibraryScanner {
         })
         if (existingLibraryItem) {
           Logger.debug(`[LibraryScanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
-          // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
+          // Update library item paths for scan
           existingLibraryItem.path = fullPath
           existingLibraryItem.relPath = itemDir
         }

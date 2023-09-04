@@ -17,8 +17,6 @@ class LibraryScan {
     this.library = null
     this.verbose = false
 
-    this.scanOptions = null
-
     this.startedAt = null
     this.finishedAt = null
     this.elapsed = null
@@ -40,12 +38,6 @@ class LibraryScan {
   get libraryMediaType() { return this.library.mediaType }
   get folders() { return this.library.folders }
 
-  get _scanOptions() { return this.scanOptions || {} }
-  get forceRescan() { return !!this._scanOptions.forceRescan }
-  get preferAudioMetadata() { return !!this._scanOptions.preferAudioMetadata }
-  get preferOpfMetadata() { return !!this._scanOptions.preferOpfMetadata }
-  get preferOverdriveMediaMarker() { return !!this._scanOptions.preferOverdriveMediaMarker }
-  get findCovers() { return !!this._scanOptions.findCovers }
   get timestamp() {
     return (new Date()).toISOString()
   }
@@ -80,7 +72,6 @@ class LibraryScan {
       id: this.id,
       type: this.type,
       library: this.library.toJSON(),
-      scanOptions: this.scanOptions ? this.scanOptions.toJSON() : null,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
       elapsed: this.elapsed,
@@ -90,12 +81,10 @@ class LibraryScan {
     }
   }
 
-  setData(library, scanOptions, type = 'scan') {
+  setData(library, type = 'scan') {
     this.id = uuidv4()
     this.type = type
     this.library = new Library(library.toJSON()) // clone library
-
-    this.scanOptions = scanOptions
 
     this.startedAt = Date.now()
   }

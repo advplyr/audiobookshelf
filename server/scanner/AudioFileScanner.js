@@ -153,12 +153,12 @@ class AudioFileScanner {
     const probeData = await prober.probe(libraryFile.metadata.path)
 
     if (probeData.error) {
-      Logger.error(`[MediaFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
+      Logger.error(`[AudioFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
       return null
     }
 
     if (!probeData.audioStream) {
-      Logger.error('[MediaFileScanner] Invalid audio file no audio stream')
+      Logger.error('[AudioFileScanner] Invalid audio file no audio stream')
       return null
     }
 
@@ -194,6 +194,16 @@ class AudioFileScanner {
     }
 
     return results
+  }
+
+  /**
+   * 
+   * @param {AudioFile} audioFile 
+   * @returns {object}
+   */
+  probeAudioFile(audioFile) {
+    Logger.debug(`[AudioFileScanner] Running ffprobe for audio file at "${audioFile.metadata.path}"`)
+    return prober.rawProbe(audioFile.metadata.path)
   }
 }
 module.exports = new AudioFileScanner()

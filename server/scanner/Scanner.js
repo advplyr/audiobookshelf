@@ -6,7 +6,6 @@ const Database = require('../Database')
 const { LogLevel } = require('../utils/constants')
 const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
 
-const MediaFileScanner = require('./MediaFileScanner')
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
@@ -373,10 +372,6 @@ class Scanner {
 
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
-  }
-
-  probeAudioFile(audioFile) {
-    return MediaFileScanner.probeAudioFile(audioFile)
   }
 }
 module.exports = Scanner

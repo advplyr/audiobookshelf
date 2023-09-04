@@ -899,20 +899,31 @@ class BookScanner {
       return fsExtra.writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2)).then(async () => {
         // Add metadata.json to libraryFiles array if it is new
         let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-        if (storeMetadataWithItem && !metadataLibraryFile) {
-          const newLibraryFile = new LibraryFile()
-          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
-          metadataLibraryFile = newLibraryFile.toJSON()
-          libraryItem.libraryFiles.push(metadataLibraryFile)
-        } else if (storeMetadataWithItem) {
-          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-          if (fileTimestamps) {
-            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-            metadataLibraryFile.metadata.size = fileTimestamps.size
-            metadataLibraryFile.ino = fileTimestamps.ino
+        if (storeMetadataWithItem) {
+          if (!metadataLibraryFile) {
+            const newLibraryFile = new LibraryFile()
+            await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+            metadataLibraryFile = newLibraryFile.toJSON()
+            libraryItem.libraryFiles.push(metadataLibraryFile)
+          } else {
+            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+            if (fileTimestamps) {
+              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+              metadataLibraryFile.metadata.size = fileTimestamps.size
+              metadataLibraryFile.ino = fileTimestamps.ino
+            }
+          }
+          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
+          if (libraryItemDirTimestamps) {
+            libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
+            libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
+            let size = 0
+            libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+            libraryItem.size = size
           }
         }
+
         libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
 
         return metadataLibraryFile
@@ -935,18 +946,28 @@ class BookScanner {
         }
         // Add metadata.abs to libraryFiles array if it is new
         let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-        if (storeMetadataWithItem && !metadataLibraryFile) {
-          const newLibraryFile = new LibraryFile()
-          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.abs`)
-          metadataLibraryFile = newLibraryFile.toJSON()
-          libraryItem.libraryFiles.push(metadataLibraryFile)
-        } else if (storeMetadataWithItem) {
-          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-          if (fileTimestamps) {
-            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-            metadataLibraryFile.metadata.size = fileTimestamps.size
-            metadataLibraryFile.ino = fileTimestamps.ino
+        if (storeMetadataWithItem) {
+          if (!metadataLibraryFile) {
+            const newLibraryFile = new LibraryFile()
+            await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.abs`)
+            metadataLibraryFile = newLibraryFile.toJSON()
+            libraryItem.libraryFiles.push(metadataLibraryFile)
+          } else {
+            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+            if (fileTimestamps) {
+              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+              metadataLibraryFile.metadata.size = fileTimestamps.size
+              metadataLibraryFile.ino = fileTimestamps.ino
+            }
+          }
+          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
+          if (libraryItemDirTimestamps) {
+            libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
+            libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
+            let size = 0
+            libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+            libraryItem.size = size
           }
         }
 

@@ -116,7 +116,7 @@ class AudioFile {
     return !this.invalid && !this.exclude
   }
 
-  // New scanner creates AudioFile from MediaFileScanner
+  // New scanner creates AudioFile from AudioFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
 

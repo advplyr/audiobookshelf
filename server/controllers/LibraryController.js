@@ -974,12 +974,9 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
       return res.sendStatus(403)
     }
-    const options = {
-      forceRescan: req.query.force == 1
-    }
     res.sendStatus(200)
 
-    await LibraryScanner.scan(req.library, options)
+    await LibraryScanner.scan(req.library)
 
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')

@@ -9,6 +9,7 @@ const { reqSupportsWebp } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
+const AudioFileScanner = require('../scanner/AudioFileScanner')
 
 class LibraryItemController {
   constructor() { }
@@ -555,7 +556,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
-    const ffprobeData = await this.scanner.probeAudioFile(audioFile)
+    const ffprobeData = await AudioFileScanner.probeAudioFile(audioFile)
     res.json(ffprobeData)
   }
 
