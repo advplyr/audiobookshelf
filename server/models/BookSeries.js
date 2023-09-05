@@ -50,10 +50,14 @@ class BookSeries extends Model {
     book.belongsToMany(series, { through: BookSeries })
     series.belongsToMany(book, { through: BookSeries })
 
-    book.hasMany(BookSeries)
+    book.hasMany(BookSeries, {
+      onDelete: 'CASCADE'
+    })
     BookSeries.belongsTo(book)
 
-    series.hasMany(BookSeries)
+    series.hasMany(BookSeries, {
+      onDelete: 'CASCADE'
+    })
     BookSeries.belongsTo(series)
   }
 }

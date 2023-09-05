@@ -141,10 +141,6 @@ module.exports = {
       offset,
       distinct: true,
       subQuery: false,
-      benchmark: true,
-      logging: (sql, timeMs) => {
-        console.log(`[Query] Series filter/sort. Elapsed ${timeMs}ms`)
-      },
       attributes: seriesAttributes,
       replacements: userPermissionBookWhere.replacements,
       include: [

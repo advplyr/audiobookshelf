@@ -64,53 +64,6 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Loads all podcast episodes, all library items in chunks of 500, then maps them to old library items
-   * @todo this is a temporary solution until we can use the sqlite without loading all the library items on init
-   * 
-   * @returns {Promise<objects.LibraryItem[]>} old library items
-   */
-  static async loadAllLibraryItems() {
-    let start = Date.now()
-    Logger.info(`[LibraryItem] Loading podcast episodes...`)
-    const podcastEpisodes = await this.sequelize.models.podcastEpisode.findAll()
-    Logger.info(`[LibraryItem] Finished loading ${podcastEpisodes.length} podcast episodes in ${((Date.now() - start) / 1000).toFixed(2)}s`)
-
-    start = Date.now()
-    Logger.info(`[LibraryItem] Loading library items...`)
-    let libraryItems = await this.getAllOldLibraryItemsIncremental()
-    Logger.info(`[LibraryItem] Finished loading ${libraryItems.length} library items in ${((Date.now() - start) / 1000).toFixed(2)}s`)
-
-    // Map LibraryItem to old library item
-    libraryItems = libraryItems.map(li => {
-      if (li.mediaType === 'podcast') {
-        li.media.podcastEpisodes = podcastEpisodes.filter(pe => pe.podcastId === li.media.id)
-      }
-      return this.getOldLibraryItem(li)
-    })
-
-    return libraryItems
-  }
-
-  /**
-   * Loads all LibraryItem in batches of 500
-   * @todo temporary solution
-   * 
-   * @param {Model<LibraryItem>[]} libraryItems 
-   * @param {number} offset 
-   * @returns {Promise<Model<LibraryItem>[]>}
-   */
-  static async getAllOldLibraryItemsIncremental(libraryItems = [], offset = 0) {
-    const limit = 500
-    const rows = await this.getLibraryItemsIncrement(offset, limit)
-    libraryItems.push(...rows)
-    if (!rows.length || rows.length < limit) {
-      return libraryItems
-    }
-    Logger.info(`[LibraryItem] Loaded ${rows.length} library items. ${libraryItems.length} loaded so far.`)
-    return this.getAllOldLibraryItemsIncremental(libraryItems, offset + rows.length)
-  }
-
-  /**
    * Gets library items partially expanded, not including podcast episodes
    * @todo temporary solution
    * 
@@ -120,10 +73,6 @@ class LibraryItem extends Model {
    */
   static getLibraryItemsIncrement(offset, limit, where = null) {
     return this.findAll({
-      benchmark: true,
-      logging: (sql, timeMs) => {
-        console.log(`[Query] Elapsed ${timeMs}ms.`)
-      },
       where,
       include: [
         {

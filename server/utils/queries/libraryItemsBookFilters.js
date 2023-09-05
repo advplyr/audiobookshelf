@@ -547,10 +547,6 @@ module.exports = {
       distinct: true,
       attributes: bookAttributes,
       replacements,
-      benchmark: true,
-      logging: (sql, timeMs) => {
-        console.log(`[Query] Elapsed ${timeMs}ms`)
-      },
       include: [
         {
           model: Database.libraryItemModel,
