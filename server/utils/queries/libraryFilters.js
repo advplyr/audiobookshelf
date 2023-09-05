@@ -265,12 +265,17 @@ module.exports = {
         })
       })
       oldSeries.books = s.bookSeries.map(bs => {
-        const libraryItem = bs.book.libraryItem.toJSON()
+        const libraryItem = bs.book.libraryItem?.toJSON()
+        if (!libraryItem) {
+          Logger.warn(`Book series book has no libraryItem`, bs, bs.book, 'series=', series)
+          return null
+        }
+
         delete bs.book.libraryItem
         libraryItem.media = bs.book
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONMinified()
         return oldLibraryItem
-      })
+      }).filter(b => b)
       allOldSeries.push(oldSeries)
     }
 
