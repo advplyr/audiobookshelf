@@ -253,18 +253,18 @@ class Book extends Model {
             collate: 'NOCASE'
           }]
         },
-        {
-          fields: [{
-            name: 'titleIgnorePrefix',
-            collate: 'NOCASE'
-          }]
-        },
+        // {
+        //   fields: [{
+        //     name: 'titleIgnorePrefix',
+        //     collate: 'NOCASE'
+        //   }]
+        // },
         {
           fields: ['publishedYear']
         },
-        {
-          fields: ['duration']
-        }
+        // {
+        //   fields: ['duration']
+        // }
       ]
     })
   }

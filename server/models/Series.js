@@ -138,12 +138,12 @@ class Series extends Model {
             collate: 'NOCASE'
           }]
         },
-        {
-          fields: [{
-            name: 'nameIgnorePrefix',
-            collate: 'NOCASE'
-          }]
-        },
+        // {
+        //   fields: [{
+        //     name: 'nameIgnorePrefix',
+        //     collate: 'NOCASE'
+        //   }]
+        // },
         {
           fields: ['libraryId']
         }

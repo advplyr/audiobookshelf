@@ -149,12 +149,12 @@ class Author extends Model {
             collate: 'NOCASE'
           }]
         },
-        {
-          fields: [{
-            name: 'lastFirst',
-            collate: 'NOCASE'
-          }]
-        },
+        // {
+        //   fields: [{
+        //     name: 'lastFirst',
+        //     collate: 'NOCASE'
+        //   }]
+        // },
         {
           fields: ['libraryId']
         }
