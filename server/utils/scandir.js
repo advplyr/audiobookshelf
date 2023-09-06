@@ -86,10 +86,24 @@ function groupFilesIntoLibraryItemPaths(mediaType, paths) {
 
   // Step 4: Add in non-media files if they fit into item group
   if (nonMediaFilePaths.length) {
+
     for (const nonMediaFilePath of nonMediaFilePaths) {
       const pathDir = Path.dirname(nonMediaFilePath)
-      if (itemGroup[pathDir]) {
-        itemGroup[pathDir].push(nonMediaFilePath)
+      const filename = Path.basename(nonMediaFilePath)
+      const dirparts = pathDir.split('/')
+      const numparts = dirparts.length
+      let _path = ''
+
+      // Iterate over directories in path
+      for (let i = 0; i < numparts; i++) {
+        const dirpart = dirparts.shift()
+        _path = Path.posix.join(_path, dirpart)
+        if (itemGroup[_path]) { // Directory is a group
+          const relpath = Path.posix.join(dirparts.join('/'), filename)
+          itemGroup[_path].push(relpath)
+        } else if (!dirparts.length) {
+          itemGroup[_path] = [filename]
+        }
       }
     }
   }

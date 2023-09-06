@@ -448,10 +448,10 @@ class LibraryScanner {
     const itemGroupingResults = {}
     for (const itemDir in fileUpdateGroup) {
       const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
-      const dirIno = await fileUtils.getIno(fullPath)
 
       const itemDirParts = itemDir.split('/').slice(0, -1)
-      const potentialChildDirs = []
+
+      const potentialChildDirs = [fullPath]
       for (let i = 0; i < itemDirParts.length; i++) {
         potentialChildDirs.push(Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir.split('/').slice(0, -1 - i).join('/')))
       }
@@ -462,6 +462,7 @@ class LibraryScanner {
       })
 
       if (!existingLibraryItem) {
+        const dirIno = await fileUtils.getIno(fullPath)
         existingLibraryItem = await Database.libraryItemModel.findOneOld({
           ino: dirIno
         })
