@@ -6,7 +6,6 @@ const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
-const filePerms = require('../utils/filePerms')
 
 const LibraryItem = require('../objects/LibraryItem')
 
@@ -49,7 +48,6 @@ class PodcastController {
       return false
     })
     if (!success) return res.status(400).send('Invalid podcast path')
-    await filePerms.setDefault(podcastPath)
 
     const libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
 

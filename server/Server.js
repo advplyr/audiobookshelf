@@ -9,7 +9,6 @@ const rateLimit = require('./libs/expressRateLimit')
 const { version } = require('../package.json')
 
 // Utils
-const filePerms = require('./utils/filePerms')
 const fileUtils = require('./utils/fileUtils')
 const Logger = require('./Logger')
 
@@ -52,11 +51,9 @@ class Server {
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
-      filePerms.setDefaultDirSync(global.ConfigPath, false)
     }
     if (!fs.pathExistsSync(global.MetadataPath)) {
       fs.mkdirSync(global.MetadataPath)
-      filePerms.setDefaultDirSync(global.MetadataPath, false)
     }
 
     this.watcher = new Watcher()

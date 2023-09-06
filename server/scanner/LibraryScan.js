@@ -6,7 +6,6 @@ const date = require('../libs/dateAndTime')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
-const filePerms = require('../utils/filePerms')
 const { secondsToTimestamp } = require('../utils/index')
 
 class LibraryScan {
@@ -127,7 +126,6 @@ class LibraryScan {
       logLines.push(JSON.stringify(l))
     })
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
-    await filePerms.setDefault(outputPath)
 
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
   }

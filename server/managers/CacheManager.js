@@ -1,7 +1,6 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 const stream = require('stream')
-const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const { resizeImage } = require('../utils/ffmpegHelpers')
 
@@ -14,29 +13,20 @@ class CacheManager {
   }
 
   async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
-    var pathsCreated = false
     if (!(await fs.pathExists(this.CachePath))) {
       await fs.mkdir(this.CachePath)
-      pathsCreated = true
     }
 
     if (!(await fs.pathExists(this.CoverCachePath))) {
       await fs.mkdir(this.CoverCachePath)
-      pathsCreated = true
     }
 
     if (!(await fs.pathExists(this.ImageCachePath))) {
       await fs.mkdir(this.ImageCachePath)
-      pathsCreated = true
     }
 
     if (!(await fs.pathExists(this.ItemCachePath))) {
       await fs.mkdir(this.ItemCachePath)
-      pathsCreated = true
-    }
-
-    if (pathsCreated) {
-      await filePerms.setDefault(this.CachePath)
     }
   }
 
@@ -73,9 +63,6 @@ class CacheManager {
 
     const writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(500)
-
-    // Set owner and permissions of cache image
-    await filePerms.setDefault(path)
 
     if (global.XAccel) {
       Logger.debug(`Use X-Accel to serve static file ${writtenFile}`)
@@ -159,9 +146,6 @@ class CacheManager {
 
     let writtenFile = await resizeImage(author.imagePath, path, width, height)
     if (!writtenFile) return res.sendStatus(500)
-
-    // Set owner and permissions of cache image
-    await filePerms.setDefault(path)
 
     var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)

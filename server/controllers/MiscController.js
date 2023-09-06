@@ -6,7 +6,6 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
-const filePerms = require('../utils/filePerms')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject } = require('../utils/index')
 
@@ -89,8 +88,6 @@ class MiscController {
         return false
       })
     }
-
-    await filePerms.setDefault(firstDirPath)
 
     res.sendStatus(200)
   }

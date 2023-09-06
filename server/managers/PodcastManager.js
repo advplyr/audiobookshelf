@@ -6,7 +6,6 @@ const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
 const { removeFile, downloadFile } = require('../utils/fileUtils')
-const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const opmlGenerator = require('../utils/generators/opmlGenerator')
@@ -96,7 +95,6 @@ class PodcastManager {
     if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
       Logger.warn(`[PodcastManager] Podcast episode download: Podcast folder no longer exists at "${this.currentDownload.libraryItem.path}" - Creating it`)
       await fs.mkdir(this.currentDownload.libraryItem.path)
-      await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
     let success = false

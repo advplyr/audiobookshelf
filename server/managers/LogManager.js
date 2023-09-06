@@ -1,6 +1,5 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
-const filePerms = require('../utils/filePerms')
 
 const DailyLog = require('../objects/DailyLog')
 
@@ -25,13 +24,11 @@ class LogManager {
   async ensureLogDirs() {
     await fs.ensureDir(this.DailyLogPath)
     await fs.ensureDir(this.ScanLogPath)
-    await filePerms.setDefault(Path.posix.join(global.MetadataPath, 'logs'), true)
   }
 
   async ensureScanLogDir() {
     if (!(await fs.pathExists(this.ScanLogPath))) {
       await fs.mkdir(this.ScanLogPath)
-      await filePerms.setDefault(this.ScanLogPath)
     }
   }
 

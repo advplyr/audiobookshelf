@@ -3,7 +3,6 @@ const Path = require('path')
 const Logger = require('../Logger')
 const readChunk = require('../libs/readChunk')
 const imageType = require('../libs/imageType')
-const filePerms = require('../utils/filePerms')
 
 const globals = require('../utils/globals')
 const { downloadFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
@@ -111,7 +110,6 @@ class CoverManager {
 
     Logger.info(`[CoverManager] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.metadata.title}"`)
 
-    await filePerms.setDefault(coverFullPath)
     libraryItem.updateMediaCover(coverFullPath)
     return {
       cover: coverFullPath
@@ -149,8 +147,6 @@ class CoverManager {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
 
       Logger.info(`[CoverManager] Downloaded libraryItem cover "${coverFullPath}" from url "${url}" for "${libraryItem.media.metadata.title}"`)
-
-      await filePerms.setDefault(coverFullPath)
       libraryItem.updateMediaCover(coverFullPath)
       return {
         cover: coverFullPath
@@ -222,7 +218,6 @@ class CoverManager {
           error: 'Failed to copy cover to dir'
         }
       }
-      await filePerms.setDefault(newCoverPath)
       await this.removeOldCovers(coverDirPath, '.' + imgtype.ext)
       Logger.debug(`[CoverManager] cover copy success`)
       coverPath = newCoverPath
@@ -263,8 +258,6 @@ class CoverManager {
 
     const success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
     if (success) {
-      await filePerms.setDefault(coverFilePath)
-
       libraryItem.updateMediaCover(coverFilePath)
       return coverFilePath
     }

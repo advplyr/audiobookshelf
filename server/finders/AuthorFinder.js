@@ -4,7 +4,6 @@ const Path = require('path')
 const Audnexus = require('../providers/Audnexus')
 
 const { downloadFile } = require('../utils/fileUtils')
-const filePerms = require('../utils/filePerms')
 
 class AuthorFinder {
   constructor() {
@@ -40,7 +39,6 @@ class AuthorFinder {
 
     if (!await fs.pathExists(authorDir)) {
       await fs.ensureDir(authorDir)
-      await filePerms.setDefault(authorDir)
     }
 
     var imageExtension = url.toLowerCase().split('.').pop()

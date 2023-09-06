@@ -1,5 +1,4 @@
 const fs = require('../../libs/fsExtra')
-const filePerms = require('../filePerms')
 const package = require('../../../package.json')
 const Logger = require('../../Logger')
 const { getId } = require('../index')
@@ -177,9 +176,7 @@ function generate(libraryItem, outputPath) {
       fileString += `title=${chapter.title}\n`
     })
   }
-  return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms.setDefault(outputPath, true).then(() => true)
-  }).catch((error) => {
+  return fs.writeFile(outputPath, fileString).then(() => true).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false
   })
@@ -216,9 +213,7 @@ function generateFromNewModel(libraryItem, outputPath) {
       fileString += `title=${chapter.title}\n`
     })
   }
-  return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms.setDefault(outputPath, true).then(() => true)
-  }).catch((error) => {
+  return fs.writeFile(outputPath, fileString).then(() => true).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false
   })

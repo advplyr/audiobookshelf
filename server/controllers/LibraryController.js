@@ -1,7 +1,6 @@
 const Sequelize = require('sequelize')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
-const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Library = require('../objects/Library')
@@ -43,7 +42,6 @@ class LibraryController {
         const direxists = await fs.pathExists(folder.fullPath)
         if (!direxists) { // If folder does not exist try to make it and set file permissions/owner
           await fs.mkdir(folder.fullPath)
-          await filePerms.setDefault(folder.fullPath)
         }
       } catch (error) {
         Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.fullPath}"`, error)
@@ -137,8 +135,6 @@ class LibraryController {
           if (!success) {
             return res.status(400).send(`Invalid folder directory "${path}"`)
           }
-          // Set permissions on newly created path
-          await filePerms.setDefault(path)
         }
       }
 
