@@ -170,6 +170,11 @@ class LibraryItemScanData {
       existingLibraryItem.ctime = this.ctimeMs
       this.hasChanges = true
     }
+    if (existingLibraryItem.isMissing) {
+      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" was missing but now found`)
+      existingLibraryItem.isMissing = false
+      this.hasChanges = true
+    }
 
     this.libraryFilesRemoved = []
     this.libraryFilesModified = []

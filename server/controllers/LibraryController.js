@@ -15,6 +15,7 @@ const naturalSort = createNewSortInstance({
 })
 
 const LibraryScanner = require('../scanner/LibraryScanner')
+const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
@@ -772,7 +773,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)
       return res.sendStatus(403)
     }
-    this.scanner.matchLibraryItems(req.library)
+    Scanner.matchLibraryItems(req.library)
     res.sendStatus(200)
   }
 

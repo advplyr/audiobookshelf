@@ -10,6 +10,9 @@ const { ScanResult } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
+const Scanner = require('../scanner/Scanner')
+const CacheManager = require('../managers/CacheManager')
+const CoverManager = require('../managers/CoverManager')
 
 class LibraryItemController {
   constructor() { }
@@ -56,7 +59,7 @@ class LibraryItemController {
     var libraryItem = req.libraryItem
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && req.body.media && (req.body.media.coverPath === '' || req.body.media.coverPath === null)) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
     }
 
     const hasUpdates = libraryItem.update(req.body)
@@ -104,7 +107,7 @@ class LibraryItemController {
 
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
     }
 
     // Book specific
@@ -165,10 +168,10 @@ class LibraryItemController {
     var result = null
     if (req.body && req.body.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
-      result = await this.coverManager.downloadCoverFromUrl(libraryItem, req.body.url)
+      result = await CoverManager.downloadCoverFromUrl(libraryItem, req.body.url)
     } else if (req.files && req.files.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
-      result = await this.coverManager.uploadCover(libraryItem, req.files.cover)
+      result = await CoverManager.uploadCover(libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
@@ -194,7 +197,7 @@ class LibraryItemController {
       return res.status(400).send('Invalid request no cover path')
     }
 
-    const validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
+    const validationResult = await CoverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
@@ -214,7 +217,7 @@ class LibraryItemController {
 
     if (libraryItem.media.coverPath) {
       libraryItem.updateMediaCover('')
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
       await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
@@ -243,7 +246,7 @@ class LibraryItemController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return this.cacheManager.handleCoverCache(res, libraryItem, options)
+    return CacheManager.handleCoverCache(res, libraryItem, options)
   }
 
   // GET: api/items/:id/stream
@@ -297,7 +300,7 @@ class LibraryItemController {
     var libraryItem = req.libraryItem
 
     var options = req.body || {}
-    var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+    var matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
     res.json(matchResult)
   }
 
@@ -421,7 +424,7 @@ class LibraryItemController {
     res.sendStatus(200)
 
     for (const libraryItem of libraryItems) {
-      const matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+      const matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {

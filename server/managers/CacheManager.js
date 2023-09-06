@@ -6,13 +6,21 @@ const { resizeImage } = require('../utils/ffmpegHelpers')
 
 class CacheManager {
   constructor() {
+    this.CachePath = null
+    this.CoverCachePath = null
+    this.ImageCachePath = null
+    this.ItemCachePath = null
+  }
+
+  /**
+   * Create cache directory paths if they dont exist
+   */
+  async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
     this.ItemCachePath = Path.join(this.CachePath, 'items')
-  }
 
-  async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
     if (!(await fs.pathExists(this.CachePath))) {
       await fs.mkdir(this.CachePath)
     }
@@ -151,4 +159,4 @@ class CacheManager {
     readStream.pipe(res)
   }
 }
-module.exports = CacheManager
+module.exports = new CacheManager()

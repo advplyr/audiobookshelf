@@ -7,6 +7,9 @@ const fs = require('../libs/fsExtra')
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
 
+const Scanner = require('../scanner/Scanner')
+const CoverManager = require('../managers/CoverManager')
+
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastController {
@@ -73,7 +76,7 @@ class PodcastController {
     if (payload.media.metadata.imageUrl) {
       // TODO: Scan cover image to library files
       // Podcast cover will always go into library item folder
-      const coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
+      const coverResponse = await CoverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
       if (coverResponse) {
         if (coverResponse.error) {
           Logger.error(`[PodcastController] Download cover error from "${payload.media.metadata.imageUrl}": ${coverResponse.error}`)
@@ -200,7 +203,7 @@ class PodcastController {
     }
 
     const overrideDetails = req.query.override === '1'
-    const episodesUpdated = await this.scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
+    const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
       await Database.updateLibraryItem(req.libraryItem)
       SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())

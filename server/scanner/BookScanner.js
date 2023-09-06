@@ -16,7 +16,8 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryFile = require('../objects/files/LibraryFile')
 const SocketAuthority = require('../SocketAuthority')
 const fsExtra = require("../libs/fsExtra")
-// const BookFinder = require('../finders/BookFinder')
+const LibraryScan = require("./LibraryScan")
+const BookFinder = require('../finders/BookFinder')
 
 /**
  * Metadata for books pulled from files
@@ -48,7 +49,7 @@ class BookScanner {
    * @param {import('../models/LibraryItem')} existingLibraryItem 
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {import('./LibraryScan')} libraryScan 
+   * @param {LibraryScan} libraryScan 
    * @returns {Promise<import('../models/LibraryItem')>}
    */
   async rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
@@ -291,17 +292,6 @@ class BookScanner {
       }
     }
 
-    // If no cover then extract cover from audio file if available
-    if (!media.coverPath && media.audioFiles.length) {
-      const libraryItemDir = existingLibraryItem.isFile ? null : existingLibraryItem.path
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(media.audioFiles, existingLibraryItem.id, libraryItemDir)
-      if (extractedCoverPath) {
-        libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
-        media.coverPath = extractedCoverPath
-        hasMediaChanges = true
-      }
-    }
-
     // Load authors/series again if updated (for sending back to client)
     if (authorsUpdated) {
       media.authors = await media.getAuthors({
@@ -318,6 +308,24 @@ class BookScanner {
           sequelize.literal(`bookSeries.createdAt ASC`)
         ]
       })
+    }
+
+    // If no cover then extract cover from audio file if available OR search for cover if enabled in server settings
+    if (!media.coverPath) {
+      const libraryItemDir = existingLibraryItem.isFile ? null : existingLibraryItem.path
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(media.audioFiles, existingLibraryItem.id, libraryItemDir)
+      if (extractedCoverPath) {
+        libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
+        media.coverPath = extractedCoverPath
+        hasMediaChanges = true
+      } else if (Database.serverSettings.scannerFindCovers) {
+        const authorName = media.authors.map(au => au.name).filter(au => au).join(', ')
+        const coverPath = await this.searchForCover(existingLibraryItem.id, libraryItemDir, media.title, authorName, libraryScan)
+        if (coverPath) {
+          media.coverPath = coverPath
+          hasMediaChanges = true
+        }
+      }
     }
 
     existingLibraryItem.media = media
@@ -360,7 +368,7 @@ class BookScanner {
    * 
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {import('./LibraryScan')} libraryScan 
+   * @param {LibraryScan} libraryScan 
    * @returns {Promise<import('../models/LibraryItem')>}
    */
   async scanNewBookLibraryItem(libraryItemData, librarySettings, libraryScan) {
@@ -449,11 +457,17 @@ class BookScanner {
       }
     }
 
-    // If cover was not found in folder then check embedded covers in audio files
-    if (!bookObject.coverPath && scannedAudioFiles.length) {
+    // If cover was not found in folder then check embedded covers in audio files OR search for cover
+    if (!bookObject.coverPath) {
       const libraryItemDir = libraryItemObj.isFile ? null : libraryItemObj.path
       // Extract and save embedded cover art
-      bookObject.coverPath = await CoverManager.saveEmbeddedCoverArtNew(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
+      if (extractedCoverPath) {
+        bookObject.coverPath = extractedCoverPath
+      } else if (Database.serverSettings.scannerFindCovers) {
+        const authorName = bookMetadata.authors.join(', ')
+        bookObject.coverPath = await this.searchForCover(libraryItemObj.id, libraryItemDir, bookObject.title, authorName, libraryScan)
+      }
     }
 
     libraryItemObj.book = bookObject
@@ -533,7 +547,7 @@ class BookScanner {
    * 
    * @param {import('../models/Book').AudioFileObject[]} audioFiles 
    * @param {import('./LibraryItemScanData')} libraryItemData 
-   * @param {import('./LibraryScan')} libraryScan 
+   * @param {LibraryScan} libraryScan 
    * @returns {Promise<BookMetadataObject>}
    */
   async getBookMetadataFromScanData(audioFiles, libraryItemData, libraryScan) {
@@ -766,7 +780,7 @@ class BookScanner {
   /**
    * @param {string} bookTitle
    * @param {AudioFile[]} audioFiles 
-   * @param {import('./LibraryScan')} libraryScan
+   * @param {LibraryScan} libraryScan
    * @returns {import('../models/Book').ChapterObject[]}
    */
   getChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan) {
@@ -847,7 +861,7 @@ class BookScanner {
   /**
    * 
    * @param {import('../models/LibraryItem')} libraryItem 
-   * @param {import('./LibraryScan')} libraryScan
+   * @param {LibraryScan} libraryScan
    * @returns {Promise}
    */
   async saveMetadataFile(libraryItem, libraryScan) {
@@ -1051,31 +1065,38 @@ class BookScanner {
     }
   }
 
-  // async searchForCover(libraryItem, libraryScan = null) {
-  //   const options = {
-  //     titleDistance: 2,
-  //     authorDistance: 2
-  //   }
-  //   const scannerCoverProvider = Database.serverSettings.scannerCoverProvider
-  //   const results = await BookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
-  //   if (results.length) {
-  //     if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
-  //     else Logger.debug(`[Scanner] Found best cover for "${libraryItem.media.metadata.title}"`)
+  /**
+   * Search cover provider for matching cover
+   * @param {string} libraryItemId 
+   * @param {string} libraryItemPath null if book isFile
+   * @param {string} title 
+   * @param {string} author 
+   * @param {LibraryScan} libraryScan 
+   * @returns {Promise<string>} path to downloaded cover or null if no cover found
+   */
+  async searchForCover(libraryItemId, libraryItemPath, title, author, libraryScan) {
+    const options = {
+      titleDistance: 2,
+      authorDistance: 2
+    }
+    const results = await BookFinder.findCovers(Database.serverSettings.scannerCoverProvider, title, author, options)
+    if (results.length) {
+      libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${title}"`)
 
-  //     // If the first cover result fails, attempt to download the second
-  //     for (let i = 0; i < results.length && i < 2; i++) {
+      // If the first cover result fails, attempt to download the second
+      for (let i = 0; i < results.length && i < 2; i++) {
 
-  //       // Downloads and updates the book cover
-  //       const result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
+        // Downloads and updates the book cover
+        const result = await CoverManager.downloadCoverFromUrlNew(results[i], libraryItemId, libraryItemPath)
 
-  //       if (result.error) {
-  //         Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
-  //       } else {
-  //         return true
-  //       }
-  //     }
-  //   }
-  //   return false
-  // }
+        if (result.error) {
+          Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
+        } else if (result.cover) {
+          return result.cover
+        }
+      }
+    }
+    return null
+  }
 }
 module.exports = new BookScanner()

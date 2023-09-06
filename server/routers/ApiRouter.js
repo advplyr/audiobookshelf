@@ -9,6 +9,8 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
+const CacheManager = require('../managers/CacheManager')
+
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
 const CollectionController = require('../controllers/CollectionController')
@@ -35,13 +37,10 @@ const Series = require('../objects/entities/Series')
 class ApiRouter {
   constructor(Server) {
     this.auth = Server.auth
-    this.scanner = Server.scanner
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
     this.backupManager = Server.backupManager
-    this.coverManager = Server.coverManager
     this.watcher = Server.watcher
-    this.cacheManager = Server.cacheManager
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager
     this.rssFeedManager = Server.rssFeedManager
@@ -414,7 +413,7 @@ class ApiRouter {
     await this.rssFeedManager.closeFeedForEntityId(libraryItemId)
 
     // purge cover cache
-    await this.cacheManager.purgeCoverCache(libraryItemId)
+    await CacheManager.purgeCoverCache(libraryItemId)
 
     const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
     if (await fs.pathExists(itemMetadataPath)) {

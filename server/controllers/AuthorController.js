@@ -5,6 +5,8 @@ const { createNewSortInstance } = require('../libs/fastSort')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const CacheManager = require('../managers/CacheManager')
+const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
 const { reqSupportsWebp } = require('../utils/index')
@@ -68,13 +70,13 @@ class AuthorController {
     // Updating/removing cover image
     if (payload.imagePath !== undefined && payload.imagePath !== req.author.imagePath) {
       if (!payload.imagePath && req.author.imagePath) { // If removing image then remove file
-        await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
-        await this.coverManager.removeFile(req.author.imagePath)
+        await CacheManager.purgeImageCache(req.author.id) // Purge cache
+        await CoverManager.removeFile(req.author.imagePath)
       } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
         const imageData = await AuthorFinder.saveAuthorImage(req.author.id, payload.imagePath)
         if (imageData) {
           if (req.author.imagePath) {
-            await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
+            await CacheManager.purgeImageCache(req.author.id) // Purge cache
           }
           payload.imagePath = imageData.path
           hasUpdated = true
@@ -86,7 +88,7 @@ class AuthorController {
         }
 
         if (req.author.imagePath) {
-          await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
+          await CacheManager.purgeImageCache(req.author.id) // Purge cache
         }
       }
     }
@@ -186,7 +188,7 @@ class AuthorController {
 
     // Only updates image if there was no image before or the author ASIN was updated
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
-      this.cacheManager.purgeImageCache(req.author.id)
+      await CacheManager.purgeImageCache(req.author.id)
 
       const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
@@ -232,7 +234,7 @@ class AuthorController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return this.cacheManager.handleAuthorCache(res, author, options)
+    return CacheManager.handleAuthorCache(res, author, options)
   }
 
   async middleware(req, res, next) {

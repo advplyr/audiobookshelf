@@ -1,6 +1,7 @@
 const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
+const LibraryScanner = require('./scanner/LibraryScanner')
 
 class SocketAuthority {
   constructor() {
@@ -180,7 +181,7 @@ class SocketAuthority {
     const initialPayload = {
       userId: client.user.id,
       username: client.user.username,
-      librariesScanning: this.Server.scanner.librariesScanning
+      librariesScanning: LibraryScanner.librariesScanning
     }
     if (user.isAdminOrUp) {
       initialPayload.usersOnline = this.getUsersOnline()

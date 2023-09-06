@@ -13,9 +13,7 @@ const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
 
 class Scanner {
-  constructor(coverManager) {
-    this.coverManager = coverManager
-  }
+  constructor() { }
 
   async quickMatchLibraryItem(libraryItem, options = {}) {
     var provider = options.provider || 'google'
@@ -48,7 +46,7 @@ class Scanner {
       // Update cover if not set OR overrideCover flag
       if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
         Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
-        var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
+        var coverResult = await CoverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
         if (!coverResult || coverResult.error || !coverResult.cover) {
           Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
         } else {
@@ -69,7 +67,7 @@ class Scanner {
       // Update cover if not set OR overrideCover flag
       if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
         Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
-        var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
+        var coverResult = await CoverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
         if (!coverResult || coverResult.error || !coverResult.cover) {
           Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
         } else {
@@ -358,4 +356,4 @@ class Scanner {
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 }
-module.exports = Scanner
+module.exports = new Scanner()

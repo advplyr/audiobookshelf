@@ -14,7 +14,6 @@ const Logger = require('./Logger')
 
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
-const Scanner = require('./scanner/Scanner')
 const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
 
@@ -23,7 +22,6 @@ const HlsRouter = require('./routers/HlsRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
-const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
 const LogManager = require('./managers/LogManager')
@@ -65,15 +63,11 @@ class Server {
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
     this.logManager = new LogManager()
-    this.cacheManager = new CacheManager()
     this.abMergeManager = new AbMergeManager(this.taskManager)
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.coverManager = new CoverManager(this.cacheManager)
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager, this.taskManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.taskManager)
     this.rssFeedManager = new RssFeedManager()
-
-    this.scanner = new Scanner(this.coverManager)
     this.cronManager = new CronManager(this.podcastManager)
 
     // Routers
@@ -110,7 +104,7 @@ class Server {
     }
 
     await this.cleanUserData() // Remove invalid user item progress
-    await this.cacheManager.ensureCachePaths()
+    await CacheManager.ensureCachePaths()
 
     await this.backupManager.init()
     await this.logManager.init()
