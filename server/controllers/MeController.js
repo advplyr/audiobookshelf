@@ -316,9 +316,19 @@ class MeController {
 
   // GET: api/me/progress/:id/remove-from-continue-listening
   async removeItemFromContinueListening(req, res) {
+    const mediaProgress = req.user.mediaProgress.find(mp => mp.id === req.params.id)
+    if (!mediaProgress) {
+      return res.sendStatus(404)
+    }
     const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
     if (hasUpdated) {
-      await Database.updateUser(req.user)
+      await Database.mediaProgressModel.update({
+        hideFromContinueListening: true
+      }, {
+        where: {
+          id: mediaProgress.id
+        }
+      })
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())

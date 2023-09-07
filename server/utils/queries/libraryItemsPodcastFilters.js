@@ -204,9 +204,10 @@ module.exports = {
    * @param {string} sortDesc 
    * @param {number} limit 
    * @param {number} offset 
+   * @param {boolean} isHomePage for home page shelves
    * @returns {object} {libraryItems:LibraryItem[], count:number}
    */
-  async getFilteredPodcastEpisodes(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, limit, offset) {
+  async getFilteredPodcastEpisodes(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, limit, offset, isHomePage = false) {
     if (sortBy === 'progress' && filterGroup !== 'progress') {
       Logger.warn('Cannot sort podcast episodes by progress without filtering by progress')
       sortBy = 'createdAt'
@@ -218,11 +219,16 @@ module.exports = {
       libraryId
     }
     if (filterGroup === 'progress') {
+      const mediaProgressWhere = {
+        userId: user.id
+      }
+      // Respect hide from continue listening for home page shelf
+      if (isHomePage) {
+        mediaProgressWhere.hideFromContinueListening = false
+      }
       podcastEpisodeIncludes.push({
         model: Database.mediaProgressModel,
-        where: {
-          userId: user.id
-        },
+        where: mediaProgressWhere,
         attributes: ['id', 'isFinished', 'currentTime', 'updatedAt']
       })
 

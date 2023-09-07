@@ -337,9 +337,10 @@ module.exports = {
    * @param {string[]} include
    * @param {number} limit 
    * @param {number} offset 
+   * @param {boolean} isHomePage for home page shelves
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset) {
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
@@ -471,12 +472,17 @@ module.exports = {
         }
       ]
     } else if (filterGroup === 'progress' && user) {
+      const mediaProgressWhere = {
+        userId: user.id
+      }
+      // Respect hide from continue listening for home page shelf
+      if (isHomePage) {
+        mediaProgressWhere.hideFromContinueListening = false
+      }
       bookIncludes.push({
         model: Database.mediaProgressModel,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
-        where: {
-          userId: user.id
-        },
+        where: mediaProgressWhere,
         required: false
       })
     } else if (filterGroup === 'recent') {
