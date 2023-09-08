@@ -156,7 +156,7 @@ class Database {
     await this.buildModels(force)
     Logger.info(`[Database] Db initialized with models:`, Object.keys(this.sequelize.models).join(', '))
 
-    await this.cleanDatabase()
+
     await this.loadData()
   }
 
@@ -267,6 +267,8 @@ class Database {
     if (['2.3.0', '2.3.1', '2.3.2', '2.3.3'].includes(this.serverSettings.version) && this.compareVersions(packageJson.version, '2.3.3') >= 0) {
       await dbMigration.migrationPatch2(this)
     }
+
+    await this.cleanDatabase()
 
     // Set if root user has been created
     this.hasRootUser = await this.models.user.getHasRootUser()
