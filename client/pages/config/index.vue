@@ -160,10 +160,10 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-disable-watcher" v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
+            <ui-toggle-switch labeledBy="settings-disable-watcher" v-model="scannerEnableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', !val)" />
+            <ui-tooltip :text="$strings.LabelSettingsEnableWatcherHelp">
               <p class="pl-4">
-                <span id="settings-disable-watcher">{{ $strings.LabelSettingsDisableWatcher }}</span>
+                <span id="settings-disable-watcher">{{ $strings.LabelSettingsEnableWatcher }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -262,6 +262,7 @@ export default {
       updatingServerSettings: false,
       homepageUseBookshelfView: false,
       useBookshelfView: false,
+      scannerEnableWatcher: false,
       isPurgingCache: false,
       hasPrefixesChanged: false,
       newServerSettings: {},
@@ -363,6 +364,9 @@ export default {
       this.updateSettingsKey('metadataFileFormat', val)
     },
     updateSettingsKey(key, val) {
+      if (key === 'scannerDisableWatcher') {
+        this.newServerSettings.scannerDisableWatcher = val
+      }
       this.updateServerSettings({
         [key]: val
       })
@@ -389,6 +393,7 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
+      this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
