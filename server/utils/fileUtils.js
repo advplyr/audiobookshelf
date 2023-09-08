@@ -138,7 +138,7 @@ async function recurseFiles(path, relPathToReplace = null) {
     realPath: true,
     normalizePath: true
   }
-  var list = await rra.list(path, options)
+  let list = await rra.list(path, options)
   if (list.error) {
     Logger.error('[fileUtils] Recurse files error', list.error)
     return []
@@ -152,10 +152,10 @@ async function recurseFiles(path, relPathToReplace = null) {
       return false
     }
 
-    var relpath = item.fullname.replace(relPathToReplace, '')
-    var reldirname = Path.dirname(relpath)
+    const relpath = item.fullname.replace(relPathToReplace, '')
+    let reldirname = Path.dirname(relpath)
     if (reldirname === '.') reldirname = ''
-    var dirname = Path.dirname(item.fullname)
+    const dirname = Path.dirname(item.fullname)
 
     // Directory has a file named ".ignore" flag directory and ignore
     if (item.name === '.ignore' && reldirname && reldirname !== '.' && !directoriesToIgnore.includes(dirname)) {
@@ -164,9 +164,13 @@ async function recurseFiles(path, relPathToReplace = null) {
       return false
     }
 
+    if (item.extension === '.part') {
+      Logger.debug(`[fileUtils] Ignoring .part file "${relpath}"`)
+      return false
+    }
+
     // Ignore any file if a directory or the filename starts with "."
-    var pathStartsWithPeriod = relpath.split('/').find(p => p.startsWith('.'))
-    if (pathStartsWithPeriod) {
+    if (relpath.split('/').find(p => p.startsWith('.'))) {
       Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
       return false
     }

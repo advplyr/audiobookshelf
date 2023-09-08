@@ -1,3 +1,4 @@
+const Path = require('path')
 const EventEmitter = require('events')
 const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
@@ -177,9 +178,15 @@ class FolderWatcher extends EventEmitter {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
     }
+
     const folderFullPath = filePathToPOSIX(folder.fullPath)
 
     const relPath = path.replace(folderFullPath, '')
+
+    if (Path.extname(relPath).toLowerCase() === '.part') {
+      Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)
+      return
+    }
 
     // Ignore files/folders starting with "."
     const hasDotPath = relPath.split('/').find(p => p.startsWith('.'))
