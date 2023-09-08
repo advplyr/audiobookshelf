@@ -259,6 +259,12 @@ class LibraryController {
     return res.json(libraryJson)
   }
 
+  /**
+   * GET /api/libraries/:id/items
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async getLibraryItems(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 

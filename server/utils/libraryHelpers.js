@@ -130,20 +130,53 @@ module.exports = {
       payload.total = libraryItems.length
     }
 
-    const sortArray = [
-      {
-        asc: (li) => li.media.metadata.getSeries(seriesId).sequence
-      },
-      { // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
-        asc: (li) => {
-          if (Database.serverSettings.sortingIgnorePrefix) {
-            return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
-          } else {
-            return li.collapsedSeries?.name || li.media.metadata.title
+    const sortingIgnorePrefix = Database.serverSettings.sortingIgnorePrefix
+
+    let sortArray = []
+    const direction = payload.sortDesc ? 'desc' : 'asc'
+    if (!payload.sortBy || payload.sortBy === 'sequence') {
+      sortArray = [
+        {
+          [direction]: (li) => li.media.metadata.getSeries(seriesId).sequence
+        },
+        { // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
+          [direction]: (li) => {
+            if (sortingIgnorePrefix) {
+              return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+            } else {
+              return li.collapsedSeries?.name || li.media.metadata.title
+            }
           }
         }
+      ]
+    } else {
+      // If series are collapsed and not sorting by title or sequence, 
+      // sort all collapsed series to the end in alphabetical order
+      if (payload.sortBy !== 'media.metadata.title') {
+        sortArray.push({
+          asc: (li) => {
+            if (li.collapsedSeries) {
+              return sortingIgnorePrefix ? li.collapsedSeries.nameIgnorePrefix : li.collapsedSeries.name
+            } else {
+              return ''
+            }
+          }
+        })
       }
-    ]
+      sortArray.push({
+        [direction]: (li) => {
+          if (payload.sortBy === 'media.metadata.title') {
+            if (sortingIgnorePrefix) {
+              return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+            } else {
+              return li.collapsedSeries?.name || li.media.metadata.title
+            }
+          } else {
+            return payload.sortBy.split('.').reduce((a, b) => a[b], li)
+          }
+        }
+      })
+    }
 
     libraryItems = naturalSort(libraryItems).by(sortArray)
 
