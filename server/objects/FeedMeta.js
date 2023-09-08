@@ -61,6 +61,10 @@ class FeedMeta {
   }
 
   getRSSData() {
+    const blockTags = [
+      { 'itunes:block': 'yes' },
+      { 'googleplay:block': 'yes' }
+    ]
     return {
       title: this.title,
       description: this.description || '',
@@ -94,8 +98,7 @@ class FeedMeta {
           ]
         },
         { 'itunes:explicit': !!this.explicit },
-        { 'itunes:block': this.preventIndexing?"Yes":"No" },
-        { 'googleplay:block': this.preventIndexing?"yes":"no" }
+        ...(this.preventIndexing ? blockTags : [])
       ]
     }
   }

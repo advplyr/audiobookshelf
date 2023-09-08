@@ -132,6 +132,8 @@ export default {
         return
       }
 
+      this.processing = true
+
       const payload = {
         serverAddress: window.origin,
         slug: this.newFeedSlug,
@@ -150,6 +152,9 @@ export default {
           console.error('Failed to open RSS Feed', error)
           const errorMsg = error.response ? error.response.data : null
           this.$toast.error(errorMsg || 'Failed to open RSS Feed')
+        })
+        .finally(() => {
+          this.processing = false
         })
     },
     copyToClipboard(str) {
