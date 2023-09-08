@@ -648,6 +648,9 @@ module.exports = {
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: [
         {
+          id: {
+            [Sequelize.Op.notIn]: user.seriesHideFromContinueListening
+          },
           libraryId
         },
         // TODO: Simplify queries
