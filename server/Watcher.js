@@ -26,6 +26,9 @@ class FolderWatcher extends EventEmitter {
 
     /** @type {string[]} */
     this.ignoreDirs = []
+    /** @type {string[]} */
+    this.pendingDirsToRemoveFromIgnore = []
+
     this.disabled = false
   }
 
@@ -220,24 +223,50 @@ class FolderWatcher extends EventEmitter {
     })
   }
 
+  /**
+   * Convert to POSIX and remove trailing slash
+   * @param {string} path 
+   * @returns {string}
+   */
   cleanDirPath(path) {
     path = filePathToPOSIX(path)
     if (path.endsWith('/')) path = path.slice(0, -1)
     return path
   }
 
+  /**
+   * Ignore this directory if files are picked up by watcher
+   * @param {string} path 
+   */
   addIgnoreDir(path) {
     path = this.cleanDirPath(path)
     if (this.ignoreDirs.includes(path)) return
+    this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
     Logger.debug(`[Watcher] Ignoring directory "${path}"`)
     this.ignoreDirs.push(path)
   }
 
+  /**
+   * When downloading a podcast episode we dont want the scanner triggering for that podcast
+   * when the episode finishes the watcher may have a delayed response so a timeout is added
+   * to prevent the watcher from picking up the episode
+   * 
+   * @param {string} path 
+   */
   removeIgnoreDir(path) {
     path = this.cleanDirPath(path)
-    if (!this.ignoreDirs.includes(path)) return
-    Logger.debug(`[Watcher] No longer ignoring directory "${path}"`)
-    this.ignoreDirs = this.ignoreDirs.filter(p => p !== path)
+    if (!this.ignoreDirs.includes(path) || this.pendingDirsToRemoveFromIgnore.includes(path)) return
+
+    // Add a 5 second delay before removing the ignore from this dir
+    this.pendingDirsToRemoveFromIgnore.push(path)
+    setTimeout(() => {
+      if (this.pendingDirsToRemoveFromIgnore.includes(path)) {
+        this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
+        Logger.debug(`[Watcher] No longer ignoring directory "${path}"`)
+        this.ignoreDirs = this.ignoreDirs.filter(p => p !== path)
+      }
+    }, 5000)
+
   }
 }
 module.exports = FolderWatcher
