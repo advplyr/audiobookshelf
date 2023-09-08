@@ -36,7 +36,10 @@
             </ui-tooltip>
           </div>
           <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
-            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
+            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="sortingPrefixesUpdated" :disabled="savingPrefixes" />
+            <div class="flex justify-end py-1">
+              <ui-btn v-if="hasPrefixesChanged" color="success" :loading="savingPrefixes" small @click="updateSortingPrefixes">Save</ui-btn>
+            </div>
           </div>
 
           <div class="flex items-center py-2 mb-2">
@@ -260,8 +263,10 @@ export default {
       homepageUseBookshelfView: false,
       useBookshelfView: false,
       isPurgingCache: false,
+      hasPrefixesChanged: false,
       newServerSettings: {},
       showConfirmPurgeCache: false,
+      savingPrefixes: false,
       metadataFileFormats: [
         {
           text: '.json',
@@ -304,15 +309,36 @@ export default {
     }
   },
   methods: {
-    updateSortingPrefixes(val) {
-      if (!val || !val.length) {
+    sortingPrefixesUpdated(val) {
+      const prefixes = [...new Set(val?.map((prefix) => prefix.trim().toLowerCase()) || [])]
+      this.newServerSettings.sortingPrefixes = prefixes
+      const serverPrefixes = this.serverSettings.sortingPrefixes || []
+      this.hasPrefixesChanged = prefixes.some((p) => !serverPrefixes.includes(p)) || serverPrefixes.some((p) => !prefixes.includes(p))
+    },
+    updateSortingPrefixes() {
+      const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
+      if (!prefixes.length) {
         this.$toast.error('Must have at least 1 prefix')
         return
       }
-      var prefixes = val.map((prefix) => prefix.trim().toLowerCase())
-      this.updateServerSettings({
-        sortingPrefixes: prefixes
-      })
+
+      this.savingPrefixes = true
+      this.$axios
+        .$patch(`/api/sorting-prefixes`, { sortingPrefixes: prefixes })
+        .then((data) => {
+          this.$toast.success(`Sorting prefixes updated. ${data.rowsUpdated} rows`)
+          if (data.serverSettings) {
+            this.$store.commit('setServerSettings', data.serverSettings)
+          }
+          this.hasPrefixesChanged = false
+        })
+        .catch((error) => {
+          console.error('Failed to update prefixes', error)
+          this.$toast.error('Failed to update sorting prefixes')
+        })
+        .finally(() => {
+          this.savingPrefixes = false
+        })
     },
     updateScannerCoverProvider(val) {
       this.updateServerSettings({

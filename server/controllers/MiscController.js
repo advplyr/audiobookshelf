@@ -7,7 +7,7 @@ const Database = require('../Database')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
-const { isObject } = require('../utils/index')
+const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 
 //
 // This is a controller for routes that don't have a home yet :(
@@ -127,7 +127,7 @@ class MiscController {
     }
     const settingsUpdate = req.body
     if (!settingsUpdate || !isObject(settingsUpdate)) {
-      return res.status(500).send('Invalid settings update object')
+      return res.status(400).send('Invalid settings update object')
     }
 
     const madeUpdates = Database.serverSettings.update(settingsUpdate)
@@ -141,6 +141,103 @@ class MiscController {
     }
     return res.json({
       success: true,
+      serverSettings: Database.serverSettings.toJSONForBrowser()
+    })
+  }
+
+  /**
+   * PATCH: /api/sorting-prefixes
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async updateSortingPrefixes(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error('User other than admin attempting to update server sorting prefixes', req.user)
+      return res.sendStatus(403)
+    }
+    let sortingPrefixes = req.body.sortingPrefixes
+    if (!sortingPrefixes?.length || !Array.isArray(sortingPrefixes)) {
+      return res.status(400).send('Invalid request body')
+    }
+    sortingPrefixes = [...new Set(sortingPrefixes.map(p => p?.trim?.().toLowerCase()).filter(p => p))]
+    if (!sortingPrefixes.length) {
+      return res.status(400).send('Invalid sortingPrefixes in request body')
+    }
+
+    Logger.debug(`[MiscController] Updating sorting prefixes ${sortingPrefixes.join(', ')}`)
+    Database.serverSettings.sortingPrefixes = sortingPrefixes
+    await Database.updateServerSettings()
+
+    let rowsUpdated = 0
+    // Update titleIgnorePrefix column on books
+    const books = await Database.bookModel.findAll({
+      attributes: ['id', 'title', 'titleIgnorePrefix']
+    })
+    const bulkUpdateBooks = []
+    books.forEach((book) => {
+      const titleIgnorePrefix = getTitleIgnorePrefix(book.title)
+      if (titleIgnorePrefix !== book.titleIgnorePrefix) {
+        bulkUpdateBooks.push({
+          id: book.id,
+          titleIgnorePrefix
+        })
+      }
+    })
+    if (bulkUpdateBooks.length) {
+      Logger.info(`[MiscController] Updating titleIgnorePrefix on ${bulkUpdateBooks.length} books`)
+      rowsUpdated += bulkUpdateBooks.length
+      await Database.bookModel.bulkCreate(bulkUpdateBooks, {
+        updateOnDuplicate: ['titleIgnorePrefix']
+      })
+    }
+
+    // Update titleIgnorePrefix column on podcasts
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: ['id', 'title', 'titleIgnorePrefix']
+    })
+    const bulkUpdatePodcasts = []
+    podcasts.forEach((podcast) => {
+      const titleIgnorePrefix = getTitleIgnorePrefix(podcast.title)
+      if (titleIgnorePrefix !== podcast.titleIgnorePrefix) {
+        bulkUpdatePodcasts.push({
+          id: podcast.id,
+          titleIgnorePrefix
+        })
+      }
+    })
+    if (bulkUpdatePodcasts.length) {
+      Logger.info(`[MiscController] Updating titleIgnorePrefix on ${bulkUpdatePodcasts.length} podcasts`)
+      rowsUpdated += bulkUpdatePodcasts.length
+      await Database.podcastModel.bulkCreate(bulkUpdatePodcasts, {
+        updateOnDuplicate: ['titleIgnorePrefix']
+      })
+    }
+
+    // Update nameIgnorePrefix column on series
+    const allSeries = await Database.seriesModel.findAll({
+      attributes: ['id', 'name', 'nameIgnorePrefix']
+    })
+    const bulkUpdateSeries = []
+    allSeries.forEach((series) => {
+      const nameIgnorePrefix = getTitleIgnorePrefix(series.name)
+      if (nameIgnorePrefix !== series.nameIgnorePrefix) {
+        bulkUpdateSeries.push({
+          id: series.id,
+          nameIgnorePrefix
+        })
+      }
+    })
+    if (bulkUpdateSeries.length) {
+      Logger.info(`[MiscController] Updating nameIgnorePrefix on ${bulkUpdateSeries.length} series`)
+      rowsUpdated += bulkUpdateSeries.length
+      await Database.seriesModel.bulkCreate(bulkUpdateSeries, {
+        updateOnDuplicate: ['nameIgnorePrefix']
+      })
+    }
+
+    res.json({
+      rowsUpdated,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
   }

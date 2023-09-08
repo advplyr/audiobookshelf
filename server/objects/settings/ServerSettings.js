@@ -43,7 +43,7 @@ class ServerSettings {
 
     // Sorting
     this.sortingIgnorePrefix = false
-    this.sortingPrefixes = ['the']
+    this.sortingPrefixes = ['the', 'a']
 
     // Misc Flags
     this.chromecastEnabled = false
