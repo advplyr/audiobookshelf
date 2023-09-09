@@ -81,7 +81,7 @@ module.exports = {
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('title COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`podcast`.`title` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'media.numTracks') {
       return [['numEpisodes', dir]]
