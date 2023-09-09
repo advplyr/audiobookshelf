@@ -566,7 +566,7 @@ module.exports = {
       ],
       order: sortOrder,
       subQuery: false,
-      limit,
+      limit: limit || null,
       offset
     })
 

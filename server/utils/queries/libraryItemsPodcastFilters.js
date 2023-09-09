@@ -166,7 +166,7 @@ module.exports = {
       ],
       order: this.getOrder(sortBy, sortDesc),
       subQuery: false,
-      limit,
+      limit: limit || null,
       offset
     })
 
