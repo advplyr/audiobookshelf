@@ -211,7 +211,7 @@ module.exports = {
         mediaWhere[key] = {
           [Sequelize.Op.or]: [null, '']
         }
-      } else if (['genres', 'tags', 'narrator'].includes(value)) {
+      } else if (['genres', 'tags', 'narrators'].includes(value)) {
         mediaWhere[value] = {
           [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
         }
