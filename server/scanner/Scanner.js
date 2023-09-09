@@ -11,6 +11,7 @@ const LibraryScan = require('./LibraryScan')
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
+const CoverManager = require('../managers/CoverManager')
 
 class Scanner {
   constructor() { }
