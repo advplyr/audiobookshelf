@@ -117,23 +117,20 @@ class User {
     return json
   }
 
-  // Data broadcasted
-  toJSONForPublic(sessions, libraryItems) {
-    var userSession = sessions ? sessions.find(s => s.userId === this.id) : null
-    var session = null
-    if (userSession) {
-      var libraryItem = libraryItems.find(li => li.id === userSession.libraryItemId)
-      if (libraryItem) {
-        session = userSession.toJSONForClient(libraryItem)
-      }
-    }
+  /**
+   * User data for clients
+   * @param {[oldPlaybackSession[]]} sessions optional array of open playback sessions
+   * @returns {object}
+   */
+  toJSONForPublic(sessions) {
+    const userSession = sessions?.find(s => s.userId === this.id) || null
+    const session = userSession?.toJSONForClient() || null
     return {
       id: this.id,
       oldUserId: this.oldUserId,
       username: this.username,
       type: this.type,
       session,
-      mostRecent: this.getMostRecentItemProgress(libraryItems),
       lastSeen: this.lastSeen,
       createdAt: this.createdAt
     }
@@ -267,45 +264,6 @@ class User {
   getDefaultLibraryId(libraryIds) {
     // Libraries should already be in ascending display order, find first accessible
     return libraryIds.find(lid => this.checkCanAccessLibrary(lid)) || null
-  }
-
-  // Returns most recent media progress w/ `media` object and optionally an `episode` object
-  getMostRecentItemProgress(libraryItems) {
-    if (!this.mediaProgress.length) return null
-    var mediaProgressObjects = this.mediaProgress.map(lip => lip.toJSON())
-    mediaProgressObjects.sort((a, b) => b.lastUpdate - a.lastUpdate)
-
-    var libraryItemMedia = null
-    var progressEpisode = null
-    // Find the most recent progress that still has a libraryItem and episode
-    var mostRecentProgress = mediaProgressObjects.find((progress) => {
-      const libraryItem = libraryItems.find(li => li.id === progress.libraryItemId)
-      if (!libraryItem) {
-        Logger.warn('[User] Library item not found for users progress ' + progress.libraryItemId)
-        return false
-      } else if (progress.episodeId) {
-        const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(progress.episodeId) : null
-        if (!episode) {
-          Logger.warn(`[User] Episode ${progress.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
-          return false
-        } else {
-          libraryItemMedia = libraryItem.media.toJSONExpanded()
-          progressEpisode = episode.toJSON()
-          return true
-        }
-      } else {
-        libraryItemMedia = libraryItem.media.toJSONExpanded()
-        return true
-      }
-    })
-
-    if (!mostRecentProgress) return null
-
-    return {
-      ...mostRecentProgress,
-      media: libraryItemMedia,
-      episode: progressEpisode
-    }
   }
 
   getMediaProgress(libraryItemId, episodeId = null) {

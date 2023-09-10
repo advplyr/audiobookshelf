@@ -188,7 +188,7 @@ class Auth {
     await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     if (users.length) {
       for (const user of users) {
         user.token = await this.generateAccessToken({ userId: user.id, username: user.username })

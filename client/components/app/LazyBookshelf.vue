@@ -314,11 +314,6 @@ export default {
       }
 
       let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
-      // TODO: Temp use new library items API for everything except collapse sub-series
-      if (entityPath === 'items' && !this.collapseBookSeries && !(this.filterName === 'Series' && this.collapseSeries)) {
-        entityPath += '2'
-      }
-
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
       const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete`
 
@@ -628,6 +623,11 @@ export default {
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },
     async init(bookshelf) {
+      if (this.entityName === 'series') {
+        this.booksPerFetch = 50
+      } else {
+        this.booksPerFetch = 100
+      }
       this.checkUpdateSearchParams()
       this.initSizeData(bookshelf)
 

@@ -1,4 +1,8 @@
 const Logger = require("../Logger")
+const BookFinder = require('../finders/BookFinder')
+const PodcastFinder = require('../finders/PodcastFinder')
+const AuthorFinder = require('../finders/AuthorFinder')
+const MusicFinder = require('../finders/MusicFinder')
 
 class SearchController {
   constructor() { }
@@ -7,7 +11,7 @@ class SearchController {
     const provider = req.query.provider || 'google'
     const title = req.query.title || ''
     const author = req.query.author || ''
-    const results = await this.bookFinder.search(provider, title, author)
+    const results = await BookFinder.search(provider, title, author)
     res.json(results)
   }
 
@@ -21,8 +25,8 @@ class SearchController {
     }
 
     let results = null
-    if (podcast) results = await this.podcastFinder.findCovers(query.title)
-    else results = await this.bookFinder.findCovers(query.provider || 'google', query.title, query.author || null)
+    if (podcast) results = await PodcastFinder.findCovers(query.title)
+    else results = await BookFinder.findCovers(query.provider || 'google', query.title, query.author || null)
     res.json({
       results
     })
@@ -30,20 +34,20 @@ class SearchController {
 
   async findPodcasts(req, res) {
     const term = req.query.term
-    const results = await this.podcastFinder.search(term)
+    const results = await PodcastFinder.search(term)
     res.json(results)
   }
 
   async findAuthor(req, res) {
     const query = req.query.q
-    const author = await this.authorFinder.findAuthorByName(query)
+    const author = await AuthorFinder.findAuthorByName(query)
     res.json(author)
   }
 
   async findChapters(req, res) {
     const asin = req.query.asin
     const region = (req.query.region || 'us').toLowerCase()
-    const chapterData = await this.bookFinder.findChapters(asin, region)
+    const chapterData = await BookFinder.findChapters(asin, region)
     if (!chapterData) {
       return res.json({ error: 'Chapters not found' })
     }
@@ -51,7 +55,7 @@ class SearchController {
   }
 
   async findMusicTrack(req, res) {
-    const tracks = await this.musicFinder.searchTrack(req.query || {})
+    const tracks = await MusicFinder.searchTrack(req.query || {})
     res.json({
       tracks
     })

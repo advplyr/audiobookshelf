@@ -4,10 +4,6 @@ const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const abmetadataGenerator = require('../../utils/generators/abmetadataGenerator')
 const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
-const { createNewSortInstance } = require('../../libs/fastSort')
-const naturalSort = createNewSortInstance({
-  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
-})
 
 class Podcast {
   constructor(podcast) {

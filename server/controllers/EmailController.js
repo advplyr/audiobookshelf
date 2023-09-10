@@ -54,7 +54,7 @@ class EmailController {
   async sendEBookToDevice(req, res) {
     Logger.debug(`[EmailController] Send ebook to device request for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
 
-    const libraryItem = Database.getLibraryItem(req.body.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.body.libraryItemId)
     if (!libraryItem) {
       return res.status(404).send('Library item not found')
     }

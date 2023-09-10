@@ -8,11 +8,24 @@ const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
+const LibraryItemScanner = require('../scanner/LibraryItemScanner')
+const AudioFileScanner = require('../scanner/AudioFileScanner')
+const Scanner = require('../scanner/Scanner')
+const CacheManager = require('../managers/CacheManager')
+const CoverManager = require('../managers/CoverManager')
 
 class LibraryItemController {
   constructor() { }
 
-  // Example expand with authors: api/items/:id?expanded=1&include=authors
+  /**
+   * GET: /api/items/:id
+   * Optional query params:
+   * ?include=progress,rssfeed,downloads
+   * ?expanded=1
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
     if (req.query.expanded == 1) {
@@ -29,17 +42,7 @@ class LibraryItemController {
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 
-      if (item.mediaType == 'book') {
-        if (includeEntities.includes('authors')) {
-          item.media.metadata.authors = item.media.metadata.authors.map(au => {
-            var author = Database.authors.find(_au => _au.id === au.id)
-            if (!author) return null
-            return {
-              ...author
-            }
-          }).filter(au => au)
-        }
-      } else if (includeEntities.includes('downloads')) {
+      if (item.mediaType === 'podcast' && includeEntities.includes('downloads')) {
         const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
         item.episodeDownloadsQueued = downloadsInQueue.map(d => d.toJSONForClient())
         if (this.podcastManager.currentDownload?.libraryItemId === req.libraryItem.id) {
@@ -56,7 +59,7 @@ class LibraryItemController {
     var libraryItem = req.libraryItem
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && req.body.media && (req.body.media.coverPath === '' || req.body.media.coverPath === null)) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
     }
 
     const hasUpdates = libraryItem.update(req.body)
@@ -71,13 +74,14 @@ class LibraryItemController {
   async delete(req, res) {
     const hardDelete = req.query.hard == 1 // Delete from file system
     const libraryItemPath = req.libraryItem.path
-    await this.handleDeleteLibraryItem(req.libraryItem)
+    await this.handleDeleteLibraryItem(req.libraryItem.mediaType, req.libraryItem.id, [req.libraryItem.media.id])
     if (hardDelete) {
       Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
       await fs.remove(libraryItemPath).catch((error) => {
         Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
       })
     }
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
 
@@ -103,7 +107,7 @@ class LibraryItemController {
 
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
     }
 
     // Book specific
@@ -124,7 +128,7 @@ class LibraryItemController {
     // Book specific - Get all series being removed from this item
     let seriesRemoved = []
     if (libraryItem.isBook && mediaPayload.metadata?.series) {
-      const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+      const seriesIdsInUpdate = mediaPayload.metadata.series?.map(se => se.id) || []
       seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
     }
 
@@ -135,7 +139,7 @@ class LibraryItemController {
       if (seriesRemoved.length) {
         // Check remove empty series
         Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
-        await this.checkRemoveEmptySeries(seriesRemoved)
+        await this.checkRemoveEmptySeries(libraryItem.media.id, seriesRemoved.map(se => se.id))
       }
 
       if (isPodcastAutoDownloadUpdated) {
@@ -164,10 +168,10 @@ class LibraryItemController {
     var result = null
     if (req.body && req.body.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
-      result = await this.coverManager.downloadCoverFromUrl(libraryItem, req.body.url)
+      result = await CoverManager.downloadCoverFromUrl(libraryItem, req.body.url)
     } else if (req.files && req.files.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
-      result = await this.coverManager.uploadCover(libraryItem, req.files.cover)
+      result = await CoverManager.uploadCover(libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
@@ -193,7 +197,7 @@ class LibraryItemController {
       return res.status(400).send('Invalid request no cover path')
     }
 
-    const validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
+    const validationResult = await CoverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
@@ -213,7 +217,7 @@ class LibraryItemController {
 
     if (libraryItem.media.coverPath) {
       libraryItem.updateMediaCover('')
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await CacheManager.purgeCoverCache(libraryItem.id)
       await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
@@ -242,7 +246,7 @@ class LibraryItemController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return this.cacheManager.handleCoverCache(res, libraryItem, options)
+    return CacheManager.handleCoverCache(res, libraryItem, options)
   }
 
   // GET: api/items/:id/stream
@@ -296,7 +300,7 @@ class LibraryItemController {
     var libraryItem = req.libraryItem
 
     var options = req.body || {}
-    var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+    var matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
     res.json(matchResult)
   }
 
@@ -309,18 +313,23 @@ class LibraryItemController {
     const hardDelete = req.query.hard == 1 // Delete files from filesystem
 
     const { libraryItemIds } = req.body
-    if (!libraryItemIds || !libraryItemIds.length) {
-      return res.sendStatus(500)
+    if (!libraryItemIds?.length) {
+      return res.status(400).send('Invalid request body')
     }
 
-    const itemsToDelete = Database.libraryItems.filter(li => libraryItemIds.includes(li.id))
+    const itemsToDelete = await Database.libraryItemModel.getAllOldLibraryItems({
+      id: libraryItemIds
+    })
+
     if (!itemsToDelete.length) {
       return res.sendStatus(404)
     }
-    for (let i = 0; i < itemsToDelete.length; i++) {
-      const libraryItemPath = itemsToDelete[i].path
-      Logger.info(`[LibraryItemController] Deleting Library Item "${itemsToDelete[i].media.metadata.title}"`)
-      await this.handleDeleteLibraryItem(itemsToDelete[i])
+
+    const libraryId = itemsToDelete[0].libraryId
+    for (const libraryItem of itemsToDelete) {
+      const libraryItemPath = libraryItem.path
+      Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
+      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, [libraryItem.media.id])
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
@@ -328,28 +337,42 @@ class LibraryItemController {
         })
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(libraryId)
     res.sendStatus(200)
   }
 
   // POST: api/items/batch/update
   async batchUpdate(req, res) {
-    var updatePayloads = req.body
-    if (!updatePayloads || !updatePayloads.length) {
+    const updatePayloads = req.body
+    if (!updatePayloads?.length) {
       return res.sendStatus(500)
     }
 
-    var itemsUpdated = 0
+    let itemsUpdated = 0
 
-    for (let i = 0; i < updatePayloads.length; i++) {
-      var mediaPayload = updatePayloads[i].mediaPayload
-      var libraryItem = Database.libraryItems.find(_li => _li.id === updatePayloads[i].id)
+    for (const updatePayload of updatePayloads) {
+      const mediaPayload = updatePayload.mediaPayload
+      const libraryItem = await Database.libraryItemModel.getOldById(updatePayload.id)
       if (!libraryItem) return null
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
 
-      var hasUpdates = libraryItem.media.update(mediaPayload)
-      if (hasUpdates) {
+      let seriesRemoved = []
+      if (libraryItem.isBook && mediaPayload.metadata?.series) {
+        const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+        seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
+      }
+
+      if (libraryItem.media.update(mediaPayload)) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
+
+        if (seriesRemoved.length) {
+          // Check remove empty series
+          Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
+          await this.checkRemoveEmptySeries(libraryItem.media.id, seriesRemoved.map(se => se.id))
+        }
+
         await Database.updateLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
         itemsUpdated++
@@ -368,13 +391,11 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    const libraryItems = []
-    libraryItemIds.forEach((lid) => {
-      const li = Database.libraryItems.find(_li => _li.id === lid)
-      if (li) libraryItems.push(li.toJSONExpanded())
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+      id: libraryItemIds
     })
     res.json({
-      libraryItems
+      libraryItems: libraryItems.map(li => li.toJSONExpanded())
     })
   }
 
@@ -393,7 +414,9 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
-    const libraryItems = req.body.libraryItemIds.map(lid => Database.getLibraryItem(lid)).filter(li => li)
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+      id: req.body.libraryItemIds
+    })
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }
@@ -401,7 +424,7 @@ class LibraryItemController {
     res.sendStatus(200)
 
     for (const libraryItem of libraryItems) {
-      const matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+      const matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {
@@ -428,23 +451,31 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
-    const libraryItems = req.body.libraryItemIds.map(lid => Database.getLibraryItem(lid)).filter(li => li)
+    const libraryItems = await Database.libraryItemModel.findAll({
+      where: {
+        id: req.body.libraryItemIds
+      },
+      attributes: ['id', 'libraryId', 'isFile']
+    })
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }
 
     res.sendStatus(200)
 
+    const libraryId = libraryItems[0].libraryId
     for (const libraryItem of libraryItems) {
       if (libraryItem.isFile) {
         Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
       } else {
-        await this.scanner.scanLibraryItemByRequest(libraryItem)
+        await LibraryItemScanner.scanLibraryItem(libraryItem.id)
       }
     }
+
+    await Database.resetLibraryIssuesFilterData(libraryId)
   }
 
-  // POST: api/items/:id/scan (admin)
+  // POST: api/items/:id/scan
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to scan library item`, req.user)
@@ -456,7 +487,8 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
+    const result = await LibraryItemScanner.scanLibraryItem(req.libraryItem.id)
+    await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
     })
@@ -529,7 +561,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
-    const ffprobeData = await this.scanner.probeAudioFile(audioFile)
+    const ffprobeData = await AudioFileScanner.probeAudioFile(audioFile)
     res.json(ffprobeData)
   }
 
@@ -680,7 +712,7 @@ class LibraryItemController {
   }
 
   async middleware(req, res, next) {
-    req.libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
+    req.libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item

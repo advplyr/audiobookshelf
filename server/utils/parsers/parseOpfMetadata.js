@@ -159,8 +159,8 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   }
 
   const creators = parseCreators(metadata)
-  const authors = (fetchCreators(creators, 'aut') || []).filter(au => au && au.trim())
-  const narrators = (fetchNarrators(creators, metadata) || []).filter(nrt => nrt && nrt.trim())
+  const authors = (fetchCreators(creators, 'aut') || []).map(au => au?.trim()).filter(au => au)
+  const narrators = (fetchNarrators(creators, metadata) || []).map(nrt => nrt?.trim()).filter(nrt => nrt)
   const data = {
     title: fetchTitle(metadata),
     subtitle: fetchSubtitle(metadata),

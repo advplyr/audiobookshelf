@@ -1,7 +1,5 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const { recurseFiles, getFileTimestampsWithIno, filePathToPOSIX } = require('./fileUtils')
+const { filePathToPOSIX } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
 
@@ -22,9 +20,12 @@ function checkFilepathIsAudioFile(filepath) {
 }
 module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
-// TODO: Function needs to be re-done
-// Input: array of relative file paths
-// Output: map of files grouped into potential item dirs
+/**
+ * TODO: Function needs to be re-done
+ * @param {string} mediaType 
+ * @param {string[]} paths array of relative file paths
+ * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
+ */
 function groupFilesIntoLibraryItemPaths(mediaType, paths) {
   // Step 1: Clean path, Remove leading "/", Filter out non-media files in root dir
   var nonMediaFilePaths = []
@@ -85,10 +86,24 @@ function groupFilesIntoLibraryItemPaths(mediaType, paths) {
 
   // Step 4: Add in non-media files if they fit into item group
   if (nonMediaFilePaths.length) {
+
     for (const nonMediaFilePath of nonMediaFilePaths) {
       const pathDir = Path.dirname(nonMediaFilePath)
-      if (itemGroup[pathDir]) {
-        itemGroup[pathDir].push(nonMediaFilePath)
+      const filename = Path.basename(nonMediaFilePath)
+      const dirparts = pathDir.split('/')
+      const numparts = dirparts.length
+      let _path = ''
+
+      // Iterate over directories in path
+      for (let i = 0; i < numparts; i++) {
+        const dirpart = dirparts.shift()
+        _path = Path.posix.join(_path, dirpart)
+        if (itemGroup[_path]) { // Directory is a group
+          const relpath = Path.posix.join(dirparts.join('/'), filename)
+          itemGroup[_path].push(relpath)
+        } else if (!dirparts.length) {
+          itemGroup[_path] = [filename]
+        }
       }
     }
   }
@@ -97,8 +112,12 @@ function groupFilesIntoLibraryItemPaths(mediaType, paths) {
 }
 module.exports.groupFilesIntoLibraryItemPaths = groupFilesIntoLibraryItemPaths
 
-// Input: array of relative file items (see recurseFiles)
-// Output: map of files grouped into potential libarary item dirs
+/**
+ * @param {string} mediaType 
+ * @param {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]} fileItems (see recurseFiles)
+ * @param {boolean} [audiobooksOnly=false] 
+ * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
+ */
 function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly = false) {
   // Handle music where every audio file is a library item
   if (mediaType === 'music') {
@@ -173,8 +192,15 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
   })
   return libraryItemGroup
 }
+module.exports.groupFileItemsIntoLibraryItemDirs = groupFileItemsIntoLibraryItemDirs
 
-function cleanFileObjects(libraryItemPath, files) {
+/**
+ * Get LibraryFile from filepath
+ * @param {string} libraryItemPath 
+ * @param {string[]} files 
+ * @returns {import('../objects/files/LibraryFile')}
+ */
+function buildLibraryFile(libraryItemPath, files) {
   return Promise.all(files.map(async (file) => {
     const filePath = Path.posix.join(libraryItemPath, file)
     const newLibraryFile = new LibraryFile()
@@ -182,73 +208,7 @@ function cleanFileObjects(libraryItemPath, files) {
     return newLibraryFile
   }))
 }
-
-// Scan folder
-async function scanFolder(library, folder) {
-  const folderPath = filePathToPOSIX(folder.fullPath)
-
-  const pathExists = await fs.pathExists(folderPath)
-  if (!pathExists) {
-    Logger.error(`[scandir] Invalid folder path does not exist "${folderPath}"`)
-    return []
-  }
-
-  const fileItems = await recurseFiles(folderPath)
-  const libraryItemGrouping = groupFileItemsIntoLibraryItemDirs(library.mediaType, fileItems, library.settings.audiobooksOnly)
-
-  if (!Object.keys(libraryItemGrouping).length) {
-    Logger.error(`Root path has no media folders: ${folderPath}`)
-    return []
-  }
-
-  const items = []
-  for (const libraryItemPath in libraryItemGrouping) {
-    let isFile = false // item is not in a folder
-    let libraryItemData = null
-    let fileObjs = []
-    if (library.mediaType === 'music') {
-      libraryItemData = {
-        path: Path.posix.join(folderPath, libraryItemPath),
-        relPath: libraryItemPath
-      }
-      fileObjs = await cleanFileObjects(folderPath, [libraryItemPath])
-      isFile = true
-    } else if (libraryItemPath === libraryItemGrouping[libraryItemPath]) {
-      // Media file in root only get title
-      libraryItemData = {
-        mediaMetadata: {
-          title: Path.basename(libraryItemPath, Path.extname(libraryItemPath))
-        },
-        path: Path.posix.join(folderPath, libraryItemPath),
-        relPath: libraryItemPath
-      }
-      fileObjs = await cleanFileObjects(folderPath, [libraryItemPath])
-      isFile = true
-    } else {
-      libraryItemData = getDataFromMediaDir(library.mediaType, folderPath, libraryItemPath)
-      fileObjs = await cleanFileObjects(libraryItemData.path, libraryItemGrouping[libraryItemPath])
-    }
-
-    const libraryItemFolderStats = await getFileTimestampsWithIno(libraryItemData.path)
-    items.push({
-      folderId: folder.id,
-      libraryId: folder.libraryId,
-      ino: libraryItemFolderStats.ino,
-      mtimeMs: libraryItemFolderStats.mtimeMs || 0,
-      ctimeMs: libraryItemFolderStats.ctimeMs || 0,
-      birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-      path: libraryItemData.path,
-      relPath: libraryItemData.relPath,
-      isFile,
-      media: {
-        metadata: libraryItemData.mediaMetadata || null
-      },
-      libraryFiles: fileObjs
-    })
-  }
-  return items
-}
-module.exports.scanFolder = scanFolder
+module.exports.buildLibraryFile = buildLibraryFile
 
 // Input relative filepath, output all details that can be parsed
 function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
@@ -365,60 +325,4 @@ function getDataFromMediaDir(libraryMediaType, folderPath, relPath) {
     return getPodcastDataFromDir(folderPath, relPath)
   }
 }
-
-// Called from Scanner.js
-async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, isSingleMediaItem) {
-  libraryItemPath = filePathToPOSIX(libraryItemPath)
-  const folderFullPath = filePathToPOSIX(folder.fullPath)
-
-  const libraryItemDir = libraryItemPath.replace(folderFullPath, '').slice(1)
-  let libraryItemData = {}
-
-  let fileItems = []
-
-  if (isSingleMediaItem) { // Single media item in root of folder
-    fileItems = [
-      {
-        fullpath: libraryItemPath,
-        path: libraryItemDir // actually the relPath (only filename here)
-      }
-    ]
-    libraryItemData = {
-      path: libraryItemPath, // full path
-      relPath: libraryItemDir, // only filename
-      mediaMetadata: {
-        title: Path.basename(libraryItemDir, Path.extname(libraryItemDir))
-      }
-    }
-  } else {
-    fileItems = await recurseFiles(libraryItemPath)
-    libraryItemData = getDataFromMediaDir(libraryMediaType, folderFullPath, libraryItemDir)
-  }
-
-  const libraryItemDirStats = await getFileTimestampsWithIno(libraryItemData.path)
-  const libraryItem = {
-    ino: libraryItemDirStats.ino,
-    mtimeMs: libraryItemDirStats.mtimeMs || 0,
-    ctimeMs: libraryItemDirStats.ctimeMs || 0,
-    birthtimeMs: libraryItemDirStats.birthtimeMs || 0,
-    folderId: folder.id,
-    libraryId: folder.libraryId,
-    path: libraryItemData.path,
-    relPath: libraryItemData.relPath,
-    isFile: isSingleMediaItem,
-    media: {
-      metadata: libraryItemData.mediaMetadata || null
-    },
-    libraryFiles: []
-  }
-
-  for (let i = 0; i < fileItems.length; i++) {
-    const fileItem = fileItems[i]
-    const newLibraryFile = new LibraryFile()
-    // fileItem.path is the relative path
-    await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
-    libraryItem.libraryFiles.push(newLibraryFile)
-  }
-  return libraryItem
-}
-module.exports.getLibraryItemFileData = getLibraryItemFileData
+module.exports.getDataFromMediaDir = getDataFromMediaDir

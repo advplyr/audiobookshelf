@@ -6,6 +6,7 @@ class AudioFile {
   constructor(data) {
     this.index = null
     this.ino = null
+    /** @type {FileMetadata} */
     this.metadata = null
     this.addedAt = null
     this.updatedAt = null
@@ -27,6 +28,7 @@ class AudioFile {
     this.embeddedCoverArt = null
 
     // Tags scraped from the audio file
+    /** @type {AudioMetaTags} */
     this.metaTags = null
 
     this.manuallyVerified = false
@@ -64,7 +66,7 @@ class AudioFile {
       channelLayout: this.channelLayout,
       chapters: this.chapters,
       embeddedCoverArt: this.embeddedCoverArt,
-      metaTags: this.metaTags ? this.metaTags.toJSON() : {},
+      metaTags: this.metaTags?.toJSON() || {},
       mimeType: this.mimeType
     }
   }
@@ -114,11 +116,16 @@ class AudioFile {
     return !this.invalid && !this.exclude
   }
 
-  // New scanner creates AudioFile from MediaFileScanner
+  // New scanner creates AudioFile from AudioFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
 
-    this.metadata = libraryFile.metadata.clone()
+    if (libraryFile.metadata instanceof FileMetadata) {
+      this.metadata = libraryFile.metadata.clone()
+    } else {
+      this.metadata = new FileMetadata(libraryFile.metadata)
+    }
+
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
 
@@ -163,11 +170,16 @@ class AudioFile {
     return new AudioFile(this.toJSON())
   }
 
+  /**
+   * 
+   * @param {AudioFile} scannedAudioFile 
+   * @returns {boolean} true if updates were made
+   */
   updateFromScan(scannedAudioFile) {
     let hasUpdated = false
 
     const newjson = scannedAudioFile.toJSON()
-    const ignoreKeys = ['manuallyVerified', 'exclude', 'addedAt', 'updatedAt']
+    const ignoreKeys = ['manuallyVerified', 'ctimeMs', 'addedAt', 'updatedAt']
 
     for (const key in newjson) {
       if (key === 'metadata') {

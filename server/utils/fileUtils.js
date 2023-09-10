@@ -59,6 +59,20 @@ async function getFileSize(path) {
 }
 module.exports.getFileSize = getFileSize
 
+/**
+ * 
+ * @param {string} filepath 
+ * @returns {boolean}
+ */
+async function checkPathIsFile(filepath) {
+  try {
+    const stat = await fs.stat(filepath)
+    return stat.isFile()
+  } catch (err) {
+    return false
+  }
+}
+module.exports.checkPathIsFile = checkPathIsFile
 
 function getIno(path) {
   return fs.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
@@ -68,6 +82,11 @@ function getIno(path) {
 }
 module.exports.getIno = getIno
 
+/**
+ * Read contents of file
+ * @param {string} path 
+ * @returns {string}
+ */
 async function readTextFile(path) {
   try {
     var data = await fs.readFile(path)
@@ -92,6 +111,12 @@ function bytesPretty(bytes, decimals = 0) {
 }
 module.exports.bytesPretty = bytesPretty
 
+/**
+ * Get array of files inside dir
+ * @param {string} path 
+ * @param {string} [relPathToReplace] 
+ * @returns {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]}
+ */
 async function recurseFiles(path, relPathToReplace = null) {
   path = filePathToPOSIX(path)
   if (!path.endsWith('/')) path = path + '/'
@@ -113,7 +138,7 @@ async function recurseFiles(path, relPathToReplace = null) {
     realPath: true,
     normalizePath: true
   }
-  var list = await rra.list(path, options)
+  let list = await rra.list(path, options)
   if (list.error) {
     Logger.error('[fileUtils] Recurse files error', list.error)
     return []
@@ -127,10 +152,10 @@ async function recurseFiles(path, relPathToReplace = null) {
       return false
     }
 
-    var relpath = item.fullname.replace(relPathToReplace, '')
-    var reldirname = Path.dirname(relpath)
+    const relpath = item.fullname.replace(relPathToReplace, '')
+    let reldirname = Path.dirname(relpath)
     if (reldirname === '.') reldirname = ''
-    var dirname = Path.dirname(item.fullname)
+    const dirname = Path.dirname(item.fullname)
 
     // Directory has a file named ".ignore" flag directory and ignore
     if (item.name === '.ignore' && reldirname && reldirname !== '.' && !directoriesToIgnore.includes(dirname)) {
@@ -139,9 +164,13 @@ async function recurseFiles(path, relPathToReplace = null) {
       return false
     }
 
+    if (item.extension === '.part') {
+      Logger.debug(`[fileUtils] Ignoring .part file "${relpath}"`)
+      return false
+    }
+
     // Ignore any file if a directory or the filename starts with "."
-    var pathStartsWithPeriod = relpath.split('/').find(p => p.startsWith('.'))
-    if (pathStartsWithPeriod) {
+    if (relpath.split('/').find(p => p.startsWith('.'))) {
       Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
       return false
     }

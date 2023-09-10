@@ -278,7 +278,12 @@ function parseProbeData(data, verbose = false) {
   }
 }
 
-// Updated probe returns MediaProbeData object
+/**
+ * Run ffprobe on audio filepath
+ * @param {string} filepath 
+ * @param {boolean} [verbose=false] 
+ * @returns {import('../scanner/MediaProbeData')|{error:string}}
+ */
 function probe(filepath, verbose = false) {
   if (process.env.FFPROBE_PATH) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH

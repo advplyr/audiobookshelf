@@ -9,24 +9,19 @@ const rateLimit = require('./libs/expressRateLimit')
 const { version } = require('../package.json')
 
 // Utils
-const filePerms = require('./utils/filePerms')
 const fileUtils = require('./utils/fileUtils')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
-const Scanner = require('./scanner/Scanner')
 const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
-
-const routes = require('./routes/index')
 
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
-const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
 const LogManager = require('./managers/LogManager')
@@ -37,6 +32,7 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
+const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
 const passport = require('passport')
@@ -58,11 +54,9 @@ class Server {
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
-      filePerms.setDefaultDirSync(global.ConfigPath, false)
     }
     if (!fs.pathExistsSync(global.MetadataPath)) {
       fs.mkdirSync(global.MetadataPath)
-      filePerms.setDefaultDirSync(global.MetadataPath, false)
     }
 
     this.watcher = new Watcher()
@@ -74,16 +68,12 @@ class Server {
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
     this.logManager = new LogManager()
-    this.cacheManager = new CacheManager()
     this.abMergeManager = new AbMergeManager(this.taskManager)
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.coverManager = new CoverManager(this.cacheManager)
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager, this.taskManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.taskManager)
     this.rssFeedManager = new RssFeedManager()
-
-    this.scanner = new Scanner(this.coverManager, this.taskManager)
-    this.cronManager = new CronManager(this.scanner, this.podcastManager)
+    this.cronManager = new CronManager(this.podcastManager)
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -97,6 +87,14 @@ class Server {
 
   authMiddleware(req, res, next) {
     this.auth.isAuthenticated(req, res, next)
+  }
+
+  cancelLibraryScan(libraryId) {
+    LibraryScanner.setCancelLibraryScan(libraryId)
+  }
+
+  getLibrariesScanning() {
+    return LibraryScanner.librariesScanning
   }
 
   /**
@@ -115,22 +113,20 @@ class Server {
     }
 
     await this.cleanUserData() // Remove invalid user item progress
-    await this.cacheManager.ensureCachePaths()
+    await CacheManager.ensureCachePaths()
 
     await this.backupManager.init()
     await this.logManager.init()
-    await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()
 
-    const libraries = await Database.models.library.getAllOldLibraries()
-    this.cronManager.init(libraries)
+    const libraries = await Database.libraryModel.getAllOldLibraries()
+    await this.cronManager.init(libraries)
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
       this.watcher.disabled = true
     } else {
       this.watcher.initWatcher(libraries)
-      this.watcher.on('files', this.filesChanged.bind(this))
     }
   }
 
@@ -269,17 +265,12 @@ class Server {
     res.sendStatus(200)
   }
 
-  async filesChanged(fileUpdates) {
-    Logger.info('[Server]', fileUpdates.length, 'Files Changed')
-    await this.scanner.scanFilesChanged(fileUpdates)
-  }
-
   /**
    * Remove user media progress for items that no longer exist & remove seriesHideFrom that no longer exist
    */
   async cleanUserData() {
     // Get all media progress without an associated media item
-    const mediaProgressToRemove = await Database.models.mediaProgress.findAll({
+    const mediaProgressToRemove = await Database.mediaProgressModel.findAll({
       where: {
         '$podcastEpisode.id$': null,
         '$book.id$': null
@@ -287,18 +278,18 @@ class Server {
       attributes: ['id'],
       include: [
         {
-          model: Database.models.book,
+          model: Database.bookModel,
           attributes: ['id']
         },
         {
-          model: Database.models.podcastEpisode,
+          model: Database.podcastEpisodeModel,
           attributes: ['id']
         }
       ]
     })
     if (mediaProgressToRemove.length) {
       // Remove media progress
-      const mediaProgressRemoved = await Database.models.mediaProgress.destroy({
+      const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
         where: {
           id: {
             [Sequelize.Op.in]: mediaProgressToRemove.map(mp => mp.id)
@@ -311,12 +302,19 @@ class Server {
     }
 
     // Remove series from hide from continue listening that no longer exist
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     for (const _user of users) {
       let hasUpdated = false
       if (_user.seriesHideFromContinueListening.length) {
+        const seriesHiding = (await Database.seriesModel.findAll({
+          where: {
+            id: _user.seriesHideFromContinueListening
+          },
+          attributes: ['id'],
+          raw: true
+        })).map(se => se.id)
         _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {
-          if (!Database.series.some(se => se.id === seriesId)) { // Series removed
+          if (!seriesHiding.includes(seriesId)) { // Series removed
             hasUpdated = true
             return false
           }

@@ -1,4 +1,4 @@
-const Logger = require('../Logger')
+const CacheManager = require('../managers/CacheManager')
 
 class CacheController {
   constructor() { }
@@ -8,7 +8,7 @@ class CacheController {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    await this.cacheManager.purgeAll()
+    await CacheManager.purgeAll()
     res.sendStatus(200)
   }
 
@@ -17,7 +17,7 @@ class CacheController {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    await this.cacheManager.purgeItems()
+    await CacheManager.purgeItems()
     res.sendStatus(200)
   }
 }

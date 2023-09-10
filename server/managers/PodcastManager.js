@@ -6,7 +6,6 @@ const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
 const { removeFile, downloadFile } = require('../utils/fileUtils')
-const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const opmlGenerator = require('../utils/generators/opmlGenerator')
@@ -96,7 +95,6 @@ class PodcastManager {
     if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
       Logger.warn(`[PodcastManager] Podcast episode download: Podcast folder no longer exists at "${this.currentDownload.libraryItem.path}" - Creating it`)
       await fs.mkdir(this.currentDownload.libraryItem.path)
-      await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
     let success = false
@@ -150,7 +148,7 @@ class PodcastManager {
       return false
     }
 
-    const libraryItem = Database.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
@@ -372,8 +370,13 @@ class PodcastManager {
     }
   }
 
-  generateOPMLFileText(libraryItems) {
-    return opmlGenerator.generate(libraryItems)
+  /**
+   * OPML file string for podcasts in a library
+   * @param {import('../models/Podcast')[]} podcasts 
+   * @returns {string} XML string
+   */
+  generateOPMLFileText(podcasts) {
+    return opmlGenerator.generate(podcasts)
   }
 
   getDownloadQueueDetails(libraryId = null) {

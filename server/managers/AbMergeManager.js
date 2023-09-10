@@ -5,7 +5,6 @@ const fs = require('../libs/fsExtra')
 const workerThreads = require('worker_threads')
 const Logger = require('../Logger')
 const Task = require('../objects/Task')
-const filePerms = require('../utils/filePerms')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
@@ -200,10 +199,6 @@ class AbMergeManager {
     // Move m4b to target
     Logger.debug(`[AbMergeManager] Moving m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`)
     await fs.move(task.data.tempFilepath, task.data.targetFilepath)
-
-    // Set file permissions and ownership
-    await filePerms.setDefault(task.data.targetFilepath)
-    await filePerms.setDefault(task.data.itemCachePath)
 
     task.setFinished()
     await this.removeTask(task, false)

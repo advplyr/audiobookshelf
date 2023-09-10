@@ -1,46 +1,61 @@
 const { DataTypes, Model } = require('sequelize')
 
-module.exports = (sequelize) => {
-  class CollectionBook extends Model {
-    static removeByIds(collectionId, bookId) {
-      return this.destroy({
-        where: {
-          bookId,
-          collectionId
-        }
-      })
-    }
+class CollectionBook extends Model {
+  constructor(values, options) {
+    super(values, options)
+
+    /** @type {UUIDV4} */
+    this.id
+    /** @type {number} */
+    this.order
+    /** @type {UUIDV4} */
+    this.bookId
+    /** @type {UUIDV4} */
+    this.collectionId
+    /** @type {Date} */
+    this.createdAt
   }
 
-  CollectionBook.init({
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-    },
-    order: DataTypes.INTEGER
-  }, {
-    sequelize,
-    timestamps: true,
-    updatedAt: false,
-    modelName: 'collectionBook'
-  })
+  static removeByIds(collectionId, bookId) {
+    return this.destroy({
+      where: {
+        bookId,
+        collectionId
+      }
+    })
+  }
 
-  // Super Many-to-Many
-  // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
-  const { book, collection } = sequelize.models
-  book.belongsToMany(collection, { through: CollectionBook })
-  collection.belongsToMany(book, { through: CollectionBook })
+  static init(sequelize) {
+    super.init({
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+      },
+      order: DataTypes.INTEGER
+    }, {
+      sequelize,
+      timestamps: true,
+      updatedAt: false,
+      modelName: 'collectionBook'
+    })
 
-  book.hasMany(CollectionBook, {
-    onDelete: 'CASCADE'
-  })
-  CollectionBook.belongsTo(book)
+    // Super Many-to-Many
+    // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
+    const { book, collection } = sequelize.models
+    book.belongsToMany(collection, { through: CollectionBook })
+    collection.belongsToMany(book, { through: CollectionBook })
 
-  collection.hasMany(CollectionBook, {
-    onDelete: 'CASCADE'
-  })
-  CollectionBook.belongsTo(collection)
+    book.hasMany(CollectionBook, {
+      onDelete: 'CASCADE'
+    })
+    CollectionBook.belongsTo(book)
 
-  return CollectionBook
+    collection.hasMany(CollectionBook, {
+      onDelete: 'CASCADE'
+    })
+    CollectionBook.belongsTo(collection)
+  }
 }
+
+module.exports = CollectionBook

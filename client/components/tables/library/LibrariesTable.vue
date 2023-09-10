@@ -11,10 +11,6 @@
       <ui-btn @click="clickAddLibrary">{{ $strings.ButtonAddYourFirstLibrary }}</ui-btn>
     </div>
 
-    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">
-      *<strong>{{ $strings.ButtonForceReScan }}</strong> {{ $strings.MessageForceReScanDescription }}
-    </p>
-
     <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">
       **<strong>{{ $strings.ButtonMatchBooks }}</strong> {{ $strings.MessageMatchBooksDescription }}
     </p>

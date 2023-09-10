@@ -1,5 +1,4 @@
 const fs = require('../../libs/fsExtra')
-const filePerms = require('../filePerms')
 const package = require('../../../package.json')
 const Logger = require('../../Logger')
 const { getId } = require('../index')
@@ -24,7 +23,7 @@ const CurrentAbMetadataVersion = 2
 
 const commaSeparatedToArray = (v) => {
   if (!v) return []
-  return v.split(',').map(_v => _v.trim()).filter(_v => _v)
+  return [...new Set(v.split(',').map(_v => _v.trim()).filter(_v => _v))]
 }
 
 const podcastMetadataMapper = {
@@ -41,7 +40,7 @@ const podcastMetadataMapper = {
     from: (v) => v || null
   },
   genres: {
-    to: (m) => m.genres.join(', '),
+    to: (m) => m.genres?.join(', ') || '',
     from: (v) => commaSeparatedToArray(v)
   },
   feedUrl: {
@@ -68,11 +67,15 @@ const bookMetadataMapper = {
     from: (v) => v || null
   },
   authors: {
-    to: (m) => m.authorName || '',
+    to: (m) => {
+      if (m.authorName !== undefined) return m.authorName
+      if (!m.authors?.length) return ''
+      return m.authors.map(au => au.name).join(', ')
+    },
     from: (v) => commaSeparatedToArray(v)
   },
   narrators: {
-    to: (m) => m.narratorName || '',
+    to: (m) => m.narrators?.join(', ') || '',
     from: (v) => commaSeparatedToArray(v)
   },
   publishedYear: {
@@ -96,11 +99,19 @@ const bookMetadataMapper = {
     from: (v) => v || null
   },
   genres: {
-    to: (m) => m.genres.join(', '),
+    to: (m) => m.genres?.join(', ') || '',
     from: (v) => commaSeparatedToArray(v)
   },
   series: {
-    to: (m) => m.seriesName,
+    to: (m) => {
+      if (m.seriesName !== undefined) return m.seriesName
+      if (!m.series?.length) return ''
+      return m.series.map((se) => {
+        const sequence = se.bookSeries?.sequence || ''
+        if (!sequence) return se.name
+        return `${se.name} #${sequence}`
+      }).join(', ')
+    },
     from: (v) => {
       return commaSeparatedToArray(v).map(series => { // Return array of { name, sequence }
         let sequence = null
@@ -165,14 +176,49 @@ function generate(libraryItem, outputPath) {
       fileString += `title=${chapter.title}\n`
     })
   }
-  return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms.setDefault(outputPath, true).then(() => true)
-  }).catch((error) => {
+  return fs.writeFile(outputPath, fileString).then(() => true).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false
   })
 }
 module.exports.generate = generate
+
+function generateFromNewModel(libraryItem, outputPath) {
+  let fileString = `;ABMETADATA${CurrentAbMetadataVersion}\n`
+  fileString += `#audiobookshelf v${package.version}\n\n`
+
+  const mediaType = libraryItem.mediaType
+
+  fileString += `media=${mediaType}\n`
+  fileString += `tags=${JSON.stringify(libraryItem.media.tags || '')}\n`
+
+  const metadataMapper = metadataMappers[mediaType]
+  for (const key in metadataMapper) {
+    fileString += `${key}=${metadataMapper[key].to(libraryItem.media)}\n`
+  }
+
+  // Description block
+  if (libraryItem.media.description) {
+    fileString += '\n[DESCRIPTION]\n'
+    fileString += libraryItem.media.description + '\n'
+  }
+
+  // Book chapters
+  if (mediaType == 'book' && libraryItem.media.chapters?.length) {
+    fileString += '\n'
+    libraryItem.media.chapters.forEach((chapter) => {
+      fileString += `[CHAPTER]\n`
+      fileString += `start=${chapter.start}\n`
+      fileString += `end=${chapter.end}\n`
+      fileString += `title=${chapter.title}\n`
+    })
+  }
+  return fs.writeFile(outputPath, fileString).then(() => true).catch((error) => {
+    Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
+    return false
+  })
+}
+module.exports.generateFromNewModel = generateFromNewModel
 
 function parseSections(lines) {
   if (!lines || !lines.length || !lines[0].startsWith('[')) { // First line must be section start
@@ -324,6 +370,10 @@ function parseAbMetadataText(text, mediaType) {
 
   mediaDetails.chapters.sort((a, b) => a.start - b.start)
 
+  if (mediaDetails.chapters.length) {
+    mediaDetails.chapters = cleanChaptersArray(mediaDetails.chapters, mediaDetails.metadata.title) || []
+  }
+
   return mediaDetails
 }
 module.exports.parse = parseAbMetadataText
@@ -401,7 +451,10 @@ function checkArraysChanged(abmetadataArray, mediaArray) {
 function parseJsonMetadataText(text) {
   try {
     const abmetadataData = JSON.parse(text)
-    if (abmetadataData.metadata?.series?.length) {
+    if (!abmetadataData.metadata) abmetadataData.metadata = {}
+
+    if (abmetadataData.metadata.series?.length) {
+      abmetadataData.metadata.series = [...new Set(abmetadataData.metadata.series.map(t => t?.trim()).filter(t => t))]
       abmetadataData.metadata.series = abmetadataData.metadata.series.map(series => {
         let sequence = null
         let name = series
@@ -418,12 +471,30 @@ function parseJsonMetadataText(text) {
         }
       })
     }
+    // clean tags & remove dupes
+    if (abmetadataData.tags?.length) {
+      abmetadataData.tags = [...new Set(abmetadataData.tags.map(t => t?.trim()).filter(t => t))]
+    }
+    if (abmetadataData.chapters?.length) {
+      abmetadataData.chapters = cleanChaptersArray(abmetadataData.chapters, abmetadataData.metadata.title)
+    }
+    // clean remove dupes
+    if (abmetadataData.metadata.authors?.length) {
+      abmetadataData.metadata.authors = [...new Set(abmetadataData.metadata.authors.map(t => t?.trim()).filter(t => t))]
+    }
+    if (abmetadataData.metadata.narrators?.length) {
+      abmetadataData.metadata.narrators = [...new Set(abmetadataData.metadata.narrators.map(t => t?.trim()).filter(t => t))]
+    }
+    if (abmetadataData.metadata.genres?.length) {
+      abmetadataData.metadata.genres = [...new Set(abmetadataData.metadata.genres.map(t => t?.trim()).filter(t => t))]
+    }
     return abmetadataData
   } catch (error) {
     Logger.error(`[abmetadataGenerator] Invalid metadata.json JSON`, error)
     return null
   }
 }
+module.exports.parseJson = parseJsonMetadataText
 
 function cleanChaptersArray(chaptersArray, mediaTitle) {
   const chapters = []

@@ -49,7 +49,7 @@ class SessionController {
       return res.sendStatus(404)
     }
 
-    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
+    const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
     const openSessions = this.playbackSessionManager.sessions.map(se => {
       return {
         ...se.toJSON(),
@@ -62,9 +62,9 @@ class SessionController {
     })
   }
 
-  getOpenSession(req, res) {
-    var libraryItem = Database.getLibraryItem(req.session.libraryItemId)
-    var sessionForClient = req.session.toJSONForClient(libraryItem)
+  async getOpenSession(req, res) {
+    const libraryItem = await Database.libraryItemModel.getOldById(req.session.libraryItemId)
+    const sessionForClient = req.session.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }
 

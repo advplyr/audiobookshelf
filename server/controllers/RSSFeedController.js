@@ -1,14 +1,23 @@
 const Logger = require('../Logger')
 const Database = require('../Database')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RSSFeedController {
   constructor() { }
+
+  async getAll(req, res) {
+    const feeds = await this.rssFeedManager.getFeeds()
+    res.json({
+      feeds: feeds.map(f => f.toJSON()),
+      minified: feeds.map(f => f.toJSONMinified())
+    })
+  }
 
   // POST: api/feeds/item/:itemId/open
   async openRSSFeedForItem(req, res) {
     const options = req.body || {}
 
-    const item = Database.libraryItems.find(li => li.id === req.params.itemId)
+    const item = await Database.libraryItemModel.getOldById(req.params.itemId)
     if (!item) return res.sendStatus(404)
 
     // Check user can access this library item
@@ -45,7 +54,7 @@ class RSSFeedController {
   async openRSSFeedForCollection(req, res) {
     const options = req.body || {}
 
-    const collection = await Database.models.collection.getById(req.params.collectionId)
+    const collection = await Database.collectionModel.findByPk(req.params.collectionId)
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist
@@ -60,7 +69,7 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
+    const collectionExpanded = await collection.getOldJsonExpanded()
     const collectionItemsWithTracks = collectionExpanded.books.filter(li => li.media.tracks.length)
 
     // Check collection has audio tracks
@@ -79,7 +88,7 @@ class RSSFeedController {
   async openRSSFeedForSeries(req, res) {
     const options = req.body || {}
 
-    const series = Database.series.find(se => se.id === req.params.seriesId)
+    const series = await Database.seriesModel.getOldById(req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist
@@ -95,8 +104,9 @@ class RSSFeedController {
     }
 
     const seriesJson = series.toJSON()
+
     // Get books in series that have audio tracks
-    seriesJson.books = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+    seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter(li => li.media.numTracks)
 
     // Check series has audio tracks
     if (!seriesJson.books.length) {

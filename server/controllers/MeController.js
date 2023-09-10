@@ -59,7 +59,7 @@ class MeController {
 
   // PATCH: api/me/progress/:id
   async createUpdateMediaProgress(req, res) {
-    const libraryItem = Database.libraryItems.find(ab => ab.id === req.params.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -75,7 +75,7 @@ class MeController {
   // PATCH: api/me/progress/:id/:episodeId
   async createUpdateEpisodeMediaProgress(req, res) {
     const episodeId = req.params.episodeId
-    const libraryItem = Database.libraryItems.find(ab => ab.id === req.params.id)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -101,7 +101,7 @@ class MeController {
 
     let shouldUpdate = false
     for (const itemProgress of itemProgressPayloads) {
-      const libraryItem = Database.libraryItems.find(li => li.id === itemProgress.libraryItemId) // Make sure this library item exists
+      const libraryItem = await Database.libraryItemModel.getOldById(itemProgress.libraryItemId)
       if (libraryItem) {
         if (req.user.createUpdateMediaProgress(libraryItem, itemProgress, itemProgress.episodeId)) {
           const mediaProgress = req.user.getMediaProgress(libraryItem.id, itemProgress.episodeId)
@@ -122,10 +122,10 @@ class MeController {
 
   // POST: api/me/item/:id/bookmark
   async createBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+
     const { time, title } = req.body
-    var bookmark = req.user.createBookmark(libraryItem.id, time, title)
+    const bookmark = req.user.createBookmark(req.params.id, time, title)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
@@ -133,15 +133,17 @@ class MeController {
 
   // PATCH: api/me/item/:id/bookmark
   async updateBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+
     const { time, title } = req.body
-    if (!req.user.findBookmark(libraryItem.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] updateBookmark not found`)
       return res.sendStatus(404)
     }
-    var bookmark = req.user.updateBookmark(libraryItem.id, time, title)
+
+    const bookmark = req.user.updateBookmark(req.params.id, time, title)
     if (!bookmark) return res.sendStatus(500)
+
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
@@ -149,16 +151,17 @@ class MeController {
 
   // DELETE: api/me/item/:id/bookmark/:time
   async removeBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
-    var time = Number(req.params.time)
+    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+
+    const time = Number(req.params.time)
     if (isNaN(time)) return res.sendStatus(500)
 
-    if (!req.user.findBookmark(libraryItem.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
-    req.user.removeBookmark(libraryItem.id, time)
+
+    req.user.removeBookmark(req.params.id, time)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
@@ -190,7 +193,8 @@ class MeController {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
         continue
       }
-      const libraryItem = Database.getLibraryItem(localProgress.libraryItemId)
+
+      const libraryItem = await Database.libraryItemModel.getOldById(localProgress.libraryItemId)
       if (!libraryItem) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item`, localProgress)
         continue
@@ -242,13 +246,15 @@ class MeController {
   }
 
   // GET: api/me/items-in-progress
-  getAllLibraryItemsInProgress(req, res) {
+  async getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
     let itemsInProgress = []
+    // TODO: More efficient to do this in a single query
     for (const mediaProgress of req.user.mediaProgress) {
       if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || mediaProgress.ebookProgress > 0)) {
-        const libraryItem = Database.getLibraryItem(mediaProgress.libraryItemId)
+
+        const libraryItem = await Database.libraryItemModel.getOldById(mediaProgress.libraryItemId)
         if (libraryItem) {
           if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
             const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)
@@ -278,7 +284,7 @@ class MeController {
 
   // GET: api/me/series/:id/remove-from-continue-listening
   async removeSeriesFromContinueListening(req, res) {
-    const series = Database.series.find(se => se.id === req.params.id)
+    const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) {
       Logger.error(`[MeController] removeSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)
@@ -294,7 +300,7 @@ class MeController {
 
   // GET: api/me/series/:id/readd-to-continue-listening
   async readdSeriesFromContinueListening(req, res) {
-    const series = Database.series.find(se => se.id === req.params.id)
+    const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) {
       Logger.error(`[MeController] readdSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)
@@ -310,9 +316,19 @@ class MeController {
 
   // GET: api/me/progress/:id/remove-from-continue-listening
   async removeItemFromContinueListening(req, res) {
+    const mediaProgress = req.user.mediaProgress.find(mp => mp.id === req.params.id)
+    if (!mediaProgress) {
+      return res.sendStatus(404)
+    }
     const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
     if (hasUpdated) {
-      await Database.updateUser(req.user)
+      await Database.mediaProgressModel.update({
+        hideFromContinueListening: true
+      }, {
+        where: {
+          id: mediaProgress.id
+        }
+      })
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())

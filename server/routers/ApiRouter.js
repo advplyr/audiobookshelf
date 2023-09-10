@@ -1,3 +1,4 @@
+const sequelize = require('sequelize')
 const express = require('express')
 const Path = require('path')
 
@@ -7,6 +8,8 @@ const SocketAuthority = require('../SocketAuthority')
 
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
+
+const CacheManager = require('../managers/CacheManager')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -28,24 +31,16 @@ const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
 const MiscController = require('../controllers/MiscController')
 
-const BookFinder = require('../finders/BookFinder')
-const AuthorFinder = require('../finders/AuthorFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
-const MusicFinder = require('../finders/MusicFinder')
-
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class ApiRouter {
   constructor(Server) {
     this.auth = Server.auth
-    this.scanner = Server.scanner
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
     this.backupManager = Server.backupManager
-    this.coverManager = Server.coverManager
     this.watcher = Server.watcher
-    this.cacheManager = Server.cacheManager
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager
     this.rssFeedManager = Server.rssFeedManager
@@ -53,11 +48,6 @@ class ApiRouter {
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
     this.taskManager = Server.taskManager
-
-    this.bookFinder = new BookFinder()
-    this.authorFinder = new AuthorFinder()
-    this.podcastFinder = new PodcastFinder()
-    this.musicFinder = new MusicFinder()
 
     this.router = express()
     this.router.disable('x-powered-by')
@@ -74,17 +64,14 @@ class ApiRouter {
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
-    this.router.get('/libraries/:id/items2', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryItemsNew.bind(this))
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
-    this.router.get('/libraries/:id/collections', LibraryController.middlewareNew.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
+    this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
     this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
-    this.router.get('/libraries/:id/albums', LibraryController.middleware.bind(this), LibraryController.getAlbumsForLibrary.bind(this))
-    this.router.get('/libraries/:id/personalized2', LibraryController.middlewareNew.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
-    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalizedOptimal.bind(this))
+    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
@@ -210,7 +197,6 @@ class ApiRouter {
     //
     // Author Routes
     //
-    this.router.get('/authors/search', AuthorController.search.bind(this))
     this.router.get('/authors/:id', AuthorController.middleware.bind(this), AuthorController.findOne.bind(this))
     this.router.patch('/authors/:id', AuthorController.middleware.bind(this), AuthorController.update.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
@@ -219,7 +205,6 @@ class ApiRouter {
     //
     // Series Routes
     //
-    this.router.get('/series/search', SeriesController.search.bind(this))
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
 
@@ -297,9 +282,10 @@ class ApiRouter {
     this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
     this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
 
-    // 
+    //
     // RSS Feed Routes (Admin and up)
     //
+    this.router.get('/feeds', RSSFeedController.middleware.bind(this), RSSFeedController.getAll.bind(this))
     this.router.post('/feeds/item/:itemId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForItem.bind(this))
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
@@ -311,6 +297,7 @@ class ApiRouter {
     this.router.post('/upload', MiscController.handleUpload.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
+    this.router.patch('/sorting-prefixes', MiscController.updateSortingPrefixes.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
     this.router.post('/tags/rename', MiscController.renameTag.bind(this))
@@ -353,110 +340,140 @@ class ApiRouter {
   //
   // Helper Methods
   //
-  userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    const json = user.toJSONForBrowser(hideRootToken)
-
-    json.mediaProgress = json.mediaProgress.map(lip => {
-      const libraryItem = Database.libraryItems.find(li => li.id === lip.libraryItemId)
-      if (!libraryItem) {
-        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
-        lip.media = null
-      } else {
-        if (lip.episodeId) {
-          const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(lip.episodeId) : null
-          if (!episode) {
-            Logger.warn(`[ApiRouter] Episode ${lip.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
-            lip.media = null
-          } else {
-            lip.media = libraryItem.media.toJSONExpanded()
-            lip.episode = episode.toJSON()
-          }
-        } else {
-          lip.media = libraryItem.media.toJSONExpanded()
-        }
-      }
-      return lip
-    }).filter(lip => !!lip)
-
-    return json
-  }
-
-  async handleDeleteLibraryItem(libraryItem) {
+  /**
+   * Remove library item and associated entities
+   * @param {string} mediaType
+   * @param {string} libraryItemId
+   * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
+   */
+  async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
     // Remove media progress for this library item from all users
-    const users = await Database.models.user.getOldUsers()
+    const users = await Database.userModel.getOldUsers()
     for (const user of users) {
-      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItem.id)) {
+      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
         await Database.removeMediaProgress(mediaProgress.id)
       }
     }
 
     // TODO: Remove open sessions for library item
-    let mediaItemIds = []
-    if (libraryItem.isBook) {
-      // remove book from collections
-      const collectionsWithBook = await Database.models.collection.getAllForBook(libraryItem.media.id)
-      for (const collection of collectionsWithBook) {
-        collection.removeBook(libraryItem.id)
-        await Database.removeCollectionBook(collection.id, libraryItem.media.id)
-        SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(Database.libraryItems))
+
+    // Remove series if empty
+    if (mediaType === 'book') {
+      // TODO: update filter data
+      const bookSeries = await Database.bookSeriesModel.findAll({
+        where: {
+          bookId: mediaItemIds[0]
+        },
+        include: {
+          model: Database.seriesModel,
+          include: {
+            model: Database.bookModel
+          }
+        }
+      })
+      for (const bs of bookSeries) {
+        if (bs.series.books.length === 1) {
+          await this.removeEmptySeries(bs.series)
+        }
       }
-
-      // Check remove empty series
-      await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
-
-      mediaItemIds.push(libraryItem.media.id)
-    } else if (libraryItem.isPodcast) {
-      mediaItemIds.push(...libraryItem.media.episodes.map(ep => ep.id))
     }
 
     // remove item from playlists
-    const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
+    const playlistsWithItem = await Database.playlistModel.getPlaylistsForMediaItemIds(mediaItemIds)
     for (const playlist of playlistsWithItem) {
-      playlist.removeItemsForLibraryItem(libraryItem.id)
+      let numMediaItems = playlist.playlistMediaItems.length
+
+      let order = 1
+      // Remove items in playlist and re-order
+      for (const playlistMediaItem of playlist.playlistMediaItems) {
+        if (mediaItemIds.includes(playlistMediaItem.mediaItemId)) {
+          await playlistMediaItem.destroy()
+          numMediaItems--
+        } else {
+          if (playlistMediaItem.order !== order) {
+            playlistMediaItem.update({
+              order
+            })
+          }
+          order++
+        }
+      }
 
       // If playlist is now empty then remove it
-      if (!playlist.items.length) {
+      const jsonExpanded = await playlist.getOldJsonExpanded()
+      if (!numMediaItems) {
         Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
-        await Database.removePlaylist(playlist.id)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(Database.libraryItems))
+        await playlist.destroy()
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
       } else {
-        await Database.updatePlaylist(playlist)
-
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
       }
     }
 
     // Close rss feed - remove from db and emit socket event
-    await this.rssFeedManager.closeFeedForEntityId(libraryItem.id)
+    await this.rssFeedManager.closeFeedForEntityId(libraryItemId)
 
     // purge cover cache
-    if (libraryItem.media.coverPath) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
-    }
+    await CacheManager.purgeCoverCache(libraryItemId)
 
-    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
     if (await fs.pathExists(itemMetadataPath)) {
       Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
       await fs.remove(itemMetadataPath)
     }
 
-    await Database.removeLibraryItem(libraryItem.id)
-    SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
+    await Database.removeLibraryItem(libraryItemId)
+
+    SocketAuthority.emitter('item_removed', {
+      id: libraryItemId
+    })
   }
 
-  async checkRemoveEmptySeries(seriesToCheck, excludeLibraryItemId = null) {
-    if (!seriesToCheck || !seriesToCheck.length) return
+  /**
+   * Used when a series is removed from a book
+   * Series is removed if it only has 1 book
+   * 
+   * @param {string} bookId
+   * @param {string[]} seriesIds 
+   */
+  async checkRemoveEmptySeries(bookId, seriesIds) {
+    if (!seriesIds?.length) return
 
-    for (const series of seriesToCheck) {
-      const otherLibraryItemsInSeries = Database.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))
-      if (!otherLibraryItemsInSeries.length) {
-        // Close open RSS feed for series
-        await this.rssFeedManager.closeFeedForEntityId(series.id)
-        Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-        await Database.removeSeries(series.id)
-        // TODO: Socket events for series?
+    const bookSeries = await Database.bookSeriesModel.findAll({
+      where: {
+        bookId,
+        seriesId: seriesIds
+      },
+      include: [
+        {
+          model: Database.seriesModel,
+          include: {
+            model: Database.bookModel
+          }
+        }
+      ]
+    })
+    for (const bs of bookSeries) {
+      if (bs.series.books.length === 1) {
+        await this.removeEmptySeries(bs.series)
       }
     }
+  }
+
+  /**
+   * Remove an empty series & close an open RSS feed
+   * @param {import('../models/Series')} series 
+   */
+  async removeEmptySeries(series) {
+    await this.rssFeedManager.closeFeedForEntityId(series.id)
+    Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
+    await Database.removeSeries(series.id)
+    // Remove series from library filter data
+    Database.removeSeriesFromFilterData(series.libraryId, series.id)
+    SocketAuthority.emitter('series_removed', {
+      id: series.id,
+      libraryId: series.libraryId
+    })
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -467,7 +484,7 @@ class ApiRouter {
   async getAllSessionsWithUserData() {
     const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
-    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
+    const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
     return sessions.map(se => {
       return {
         ...se,
@@ -527,7 +544,7 @@ class ApiRouter {
       const mediaMetadata = mediaPayload.metadata
 
       // Create new authors if in payload
-      if (mediaMetadata.authors && mediaMetadata.authors.length) {
+      if (mediaMetadata.authors?.length) {
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
@@ -536,13 +553,21 @@ class ApiRouter {
             continue
           }
 
+          // Ensure the ID for the author exists
+          if (mediaMetadata.authors[i].id && !(await Database.checkAuthorExists(libraryId, mediaMetadata.authors[i].id))) {
+            Logger.warn(`[ApiRouter] Author id "${mediaMetadata.authors[i].id}" does not exist`)
+            mediaMetadata.authors[i].id = null
+          }
+
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = Database.authors.find(au => au.libraryId === libraryId && au.checkNameEquals(authorName))
+            let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryId)
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i], libraryId)
               Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
               newAuthors.push(author)
+              // Update filter data
+              Database.addAuthorToFilterData(libraryId, author.name, author.id)
             }
 
             // Update ID in original payload
@@ -565,13 +590,21 @@ class ApiRouter {
             continue
           }
 
+          // Ensure the ID for the series exists
+          if (mediaMetadata.series[i].id && !(await Database.checkSeriesExists(libraryId, mediaMetadata.series[i].id))) {
+            Logger.warn(`[ApiRouter] Series id "${mediaMetadata.series[i].id}" does not exist`)
+            mediaMetadata.series[i].id = null
+          }
+
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = Database.series.find(se => se.libraryId === libraryId && se.checkNameEquals(seriesName))
+            let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i], libraryId)
               Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
+              // Update filter data
+              Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
             }
 
             // Update ID in original payload

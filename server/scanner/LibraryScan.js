@@ -6,17 +6,15 @@ const date = require('../libs/dateAndTime')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
-const filePerms = require('../utils/filePerms')
 const { secondsToTimestamp } = require('../utils/index')
 
 class LibraryScan {
   constructor() {
     this.id = null
     this.type = null
+    /** @type {import('../objects/Library')} */
     this.library = null
     this.verbose = false
-
-    this.scanOptions = null
 
     this.startedAt = null
     this.finishedAt = null
@@ -26,6 +24,11 @@ class LibraryScan {
     this.resultsAdded = 0
     this.resultsUpdated = 0
 
+    /** @type {string[]} */
+    this.authorsRemovedFromBooks = []
+    /** @type {string[]} */
+    this.seriesRemovedFromBooks = []
+
     this.logs = []
   }
 
@@ -34,12 +37,6 @@ class LibraryScan {
   get libraryMediaType() { return this.library.mediaType }
   get folders() { return this.library.folders }
 
-  get _scanOptions() { return this.scanOptions || {} }
-  get forceRescan() { return !!this._scanOptions.forceRescan }
-  get preferAudioMetadata() { return !!this._scanOptions.preferAudioMetadata }
-  get preferOpfMetadata() { return !!this._scanOptions.preferOpfMetadata }
-  get preferOverdriveMediaMarker() { return !!this._scanOptions.preferOverdriveMediaMarker }
-  get findCovers() { return !!this._scanOptions.findCovers }
   get timestamp() {
     return (new Date()).toISOString()
   }
@@ -74,7 +71,6 @@ class LibraryScan {
       id: this.id,
       type: this.type,
       library: this.library.toJSON(),
-      scanOptions: this.scanOptions ? this.scanOptions.toJSON() : null,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
       elapsed: this.elapsed,
@@ -84,12 +80,10 @@ class LibraryScan {
     }
   }
 
-  setData(library, scanOptions, type = 'scan') {
+  setData(library, type = 'scan') {
     this.id = uuidv4()
     this.type = type
     this.library = new Library(library.toJSON()) // clone library
-
-    this.scanOptions = scanOptions
 
     this.startedAt = Date.now()
   }
@@ -117,7 +111,7 @@ class LibraryScan {
     }
 
     if (this.verbose) {
-      Logger.debug(`[LibraryScan] "${this.libraryName}":`, args)
+      Logger.debug(`[LibraryScan] "${this.libraryName}":`, ...args)
     }
     this.logs.push(logObj)
   }
@@ -132,7 +126,6 @@ class LibraryScan {
       logLines.push(JSON.stringify(l))
     })
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
-    await filePerms.setDefault(outputPath)
 
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
   }

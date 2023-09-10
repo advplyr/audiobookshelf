@@ -93,7 +93,7 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSession(user, sessionJson, deviceInfo) {
-    const libraryItem = Database.getLibraryItem(sessionJson.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
     const episode = (sessionJson.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
@@ -259,13 +259,13 @@ class PlaybackSessionManager {
     }
 
     this.sessions.push(newPlaybackSession)
-    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, Database.libraryItems))
+    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))
 
     return newPlaybackSession
   }
 
   async syncSession(user, session, syncData) {
-    const libraryItem = Database.libraryItems.find(li => li.id === session.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
       return null
@@ -304,7 +304,7 @@ class PlaybackSessionManager {
       await this.saveSession(session)
     }
     Logger.debug(`[PlaybackSessionManager] closeSession "${session.id}"`)
-    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, Database.libraryItems))
+    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))
     SocketAuthority.clientEmitter(session.userId, 'user_session_closed', session.id)
     return this.removeSession(session.id)
   }

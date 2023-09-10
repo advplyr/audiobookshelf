@@ -66,7 +66,7 @@ class ToolsController {
 
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = Database.getLibraryItem(libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getOldById(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not found`)
         return res.sendStatus(404)
@@ -99,15 +99,15 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-root user attempted to access tools route`, req.user)
       return res.sendStatus(403)
     }
 
     if (req.params.id) {
-      const item = Database.libraryItems.find(li => li.id === req.params.id)
-      if (!item || !item.media) return res.sendStatus(404)
+      const item = await Database.libraryItemModel.getOldById(req.params.id)
+      if (!item?.media) return res.sendStatus(404)
 
       // Check user can access this library item
       if (!req.user.checkCanAccessLibraryItem(item)) {

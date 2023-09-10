@@ -71,11 +71,6 @@ export default {
           text: this.$strings.ButtonScan,
           action: 'scan',
           value: 'scan'
-        },
-        {
-          text: this.$strings.ButtonForceReScan,
-          action: 'force-scan',
-          value: 'force-scan'
         }
       ]
       if (this.isBookLibrary) {
@@ -136,26 +131,6 @@ export default {
           console.error('Failed to start scan', error)
           this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
         })
-    },
-    forceScan() {
-      const payload = {
-        message: this.$strings.MessageConfirmForceReScan,
-        callback: (confirmed) => {
-          if (confirmed) {
-            this.$store
-              .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
-              .then(() => {
-                this.$toast.success(this.$strings.ToastLibraryScanStarted)
-              })
-              .catch((error) => {
-                console.error('Failed to start scan', error)
-                this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
-              })
-          }
-        },
-        type: 'yesNo'
-      }
-      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     deleteClick() {
       const payload = {

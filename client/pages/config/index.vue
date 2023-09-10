@@ -36,7 +36,10 @@
             </ui-tooltip>
           </div>
           <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
-            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
+            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="sortingPrefixesUpdated" :disabled="savingPrefixes" />
+            <div class="flex justify-end py-1">
+              <ui-btn v-if="hasPrefixesChanged" color="success" :loading="savingPrefixes" small @click="updateSortingPrefixes">Save</ui-btn>
+            </div>
           </div>
 
           <div class="flex items-center py-2 mb-2">
@@ -157,10 +160,10 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-disable-watcher" v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
+            <ui-toggle-switch labeledBy="settings-disable-watcher" v-model="scannerEnableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', !val)" />
+            <ui-tooltip :text="$strings.LabelSettingsEnableWatcherHelp">
               <p class="pl-4">
-                <span id="settings-disable-watcher">{{ $strings.LabelSettingsDisableWatcher }}</span>
+                <span id="settings-disable-watcher">{{ $strings.LabelSettingsEnableWatcher }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -259,9 +262,12 @@ export default {
       updatingServerSettings: false,
       homepageUseBookshelfView: false,
       useBookshelfView: false,
+      scannerEnableWatcher: false,
       isPurgingCache: false,
+      hasPrefixesChanged: false,
       newServerSettings: {},
       showConfirmPurgeCache: false,
+      savingPrefixes: false,
       metadataFileFormats: [
         {
           text: '.json',
@@ -304,15 +310,36 @@ export default {
     }
   },
   methods: {
-    updateSortingPrefixes(val) {
-      if (!val || !val.length) {
+    sortingPrefixesUpdated(val) {
+      const prefixes = [...new Set(val?.map((prefix) => prefix.trim().toLowerCase()) || [])]
+      this.newServerSettings.sortingPrefixes = prefixes
+      const serverPrefixes = this.serverSettings.sortingPrefixes || []
+      this.hasPrefixesChanged = prefixes.some((p) => !serverPrefixes.includes(p)) || serverPrefixes.some((p) => !prefixes.includes(p))
+    },
+    updateSortingPrefixes() {
+      const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
+      if (!prefixes.length) {
         this.$toast.error('Must have at least 1 prefix')
         return
       }
-      var prefixes = val.map((prefix) => prefix.trim().toLowerCase())
-      this.updateServerSettings({
-        sortingPrefixes: prefixes
-      })
+
+      this.savingPrefixes = true
+      this.$axios
+        .$patch(`/api/sorting-prefixes`, { sortingPrefixes: prefixes })
+        .then((data) => {
+          this.$toast.success(`Sorting prefixes updated. ${data.rowsUpdated} rows`)
+          if (data.serverSettings) {
+            this.$store.commit('setServerSettings', data.serverSettings)
+          }
+          this.hasPrefixesChanged = false
+        })
+        .catch((error) => {
+          console.error('Failed to update prefixes', error)
+          this.$toast.error('Failed to update sorting prefixes')
+        })
+        .finally(() => {
+          this.savingPrefixes = false
+        })
     },
     updateScannerCoverProvider(val) {
       this.updateServerSettings({
@@ -337,6 +364,9 @@ export default {
       this.updateSettingsKey('metadataFileFormat', val)
     },
     updateSettingsKey(key, val) {
+      if (key === 'scannerDisableWatcher') {
+        this.newServerSettings.scannerDisableWatcher = val
+      }
       this.updateServerSettings({
         [key]: val
       })
@@ -363,6 +393,7 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
+      this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL

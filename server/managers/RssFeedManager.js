@@ -6,27 +6,28 @@ const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RssFeedManager {
   constructor() { }
 
   async validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
-      const collection = await Database.models.collection.getById(feedObj.entityId)
+      const collection = await Database.collectionModel.getOldById(feedObj.entityId)
       if (!collection) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'libraryItem') {
-      if (!Database.libraryItems.some(li => li.id === feedObj.entityId)) {
+      const libraryItemExists = await Database.libraryItemModel.checkExistsById(feedObj.entityId)
+      if (!libraryItemExists) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'series') {
-      const series = Database.series.find(s => s.id === feedObj.entityId)
-      const hasSeriesBook = series ? Database.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length) : false
-      if (!hasSeriesBook) {
-        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found or has no audio tracks`)
+      const series = await Database.seriesModel.getOldById(feedObj.entityId)
+      if (!series) {
+        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found`)
         return false
       }
     } else {
@@ -40,7 +41,7 @@ class RssFeedManager {
    * Validate all feeds and remove invalid
    */
   async init() {
-    const feeds = await Database.models.feed.getOldFeeds()
+    const feeds = await Database.feedModel.getOldFeeds()
     for (const feed of feeds) {
       // Remove invalid feeds
       if (!await this.validateFeedEntity(feed)) {
@@ -51,29 +52,29 @@ class RssFeedManager {
 
   /**
    * Find open feed for an entity (e.g. collection id, playlist id, library item id)
-   * @param {string} entityId 
+   * @param {string} entityId
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedForEntityId(entityId) {
-    return Database.models.feed.findOneOld({ entityId })
+    return Database.feedModel.findOneOld({ entityId })
   }
 
   /**
    * Find open feed for a slug
-   * @param {string} slug 
+   * @param {string} slug
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeedBySlug(slug) {
-    return Database.models.feed.findOneOld({ slug })
+    return Database.feedModel.findOneOld({ slug })
   }
 
   /**
    * Find open feed for a slug
-   * @param {string} slug 
+   * @param {string} slug
    * @returns {Promise<objects.Feed>} oldFeed
    */
   findFeed(id) {
-    return Database.models.feed.findByPkOld(id)
+    return Database.feedModel.findByPkOld(id)
   }
 
   async getFeed(req, res) {
@@ -86,7 +87,7 @@ class RssFeedManager {
 
     // Check if feed needs to be updated
     if (feed.entityType === 'libraryItem') {
-      const libraryItem = Database.getLibraryItem(feed.entityId)
+      const libraryItem = await Database.libraryItemModel.getOldById(feed.entityId)
 
       let mostRecentlyUpdatedAt = libraryItem.updatedAt
       if (libraryItem.isPodcast) {
@@ -102,9 +103,9 @@ class RssFeedManager {
         await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = await Database.models.collection.getById(feed.entityId)
+      const collection = await Database.collectionModel.findByPk(feed.entityId)
       if (collection) {
-        const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
+        const collectionExpanded = await collection.getOldJsonExpanded()
 
         // Find most recently updated item in collection
         let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
@@ -122,11 +123,12 @@ class RssFeedManager {
         }
       }
     } else if (feed.entityType === 'series') {
-      const series = Database.series.find(s => s.id === feed.entityId)
+      const series = await Database.seriesModel.getOldById(feed.entityId)
       if (series) {
         const seriesJson = series.toJSON()
+
         // Get books in series that have audio tracks
-        seriesJson.books = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+        seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter(li => li.media.numTracks)
 
         // Find most recently updated item in series
         let mostRecentlyUpdatedAt = seriesJson.updatedAt
@@ -259,6 +261,12 @@ class RssFeedManager {
     const feed = await this.findFeedForEntityId(entityId)
     if (!feed) return
     return this.handleCloseFeed(feed)
+  }
+
+  async getFeeds() {
+    const feeds = await Database.models.feed.getOldFeeds()
+    Logger.info(`[RssFeedManager] Fetched all feeds`)
+    return feeds
   }
 }
 module.exports = RssFeedManager

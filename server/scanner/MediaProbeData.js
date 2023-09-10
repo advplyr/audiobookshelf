@@ -42,13 +42,8 @@ class MediaProbeData {
     }
   }
 
-  getEmbeddedCoverArt(videoStream) {
-    const ImageCodecs = ['mjpeg', 'jpeg', 'png']
-    return ImageCodecs.includes(videoStream.codec) ? videoStream.codec : null
-  }
-
   setData(data) {
-    this.embeddedCoverArt = data.video_stream ? this.getEmbeddedCoverArt(data.video_stream) : null
+    this.embeddedCoverArt = data.video_stream?.codec || null
     this.format = data.format
     this.duration = data.duration
     this.size = data.size
