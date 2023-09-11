@@ -108,6 +108,9 @@ module.exports = {
           if (li.size && !oldLibraryItem.media.size) {
             oldLibraryItem.media.size = li.size
           }
+          if (li.numEpisodesIncomplete) {
+            oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
+          }
           return oldLibraryItem
         }),
         count
