@@ -46,7 +46,7 @@ export default {
       type: Array,
       default: () => []
     },
-    endpoint: String,
+    filterKey: String,
     label: String,
     disabled: Boolean,
     readonly: Boolean,
@@ -60,7 +60,6 @@ export default {
     return {
       textInput: null,
       currentSearch: null,
-      searching: false,
       typingTimeout: null,
       isFocused: false,
       menu: null,
@@ -97,6 +96,9 @@ export default {
     },
     itemsToShow() {
       return this.items
+    },
+    filterData() {
+      return this.$store.state.libraries.filterData || {}
     }
   },
   methods: {
@@ -109,20 +111,15 @@ export default {
     getIsSelected(itemValue) {
       return !!this.selected.find((i) => i.id === itemValue)
     },
-    async search() {
-      if (this.searching) return
+    search() {
       this.currentSearch = this.textInput
-      this.searching = true
-      const results = await this.$axios
-        .$get(`/api/${this.endpoint}?q=${this.currentSearch}&limit=15&token=${this.userToken}`)
-        .then((res) => res.results || res)
-        .catch((error) => {
-          console.error('Failed to get search results', error)
-          return []
-        })
+      const dataToSearch = this.filterData[this.filterKey] || []
+
+      const results = dataToSearch.filter((au) => {
+        return au.name.toLowerCase().includes(this.currentSearch.toLowerCase().trim())
+      })
 
       this.items = results || []
-      this.searching = false
     },
     keydownInput() {
       clearTimeout(this.typingTimeout)
