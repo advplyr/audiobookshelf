@@ -161,7 +161,8 @@ class Server {
 
     this.server = http.createServer(app)
 
-    router.use(this.auth.cors)
+
+
     router.use(fileUpload({
       defCharset: 'utf8',
       defParamCharset: 'utf8',
@@ -194,6 +195,9 @@ class Server {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
+
+    // Auth routes
+    this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
     const dyanimicRoutes = [

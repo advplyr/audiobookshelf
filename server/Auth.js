@@ -6,14 +6,14 @@ const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const OpenIDConnectStrategy = require('passport-openidconnect')
+const Database = require('./Database')
 
 /**
  * @class Class for handling all the authentication related functionality.
  */
 class Auth {
 
-  constructor(db) {
-    this.db = db
+  constructor() {
   }
 
   /**
@@ -31,10 +31,10 @@ class Auth {
         clientID: global.ServerSettings.authGoogleOauth20ClientID,
         clientSecret: global.ServerSettings.authGoogleOauth20ClientSecret,
         callbackURL: global.ServerSettings.authGoogleOauth20CallbackURL
-      }, (function (accessToken, refreshToken, profile, done) {
+      }, (async function (accessToken, refreshToken, profile, done) {
         // TODO: what to use as username
         // TODO: do we want to create the users which does not exist?
-        const user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
+        const user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
         if (!user || !user.isActive) {
           done(null, null)
@@ -61,7 +61,7 @@ class Auth {
         (function (issuer, profile, done) {
           // TODO: what to use as username
           // TODO: do we want to create the users which does not exist?
-          var user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
+          var user = Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
           if (!user || !user.isActive) {
             done(null, null)
@@ -86,16 +86,17 @@ class Auth {
         return cb(null, JSON.stringify({
           "username": user.username,
           "id": user.id,
+          "email": user.email,
         }))
       })
     })
 
     // define how to deseralize a user (use the username to get it from the database)
     passport.deserializeUser((function (user, cb) {
-      process.nextTick((function () {
+      process.nextTick((async function () {
         const parsedUserInfo = JSON.parse(user)
         // TODO: do the matching on username or better on id?
-        const dbUser = this.db.users.find(u => u.username.toLowerCase() === parsedUserInfo.username.toLowerCase())
+        const dbUser = await Database.userModel.getUserByUsername(parsedUserInfo.username.toLowerCase())
         return cb(null, dbUser)
       }).bind(this))
     }).bind(this))
@@ -108,9 +109,9 @@ class Auth {
   initAuthRoutes(router) {
     // Local strategy login route (takes username and password)
     router.post('/login', passport.authenticate('local'),
-      (function (req, res) {
+      (async function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user))
+        res.json(await this.getUserLoginResponsePayload(req.user))
       }).bind(this)
     )
 
@@ -120,9 +121,12 @@ class Auth {
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
       passport.authenticate('google'),
-      (function (req, res) {
+      (async function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user))
+        var data_json = await this.getUserLoginResponsePayload(req.user)
+        // res.json(data_json)
+        // TODO: figure out how to redirect back to the app page
+        res.redirect(301, `http://localhost:3000/login?setToken=${data_json.user.token}`)
       }).bind(this)
     )
 
@@ -132,9 +136,12 @@ class Auth {
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
       passport.authenticate('openidconnect'),
-      (function (req, res) {
+      (async function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user))
+        var data_json = await this.getUserLoginResponsePayload(req.user)
+        // res.json(data_json)
+        // TODO: figure out how to redirect back to the app page
+        res.redirect(301, `http://localhost:3000/login?setToken=${data_json.user.token}`)
       }).bind(this)
     )
 
@@ -177,6 +184,20 @@ class Auth {
   }
 
   /**
+   * Function to generate a jwt token for a given user.
+   * @param {string} token 
+   * @returns the tokens data.
+   */
+  static validateAccessToken(token) {
+    try {
+      return jwt.verify(token, global.ServerSettings.tokenSecret)
+    }
+    catch (err) {
+      return null
+    }
+  }
+
+  /**
    * Generate a token for each user.
    */
   async initTokenSecret() {
@@ -203,7 +224,7 @@ class Auth {
    * @param {function} done 
    */
   jwtAuthCheck(jwt_payload, done) {
-    const user = this.db.users.find(u => u.username.toLowerCase() === jwt_payload.username.toLowerCase())
+    const user = Database.userModel.getUserByUsername(jwt_payload.username.toLowerCase())
 
     if (!user || !user.isActive) {
       done(null, null)
@@ -220,7 +241,7 @@ class Auth {
    * @param {function} done 
    */
   async localAuthCheckUserPw(username, password, done) {
-    const user = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
+    const user = Database.userModel.getUserByUsername(username.toLowerCase())
 
     if (!user || !user.isActive) {
       done(null, null)
@@ -269,7 +290,8 @@ class Auth {
    * @param {string} username 
    * @returns {string} jsonPayload
    */
-  getUserLoginResponsePayload(user) {
+  async getUserLoginResponsePayload(user) {
+    const libraryIds = await Database.libraryModel.getAllLibraryIds()
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),

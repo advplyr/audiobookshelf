@@ -195,6 +195,25 @@ class User extends Model {
   }
 
   /**
+   * Get user by email case insensitive
+   * @param {string} username 
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getUserByEmail(email) {
+    if (!email) return null
+    const user = await this.findOne({
+      where: {
+        email: {
+          [Op.like]: email
+        }
+      },
+      include: this.sequelize.models.mediaProgress
+    })
+    if (!user) return null
+    return this.getOldUser(user)
+  }
+
+  /**
    * Get user by id
    * @param {string} userId 
    * @returns {Promise<oldUser|null>} returns null if not found

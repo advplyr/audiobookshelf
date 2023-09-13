@@ -37,6 +37,15 @@
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
+        <hr />
+        <div class="w-full flex py-3">
+          <a href="http://localhost:3333/auth/google">
+            <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
+          </a>
+          <a href="http://localhost:3333/auth/openid">
+            <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -132,11 +141,7 @@ export default {
 
       location.reload()
     },
-<<<<<<< HEAD
-    setUser({ user, userDefaultLibraryId, serverSettings, Source }) {
-=======
     setUser({ user, userDefaultLibraryId, serverSettings, Source, ereaderDevices }) {
->>>>>>> origin/master
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
       this.$store.commit('libraries/setEReaderDevices', ereaderDevices)
@@ -166,10 +171,7 @@ export default {
         else this.error = 'Unknown Error'
         return false
       })
-<<<<<<< HEAD
       console.log('Auth res', authRes)
-=======
->>>>>>> origin/master
       if (authRes?.error) {
         this.error = authRes.error
       } else if (authRes) {
@@ -222,6 +224,11 @@ export default {
     }
   },
   async mounted() {
+    console.log(new URLSearchParams(window.location.search).get('setToken'))
+    if (new URLSearchParams(window.location.search).get('setToken')) {
+      localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
+      console.log('hereasd')
+    }
     if (localStorage.getItem('token')) {
       var userfound = await this.checkAuth()
       if (userfound) return // if valid user no need to check status
