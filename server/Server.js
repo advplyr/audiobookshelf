@@ -5,6 +5,7 @@ const http = require('http')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
+const cookieParser = require("cookie-parser");
 
 const { version } = require('../package.json')
 
@@ -136,6 +137,8 @@ class Server {
 
     const app = express()
 
+    // parse cookies in requests
+    app.use(cookieParser());
     // enable express-session
     app.use(expressSession({
       secret: global.ServerSettings.tokenSecret,

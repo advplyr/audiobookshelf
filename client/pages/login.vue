@@ -39,10 +39,10 @@
         </form>
         <hr />
         <div class="w-full flex py-3">
-          <a href="http://localhost:3333/auth/google">
+          <a :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
           </a>
-          <a href="http://localhost:3333/auth/openid">
+          <a :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
           </a>
         </div>
@@ -69,7 +69,8 @@ export default {
       },
       confirmPassword: '',
       ConfigPath: '',
-      MetadataPath: ''
+      MetadataPath: '',
+      currentUrl: location.toString()
     }
   },
   watch: {

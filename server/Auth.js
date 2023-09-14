@@ -32,7 +32,6 @@ class Auth {
         clientSecret: global.ServerSettings.authGoogleOauth20ClientSecret,
         callbackURL: global.ServerSettings.authGoogleOauth20CallbackURL
       }, (async function (accessToken, refreshToken, profile, done) {
-        // TODO: what to use as username
         // TODO: do we want to create the users which does not exist?
         const user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
@@ -59,7 +58,6 @@ class Auth {
         skipUserProfile: false
       },
         (function (issuer, profile, done) {
-          // TODO: what to use as username
           // TODO: do we want to create the users which does not exist?
           var user = Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
@@ -116,7 +114,20 @@ class Auth {
     )
 
     // google-oauth20 strategy login route (this redirects to the google login)
-    router.get('/auth/google', passport.authenticate('google', { scope: ['email'] }))
+    router.get('/auth/google', (req, res, next) => {
+      const auth_func = passport.authenticate('google', { scope: ['email'] })
+      if (!req.query.callback || req.query.callback === "") {
+        res.status(400).send({
+          message: 'No callback parameter'
+        })
+        return
+      }
+      res.cookie('auth_cb', req.query.callback, {
+        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        httpOnly: true
+      })
+      auth_func(req, res, next);
+    })
 
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
@@ -125,13 +136,31 @@ class Auth {
         // return the user login response json if the login was successfull
         var data_json = await this.getUserLoginResponsePayload(req.user)
         // res.json(data_json)
-        // TODO: figure out how to redirect back to the app page
-        res.redirect(301, `http://localhost:3000/login?setToken=${data_json.user.token}`)
+        // TODO: do we want to somehow limit the values for auth_cb?
+        if (req.cookies.auth_cb) {
+          res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
+        }
+        else {
+          res.status(400).send("No callback or already expired")
+        }
       }).bind(this)
     )
 
     // openid strategy login route (this redirects to the configured openid login provider)
-    router.get('/auth/openid', passport.authenticate('openidconnect'))
+    router.get('/auth/openid', (req, res, next) => {
+      const auth_func = passport.authenticate('openidconnect')
+      if (!req.query.callback || req.query.callback === "") {
+        res.status(400).send({
+          message: 'No callback parameter'
+        })
+        return
+      }
+      res.cookie('auth_cb', req.query.callback, {
+        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        httpOnly: true
+      })
+      auth_func(req, res, next);
+    })
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
@@ -140,8 +169,12 @@ class Auth {
         // return the user login response json if the login was successfull
         var data_json = await this.getUserLoginResponsePayload(req.user)
         // res.json(data_json)
-        // TODO: figure out how to redirect back to the app page
-        res.redirect(301, `http://localhost:3000/login?setToken=${data_json.user.token}`)
+        if (req.cookies.auth_cb) {
+          res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
+        }
+        else {
+          res.status(400).send("No callback or already expired")
+        }
       }).bind(this)
     )
 
