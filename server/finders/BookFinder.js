@@ -214,7 +214,7 @@ class BookFinder {
     var books = []
     const maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     const maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
-    const maxFuzzySearches = 5
+    const maxFuzzySearches = !isNaN(options.maxFuzzySearches) ? Number(options.maxFuzzySearches) : 5
     var numFuzzySearches = 0
 
     if (!title)
