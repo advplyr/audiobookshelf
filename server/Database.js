@@ -684,15 +684,13 @@ class Database {
 
     // Remove empty series
     const emptySeries = await this.seriesModel.findAll({
-      attributes: ['series.id', 'series.name', [this.sequelize.fn('COUNT', '*'), 'book_count']],
       include: [
         {
           model: this.bookSeriesModel,
           required: false
         }
       ],
-      group:["series.id", 'series.name'],
-      having: { 'book_count': 0 }
+      where:{ '$bookSeries.id$': null }
     })
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)
