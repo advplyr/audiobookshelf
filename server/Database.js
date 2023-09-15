@@ -172,11 +172,11 @@ class Database {
     if (process.env.QUERY_LOGGING === "log") {
       // Setting QUERY_LOGGING=log will log all Sequelize queries before they run
       Logger.info(`[Database] Query logging enabled"`)
-      logging = (query) => Logger.dev(`Running the following query: ${query}`)
+      logging = (query) => Logger.dev(`Running the following query:\n ${query}`)
     } else if (process.env.QUERY_LOGGING === "benchmark") {
       // Setting QUERY_LOGGING=benchmark will log all Sequelize queries and their execution times, after they run
       Logger.info(`[Database] Query benchmarking enabled"`)
-      logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms: ${query}`)
+      logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms:\n ${query}`)
       benchmark = true;
     }
 
