@@ -684,7 +684,15 @@ class Database {
 
     // Remove empty series
     const emptySeries = await this.seriesModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)`), 0)
+      attributes: ['series.id', 'series.name', [this.sequelize.fn('COUNT', '*'), 'book_count']],
+      include: [
+        {
+          model: this.bookSeriesModel,
+          required: false
+        }
+      ],
+      group:["series.id", 'series.name'],
+      having: { 'book_count': 0 }
     })
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)
