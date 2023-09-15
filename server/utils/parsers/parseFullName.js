@@ -70,8 +70,8 @@ module.exports = (nameToParse, partToReturn, fixCase, stopOnError, useLongLists)
                 namePartWords[j].slice(3).toLowerCase();
             } else if (
               namePartLabels[j] === 'suffix' &&
-              nameParts[j].slice(-1) !== '.' &&
-              !suffixList.indexOf(nameParts[j].toLowerCase())
+              namePartWords[j].slice(-1) !== '.' &&
+              !suffixList.indexOf(namePartWords[j].toLowerCase())
             ) { // Convert suffix abbreviations to UPPER CASE
               if (namePartWords[j] === namePartWords[j].toLowerCase()) {
                 namePartWords[j] = namePartWords[j].toUpperCase();
