@@ -154,7 +154,7 @@ class Server {
     // register passport in express-session
     app.use(passport.session())
     // config passport.js
-    this.auth.initPassportJs()
+    await this.auth.initPassportJs()
     // use auth on all routes - not used now
     // app.use(passport.authenticate('session'))
 
