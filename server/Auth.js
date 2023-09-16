@@ -235,9 +235,9 @@ class Auth {
    */
   async initTokenSecret() {
     if (process.env.TOKEN_SECRET) { // User can supply their own token secret
-      this.db.serverSettings.tokenSecret = process.env.TOKEN_SECRET
+      global.ServerSettings.tokenSecret = process.env.TOKEN_SECRET
     } else {
-      this.db.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
+      global.ServerSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
     }
     await Database.updateServerSettings()
 
