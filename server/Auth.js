@@ -19,7 +19,7 @@ class Auth {
   /**
    * Inializes all passportjs stragegies and other passportjs ralated initialization.
    */
-  initPassportJs() {
+  async initPassportJs() {
     // Check if we should load the local strategy
     if (global.ServerSettings.authActiveAuthMethods.includes("local")) {
       passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
@@ -68,6 +68,10 @@ class Auth {
 
           return done(null, user)
         }).bind(this)))
+    }
+
+    if (!global.ServerSettings.tokenSecret) {
+      await this.initTokenSecret()
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
