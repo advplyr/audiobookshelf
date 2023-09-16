@@ -172,7 +172,7 @@ export default {
         else this.error = 'Unknown Error'
         return false
       })
-      console.log('Auth res', authRes)
+
       if (authRes?.error) {
         this.error = authRes.error
       } else if (authRes) {
@@ -225,10 +225,8 @@ export default {
     }
   },
   async mounted() {
-    console.log(new URLSearchParams(window.location.search).get('setToken'))
     if (new URLSearchParams(window.location.search).get('setToken')) {
       localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
-      console.log('hereasd')
     }
     if (localStorage.getItem('token')) {
       var userfound = await this.checkAuth()
