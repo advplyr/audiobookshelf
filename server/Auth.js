@@ -278,7 +278,7 @@ class Auth {
    * @param {function} done 
    */
   async localAuthCheckUserPw(username, password, done) {
-    const user = Database.userModel.getUserByUsername(username.toLowerCase())
+    const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
     if (!user || !user.isActive) {
       done(null, null)
