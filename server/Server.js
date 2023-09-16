@@ -216,6 +216,7 @@ class Server {
       '/library/:library/series/:id?',
       '/library/:library/podcast/search',
       '/library/:library/podcast/latest',
+      '/library/:library/podcast/download-queue',
       '/config/users/:id',
       '/config/users/:id/sessions',
       '/config/item-metadata-utils/:id',

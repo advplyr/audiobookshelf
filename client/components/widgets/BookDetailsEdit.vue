@@ -12,8 +12,8 @@
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-3/4 px-1">
-          <!-- Authors filter only contains authors in this library, use query input to query all authors -->
-          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" endpoint="authors/search" />
+          <!-- Authors filter only contains authors in this library, uses filter data -->
+          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" filter-key="authors" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
           <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" :label="$strings.LabelPublishYear" />
