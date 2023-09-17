@@ -206,7 +206,7 @@ class PlaylistController {
 
     await Database.createPlaylistMediaItem(playlistMediaItem)
     const jsonExpanded = await req.playlist.getOldJsonExpanded()
-    SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
+    SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_updated', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -376,9 +376,9 @@ class PlaylistController {
       if (!numMediaItems) {
         Logger.info(`[PlaylistController] Playlist "${req.playlist.name}" has no more items - removing it`)
         await req.playlist.destroy()
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
+        SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_removed', jsonExpanded)
       } else {
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
+        SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_updated', jsonExpanded)
       }
     }
     res.json(jsonExpanded)

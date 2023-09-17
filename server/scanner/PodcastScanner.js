@@ -178,7 +178,7 @@ class PodcastScanner {
     // If no cover then extract cover from audio file if available
     if (!media.coverPath && existingPodcastEpisodes.length) {
       const audioFiles = existingPodcastEpisodes.map(ep => ep.audioFile)
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(audioFiles, existingLibraryItem.id, existingLibraryItem.path)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(audioFiles, existingLibraryItem.id, existingLibraryItem.path)
       if (extractedCoverPath) {
         libraryScan.addLog(LogLevel.DEBUG, `Updating podcast "${podcastMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
         media.coverPath = extractedCoverPath
@@ -279,7 +279,7 @@ class PodcastScanner {
     // If cover was not found in folder then check embedded covers in audio files
     if (!podcastObject.coverPath && scannedAudioFiles.length) {
       // Extract and save embedded cover art
-      podcastObject.coverPath = await CoverManager.saveEmbeddedCoverArtNew(scannedAudioFiles, libraryItemObj.id, libraryItemObj.path)
+      podcastObject.coverPath = await CoverManager.saveEmbeddedCoverArt(scannedAudioFiles, libraryItemObj.id, libraryItemObj.path)
     }
 
     libraryItemObj.podcast = podcastObject

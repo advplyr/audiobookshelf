@@ -26,8 +26,8 @@
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.authors" />
-              <!-- Authors filter only contains authors in this library, use query input to query all authors -->
-              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" :label="$strings.LabelAuthors" endpoint="authors/search" class="mb-4 ml-4" />
+              <!-- Authors filter only contains authors in this library, uses filter data -->
+              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" :label="$strings.LabelAuthors" filter-key="authors" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />

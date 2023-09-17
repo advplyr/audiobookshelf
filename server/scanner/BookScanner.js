@@ -313,7 +313,7 @@ class BookScanner {
     // If no cover then extract cover from audio file if available OR search for cover if enabled in server settings
     if (!media.coverPath) {
       const libraryItemDir = existingLibraryItem.isFile ? null : existingLibraryItem.path
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(media.audioFiles, existingLibraryItem.id, libraryItemDir)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(media.audioFiles, existingLibraryItem.id, libraryItemDir)
       if (extractedCoverPath) {
         libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
         media.coverPath = extractedCoverPath
@@ -461,7 +461,7 @@ class BookScanner {
     if (!bookObject.coverPath) {
       const libraryItemDir = libraryItemObj.isFile ? null : libraryItemObj.path
       // Extract and save embedded cover art
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
       if (extractedCoverPath) {
         bookObject.coverPath = extractedCoverPath
       } else if (Database.serverSettings.scannerFindCovers) {

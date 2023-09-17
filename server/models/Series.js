@@ -1,4 +1,4 @@
-const { DataTypes, Model, literal } = require('sequelize')
+const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const oldSeries = require('../objects/entities/Series')
 
@@ -105,14 +105,11 @@ class Series extends Model {
   static async getOldByNameAndLibrary(seriesName, libraryId) {
     const series = (await this.findOne({
       where: [
-        literal(`name = ':seriesName' COLLATE NOCASE`),
+        where(fn('lower', col('name')), seriesName.toLowerCase()),
         {
           libraryId
         }
-      ],
-      replacements: {
-        seriesName
-      }
+      ]
     }))?.getOldSeries()
     return series
   }
