@@ -105,6 +105,63 @@ class Auth {
   }
 
   /**
+   * Stores the client's choise how the login callback should happen in temp cookies.
+   * @param {*} req Request object.
+   * @param {*} res Response object.
+   */
+  paramsToCookies(req, res) {
+    if (req.query.isRest && (req.query.isRest.toLowerCase() == "true" || req.query.isRest.toLowerCase() == "false")) {
+      res.cookie('is_rest', req.query.isRest.toLowerCase(), {
+        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        httpOnly: true
+      })
+    }
+    else {
+      res.cookie('is_rest', "false", {
+        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        httpOnly: true
+      })
+      if (!req.query.callback || req.query.callback === "") {
+        res.status(400).send({
+          message: 'No callback parameter'
+        })
+        return
+      }
+      res.cookie('auth_cb', req.query.callback, {
+        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        httpOnly: true
+      })
+    }
+  }
+
+
+  /**
+   * Informs the client in the right mode about a successfull login and the token
+   * (clients choise is restored from cookies).
+   * @param {*} req Request object.
+   * @param {*} res Response object.
+   */
+  async handleLoginSuccessBasedOnCookie(req, res) {
+    const data_json = await this.getUserLoginResponsePayload(req.user)
+
+    if (req.cookies.is_rest && req.cookies.is_rest === "true") {
+      // REST request - send data
+      res.json(data_json)
+    }
+    else {
+      // UI request -> check if we have a callback url
+      // TODO: do we want to somehow limit the values for auth_cb?
+      if (req.cookies.auth_cb && req.cookies.auth_cb.startsWith("http")) {
+        // UI request -> redirect
+        res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
+      }
+      else {
+        res.status(400).send("No callback or already expired")
+      }
+    }
+  }
+
+  /**
    * Creates all (express) routes required for authentication.
    * @param {express.Router} router 
    */
@@ -120,66 +177,27 @@ class Auth {
     // google-oauth20 strategy login route (this redirects to the google login)
     router.get('/auth/google', (req, res, next) => {
       const auth_func = passport.authenticate('google', { scope: ['email'] })
-      if (!req.query.callback || req.query.callback === "") {
-        res.status(400).send({
-          message: 'No callback parameter'
-        })
-        return
-      }
-      res.cookie('auth_cb', req.query.callback, {
-        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
-        httpOnly: true
-      })
-      auth_func(req, res, next);
+      this.paramsToCookies(req, res)
+      auth_func(req, res, next)
     })
 
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
       passport.authenticate('google'),
-      (async function (req, res) {
-        // return the user login response json if the login was successfull
-        var data_json = await this.getUserLoginResponsePayload(req.user)
-        // res.json(data_json)
-        // TODO: do we want to somehow limit the values for auth_cb?
-        if (req.cookies.auth_cb) {
-          res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
-        }
-        else {
-          res.status(400).send("No callback or already expired")
-        }
-      }).bind(this)
+      this.handleLoginSuccessBasedOnCookie.bind(this)
     )
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
       const auth_func = passport.authenticate('openidconnect')
-      if (!req.query.callback || req.query.callback === "") {
-        res.status(400).send({
-          message: 'No callback parameter'
-        })
-        return
-      }
-      res.cookie('auth_cb', req.query.callback, {
-        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
-        httpOnly: true
-      })
-      auth_func(req, res, next);
+      this.paramsToCookies(req, res)
+      auth_func(req, res, next)
     })
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
       passport.authenticate('openidconnect'),
-      (async function (req, res) {
-        // return the user login response json if the login was successfull
-        var data_json = await this.getUserLoginResponsePayload(req.user)
-        // res.json(data_json)
-        if (req.cookies.auth_cb) {
-          res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
-        }
-        else {
-          res.status(400).send("No callback or already expired")
-        }
-      }).bind(this)
+      this.handleLoginSuccessBasedOnCookie.bind(this)
     )
 
     // Logout route
