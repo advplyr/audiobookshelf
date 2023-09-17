@@ -536,7 +536,7 @@ class LibraryItem extends Model {
         })
       }
     }
-    Logger.debug(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening/Reading" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
+    Logger.dev(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening/Reading" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
     let start = Date.now()
     if (library.isBook) {
@@ -553,7 +553,7 @@ class LibraryItem extends Model {
           total: continueSeriesPayload.count
         })
       }
-      Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.dev(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     } else if (library.isPodcast) {
       // "Newest Episodes" shelf
       const newestEpisodesPayload = await libraryFilters.getNewestPodcastEpisodes(library, user, limit)
@@ -567,7 +567,7 @@ class LibraryItem extends Model {
           total: newestEpisodesPayload.count
         })
       }
-      Logger.debug(`Loaded ${newestEpisodesPayload.libraryItems.length} of ${newestEpisodesPayload.count} episodes for "Newest Episodes" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.dev(`Loaded ${newestEpisodesPayload.libraryItems.length} of ${newestEpisodesPayload.count} episodes for "Newest Episodes" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     start = Date.now()
@@ -583,7 +583,7 @@ class LibraryItem extends Model {
         total: mostRecentPayload.count
       })
     }
-    Logger.debug(`Loaded ${mostRecentPayload.libraryItems.length} of ${mostRecentPayload.count} items for "Recently Added" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+    Logger.dev(`Loaded ${mostRecentPayload.libraryItems.length} of ${mostRecentPayload.count} items for "Recently Added" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     if (library.isBook) {
       start = Date.now()
@@ -599,7 +599,7 @@ class LibraryItem extends Model {
           total: seriesMostRecentPayload.count
         })
       }
-      Logger.debug(`Loaded ${seriesMostRecentPayload.series.length} of ${seriesMostRecentPayload.count} series for "Recent Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.dev(`Loaded ${seriesMostRecentPayload.series.length} of ${seriesMostRecentPayload.count} series for "Recent Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
       start = Date.now()
       // "Discover" shelf
@@ -614,7 +614,7 @@ class LibraryItem extends Model {
           total: discoverLibraryItemsPayload.count
         })
       }
-      Logger.debug(`Loaded ${discoverLibraryItemsPayload.libraryItems.length} of ${discoverLibraryItemsPayload.count} items for "Discover" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.dev(`Loaded ${discoverLibraryItemsPayload.libraryItems.length} of ${discoverLibraryItemsPayload.count} items for "Discover" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     start = Date.now()
@@ -645,7 +645,7 @@ class LibraryItem extends Model {
         })
       }
     }
-    Logger.debug(`Loaded ${mediaFinishedPayload.items.length} of ${mediaFinishedPayload.count} items for "Listen/Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+    Logger.dev(`Loaded ${mediaFinishedPayload.items.length} of ${mediaFinishedPayload.count} items for "Listen/Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     if (library.isBook) {
       start = Date.now()
@@ -661,7 +661,7 @@ class LibraryItem extends Model {
           total: newestAuthorsPayload.count
         })
       }
-      Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.dev(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     Logger.debug(`Loaded ${shelves.length} personalized shelves in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
