@@ -136,7 +136,7 @@ class BookScanner {
     }
 
     // Check if cover was removed
-    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath)) {
+    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
       media.coverPath = null
       hasMediaChanges = true
     }
