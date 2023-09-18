@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { encodeUriPath } = require('../utils/fileUtils')
 
 class BackupController {
   constructor() { }
@@ -37,8 +38,9 @@ class BackupController {
    */
   download(req, res) {
     if (global.XAccel) {
-      Logger.debug(`Use X-Accel to serve static file ${req.backup.fullPath}`)
-      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + req.backup.fullPath }).send()
+      const encodedURI = encodeUriPath(global.XAccel + req.backup.fullPath)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
     res.sendFile(req.backup.fullPath)
   }

@@ -293,5 +293,6 @@ module.exports.removeFile = (path) => {
 }
 
 module.exports.encodeUriPath = (path) => {
-  return filePathToPOSIX(path).replace(/%/g, '%25').replace(/#/g, '%23')
+  const uri = new URL(path, "file://")
+  return uri.pathname
 }

@@ -3,6 +3,7 @@ const fs = require('../libs/fsExtra')
 const stream = require('stream')
 const Logger = require('../Logger')
 const { resizeImage } = require('../utils/ffmpegHelpers')
+const { encodeUriPath } = require('../utils/fileUtils')
 
 class CacheManager {
   constructor() {
@@ -50,8 +51,9 @@ class CacheManager {
     // Cache exists
     if (await fs.pathExists(path)) {
       if (global.XAccel) {
-        Logger.debug(`Use X-Accel to serve static file ${path}`)
-        return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + path }).send()
+        const encodedURI = encodeUriPath(global.XAccel + path)
+        Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+        return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
 
       const r = fs.createReadStream(path)
@@ -73,8 +75,9 @@ class CacheManager {
     if (!writtenFile) return res.sendStatus(500)
 
     if (global.XAccel) {
-      Logger.debug(`Use X-Accel to serve static file ${writtenFile}`)
-      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + writtenFile }).send()
+      const encodedURI = encodeUriPath(global.XAccel + writtenFile)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
     var readStream = fs.createReadStream(writtenFile)
