@@ -253,7 +253,7 @@ class CoverManager {
 
     const coverAlreadyExists = await fs.pathExists(coverFilePath)
     if (coverAlreadyExists) {
-      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${libraryItemPath}" - bail`)
+      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${coverFilePath}" - bail`)
       return null
     }
 
