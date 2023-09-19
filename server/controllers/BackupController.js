@@ -42,6 +42,9 @@ class BackupController {
       Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
       return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
+
+    res.setHeader('Content-disposition', 'attachment; filename=' + req.backup.filename)
+
     res.sendFile(req.backup.fullPath)
   }
 
