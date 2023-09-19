@@ -160,6 +160,7 @@ class BookScanner {
       // Prefer to use an epub ebook then fallback to the first ebook found
       let ebookLibraryFile = libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub')
       if (!ebookLibraryFile) ebookLibraryFile = libraryItemData.ebookLibraryFiles[0]
+      ebookLibraryFile = ebookLibraryFile.toJSON()
       // Ebook file is the same as library file except for additional `ebookFormat`
       ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
       media.ebookFile = ebookLibraryFile
@@ -386,6 +387,7 @@ class BookScanner {
     }
 
     if (ebookLibraryFile) {
+      ebookLibraryFile = ebookLibraryFile.toJSON()
       ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
     }
 
