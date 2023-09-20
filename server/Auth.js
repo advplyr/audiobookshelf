@@ -120,14 +120,14 @@ class Auth {
     if (req.query.isRest && req.query.isRest.toLowerCase() == "true") {
       // store the isRest flag to the is_rest cookie 
       res.cookie('is_rest', req.query.isRest.toLowerCase(), {
-        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        maxAge: 120000, // 2 min
         httpOnly: true
       })
     }
     else {
       // no isRest-flag set -> set is_rest cookie to false
       res.cookie('is_rest', "false", {
-        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        maxAge: 120000, // 2 min
         httpOnly: true
       })
 
@@ -140,7 +140,7 @@ class Auth {
       }
       // store the callback url to the auth_cb cookie 
       res.cookie('auth_cb', req.query.callback, {
-        maxAge: 120000 * 120, // Hack - this semms to be in UTC??
+        maxAge: 120000, // 2 min
         httpOnly: true
       })
     }
