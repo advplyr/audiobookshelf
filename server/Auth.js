@@ -17,10 +17,10 @@ class Auth {
   }
 
   /**
-   * Inializes all passportjs stragegies and other passportjs ralated initialization.
+   * Inializes all passportjs strategies and other passportjs ralated initialization.
    */
   async initPassportJs() {
-    // Check if we should load the local strategy
+    // Check if we should load the local strategy (username + password login)
     if (global.ServerSettings.authActiveAuthMethods.includes("local")) {
       passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
     }
@@ -33,13 +33,17 @@ class Auth {
         callbackURL: global.ServerSettings.authGoogleOauth20CallbackURL
       }, (async function (accessToken, refreshToken, profile, done) {
         // TODO: do we want to create the users which does not exist?
+
+        // get user by email
         const user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
         if (!user || !user.isActive) {
+          // deny login
           done(null, null)
           return
         }
 
+        // permit login
         return done(null, user)
       }).bind(this)))
     }
@@ -59,17 +63,23 @@ class Auth {
       },
         (function (issuer, profile, done) {
           // TODO: do we want to create the users which does not exist?
+
+          // get user by email
           var user = Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
           if (!user || !user.isActive) {
+            // deny login
             done(null, null)
             return
           }
 
+          // permit login
           return done(null, user)
         }).bind(this)))
     }
 
+    // should be already initialied here - but ci had some problems so check again
+    // token is required to encrypt/protect the info in jwts
     if (!global.ServerSettings.tokenSecret) {
       await this.initTokenSecret()
     }
@@ -83,22 +93,19 @@ class Auth {
     // define how to seralize a user (to be put into the session)
     passport.serializeUser(function (user, cb) {
       process.nextTick(function () {
-        // only store username and id to session
-        // TODO: do we want to store more info in the session?
+        // only store id to session
         return cb(null, JSON.stringify({
-          "username": user.username,
           "id": user.id,
-          "email": user.email,
         }))
       })
     })
 
-    // define how to deseralize a user (use the username to get it from the database)
+    // define how to deseralize a user (use the ID to get it from the database)
     passport.deserializeUser((function (user, cb) {
       process.nextTick((async function () {
         const parsedUserInfo = JSON.parse(user)
-        // TODO: do the matching on username or better on id?
-        const dbUser = await Database.userModel.getUserByUsername(parsedUserInfo.username.toLowerCase())
+        // load the user by ID that is stored in the session
+        const dbUser = await Database.userModel.getUserById(parsedUserInfo.id)
         return cb(null, dbUser)
       }).bind(this))
     }).bind(this))
@@ -110,23 +117,28 @@ class Auth {
    * @param {*} res Response object.
    */
   paramsToCookies(req, res) {
-    if (req.query.isRest && (req.query.isRest.toLowerCase() == "true" || req.query.isRest.toLowerCase() == "false")) {
+    if (req.query.isRest && req.query.isRest.toLowerCase() == "true") {
+      // store the isRest flag to the is_rest cookie 
       res.cookie('is_rest', req.query.isRest.toLowerCase(), {
         maxAge: 120000 * 120, // Hack - this semms to be in UTC??
         httpOnly: true
       })
     }
     else {
+      // no isRest-flag set -> set is_rest cookie to false
       res.cookie('is_rest', "false", {
         maxAge: 120000 * 120, // Hack - this semms to be in UTC??
         httpOnly: true
       })
+
+      // check if we are missing a callback parameter - we need one if isRest=false
       if (!req.query.callback || req.query.callback === "") {
         res.status(400).send({
           message: 'No callback parameter'
         })
         return
       }
+      // store the callback url to the auth_cb cookie 
       res.cookie('auth_cb', req.query.callback, {
         maxAge: 120000 * 120, // Hack - this semms to be in UTC??
         httpOnly: true
@@ -142,6 +154,7 @@ class Auth {
    * @param {*} res Response object.
    */
   async handleLoginSuccessBasedOnCookie(req, res) {
+    // get userLogin json (information about the user, server and the session)
     const data_json = await this.getUserLoginResponsePayload(req.user)
 
     if (req.cookies.is_rest && req.cookies.is_rest === "true") {
@@ -152,7 +165,7 @@ class Auth {
       // UI request -> check if we have a callback url
       // TODO: do we want to somehow limit the values for auth_cb?
       if (req.cookies.auth_cb && req.cookies.auth_cb.startsWith("http")) {
-        // UI request -> redirect
+        // UI request -> redirect to auth_cb url and send the jwt token as parameter
         res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
       }
       else {
@@ -165,7 +178,7 @@ class Auth {
    * Creates all (express) routes required for authentication.
    * @param {express.Router} router 
    */
-  initAuthRoutes(router) {
+  async initAuthRoutes(router) {
     // Local strategy login route (takes username and password)
     router.post('/login', passport.authenticate('local'),
       (async function (req, res) {
@@ -177,6 +190,7 @@ class Auth {
     // google-oauth20 strategy login route (this redirects to the google login)
     router.get('/auth/google', (req, res, next) => {
       const auth_func = passport.authenticate('google', { scope: ['email'] })
+      // params (isRest, callback) to a cookie that will be send to the client
       this.paramsToCookies(req, res)
       auth_func(req, res, next)
     })
@@ -184,12 +198,14 @@ class Auth {
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
       passport.authenticate('google'),
+      // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this)
     )
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
       const auth_func = passport.authenticate('openidconnect')
+      // params (isRest, callback) to a cookie that will be send to the client
       this.paramsToCookies(req, res)
       auth_func(req, res, next)
     })
@@ -197,6 +213,7 @@ class Auth {
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
       passport.authenticate('openidconnect'),
+      // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this)
     )
 
@@ -239,7 +256,7 @@ class Auth {
   }
 
   /**
-   * Function to generate a jwt token for a given user.
+   * Function to validate a jwt token for a given user.
    * @param {string} token 
    * @returns the tokens data.
    */
@@ -253,7 +270,7 @@ class Auth {
   }
 
   /**
-   * Generate a token for each user.
+   * Generate a token which is used to encrpt/protect the jwts.
    */
   async initTokenSecret() {
     if (process.env.TOKEN_SECRET) { // User can supply their own token secret
@@ -279,12 +296,15 @@ class Auth {
    * @param {function} done 
    */
   jwtAuthCheck(jwt_payload, done) {
-    const user = Database.userModel.getUserByUsername(jwt_payload.username.toLowerCase())
+    // load user by id from the jwt token
+    const user = Database.userModel.getUserById(jwt_payload.id)
 
     if (!user || !user.isActive) {
+      // deny login
       done(null, null)
       return
     }
+    // approve login
     done(null, user)
     return
   }
@@ -296,6 +316,7 @@ class Auth {
    * @param {function} done 
    */
   async localAuthCheckUserPw(username, password, done) {
+    // Load the user given it's username
     const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
     if (!user || !user.isActive) {
@@ -306,9 +327,11 @@ class Auth {
     // Check passwordless root user
     if (user.id === 'root' && (!user.pash || user.pash === '')) {
       if (password) {
+        // deny login
         done(null, null)
         return
       }
+      // approve login
       done(null, user)
       return
     }
@@ -316,9 +339,11 @@ class Auth {
     // Check password match
     const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
+      // approve login
       done(null, user)
       return
     }
+    // deny login
     done(null, null)
     return
   }
@@ -343,7 +368,7 @@ class Auth {
   /**
    * Return the login info payload for a user.
    * @param {string} username 
-   * @returns {string} jsonPayload
+   * @returns {Promise<string>} jsonPayload
    */
   async getUserLoginResponsePayload(user) {
     const libraryIds = await Database.libraryModel.getAllLibraryIds()

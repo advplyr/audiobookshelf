@@ -2,8 +2,6 @@ const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
 const Auth = require('./Auth')
-const passport = require('passport')
-const expressSession = require('express-session')
 
 class SocketAuthority {
   constructor() {
@@ -85,23 +83,6 @@ class SocketAuthority {
       }
     })
 
-    /*
-    const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
-
-    io.use(wrap(expressSession({
-      secret: global.ServerSettings.tokenSecret,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        // also send the cookie if were hare not on https
-        secure: false
-      },
-    })));
-    
-    io.use(wrap(passport.initialize()));
-    io.use(wrap(passport.session()));
-    */
-
     this.io.on('connection', (socket) => {
       this.clients[socket.id] = {
         id: socket.id,
@@ -168,14 +149,18 @@ class SocketAuthority {
   // When setting up a socket connection the user needs to be associated with a socket id
   //  for this the client will send a 'auth' event that includes the users API token
   async authenticateSocket(socket, token) {
-    // TODO
+    // we don't use passport to authenticate the jwt we get over the socket connection.
+    // it's easier to directly verify/decode it.
     const token_data = Auth.validateAccessToken(token)
-    if (!token_data || !token_data.username) {
+    if (!token_data || !token_data.id) {
+      // Token invalid
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }
-    const user = await Database.userModel.getUserByUsername(token_data.username)
+    // get the user via the id from the decoded jwt.
+    const user = await Database.userModel.getUserById(token_data.id)
     if (!user) {
+      // user not found
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }

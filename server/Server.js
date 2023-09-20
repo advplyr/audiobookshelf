@@ -87,6 +87,7 @@ class Server {
   }
 
   authMiddleware(req, res, next) {
+    // ask passportjs if the current request is authenticated
     this.auth.isAuthenticated(req, res, next)
   }
 
@@ -145,7 +146,7 @@ class Server {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        // also send the cookie if were hare not on https
+        // also send the cookie if were are not on https (not every use has https)
         secure: false
       },
     }))
@@ -155,8 +156,6 @@ class Server {
     app.use(passport.session())
     // config passport.js
     await this.auth.initPassportJs()
-    // use auth on all routes - not used now
-    // app.use(passport.authenticate('session'))
 
     const router = express.Router()
     app.use(global.RouterBasePath, router)
@@ -200,7 +199,7 @@ class Server {
     })
 
     // Auth routes
-    this.auth.initAuthRoutes(router)
+    await this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
     const dyanimicRoutes = [
