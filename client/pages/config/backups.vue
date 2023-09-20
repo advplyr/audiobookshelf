@@ -18,12 +18,20 @@
           <span class="material-icons text-lg text-black-50 hover:text-yellow-500 cursor-pointer ml-2" @click="showCronBuilder = !showCronBuilder">edit</span>
         </div>
 
-        <div v-if="nextBackupDate" class="flex items-center pl-6 py-0.5 px-2">
+        <div v-if="nextBackupDate" class="flex items-center pl-6 py-0.5 px-2 mb-2">
           <span class="material-icons-outlined text-2xl text-black-50 mr-2">event</span>
           <div class="w-48">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
           </div>
           <div class="text-gray-100">{{ nextBackupDate }}</div>
+        </div>
+
+        <div class="flex items-center pl-6 mb-2">
+          <span class="material-icons-outlined text-2xl text-black-50 mr-2">folder</span>
+          <div class="w-48">
+            <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelBackupLocation }}:</span>
+          </div>
+          <div class="text-gray-100">{{ backupLocation }}</div>
         </div>
       </div>
 
@@ -65,7 +73,8 @@ export default {
       maxBackupSize: 1,
       cronExpression: '',
       newServerSettings: {},
-      showCronBuilder: false
+      showCronBuilder: false,
+      backupLocation: ''
     }
   },
   watch: {
