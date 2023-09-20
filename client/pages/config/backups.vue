@@ -134,6 +134,23 @@ export default {
       this.enableBackups = !!this.newServerSettings.backupSchedule
       this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
+
+      this.loadBackupLocation()
+    },
+    loadBackupLocation() {
+      this.processing = true
+      this.$axios
+          .$get('/api/backups/location')
+          .then((data) => {
+            this.backupLocation = data.backupLocation
+          })
+          .catch((error) => {
+            console.error('Failed to load backup location', error)
+            this.$toast.error('Failed to load backup location')
+          })
+          .finally(() => {
+            this.processing = false
+          })
     }
   },
   mounted() {

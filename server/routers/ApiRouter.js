@@ -187,6 +187,7 @@ class ApiRouter {
     this.router.get('/backups/:id/download', BackupController.middleware.bind(this), BackupController.download.bind(this))
     this.router.get('/backups/:id/apply', BackupController.middleware.bind(this), BackupController.apply.bind(this))
     this.router.post('/backups/upload', BackupController.middleware.bind(this), BackupController.upload.bind(this))
+    this.router.get('/backups/location', BackupController.middleware.bind(this), BackupController.getBackupLocation.bind(this))
 
     //
     // File System Routes

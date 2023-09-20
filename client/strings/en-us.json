@@ -188,6 +188,7 @@
   "LabelBackToUser": "Back to User",
   "LabelBackupsEnableAutomaticBackups": "Enable automatic backups",
   "LabelBackupsEnableAutomaticBackupsHelp": "Backups saved in /metadata/backups",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsMaxBackupSize": "Maximum backup size (in GB)",
   "LabelBackupsMaxBackupSizeHelp": "As a safeguard against misconfiguration, backups will fail if they exceed the configured size.",
   "LabelBackupsNumberToKeep": "Number of backups to keep",

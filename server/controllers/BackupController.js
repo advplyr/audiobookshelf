@@ -10,6 +10,12 @@ class BackupController {
     })
   }
 
+  getBackupLocation(req, res) {
+    res.json({
+      backupLocation: this.backupManager.backupLocation
+    })
+  }
+
   create(req, res) {
     this.backupManager.requestCreateBackup(res)
   }
