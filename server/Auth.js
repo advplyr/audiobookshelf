@@ -61,11 +61,11 @@ class Auth {
         scope: ["openid", "email", "profile"],
         skipUserProfile: false
       },
-        (function (issuer, profile, done) {
+        (async function (issuer, profile, done) {
           // TODO: do we want to create the users which does not exist?
 
           // get user by email
-          var user = Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
+          var user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
 
           if (!user || !user.isActive) {
             // deny login
@@ -295,9 +295,9 @@ class Auth {
    * @param {Object} jwt_payload 
    * @param {function} done 
    */
-  jwtAuthCheck(jwt_payload, done) {
+  async jwtAuthCheck(jwt_payload, done) {
     // load user by id from the jwt token
-    const user = Database.userModel.getUserById(jwt_payload.id)
+    const user = await Database.userModel.getUserById(jwt_payload.id)
 
     if (!user || !user.isActive) {
       // deny login
