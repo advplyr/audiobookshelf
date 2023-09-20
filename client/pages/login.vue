@@ -27,7 +27,7 @@
         <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
         <div class="w-full h-px bg-white bg-opacity-10 my-4" />
         <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
-        <form @submit.prevent="submitForm">
+        <form id="login-local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
           <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
 
@@ -39,10 +39,10 @@
         </form>
         <hr />
         <div class="w-full flex py-3">
-          <a :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
+          <a id="login-google-oauth20" :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
           </a>
-          <a :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
+          <a id="login-openid" :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
           </a>
         </div>
@@ -222,9 +222,28 @@ export default {
           this.processing = false
           this.criticalError = 'Status check failed'
         })
+    },
+    async updateLoginVisibility() {
+      await this.$axios
+        .$get('/auth_methods')
+        .then((response) => {
+          ;['local', 'google-oauth20', 'openid'].forEach((auth_method) => {
+            debugger
+            if (response.includes(auth_method)) {
+              // TODO: show `#login-${auth_method}`
+            } else {
+              // TODO: hide `#login-${auth_method}`
+            }
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error.response)
+          return false
+        })
     }
   },
   async mounted() {
+    this.updateLoginVisibility()
     if (new URLSearchParams(window.location.search).get('setToken')) {
       localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
     }
