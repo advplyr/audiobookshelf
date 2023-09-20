@@ -228,6 +228,11 @@ class Auth {
         }
       })
     })
+
+    // Get avilible auth methods
+    router.get('/auth_methods', (req, res) => {
+      res.json(global.ServerSettings.authActiveAuthMethods)
+    })
   }
 
   /**
