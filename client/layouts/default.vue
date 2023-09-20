@@ -231,8 +231,12 @@ export default {
     scanComplete(data) {
       console.log('Scan complete received', data)
 
-      var message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" complete!`
-      if (data.results) {
+      let message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" complete!`
+      let toastType = 'success'
+      if (data.error) {
+        message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" finished with error:\n${data.error}`
+        toastType = 'error'
+      } else if (data.results) {
         var scanResultMsgs = []
         var results = data.results
         if (results.added) scanResultMsgs.push(`${results.added} added`)
@@ -247,9 +251,9 @@ export default {
 
       var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
       if (existingScan && !isNaN(existingScan.toastId)) {
-        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: 'success', closeButton: false, onClose: () => null } }, true)
+        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: toastType, closeButton: false, onClose: () => null } }, true)
       } else {
-        this.$toast.success(message, { timeout: 5000 })
+        this.$toast[toastType](message, { timeout: 5000 })
       }
 
       this.$store.commit('scanners/remove', data)

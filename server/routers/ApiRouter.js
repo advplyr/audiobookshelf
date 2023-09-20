@@ -553,13 +553,17 @@ class ApiRouter {
             continue
           }
 
+          if (mediaMetadata.authors[i].id?.startsWith('new')) {
+            mediaMetadata.authors[i].id = null
+          }
+
           // Ensure the ID for the author exists
           if (mediaMetadata.authors[i].id && !(await Database.checkAuthorExists(libraryId, mediaMetadata.authors[i].id))) {
             Logger.warn(`[ApiRouter] Author id "${mediaMetadata.authors[i].id}" does not exist`)
             mediaMetadata.authors[i].id = null
           }
 
-          if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
+          if (!mediaMetadata.authors[i].id) {
             let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryId)
             if (!author) {
               author = new Author()
@@ -590,13 +594,17 @@ class ApiRouter {
             continue
           }
 
+          if (mediaMetadata.series[i].id?.startsWith('new')) {
+            mediaMetadata.series[i].id = null
+          }
+
           // Ensure the ID for the series exists
           if (mediaMetadata.series[i].id && !(await Database.checkSeriesExists(libraryId, mediaMetadata.series[i].id))) {
             Logger.warn(`[ApiRouter] Series id "${mediaMetadata.series[i].id}" does not exist`)
             mediaMetadata.series[i].id = null
           }
 
-          if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
+          if (!mediaMetadata.series[i].id) {
             let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
             if (!seriesItem) {
               seriesItem = new Series()

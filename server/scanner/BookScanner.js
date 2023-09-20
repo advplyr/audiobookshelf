@@ -136,7 +136,7 @@ class BookScanner {
     }
 
     // Check if cover was removed
-    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath)) {
+    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
       media.coverPath = null
       hasMediaChanges = true
     }
@@ -160,6 +160,7 @@ class BookScanner {
       // Prefer to use an epub ebook then fallback to the first ebook found
       let ebookLibraryFile = libraryItemData.ebookLibraryFiles.find(lf => lf.metadata.ext.slice(1).toLowerCase() === 'epub')
       if (!ebookLibraryFile) ebookLibraryFile = libraryItemData.ebookLibraryFiles[0]
+      ebookLibraryFile = ebookLibraryFile.toJSON()
       // Ebook file is the same as library file except for additional `ebookFormat`
       ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
       media.ebookFile = ebookLibraryFile
@@ -313,7 +314,7 @@ class BookScanner {
     // If no cover then extract cover from audio file if available OR search for cover if enabled in server settings
     if (!media.coverPath) {
       const libraryItemDir = existingLibraryItem.isFile ? null : existingLibraryItem.path
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(media.audioFiles, existingLibraryItem.id, libraryItemDir)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(media.audioFiles, existingLibraryItem.id, libraryItemDir)
       if (extractedCoverPath) {
         libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
         media.coverPath = extractedCoverPath
@@ -386,6 +387,7 @@ class BookScanner {
     }
 
     if (ebookLibraryFile) {
+      ebookLibraryFile = ebookLibraryFile.toJSON()
       ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
     }
 
@@ -461,7 +463,7 @@ class BookScanner {
     if (!bookObject.coverPath) {
       const libraryItemDir = libraryItemObj.isFile ? null : libraryItemObj.path
       // Extract and save embedded cover art
-      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArtNew(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
+      const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(scannedAudioFiles, libraryItemObj.id, libraryItemDir)
       if (extractedCoverPath) {
         bookObject.coverPath = extractedCoverPath
       } else if (Database.serverSettings.scannerFindCovers) {

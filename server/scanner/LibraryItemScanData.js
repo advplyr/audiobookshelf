@@ -102,7 +102,7 @@ class LibraryItemScanData {
     return this.libraryFiles.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
-  /** @type {LibraryItem.LibraryFileObject[]} */
+  /** @type {import('../objects/files/LibraryFile')[]} */
   get ebookLibraryFiles() {
     return this.libraryFiles.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }

@@ -19,6 +19,7 @@ class LibraryScan {
     this.startedAt = null
     this.finishedAt = null
     this.elapsed = null
+    this.error = null
 
     this.resultsMissing = 0
     this.resultsAdded = 0
@@ -52,6 +53,7 @@ class LibraryScan {
       id: this.libraryId,
       type: this.type,
       name: this.libraryName,
+      error: this.error,
       results: {
         added: this.resultsAdded,
         updated: this.resultsUpdated,
@@ -74,6 +76,7 @@ class LibraryScan {
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
       elapsed: this.elapsed,
+      error: this.error,
       resultsAdded: this.resultsAdded,
       resultsUpdated: this.resultsUpdated,
       resultsMissing: this.resultsMissing
@@ -88,9 +91,14 @@ class LibraryScan {
     this.startedAt = Date.now()
   }
 
-  setComplete() {
+  /**
+   * 
+   * @param {string} error 
+   */
+  setComplete(error = null) {
     this.finishedAt = Date.now()
     this.elapsed = this.finishedAt - this.startedAt
+    this.error = error
   }
 
   getLogLevelString(level) {

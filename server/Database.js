@@ -666,7 +666,11 @@ class Database {
   async cleanDatabase() {
     // Remove invalid Podcast records
     const podcastsWithNoLibraryItem = await this.podcastModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM libraryItems li WHERE li.mediaId = podcast.id)`), 0)
+      include: {
+        model: this.libraryItemModel,
+        required: false
+      },
+      where: { '$libraryItem.id$': null }
     })
     for (const podcast of podcastsWithNoLibraryItem) {
       Logger.warn(`Found podcast "${podcast.title}" with no libraryItem - removing it`)
@@ -675,7 +679,11 @@ class Database {
 
     // Remove invalid Book records
     const booksWithNoLibraryItem = await this.bookModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM libraryItems li WHERE li.mediaId = book.id)`), 0)
+      include: {
+        model: this.libraryItemModel,
+        required: false
+      },
+      where: { '$libraryItem.id$': null }
     })
     for (const book of booksWithNoLibraryItem) {
       Logger.warn(`Found book "${book.title}" with no libraryItem - removing it`)
@@ -684,7 +692,11 @@ class Database {
 
     // Remove empty series
     const emptySeries = await this.seriesModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)`), 0)
+      include: {
+        model: this.bookSeriesModel,
+        required: false
+      },
+      where: { '$bookSeries.id$': null }
     })
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)

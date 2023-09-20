@@ -73,7 +73,7 @@ class Book {
       numInvalidAudioFiles: this.invalidAudioFiles.length,
       duration: this.duration,
       size: this.size,
-      ebookFormat: this.ebookFile ? this.ebookFile.ebookFormat : null
+      ebookFormat: this.ebookFile?.ebookFormat
     }
   }
 
@@ -90,7 +90,7 @@ class Book {
       size: this.size,
       tracks: this.tracks.map(t => t.toJSON()),
       missingParts: [...this.missingParts],
-      ebookFile: this.ebookFile ? this.ebookFile.toJSON() : null
+      ebookFile: this.ebookFile?.toJSON() || null
     }
   }
 
