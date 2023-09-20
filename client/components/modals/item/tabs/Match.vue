@@ -205,7 +205,7 @@ export default {
     processing: Boolean,
     libraryItem: {
       type: Object,
-      default: () => {}
+      default: () => { }
     }
   },
   data() {
@@ -305,7 +305,7 @@ export default {
       const filterData = this.$store.state.libraries.filterData || {}
       const currentGenres = filterData.genres || []
       const selectedMatchGenres = this.selectedMatch.genres || []
-      return [...new Set([...currentGenres ,...selectedMatchGenres])]
+      return [...new Set([...currentGenres, ...selectedMatchGenres])]
     }
   },
   methods: {
@@ -325,9 +325,9 @@ export default {
       }
     },
     getSearchQuery() {
-      if (this.isPodcast) return `term=${this.searchTitle}`
-      var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${this.searchTitle}`
-      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
+      if (this.isPodcast) return `term=${encodeURIComponent(this.searchTitle)}`
+      var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle)}`
+      if (this.searchAuthor) searchQuery += `&author=${encodeURIComponent(this.searchAuthor)}`
       return searchQuery
     },
     submitSearch() {
@@ -580,6 +580,7 @@ export default {
 .matchListWrapper {
   height: calc(100% - 124px);
 }
+
 @media (min-width: 768px) {
   .matchListWrapper {
     height: calc(100% - 80px);
