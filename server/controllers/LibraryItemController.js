@@ -7,7 +7,7 @@ const Database = require('../Database')
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
-const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
+const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
@@ -235,8 +235,9 @@ class LibraryItemController {
       }
 
       if (global.XAccel) {
-        Logger.debug(`Use X-Accel to serve static file ${libraryItem.media.coverPath}`)
-        return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + libraryItem.media.coverPath }).send()
+        const encodedURI = encodeUriPath(global.XAccel + libraryItem.media.coverPath)
+        Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+        return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
       return res.sendFile(libraryItem.media.coverPath)
     }
@@ -575,8 +576,9 @@ class LibraryItemController {
     const libraryFile = req.libraryFile
 
     if (global.XAccel) {
-      Logger.debug(`Use X-Accel to serve static file ${libraryFile.metadata.path}`)
-      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + libraryFile.metadata.path }).send()
+      const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
     // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
@@ -632,8 +634,9 @@ class LibraryItemController {
     Logger.info(`[LibraryItemController] User "${req.user.username}" requested file download at "${libraryFile.metadata.path}"`)
 
     if (global.XAccel) {
-      Logger.debug(`Use X-Accel to serve static file ${libraryFile.metadata.path}`)
-      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + libraryFile.metadata.path }).send()
+      const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
     // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
@@ -673,8 +676,9 @@ class LibraryItemController {
     const ebookFilePath = ebookFile.metadata.path
 
     if (global.XAccel) {
-      Logger.debug(`Use X-Accel to serve static file ${ebookFilePath}`)
-      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + ebookFilePath }).send()
+      const encodedURI = encodeUriPath(global.XAccel + ebookFilePath)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
     res.sendFile(ebookFilePath)

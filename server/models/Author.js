@@ -1,4 +1,4 @@
-const { DataTypes, Model, literal } = require('sequelize')
+const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const oldAuthor = require('../objects/entities/Author')
 
@@ -114,14 +114,11 @@ class Author extends Model {
   static async getOldByNameAndLibrary(authorName, libraryId) {
     const author = (await this.findOne({
       where: [
-        literal(`name = ':authorName' COLLATE NOCASE`),
+        where(fn('lower', col('name')), authorName.toLowerCase()),
         {
           libraryId
         }
-      ],
-      replacements: {
-        authorName
-      }
+      ]
     }))?.getOldAuthor()
     return author
   }

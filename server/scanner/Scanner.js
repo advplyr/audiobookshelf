@@ -328,7 +328,7 @@ class Scanner {
     let offset = 0
 
     const libraryScan = new LibraryScan()
-    libraryScan.setData(library, null, 'match')
+    libraryScan.setData(library, 'match')
     LibraryScanner.librariesScanning.push(libraryScan.getScanEmitData)
     SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
 
@@ -338,10 +338,9 @@ class Scanner {
     while (hasMoreChunks) {
       const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
       if (!libraryItems.length) {
-        Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
-        SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
-        return
+        break
       }
+
       offset += limit
       hasMoreChunks = libraryItems.length < limit
       let oldLibraryItems = libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
@@ -350,6 +349,13 @@ class Scanner {
       if (!shouldContinue) {
         break
       }
+    }
+
+    if (offset === 0) {
+      Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
+      libraryScan.setComplete('Library has no items')
+    } else {
+      libraryScan.setComplete()
     }
 
     delete LibraryScanner.cancelLibraryScan[libraryScan.libraryId]
