@@ -326,6 +326,18 @@ class User {
     return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
   }
 
+  /**
+   * Checks if a user can access a library item
+   * @param {string} libraryId 
+   * @param {boolean} explicit 
+   * @param {string[]} tags 
+   */
+  checkCanAccessLibraryItemWithData(libraryId, explicit, tags) {
+    if (!this.checkCanAccessLibrary(libraryId)) return false
+    if (explicit && !this.canAccessExplicitContent) return false
+    return this.checkCanAccessLibraryItemWithTags(tags)
+  }
+
   findBookmark(libraryItemId, time) {
     return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time)
   }

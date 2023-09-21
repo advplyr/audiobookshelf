@@ -225,15 +225,45 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
-  // GET api/items/:id/cover
+  /**
+   * GET: api/items/:id/cover
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async getCover(req, res) {
-    const { query: { width, height, format, raw }, libraryItem } = req
+    const { query: { width, height, format, raw } } = req
+
+    const libraryItem = await Database.libraryItemModel.findByPk(req.params.id, {
+      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['id', 'coverPath', 'tags', 'explicit']
+        },
+        {
+          model: Database.podcastModel,
+          attributes: ['id', 'coverPath', 'tags', 'explicit']
+        }
+      ]
+    })
+    if (!libraryItem) {
+      Logger.warn(`[LibraryItemController] getCover: Library item "${req.params.id}" does not exist`)
+      return res.sendStatus(404)
+    }
+
+    // Check if user can access this library item
+    if (!req.user.checkCanAccessLibraryItemWithData(libraryItem.libraryId, libraryItem.media.explicit, libraryItem.media.tags)) {
+      return res.sendStatus(403)
+    }
+
+    // Check if library item media has a cover path
+    if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
+      Logger.debug(`[LibraryItemController] getCover: Library item "${req.params.id}" has no cover path`)
+      return res.sendStatus(404)
+    }
 
     if (raw) { // any value
-      if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-        return res.sendStatus(404)
-      }
-
       if (global.XAccel) {
         const encodedURI = encodeUriPath(global.XAccel + libraryItem.media.coverPath)
         Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
@@ -247,7 +277,7 @@ class LibraryItemController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return CacheManager.handleCoverCache(res, libraryItem, options)
+    return CacheManager.handleCoverCache(res, libraryItem.id, libraryItem.media.coverPath, options)
   }
 
   // GET: api/items/:id/stream
