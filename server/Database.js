@@ -177,7 +177,7 @@ class Database {
       // Setting QUERY_LOGGING=benchmark will log all Sequelize queries and their execution times, after they run
       Logger.info(`[Database] Query benchmarking enabled"`)
       logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms:\n ${query}`)
-      benchmark = true;
+      benchmark = true
     }
 
     this.sequelize = new Sequelize({
