@@ -186,6 +186,7 @@
   "LabelAuthors": "Autores",
   "LabelAutoDownloadEpisodes": "Descargar Episodios Automáticamente",
   "LabelBackToUser": "Regresar a Usuario",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Habilitar Respaldo Automático",
   "LabelBackupsEnableAutomaticBackupsHelp": "Respaldo Guardado en /metadata/backups",
   "LabelBackupsMaxBackupSize": "Tamaño Máximo de Respaldos (en GB)",

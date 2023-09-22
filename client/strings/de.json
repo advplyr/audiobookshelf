@@ -186,6 +186,7 @@
   "LabelAuthors": "Autoren",
   "LabelAutoDownloadEpisodes": "Episoden automatisch herunterladen",
   "LabelBackToUser": "Zurück zum Benutzer",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Automatische Sicherung aktivieren",
   "LabelBackupsEnableAutomaticBackupsHelp": "Backups werden in /metadata/backups gespeichert",
   "LabelBackupsMaxBackupSize": "Maximale Sicherungsgröße (in GB)",

@@ -186,6 +186,7 @@
   "LabelAuthors": "Auteurs",
   "LabelAutoDownloadEpisodes": "Afleveringen automatisch downloaden",
   "LabelBackToUser": "Terug naar gebruiker",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Automatische back-ups inschakelen",
   "LabelBackupsEnableAutomaticBackupsHelp": "Back-ups opgeslagen in /metadata/backups",
   "LabelBackupsMaxBackupSize": "Maximale back-up-grootte (in GB)",

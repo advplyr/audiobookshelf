@@ -186,6 +186,7 @@
   "LabelAuthors": "Autori",
   "LabelAutoDownloadEpisodes": "Automatski preuzmi epizode",
   "LabelBackToUser": "Nazad k korisniku",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Uključi automatski backup",
   "LabelBackupsEnableAutomaticBackupsHelp": "Backups spremljeni u /metadata/backups",
   "LabelBackupsMaxBackupSize": "Maksimalna količina backupa (u GB)",
