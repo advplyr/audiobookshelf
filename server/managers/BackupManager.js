@@ -26,6 +26,10 @@ class BackupManager {
     this.backups = []
   }
 
+  get backupLocation() {
+    return this.BackupPath
+  }
+
   get backupSchedule() {
     return global.ServerSettings.backupSchedule
   }

@@ -186,6 +186,7 @@
   "LabelAuthors": "Авторы",
   "LabelAutoDownloadEpisodes": "Скачивать эпизоды автоматически",
   "LabelBackToUser": "Назад к пользователю",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Включить автоматическое бэкапирование",
   "LabelBackupsEnableAutomaticBackupsHelp": "Бэкапы сохраняются в /metadata/backups",
   "LabelBackupsMaxBackupSize": "Максимальный размер бэкапа (в GB)",

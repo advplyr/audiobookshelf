@@ -186,6 +186,7 @@
   "LabelAuthors": "Autoriai",
   "LabelAutoDownloadEpisodes": "Automatiškai atsisiųsti epizodus",
   "LabelBackToUser": "Grįžti į naudotoją",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Įjungti automatinį atsarginių kopijų kūrimą",
   "LabelBackupsEnableAutomaticBackupsHelp": "Atsarginės kopijos bus išsaugotos /metadata/backups aplanke",
   "LabelBackupsMaxBackupSize": "Maksimalus atsarginių kopijų dydis (GB)",

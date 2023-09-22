@@ -186,6 +186,7 @@
   "LabelAuthors": "作者",
   "LabelAutoDownloadEpisodes": "自动下载剧集",
   "LabelBackToUser": "返回到用户",
+  "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "启用自动备份",
   "LabelBackupsEnableAutomaticBackupsHelp": "备份保存到 /metadata/backups",
   "LabelBackupsMaxBackupSize": "最大备份大小 (GB)",
