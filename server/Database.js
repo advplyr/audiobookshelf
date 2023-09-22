@@ -167,8 +167,8 @@ class Database {
   async connect() {
     Logger.info(`[Database] Initializing db at "${this.dbPath}"`)
 
-    let logging = false;
-    let benchmark = false;
+    let logging = false
+    let benchmark = false
     if (process.env.QUERY_LOGGING === "log") {
       // Setting QUERY_LOGGING=log will log all Sequelize queries before they run
       Logger.info(`[Database] Query logging enabled`)
