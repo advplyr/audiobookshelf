@@ -1,6 +1,12 @@
 <template>
   <div>
     <app-settings-content :header-text="$strings.HeaderBackups" :description="$strings.MessageBackupsDescription">
+      <div v-if="backupLocation" class="flex items-center mb-4">
+        <span class="material-icons-outlined text-2xl text-black-50 mr-2">folder</span>
+        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelBackupLocation }}:</span>
+        <div class="text-gray-100 pl-4">{{ backupLocation }}</div>
+      </div>
+
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="enableBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
         <ui-tooltip :text="$strings.LabelBackupsEnableAutomaticBackupsHelp">
@@ -11,7 +17,7 @@
       <div v-if="enableBackups" class="mb-6">
         <div class="flex items-center pl-6 mb-2">
           <span class="material-icons-outlined text-2xl text-black-50 mr-2">schedule</span>
-          <div class="w-48">
+          <div class="w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span>
           </div>
           <div class="text-gray-100">{{ scheduleDescription }}</div>
@@ -20,19 +26,19 @@
 
         <div v-if="nextBackupDate" class="flex items-center pl-6 py-0.5 px-2 mb-2">
           <span class="material-icons-outlined text-2xl text-black-50 mr-2">event</span>
-          <div class="w-48">
+          <div class="w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
           </div>
           <div class="text-gray-100">{{ nextBackupDate }}</div>
         </div>
 
-        <div class="flex items-center pl-6 mb-2">
+        <!-- <div class="flex items-center pl-6 mb-2">
           <span class="material-icons-outlined text-2xl text-black-50 mr-2">folder</span>
           <div class="w-48">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelBackupLocation }}:</span>
           </div>
           <div class="text-gray-100">{{ backupLocation }}</div>
-        </div>
+        </div> -->
       </div>
 
       <div class="flex items-center py-2">
@@ -51,7 +57,7 @@
         </ui-tooltip>
       </div>
 
-      <tables-backups-table />
+      <tables-backups-table @loaded="backupsLoaded" />
 
       <modals-backup-schedule-modal v-model="showCronBuilder" :cron-expression.sync="cronExpression" />
     </app-settings-content>
@@ -107,6 +113,9 @@ export default {
     }
   },
   methods: {
+    backupsLoaded(backupLocation) {
+      this.backupLocation = backupLocation
+    },
     updateBackupsSettings() {
       if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
         this.$toast.error('Invalid maximum backup size')
@@ -143,23 +152,6 @@ export default {
       this.enableBackups = !!this.newServerSettings.backupSchedule
       this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
-
-      this.loadBackupLocation()
-    },
-    loadBackupLocation() {
-      this.processing = true
-      this.$axios
-          .$get('/api/backups/location')
-          .then((data) => {
-            this.backupLocation = data.backupLocation
-          })
-          .catch((error) => {
-            console.error('Failed to load backup location', error)
-            this.$toast.error('Failed to load backup location')
-          })
-          .finally(() => {
-            this.processing = false
-          })
     }
   },
   mounted() {
