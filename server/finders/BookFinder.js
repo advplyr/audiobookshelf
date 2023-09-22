@@ -52,21 +52,19 @@ class BookFinder {
   cleanTitleForCompares(title) {
     if (!title) return ''
     // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
-    var stripped = this.stripSubtitle(title)
+    let stripped = this.stripSubtitle(title)
 
     // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
-    var cleaned = stripped.replace(/ *\([^)]*\) */g, "")
+    let cleaned = stripped.replace(/ *\([^)]*\) */g, "")
 
     // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
     cleaned = cleaned.replace(/'/g, '')
-    cleaned = this.replaceAccentedChars(cleaned)
-    return cleaned
+    return this.replaceAccentedChars(cleaned)
   }
 
   cleanAuthorForCompares(author) {
     if (!author) return ''
-    var cleaned = this.replaceAccentedChars(author)
-    return cleaned
+    return this.replaceAccentedChars(author)
   }
 
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
@@ -210,12 +208,23 @@ class BookFinder {
       candidates.add(candidate)
   }
 
+  /**
+   * Search for books including fuzzy searches
+   * 
+   * @param {string} provider 
+   * @param {string} title 
+   * @param {string} author 
+   * @param {string} isbn 
+   * @param {string} asin 
+   * @param {{titleDistance:number, authorDistance:number, maxFuzzySearches:number}} options 
+   * @returns {Promise<Object[]>}
+   */
   async search(provider, title, author, isbn, asin, options = {}) {
-    var books = []
+    let books = []
     const maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     const maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
     const maxFuzzySearches = !isNaN(options.maxFuzzySearches) ? Number(options.maxFuzzySearches) : 5
-    var numFuzzySearches = 0
+    let numFuzzySearches = 0
 
     if (!title)
       return books
@@ -228,8 +237,8 @@ class BookFinder {
       author = author.trim().toLowerCase()
 
       // Now run up to maxFuzzySearches fuzzy searches
-      var candidates = new Set()
-      var cleanedAuthor = this.cleanAuthorForCompares(author)
+      let candidates = new Set()
+      let cleanedAuthor = this.cleanAuthorForCompares(author)
       this.addTitleCandidate(title, candidates)
 
       // remove parentheses and their contents, and replace with a separator
@@ -256,8 +265,7 @@ class BookFinder {
           if (lengthDiff) return lengthDiff
           return b.localeCompare(a)
         })
-        Logger.debug(`[BookFinder] Found ${candidates.length} fuzzy title candidates`)
-        Logger.debug(candidates)
+        Logger.debug(`[BookFinder] Found ${candidates.length} fuzzy title candidates`, candidates)
         for (const candidate of candidates) {
           if (++numFuzzySearches > maxFuzzySearches) return books
           books = await this.runSearch(candidate, cleanedAuthor, provider, asin, maxTitleDistance, maxAuthorDistance)
@@ -283,10 +291,21 @@ class BookFinder {
     return books
   }
 
+  /**
+   * Search for books
+   * 
+   * @param {string} title 
+   * @param {string} author 
+   * @param {string} provider 
+   * @param {string} asin only used for audible providers
+   * @param {number} maxTitleDistance only used for openlibrary provider
+   * @param {number} maxAuthorDistance only used for openlibrary provider
+   * @returns {Promise<Object[]>}
+   */
   async runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance) {
     Logger.debug(`Book Search: title: "${title}", author: "${author || ''}", provider: ${provider}`)
 
-    var books = []
+    let books = []
 
     if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
