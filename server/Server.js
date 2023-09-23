@@ -139,7 +139,7 @@ class Server {
     const app = express()
 
     // parse cookies in requests
-    app.use(cookieParser());
+    app.use(cookieParser())
     // enable express-session
     app.use(expressSession({
       secret: global.ServerSettings.tokenSecret,

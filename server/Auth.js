@@ -78,16 +78,10 @@ class Auth {
         }).bind(this)))
     }
 
-    // should be already initialied here - but ci had some problems so check again
-    // token is required to encrypt/protect the info in jwts
-    if (!global.ServerSettings.tokenSecret) {
-      await this.initTokenSecret()
-    }
-
     // Load the JwtStrategy (always) -> for bearer token auth 
     passport.use(new JwtStrategy({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: global.ServerSettings.tokenSecret
+      secretOrKey: Database.serverSettings.tokenSecret
     }, this.jwtAuthCheck.bind(this)))
 
     // define how to seralize a user (to be put into the session)
@@ -330,7 +324,7 @@ class Auth {
     }
 
     // Check passwordless root user
-    if (user.id === 'root' && (!user.pash || user.pash === '')) {
+    if (user.type === 'root' && (!user.pash || user.pash === '')) {
       if (password) {
         // deny login
         done(null, null)
