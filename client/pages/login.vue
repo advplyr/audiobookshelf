@@ -27,7 +27,7 @@
         <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
         <div class="w-full h-px bg-white bg-opacity-10 my-4" />
         <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
-        <form id="login-local" @submit.prevent="submitForm">
+        <form v-show="login_local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
           <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
 
@@ -39,10 +39,10 @@
         </form>
         <hr />
         <div class="w-full flex py-3">
-          <a id="login-google-oauth20" :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
+          <a v-show="login_google_oauth20" :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
           </a>
-          <a id="login-openid" :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
+          <a v-show="login_openid" :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
           </a>
         </div>
@@ -70,7 +70,10 @@ export default {
       confirmPassword: '',
       ConfigPath: '',
       MetadataPath: '',
-      currentUrl: location.toString()
+      currentUrl: location.toString(),
+      login_local: true,
+      login_google_oauth20: false,
+      login_openid: false
     }
   },
   watch: {
@@ -227,14 +230,23 @@ export default {
       await this.$axios
         .$get('/auth_methods')
         .then((response) => {
-          ;['local', 'google-oauth20', 'openid'].forEach((auth_method) => {
-            debugger
-            if (response.includes(auth_method)) {
-              // TODO: show `#login-${auth_method}`
-            } else {
-              // TODO: hide `#login-${auth_method}`
-            }
-          })
+          if (response.includes('local')) {
+            this.login_local = true
+          } else {
+            this.login_local = false
+          }
+
+          if (response.includes('google-oauth20')) {
+            this.login_google_oauth20 = true
+          } else {
+            this.login_google_oauth20 = false
+          }
+
+          if (response.includes('openid')) {
+            this.login_openid = true
+          } else {
+            this.login_openid = false
+          }
         })
         .catch((error) => {
           console.error('Failed', error.response)
@@ -243,7 +255,7 @@ export default {
     }
   },
   async mounted() {
-    this.updateLoginVisibility()
+    this.$nextTick(async () => await this.updateLoginVisibility())
     if (new URLSearchParams(window.location.search).get('setToken')) {
       localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
     }
