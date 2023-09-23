@@ -115,6 +115,19 @@ class PodcastController {
     res.json({ podcast })
   }
 
+  async checkPodcastFeed(req, res) {
+    const libraryItem = req.libraryItem
+    const podcast = await getPodcastFeed(libraryItem.media.metadata.feedUrl)
+
+    if (!podcast) {
+      this.podcastManager.setFeedHealthStatus(libraryItem, false)
+      return res.status(404).send('Podcast RSS feed request failed or invalid response data')
+    }
+
+    this.podcastManager.setFeedHealthStatus(libraryItem, true)
+    res.json({ podcast })
+  }
+
   async getFeedsFromOPMLText(req, res) {
     if (!req.body.opmlText) {
       return res.sendStatus(400)

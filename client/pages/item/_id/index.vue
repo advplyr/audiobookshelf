@@ -485,16 +485,16 @@ export default {
         return this.$toast.error('Podcast does not have an RSS Feed')
       }
       this.fetchingRSSFeed = true
-      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
+      var payload = await this.$axios.get(`/api/podcasts/${this.libraryItemId}/feed`).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error('Failed to get podcast feed')
         return null
       })
       this.fetchingRSSFeed = false
-      if (!payload) return
+      if (!payload || !payload.data) return
 
-      console.log('Podcast feed', payload)
-      const podcastfeed = payload.podcast
+      console.log('Podcast feed', payload.data)
+      const podcastfeed = payload.data.podcast
       if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
         this.$toast.info('No episodes found in RSS feed')
         return

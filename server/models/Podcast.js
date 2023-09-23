@@ -50,6 +50,10 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {Date} */
+    this.lastSuccessfulFetchAt
+    /** @type {boolean} */
+    this.feedHealthy
   }
 
   static getOldPodcast(libraryItemExpanded) {
@@ -71,7 +75,9 @@ class Podcast extends Model {
         itunesArtistId: podcastExpanded.itunesArtistId,
         explicit: podcastExpanded.explicit,
         language: podcastExpanded.language,
-        type: podcastExpanded.podcastType
+        type: podcastExpanded.podcastType,
+        lastSuccessfulFetchAt: podcastExpanded.lastSuccessfulFetchAt?.valueOf() || null,
+        feedHealthy: !!podcastExpanded.feedHealthy
       },
       coverPath: podcastExpanded.coverPath,
       tags: podcastExpanded.tags,
@@ -108,7 +114,9 @@ class Podcast extends Model {
       maxNewEpisodesToDownload: oldPodcast.maxNewEpisodesToDownload,
       coverPath: oldPodcast.coverPath,
       tags: oldPodcast.tags,
-      genres: oldPodcastMetadata.genres
+      genres: oldPodcastMetadata.genres,
+      lastSuccessfulFetchAt: oldPodcastMetadata.lastSuccessfulFetchAt,
+      feedHealthy: !!oldPodcastMetadata.feedHealthy
     }
   }
 
@@ -144,7 +152,9 @@ class Podcast extends Model {
       maxNewEpisodesToDownload: DataTypes.INTEGER,
       coverPath: DataTypes.STRING,
       tags: DataTypes.JSON,
-      genres: DataTypes.JSON
+      genres: DataTypes.JSON,
+      lastSuccessfulFetchAt: DataTypes.DATE,
+      feedHealthy: DataTypes.BOOLEAN
     }, {
       sequelize,
       modelName: 'podcast'

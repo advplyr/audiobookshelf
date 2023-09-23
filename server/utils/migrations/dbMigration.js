@@ -198,7 +198,9 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     updatedAt: LibraryItem.updatedAt,
     coverPath: oldPodcast.coverPath,
     tags: oldPodcast.tags,
-    genres: oldPodcastMetadata.genres
+    genres: oldPodcastMetadata.genres,
+    lastSuccessfulFetchAt: oldPodcastMetadata.lastSuccessfulFetchAt || null,
+    feedHealthy: !!oldPodcastMetadata.feedHealthy || null
   }
   _newRecords.podcast = Podcast
   oldDbIdMap.podcasts[oldLibraryItem.id] = Podcast.id
