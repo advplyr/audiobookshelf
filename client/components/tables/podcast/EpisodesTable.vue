@@ -191,6 +191,7 @@ export default {
     }
   },
   methods: {
+    search() {},
     inputUpdate() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {

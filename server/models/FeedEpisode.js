@@ -63,6 +63,19 @@ class FeedEpisode extends Model {
     }
   }
 
+  /**
+   * Create feed episode from old model
+   * 
+   * @param {string} feedId 
+   * @param {Object} oldFeedEpisode 
+   * @returns {Promise<FeedEpisode>}
+   */
+  static createFromOld(feedId, oldFeedEpisode) {
+    const newEpisode = this.getFromOld(oldFeedEpisode)
+    newEpisode.feedId = feedId
+    return this.create(newEpisode)
+  }
+
   static getFromOld(oldFeedEpisode) {
     return {
       id: oldFeedEpisode.id,
