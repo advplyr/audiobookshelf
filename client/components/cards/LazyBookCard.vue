@@ -89,7 +89,7 @@
 
     <!-- Series name overlay -->
     <div v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
-      <p class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ series }}</p>
+      <p v-if="seriesName" class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ seriesName }}</p>
     </div>
 
     <!-- Error widget -->
@@ -217,6 +217,9 @@ export default {
     series() {
       // Only included when filtering by series or collapse series or Continue Series shelf on home page
       return this.mediaMetadata.series
+    },
+    seriesName() {
+      return this.series?.name || null
     },
     seriesSequence() {
       return this.series?.sequence || null

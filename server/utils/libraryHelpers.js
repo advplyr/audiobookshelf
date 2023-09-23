@@ -190,6 +190,7 @@ module.exports = {
       const json = li.toJSONMinified()
       json.media.metadata.series = {
         id: filteredSeries.id,
+        name: filteredSeries.name,
         sequence: filteredSeries.sequence
       }
 
