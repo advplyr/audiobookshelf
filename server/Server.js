@@ -238,7 +238,8 @@ class Server {
       // server has been initialized if a root user exists
       const payload = {
         isInit: Database.hasRootUser,
-        language: Database.serverSettings.language
+        language: Database.serverSettings.language,
+        authMethods: Database.serverSettings.authActiveAuthMethods
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath

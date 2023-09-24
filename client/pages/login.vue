@@ -25,8 +25,11 @@
       </div>
       <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 -mt-40">
         <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
+
         <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+
         <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
+
         <form v-show="login_local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
           <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
@@ -37,7 +40,9 @@
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
-        <hr />
+
+        <div v-if="login_local && (login_google_oauth20 || login_openid)" class="w-full h-px bg-white bg-opacity-10 my-4" />
+
         <div class="w-full flex py-3">
           <a v-show="login_google_oauth20" :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
@@ -106,6 +111,9 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    googleAuthUri() {
+      return `${process.env.serverUrl}/auth/openid?callback=${currentUrl}`
     }
   },
   methods: {
@@ -210,14 +218,16 @@ export default {
       this.processing = true
       this.$axios
         .$get('/status')
-        .then((res) => {
+        .then((data) => {
           this.processing = false
-          this.isInit = res.isInit
-          this.showInitScreen = !res.isInit
-          this.$setServerLanguageCode(res.language)
+          this.isInit = data.isInit
+          this.showInitScreen = !data.isInit
+          this.$setServerLanguageCode(data.language)
           if (this.showInitScreen) {
-            this.ConfigPath = res.ConfigPath || ''
-            this.MetadataPath = res.MetadataPath || ''
+            this.ConfigPath = data.ConfigPath || ''
+            this.MetadataPath = data.MetadataPath || ''
+          } else {
+            this.updateLoginVisibility(data.authMethods || [])
           }
         })
         .catch((error) => {
@@ -226,43 +236,34 @@ export default {
           this.criticalError = 'Status check failed'
         })
     },
-    async updateLoginVisibility() {
-      await this.$axios
-        .$get('/auth_methods')
-        .then((response) => {
-          if (response.includes('local')) {
-            this.login_local = true
-          } else {
-            this.login_local = false
-          }
+    updateLoginVisibility(authMethods) {
+      if (authMethods.includes('local') || !authMethods.length) {
+        this.login_local = true
+      } else {
+        this.login_local = false
+      }
 
-          if (response.includes('google-oauth20')) {
-            this.login_google_oauth20 = true
-          } else {
-            this.login_google_oauth20 = false
-          }
+      if (authMethods.includes('google-oauth20')) {
+        this.login_google_oauth20 = true
+      } else {
+        this.login_google_oauth20 = false
+      }
 
-          if (response.includes('openid')) {
-            this.login_openid = true
-          } else {
-            this.login_openid = false
-          }
-        })
-        .catch((error) => {
-          console.error('Failed', error.response)
-          return false
-        })
+      if (authMethods.includes('openid')) {
+        this.login_openid = true
+      } else {
+        this.login_openid = false
+      }
     }
   },
   async mounted() {
-    this.$nextTick(async () => await this.updateLoginVisibility())
     if (new URLSearchParams(window.location.search).get('setToken')) {
       localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
     }
     if (localStorage.getItem('token')) {
-      var userfound = await this.checkAuth()
-      if (userfound) return // if valid user no need to check status
+      if (await this.checkAuth()) return // if valid user no need to check status
     }
+
     this.checkStatus()
   }
 }

@@ -146,24 +146,31 @@ class SocketAuthority {
     })
   }
 
-  // When setting up a socket connection the user needs to be associated with a socket id
-  //  for this the client will send a 'auth' event that includes the users API token
+  /**
+   * When setting up a socket connection the user needs to be associated with a socket id
+   * for this the client will send a 'auth' event that includes the users API token
+   * 
+   * @param {SocketIO.Socket} socket 
+   * @param {string} token JWT
+   */
   async authenticateSocket(socket, token) {
     // we don't use passport to authenticate the jwt we get over the socket connection.
     // it's easier to directly verify/decode it.
     const token_data = Auth.validateAccessToken(token)
-    if (!token_data || !token_data.id) {
+
+    if (!token_data?.userId) {
       // Token invalid
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }
     // get the user via the id from the decoded jwt.
-    const user = await Database.userModel.getUserById(token_data.id)
+    const user = await Database.userModel.getUserByIdOrOldId(token_data.userId)
     if (!user) {
       // user not found
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }
+
     const client = this.clients[socket.id]
     if (!client) {
       Logger.error(`[SocketAuthority] Socket for user ${user.username} has no client`)

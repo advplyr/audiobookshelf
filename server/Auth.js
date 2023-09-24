@@ -64,10 +64,9 @@ class Auth {
         (async function (issuer, profile, done) {
           // TODO: do we want to create the users which does not exist?
 
-          // get user by email
-          var user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
+          const user = await Database.userModel.getUserByUsername(profile.username)
 
-          if (!user || !user.isActive) {
+          if (!user?.isActive) {
             // deny login
             done(null, null)
             return
@@ -106,9 +105,10 @@ class Auth {
   }
 
   /**
-   * Stores the client's choise how the login callback should happen in temp cookies.
-   * @param {*} req Request object.
-   * @param {*} res Response object.
+   * Stores the client's choice how the login callback should happen in temp cookies
+   * 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   paramsToCookies(req, res) {
     if (req.query.isRest && req.query.isRest.toLowerCase() == "true") {
@@ -140,12 +140,12 @@ class Auth {
     }
   }
 
-
   /**
    * Informs the client in the right mode about a successfull login and the token
    * (clients choise is restored from cookies).
-   * @param {*} req Request object.
-   * @param {*} res Response object.
+   * 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async handleLoginSuccessBasedOnCookie(req, res) {
     // get userLogin json (information about the user, server and the session)
@@ -170,16 +170,15 @@ class Auth {
 
   /**
    * Creates all (express) routes required for authentication.
-   * @param {express.Router} router 
+   * 
+   * @param {import('express').Router} router 
    */
   async initAuthRoutes(router) {
     // Local strategy login route (takes username and password)
-    router.post('/login', passport.authenticate('local'),
-      (async function (req, res) {
-        // return the user login response json if the login was successfull
-        res.json(await this.getUserLoginResponsePayload(req.user))
-      }).bind(this)
-    )
+    router.post('/login', passport.authenticate('local'), async (req, res) => {
+      // return the user login response json if the login was successfull
+      res.json(await this.getUserLoginResponsePayload(req.user))
+    })
 
     // google-oauth20 strategy login route (this redirects to the google login)
     router.get('/auth/google', (req, res, next) => {
@@ -222,18 +221,13 @@ class Auth {
         }
       })
     })
-
-    // Get avilible auth methods
-    router.get('/auth_methods', (req, res) => {
-      res.json(global.ServerSettings.authActiveAuthMethods)
-    })
   }
 
   /**
    * middleware to use in express to only allow authenticated users.
-   * @param {express.Request} req 
-   * @param {express.Response} res 
-   * @param {express.NextFunction} next  
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   * @param {import('express').NextFunction} next  
    */
   isAuthenticated(req, res, next) {
     // check if session cookie says that we are authenticated
@@ -246,18 +240,20 @@ class Auth {
   }
 
   /**
-   * Function to generate a jwt token for a given user.
+   * Function to generate a jwt token for a given user
+   * 
    * @param {Object} user 
-   * @returns the token.
+   * @returns {string} token
    */
   generateAccessToken(user) {
     return jwt.sign({ userId: user.id, username: user.username }, global.ServerSettings.tokenSecret)
   }
 
   /**
-   * Function to validate a jwt token for a given user.
+   * Function to validate a jwt token for a given user
+   * 
    * @param {string} token 
-   * @returns the tokens data.
+   * @returns {Object} tokens data
    */
   static validateAccessToken(token) {
     try {
@@ -365,9 +361,10 @@ class Auth {
   }
 
   /**
-   * Return the login info payload for a user.
-   * @param {string} username 
-   * @returns {Promise<string>} jsonPayload
+   * Return the login info payload for a user
+   * 
+   * @param {Object} user 
+   * @returns {Promise<Object>} jsonPayload
    */
   async getUserLoginResponsePayload(user) {
     const libraryIds = await Database.libraryModel.getAllLibraryIds()
