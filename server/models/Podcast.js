@@ -120,6 +120,11 @@ class Podcast extends Model {
     }
   }
 
+  static async getAllInboundFeeds(){
+    const podcasts = await this.findAll()
+    return podcasts.map(p => this.getFromOld(p))
+  }
+
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize 

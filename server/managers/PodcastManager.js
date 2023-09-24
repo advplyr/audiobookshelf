@@ -408,6 +408,12 @@ class PodcastManager {
             queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
         }
     }
+
+    async getPodcastsWithInboundFeed() {
+        const podcasts = await Database.models.podcast.getAllInboundFeeds()
+        Logger.info(`[PodcastManager] Fetched all podcasts with feed`)
+        return podcasts
+    }
 }
 
 module.exports = PodcastManager

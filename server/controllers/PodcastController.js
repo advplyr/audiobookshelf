@@ -115,6 +115,13 @@ class PodcastController {
     res.json({ podcast })
   }
 
+  async getPodcastsWithInboundFeed(req, res) {
+    const podcasts = await Database.podcastModel.getAllInboundFeeds()
+    res.json({
+      podcasts
+    })
+  }
+
   async checkPodcastFeed(req, res) {
     const libraryItem = req.libraryItem
     const podcast = await getPodcastFeed(libraryItem.media.metadata.feedUrl)
