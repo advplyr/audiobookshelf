@@ -44,10 +44,10 @@
         <div v-if="login_local && (login_google_oauth20 || login_openid)" class="w-full h-px bg-white bg-opacity-10 my-4" />
 
         <div class="w-full flex py-3">
-          <a v-show="login_google_oauth20" :href="`http://localhost:3333/auth/google?callback=${currentUrl}`">
+          <a v-show="login_google_oauth20" :href="googleAuthUri">
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
           </a>
-          <a v-show="login_openid" :href="`http://localhost:3333/auth/openid?callback=${currentUrl}`">
+          <a v-show="login_openid" :href="openidAuthUri">
             <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
           </a>
         </div>
@@ -75,7 +75,6 @@ export default {
       confirmPassword: '',
       ConfigPath: '',
       MetadataPath: '',
-      currentUrl: location.toString(),
       login_local: true,
       login_google_oauth20: false,
       login_openid: false
@@ -113,7 +112,10 @@ export default {
       return this.$store.state.user.user
     },
     googleAuthUri() {
-      return `${process.env.serverUrl}/auth/openid?callback=${currentUrl}`
+      return `${process.env.serverUrl}/auth/google?callback=${location.toString()}`
+    },
+    openidAuthUri() {
+      return `${process.env.serverUrl}/auth/openid?callback=${location.toString()}`
     }
   },
   methods: {
