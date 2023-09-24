@@ -64,14 +64,13 @@ class ServerSettings {
     this.authGoogleOauth20ClientSecret = ''
     this.authGoogleOauth20CallbackURL = ''
 
-    // generic-oauth20 settings
+    // openid settings
     this.authOpenIDIssuerURL = ''
     this.authOpenIDAuthorizationURL = ''
     this.authOpenIDTokenURL = ''
     this.authOpenIDUserInfoURL = ''
     this.authOpenIDClientID = ''
     this.authOpenIDClientSecret = ''
-    this.authOpenIDCallbackURL = ''
 
     if (settings) {
       this.construct(settings)
@@ -126,7 +125,6 @@ class ServerSettings {
     this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || ''
     this.authOpenIDClientID = settings.authOpenIDClientID || ''
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
-    this.authOpenIDCallbackURL = settings.authOpenIDCallbackURL || ''
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -144,16 +142,15 @@ class ServerSettings {
 
     // remove uninitialized methods    
     // OpenID
-    if (this.authActiveAuthMethods.includes('generic-oauth20') && (
+    if (this.authActiveAuthMethods.includes('openid') && (
       this.authOpenIDIssuerURL === '' ||
       this.authOpenIDAuthorizationURL === '' ||
       this.authOpenIDTokenURL === '' ||
       this.authOpenIDUserInfoURL === '' ||
       this.authOpenIDClientID === '' ||
-      this.authOpenIDClientSecret === '' ||
-      this.authOpenIDCallbackURL === ''
+      this.authOpenIDClientSecret === ''
     )) {
-      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('generic-oauth20', 0), 1)
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
     }
 
     // fallback to local    
@@ -228,8 +225,7 @@ class ServerSettings {
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
-      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
-      authOpenIDCallbackURL: this.authOpenIDCallbackURL
+      authOpenIDClientSecret: this.authOpenIDClientSecret // Do not return to client
     }
   }
 
@@ -243,13 +239,42 @@ class ServerSettings {
     return json
   }
 
+  get authenticationSettings() {
+    return {
+      authActiveAuthMethods: this.authActiveAuthMethods,
+      authGoogleOauth20ClientID: this.authGoogleOauth20ClientID, // Do not return to client
+      authGoogleOauth20ClientSecret: this.authGoogleOauth20ClientSecret, // Do not return to client
+      authGoogleOauth20CallbackURL: this.authGoogleOauth20CallbackURL,
+      authOpenIDIssuerURL: this.authOpenIDIssuerURL,
+      authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
+      authOpenIDTokenURL: this.authOpenIDTokenURL,
+      authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret // Do not return to client
+    }
+  }
+
+  /**
+   * Update server settings
+   * 
+   * @param {Object} payload 
+   * @returns {boolean} true if updates were made
+   */
   update(payload) {
     let hasUpdates = false
     for (const key in payload) {
-      if (key === 'sortingPrefixes' && payload[key] && payload[key].length) {
-        const prefixesCleaned = payload[key].filter(prefix => !!prefix).map(prefix => prefix.toLowerCase())
-        if (prefixesCleaned.join(',') !== this[key].join(',')) {
-          this[key] = [...prefixesCleaned]
+      if (key === 'sortingPrefixes') {
+        // Sorting prefixes are updated with the /api/sorting-prefixes endpoint
+        continue
+      } else if (key === 'authActiveAuthMethods') {
+        if (!payload[key]?.length) {
+          Logger.error(`[ServerSettings] Invalid authActiveAuthMethods`, payload[key])
+          continue
+        }
+        this.authActiveAuthMethods.sort()
+        payload[key].sort()
+        if (payload[key].join() !== this.authActiveAuthMethods.join()) {
+          this.authActiveAuthMethods = payload[key]
           hasUpdates = true
         }
       } else if (this[key] !== payload[key]) {

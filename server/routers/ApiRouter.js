@@ -306,6 +306,7 @@ class ApiRouter {
     this.router.post('/genres/rename', MiscController.renameGenre.bind(this))
     this.router.delete('/genres/:genre', MiscController.deleteGenre.bind(this))
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
+    this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {

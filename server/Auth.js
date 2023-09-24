@@ -57,24 +57,23 @@ class Auth {
         userInfoURL: global.ServerSettings.authOpenIDUserInfoURL,
         clientID: global.ServerSettings.authOpenIDClientID,
         clientSecret: global.ServerSettings.authOpenIDClientSecret,
-        callbackURL: global.ServerSettings.authOpenIDCallbackURL,
+        callbackURL: '/auth/openid/callback',
         scope: ["openid", "email", "profile"],
         skipUserProfile: false
-      },
-        (async function (issuer, profile, done) {
-          // TODO: do we want to create the users which does not exist?
+      }, async (issuer, profile, done) => {
+        // TODO: do we want to create the users which does not exist?
 
-          const user = await Database.userModel.getUserByUsername(profile.username)
+        const user = await Database.userModel.getUserByUsername(profile.username)
 
-          if (!user?.isActive) {
-            // deny login
-            done(null, null)
-            return
-          }
+        if (!user?.isActive) {
+          // deny login
+          done(null, null)
+          return
+        }
 
-          // permit login
-          return done(null, user)
-        }).bind(this)))
+        // permit login
+        return done(null, user)
+      }))
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -111,14 +110,13 @@ class Auth {
    * @param {import('express').Response} res
    */
   paramsToCookies(req, res) {
-    if (req.query.isRest && req.query.isRest.toLowerCase() == "true") {
+    if (req.query.isRest?.toLowerCase() == "true") {
       // store the isRest flag to the is_rest cookie 
       res.cookie('is_rest', req.query.isRest.toLowerCase(), {
         maxAge: 120000, // 2 min
         httpOnly: true
       })
-    }
-    else {
+    } else {
       // no isRest-flag set -> set is_rest cookie to false
       res.cookie('is_rest', "false", {
         maxAge: 120000, // 2 min
@@ -126,7 +124,7 @@ class Auth {
       })
 
       // check if we are missing a callback parameter - we need one if isRest=false
-      if (!req.query.callback || req.query.callback === "") {
+      if (!req.query.callback) {
         res.status(400).send({
           message: 'No callback parameter'
         })
@@ -151,19 +149,17 @@ class Auth {
     // get userLogin json (information about the user, server and the session)
     const data_json = await this.getUserLoginResponsePayload(req.user)
 
-    if (req.cookies.is_rest && req.cookies.is_rest === "true") {
+    if (req.cookies.is_rest === 'true') {
       // REST request - send data
       res.json(data_json)
-    }
-    else {
+    } else {
       // UI request -> check if we have a callback url
       // TODO: do we want to somehow limit the values for auth_cb?
-      if (req.cookies.auth_cb && req.cookies.auth_cb.startsWith("http")) {
+      if (req.cookies.auth_cb?.startsWith('http')) {
         // UI request -> redirect to auth_cb url and send the jwt token as parameter
         res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
-      }
-      else {
-        res.status(400).send("No callback or already expired")
+      } else {
+        res.status(400).send('No callback or already expired')
       }
     }
   }
@@ -205,7 +201,7 @@ class Auth {
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
-      passport.authenticate('openidconnect'),
+      passport.authenticate('openidconnect', { failureRedirect: '/login', failureMessage: true }),
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this)
     )

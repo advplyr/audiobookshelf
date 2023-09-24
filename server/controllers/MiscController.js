@@ -117,8 +117,9 @@ class MiscController {
   /**
    * PATCH: /api/settings
    * Update server settings
-   * @param {*} req 
-   * @param {*} res 
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async updateServerSettings(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -246,8 +247,8 @@ class MiscController {
    * POST: /api/authorize
    * Used to authorize an API token
    * 
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async authorize(req, res) {
     if (!req.user) {
@@ -538,6 +539,20 @@ class MiscController {
       Logger.warn(`[MiscController] Invalid cron expression ${expression}`, error.message)
       res.status(400).send(error.message)
     }
+  }
+
+  /**
+   * GET: api/auth-settings (admin only)
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  getAuthSettings(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
+      return res.sendStatus(403)
+    }
+    return res.json(Database.serverSettings.authenticationSettings)
   }
 }
 module.exports = new MiscController()

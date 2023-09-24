@@ -163,8 +163,6 @@ class Server {
 
     this.server = http.createServer(app)
 
-
-
     router.use(fileUpload({
       defCharset: 'utf8',
       defParamCharset: 'utf8',
