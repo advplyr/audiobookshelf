@@ -53,8 +53,10 @@
       </div>
       <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
 
+      <div class="w-full my-8 h-px bg-white/10" />
+
       <!-- open listening sessions table -->
-      <p v-if="openListeningSessions.length" class="text-lg mb-4 mt-8">Open Listening Sessions</p>
+      <p v-if="openListeningSessions.length" class="text-lg my-4">Open Listening Sessions</p>
       <div v-if="openListeningSessions.length" class="block max-w-full">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
@@ -73,8 +75,7 @@
               <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
             </td>
             <td class="hidden md:table-cell">
-              <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
-              <p v-else class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
+              <p class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
             </td>
             <td class="hidden md:table-cell">
               <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
@@ -153,8 +154,8 @@ export default {
     },
     filteredUserUsername() {
       if (!this.userFilter) return null
-      var user = this.users.find((u) => u.id === this.userFilter)
-      return user ? user.username : null
+      const user = this.users.find((u) => u.id === this.userFilter)
+      return user?.username || null
     },
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
@@ -273,7 +274,7 @@ export default {
       return 'Unknown'
     },
     async loadSessions(page) {
-      var userFilterQuery = this.selectedUser ? `&user=${this.selectedUser}` : ''
+      const userFilterQuery = this.selectedUser ? `&user=${this.selectedUser}` : ''
       const data = await this.$axios.$get(`/api/sessions?page=${page}&itemsPerPage=${this.itemsPerPage}${userFilterQuery}`).catch((err) => {
         console.error('Failed to load listening sessions', err)
         return null
