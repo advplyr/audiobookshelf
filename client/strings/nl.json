@@ -534,6 +534,7 @@
   "MessageConfirmMarkSeriesFinished": "Weet je zeker dat je alle boeken in deze serie wil markeren als voltooid?",
   "MessageConfirmMarkSeriesNotFinished": "Weet je zeker dat je alle boeken in deze serie wil markeren als niet voltooid?",
   "MessageConfirmRemoveAllChapters": "Weet je zeker dat je alle hoofdstukken wil verwijderen?",
+  "MessageConfirmRemoveAuthor": "Are you sure you want to remove author \"{0}\"?",
   "MessageConfirmRemoveCollection": "Weet je zeker dat je de collectie \"{0}\" wil verwijderen?",
   "MessageConfirmRemoveEpisode": "Weet je zeker dat je de aflevering \"{0}\" wil verwijderen?",
   "MessageConfirmRemoveEpisodes": "Weet je zeker dat je {0} afleveringen wil verwijderen?",

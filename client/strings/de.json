@@ -534,6 +534,7 @@
   "MessageConfirmMarkSeriesFinished": "Sind Sie sicher, dass Sie alle Medien dieser Reihe als abgeschlossen markieren wollen?",
   "MessageConfirmMarkSeriesNotFinished": "Sind Sie sicher, dass Sie alle Medien dieser Reihe als nicht abgeschlossen markieren wollen?",
   "MessageConfirmRemoveAllChapters": "Sind Sie sicher, dass Sie alle Kapitel entfernen möchten?",
+  "MessageConfirmRemoveAuthor": "Are you sure you want to remove author \"{0}\"?",
   "MessageConfirmRemoveCollection": "Sind Sie sicher, dass Sie die Sammlung \"{0}\" löschen wollen?",
   "MessageConfirmRemoveEpisode": "Sind Sie sicher, dass Sie die Episode \"{0}\" löschen möchten?",
   "MessageConfirmRemoveEpisodes": "Sind Sie sicher, dass Sie {0} Episoden löschen wollen?",

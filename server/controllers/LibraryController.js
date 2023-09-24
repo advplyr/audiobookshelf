@@ -620,7 +620,7 @@ class LibraryController {
         model: Database.bookModel,
         attributes: ['id', 'tags', 'explicit'],
         where: bookWhere,
-        required: true,
+        required: false,
         through: {
           attributes: []
         }
