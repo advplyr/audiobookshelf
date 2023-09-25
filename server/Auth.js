@@ -16,6 +16,18 @@ class Auth {
   constructor() {
   }
 
+  static cors(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
+    res.header('Access-Control-Allow-Headers', '*')
+    res.header('Access-Control-Allow-Credentials', true)
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200)
+    } else {
+      next()
+    }
+  }
+
   /**
    * Inializes all passportjs strategies and other passportjs ralated initialization.
    */
@@ -78,7 +90,7 @@ class Auth {
 
     // Load the JwtStrategy (always) -> for bearer token auth 
     passport.use(new JwtStrategy({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), ExtractJwt.fromUrlQueryParameter('token')]),
       secretOrKey: Database.serverSettings.tokenSecret
     }, this.jwtAuthCheck.bind(this)))
 
@@ -123,15 +135,25 @@ class Auth {
         httpOnly: true
       })
 
+      // persist state if passed in
+      if (req.query.state) {
+        res.cookie('auth_state', req.query.state, {
+          maxAge: 120000, // 2 min
+          httpOnly: true
+        })
+      }
+
+      const callback = req.query.redirect_uri || req.query.callback
+
       // check if we are missing a callback parameter - we need one if isRest=false
-      if (!req.query.callback) {
+      if (!callback) {
         res.status(400).send({
           message: 'No callback parameter'
         })
         return
       }
       // store the callback url to the auth_cb cookie 
-      res.cookie('auth_cb', req.query.callback, {
+      res.cookie('auth_cb', callback, {
         maxAge: 120000, // 2 min
         httpOnly: true
       })
@@ -155,9 +177,10 @@ class Auth {
     } else {
       // UI request -> check if we have a callback url
       // TODO: do we want to somehow limit the values for auth_cb?
-      if (req.cookies.auth_cb?.startsWith('http')) {
+      if (req.cookies.auth_cb) {
+        let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
         // UI request -> redirect to auth_cb url and send the jwt token as parameter
-        res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}`)
+        res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}${stateQuery}`)
       } else {
         res.status(400).send('No callback or already expired')
       }
@@ -201,10 +224,9 @@ class Auth {
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
-      passport.authenticate('openidconnect', { failureRedirect: '/login', failureMessage: true }),
+      passport.authenticate('openidconnect'),
       // on a successfull login: read the cookies and react like the client requested (callback or json)
-      this.handleLoginSuccessBasedOnCookie.bind(this)
-    )
+      this.handleLoginSuccessBasedOnCookie.bind(this))
 
     // Logout route
     router.post('/logout', (req, res) => {
@@ -288,9 +310,9 @@ class Auth {
    */
   async jwtAuthCheck(jwt_payload, done) {
     // load user by id from the jwt token
-    const user = await Database.userModel.getUserById(jwt_payload.id)
+    const user = await Database.userModel.getUserByIdOrOldId(jwt_payload.userId)
 
-    if (!user || !user.isActive) {
+    if (!user?.isActive) {
       // deny login
       done(null, null)
       return
