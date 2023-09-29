@@ -91,7 +91,7 @@ class PodcastController {
 
     res.json(libraryItem.toJSONExpanded())
 
-    if (payload.episodesToDownload && payload.episodesToDownload.length) {
+    if (payload.episodesToDownload?.length) {
       Logger.info(`[PodcastController] Podcast created now starting ${payload.episodesToDownload.length} episode downloads`)
       this.podcastManager.downloadPodcastEpisodes(libraryItem, payload.episodesToDownload)
     }
