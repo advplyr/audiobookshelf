@@ -196,7 +196,7 @@ class MeController {
 
       const libraryItem = await Database.libraryItemModel.getOldById(localProgress.libraryItemId)
       if (!libraryItem) {
-        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item`, localProgress)
+        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item with id "${localProgress.libraryItemId}"`, localProgress)
         continue
       }
 
