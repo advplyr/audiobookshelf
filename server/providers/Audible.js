@@ -1,5 +1,6 @@
 const axios = require('axios')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const TurndownService = require('turndown')
+var turndownService = new TurndownService()
 const Logger = require('../Logger')
 
 class Audible {
@@ -45,7 +46,7 @@ class Audible {
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
             publisher: publisherName,
             publishedYear: releaseDate ? releaseDate.split('-')[0] : null,
-            description: summary ? htmlSanitizer.stripAllTags(summary) : null,
+            description: summary ? turndownService.turndown(summary) : null,
             cover: image,
             asin,
             genres: genresFiltered.length ? genresFiltered : null,

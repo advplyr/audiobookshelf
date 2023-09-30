@@ -1,6 +1,8 @@
 const axios = require('axios')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const TurndownService = require('turndown')
+var turndownService = new TurndownService()
 
 class iTunes {
   constructor() { }
@@ -69,7 +71,7 @@ class iTunes {
       artistId: data.artistId,
       title: data.collectionName,
       author,
-      description: htmlSanitizer.stripAllTags(data.description || ''),
+      description: turndownService.turndown(data.description || ''),
       publishedYear: data.releaseDate ? data.releaseDate.split('-')[0] : null,
       genres: data.primaryGenreName ? [data.primaryGenreName] : null,
       cover: this.getCoverArtwork(data)

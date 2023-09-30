@@ -125,7 +125,7 @@
           </div>
 
           <div class="my-4 max-w-2xl">
-            <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
+            <div class="text-base text-gray-100 default-style" v-html="description" />
           </div>
 
           <div v-if="invalidAudioFiles.length" class="bg-error border-red-800 shadow-md p-4">
@@ -153,6 +153,8 @@
 </template>
 
 <script>
+import { marked } from '@/static/libs/marked/index.js'
+
 export default {
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
@@ -323,7 +325,7 @@ export default {
       return this.media.audioFile
     },
     description() {
-      return this.mediaMetadata.description || ''
+      return marked(this.mediaMetadata.description || '')
     },
     userMediaProgress() {
       if (this.isMusic) return null

@@ -1,5 +1,6 @@
 const { xmlToJSON } = require('../index')
-const htmlSanitizer = require('../htmlSanitizer')
+const TurndownService = require('turndown')
+var turndownService = new TurndownService()
 
 function parseCreators(metadata) {
   if (!metadata['dc:creator']) return null
@@ -87,7 +88,7 @@ function fetchDescription(metadata) {
   // check if description is HTML or plain text. only plain text allowed
   // calibre stores < and > as &lt; and &gt;
   description = description.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  return htmlSanitizer.stripAllTags(description)
+  return turndownService.turndown(description)
 }
 
 function fetchGenres(metadata) {
