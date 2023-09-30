@@ -176,6 +176,8 @@ class Feed extends Model {
     if (!existingFeed) return false
 
     let hasUpdates = false
+
+    // Remove and update existing feed episodes
     for (const feedEpisode of existingFeed.feedEpisodes) {
       const oldFeedEpisode = oldFeedEpisodes.find(ep => ep.id === feedEpisode.id)
       // Episode removed
@@ -193,6 +195,14 @@ class Feed extends Model {
           await feedEpisode.update(oldFeedEpisodeCleaned)
           hasUpdates = true
         }
+      }
+    }
+
+    // Add new feed episodes
+    for (const episode of oldFeedEpisodes) {
+      if (!existingFeed.feedEpisodes.some(fe => fe.id === episode.id)) {
+        await this.sequelize.models.feedEpisode.createFromOld(feedObj.id, episode)
+        hasUpdates = true
       }
     }
 

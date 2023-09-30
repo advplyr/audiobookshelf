@@ -199,6 +199,7 @@ class ApiRouter {
     //
     this.router.get('/authors/:id', AuthorController.middleware.bind(this), AuthorController.findOne.bind(this))
     this.router.patch('/authors/:id', AuthorController.middleware.bind(this), AuthorController.update.bind(this))
+    this.router.delete('/authors/:id', AuthorController.middleware.bind(this), AuthorController.delete.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
     this.router.get('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.getImage.bind(this))
 

@@ -120,7 +120,7 @@ export default {
       for (const key in this.libraryCopy) {
         if (library[key] !== undefined) {
           if (key === 'folders') {
-            this.libraryCopy.folders = library.folders.map((f) => ({ ...f }))
+            this.libraryCopy.folders = library.folders.map((f) => ({ ...f })).filter((f) => !!f.fullPath?.trim())
           } else if (key === 'settings') {
             for (const settingKey in library.settings) {
               this.libraryCopy.settings[settingKey] = library.settings[settingKey]

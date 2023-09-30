@@ -534,6 +534,7 @@
   "MessageConfirmMarkSeriesFinished": "Вы уверены, что хотите отметить все книги этой серии как завершенные?",
   "MessageConfirmMarkSeriesNotFinished": "Вы уверены, что хотите отметить все книги этой серии как не завершенные?",
   "MessageConfirmRemoveAllChapters": "Вы уверены, что хотите удалить все главы?",
+  "MessageConfirmRemoveAuthor": "Are you sure you want to remove author \"{0}\"?",
   "MessageConfirmRemoveCollection": "Вы уверены, что хотите удалить коллекцию \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Вы уверены, что хотите удалить эпизод \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Вы уверены, что хотите удалить {0} эпизодов?",

@@ -28,6 +28,8 @@ class FolderWatcher extends EventEmitter {
     this.ignoreDirs = []
     /** @type {string[]} */
     this.pendingDirsToRemoveFromIgnore = []
+    /** @type {NodeJS.Timeout} */
+    this.removeFromIgnoreTimer = null
 
     this.disabled = false
   }
@@ -240,9 +242,12 @@ class FolderWatcher extends EventEmitter {
    */
   addIgnoreDir(path) {
     path = this.cleanDirPath(path)
-    if (this.ignoreDirs.includes(path)) return
     this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
-    Logger.debug(`[Watcher] Ignoring directory "${path}"`)
+    if (this.ignoreDirs.includes(path)) {
+      // Already ignoring dir
+      return
+    }
+    Logger.debug(`[Watcher] addIgnoreDir: Ignoring directory "${path}"`)
     this.ignoreDirs.push(path)
   }
 
@@ -255,18 +260,24 @@ class FolderWatcher extends EventEmitter {
    */
   removeIgnoreDir(path) {
     path = this.cleanDirPath(path)
-    if (!this.ignoreDirs.includes(path) || this.pendingDirsToRemoveFromIgnore.includes(path)) return
+    if (!this.ignoreDirs.includes(path)) {
+      Logger.debug(`[Watcher] removeIgnoreDir: Path is not being ignored "${path}"`)
+      return
+    }
 
     // Add a 5 second delay before removing the ignore from this dir
-    this.pendingDirsToRemoveFromIgnore.push(path)
-    setTimeout(() => {
+    if (!this.pendingDirsToRemoveFromIgnore.includes(path)) {
+      this.pendingDirsToRemoveFromIgnore.push(path)
+    }
+
+    clearTimeout(this.removeFromIgnoreTimer)
+    this.removeFromIgnoreTimer = setTimeout(() => {
       if (this.pendingDirsToRemoveFromIgnore.includes(path)) {
         this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
-        Logger.debug(`[Watcher] No longer ignoring directory "${path}"`)
+        Logger.debug(`[Watcher] removeIgnoreDir: No longer ignoring directory "${path}"`)
         this.ignoreDirs = this.ignoreDirs.filter(p => p !== path)
       }
     }, 5000)
-
   }
 }
 module.exports = FolderWatcher

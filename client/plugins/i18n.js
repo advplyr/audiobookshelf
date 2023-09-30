@@ -13,6 +13,7 @@ const languageCodeMap = {
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
   'lt': { label: 'Lietuvių', dateFnsLocale: 'lt' },
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
+  'no': { label: 'Norsk', dateFnsLocale: 'no' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
   'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
