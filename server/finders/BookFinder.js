@@ -136,6 +136,10 @@ class BookFinder {
     if (!booksFiltered.length && books.length) {
       if (this.verbose) Logger.debug(`Search has ${books.length} matches, but no close title matches`)
     }
+    booksFiltered.sort((a, b) => {
+      return a.totalDistance - b.totalDistance
+    })
+
     return booksFiltered
   }
 
@@ -280,12 +284,6 @@ class BookFinder {
           }
         }
       }
-    }
-
-    if (provider === 'openlibrary') {
-      books.sort((a, b) => {
-        return a.totalDistance - b.totalDistance
-      })
     }
 
     return books
