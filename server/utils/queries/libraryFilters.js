@@ -205,6 +205,15 @@ module.exports = {
         }
       }
     ]
+
+    // Handle library setting to hide single book series
+    // TODO: Merge with existing query
+    if (library.settings.hideSingleBookSeries) {
+      seriesWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id)`), {
+        [Sequelize.Op.gt]: 1
+      }))
+    }
+
     // Handle user permissions to only include series with at least 1 book
     // TODO: Simplify to a single query
     if (userPermissionBookWhere.bookWhere.length) {
