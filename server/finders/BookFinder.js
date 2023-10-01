@@ -183,34 +183,66 @@ class BookFinder {
     return books
   }
 
-  addTitleCandidate(title, candidates) {
-    // Main variant
-    const cleanTitle = this.cleanTitleForCompares(title).trim()
-    if (!cleanTitle) return
-    candidates.add(cleanTitle)
+  static TitleCandidates = class {
 
-    let candidate = cleanTitle
+    constructor(bookFinder, cleanAuthor) {
+      this.bookFinder = bookFinder
+      this.candidates = new Set()
+      this.cleanAuthor = cleanAuthor
+    }
 
-    // Remove subtitle
-    candidate = candidate.replace(/([,:;_]| by ).*/g, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+    add(title) {
+      const titleTransformers = [
+        [/([,:;_]| by ).*/g, ''],                  // Remove subtitle
+        [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
+        [/(^| )\d+k(bps)?( |$)/, ' '],             // Remove bitrate
+        [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, '']  // Remove edition
+      ]
 
-    // Remove preceding/trailing numbers
-    candidate = candidate.replace(/^\d+ | \d+$/g, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+      // Main variant
+      const cleanTitle = this.bookFinder.cleanTitleForCompares(title).trim()
+      if (!cleanTitle) return
+      this.candidates.add(cleanTitle)
 
-    // Remove bitrate
-    candidate = candidate.replace(/(^| )\d+k(bps)?( |$)/, " ").trim()
-    if (candidate)
-      candidates.add(candidate)
+      let candidate = cleanTitle
 
-    // Remove edition
-    candidate = candidate.replace(/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+      for (const transformer of titleTransformers) {
+        candidate = candidate.replace(transformer[0], transformer[1]).trim()
+        if (candidate) {
+          this.candidates.add(candidate)
+        }
+      }
+    }
+
+    get size() {
+      return this.candidates.size
+    }
+
+    getCandidates() {
+      var candidates = [...this.candidates]
+      candidates.sort((a, b) => {
+        // Candidates that include the author are likely low quality
+        const includesAuthorDiff = !b.includes(this.cleanAuthor) - !a.includes(this.cleanAuthor)
+        if (includesAuthorDiff) return includesAuthorDiff
+        // Candidates that include only digits are also likely low quality
+        const onlyDigits = /^\d+$/
+        const includesOnlyDigitsDiff = !onlyDigits.test(b) - !onlyDigits.test(a)
+        if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
+        // Start with longer candidaets, as they are likely more specific
+        const lengthDiff = b.length - a.length
+        if (lengthDiff) return lengthDiff
+        return b.localeCompare(a)
+      })
+      Logger.debug(`[${this.constructor.name}] Found ${candidates.length} fuzzy title candidates`)
+      Logger.debug(candidates)
+      return candidates
+    }
+
+    delete(title) {
+      return this.candidates.delete(title)
+    }
   }
+
 
   /**
    * Search for books including fuzzy searches
@@ -240,46 +272,33 @@ class BookFinder {
       title = title.trim().toLowerCase()
       author = author.trim().toLowerCase()
 
+      const cleanAuthor = this.cleanAuthorForCompares(author)
+
       // Now run up to maxFuzzySearches fuzzy searches
-      let candidates = new Set()
-      let cleanedAuthor = this.cleanAuthorForCompares(author)
-      this.addTitleCandidate(title, candidates)
+      let titleCandidates = new BookFinder.TitleCandidates(this, cleanAuthor)
+      titleCandidates.add(title)
 
       // remove parentheses and their contents, and replace with a separator
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}/g, " - ")
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
       for (const titlePart of titleParts) {
-        this.addTitleCandidate(titlePart, candidates)
+        titleCandidates.add(titlePart)
       }
       // We already searched for original title
-      if (author == cleanedAuthor) candidates.delete(title)
-      if (candidates.size > 0) {
-        candidates = [...candidates]
-        candidates.sort((a, b) => {
-          // Candidates that include the author are likely low quality
-          const includesAuthorDiff = !b.includes(cleanedAuthor) - !a.includes(cleanedAuthor)
-          if (includesAuthorDiff) return includesAuthorDiff
-          // Candidates that include only digits are also likely low quality
-          const onlyDigits = /^\d+$/
-          const includesOnlyDigitsDiff = !onlyDigits.test(b) - !onlyDigits.test(a)
-          if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
-          // Start with longer candidaets, as they are likely more specific
-          const lengthDiff = b.length - a.length
-          if (lengthDiff) return lengthDiff
-          return b.localeCompare(a)
-        })
-        Logger.debug(`[BookFinder] Found ${candidates.length} fuzzy title candidates`, candidates)
-        for (const candidate of candidates) {
+      if (author == cleanAuthor) titleCandidates.delete(title)
+      if (titleCandidates.size > 0) {
+        titleCandidates = titleCandidates.getCandidates()
+        for (const titleCandidate of titleCandidates) {
           if (++numFuzzySearches > maxFuzzySearches) return books
-          books = await this.runSearch(candidate, cleanedAuthor, provider, asin, maxTitleDistance, maxAuthorDistance)
+          books = await this.runSearch(titleCandidate, cleanAuthor, provider, asin, maxTitleDistance, maxAuthorDistance)
           if (books.length) break
         }
         if (!books.length) {
           // Now try searching without the author
-          for (const candidate of candidates) {
+          for (const titleCandidate of titleCandidates) {
             if (++numFuzzySearches > maxFuzzySearches) return books
-            books = await this.runSearch(candidate, '', provider, asin, maxTitleDistance, maxAuthorDistance)
+            books = await this.runSearch(titleCandidate, '', provider, asin, maxTitleDistance, maxAuthorDistance)
             if (books.length) break
           }
         }
