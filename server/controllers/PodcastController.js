@@ -115,8 +115,8 @@ class PodcastController {
     res.json({ podcast })
   }
 
-  async getPodcastsWithInboundFeed(req, res) {
-    const podcasts = await Database.podcastModel.getAllInboundFeeds()
+  async getPodcastsWithIncomingFeeds(req, res) {
+    const podcasts = await Database.podcastModel.getAllIncomingFeeds()
     res.json({
       podcasts
     })

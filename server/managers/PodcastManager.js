@@ -409,9 +409,9 @@ class PodcastManager {
         }
     }
 
-    async getPodcastsWithInboundFeed() {
-        const podcasts = await Database.models.podcast.getAllInboundFeeds()
-        Logger.info(`[PodcastManager] Fetched all podcasts with feed`)
+    async getPodcastsWithIncomingFeeds() {
+        const podcasts = await Database.models.podcast.getAllIncomingFeeds()
+        Logger.info(`[PodcastManager] Fetched ${podcasts.length} podcasts with incoming feeds`)
         return podcasts
     }
 }

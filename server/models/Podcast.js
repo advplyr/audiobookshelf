@@ -120,9 +120,9 @@ class Podcast extends Model {
     }
   }
 
-  static async getAllInboundFeeds(){
+  static async getAllIncomingFeeds(){
     const podcasts = await this.findAll()
-    return podcasts.map(p => this.getFromOld(p))
+    return podcasts.map(p => this.getFromOld({metadata: p.dataValues}))
   }
 
   /**

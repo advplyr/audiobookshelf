@@ -227,7 +227,7 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.get('/podcasts/inboundFeeds', PodcastController.getPodcastsWithInboundFeed.bind(this))
+    this.router.get('/podcasts/incomingFeeds', PodcastController.getPodcastsWithIncomingFeeds.bind(this))
     this.router.get('/podcasts/:id/feed', PodcastController.middleware.bind(this), PodcastController.checkPodcastFeed.bind(this))
     this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
