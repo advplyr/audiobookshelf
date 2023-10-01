@@ -280,12 +280,6 @@ class LibraryItemController {
     return CacheManager.handleCoverCache(res, libraryItem.id, libraryItem.media.coverPath, options)
   }
 
-  // GET: api/items/:id/stream
-  openStream(req, res) {
-    // this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
-    res.sendStatus(500)
-  }
-
   // POST: api/items/:id/play
   startPlaybackSession(req, res) {
     if (!req.libraryItem.media.numTracks && req.libraryItem.mediaType !== 'video') {
