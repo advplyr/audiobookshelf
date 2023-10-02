@@ -87,7 +87,7 @@ function fetchDescription(metadata) {
   // check if description is HTML or plain text. only plain text allowed
   // calibre stores < and > as &lt; and &gt;
   description = description.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  return htmlSanitizer.stripAllTags(description)
+  return htmlSanitizer.sanitize(description)
 }
 
 function fetchGenres(metadata) {

@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" />
+      <ui-rich-text-editor ref="descriptionInput" v-model="details.description" :label="$strings.LabelDescription" class="mt-2" />
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <trix-editor :contenteditable="!disabledEditor" :class="['trix-content']" ref="trix" :input="computedId" :placeholder="placeholder" @trix-change="handleContentChange" @trix-initialize="handleInitialize" @trix-focus="processTrixFocus" @trix-blur="processTrixBlur" />
+    <trix-editor :contenteditable="!disabledEditor" :class="['trix-content', editorClasses]" ref="trix" :input="computedId" :placeholder="placeholder" @trix-change="handleContentChange" @trix-initialize="handleInitialize" @trix-focus="processTrixFocus" @trix-blur="processTrixBlur" />
     <input type="hidden" :name="inputName" :id="computedId" :value="editorContent" />
   </div>
 </template>
@@ -21,6 +21,7 @@ export default {
     event: 'update'
   },
   props: {
+    editorClasses: String, // classes to apply to the editor but not the toolbar
     /**
      * This prop will put the editor in read-only mode
      */
@@ -224,12 +225,12 @@ export default {
       /** Disable toolbar and editor by pointer events styling */
       if (editorState) {
         this.$refs.trix.toolbarElement.style['pointer-events'] = 'none'
+        this.$refs.trix.toolbarElement.style['display'] = 'none'
         this.$refs.trix.contentEditable = false
-        this.$refs.trix.style['background'] = '#e9ecef'
       } else {
         this.$refs.trix.toolbarElement.style['pointer-events'] = 'unset'
+        this.$refs.trix.toolbarElement.style['display'] = 'block'
         this.$refs.trix.style['pointer-events'] = 'unset'
-        this.$refs.trix.style['background'] = 'transparent'
       }
     },
     overrideConfig(config) {

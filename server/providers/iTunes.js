@@ -69,7 +69,8 @@ class iTunes {
       artistId: data.artistId,
       title: data.collectionName,
       author,
-      description: htmlSanitizer.stripAllTags(data.description || ''),
+      description: htmlSanitizer.sanitize(data.description || ''),
+      descriptionPlain: htmlSanitizer.stripAllTags(data.description || ''),
       publishedYear: data.releaseDate ? data.releaseDate.split('-')[0] : null,
       genres: data.primaryGenreName ? [data.primaryGenreName] : null,
       cover: this.getCoverArtwork(data)

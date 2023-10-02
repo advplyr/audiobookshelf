@@ -24,7 +24,7 @@
           </div>
         </div>
         <div class="w-full max-h-12 overflow-hidden">
-          <p class="text-gray-500 text-xs">{{ book.description }}</p>
+          <p class="text-gray-500 text-xs">{{ book.descriptionPlain || book.description }}</p>
         </div>
       </div>
       <div v-else class="px-4 flex-grow">
