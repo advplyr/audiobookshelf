@@ -167,6 +167,30 @@ class AuthorController {
     }
   }
 
+  /**
+   * DELETE: /api/authors/:id
+   * Remove author from all books and delete
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async delete(req, res) {
+    Logger.info(`[AuthorController] Removing author "${req.author.name}"`)
+
+    await Database.authorModel.removeById(req.author.id)
+
+    if (req.author.imagePath) {
+      await CacheManager.purgeImageCache(req.author.id) // Purge cache
+    }
+
+    SocketAuthority.emitter('author_removed', req.author.toJSON())
+
+    // Update filter data
+    Database.removeAuthorFromFilterData(req.author.libraryId, req.author.id)
+
+    res.sendStatus(200)
+  }
+
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'

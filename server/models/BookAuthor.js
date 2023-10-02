@@ -47,10 +47,14 @@ class BookAuthor extends Model {
     book.belongsToMany(author, { through: BookAuthor })
     author.belongsToMany(book, { through: BookAuthor })
 
-    book.hasMany(BookAuthor)
+    book.hasMany(BookAuthor, {
+      onDelete: 'CASCADE'
+    })
     BookAuthor.belongsTo(book)
 
-    author.hasMany(BookAuthor)
+    author.hasMany(BookAuthor, {
+      onDelete: 'CASCADE'
+    })
     BookAuthor.belongsTo(author)
   }
 }

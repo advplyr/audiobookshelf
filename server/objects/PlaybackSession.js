@@ -168,7 +168,13 @@ class PlaybackSession {
     this.currentTime = session.currentTime || 0
 
     this.startedAt = session.startedAt
-    this.updatedAt = session.updatedAt || null
+    this.updatedAt = session.updatedAt || session.startedAt
+
+    // Local playback sessions dont set this date field so set using updatedAt
+    if (!this.date && session.updatedAt) {
+      this.date = date.format(new Date(session.updatedAt), 'YYYY-MM-DD')
+      this.dayOfWeek = date.format(new Date(session.updatedAt), 'dddd')
+    }
   }
 
   get mediaItemId() {

@@ -33,8 +33,10 @@
             </div>
 
             <div class="flex pt-2 px-2">
-              <ui-btn type="button" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
+              <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
               <div class="flex-grow" />
+              <ui-btn type="button" class="mx-2" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
+
               <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
             </div>
           </div>
@@ -91,6 +93,9 @@ export default {
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {
@@ -99,6 +104,31 @@ export default {
       this.authorCopy.asin = this.author.asin
       this.authorCopy.description = this.author.description
       this.authorCopy.imagePath = this.author.imagePath
+    },
+    removeClick() {
+      const payload = {
+        message: this.$getString('MessageConfirmRemoveAuthor', [this.author.name]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.processing = true
+            this.$axios
+              .$delete(`/api/authors/${this.authorId}`)
+              .then(() => {
+                this.$toast.success('Author removed')
+                this.show = false
+              })
+              .catch((error) => {
+                console.error('Failed to remove author', error)
+                this.$toast.error('Failed to remove author')
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     async submitForm() {
       var keysToCheck = ['name', 'asin', 'description', 'imagePath']

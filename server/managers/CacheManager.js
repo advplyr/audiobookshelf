@@ -39,14 +39,14 @@ class CacheManager {
     }
   }
 
-  async handleCoverCache(res, libraryItem, options = {}) {
+  async handleCoverCache(res, libraryItemId, coverPath, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    const path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const path = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(path)) {
@@ -67,11 +67,7 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      return res.sendStatus(500)
-    }
-
-    const writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
+    const writtenFile = await resizeImage(coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     if (global.XAccel) {

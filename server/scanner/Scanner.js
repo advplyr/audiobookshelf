@@ -36,7 +36,7 @@ class Scanner {
       var searchISBN = options.isbn || libraryItem.media.metadata.isbn
       var searchASIN = options.asin || libraryItem.media.metadata.asin
 
-      var results = await BookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
+      var results = await BookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
       if (!results.length) {
         return {
           warning: `No ${provider} match found`

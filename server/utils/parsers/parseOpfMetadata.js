@@ -16,8 +16,8 @@ function parseCreators(metadata) {
 }
 
 function fetchCreators(creators, role) {
-  if (!creators || !creators.length) return null
-  return [...new Set(creators.filter(c => c.role === role).map(c => c.value))]
+  if (!creators?.length) return null
+  return [...new Set(creators.filter(c => c.role === role && c.value).map(c => c.value))]
 }
 
 function fetchTagString(metadata, tag) {
@@ -92,7 +92,7 @@ function fetchDescription(metadata) {
 
 function fetchGenres(metadata) {
   if (!metadata['dc:subject'] || !metadata['dc:subject'].length) return []
-  return [...new Set(metadata['dc:subject'].filter(g => typeof g === 'string'))]
+  return [...new Set(metadata['dc:subject'].filter(g => g && typeof g === 'string'))]
 }
 
 function fetchLanguage(metadata) {
@@ -122,7 +122,7 @@ function fetchNarrators(creators, metadata) {
 
 function fetchTags(metadata) {
   if (!metadata['dc:tag'] || !metadata['dc:tag'].length) return []
-  return [...new Set(metadata['dc:tag'].filter(tag => typeof tag === 'string'))]
+  return [...new Set(metadata['dc:tag'].filter(tag => tag && typeof tag === 'string'))]
 }
 
 function stripPrefix(str) {
