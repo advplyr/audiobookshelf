@@ -339,7 +339,7 @@ class Stream extends EventEmitter {
       } else {
         Logger.error('Ffmpeg Err', '"' + err.message + '"')
 
-        // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172
+        // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172 and https://github.com/advplyr/audiobookshelf/issues/2157
         const aacErrorMsg = 'ffmpeg exited with code 1:'
         if (audioCodec === 'copy' && this.isAACEncodable && err.message && err.message.startsWith(aacErrorMsg)) {
           Logger.info(`[Stream] Re-attempting stream with AAC encode`)
