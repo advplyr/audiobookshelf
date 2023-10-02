@@ -259,7 +259,6 @@ class LibraryItemController {
 
     // Check if library item media has a cover path
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      Logger.debug(`[LibraryItemController] getCover: Library item "${req.params.id}" has no cover path`)
       return res.sendStatus(404)
     }
 
