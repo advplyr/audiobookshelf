@@ -100,7 +100,7 @@ class BackupManager {
     let entries
     try {
       entries = await zip.entries()
-    } catch(error){
+    } catch (error) {
       // Not a valid zip file
       Logger.error('[BackupManager] Failed to read backup file - backup might not be a valid .zip file', tempPath, error)
       return res.status(400).send('Failed to read backup file - backup might not be a valid .zip file')
@@ -182,7 +182,6 @@ class BackupManager {
             data = await zip.entryData('details')
           } catch (error) {
             Logger.error(`[BackupManager] Failed to unzip backup "${fullFilePath}"`, error)
-            await zip.close()
             continue
           }
 

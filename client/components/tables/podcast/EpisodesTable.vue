@@ -191,7 +191,7 @@ export default {
     }
   },
   methods: {
-    search() {},
+    submit() {},
     inputUpdate() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {

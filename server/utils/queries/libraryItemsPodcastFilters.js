@@ -247,7 +247,7 @@ module.exports = {
         podcastEpisodeWhere['$mediaProgresses.isFinished$'] = true
       }
     } else if (filterGroup === 'recent') {
-      libraryItemWhere['createdAt'] = {
+      podcastEpisodeWhere['createdAt'] = {
         [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
       }
     }

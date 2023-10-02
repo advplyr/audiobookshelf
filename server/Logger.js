@@ -92,7 +92,7 @@ class Logger {
    * @param  {...any} args
    */
   dev(...args) {
-    if (!this.isDev) return
+    if (!this.isDev || process.env.HIDE_DEV_LOGS === '1') return
     console.log(`[${this.timestamp}] DEV:`, ...args)
   }
 

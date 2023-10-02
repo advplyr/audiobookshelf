@@ -795,6 +795,9 @@ class LibraryItem extends Model {
           fields: ['libraryId', 'mediaType']
         },
         {
+          fields: ['libraryId', 'mediaId', 'mediaType']
+        },
+        {
           fields: ['birthtime']
         },
         {

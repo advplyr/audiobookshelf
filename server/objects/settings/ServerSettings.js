@@ -147,6 +147,7 @@ class ServerSettings {
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       homeBookshelfView: this.homeBookshelfView,
       bookshelfView: this.bookshelfView,
+      podcastEpisodeSchedule: this.podcastEpisodeSchedule,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,

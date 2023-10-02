@@ -234,7 +234,7 @@ class BookFinder {
     if (!books.length && maxFuzzySearches > 0) {
       // normalize title and author
       title = title.trim().toLowerCase()
-      author = author.trim().toLowerCase()
+      author = author?.trim().toLowerCase() || ''
 
       // Now run up to maxFuzzySearches fuzzy searches
       let candidates = new Set()
