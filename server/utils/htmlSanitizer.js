@@ -4,7 +4,7 @@ const { entities } = require("./htmlEntities");
 function sanitize(html) {
   const sanitizerOptions = {
     allowedTags: [
-      'p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del', 'br'
+      'p', 'ol', 'ul', 'li', 'a', 'strong', 'b', 'em', 'i', 'del', 'br'
     ],
     disallowedTagsMode: 'discard',
     allowedAttributes: {
