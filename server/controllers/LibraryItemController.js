@@ -259,7 +259,6 @@ class LibraryItemController {
 
     // Check if library item media has a cover path
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      Logger.debug(`[LibraryItemController] getCover: Library item "${req.params.id}" has no cover path`)
       return res.sendStatus(404)
     }
 
@@ -278,12 +277,6 @@ class LibraryItemController {
       width: width ? parseInt(width) : null
     }
     return CacheManager.handleCoverCache(res, libraryItem.id, libraryItem.media.coverPath, options)
-  }
-
-  // GET: api/items/:id/stream
-  openStream(req, res) {
-    // this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
-    res.sendStatus(500)
   }
 
   // POST: api/items/:id/play
