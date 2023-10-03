@@ -59,12 +59,12 @@ class BookFinder {
 
     // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
     cleaned = cleaned.replace(/'/g, '')
-    return this.replaceAccentedChars(cleaned)
+    return this.replaceAccentedChars(cleaned).toLowerCase()
   }
 
   cleanAuthorForCompares(author) {
     if (!author) return ''
-    return this.replaceAccentedChars(author)
+    return this.replaceAccentedChars(author).toLowerCase()
   }
 
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
