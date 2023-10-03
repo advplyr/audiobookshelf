@@ -285,14 +285,14 @@ class PodcastManager {
             Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`)
             return false
         }
-        var feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
+        let feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
         if (!feed || !feed.episodes) {
             Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id}, URL: ${podcastLibraryItem.media.metadata.feedUrl})`, feed)
             return false
         }
 
         // Filter new and not already has
-        var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
+        let newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
 
         if (maxNewEpisodes > 0) {
             newEpisodes = newEpisodes.slice(0, maxNewEpisodes)
@@ -326,13 +326,22 @@ class PodcastManager {
         return newEpisodes
     }
 
-    setFeedHealthStatus(libraryItem, isHealthy) {
-        libraryItem.media.metadata.feedHealthy = isHealthy
+    async setFeedHealthStatus(podcastId, isHealthy) {
+        const podcast = await Database.podcastModel.findByPk(podcastId)
+
+        if (!podcast) return
+
+        podcast.feedHealthy = isHealthy
         if (isHealthy) {
-            libraryItem.media.lastSuccessfulFetchAt = Date.now()
+            podcast.lastSuccessfulFetchAt = Date.now()
         }
-        libraryItem.updatedAt = Date.now()
-        Database.updateLibraryItem(libraryItem)
+        podcast.lastEpisodeCheck = Date.now()
+        podcast.updatedAt = Date.now()
+        await Database.podcastModel.update(podcast, {
+            where: { id: podcastId }
+        })
+
+        return {lastEpisodeCheck: podcast.lastEpisodeCheck, lastSuccessfulFetchAt: podcast.lastSuccessfulFetchAt, feedHealthy: podcast.feedHealthy}
     }
 
     async findEpisode(rssFeedUrl, searchTitle) {
@@ -407,12 +416,6 @@ class PodcastManager {
             currentDownload: _currentDownload?.toJSONForClient(),
             queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
         }
-    }
-
-    async getPodcastsWithIncomingFeeds() {
-        const podcasts = await Database.models.podcast.getAllIncomingFeeds()
-        Logger.info(`[PodcastManager] Fetched ${podcasts.length} podcasts with incoming feeds`)
-        return podcasts
     }
 }
 
