@@ -1,5 +1,6 @@
 const tone = require('node-tone')
 const fs = require('../libs/fsExtra')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
 
 function getToneMetadataObject(libraryItem, chapters, trackTotal, mimeType = null) {
@@ -23,8 +24,8 @@ function getToneMetadataObject(libraryItem, chapters, trackTotal, mimeType = nul
     metadataObject['albumArtist'] = bookMetadata.authorName
   }
   if (bookMetadata.description) {
-    metadataObject['comment'] = bookMetadata.description
-    metadataObject['description'] = bookMetadata.description
+    metadataObject['comment'] = htmlSanitizer.stripAllTags(bookMetadata.description)
+    metadataObject['description'] = htmlSanitizer.stripAllTags(bookMetadata.description)
   }
   if (bookMetadata.narratorName) {
     metadataObject['narrator'] = bookMetadata.narratorName
