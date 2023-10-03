@@ -417,7 +417,7 @@
   "LabelSettingsPreferAudioMetadata": "Prefer audio metadata",
   "LabelSettingsPreferAudioMetadataHelp": "Audio file ID3 meta tags will be used for book details over folder names",
   "LabelSettingsPreferMatchedMetadata": "Prefer matched metadata",
-  "LabelSettingsPreferMatchedMetadataHelp": "Matched data will overide item details when using Quick Match. By default Quick Match will only fill in missing details.",
+  "LabelSettingsPreferMatchedMetadataHelp": "Matched data will override item details when using Quick Match. By default Quick Match will only fill in missing details.",
   "LabelSettingsPreferOPFMetadata": "Prefer OPF metadata",
   "LabelSettingsPreferOPFMetadataHelp": "OPF file metadata will be used for book details over folder names",
   "LabelSettingsSkipMatchingBooksWithASIN": "Skip matching books that already have an ASIN",
