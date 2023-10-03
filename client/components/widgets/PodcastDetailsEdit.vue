@@ -10,7 +10,15 @@
         </div>
       </div>
 
-      <ui-text-input-with-label ref="feedUrlInput" v-model="details.feedUrl" :label="$strings.LabelRSSFeedURL" class="mt-2" />
+      <div class="flex mt-2">
+        <div class="w-full relative">
+          <ui-text-input-with-label ref="feedUrlInput" v-model="details.feedUrl" :label="$strings.LabelRSSFeedURL" class="mt-2" />
+          <div v-if="details.feedHealthy != null" class="material-icons absolute right-2 bottom-1 p-0.5">
+            <widgets-feed-healthy-indicator :value="details.feedHealthy"></widgets-feed-healthy-indicator>
+          </div>
+        </div>
+      </div>
+      <p v-if="details.lastSuccessfulFetchAt" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelFeedLastSuccessfulCheck }}: {{$dateDistanceFromNow(details.lastSuccessfulFetchAt)}}</p>
 
       <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" />
 
@@ -71,7 +79,9 @@ export default {
         itunesArtistId: null,
         explicit: false,
         language: null,
-        type: null
+        type: null,
+        feedHealthy: false,
+        lastSuccessfulFetchAt: null
       },
       newTags: []
     }
@@ -229,6 +239,8 @@ export default {
       this.details.language = this.mediaMetadata.language || ''
       this.details.explicit = !!this.mediaMetadata.explicit
       this.details.type = this.mediaMetadata.type || 'episodic'
+      this.details.feedHealthy = !!this.mediaMetadata.feedHealthy
+      this.details.lastSuccessfulFetchAt = this.mediaMetadata.lastSuccessfulFetchAt || null
 
       this.newTags = [...(this.media.tags || [])]
     },

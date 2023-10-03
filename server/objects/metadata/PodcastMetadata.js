@@ -16,6 +16,8 @@ class PodcastMetadata {
     this.explicit = false
     this.language = null
     this.type = null
+    this.lastSuccessfulFetchAt = null
+    this.feedHealthy = null
 
     if (metadata) {
       this.construct(metadata)
@@ -36,6 +38,8 @@ class PodcastMetadata {
     this.explicit = metadata.explicit
     this.language = metadata.language || null
     this.type = metadata.type || 'episodic'
+    this.lastSuccessfulFetchAt = metadata.lastSuccessfulFetchAt || null
+    this.feedHealthy = metadata.feedHealthy || null
   }
 
   toJSON() {
@@ -52,7 +56,9 @@ class PodcastMetadata {
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
       language: this.language,
-      type: this.type
+      type: this.type,
+      lastSuccessfulFetchAt: this.lastSuccessfulFetchAt,
+      feedHealthy: this.feedHealthy
     }
   }
 
@@ -71,7 +77,9 @@ class PodcastMetadata {
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
       language: this.language,
-      type: this.type
+      type: this.type,
+      lastSuccessfulFetchAt: this.lastSuccessfulFetchAt,
+      feedHealthy: this.feedHealthy
     }
   }
 
@@ -120,6 +128,8 @@ class PodcastMetadata {
     if (mediaMetadata.genres && mediaMetadata.genres.length) {
       this.genres = [...mediaMetadata.genres]
     }
+    this.lastSuccessfulFetchAt = mediaMetadata.lastSuccessfulFetchAt || null
+    this.feedHealthy = mediaMetadata.feedHealthy || null
   }
 
   update(payload) {
