@@ -276,7 +276,6 @@ class BookFinder {
 
       // Now run up to maxFuzzySearches fuzzy searches
       let titleCandidates = new BookFinder.TitleCandidates(this, cleanAuthor)
-      titleCandidates.add(title)
 
       // remove parentheses and their contents, and replace with a separator
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}/g, " - ")
@@ -285,16 +284,15 @@ class BookFinder {
       for (const titlePart of titleParts) {
         titleCandidates.add(titlePart)
       }
-      // We already searched for original title
-      if (author == cleanAuthor) titleCandidates.delete(title)
       if (titleCandidates.size > 0) {
         titleCandidates = titleCandidates.getCandidates()
         for (const titleCandidate of titleCandidates) {
+          if (titleCandidate == title && cleanAuthor == author) continue // We already tried this
           if (++numFuzzySearches > maxFuzzySearches) return books
           books = await this.runSearch(titleCandidate, cleanAuthor, provider, asin, maxTitleDistance, maxAuthorDistance)
           if (books.length) break
         }
-        if (!books.length) {
+        if (!books.length && cleanAuthor) {
           // Now try searching without the author
           for (const titleCandidate of titleCandidates) {
             if (++numFuzzySearches > maxFuzzySearches) return books
