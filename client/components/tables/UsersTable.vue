@@ -129,7 +129,6 @@ export default {
           this.users = res.users.sort((a, b) => {
             return a.createdAt - b.createdAt
           })
-          console.log('Loaded users', this.users)
         })
         .catch((error) => {
           console.error('Failed', error)
