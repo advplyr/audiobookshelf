@@ -206,12 +206,11 @@ class BookFinder {
 
       let candidate = cleanTitle
 
-      for (const transformer of titleTransformers) {
+      for (const transformer of titleTransformers)
         candidate = candidate.replace(transformer[0], transformer[1]).trim()
-        if (candidate) {
-          this.candidates.add(candidate)
-        }
-      }
+
+      if (candidate)
+        this.candidates.add(candidate)
     }
 
     get size() {
