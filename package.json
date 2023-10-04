@@ -34,13 +34,13 @@
     "express": "^4.17.1",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
-    "jsdom": "^22.1.0",
     "node-tone": "^1.0.1",
     "nodemailer": "^6.9.2",
     "sequelize": "^6.32.1",
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
     "xml2js": "^0.5.0",
+    "xmldom": "^0.6.0",
     "xpath": "^0.0.33"
   },
   "devDependencies": {

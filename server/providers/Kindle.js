@@ -1,8 +1,7 @@
 const axios = require('axios')
-const htmlSanitizer = require('../utils/htmlSanitizer') // Assuming htmlSanitizer is in the same folder as in Audible
 const Logger = require('../Logger')
 const xpath = require('xpath')
-const jsdom = require('jsdom')
+const { DOMParser } = require('xmldom')
 
 class Kindle {
   cleanResult(result) {
@@ -44,10 +43,15 @@ class Kindle {
     Logger.debug(`[Kindle] Search url: ${url}`)
 
     var items = await axios
-      .get(url)
+      .get(url, { headers: { 'User-Agent': '' } }) //Amazon blocks the axios user agent so we strip it
       .then((result) => {
         if (!result || !result.data) return []
-        const dom = new jsdom.JSDOM(result.data)
+        const dom = new DOMParser({
+          errorHandler: {
+            warning: () => {}, // Suppress warning messages
+            error: () => {} // Suppress error messages
+          }
+        }).parseFromString(result.data)
         return xpath.select('//div[contains(@class, "s-result-list")]//div[@data-index and @data-asin]', dom)
       })
       .catch((error) => {
