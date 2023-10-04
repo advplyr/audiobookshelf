@@ -6,6 +6,10 @@ export const state = () => ({
       value: 'google'
     },
     {
+      text: 'Kindle',
+      value: 'kindle'
+    },
+    {
       text: 'Open Library',
       value: 'openlibrary'
     },

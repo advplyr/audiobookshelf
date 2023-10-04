@@ -1,5 +1,6 @@
 const OpenLibrary = require('../providers/OpenLibrary')
 const GoogleBooks = require('../providers/GoogleBooks')
+const Kindle = require('../providers/Kindle')
 const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
 const Audnexus = require('../providers/Audnexus')
@@ -12,13 +13,14 @@ class BookFinder {
   constructor() {
     this.openLibrary = new OpenLibrary()
     this.googleBooks = new GoogleBooks()
+    this.kindle = new Kindle()
     this.audible = new Audible()
     this.iTunesApi = new iTunes()
     this.audnexus = new Audnexus()
     this.fantLab = new FantLab()
     this.audiobookCovers = new AudiobookCovers()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['google', 'kindle', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
     this.verbose = false
   }
@@ -147,6 +149,16 @@ class BookFinder {
       return []
     }
     // Google has good sort
+    return books
+  }
+
+  async getKindleResults(title, author) {
+    var books = await this.kindle.search(title, author)
+    if (this.verbose) Logger.debug(`Kindle Book Search Results: ${books.length || 0}`)
+    if (books.errorCode) {
+      Logger.error(`Kindle Search Error ${books.errorCode}`)
+      return []
+    }
     return books
   }
 
@@ -309,6 +321,8 @@ class BookFinder {
 
     if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
+    } else if (provider === 'kindle') {
+      books = await this.getKindleResults(title, author)
     } else if (provider.startsWith('audible')) {
       books = await this.getAudibleResults(title, author, asin, provider)
     } else if (provider === 'itunes') {
@@ -319,8 +333,7 @@ class BookFinder {
       books = await this.getFantLabResults(title, author)
     } else if (provider === 'audiobookcovers') {
       books = await this.getAudiobookCoversResults(title)
-    }
-    else {
+    } else {
       books = await this.getGoogleBooksResults(title, author)
     }
     return books
