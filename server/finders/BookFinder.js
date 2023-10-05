@@ -279,9 +279,10 @@ class BookFinder {
       if (cleanAuthor) this.candidates.add(cleanAuthor)
     }
 
-    validateAuthor(name, region = '', maxLevenshtein = 3) {
+    validateAuthor(name, region = '', maxLevenshtein = 2) {
       return this.bookFinder.audnexus.authorASINsRequest(name, region).then((asins) => {
-        for (const asin of asins) {
+        for (const [i, asin] of asins.entries()) {
+          if (i > 10) break
           let cleanName = this.bookFinder.cleanAuthorForCompares(asin.name)
           if (!cleanName) continue
           if (cleanName.includes(name)) return name
