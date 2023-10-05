@@ -64,7 +64,12 @@ class BookFinder {
 
   cleanAuthorForCompares(author) {
     if (!author) return ''
-    return this.replaceAccentedChars(author).toLowerCase()
+    let cleanAuthor = this.replaceAccentedChars(author).toLowerCase()
+    // separate initials
+    cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
+    // remove middle initials
+    cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
+    return cleanAuthor
   }
 
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
