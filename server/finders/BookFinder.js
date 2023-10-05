@@ -189,9 +189,11 @@ class BookFinder {
       this.bookFinder = bookFinder
       this.candidates = new Set()
       this.cleanAuthor = cleanAuthor
+      this.priorities = {}
+      this.positions = {}
     }
 
-    add(title) {
+    add(title, position = 0) {
       const titleTransformers = [
         [/([,:;_]| by ).*/g, ''],                  // Remove subtitle
         [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
@@ -203,14 +205,22 @@ class BookFinder {
       const cleanTitle = this.bookFinder.cleanTitleForCompares(title).trim()
       if (!cleanTitle) return
       this.candidates.add(cleanTitle)
+      this.priorities[cleanTitle] = 0
+      this.positions[cleanTitle] = position
 
       let candidate = cleanTitle
 
       for (const transformer of titleTransformers)
         candidate = candidate.replace(transformer[0], transformer[1]).trim()
 
-      if (candidate)
-        this.candidates.add(candidate)
+      if (candidate != cleanTitle) {
+        if (candidate) {
+          this.candidates.add(candidate)
+          this.priorities[candidate] = 0
+          this.positions[candidate] = position
+        }
+        this.priorities[cleanTitle] = 1
+      }
     }
 
     get size() {
@@ -227,6 +237,12 @@ class BookFinder {
         const onlyDigits = /^\d+$/
         const includesOnlyDigitsDiff = !onlyDigits.test(b) - !onlyDigits.test(a)
         if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
+        // transformed candidates receive higher priority
+        const priorityDiff = this.priorities[a] - this.priorities[b]
+        if (priorityDiff) return priorityDiff
+        // if same priorirty, prefer candidates that are closer to the beginning (e.g. titles before subtitles)
+        const positionDiff = this.positions[a] - this.positions[b]
+        if (positionDiff) return positionDiff
         // Start with longer candidaets, as they are likely more specific
         const lengthDiff = b.length - a.length
         if (lengthDiff) return lengthDiff
@@ -280,8 +296,8 @@ class BookFinder {
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}/g, " - ")
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
-      for (const titlePart of titleParts) {
-        titleCandidates.add(titlePart)
+      for (const [position, titlePart] of titleParts.entries()) {
+        titleCandidates.add(titlePart, position)
       }
       if (titleCandidates.size > 0) {
         titleCandidates = titleCandidates.getCandidates()
