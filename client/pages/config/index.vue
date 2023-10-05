@@ -52,6 +52,54 @@
           </div>
 
           <div class="pt-4">
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsProxyAuth }}</h2>
+          </div>
+
+          <div class="flex items-end py-2">
+            <ui-toggle-switch labeledBy="settings-enable-proxy-auth" v-model="newServerSettings.proxyAuthEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('proxyAuthEnabled', val)" />
+            <ui-tooltip :text="$strings.LabelSettingsEnableProxyAuthHelp">
+              <p class="pl-4">
+                <span id="settings-enable-proxy-auth">{{ $strings.LabelSettingsEnableProxyAuth }}</span>
+                <span class="material-icons icon-text">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div class="flex-grow py-2" v-if="newServerSettings.proxyAuthEnabled">
+            <div class="flex items-center">
+              <label for="settings-proxy-auth-user-header" class="text-sm font-semibold px-1">
+                {{ $strings.LabelSettingsProxyAuthUsernameHeader }}
+              </label>
+              <ui-tooltip :text="$strings.LabelSettingsProxyAuthUsernameHeaderHelp">
+                <span class="material-icons icon-text">info_outlined</span>
+              </ui-tooltip>
+            </div>
+
+            <div class="relative w-full max-w-52">
+              <ui-text-input inputId="settings-proxy-auth-user-header" :disabled="updatingServerSettings" v-model="newServerSettings.proxyAuthUsernameHeader" @change="(val) => updateSettingsKey('proxyAuthUsernameHeader', val)" />
+            </div>
+
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: X-Authentik-Username</p>
+          </div>
+
+          <div class="flex-grow py-2" v-if="newServerSettings.proxyAuthEnabled">
+            <div class="flex items-center">
+              <label for="settings-proxy-auth-email-header" class="text-sm font-semibold px-1">
+                {{ $strings.LabelSettingsProxyAuthEmailHeader }}
+              </label>
+              <ui-tooltip :text="$strings.LabelSettingsProxyAuthEmailHeaderHelp">
+                <span class="material-icons icon-text">info_outlined</span>
+              </ui-tooltip>
+            </div>
+
+            <div class="relative w-full max-w-52">
+              <ui-text-input inputId="settings-proxy-auth-email-header" :disabled="updatingServerSettings" v-model="newServerSettings.proxyAuthEmailHeader" @change="(val) => updateSettingsKey('proxyAuthEmailHeader', val)" />
+            </div>
+
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: X-Authentik-Email</p>
+          </div>
+
+          <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsDisplay }}</h2>
           </div>
 
