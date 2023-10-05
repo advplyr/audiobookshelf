@@ -317,6 +317,14 @@ class BookFinder {
       return this.candidates.size
     }
 
+    get agressivelyCleanAuthor() {
+      if (this.cleanAuthor) {
+        const agressivelyCleanAuthor = this.cleanAuthor.replace(/[,/-].*$/, '').trim()
+        return agressivelyCleanAuthor ? agressivelyCleanAuthor : this.cleanAuthor
+      }
+      return ''
+    }
+
     async getCandidates() {
       var filteredCandidates = []
       var promises = []
@@ -325,9 +333,9 @@ class BookFinder {
       }
       const results = [...new Set(await Promise.all(promises))]
       filteredCandidates = results.filter(author => author)
-      // if no valid candidates were found, add back the original clean author
-      if (!filteredCandidates.length && this.cleanAuthor) filteredCandidates.push(this.cleanAuthor)
-      // always add an empty author candidate
+      // If no valid candidates were found, add back an aggresively cleaned author version
+      if (!filteredCandidates.length && this.cleanAuthor) filteredCandidates.push(this.agressivelyCleanAuthor)
+      // Always add an empty author candidate
       filteredCandidates.push('')
       Logger.debug(`[${this.constructor.name}] Found ${filteredCandidates.length} fuzzy author candidates`)
       Logger.debug(filteredCandidates)
@@ -364,7 +372,7 @@ class BookFinder {
     books = await this.runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance)
 
     if (!books.length && maxFuzzySearches > 0) {
-      // normalize title and author
+      // Normalize title and author
       title = title.trim().toLowerCase()
       author = author.trim().toLowerCase()
 
@@ -373,7 +381,7 @@ class BookFinder {
       // Now run up to maxFuzzySearches fuzzy searches
       let authorCandidates = new BookFinder.AuthorCandidates(this, cleanAuthor)
 
-      // remove underscores and parentheses with their contents, and replace with a separator
+      // Remove underscores and parentheses with their contents, and replace with a separator
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, " - ")
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
