@@ -202,9 +202,11 @@ class BookFinder {
 
       const titleTransformers = [
         [/([,:;_]| by ).*/g, ''],                  // Remove subtitle
-        [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
         [/(^| )\d+k(bps)?( |$)/, ' '],             // Remove bitrate
-        [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, '']  // Remove edition
+        [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, ''], // Remove edition
+        [/(^| |\.)(m4b|m4a|mp3)( |$)/g, ''],       // Remove file-type
+        [/ a novel.*$/g, ''],                      // Remove "a novel"
+        [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
       ]
 
       // Main variant
