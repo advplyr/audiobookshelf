@@ -14,7 +14,8 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
-    "deploy-linux": "node deploy/linux"
+    "deploy-linux": "node deploy/linux",
+    "format": "prettier --write *.js server/**/*.js"
   },
   "bin": "prod.js",
   "pkg": {
@@ -42,6 +43,7 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "nodemon": "^2.0.20",
+    "prettier": "^3.0.3"
   }
 }
