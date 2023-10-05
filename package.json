@@ -34,6 +34,7 @@
     "express": "^4.17.1",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
+    "limiter": "^2.1.0",
     "node-tone": "^1.0.1",
     "nodemailer": "^6.9.2",
     "sequelize": "^6.32.1",
