@@ -9,7 +9,8 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const seriesFilters = require('../utils/queries/seriesFilters')
 const fileUtils = require('../utils/fileUtils')
-const { sort, createNewSortInstance } = require('../libs/fastSort')
+const { asciiOnlyToLowerCase } = require('../utils/index')
+const { createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -555,7 +556,7 @@ class LibraryController {
       return res.status(400).send('No query string')
     }
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    const query = req.query.q.trim().toLowerCase()
+    const query = asciiOnlyToLowerCase(req.query.q.trim())
 
     const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)

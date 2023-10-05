@@ -167,3 +167,26 @@ module.exports.getTitlePrefixAtEnd = (title) => {
   let [sort, prefix] = getTitleParts(title)
   return prefix ? `${sort}, ${prefix}` : title
 }
+
+/**
+ * to lower case for only ascii characters
+ * used to handle sqlite that doesnt support unicode lower
+ * @see https://github.com/advplyr/audiobookshelf/issues/2187
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.asciiOnlyToLowerCase = (str) => {
+  if (!str) return ''
+
+  let temp = ''
+  for (let chars of str) {
+    let value = chars.charCodeAt()
+    if (value >= 65 && value <= 90) {
+      temp += String.fromCharCode(value + 32)
+    } else {
+      temp += chars
+    }
+  }
+  return temp
+}
