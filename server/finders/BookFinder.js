@@ -372,8 +372,8 @@ class BookFinder {
       // Now run up to maxFuzzySearches fuzzy searches
       let authorCandidates = new BookFinder.AuthorCandidates(this, cleanAuthor)
 
-      // remove parentheses and their contents, and replace with a separator
-      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}/g, " - ")
+      // remove underscores and parentheses with their contents, and replace with a separator
+      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, " - ")
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
       for (const titlePart of titleParts)
