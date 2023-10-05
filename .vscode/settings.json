@@ -3,6 +3,11 @@
   "editor.detectIndentation": true,
   "editor.tabSize": 2,
 
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": false,
+  "files.trimTrailingWhitespace": true,
+  "files.trimFinalNewlines": true,
+
   "[javascript][json][jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
