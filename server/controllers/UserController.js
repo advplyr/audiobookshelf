@@ -1,9 +1,6 @@
-const uuidv4 = require("uuid").v4
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
-
-const User = require('../objects/user/User')
 
 const { toNumber } = require('../utils/index')
 
@@ -36,9 +33,9 @@ class UserController {
    * GET: /api/users/:id
    * Get a single user toJSONForBrowser
    * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   * 
-   * @param {import("express").Request} req 
-   * @param {import("express").Response} res 
+   *
+   * @param {import("express").Request} req
+   * @param {import("express").Response} res
    */
   async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -97,15 +94,8 @@ class UserController {
       return res.status(500).send('Username already taken')
     }
 
-    account.id = uuidv4()
-    account.pash = await this.auth.hashPass(account.password)
-    delete account.password
-    account.token = await this.auth.generateAccessToken({ userId: account.id, username })
-    account.createdAt = Date.now()
-    const newUser = new User(account)
-
-    const success = await Database.createUser(newUser)
-    if (success) {
+    const newUser = await this.auth.createUser(account)
+    if (newUser) {
       SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
       res.json({
         user: newUser.toJSONForBrowser()
@@ -118,9 +108,9 @@ class UserController {
   /**
    * PATCH: /api/users/:id
    * Update user
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async update(req, res) {
     const user = req.reqUser

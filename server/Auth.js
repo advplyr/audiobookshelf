@@ -1,8 +1,11 @@
+const uuidv4 = require("uuid").v4
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
 const requestIp = require('./libs/requestIp')
+
 const Logger = require('./Logger')
 const Database = require('./Database')
+const User = require('./objects/user/User')
 
 class Auth {
   constructor() { }
@@ -53,16 +56,46 @@ class Auth {
       token = authHeader && authHeader.split(' ')[1]
     }
 
-    if (token == null) {
-      Logger.error('Api called without a token', req.path)
+    let proxyUsername = null
+    if (Database.serverSettings.proxyAuthEnabled) {
+      const uHeader = Database.serverSettings.proxyAuthUsernameHeader.toLowerCase()
+      proxyUsername = uHeader ? req.headers[uHeader] : null
+    }
+
+    if (token == null && proxyUsername == null) {
+      Logger.error('Api called without a token and proxy auth is disabled', req.path)
       return res.sendStatus(401)
     }
 
-    const user = await this.verifyToken(token)
-    if (!user) {
-      Logger.error('Verify Token User Not Found', token)
-      return res.sendStatus(404)
+    let user
+    if (token) {
+      user = await this.verifyToken(token)
+      if (!user) {
+        Logger.error('Verify Token User Not Found', token)
+        return res.sendStatus(401)
+      }
+
+      user.isFromProxy = false
+    } else if (proxyUsername) {
+      const eHeader = Database.serverSettings.proxyAuthEmailHeader.toLowerCase()
+      const proxyEmail = eHeader ? req.headers[eHeader] : null
+
+      user = await this.getProxyUser(proxyUsername, proxyEmail)
+      if (!user) {
+        Logger.error('Cannot get user from proxy headers', proxyUsername)
+        return res.sendStatus(401)
+      }
+
+      user.isFromProxy = true
     }
+
+    // if we got here, we should have a valid user in `user`
+    if (!user) {
+      Logger.error('Unknown error getting user')
+      return res.sendStatus(401)
+    }
+
+    // is the user active
     if (!user.isActive) {
       Logger.error('Verify Token User is disabled', token, user.username)
       return res.sendStatus(403)
@@ -110,9 +143,52 @@ class Auth {
     })
   }
 
+  async getProxyUser(username, email) {
+    const user = await Database.userModel.getUserByUsername(username)
+    if (user) {
+      return user
+    }
+
+    if (!email) {
+      return null
+    }
+
+    const account = {
+      username,
+      email,
+      type: 'user',
+      isActive: true,
+    }
+
+    return await this.createUser(account)
+  }
+
+  // create and return a new user from an object with lots of user properties defined
+  async createUser(account) {
+    const username = account.username
+    const usernameExists = await Database.userModel.getUserByUsername(username)
+    if (usernameExists) {
+      return null
+    }
+
+    account.id = uuidv4()
+
+    const password = account.password || uuidv4()
+    delete account.password
+
+    account.pash = await this.hashPass(password)
+
+    account.token = await this.generateAccessToken({ userId: account.id, username })
+    account.createdAt = Date.now()
+    const newUser = new User(account)
+
+    const success = await Database.createUser(newUser)
+    return success ? await Database.userModel.getUserById(newUser.id) : null
+  }
+
   /**
    * Payload returned to a user after successful login
-   * @param {oldUser} user 
+   * @param {oldUser} user
    * @returns {object}
    */
   async getUserLoginResponsePayload(user) {
@@ -187,8 +263,9 @@ class Auth {
       })
     }
 
+    // proxy users can change their password without knowing their old password
     const compare = await this.comparePassword(password, matchingUser)
-    if (!compare) {
+    if (!compare && !req.user.isFromProxy) {
       return res.json({
         error: 'Invalid password'
       })

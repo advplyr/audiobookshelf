@@ -51,6 +51,11 @@ class ServerSettings {
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
 
+    // Reverse Proxy
+    this.proxyAuthEnabled = false
+    this.proxyAuthUsernameHeader = ''
+    this.proxyAuthEmailHeader = ''
+
     this.logLevel = Logger.logLevel
 
     this.version = null
@@ -94,6 +99,11 @@ class ServerSettings {
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
+
+    this.proxyAuthEnabled = !!settings.proxyAuthEnabled
+    this.proxyAuthUsernameHeader = settings.proxyAuthUsernameHeader || ''
+    this.proxyAuthEmailHeader = settings.proxyAuthEmailHeader || ''
+
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -151,6 +161,9 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      proxyAuthEnabled: this.proxyAuthEnabled,
+      proxyAuthUsernameHeader: this.proxyAuthUsernameHeader,
+      proxyAuthEmailHeader: this.proxyAuthEmailHeader,
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,
       language: this.language,
