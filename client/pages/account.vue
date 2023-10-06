@@ -20,14 +20,17 @@
         <div class="w-full h-px bg-white/10 my-4" />
 
         <p v-if="!isGuest" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
+
+        <p v-if="isFromProxy" class="py-2">{{ $strings.NoteChangeProxyPassword }}</p>
+
         <form v-if="!isGuest" @submit.prevent="submitChangePassword">
-          <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" :label="$strings.LabelPassword" class="my-2" />
+          <ui-text-input-with-label v-if="!isFromProxy" v-model="password" :disabled="changingPassword" type="password" :label="$strings.LabelPassword" class="my-2" />
           <ui-text-input-with-label v-model="newPassword" :disabled="changingPassword" type="password" :label="$strings.LabelNewPassword" class="my-2" />
-          <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" :label="$strings.LabelConfirmPassword" class="my-2" />
+          <ui-text-input-with-label v-if="!isFromProxy" v-model="confirmPassword" :disabled="changingPassword" type="password" :label="$strings.LabelConfirmPassword" class="my-2" />
           <div class="flex items-center py-2">
             <p v-if="isRoot" class="text-error py-2 text-xs">* {{ $strings.NoteChangeRootPassword }}</p>
             <div class="flex-grow" />
-            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonSubmit }}</ui-btn>
+            <ui-btn v-if="canSubmitPwChange" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>
@@ -68,7 +71,20 @@ export default {
     },
     isGuest() {
       return this.usertype === 'guest'
-    }
+    },
+    isFromProxy() {
+      return this.user.isFromProxy
+    },
+    canSubmitPwChange() {
+      if (this.isGuest) return false;
+      if (this.isRoot) return true;
+
+      if (!this.password && !this.isFromProxy) return false;
+      if (!this.newPassword && !this.isRoot) return false;
+      if (!this.confirmPassword && !this.isFromProxy) return false;
+
+      return true
+    },
   },
   methods: {
     updateLocalLanguage(lang) {
@@ -96,7 +112,7 @@ export default {
       this.confirmPassword = null
     },
     submitChangePassword() {
-      if (this.newPassword !== this.confirmPassword) {
+      if (this.newPassword !== this.confirmPassword && !this.isFromProxy) {
         return this.$toast.error('New password and confirm password do not match')
       }
       if (this.password === this.newPassword) {
