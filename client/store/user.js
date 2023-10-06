@@ -131,21 +131,26 @@ export const actions = {
     } catch (error) {
       console.error('Failed to load userSettings from local storage', error)
     }
-  }
+  },
+  setUser({ commit }, user) {
+    commit('setUser', user)
+    commit('setUserToken', user ? user.token : null)
+  },
 }
 
 export const mutations = {
   setUser(state, user) {
     state.user = user
-    if (user) {
-      if (user.token) localStorage.setItem('token', user.token)
-    } else {
-      localStorage.removeItem('token')
-    }
   },
   setUserToken(state, token) {
-    state.user.token = token
-    localStorage.setItem('token', user.token)
+    if (!token) {
+      localStorage.removeItem('token')
+    } else if (state.user && state.user.isFromProxy) {
+      localStorage.removeItem('token')
+    } else {
+      state.user.token = token
+      localStorage.setItem('token', token)
+    }
   },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return

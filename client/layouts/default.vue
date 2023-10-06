@@ -293,7 +293,7 @@ export default {
     },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
-        this.$store.commit('user/setUser', user)
+        this.$store.dispatch('user/setUser', user)
       }
     },
     userOnline(user) {

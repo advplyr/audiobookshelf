@@ -158,8 +158,6 @@ class Auth {
       email,
       type: 'user',
       isActive: true,
-      token: null,
-      isFromProxy: true,
     }
 
     return await this.createUser(account)
@@ -179,12 +177,7 @@ class Auth {
     delete account.password
 
     account.pash = await this.hashPass(password)
-
-    // proxy users don't get a token
-    if (!account.isFromProxy) {
-      account.token = await this.generateAccessToken({ userId: account.id, username })
-    }
-
+    account.token = await this.generateAccessToken({ userId: account.id, username })
     account.createdAt = Date.now()
     const newUser = new User(account)
 

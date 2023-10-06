@@ -98,10 +98,7 @@ export default {
       this.$axios.$post('/logout', logoutPayload).catch((error) => {
         console.error(error)
       })
-      if (localStorage.getItem('token')) {
-        localStorage.removeItem('token')
-      }
-      this.$store.commit('user/setUser', null)
+      this.$store.dispatch('user/setUser', null)
       this.$store.commit('libraries/setUserPlaylists', [])
       this.$store.commit('libraries/setCollections', [])
       this.$router.push('/login')

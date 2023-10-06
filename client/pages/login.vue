@@ -144,8 +144,8 @@ export default {
       }
 
       this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
-      this.$store.commit('user/setUser', user)
 
+      this.$store.dispatch('user/setUser', user)
       this.$store.dispatch('user/loadUserSettings')
     },
     async submitForm() {
