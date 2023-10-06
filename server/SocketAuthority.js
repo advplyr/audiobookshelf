@@ -36,8 +36,8 @@ class SocketAuthority {
 
   /**
    * Emits event to all authorized clients
-   * @param {string} evt 
-   * @param {any} data 
+   * @param {string} evt
+   * @param {any} data
    * @param {Function} [filter] optional filter function to only send event to specific users
    */
   emitter(evt, data, filter = null) {
@@ -147,7 +147,7 @@ class SocketAuthority {
   // When setting up a socket connection the user needs to be associated with a socket id
   //  for this the client will send a 'auth' event that includes the users API token
   async authenticateSocket(socket, token) {
-    const user = await this.Server.auth.authenticateUser(token)
+    const user = await this.Server.auth.authenticateUser(token, socket.handshake.headers)
     if (!user) {
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
@@ -169,7 +169,7 @@ class SocketAuthority {
       return
     }
 
-    Logger.debug(`[SocketAuthority] User Online ${client.user.username}`)
+    Logger.debug(`[SocketAuthority] User Online ${client.user.username} (FromProxy: ${user.isFromProxy})`)
 
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 

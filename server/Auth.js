@@ -47,6 +47,7 @@ class Auth {
 
   async authMiddleware(req, res, next) {
     var token = null
+    var proxyAccount = this.getProxyAccount(req.headers)
 
     // If using a get request, the token can be passed as a query string
     if (req.method === 'GET' && req.query && req.query.token) {
@@ -56,13 +57,7 @@ class Auth {
       token = authHeader && authHeader.split(' ')[1]
     }
 
-    let proxyUsername = null
-    if (Database.serverSettings.proxyAuthEnabled) {
-      const uHeader = Database.serverSettings.proxyAuthUsernameHeader.toLowerCase()
-      proxyUsername = uHeader ? req.headers[uHeader] : null
-    }
-
-    if (token == null && proxyUsername == null) {
+    if (token == null && !(proxyAccount && proxyAccount['username'])) {
       Logger.error('Api called without a token and no proxy auth provided', req.path)
       return res.sendStatus(401)
     }
@@ -76,11 +71,8 @@ class Auth {
       }
 
       user.isFromProxy = false
-    } else if (proxyUsername) {
-      const eHeader = Database.serverSettings.proxyAuthEmailHeader.toLowerCase()
-      const proxyEmail = eHeader ? req.headers[eHeader] : null
-
-      user = await this.getProxyUser(proxyUsername, proxyEmail)
+    } else if (proxyAccount) {
+      user = await this.getProxyUser(proxyAccount)
       if (!user) {
         Logger.error('Cannot get user from proxy headers', proxyUsername)
         return res.sendStatus(401)
@@ -121,8 +113,20 @@ class Auth {
     return jwt.sign(payload, Database.serverSettings.tokenSecret)
   }
 
-  authenticateUser(token) {
-    return this.verifyToken(token)
+  async authenticateUser(token, headers) {
+    const tokenUser = token ? await this.verifyToken(token) : null
+    if (tokenUser) return tokenUser
+
+    const proxyAccount = this.getProxyAccount(headers)
+    if (proxyAccount && proxyAccount.username) {
+      const proxyUser = await this.getProxyUser(proxyAccount)
+      if (proxyUser) {
+        proxyUser.isFromProxy = true;
+        return proxyUser;
+      }
+    }
+
+    return null
   }
 
   verifyToken(token) {
@@ -143,19 +147,28 @@ class Auth {
     })
   }
 
-  async getProxyUser(username, email) {
-    const user = await Database.userModel.getUserByUsername(username)
-    if (user) {
-      return user
-    }
+  getProxyAccount(headers) {
+    if (!Database.serverSettings.proxyAuthEnabled) return null
 
-    if (!email) {
-      return null
-    }
+    const uHeader = Database.serverSettings.proxyAuthUsernameHeader.toLowerCase()
+    const eHeader = Database.serverSettings.proxyAuthEmailHeader.toLowerCase()
 
-    const account = {
-      username,
-      email,
+    return {
+      username: uHeader ? headers[uHeader] : null,
+      email: eHeader ? headers[eHeader] : null,
+    }
+  }
+
+  async getProxyUser(account) {
+    const user = await Database.userModel.getUserByUsername(account.username)
+    if (user) return user;
+
+    // we need an email to create accounts
+    if (!account.email) return null;
+
+    // add some fields for proxy users
+    account = {
+      ...account,
       type: 'user',
       isActive: true,
     }
