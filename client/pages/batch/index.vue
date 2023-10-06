@@ -65,7 +65,7 @@
                   :label="$strings.LabelExplicit"
                   :disabled="!selectedBatchUsage.explicit"
                   :checkbox-bg="!selectedBatchUsage.explicit ? 'bg' : 'primary'"
-                  :check-color="!selectedBatchUsage.explicit ? 'gray-600' : 'green-500'"
+                  :check-color="!selectedBatchUsage.explicit ? 'text-gray-600' : 'text-green-500'"
                   border-color="gray-600"
                   :label-class="!selectedBatchUsage.explicit ? 'pl-2 text-base text-gray-400 font-semibold' : 'pl-2 text-base font-semibold'"
                 />

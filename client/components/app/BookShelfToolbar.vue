@@ -49,7 +49,7 @@
           <span class="font-mono">{{ numShowing }}</span>
         </div>
         <div class="flex-grow" />
-        <ui-checkbox v-if="!isBatchSelecting" v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
+        <ui-checkbox v-if="!isBatchSelecting" v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="text-white" small class="mr-2" @input="updateCollapseBookSeries" />
 
         <!-- RSS feed -->
         <ui-tooltip v-if="seriesRssFeed" :text="$strings.LabelOpenRSSFeed" direction="top">
@@ -65,7 +65,7 @@
         <div class="flex-grow hidden sm:inline-block" />
 
         <!-- collapse series checkbox -->
-        <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="text-white" small class="mr-2" @input="updateCollapseSeries" />
 
         <!-- library filter select -->
         <controls-library-filter-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
