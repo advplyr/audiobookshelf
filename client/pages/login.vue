@@ -170,17 +170,17 @@ export default {
       this.processing = false
     },
     checkAuth() {
+      const headers = {}
+
       const token = localStorage.getItem('token')
-      if (!token) return false
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
 
       this.processing = true
 
       return this.$axios
-        .$post('/api/authorize', null, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
+        .$post('/api/authorize', null, { headers })
         .then((res) => {
           this.setUser(res)
           this.processing = false
@@ -214,11 +214,14 @@ export default {
     }
   },
   async mounted() {
-    if (localStorage.getItem('token')) {
-      var userfound = await this.checkAuth()
-      if (userfound) return // if valid user no need to check status
+    var userfound = await this.checkAuth()
+
+    // if valid user no need to check status
+    if (userfound) {
+      return
+    } else {
+      this.checkStatus()
     }
-    this.checkStatus()
   }
 }
 </script>
