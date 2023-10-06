@@ -63,7 +63,7 @@ class Auth {
     }
 
     if (token == null && proxyUsername == null) {
-      Logger.error('Api called without a token and proxy auth is disabled', req.path)
+      Logger.error('Api called without a token and no proxy auth provided', req.path)
       return res.sendStatus(401)
     }
 
@@ -158,6 +158,8 @@ class Auth {
       email,
       type: 'user',
       isActive: true,
+      token: null,
+      isFromProxy: true,
     }
 
     return await this.createUser(account)
@@ -178,7 +180,11 @@ class Auth {
 
     account.pash = await this.hashPass(password)
 
-    account.token = await this.generateAccessToken({ userId: account.id, username })
+    // proxy users don't get a token
+    if (!account.isFromProxy) {
+      account.token = await this.generateAccessToken({ userId: account.id, username })
+    }
+
     account.createdAt = Date.now()
     const newUser = new User(account)
 

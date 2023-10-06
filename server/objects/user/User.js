@@ -24,6 +24,8 @@ class User {
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsSelected = [] // Empty if ALL item tags accessible
 
+    this.isFromProxy = false  // whether the user was authenticated in the proxy layer
+
     if (user) {
       this.construct(user)
     }
@@ -90,7 +92,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      isFromProxy: this.isFromProxy,
     }
   }
 
@@ -111,7 +114,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      isFromProxy: this.isFromProxy,
     }
     if (minimal) {
       delete json.mediaProgress
@@ -183,6 +187,9 @@ class User {
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
     this.itemTagsSelected = [...(user.itemTagsSelected || [])]
+
+
+    this.isFromProxy = false
   }
 
   update(payload) {
@@ -261,7 +268,7 @@ class User {
 
   /**
    * Get first available library id for user
-   * 
+   *
    * @param {string[]} libraryIds
    * @returns {string|null}
    */
@@ -332,9 +339,9 @@ class User {
 
   /**
    * Checks if a user can access a library item
-   * @param {string} libraryId 
-   * @param {boolean} explicit 
-   * @param {string[]} tags 
+   * @param {string} libraryId
+   * @param {boolean} explicit
+   * @param {string[]} tags
    */
   checkCanAccessLibraryItemWithData(libraryId, explicit, tags) {
     if (!this.checkCanAccessLibrary(libraryId)) return false
@@ -398,7 +405,7 @@ class User {
   /**
    * Number of podcast episodes not finished for library item
    * Note: libraryItem passed in from libraryHelpers is not a LibraryItem class instance
-   * @param {LibraryItem|object} libraryItem 
+   * @param {LibraryItem|object} libraryItem
    * @returns {number}
    */
   getNumEpisodesIncompleteForPodcast(libraryItem) {
