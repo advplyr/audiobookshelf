@@ -294,23 +294,9 @@ class BookFinder {
     }
 
     add(author) {
-      const authorTransformers = []
-
-      // Main variant
       const cleanAuthor = this.bookFinder.cleanAuthorForCompares(author).trim()
-      if (!cleanAuthor) return false
+      if (!cleanAuthor) return
       this.candidates.add(cleanAuthor)
-
-      let candidate = cleanAuthor
-
-      for (const transformer of authorTransformers) {
-        candidate = candidate.replace(transformer[0], transformer[1]).trim()
-        if (candidate) {
-          this.candidates.add(candidate)
-        }
-      }
-
-      return true
     }
 
     get size() {
