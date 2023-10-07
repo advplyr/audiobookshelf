@@ -7,6 +7,7 @@ class User {
     this.id = null
     this.oldUserId = null // TODO: Temp for keeping old access tokens
     this.username = null
+    this.email = null
     this.pash = null
     this.type = null
     this.token = null
@@ -76,6 +77,7 @@ class User {
       id: this.id,
       oldUserId: this.oldUserId,
       username: this.username,
+      email: this.email,
       pash: this.pash,
       type: this.type,
       token: this.token,
@@ -97,6 +99,7 @@ class User {
       id: this.id,
       oldUserId: this.oldUserId,
       username: this.username,
+      email: this.email,
       type: this.type,
       token: (this.type === 'root' && hideRootToken) ? '' : this.token,
       mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
@@ -140,6 +143,7 @@ class User {
     this.id = user.id
     this.oldUserId = user.oldUserId
     this.username = user.username
+    this.email = user.email || null
     this.pash = user.pash
     this.type = user.type
     this.token = user.token
@@ -184,7 +188,7 @@ class User {
   update(payload) {
     var hasUpdates = false
     // Update the following keys:
-    const keysToCheck = ['pash', 'type', 'username', 'isActive']
+    const keysToCheck = ['pash', 'type', 'username', 'email', 'isActive']
     keysToCheck.forEach((key) => {
       if (payload[key] !== undefined) {
         if (key === 'isActive' || payload[key]) { // pash, type, username must evaluate to true (cannot be null or empty)

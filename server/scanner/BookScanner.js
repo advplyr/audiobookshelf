@@ -1111,7 +1111,7 @@ class BookScanner {
         const result = await CoverManager.downloadCoverFromUrlNew(results[i], libraryItemId, libraryItemPath)
 
         if (result.error) {
-          Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
+          libraryScan.addLog(LogLevel.ERROR, `Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
         } else if (result.cover) {
           return result.cover
         }

@@ -14,7 +14,7 @@
           <div v-if="showEdit && !disabled" class="rounded-full cursor-pointer w-6 h-6 mx-0.5 bg-bg flex items-center justify-center">
             <span class="material-icons text-white hover:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem">add</span>
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -112,6 +112,7 @@ export default {
       return !!this.selected.find((i) => i.id === itemValue)
     },
     search() {
+      if (!this.textInput) return
       this.currentSearch = this.textInput
       const dataToSearch = this.filterData[this.filterKey] || []
 
@@ -164,6 +165,34 @@ export default {
       this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
+    },
+    inputPaste(evt) {
+      setTimeout(() => {
+        const pastedText = evt.target?.value || ''
+        console.log('Pasted text=', pastedText)
+        const pastedItems = [
+          ...new Set(
+            pastedText
+              .split(';')
+              .map((i) => i.trim())
+              .filter((i) => i)
+          )
+        ]
+
+        // Filter out items already selected
+        const itemsToAdd = pastedItems.filter((i) => !this.selected.some((_i) => _i[this.textKey].toLowerCase() === i.toLowerCase()))
+        if (pastedItems.length && !itemsToAdd.length) {
+          this.textInput = null
+          this.currentSearch = null
+        } else {
+          for (const [index, itemToAdd] of itemsToAdd.entries()) {
+            this.insertNewItem({
+              id: `new-${Date.now()}-${index}`,
+              name: itemToAdd
+            })
+          }
+        }
+      }, 10)
     },
     inputFocus() {
       if (!this.menu) {

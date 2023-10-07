@@ -374,7 +374,7 @@ class BookFinder {
     if (!books.length && maxFuzzySearches > 0) {
       // Normalize title and author
       title = title.trim().toLowerCase()
-      author = author.trim().toLowerCase()
+      author = author?.trim().toLowerCase() || ''
 
       const cleanAuthor = this.cleanAuthorForCompares(author)
 

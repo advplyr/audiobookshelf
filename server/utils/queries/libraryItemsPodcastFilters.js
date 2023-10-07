@@ -2,6 +2,7 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
+const { asciiOnlyToLowerCase } = require('../index')
 
 module.exports = {
   /**
@@ -247,7 +248,7 @@ module.exports = {
         podcastEpisodeWhere['$mediaProgresses.isFinished$'] = true
       }
     } else if (filterGroup === 'recent') {
-      libraryItemWhere['createdAt'] = {
+      podcastEpisodeWhere['createdAt'] = {
         [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
       }
     }
@@ -364,7 +365,8 @@ module.exports = {
       let matchText = null
       let matchKey = null
       for (const key of ['title', 'author', 'itunesId', 'itunesArtistId']) {
-        if (podcast[key]?.toLowerCase().includes(query)) {
+        const valueToLower = asciiOnlyToLowerCase(podcast[key])
+        if (valueToLower.includes(query)) {
           matchText = podcast[key]
           matchKey = key
           break
