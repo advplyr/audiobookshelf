@@ -140,10 +140,6 @@ class Music {
     return this.metadata.setDataFromAudioMetaTags(this.audioFile.metaTags, overrideExistingDetails)
   }
 
-  syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
-    return false
-  }
-
   searchQuery(query) {
     return {}
   }

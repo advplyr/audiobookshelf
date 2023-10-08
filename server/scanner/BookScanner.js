@@ -3,8 +3,6 @@ const Path = require('path')
 const sequelize = require('sequelize')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
-const { parseOpfMetadataXML } = require('../utils/parsers/parseOpfMetadata')
-const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 const parseNameString = require('../utils/parsers/parseNameString')
 const globals = require('../utils/globals')
@@ -16,8 +14,11 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryFile = require('../objects/files/LibraryFile')
 const SocketAuthority = require('../SocketAuthority')
 const fsExtra = require("../libs/fsExtra")
-const LibraryScan = require("./LibraryScan")
 const BookFinder = require('../finders/BookFinder')
+
+const LibraryScan = require("./LibraryScan")
+const OpfFileScanner = require('./OpfFileScanner')
+const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
 
 /**
  * Metadata for books pulled from files
@@ -50,7 +51,7 @@ class BookScanner {
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {LibraryScan} libraryScan 
-   * @returns {Promise<import('../models/LibraryItem')>}
+   * @returns {Promise<{libraryItem:import('../models/LibraryItem'), wasUpdated:boolean}>}
    */
   async rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
     /** @type {import('../models/Book')} */
@@ -168,7 +169,7 @@ class BookScanner {
       hasMediaChanges = true
     }
 
-    const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, libraryItemData, libraryScan, existingLibraryItem.id)
+    const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, libraryItemData, libraryScan, librarySettings, existingLibraryItem.id)
     let authorsUpdated = false
     const bookAuthorsRemoved = []
     let seriesUpdated = false
@@ -360,7 +361,10 @@ class BookScanner {
     libraryScan.seriesRemovedFromBooks.push(...bookSeriesRemoved)
     libraryScan.authorsRemovedFromBooks.push(...bookAuthorsRemoved)
 
-    return existingLibraryItem
+    return {
+      libraryItem: existingLibraryItem,
+      wasUpdated: hasMediaChanges || libraryItemUpdated || seriesUpdated || authorsUpdated
+    }
   }
 
   /**
@@ -389,7 +393,7 @@ class BookScanner {
       ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
     }
 
-    const bookMetadata = await this.getBookMetadataFromScanData(scannedAudioFiles, libraryItemData, libraryScan)
+    const bookMetadata = await this.getBookMetadataFromScanData(scannedAudioFiles, libraryItemData, libraryScan, librarySettings)
     bookMetadata.explicit = !!bookMetadata.explicit // Ensure boolean
     bookMetadata.abridged = !!bookMetadata.abridged // Ensure boolean
 
@@ -548,226 +552,41 @@ class BookScanner {
    * @param {import('../models/Book').AudioFileObject[]} audioFiles 
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {LibraryScan} libraryScan 
+   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {string} [existingLibraryItemId]
    * @returns {Promise<BookMetadataObject>}
    */
-  async getBookMetadataFromScanData(audioFiles, libraryItemData, libraryScan, existingLibraryItemId = null) {
+  async getBookMetadataFromScanData(audioFiles, libraryItemData, libraryScan, librarySettings, existingLibraryItemId = null) {
     // First set book metadata from folder/file names
     const bookMetadata = {
-      title: libraryItemData.mediaMetadata.title,
-      titleIgnorePrefix: getTitleIgnorePrefix(libraryItemData.mediaMetadata.title),
-      subtitle: libraryItemData.mediaMetadata.subtitle || undefined,
-      publishedYear: libraryItemData.mediaMetadata.publishedYear || undefined,
+      title: libraryItemData.mediaMetadata.title, // required
+      titleIgnorePrefix: undefined,
+      subtitle: undefined,
+      publishedYear: undefined,
       publisher: undefined,
       description: undefined,
       isbn: undefined,
       asin: undefined,
       language: undefined,
-      narrators: parseNameString.parse(libraryItemData.mediaMetadata.narrators)?.names || [],
+      narrators: [],
       genres: [],
       tags: [],
-      authors: parseNameString.parse(libraryItemData.mediaMetadata.author)?.names || [],
+      authors: [],
       series: [],
       chapters: [],
       explicit: undefined,
       abridged: undefined,
       coverPath: undefined
     }
-    if (libraryItemData.mediaMetadata.series) {
-      bookMetadata.series.push({
-        name: libraryItemData.mediaMetadata.series,
-        sequence: libraryItemData.mediaMetadata.sequence || null
-      })
-    }
 
-    // Fill in or override book metadata from audio file meta tags
-    if (audioFiles.length) {
-      const MetadataMapArray = [
-        {
-          tag: 'tagComposer',
-          key: 'narrators'
-        },
-        {
-          tag: 'tagDescription',
-          altTag: 'tagComment',
-          key: 'description'
-        },
-        {
-          tag: 'tagPublisher',
-          key: 'publisher'
-        },
-        {
-          tag: 'tagDate',
-          key: 'publishedYear'
-        },
-        {
-          tag: 'tagSubtitle',
-          key: 'subtitle'
-        },
-        {
-          tag: 'tagAlbum',
-          altTag: 'tagTitle',
-          key: 'title',
-        },
-        {
-          tag: 'tagArtist',
-          altTag: 'tagAlbumArtist',
-          key: 'authors'
-        },
-        {
-          tag: 'tagGenre',
-          key: 'genres'
-        },
-        {
-          tag: 'tagSeries',
-          key: 'series'
-        },
-        {
-          tag: 'tagIsbn',
-          key: 'isbn'
-        },
-        {
-          tag: 'tagLanguage',
-          key: 'language'
-        },
-        {
-          tag: 'tagASIN',
-          key: 'asin'
-        }
-      ]
-      const overrideExistingDetails = Database.serverSettings.scannerPreferAudioMetadata
-      const firstScannedFile = audioFiles[0]
-      const audioFileMetaTags = firstScannedFile.metaTags
-      MetadataMapArray.forEach((mapping) => {
-        let value = audioFileMetaTags[mapping.tag]
-        if (!value && mapping.altTag) {
-          value = audioFileMetaTags[mapping.altTag]
-        }
-
-        if (value && typeof value === 'string') {
-          value = value.trim() // Trim whitespace
-
-          if (mapping.key === 'narrators' && (!bookMetadata.narrators.length || overrideExistingDetails)) {
-            bookMetadata.narrators = parseNameString.parse(value)?.names || []
-          } else if (mapping.key === 'authors' && (!bookMetadata.authors.length || overrideExistingDetails)) {
-            bookMetadata.authors = parseNameString.parse(value)?.names || []
-          } else if (mapping.key === 'genres' && (!bookMetadata.genres.length || overrideExistingDetails)) {
-            bookMetadata.genres = this.parseGenresString(value)
-          } else if (mapping.key === 'series' && (!bookMetadata.series.length || overrideExistingDetails)) {
-            bookMetadata.series = [
-              {
-                name: value,
-                sequence: audioFileMetaTags.tagSeriesPart || null
-              }
-            ]
-          } else if (!bookMetadata[mapping.key] || overrideExistingDetails) {
-            bookMetadata[mapping.key] = value
-          }
-        }
-      })
-    }
-
-    // If desc.txt in library item folder then use this for description
-    if (libraryItemData.descTxtLibraryFile) {
-      const description = await readTextFile(libraryItemData.descTxtLibraryFile.metadata.path)
-      if (description.trim()) bookMetadata.description = description.trim()
-    }
-
-    // If reader.txt in library item folder then use this for narrator
-    if (libraryItemData.readerTxtLibraryFile) {
-      let narrator = await readTextFile(libraryItemData.readerTxtLibraryFile.metadata.path)
-      narrator = narrator.split(/\r?\n/)[0]?.trim() || '' // Only use first line
-      if (narrator) {
-        bookMetadata.narrators = parseNameString.parse(narrator)?.names || []
-      }
-    }
-
-    // If opf file is found look for metadata
-    if (libraryItemData.metadataOpfLibraryFile) {
-      const xmlText = await readTextFile(libraryItemData.metadataOpfLibraryFile.metadata.path)
-      const opfMetadata = xmlText ? await parseOpfMetadataXML(xmlText) : null
-      if (opfMetadata) {
-        const opfMetadataOverrideDetails = Database.serverSettings.scannerPreferOpfMetadata
-        for (const key in opfMetadata) {
-          if (key === 'tags') { // Add tags only if tags are empty
-            if (opfMetadata.tags.length && (!bookMetadata.tags.length || opfMetadataOverrideDetails)) {
-              bookMetadata.tags = opfMetadata.tags
-            }
-          } else if (key === 'genres') { // Add genres only if genres are empty
-            if (opfMetadata.genres.length && (!bookMetadata.genres.length || opfMetadataOverrideDetails)) {
-              bookMetadata.genres = opfMetadata.genres
-            }
-          } else if (key === 'authors') {
-            if (opfMetadata.authors?.length && (!bookMetadata.authors.length || opfMetadataOverrideDetails)) {
-              bookMetadata.authors = opfMetadata.authors
-            }
-          } else if (key === 'narrators') {
-            if (opfMetadata.narrators?.length && (!bookMetadata.narrators.length || opfMetadataOverrideDetails)) {
-              bookMetadata.narrators = opfMetadata.narrators
-            }
-          } else if (key === 'series') {
-            if (opfMetadata.series && (!bookMetadata.series.length || opfMetadataOverrideDetails)) {
-              bookMetadata.series = [{
-                name: opfMetadata.series,
-                sequence: opfMetadata.sequence || null
-              }]
-            }
-          } else if (opfMetadata[key] && (!bookMetadata[key] || opfMetadataOverrideDetails)) {
-            bookMetadata[key] = opfMetadata[key]
-          }
-        }
-      }
-    }
-
-    // If metadata.json or metadata.abs use this for metadata
-    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile || libraryItemData.metadataAbsLibraryFile
-    let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
-    let metadataFilePath = metadataLibraryFile?.metadata.path
-    let metadataFileFormat = libraryItemData.metadataJsonLibraryFile ? 'json' : 'abs'
-
-    // When metadata file is not stored with library item then check in the /metadata/items folder for it
-    if (!metadataText && existingLibraryItemId) {
-      let metadataPath = Path.join(global.MetadataPath, 'items', existingLibraryItemId)
-
-      let altFormat = global.ServerSettings.metadataFileFormat === 'json' ? 'abs' : 'json'
-      // First check the metadata format set in server settings, fallback to the alternate
-      metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
-      metadataFileFormat = global.ServerSettings.metadataFileFormat
-      if (await fsExtra.pathExists(metadataFilePath)) {
-        metadataText = await readTextFile(metadataFilePath)
-      } else if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.${altFormat}`))) {
-        metadataFilePath = Path.join(metadataPath, `metadata.${altFormat}`)
-        metadataFileFormat = altFormat
-        metadataText = await readTextFile(metadataFilePath)
-      }
-    }
-
-    if (metadataText) {
-      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}" - preferring`)
-      let abMetadata = null
-      if (metadataFileFormat === 'json') {
-        abMetadata = abmetadataGenerator.parseJson(metadataText)
+    const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, libraryItemData, libraryScan, existingLibraryItemId)
+    for (const metadataSource of librarySettings.metadataPrecedence) {
+      if (bookMetadataSourceHandler[metadataSource]) {
+        libraryScan.addLog(LogLevel.DEBUG, `Getting metadata from source "${metadataSource}"`)
+        await bookMetadataSourceHandler[metadataSource]()
       } else {
-        abMetadata = abmetadataGenerator.parse(metadataText, 'book')
+        libraryScan.addLog(LogLevel.ERROR, `Invalid metadata source "${metadataSource}"`)
       }
-
-      if (abMetadata) {
-        if (abMetadata.tags?.length) {
-          bookMetadata.tags = abMetadata.tags
-        }
-        if (abMetadata.chapters?.length) {
-          bookMetadata.chapters = abMetadata.chapters
-        }
-        for (const key in abMetadata.metadata) {
-          if (abMetadata.metadata[key] === undefined) continue
-          bookMetadata[key] = abMetadata.metadata[key]
-        }
-      }
-    }
-
-    // Set chapters from audio files if not already set
-    if (!bookMetadata.chapters.length) {
-      bookMetadata.chapters = this.getChaptersFromAudioFiles(bookMetadata.title, audioFiles, libraryScan)
     }
 
     // Set cover from library file if one is found otherwise check audiofile
@@ -781,102 +600,76 @@ class BookScanner {
     return bookMetadata
   }
 
-  /**
-   * Parse a genre string into multiple genres
-   * @example "Fantasy;Sci-Fi;History" => ["Fantasy", "Sci-Fi", "History"]
-   * @param {string} genreTag 
-   * @returns {string[]}
-   */
-  parseGenresString(genreTag) {
-    if (!genreTag?.length) return []
-    const separators = ['/', '//', ';']
-    for (let i = 0; i < separators.length; i++) {
-      if (genreTag.includes(separators[i])) {
-        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
-      }
-    }
-    return [genreTag]
-  }
 
-  /**
-   * @param {string} bookTitle
-   * @param {AudioFile[]} audioFiles 
-   * @param {LibraryScan} libraryScan
-   * @returns {import('../models/Book').ChapterObject[]}
-   */
-  getChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan) {
-    if (!audioFiles.length) return []
-
-    // If overdrive media markers are present and preferred, use those instead
-    if (Database.serverSettings.scannerPreferOverdriveMediaMarker) {
-      const overdriveChapters = parseOverdriveMediaMarkersAsChapters(audioFiles)
-      if (overdriveChapters) {
-        libraryScan.addLog(LogLevel.DEBUG, 'Overdrive Media Markers and preference found! Using these for chapter definitions')
-
-        return overdriveChapters
-      }
+  static BookMetadataSourceHandler = class {
+    /**
+     * 
+     * @param {Object} bookMetadata 
+     * @param {import('../models/Book').AudioFileObject[]} audioFiles 
+     * @param {import('./LibraryItemScanData')} libraryItemData 
+     * @param {LibraryScan} libraryScan 
+     * @param {string} existingLibraryItemId 
+     */
+    constructor(bookMetadata, audioFiles, libraryItemData, libraryScan, existingLibraryItemId) {
+      this.bookMetadata = bookMetadata
+      this.audioFiles = audioFiles
+      this.libraryItemData = libraryItemData
+      this.libraryScan = libraryScan
+      this.existingLibraryItemId = existingLibraryItemId
     }
 
-    let chapters = []
+    /**
+     * Metadata parsed from folder names/structure
+     */
+    folderStructure() {
+      this.libraryItemData.setBookMetadataFromFilenames(this.bookMetadata)
+    }
 
-    // If first audio file has embedded chapters then use embedded chapters
-    if (audioFiles[0].chapters?.length) {
-      // If all files chapters are the same, then only make chapters for the first file
-      if (
-        audioFiles.length === 1 ||
-        audioFiles.length > 1 &&
-        audioFiles[0].chapters.length === audioFiles[1].chapters?.length &&
-        audioFiles[0].chapters.every((c, i) => c.title === audioFiles[1].chapters[i].title)
-      ) {
-        libraryScan.addLog(LogLevel.DEBUG, `setChapters: Using embedded chapters in first audio file ${audioFiles[0].metadata?.path}`)
-        chapters = audioFiles[0].chapters.map((c) => ({ ...c }))
-      } else {
-        libraryScan.addLog(LogLevel.DEBUG, `setChapters: Using embedded chapters from all audio files ${audioFiles[0].metadata?.path}`)
-        let currChapterId = 0
-        let currStartTime = 0
+    /**
+     * Metadata from audio file meta tags
+     */
+    audioMetatags() {
+      if (!this.audioFiles.length) return
+      // Modifies bookMetadata with metadata mapped from audio file meta tags
+      const bookTitle = this.bookMetadata.title || this.libraryItemData.mediaMetadata.title
+      AudioFileScanner.setBookMetadataFromAudioMetaTags(bookTitle, this.audioFiles, this.bookMetadata, this.libraryScan)
+    }
 
-        audioFiles.forEach((file) => {
-          if (file.duration) {
-            const afChapters = file.chapters?.map((c) => ({
-              ...c,
-              id: c.id + currChapterId,
-              start: c.start + currStartTime,
-              end: c.end + currStartTime,
-            })) ?? []
-            chapters = chapters.concat(afChapters)
-
-            currChapterId += file.chapters?.length ?? 0
-            currStartTime += file.duration
-          }
-        })
-        return chapters
+    /**
+     * Description from desc.txt and narrator from reader.txt
+     */
+    async txtFiles() {
+      // If desc.txt in library item folder then use this for description
+      if (this.libraryItemData.descTxtLibraryFile) {
+        const description = await readTextFile(this.libraryItemData.descTxtLibraryFile.metadata.path)
+        if (description.trim()) this.bookMetadata.description = description.trim()
       }
-    } else if (audioFiles.length > 1) {
-      const preferAudioMetadata = !!Database.serverSettings.scannerPreferAudioMetadata
 
-      // Build chapters from audio files
-      let currChapterId = 0
-      let currStartTime = 0
-      audioFiles.forEach((file) => {
-        if (file.duration) {
-          let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
-
-          // When prefer audio metadata server setting is set then use ID3 title tag as long as it is not the same as the book title
-          if (preferAudioMetadata && file.metaTags?.tagTitle && file.metaTags?.tagTitle !== bookTitle) {
-            title = file.metaTags.tagTitle
-          }
-
-          chapters.push({
-            id: currChapterId++,
-            start: currStartTime,
-            end: currStartTime + file.duration,
-            title
-          })
-          currStartTime += file.duration
+      // If reader.txt in library item folder then use this for narrator
+      if (this.libraryItemData.readerTxtLibraryFile) {
+        let narrator = await readTextFile(this.libraryItemData.readerTxtLibraryFile.metadata.path)
+        narrator = narrator.split(/\r?\n/)[0]?.trim() || '' // Only use first line
+        if (narrator) {
+          this.bookMetadata.narrators = parseNameString.parse(narrator)?.names || []
         }
-      })
+      }
     }
-    return chapters
+
+    /**
+     * Metadata from opf file
+     */
+    async opfFile() {
+      if (!this.libraryItemData.metadataOpfLibraryFile) return
+      await OpfFileScanner.scanBookOpfFile(this.libraryItemData.metadataOpfLibraryFile, this.bookMetadata)
+    }
+
+    /**
+     * Metadata from metadata.json or metadata.abs
+     */
+    async absMetadata() {
+      // If metadata.json or metadata.abs use this for metadata
+      await AbsMetadataFileScanner.scanBookMetadataFile(this.libraryScan, this.libraryItemData, this.bookMetadata, this.existingLibraryItemId)
+    }
   }
 
   /**

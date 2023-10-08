@@ -44,9 +44,9 @@ class LibraryScanner {
   /**
    * 
    * @param {import('../objects/Library')} library 
-   * @param {*} options 
+   * @param {boolean} [forceRescan] 
    */
-  async scan(library, options = {}) {
+  async scan(library, forceRescan = false) {
     if (this.isLibraryScanning(library.id)) {
       Logger.error(`[Scanner] Already scanning ${library.id}`)
       return
@@ -64,9 +64,9 @@ class LibraryScanner {
 
     SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
 
-    Logger.info(`[Scanner] Starting library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+    Logger.info(`[Scanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    const canceled = await this.scanLibrary(libraryScan)
+    const canceled = await this.scanLibrary(libraryScan, forceRescan)
 
     if (canceled) {
       Logger.info(`[Scanner] Library scan canceled for "${libraryScan.libraryName}"`)
@@ -95,9 +95,10 @@ class LibraryScanner {
   /**
    * 
    * @param {import('./LibraryScan')} libraryScan 
-   * @returns {boolean} true if scan canceled
+   * @param {boolean} forceRescan
+   * @returns {Promise<boolean>} true if scan canceled
    */
-  async scanLibrary(libraryScan) {
+  async scanLibrary(libraryScan, forceRescan) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
     await libraryFilters.getFilterData(libraryScan.library.mediaType, libraryScan.libraryId)
@@ -155,17 +156,25 @@ class LibraryScanner {
         }
       } else {
         libraryItemDataFound = libraryItemDataFound.filter(lidf => lidf !== libraryItemData)
-        if (await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)) {
-          libraryScan.resultsUpdated++
-          if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
-            const libraryItem = await LibraryItemScanner.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
-            const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-            oldLibraryItemsUpdated.push(oldLibraryItem)
+        let libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
+        if (libraryItemDataUpdated || forceRescan) {
+          if (forceRescan || libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
+            const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
+            if (!forceRescan || wasUpdated) {
+              libraryScan.resultsUpdated++
+              const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
+              oldLibraryItemsUpdated.push(oldLibraryItem)
+            } else {
+              libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
+            }
           } else {
+            libraryScan.resultsUpdated++
             // TODO: Temporary while using old model to socket emit
             const oldLibraryItem = await Database.libraryItemModel.getOldById(existingLibraryItem.id)
             oldLibraryItemsUpdated.push(oldLibraryItem)
           }
+        } else {
+          libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
         }
       }
 

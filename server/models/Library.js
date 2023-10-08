@@ -11,6 +11,7 @@ const oldLibrary = require('../objects/Library')
  * @property {string} autoScanCronExpression
  * @property {boolean} audiobooksOnly
  * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book 
+ * @property {string[]} metadataPrecedence
  */
 
 class Library extends Model {

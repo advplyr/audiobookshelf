@@ -54,6 +54,9 @@ export default {
     buttonText() {
       return this.library ? this.$strings.ButtonSave : this.$strings.ButtonCreate
     },
+    mediaType() {
+      return this.libraryCopy?.mediaType
+    },
     tabs() {
       return [
         {
@@ -67,11 +70,18 @@ export default {
           component: 'modals-libraries-library-settings'
         },
         {
+          id: 'scanner',
+          title: this.$strings.HeaderSettingsScanner,
+          component: 'modals-libraries-library-scanner-settings'
+        },
+        {
           id: 'schedule',
           title: this.$strings.HeaderSchedule,
           component: 'modals-libraries-schedule-scan'
         }
-      ]
+      ].filter((tab) => {
+        return tab.id !== 'scanner' || this.mediaType === 'book'
+      })
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
@@ -105,7 +115,9 @@ export default {
           disableWatcher: false,
           skipMatchingMediaWithAsin: false,
           skipMatchingMediaWithIsbn: false,
-          autoScanCronExpression: null
+          autoScanCronExpression: null,
+          hideSingleBookSeries: false,
+          metadataPrecedence: ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
         }
       }
     },

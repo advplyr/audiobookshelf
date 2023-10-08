@@ -1,6 +1,9 @@
 const Path = require('path')
 const Logger = require('../Logger')
 const prober = require('../utils/prober')
+const { LogLevel } = require('../utils/constants')
+const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
+const parseNameString = require('../utils/parsers/parseNameString')
 const LibraryItem = require('../models/LibraryItem')
 const AudioFile = require('../objects/files/AudioFile')
 
@@ -204,6 +207,205 @@ class AudioFileScanner {
   probeAudioFile(audioFile) {
     Logger.debug(`[AudioFileScanner] Running ffprobe for audio file at "${audioFile.metadata.path}"`)
     return prober.rawProbe(audioFile.metadata.path)
+  }
+
+  /**
+   * Set book metadata & chapters from audio file meta tags
+   * 
+   * @param {string} bookTitle
+   * @param {import('../models/Book').AudioFileObject} audioFile 
+   * @param {Object} bookMetadata 
+   * @param {LibraryScan} libraryScan
+   */
+  setBookMetadataFromAudioMetaTags(bookTitle, audioFiles, bookMetadata, libraryScan) {
+    const MetadataMapArray = [
+      {
+        tag: 'tagComposer',
+        key: 'narrators'
+      },
+      {
+        tag: 'tagDescription',
+        altTag: 'tagComment',
+        key: 'description'
+      },
+      {
+        tag: 'tagPublisher',
+        key: 'publisher'
+      },
+      {
+        tag: 'tagDate',
+        key: 'publishedYear'
+      },
+      {
+        tag: 'tagSubtitle',
+        key: 'subtitle'
+      },
+      {
+        tag: 'tagAlbum',
+        altTag: 'tagTitle',
+        key: 'title',
+      },
+      {
+        tag: 'tagArtist',
+        altTag: 'tagAlbumArtist',
+        key: 'authors'
+      },
+      {
+        tag: 'tagGenre',
+        key: 'genres'
+      },
+      {
+        tag: 'tagSeries',
+        key: 'series'
+      },
+      {
+        tag: 'tagIsbn',
+        key: 'isbn'
+      },
+      {
+        tag: 'tagLanguage',
+        key: 'language'
+      },
+      {
+        tag: 'tagASIN',
+        key: 'asin'
+      }
+    ]
+
+    const firstScannedFile = audioFiles[0]
+    const audioFileMetaTags = firstScannedFile.metaTags
+    MetadataMapArray.forEach((mapping) => {
+      let value = audioFileMetaTags[mapping.tag]
+      if (!value && mapping.altTag) {
+        value = audioFileMetaTags[mapping.altTag]
+      }
+
+      if (value && typeof value === 'string') {
+        value = value.trim() // Trim whitespace
+
+        if (mapping.key === 'narrators') {
+          bookMetadata.narrators = parseNameString.parse(value)?.names || []
+        } else if (mapping.key === 'authors') {
+          bookMetadata.authors = parseNameString.parse(value)?.names || []
+        } else if (mapping.key === 'genres') {
+          bookMetadata.genres = this.parseGenresString(value)
+        } else if (mapping.key === 'series') {
+          bookMetadata.series = [
+            {
+              name: value,
+              sequence: audioFileMetaTags.tagSeriesPart || null
+            }
+          ]
+        } else {
+          bookMetadata[mapping.key] = value
+        }
+      }
+    })
+
+    // Set chapters
+    const chapters = this.getBookChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan)
+    if (chapters.length) {
+      bookMetadata.chapters = chapters
+    }
+  }
+
+  /**
+   * @param {string} bookTitle
+   * @param {AudioFile[]} audioFiles 
+   * @param {LibraryScan} libraryScan
+   * @returns {import('../models/Book').ChapterObject[]}
+   */
+  getBookChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan) {
+    // If overdrive media markers are present then use those instead
+    const overdriveChapters = parseOverdriveMediaMarkersAsChapters(audioFiles)
+    if (overdriveChapters?.length) {
+      libraryScan.addLog(LogLevel.DEBUG, 'Overdrive Media Markers and preference found! Using these for chapter definitions')
+
+      return overdriveChapters
+    }
+
+    let chapters = []
+
+    // If first audio file has embedded chapters then use embedded chapters
+    if (audioFiles[0].chapters?.length) {
+      // If all files chapters are the same, then only make chapters for the first file
+      if (
+        audioFiles.length === 1 ||
+        audioFiles.length > 1 &&
+        audioFiles[0].chapters.length === audioFiles[1].chapters?.length &&
+        audioFiles[0].chapters.every((c, i) => c.title === audioFiles[1].chapters[i].title)
+      ) {
+        libraryScan.addLog(LogLevel.DEBUG, `setChapters: Using embedded chapters in first audio file ${audioFiles[0].metadata?.path}`)
+        chapters = audioFiles[0].chapters.map((c) => ({ ...c }))
+      } else {
+        libraryScan.addLog(LogLevel.DEBUG, `setChapters: Using embedded chapters from all audio files ${audioFiles[0].metadata?.path}`)
+        let currChapterId = 0
+        let currStartTime = 0
+
+        audioFiles.forEach((file) => {
+          if (file.duration) {
+            const afChapters = file.chapters?.map((c) => ({
+              ...c,
+              id: c.id + currChapterId,
+              start: c.start + currStartTime,
+              end: c.end + currStartTime,
+            })) ?? []
+            chapters = chapters.concat(afChapters)
+
+            currChapterId += file.chapters?.length ?? 0
+            currStartTime += file.duration
+          }
+        })
+        return chapters
+      }
+    } else if (audioFiles.length > 1) {
+
+      // In some cases the ID3 title tag for each file is the chapter title, the criteria to determine if this will be used
+      // 1. Every audio file has an ID3 title tag set
+      // 2. None of the title tags are the same as the book title
+      // 3. Every ID3 title tag is unique
+      const metaTagTitlesFound = [...new Set(audioFiles.map(af => af.metaTags?.tagTitle).filter(tagTitle => !!tagTitle && tagTitle !== bookTitle))]
+      const useMetaTagAsTitle = metaTagTitlesFound.length === audioFiles.length
+
+      // Build chapters from audio files
+      let currChapterId = 0
+      let currStartTime = 0
+      audioFiles.forEach((file) => {
+        if (file.duration) {
+          let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+          if (useMetaTagAsTitle) {
+            title = file.metaTags.tagTitle
+          }
+
+          chapters.push({
+            id: currChapterId++,
+            start: currStartTime,
+            end: currStartTime + file.duration,
+            title
+          })
+          currStartTime += file.duration
+        }
+      })
+    }
+    return chapters
+  }
+
+  /**
+   * Parse a genre string into multiple genres
+   * @example "Fantasy;Sci-Fi;History" => ["Fantasy", "Sci-Fi", "History"]
+   * 
+   * @param {string} genreTag 
+   * @returns {string[]}
+   */
+  parseGenresString(genreTag) {
+    if (!genreTag?.length) return []
+    const separators = ['/', '//', ';']
+    for (let i = 0; i < separators.length; i++) {
+      if (genreTag.includes(separators[i])) {
+        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
+      }
+    }
+    return [genreTag]
   }
 }
 module.exports = new AudioFileScanner()

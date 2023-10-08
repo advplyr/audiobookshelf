@@ -39,7 +39,7 @@ class PodcastScanner {
    * @param {import('./LibraryItemScanData')} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {import('./LibraryScan')} libraryScan 
-   * @returns {Promise<import('../models/LibraryItem')>}
+   * @returns {Promise<{libraryItem:import('../models/LibraryItem'), wasUpdated:boolean}>}
    */
   async rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
     /** @type {import('../models/Podcast')} */
@@ -201,7 +201,10 @@ class PodcastScanner {
       await existingLibraryItem.save()
     }
 
-    return existingLibraryItem
+    return {
+      libraryItem: existingLibraryItem,
+      wasUpdated: hasMediaChanges || libraryItemUpdated
+    }
   }
 
   /**
@@ -335,7 +338,6 @@ class PodcastScanner {
 
     if (podcastEpisodes.length) {
       const audioFileMetaTags = podcastEpisodes[0].audioFile.metaTags
-      const overrideExistingDetails = Database.serverSettings.scannerPreferAudioMetadata
 
       const MetadataMapArray = [
         {
@@ -376,10 +378,10 @@ class PodcastScanner {
         if (value && typeof value === 'string') {
           value = value.trim() // Trim whitespace
 
-          if (mapping.key === 'genres' && (!podcastMetadata.genres.length || overrideExistingDetails)) {
+          if (mapping.key === 'genres') {
             podcastMetadata.genres = this.parseGenresString(value)
             libraryScan.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastMetadata.genres.join(', ')}`)
-          } else if (!podcastMetadata[mapping.key] || overrideExistingDetails) {
+          } else {
             podcastMetadata[mapping.key] = value
             libraryScan.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastMetadata[mapping.key]}`)
           }
@@ -628,7 +630,6 @@ class PodcastScanner {
     ]
 
     const audioFileMetaTags = podcastEpisode.audioFile.metaTags
-    const overrideExistingDetails = Database.serverSettings.scannerPreferAudioMetadata
     MetadataMapArray.forEach((mapping) => {
       let value = audioFileMetaTags[mapping.tag]
       let tagToUse = mapping.tag
@@ -640,7 +641,7 @@ class PodcastScanner {
       if (value && typeof value === 'string') {
         value = value.trim() // Trim whitespace
 
-        if (mapping.key === 'pubDate' && (!podcastEpisode.pubDate || overrideExistingDetails)) {
+        if (mapping.key === 'pubDate') {
           const pubJsDate = new Date(value)
           if (pubJsDate && !isNaN(pubJsDate)) {
             podcastEpisode.publishedAt = pubJsDate.valueOf()
@@ -649,14 +650,14 @@ class PodcastScanner {
           } else {
             scanLogger.addLog(LogLevel.WARN, `Mapping pubDate with tag ${tagToUse} has invalid date "${value}"`)
           }
-        } else if (mapping.key === 'episodeType' && (!podcastEpisode.episodeType || overrideExistingDetails)) {
+        } else if (mapping.key === 'episodeType') {
           if (['full', 'trailer', 'bonus'].includes(value)) {
             podcastEpisode.episodeType = value
             scanLogger.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastEpisode[mapping.key]}`)
           } else {
             scanLogger.addLog(LogLevel.WARN, `Mapping episodeType with invalid value "${value}". Must be one of [full, trailer, bonus].`)
           }
-        } else if (!podcastEpisode[mapping.key] || overrideExistingDetails) {
+        } else {
           podcastEpisode[mapping.key] = value
           scanLogger.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastEpisode[mapping.key]}`)
         }

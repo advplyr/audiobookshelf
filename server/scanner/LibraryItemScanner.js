@@ -58,7 +58,7 @@ class LibraryItemScanner {
 
     if (await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)) {
       if (libraryItemScanData.hasLibraryFileChanges || libraryItemScanData.hasPathChange) {
-        const expandedLibraryItem = await this.rescanLibraryItem(libraryItem, libraryItemScanData, library.settings, scanLogger)
+        const { libraryItem: expandedLibraryItem } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(expandedLibraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
 
@@ -71,6 +71,7 @@ class LibraryItemScanner {
 
       return ScanResult.UPDATED
     }
+    libraryScan.addLog(LogLevel.DEBUG, `Library item "${libraryItem.relPath}" is up-to-date`)
     return ScanResult.UPTODATE
   }
 
@@ -156,16 +157,14 @@ class LibraryItemScanner {
    * @param {LibraryItemScanData} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {LibraryScan} libraryScan
-   * @returns {Promise<LibraryItem>}
+   * @returns {Promise<{libraryItem:LibraryItem, wasUpdated:boolean}>}
    */
-  async rescanLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
-    let newLibraryItem = null
+  rescanLibraryItemMedia(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
     if (existingLibraryItem.mediaType === 'book') {
-      newLibraryItem = await BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
+      return BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
     } else {
-      newLibraryItem = await PodcastScanner.rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
+      return PodcastScanner.rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
     }
-    return newLibraryItem
   }
 
   /**

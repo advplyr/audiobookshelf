@@ -784,7 +784,14 @@ class LibraryController {
     res.sendStatus(200)
   }
 
-  // POST: api/libraries/:id/scan
+  /**
+   * POST: /api/libraries/:id/scan
+   * Optional query:
+   * ?force=1
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
@@ -792,7 +799,8 @@ class LibraryController {
     }
     res.sendStatus(200)
 
-    await LibraryScanner.scan(req.library)
+    const forceRescan = req.query.force === '1'
+    await LibraryScanner.scan(req.library, forceRescan)
 
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')

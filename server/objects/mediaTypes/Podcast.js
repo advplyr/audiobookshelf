@@ -203,37 +203,6 @@ class Podcast {
     this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
   }
 
-  async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
-    let metadataUpdatePayload = {}
-    let tagsUpdated = false
-
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
-    if (metadataAbs) {
-      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
-      const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast', isJSON)
-      if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
-        Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
-
-        if (abmetadataUpdates.tags) { // Set media tags if updated
-          this.tags = abmetadataUpdates.tags
-          tagsUpdated = true
-        }
-        if (abmetadataUpdates.metadata) {
-          metadataUpdatePayload = {
-            ...metadataUpdatePayload,
-            ...abmetadataUpdates.metadata
-          }
-        }
-      }
-    }
-
-    if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
-    }
-    return tagsUpdated
-  }
-
   searchEpisodes(query) {
     return this.episodes.filter(ep => ep.searchQuery(query))
   }

@@ -9,6 +9,7 @@ class LibrarySettings {
     this.autoScanCronExpression = null
     this.audiobooksOnly = false
     this.hideSingleBookSeries = false // Do not show series that only have 1 book 
+    this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
 
     if (settings) {
       this.construct(settings)
@@ -23,6 +24,12 @@ class LibrarySettings {
     this.autoScanCronExpression = settings.autoScanCronExpression || null
     this.audiobooksOnly = !!settings.audiobooksOnly
     this.hideSingleBookSeries = !!settings.hideSingleBookSeries
+    if (settings.metadataPrecedence) {
+      this.metadataPrecedence = [...settings.metadataPrecedence]
+    } else {
+      // Added in v2.4.5
+      this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
+    }
   }
 
   toJSON() {
@@ -33,14 +40,20 @@ class LibrarySettings {
       skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn,
       autoScanCronExpression: this.autoScanCronExpression,
       audiobooksOnly: this.audiobooksOnly,
-      hideSingleBookSeries: this.hideSingleBookSeries
+      hideSingleBookSeries: this.hideSingleBookSeries,
+      metadataPrecedence: [...this.metadataPrecedence]
     }
   }
 
   update(payload) {
     let hasUpdates = false
     for (const key in payload) {
-      if (this[key] !== payload[key]) {
+      if (key === 'metadataPrecedence') {
+        if (payload[key] && Array.isArray(payload[key]) && payload[key].join() !== this[key].join()) {
+          this[key] = payload[key]
+          hasUpdates = true
+        }
+      } else if (this[key] !== payload[key]) {
         this[key] = payload[key]
         hasUpdates = true
       }

@@ -2,6 +2,18 @@ const Path = require('path')
 const { filePathToPOSIX } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
+const parseNameString = require('./parsers/parseNameString')
+
+/**
+ * @typedef LibraryItemFilenameMetadata
+ * @property {string} title
+ * @property {string} subtitle Book mediaType only
+ * @property {string[]} authors Book mediaType only
+ * @property {string[]} narrators Book mediaType only
+ * @property {string} seriesName Book mediaType only
+ * @property {string} seriesSequence Book mediaType only
+ * @property {string} publishedYear Book mediaType only
+ */
 
 function isMediaFile(mediaType, ext, audiobooksOnly = false) {
   if (!ext) return false
@@ -210,10 +222,15 @@ function buildLibraryFile(libraryItemPath, files) {
 }
 module.exports.buildLibraryFile = buildLibraryFile
 
-// Input relative filepath, output all details that can be parsed
-function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
-  relPath = filePathToPOSIX(relPath)
-  var splitDir = relPath.split('/')
+/**
+ * Get details parsed from filenames
+ * 
+ * @param {string} relPath 
+ * @param {boolean} parseSubtitle 
+ * @returns {LibraryItemFilenameMetadata}
+ */
+function getBookDataFromDir(relPath, parseSubtitle = false) {
+  const splitDir = relPath.split('/')
 
   var folder = splitDir.pop() // Audio files will always be in the directory named for the title
   series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
@@ -226,17 +243,13 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
 
   return {
-    mediaMetadata: {
-      author,
-      title,
-      subtitle,
-      series,
-      sequence,
-      publishedYear,
-      narrators,
-    },
-    relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
-    path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+    title,
+    subtitle,
+    authors: parseNameString.parse(author)?.names || [],
+    narrators: parseNameString.parse(narrators)?.names || [],
+    seriesName: series,
+    seriesSequence: sequence,
+    publishedYear
   }
 }
 module.exports.getBookDataFromDir = getBookDataFromDir
@@ -301,28 +314,43 @@ function getSubtitle(folder) {
   return [splitTitle.shift(), splitTitle.join(' - ')]
 }
 
-function getPodcastDataFromDir(folderPath, relPath) {
-  relPath = filePathToPOSIX(relPath)
+/**
+ * 
+ * @param {string} relPath 
+ * @returns {LibraryItemFilenameMetadata}
+ */
+function getPodcastDataFromDir(relPath) {
   const splitDir = relPath.split('/')
 
   // Audio files will always be in the directory named for the title
   const title = splitDir.pop()
   return {
-    mediaMetadata: {
-      title
-    },
-    relPath: relPath, // relative podcast path i.e. /Podcast Name/..
-    path: Path.posix.join(folderPath, relPath) // i.e. /podcasts/Podcast Name/..
+    title
   }
 }
 
+/**
+ * 
+ * @param {string} libraryMediaType 
+ * @param {string} folderPath 
+ * @param {string} relPath 
+ * @returns {{ mediaMetadata: LibraryItemFilenameMetadata, relPath: string, path: string}}
+ */
 function getDataFromMediaDir(libraryMediaType, folderPath, relPath) {
+  relPath = filePathToPOSIX(relPath)
+  let fullPath = Path.posix.join(folderPath, relPath)
+  let mediaMetadata = null
+
   if (libraryMediaType === 'podcast') {
-    return getPodcastDataFromDir(folderPath, relPath)
-  } else if (libraryMediaType === 'book') {
-    return getBookDataFromDir(folderPath, relPath, !!global.ServerSettings.scannerParseSubtitle)
-  } else {
-    return getPodcastDataFromDir(folderPath, relPath)
+    mediaMetadata = getPodcastDataFromDir(relPath)
+  } else { // book
+    mediaMetadata = getBookDataFromDir(relPath, !!global.ServerSettings.scannerParseSubtitle)
+  }
+
+  return {
+    mediaMetadata,
+    relPath,
+    path: fullPath
   }
 }
 module.exports.getDataFromMediaDir = getDataFromMediaDir

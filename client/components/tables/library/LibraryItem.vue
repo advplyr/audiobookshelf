@@ -75,6 +75,11 @@ export default {
       ]
       if (this.isBookLibrary) {
         items.push({
+          text: this.$strings.ButtonForceReScan,
+          action: 'force-rescan',
+          value: 'force-rescan'
+        })
+        items.push({
           text: this.$strings.ButtonMatchBooks,
           action: 'match-books',
           value: 'match-books'
@@ -95,8 +100,8 @@ export default {
         this.editClick()
       } else if (action === 'scan') {
         this.scan()
-      } else if (action === 'force-scan') {
-        this.forceScan()
+      } else if (action === 'force-rescan') {
+        this.scan(true)
       } else if (action === 'match-books') {
         this.matchAll()
       } else if (action === 'delete') {
@@ -121,9 +126,9 @@ export default {
     editClick() {
       this.$emit('edit', this.library)
     },
-    scan() {
+    scan(force = false) {
       this.$store
-        .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force })
         .then(() => {
           this.$toast.success(this.$strings.ToastLibraryScanStarted)
         })
