@@ -4,7 +4,7 @@
   "editor.tabSize": 2,
 
   "files.encoding": "utf8",
-  "files.insertFinalNewline": false,
+  "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "files.trimFinalNewlines": true,
 
