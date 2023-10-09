@@ -75,11 +75,6 @@ export default {
       ]
       if (this.isBookLibrary) {
         items.push({
-          text: this.$strings.ButtonForceReScan,
-          action: 'force-rescan',
-          value: 'force-rescan'
-        })
-        items.push({
           text: this.$strings.ButtonMatchBooks,
           action: 'match-books',
           value: 'match-books'

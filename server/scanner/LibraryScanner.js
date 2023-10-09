@@ -48,13 +48,19 @@ class LibraryScanner {
    */
   async scan(library, forceRescan = false) {
     if (this.isLibraryScanning(library.id)) {
-      Logger.error(`[Scanner] Already scanning ${library.id}`)
+      Logger.error(`[LibraryScanner] Already scanning ${library.id}`)
       return
     }
 
     if (!library.folders.length) {
-      Logger.warn(`[Scanner] Library has no folders to scan "${library.name}"`)
+      Logger.warn(`[LibraryScanner] Library has no folders to scan "${library.name}"`)
       return
+    }
+
+    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence?.join()) {
+      const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
+      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
+      forceRescan = true
     }
 
     const libraryScan = new LibraryScan()
@@ -64,18 +70,18 @@ class LibraryScanner {
 
     SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
 
-    Logger.info(`[Scanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+    Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
     const canceled = await this.scanLibrary(libraryScan, forceRescan)
 
     if (canceled) {
-      Logger.info(`[Scanner] Library scan canceled for "${libraryScan.libraryName}"`)
+      Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
       delete this.cancelLibraryScan[libraryScan.libraryId]
     }
 
     libraryScan.setComplete()
 
-    Logger.info(`[Scanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+    Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
 
     if (canceled && !libraryScan.totalResults) {
@@ -84,6 +90,13 @@ class LibraryScanner {
       SocketAuthority.emitter('scan_complete', emitData)
       return
     }
+
+    library.lastScan = Date.now()
+    library.lastScanVersion = packageJson.version
+    if (library.isBook) {
+      library.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+    }
+    await Database.libraryModel.updateFromOld(library)
 
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
 
