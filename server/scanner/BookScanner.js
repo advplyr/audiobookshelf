@@ -76,8 +76,8 @@ class BookScanner {
       ]
     })
 
-    let hasMediaChanges = libraryItemData.hasAudioFileChanges
-    if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length) {
+    let hasMediaChanges = libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length
+    if (hasMediaChanges) {
       // Filter out audio files that were removed
       media.audioFiles = media.audioFiles.filter(af => !libraryItemData.checkAudioFileRemoved(af))
 

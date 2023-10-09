@@ -38,7 +38,7 @@ class OpfFileScanner {
               sequence: opfMetadata.sequence || null
             }]
           }
-        } else if (opfMetadata[key]) {
+        } else if (opfMetadata[key] && key !== 'sequence') {
           bookMetadata[key] = opfMetadata[key]
         }
       }
