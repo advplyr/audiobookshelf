@@ -61,5 +61,65 @@ class AbsMetadataFileScanner {
       }
     }
   }
+
+  /**
+   * Check for metadata.json or metadata.abs file and set podcast metadata
+   * 
+   * @param {import('./LibraryScan')} libraryScan 
+   * @param {import('./LibraryItemScanData')} libraryItemData 
+   * @param {Object} podcastMetadata 
+   * @param {string} [existingLibraryItemId] 
+   */
+  async scanPodcastMetadataFile(libraryScan, libraryItemData, podcastMetadata, existingLibraryItemId = null) {
+    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile || libraryItemData.metadataAbsLibraryFile
+    let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
+    let metadataFilePath = metadataLibraryFile?.metadata.path
+    let metadataFileFormat = libraryItemData.metadataJsonLibraryFile ? 'json' : 'abs'
+
+    // When metadata file is not stored with library item then check in the /metadata/items folder for it
+    if (!metadataText && existingLibraryItemId) {
+      let metadataPath = Path.join(global.MetadataPath, 'items', existingLibraryItemId)
+
+      let altFormat = global.ServerSettings.metadataFileFormat === 'json' ? 'abs' : 'json'
+      // First check the metadata format set in server settings, fallback to the alternate
+      metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
+      metadataFileFormat = global.ServerSettings.metadataFileFormat
+      if (await fsExtra.pathExists(metadataFilePath)) {
+        metadataText = await readTextFile(metadataFilePath)
+      } else if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.${altFormat}`))) {
+        metadataFilePath = Path.join(metadataPath, `metadata.${altFormat}`)
+        metadataFileFormat = altFormat
+        metadataText = await readTextFile(metadataFilePath)
+      }
+    }
+
+    if (metadataText) {
+      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}" - preferring`)
+      let abMetadata = null
+      if (metadataFileFormat === 'json') {
+        abMetadata = abmetadataGenerator.parseJson(metadataText)
+      } else {
+        abMetadata = abmetadataGenerator.parse(metadataText, 'podcast')
+      }
+
+      if (abMetadata) {
+        if (abMetadata.tags?.length) {
+          podcastMetadata.tags = abMetadata.tags
+        }
+        for (const key in abMetadata.metadata) {
+          if (abMetadata.metadata[key] === undefined) continue
+
+          // TODO: New podcast model changed some keys, need to update the abmetadataGenerator
+          let newModelKey = key
+          if (key === 'feedUrl') newModelKey = 'feedURL'
+          else if (key === 'imageUrl') newModelKey = 'imageURL'
+          else if (key === 'itunesPageUrl') newModelKey = 'itunesPageURL'
+          else if (key === 'type') newModelKey = 'podcastType'
+
+          podcastMetadata[newModelKey] = abMetadata.metadata[key]
+        }
+      }
+    }
+  }
 }
 module.exports = new AbsMetadataFileScanner()

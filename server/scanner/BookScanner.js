@@ -580,9 +580,10 @@ class BookScanner {
     }
 
     const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, libraryItemData, libraryScan, existingLibraryItemId)
-    for (const metadataSource of librarySettings.metadataPrecedence) {
+    const metadataPrecedence = librarySettings.metadataPrecedence || ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
+    libraryScan.addLog(LogLevel.DEBUG, `"${bookMetadata.title}" Getting metadata with precedence [${metadataPrecedence.join(', ')}]`)
+    for (const metadataSource of metadataPrecedence) {
       if (bookMetadataSourceHandler[metadataSource]) {
-        libraryScan.addLog(LogLevel.DEBUG, `Getting metadata from source "${metadataSource}"`)
         await bookMetadataSourceHandler[metadataSource]()
       } else {
         libraryScan.addLog(LogLevel.ERROR, `Invalid metadata source "${metadataSource}"`)

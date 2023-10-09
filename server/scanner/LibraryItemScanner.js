@@ -50,28 +50,25 @@ class LibraryItemScanner {
 
     const scanLogger = new ScanLogger()
     scanLogger.verbose = true
-    scanLogger.setData('libraryItem', libraryItemId)
+    scanLogger.setData('libraryItem', libraryItem.relPath)
 
     const libraryItemPath = fileUtils.filePathToPOSIX(libraryItem.path)
     const folder = library.libraryFolders[0]
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, false)
 
-    if (await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)) {
-      if (libraryItemScanData.hasLibraryFileChanges || libraryItemScanData.hasPathChange) {
-        const { libraryItem: expandedLibraryItem } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(expandedLibraryItem)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+    let libraryItemDataUpdated = await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)
 
-        await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
-      } else {
-        // TODO: Temporary while using old model to socket emit
-        const oldLibraryItem = await Database.libraryItemModel.getOldById(libraryItem.id)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
-      }
+    const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
+    if (libraryItemDataUpdated || wasUpdated) {
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(expandedLibraryItem)
+      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+      await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
 
       return ScanResult.UPDATED
     }
-    libraryScan.addLog(LogLevel.DEBUG, `Library item "${libraryItem.relPath}" is up-to-date`)
+
+    scanLogger.addLog(LogLevel.DEBUG, `Library item is up-to-date`)
     return ScanResult.UPTODATE
   }
 

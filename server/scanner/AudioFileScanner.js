@@ -215,7 +215,7 @@ class AudioFileScanner {
    * @param {string} bookTitle
    * @param {import('../models/Book').AudioFileObject} audioFile 
    * @param {Object} bookMetadata 
-   * @param {LibraryScan} libraryScan
+   * @param {import('./LibraryScan')} libraryScan
    */
   setBookMetadataFromAudioMetaTags(bookTitle, audioFiles, bookMetadata, libraryScan) {
     const MetadataMapArray = [
@@ -310,9 +310,144 @@ class AudioFileScanner {
   }
 
   /**
+   * Set podcast metadata from first audio file
+   * 
+   * @param {import('../models/Book').AudioFileObject} audioFile 
+   * @param {Object} podcastMetadata 
+   * @param {import('./LibraryScan')} libraryScan
+   */
+  setPodcastMetadataFromAudioMetaTags(audioFile, podcastMetadata, libraryScan) {
+    const audioFileMetaTags = audioFile.metaTags
+
+    const MetadataMapArray = [
+      {
+        tag: 'tagAlbum',
+        altTag: 'tagSeries',
+        key: 'title'
+      },
+      {
+        tag: 'tagArtist',
+        key: 'author'
+      },
+      {
+        tag: 'tagGenre',
+        key: 'genres'
+      },
+      {
+        tag: 'tagLanguage',
+        key: 'language'
+      },
+      {
+        tag: 'tagItunesId',
+        key: 'itunesId'
+      },
+      {
+        tag: 'tagPodcastType',
+        key: 'podcastType',
+      }
+    ]
+
+    MetadataMapArray.forEach((mapping) => {
+      let value = audioFileMetaTags[mapping.tag]
+      let tagToUse = mapping.tag
+      if (!value && mapping.altTag) {
+        value = audioFileMetaTags[mapping.altTag]
+        tagToUse = mapping.altTag
+      }
+
+      if (value && typeof value === 'string') {
+        value = value.trim() // Trim whitespace
+
+        if (mapping.key === 'genres') {
+          podcastMetadata.genres = this.parseGenresString(value)
+          libraryScan.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastMetadata.genres.join(', ')}`)
+        } else {
+          podcastMetadata[mapping.key] = value
+          libraryScan.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastMetadata[mapping.key]}`)
+        }
+      }
+    })
+  }
+
+  /**
+   * 
+   * @param {import('../models/PodcastEpisode')} podcastEpisode Not the model when creating new podcast
+   * @param {import('./ScanLogger')} scanLogger
+   */
+  setPodcastEpisodeMetadataFromAudioMetaTags(podcastEpisode, scanLogger) {
+    const MetadataMapArray = [
+      {
+        tag: 'tagComment',
+        altTag: 'tagSubtitle',
+        key: 'description'
+      },
+      {
+        tag: 'tagSubtitle',
+        key: 'subtitle'
+      },
+      {
+        tag: 'tagDate',
+        key: 'pubDate'
+      },
+      {
+        tag: 'tagDisc',
+        key: 'season',
+      },
+      {
+        tag: 'tagTrack',
+        altTag: 'tagSeriesPart',
+        key: 'episode'
+      },
+      {
+        tag: 'tagTitle',
+        key: 'title'
+      },
+      {
+        tag: 'tagEpisodeType',
+        key: 'episodeType'
+      }
+    ]
+
+    const audioFileMetaTags = podcastEpisode.audioFile.metaTags
+    MetadataMapArray.forEach((mapping) => {
+      let value = audioFileMetaTags[mapping.tag]
+      let tagToUse = mapping.tag
+      if (!value && mapping.altTag) {
+        tagToUse = mapping.altTag
+        value = audioFileMetaTags[mapping.altTag]
+      }
+
+      if (value && typeof value === 'string') {
+        value = value.trim() // Trim whitespace
+
+        if (mapping.key === 'pubDate') {
+          const pubJsDate = new Date(value)
+          if (pubJsDate && !isNaN(pubJsDate)) {
+            podcastEpisode.publishedAt = pubJsDate.valueOf()
+            podcastEpisode.pubDate = value
+            scanLogger.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastEpisode[mapping.key]}`)
+          } else {
+            scanLogger.addLog(LogLevel.WARN, `Mapping pubDate with tag ${tagToUse} has invalid date "${value}"`)
+          }
+        } else if (mapping.key === 'episodeType') {
+          if (['full', 'trailer', 'bonus'].includes(value)) {
+            podcastEpisode.episodeType = value
+            scanLogger.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastEpisode[mapping.key]}`)
+          } else {
+            scanLogger.addLog(LogLevel.WARN, `Mapping episodeType with invalid value "${value}". Must be one of [full, trailer, bonus].`)
+          }
+        } else {
+          podcastEpisode[mapping.key] = value
+          scanLogger.addLog(LogLevel.DEBUG, `Mapping metadata to key ${tagToUse} => ${mapping.key}: ${podcastEpisode[mapping.key]}`)
+        }
+      }
+    })
+  }
+
+  /**
    * @param {string} bookTitle
    * @param {AudioFile[]} audioFiles 
-   * @param {LibraryScan} libraryScan
+   * @param {import('./LibraryScan')} libraryScan
    * @returns {import('../models/Book').ChapterObject[]}
    */
   getBookChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan) {
