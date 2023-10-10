@@ -85,10 +85,29 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
+  /**
+   * GET: /api/items/:id/download
+   * Download library item. Zip file if multiple files.
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   download(req, res) {
     if (!req.user.canDownload) {
       Logger.warn('User attempted to download without permission', req.user)
       return res.sendStatus(403)
+    }
+
+    // If library item is a single file in root dir then no need to zip
+    if (req.libraryItem.isFile) {
+      // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(req.libraryItem.path))
+      if (audioMimeType) {
+        res.setHeader('Content-Type', audioMimeType)
+      }
+
+      res.download(req.libraryItem.path, req.libraryItem.relPath)
+      return
     }
 
     const libraryItemPath = req.libraryItem.path
