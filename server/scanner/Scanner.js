@@ -12,12 +12,14 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
 const CoverManager = require('../managers/CoverManager')
+const CacheManager = require('../managers/CacheManager')
+const AuthorFinder = require('../finders/AuthorFinder')
 
 class Scanner {
   constructor() { }
 
   async quickMatchLibraryItem(libraryItem, options = {}) {
-    var provider = options.provider || 'google'
+    options.provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
     var overrideDefaults = options.overrideDefaults || false
@@ -36,10 +38,10 @@ class Scanner {
       var searchISBN = options.isbn || libraryItem.media.metadata.isbn
       var searchASIN = options.asin || libraryItem.media.metadata.asin
 
-      var results = await BookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
+      var results = await BookFinder.search(options.provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
       if (!results.length) {
         return {
-          warning: `No ${provider} match found`
+          warning: `No ${options.provider} match found`
         }
       }
       var matchData = results[0]
@@ -60,7 +62,7 @@ class Scanner {
       var results = await PodcastFinder.search(searchTitle)
       if (!results.length) {
         return {
-          warning: `No ${provider} match found`
+          warning: `No ${options.provider} match found`
         }
       }
       var matchData = results[0]
@@ -189,6 +191,13 @@ class Scanner {
         if (!author) {
           author = new Author()
           author.setData({ name: authorName }, libraryItem.libraryId)
+          let authorOptions = {}
+          authorOptions.region = options.provider.includes('.') ? options.provider.split('.').pop() : 'us'
+          let authorData = await this.quickMatchAuthor(author, authorOptions)
+          if (authorData) {
+            author = authorData.author
+          }
+
           await Database.createAuthor(author)
           SocketAuthority.emitter('author_added', author.toJSON())
           // Update filter data
@@ -362,5 +371,50 @@ class Scanner {
     LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter(ls => ls.id !== library.id)
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
   }
+
+
+  /**
+   * Search providers for author
+   * @param {Author} author
+   * @param {{region:string, asin:string, q:string}} options
+   */
+  async quickMatchAuthor(author, options = {}) {
+    let authorData = null
+    const region = options.region || 'us'
+    if (options.asin) {
+      authorData = await AuthorFinder.findAuthorByASIN(options.asin, region)
+    } else {
+      authorData = await AuthorFinder.findAuthorByName(options.q || author.name, region)
+    }
+    if (!authorData) {
+      return null
+    }
+    Logger.debug(`[Scanner] match author from with "${options.q || options.asin}"`, authorData)
+
+    let hasUpdated = false;
+    ['asin', 'name', 'description'].forEach(key => {
+      if (authorData[key] && author[key] !== authorData[key]) {
+        author[key] = authorData[key];
+        hasUpdated = true;
+      }
+    });
+
+    // Only updates image if there was no image before or the author ASIN was updated
+    if (authorData.image && (!author.imagePath || (authorData.asin && author.asin !== authorData.asin))) {
+      await CacheManager.purgeImageCache(author.id)
+
+      const imageData = await AuthorFinder.saveAuthorImage(author.id, authorData.image)
+      if (imageData) {
+        author.imagePath = imageData.path
+        hasUpdated = true
+      }
+    }
+
+    return {
+      updated: hasUpdated,
+      author: author
+    }
+  }
+
 }
 module.exports = new Scanner()

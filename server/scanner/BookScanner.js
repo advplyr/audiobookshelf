@@ -15,10 +15,12 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const SocketAuthority = require('../SocketAuthority')
 const fsExtra = require("../libs/fsExtra")
 const BookFinder = require('../finders/BookFinder')
+const Author = require('../objects/entities/Author')
 
 const LibraryScan = require("./LibraryScan")
 const OpfFileScanner = require('./OpfFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
+const Scanner = require('../scanner/Scanner')
 
 /**
  * Metadata for books pulled from files
@@ -192,11 +194,15 @@ class BookScanner {
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
               authorsUpdated = true
             } else {
-              const newAuthor = await Database.authorModel.create({
-                name: authorName,
-                lastFirst: parseNameString.nameToLastFirst(authorName),
-                libraryId: libraryItemData.libraryId
-              })
+              let author = new Author()
+              author.setData({ name: authorName }, libraryItemData.libraryId)
+              let authorOptions = {}
+              authorOptions.region = libraryScan.library.provider.includes('.') ? libraryScan.library.provider.split('.').pop() : 'us'
+              let authorData = await Scanner.quickMatchAuthor(author, authorOptions)
+              if (authorData) {
+                author = authorData.author
+              }
+              const newAuthor = await Database.authorModel.create(author)
               await media.addAuthor(newAuthor)
               Database.addAuthorToFilterData(libraryItemData.libraryId, newAuthor.name, newAuthor.id)
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new author "${authorName}"`)
@@ -416,12 +422,16 @@ class BookScanner {
           })
         } else {
           // New author
+          let author = new Author()
+          author.setData({ name: authorName }, libraryItemData.libraryId)
+          let authorOptions = {}
+          authorOptions.region = libraryScan.library.provider.includes('.') ? libraryScan.library.provider.split('.').pop() : 'us'
+          let authorData = await Scanner.quickMatchAuthor(author, authorOptions)
+          if (authorData) {
+            author = authorData.author
+          }
           bookObject.bookAuthors.push({
-            author: {
-              libraryId: libraryItemData.libraryId,
-              name: authorName,
-              lastFirst: parseNameString.nameToLastFirst(authorName)
-            }
+            author: author.toJSON()
           })
         }
       }

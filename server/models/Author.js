@@ -1,4 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
+const { nameToLastFirst } = require('../utils/parsers/parseNameString')
 
 const oldAuthor = require('../objects/entities/Author')
 
@@ -166,6 +167,12 @@ class Author extends Model {
       onDelete: 'CASCADE'
     })
     Author.belongsTo(library)
+
+    Author.addHook('beforeCreate', async (author) => {
+      if (!author || author.lastFirst) return
+      author.lastFirst = nameToLastFirst(author.name)
+    })
+
   }
 }
 module.exports = Author

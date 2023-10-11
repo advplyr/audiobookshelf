@@ -8,6 +8,7 @@ const Database = require('../Database')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
+const Scanner = require('../scanner/Scanner')
 
 const { reqSupportsWebp } = require('../utils/index')
 
@@ -191,54 +192,21 @@ class AuthorController {
     res.sendStatus(200)
   }
 
+  // POST api/authors/:id/match
   async match(req, res) {
-    let authorData = null
-    const region = req.body.region || 'us'
-    if (req.body.asin) {
-      authorData = await AuthorFinder.findAuthorByASIN(req.body.asin, region)
-    } else {
-      authorData = await AuthorFinder.findAuthorByName(req.body.q, region)
-    }
-    if (!authorData) {
+    var author = req.author
+    var options = req.body || {}
+    var matchResult = await Scanner.quickMatchAuthor(author, options)
+    if (!matchResult) {
       return res.status(404).send('Author not found')
     }
-    Logger.debug(`[AuthorController] match author with "${req.body.q || req.body.asin}"`, authorData)
-
-    let hasUpdates = false
-    if (authorData.asin && req.author.asin !== authorData.asin) {
-      req.author.asin = authorData.asin
-      hasUpdates = true
+    if (matchResult.updated) {
+      matchResult.author.updatedAt = Date.now()
+      await Database.updateAuthor(matchResult.author)
+      const numBooks = await Database.libraryItemModel.getForAuthor(matchResult.author).length
+      SocketAuthority.emitter('author_updated', matchResult.author.toJSONExpanded(numBooks))
     }
-
-    // Only updates image if there was no image before or the author ASIN was updated
-    if (authorData.image && (!req.author.imagePath || hasUpdates)) {
-      await CacheManager.purgeImageCache(req.author.id)
-
-      const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image)
-      if (imageData) {
-        req.author.imagePath = imageData.path
-        hasUpdates = true
-      }
-    }
-
-    if (authorData.description && req.author.description !== authorData.description) {
-      req.author.description = authorData.description
-      hasUpdates = true
-    }
-
-    if (hasUpdates) {
-      req.author.updatedAt = Date.now()
-
-      await Database.updateAuthor(req.author)
-
-      const numBooks = await Database.libraryItemModel.getForAuthor(req.author).length
-      SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
-    }
-
-    res.json({
-      updated: hasUpdates,
-      author: req.author
-    })
+    res.json(matchResult)
   }
 
   // GET api/authors/:id/image
