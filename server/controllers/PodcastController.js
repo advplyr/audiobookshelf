@@ -286,7 +286,7 @@ class PodcastController {
       const numItems = pmi.playlist.playlistMediaItems.length - 1
 
       if (!numItems) {
-        Logger.info(`[PodcastController] Playlist "${playlist.name}" has no more items - removing it`)
+        Logger.info(`[PodcastController] Playlist "${pmi.playlist.name}" has no more items - removing it`)
         const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
         SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_removed', jsonExpanded)
         await pmi.playlist.destroy()
