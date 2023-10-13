@@ -182,22 +182,22 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
-    var libraryItem = req.libraryItem
+    let libraryItem = req.libraryItem
 
-    var result = null
-    if (req.body && req.body.url) {
+    let result = null
+    if (req.body?.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
       result = await CoverManager.downloadCoverFromUrl(libraryItem, req.body.url)
-    } else if (req.files && req.files.cover) {
+    } else if (req.files?.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
       result = await CoverManager.uploadCover(libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
 
-    if (result && result.error) {
+    if (result?.error) {
       return res.status(400).send(result.error)
-    } else if (!result || !result.cover) {
+    } else if (!result?.cover) {
       return res.status(500).send('Unknown error occurred')
     }
 

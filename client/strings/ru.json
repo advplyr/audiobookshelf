@@ -266,6 +266,7 @@
   "LabelHost": "Хост",
   "LabelHour": "Часы",
   "LabelIcon": "Иконка",
+  "LabelImageURLFromTheWeb": "Image URL from the web",
   "LabelIncludeInTracklist": "Включать в список воспроизведения",
   "LabelIncomplete": "Не завершен",
   "LabelInProgress": "В процессе",

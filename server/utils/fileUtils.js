@@ -1,7 +1,8 @@
-const fs = require('../libs/fsExtra')
-const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
+const ssrfFilter = require('ssrf-req-filter')
+const fs = require('../libs/fsExtra')
+const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
 
@@ -210,7 +211,9 @@ module.exports.downloadFile = (url, filepath) => {
       url,
       method: 'GET',
       responseType: 'stream',
-      timeout: 30000
+      timeout: 30000,
+      httpAgent: ssrfFilter(url),
+      httpsAgent: ssrfFilter(url)
     }).then((response) => {
       const writer = fs.createWriteStream(filepath)
       response.data.pipe(writer)

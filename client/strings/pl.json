@@ -266,6 +266,7 @@
   "LabelHost": "Host",
   "LabelHour": "Godzina",
   "LabelIcon": "Ikona",
+  "LabelImageURLFromTheWeb": "Image URL from the web",
   "LabelIncludeInTracklist": "Dołącz do listy odtwarzania",
   "LabelIncomplete": "Nieukończone",
   "LabelInProgress": "W trakcie",

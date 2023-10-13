@@ -120,13 +120,16 @@ class CoverManager {
       await fs.ensureDir(coverDirPath)
 
       var temppath = Path.posix.join(coverDirPath, 'cover')
-      var success = await downloadFile(url, temppath).then(() => true).catch((err) => {
-        Logger.error(`[CoverManager] Download image file failed for "${url}"`, err)
+
+      let errorMsg = ''
+      let success = await downloadFile(url, temppath).then(() => true).catch((err) => {
+        errorMsg = err.message || 'Unknown error'
+        Logger.error(`[CoverManager] Download image file failed for "${url}"`, errorMsg)
         return false
       })
       if (!success) {
         return {
-          error: 'Failed to download image from url'
+          error: 'Failed to download image from url: ' + errorMsg
         }
       }
 
