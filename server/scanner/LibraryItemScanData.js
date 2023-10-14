@@ -309,7 +309,7 @@ class LibraryItemScanData {
    * @param {Object} bookMetadata 
    */
   setBookMetadataFromFilenames(bookMetadata) {
-    const keysToMap = ['title', 'subtitle', 'publishedYear']
+    const keysToMap = ['title', 'subtitle', 'publishedYear', 'asin']
     for (const key in this.mediaMetadata) {
       if (keysToMap.includes(key) && this.mediaMetadata[key]) {
         bookMetadata[key] = this.mediaMetadata[key]

@@ -55,7 +55,7 @@ class AbsMetadataFileScanner {
           bookMetadata.chapters = abMetadata.chapters
         }
         for (const key in abMetadata.metadata) {
-          if (abMetadata.metadata[key] === undefined) continue
+          if (abMetadata.metadata[key] === undefined || abMetadata.metadata[key] === null) continue
           bookMetadata[key] = abMetadata.metadata[key]
         }
       }
