@@ -204,7 +204,16 @@ async function recurseFiles(path, relPathToReplace = null) {
 }
 module.exports.recurseFiles = recurseFiles
 
-module.exports.downloadFile = (url, filepath) => {
+/**
+ * Download file from web to local file system
+ * Uses SSRF filter to prevent internal URLs
+ * 
+ * @param {string} url 
+ * @param {string} filepath path to download the file to
+ * @param {Function} [contentTypeFilter] validate content type before writing
+ * @returns {Promise}
+ */
+module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
     axios({
@@ -215,6 +224,12 @@ module.exports.downloadFile = (url, filepath) => {
       httpAgent: ssrfFilter(url),
       httpsAgent: ssrfFilter(url)
     }).then((response) => {
+      // Validate content type
+      if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
+        return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+      }
+
+      // Write to filepath
       const writer = fs.createWriteStream(filepath)
       response.data.pipe(writer)
 
@@ -225,6 +240,21 @@ module.exports.downloadFile = (url, filepath) => {
       reject(err)
     })
   })
+}
+
+/**
+ * Download image file from web to local file system
+ * Response header must have content-type of image/ (excluding svg)
+ * 
+ * @param {string} url 
+ * @param {string} filepath 
+ * @returns {Promise}
+ */
+module.exports.downloadImageFile = (url, filepath) => {
+  const contentTypeFilter = (contentType) => {
+    return contentType?.startsWith('image/') && contentType !== 'image/svg+xml'
+  }
+  return this.downloadFile(url, filepath, contentTypeFilter)
 }
 
 module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {

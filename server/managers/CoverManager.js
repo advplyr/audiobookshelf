@@ -5,7 +5,7 @@ const readChunk = require('../libs/readChunk')
 const imageType = require('../libs/imageType')
 
 const globals = require('../utils/globals')
-const { downloadFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
+const { downloadImageFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const CacheManager = require('../managers/CacheManager')
 
@@ -122,7 +122,7 @@ class CoverManager {
       var temppath = Path.posix.join(coverDirPath, 'cover')
 
       let errorMsg = ''
-      let success = await downloadFile(url, temppath).then(() => true).catch((err) => {
+      let success = await downloadImageFile(url, temppath).then(() => true).catch((err) => {
         errorMsg = err.message || 'Unknown error'
         Logger.error(`[CoverManager] Download image file failed for "${url}"`, errorMsg)
         return false
@@ -287,7 +287,7 @@ class CoverManager {
       await fs.ensureDir(coverDirPath)
 
       const temppath = Path.posix.join(coverDirPath, 'cover')
-      const success = await downloadFile(url, temppath).then(() => true).catch((err) => {
+      const success = await downloadImageFile(url, temppath).then(() => true).catch((err) => {
         Logger.error(`[CoverManager] Download image file failed for "${url}"`, err)
         return false
       })

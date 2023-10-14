@@ -3,7 +3,7 @@ const Logger = require('../Logger')
 const Path = require('path')
 const Audnexus = require('../providers/Audnexus')
 
-const { downloadFile } = require('../utils/fileUtils')
+const { downloadImageFile } = require('../utils/fileUtils')
 
 class AuthorFinder {
   constructor() {
@@ -45,7 +45,7 @@ class AuthorFinder {
     const filename = authorId + '.' + ext
     const outputPath = Path.posix.join(authorDir, filename)
 
-    return downloadFile(url, outputPath).then(() => {
+    return downloadImageFile(url, outputPath).then(() => {
       return {
         path: outputPath
       }
