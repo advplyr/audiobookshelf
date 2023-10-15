@@ -21,9 +21,10 @@ class LibraryItemScanner {
    * Scan single library item
    * 
    * @param {string} libraryItemId 
+   * @param {{relPath:string, path:string}} [renamedPaths] used by watcher when item folder was renamed
    * @returns {number} ScanResult
    */
-  async scanLibraryItem(libraryItemId) {
+  async scanLibraryItem(libraryItemId, renamedPaths = null) {
     // TODO: Add task manager
     const libraryItem = await Database.libraryItemModel.findByPk(libraryItemId)
     if (!libraryItem) {
@@ -50,9 +51,9 @@ class LibraryItemScanner {
 
     const scanLogger = new ScanLogger()
     scanLogger.verbose = true
-    scanLogger.setData('libraryItem', libraryItem.relPath)
+    scanLogger.setData('libraryItem', renamedPaths?.relPath || libraryItem.relPath)
 
-    const libraryItemPath = fileUtils.filePathToPOSIX(libraryItem.path)
+    const libraryItemPath = renamedPaths?.path || fileUtils.filePathToPOSIX(libraryItem.path)
     const folder = library.libraryFolders[0]
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, false)
 
