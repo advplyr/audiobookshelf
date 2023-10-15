@@ -5,6 +5,7 @@ import { supplant } from './utils'
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
+  'da': { label: 'Dansk', dateFnsLocale: 'da' },
   'de': { label: 'Deutsch', dateFnsLocale: 'de' },
   'en-us': { label: 'English', dateFnsLocale: 'enUS' },
   'es': { label: 'Español', dateFnsLocale: 'es' },
