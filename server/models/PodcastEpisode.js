@@ -79,6 +79,7 @@ class PodcastEpisode extends Model {
       subtitle: this.subtitle,
       description: this.description,
       enclosure,
+      guid: this.extraData?.guid || null,
       pubDate: this.pubDate,
       chapters: this.chapters,
       audioFile: this.audioFile,
@@ -97,6 +98,9 @@ class PodcastEpisode extends Model {
     const extraData = {}
     if (oldEpisode.oldEpisodeId) {
       extraData.oldEpisodeId = oldEpisode.oldEpisodeId
+    }
+    if (oldEpisode.guid) {
+      extraData.guid = oldEpisode.guid
     }
     return {
       id: oldEpisode.id,

@@ -201,7 +201,7 @@ class PodcastManager {
     })
     // TODO: Should we check for open playback sessions for this episode?
     // TODO: remove all user progress for this episode
-    if (oldestEpisode && oldestEpisode.audioFile) {
+    if (oldestEpisode?.audioFile) {
       Logger.info(`[PodcastManager] Deleting oldest episode "${oldestEpisode.title}"`)
       const successfullyDeleted = await removeFile(oldestEpisode.audioFile.metadata.path)
       if (successfullyDeleted) {
@@ -246,7 +246,7 @@ class PodcastManager {
     Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.metadata.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
     var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
-    Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes ? newEpisodes.length : 'N/A'} episodes found`)
+    Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes?.length || 'N/A'} episodes found`)
 
     if (!newEpisodes) { // Failed
       // Allow up to MaxFailedEpisodeChecks failed attempts before disabling auto download
@@ -280,14 +280,14 @@ class PodcastManager {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`)
       return false
     }
-    var feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
-    if (!feed || !feed.episodes) {
+    const feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
+    if (!feed?.episodes) {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`, feed)
       return false
     }
 
     // Filter new and not already has
-    var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
+    let newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
 
     if (maxNewEpisodes > 0) {
       newEpisodes = newEpisodes.slice(0, maxNewEpisodes)

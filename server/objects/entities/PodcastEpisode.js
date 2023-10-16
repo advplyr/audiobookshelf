@@ -20,6 +20,7 @@ class PodcastEpisode {
     this.subtitle = null
     this.description = null
     this.enclosure = null
+    this.guid = null
     this.pubDate = null
     this.chapters = []
 
@@ -46,6 +47,7 @@ class PodcastEpisode {
     this.subtitle = episode.subtitle
     this.description = episode.description
     this.enclosure = episode.enclosure ? { ...episode.enclosure } : null
+    this.guid = episode.guid || null
     this.pubDate = episode.pubDate
     this.chapters = episode.chapters?.map(ch => ({ ...ch })) || []
     this.audioFile = new AudioFile(episode.audioFile)
@@ -70,6 +72,7 @@ class PodcastEpisode {
       subtitle: this.subtitle,
       description: this.description,
       enclosure: this.enclosure ? { ...this.enclosure } : null,
+      guid: this.guid,
       pubDate: this.pubDate,
       chapters: this.chapters.map(ch => ({ ...ch })),
       audioFile: this.audioFile.toJSON(),
@@ -93,6 +96,7 @@ class PodcastEpisode {
       subtitle: this.subtitle,
       description: this.description,
       enclosure: this.enclosure ? { ...this.enclosure } : null,
+      guid: this.guid,
       pubDate: this.pubDate,
       chapters: this.chapters.map(ch => ({ ...ch })),
       audioFile: this.audioFile.toJSON(),
@@ -133,6 +137,7 @@ class PodcastEpisode {
     this.pubDate = data.pubDate || ''
     this.description = data.description || ''
     this.enclosure = data.enclosure ? { ...data.enclosure } : null
+    this.guid = data.guid || null
     this.season = data.season || ''
     this.episode = data.episode || ''
     this.episodeType = data.episodeType || 'full'
