@@ -17,7 +17,7 @@
           </div>
 
           <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
-          <p class="text-white max-w-3xl text-sm leading-5">{{ author.description }}</p>
+          <p class="text-white max-w-3xl text-sm leading-5 whitespace-pre-wrap">{{ author.description }}</p>
         </div>
       </div>
 
