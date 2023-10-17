@@ -855,6 +855,56 @@ class LibraryController {
   }
 
   /**
+   * Remove all metadata.json or metadata.abs files in library item folders
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async removeAllMetadataFiles(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user attempted to remove all metadata files`, req.user)
+      return res.sendStatus(403)
+    }
+
+    const fileExt = req.query.ext === 'abs' ? 'abs' : 'json'
+    const metadataFilename = `metadata.${fileExt}`
+    const libraryItemsWithMetadata = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'libraryFiles'],
+      where: [
+        {
+          libraryId: req.library.id
+        },
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(libraryFiles) AND json_extract(json_each.value, "$.metadata.filename") = "${metadataFilename}")`), {
+          [Sequelize.Op.gte]: 1
+        })
+      ]
+    })
+    if (!libraryItemsWithMetadata.length) {
+      Logger.info(`[LibraryController] No ${metadataFilename} files found to remove`)
+      return res.json({
+        found: 0
+      })
+    }
+
+    Logger.info(`[LibraryController] Found ${libraryItemsWithMetadata.length} ${metadataFilename} files to remove`)
+
+    let numRemoved = 0
+    for (const libraryItem of libraryItemsWithMetadata) {
+      const metadataFilepath = libraryItem.libraryFiles.find(lf => lf.metadata.filename === metadataFilename)?.metadata.path
+      if (!metadataFilepath) continue
+      Logger.debug(`[LibraryController] Removing file "${metadataFilepath}"`)
+      if ((await fileUtils.removeFile(metadataFilepath))) {
+        numRemoved++
+      }
+    }
+
+    res.json({
+      found: libraryItemsWithMetadata.length,
+      removed: numRemoved
+    })
+  }
+
+  /**
    * Middleware that is not using libraryItems from memory
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
