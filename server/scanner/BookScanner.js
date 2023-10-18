@@ -339,6 +339,19 @@ class BookScanner {
       libraryItemUpdated = global.ServerSettings.storeMetadataWithItem && !existingLibraryItem.isFile
     }
 
+    // If book has no audio files and no ebook then it is considered missing
+    if (!media.audioFiles.length && !media.ebookFile) {
+      if (!existingLibraryItem.isMissing) {
+        libraryScan.addLog(LogLevel.INFO, `Book "${bookMetadata.title}" has no audio files and no ebook file. Setting library item as missing`)
+        existingLibraryItem.isMissing = true
+        libraryItemUpdated = true
+      }
+    } else if (existingLibraryItem.isMissing) {
+      libraryScan.addLog(LogLevel.INFO, `Book "${bookMetadata.title}" was missing but now has media files. Setting library item as NOT missing`)
+      existingLibraryItem.isMissing = false
+      libraryItemUpdated = true
+    }
+
     // Check/update the isSupplementary flag on libraryFiles for the LibraryItem
     for (const libraryFile of existingLibraryItem.libraryFiles) {
       if (globals.SupportedEbookTypes.includes(libraryFile.metadata.ext.slice(1).toLowerCase())) {
