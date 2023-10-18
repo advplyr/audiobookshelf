@@ -1,7 +1,18 @@
 <template>
-  <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
-    <ui-btn class="mb-4" @click.stop="removeAllMetadataClick('json')">Remove all metadata.json files in library item folders</ui-btn>
-    <ui-btn @click.stop="removeAllMetadataClick('abs')">Remove all metadata.abs files in library item folders</ui-btn>
+  <div class="w-full h-full px-1 md:px-2 py-1 mb-4">
+    <div class="w-full border border-black-200 p-4 my-8">
+      <div class="flex flex-wrap items-center">
+        <div>
+          <p class="text-lg">Remove metadata files in library item folders</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Remove all metadata.json or metadata.abs files in your {{ mediaType }} folders</p>
+        </div>
+        <div class="flex-grow" />
+        <div>
+          <ui-btn class="mb-4 block" @click.stop="removeAllMetadataClick('json')">Remove all metadata.json</ui-btn>
+          <ui-btn @click.stop="removeAllMetadataClick('abs')">Remove all metadata.abs</ui-btn>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
