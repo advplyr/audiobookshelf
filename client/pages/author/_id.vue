@@ -3,7 +3,7 @@
     <div class="max-w-6xl mx-auto">
       <div class="flex flex-wrap sm:flex-nowrap justify-center mb-6">
         <div class="w-48 min-w-48">
-          <div class="w-full h-52">
+          <div class="w-full h-60">
             <covers-author-image :author="author" rounded="0" />
           </div>
         </div>
@@ -44,7 +44,7 @@
 <script>
 export default {
   async asyncData({ store, app, params, redirect, query }) {
-    const author = await app.$axios.$get(`/api/authors/${params.id}?library=${query.library || store.state.libraries.currentLibraryId}&include=items,series`).catch((error) => {
+    const author = await app.$axios.$get(`/api/authors/${params.id}?include=items,series`).catch((error) => {
       console.error('Failed to get author', error)
       return null
     })

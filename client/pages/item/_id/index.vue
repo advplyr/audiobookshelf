@@ -42,7 +42,7 @@
                   <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}?library=${libraryItem.libraryId}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
