@@ -1,9 +1,7 @@
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
-const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
-const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
-const abmetadataGenerator = require('../../utils/generators/abmetadataGenerator')
-const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
+const { areEquivalent, copyValue } = require('../../utils/index')
+const { filePathToPOSIX } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 const EBookFile = require('../files/EBookFile')
@@ -111,22 +109,11 @@ class Book {
   get hasMediaEntities() {
     return !!this.tracks.length || this.ebookFile
   }
-  get shouldSearchForCover() {
-    if (this.coverPath) return false
-    if (!this.lastCoverSearch || this.metadata.coverSearchQuery !== this.lastCoverSearchQuery) return true
-    return (Date.now() - this.lastCoverSearch) > 1000 * 60 * 60 * 24 * 7 // 7 day
-  }
-  get hasEmbeddedCoverArt() {
-    return this.audioFiles.some(af => af.embeddedCoverArt)
-  }
   get invalidAudioFiles() {
     return this.audioFiles.filter(af => af.invalid)
   }
   get includedAudioFiles() {
     return this.audioFiles.filter(af => !af.exclude && !af.invalid)
-  }
-  get hasIssues() {
-    return this.missingParts.length || this.invalidAudioFiles.length
   }
   get tracks() {
     let startOffset = 0
@@ -224,57 +211,6 @@ class Book {
     if (audioFile) return audioFile
     if (this.ebookFile && this.ebookFile.ino === inode) return this.ebookFile
     return null
-  }
-
-  updateLastCoverSearch(coverWasFound) {
-    this.lastCoverSearch = coverWasFound ? null : Date.now()
-    this.lastCoverSearchQuery = coverWasFound ? null : this.metadata.coverSearchQuery
-  }
-
-  // Audio file metadata tags map to book details (will not overwrite)
-  setMetadataFromAudioFile(overrideExistingDetails = false) {
-    if (!this.audioFiles.length) return false
-    var audioFile = this.audioFiles[0]
-    if (!audioFile.metaTags) return false
-    return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
-  }
-
-  setData(mediaPayload) {
-    this.metadata = new BookMetadata()
-    if (mediaPayload.metadata) {
-      this.metadata.setData(mediaPayload.metadata)
-    }
-  }
-
-  searchQuery(query) {
-    const payload = {
-      tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
-      series: this.metadata.searchSeries(query),
-      authors: this.metadata.searchAuthors(query),
-      narrators: this.metadata.searchNarrators(query),
-      matchKey: null,
-      matchText: null
-    }
-    const metadataMatch = this.metadata.searchQuery(query)
-    if (metadataMatch) {
-      payload.matchKey = metadataMatch.matchKey
-      payload.matchText = metadataMatch.matchText
-    } else {
-      if (payload.authors.length) {
-        payload.matchKey = 'authors'
-        payload.matchText = this.metadata.authorName
-      } else if (payload.series.length) {
-        payload.matchKey = 'series'
-        payload.matchText = this.metadata.seriesName
-      } else if (payload.tags.length) {
-        payload.matchKey = 'tags'
-        payload.matchText = this.tags.join(', ')
-      } else if (payload.narrators.length) {
-        payload.matchKey = 'narrators'
-        payload.matchText = this.metadata.narratorName
-      }
-    }
-    return payload
   }
 
   /**

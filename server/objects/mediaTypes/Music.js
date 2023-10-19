@@ -65,15 +65,6 @@ class Music {
   get hasMediaEntities() {
     return !!this.audioFile
   }
-  get shouldSearchForCover() {
-    return false
-  }
-  get hasEmbeddedCoverArt() {
-    return this.audioFile.embeddedCoverArt
-  }
-  get hasIssues() {
-    return false
-  }
   get duration() {
     return this.audioFile.duration || 0
   }
@@ -132,16 +123,6 @@ class Music {
 
   setAudioFile(audioFile) {
     this.audioFile = audioFile
-  }
-
-  setMetadataFromAudioFile(overrideExistingDetails = false) {
-    if (!this.audioFile) return false
-    if (!this.audioFile.metaTags) return false
-    return this.metadata.setDataFromAudioMetaTags(this.audioFile.metaTags, overrideExistingDetails)
-  }
-
-  searchQuery(query) {
-    return {}
   }
 
   // Only checks container format

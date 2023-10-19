@@ -1,4 +1,3 @@
-const sequelize = require('sequelize')
 const express = require('express')
 const Path = require('path')
 

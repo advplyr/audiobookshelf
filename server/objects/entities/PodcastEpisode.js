@@ -1,7 +1,5 @@
 const uuidv4 = require("uuid").v4
-const Path = require('path')
-const Logger = require('../../Logger')
-const { cleanStringForSearch, areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 
@@ -146,19 +144,6 @@ class PodcastEpisode {
     this.updatedAt = Date.now()
   }
 
-  setDataFromAudioFile(audioFile, index) {
-    this.id = uuidv4()
-    this.audioFile = audioFile
-    this.title = Path.basename(audioFile.metadata.filename, Path.extname(audioFile.metadata.filename))
-    this.index = index
-
-    this.setDataFromAudioMetaTags(audioFile.metaTags, true)
-
-    this.chapters = audioFile.chapters?.map((c) => ({ ...c }))
-    this.addedAt = Date.now()
-    this.updatedAt = Date.now()
-  }
-
   update(payload) {
     let hasUpdates = false
     for (const key in this.toJSON()) {
@@ -191,81 +176,6 @@ class PodcastEpisode {
   checkEqualsEnclosureUrl(url) {
     if (!this.enclosure || !this.enclosure.url) return false
     return this.enclosure.url == url
-  }
-
-  searchQuery(query) {
-    return cleanStringForSearch(this.title).includes(query)
-  }
-
-  setDataFromAudioMetaTags(audioFileMetaTags, overrideExistingDetails = false) {
-    if (!audioFileMetaTags) return false
-
-    const MetadataMapArray = [
-      {
-        tag: 'tagComment',
-        altTag: 'tagSubtitle',
-        key: 'description'
-      },
-      {
-        tag: 'tagSubtitle',
-        key: 'subtitle'
-      },
-      {
-        tag: 'tagDate',
-        key: 'pubDate'
-      },
-      {
-        tag: 'tagDisc',
-        key: 'season',
-      },
-      {
-        tag: 'tagTrack',
-        altTag: 'tagSeriesPart',
-        key: 'episode'
-      },
-      {
-        tag: 'tagTitle',
-        key: 'title'
-      },
-      {
-        tag: 'tagEpisodeType',
-        key: 'episodeType'
-      }
-    ]
-
-    MetadataMapArray.forEach((mapping) => {
-      let value = audioFileMetaTags[mapping.tag]
-      let tagToUse = mapping.tag
-      if (!value && mapping.altTag) {
-        tagToUse = mapping.altTag
-        value = audioFileMetaTags[mapping.altTag]
-      }
-
-      if (value && typeof value === 'string') {
-        value = value.trim() // Trim whitespace
-
-        if (mapping.key === 'pubDate' && (!this.pubDate || overrideExistingDetails)) {
-          const pubJsDate = new Date(value)
-          if (pubJsDate && !isNaN(pubJsDate)) {
-            this.publishedAt = pubJsDate.valueOf()
-            this.pubDate = value
-            Logger.debug(`[PodcastEpisode] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${this[mapping.key]}`)
-          } else {
-            Logger.warn(`[PodcastEpisode] Mapping pubDate with tag ${tagToUse} has invalid date "${value}"`)
-          }
-        } else if (mapping.key === 'episodeType' && (!this.episodeType || overrideExistingDetails)) {
-          if (['full', 'trailer', 'bonus'].includes(value)) {
-            this.episodeType = value
-            Logger.debug(`[PodcastEpisode] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${this[mapping.key]}`)
-          } else {
-            Logger.warn(`[PodcastEpisode] Mapping episodeType with invalid value "${value}". Must be one of [full, trailer, bonus].`)
-          }
-        } else if (!this[mapping.key] || overrideExistingDetails) {
-          this[mapping.key] = value
-          Logger.debug(`[PodcastEpisode] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${this[mapping.key]}`)
-        }
-      }
-    })
   }
 }
 module.exports = PodcastEpisode
