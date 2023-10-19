@@ -124,7 +124,7 @@
             </ui-context-menu-dropdown>
           </div>
 
-          <div class="my-4 max-w-2xl">
+          <div class="my-4 w-full">
             <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
