@@ -682,8 +682,8 @@ export default {
     },
     deleteLibraryItem() {
       const payload = {
-        message: 'This will delete the library item from the database and your file system. Are you sure?',
-        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        message: this.$strings.MessageConfirmDeleteLibraryItem,
+        checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
         checkboxDefaultValue: true,
