@@ -12,6 +12,8 @@ const opmlGenerator = require('../utils/generators/opmlGenerator')
 const prober = require('../utils/prober')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
+const TaskManager = require('./TaskManager')
+
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
@@ -19,10 +21,9 @@ const AudioFile = require('../objects/files/AudioFile')
 const Task = require("../objects/Task")
 
 class PodcastManager {
-  constructor(watcher, notificationManager, taskManager) {
+  constructor(watcher, notificationManager) {
     this.watcher = watcher
     this.notificationManager = notificationManager
-    this.taskManager = taskManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -76,7 +77,7 @@ class PodcastManager {
       libraryItemId: podcastEpisodeDownload.libraryItemId,
     }
     task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
-    this.taskManager.addTask(task)
+    TaskManager.addTask(task)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
@@ -128,7 +129,7 @@ class PodcastManager {
       this.currentDownload.setFinished(false)
     }
 
-    this.taskManager.taskFinished(task)
+    TaskManager.taskFinished(task)
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
     SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())

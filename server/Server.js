@@ -31,7 +31,6 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
-const TaskManager = require('./managers/TaskManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 class Server {
@@ -58,15 +57,14 @@ class Server {
     this.auth = new Auth()
 
     // Managers
-    this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
     this.logManager = new LogManager()
-    this.abMergeManager = new AbMergeManager(this.taskManager)
+    this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager, this.taskManager)
-    this.audioMetadataManager = new AudioMetadataMangaer(this.taskManager)
+    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
+    this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
 

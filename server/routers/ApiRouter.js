@@ -46,7 +46,6 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
-    this.taskManager = Server.taskManager
 
     this.router = express()
     this.router.disable('x-powered-by')

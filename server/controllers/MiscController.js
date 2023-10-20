@@ -9,6 +9,8 @@ const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 
+const TaskManager = require('../managers/TaskManager')
+
 //
 // This is a controller for routes that don't have a home yet :(
 //
@@ -102,7 +104,7 @@ class MiscController {
     const includeArray = (req.query.include || '').split(',')
 
     const data = {
-      tasks: this.taskManager.tasks.map(t => t.toJSON())
+      tasks: TaskManager.tasks.map(t => t.toJSON())
     }
 
     if (includeArray.includes('queue')) {
