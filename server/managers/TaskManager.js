@@ -28,5 +28,21 @@ class TaskManager {
       SocketAuthority.emitter('task_finished', task.toJSON())
     }
   }
+
+  /**
+   * Create new task and add
+   * 
+   * @param {string} action 
+   * @param {string} title 
+   * @param {string} description 
+   * @param {boolean} showSuccess 
+   * @param {Object} [data] 
+   */
+  createAndAddTask(action, title, description, showSuccess, data = {}) {
+    const task = new Task()
+    task.setData(action, title, description, showSuccess, data)
+    this.addTask(task)
+    return task
+  }
 }
 module.exports = new TaskManager()

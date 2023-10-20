@@ -123,13 +123,6 @@ export default {
     init(payload) {
       console.log('Init Payload', payload)
 
-      // Start scans currently running
-      if (payload.librariesScanning) {
-        payload.librariesScanning.forEach((libraryScan) => {
-          this.scanStart(libraryScan)
-        })
-      }
-
       // Remove any current scans that are no longer running
       var currentScans = [...this.$store.state.scanners.libraryScans]
       currentScans.forEach((ls) => {

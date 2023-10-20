@@ -6,7 +6,7 @@ const date = require('../libs/dateAndTime')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
-const { secondsToTimestamp } = require('../utils/index')
+const { secondsToTimestamp, elapsedPretty } = require('../utils/index')
 
 class LibraryScan {
   constructor() {
@@ -66,6 +66,15 @@ class LibraryScan {
   }
   get logFilename() {
     return date.format(new Date(), 'YYYY-MM-DD') + '_' + this.id + '.txt'
+  }
+  get scanResultsString() {
+    if (this.error) return this.error
+    const strs = []
+    if (this.resultsAdded) strs.push(`${this.resultsAdded} added`)
+    if (this.resultsUpdated) strs.push(`${this.resultsUpdated} updated`)
+    if (this.resultsMissing) strs.push(`${this.resultsMissing} missing`)
+    if (!strs.length) return `Everything was up to date (${elapsedPretty(this.elapsed / 1000)})`
+    return strs.join(', ') + ` (${elapsedPretty(this.elapsed / 1000)})`
   }
 
   toJSON() {

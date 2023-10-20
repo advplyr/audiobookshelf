@@ -18,7 +18,6 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
-const Task = require("../objects/Task")
 
 class PodcastManager {
   constructor(watcher, notificationManager) {
@@ -70,14 +69,12 @@ class PodcastManager {
       return
     }
 
-    const task = new Task()
     const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
     const taskData = {
       libraryId: podcastEpisodeDownload.libraryId,
       libraryItemId: podcastEpisodeDownload.libraryItemId,
     }
-    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
-    TaskManager.addTask(task)
+    const task = TaskManager.createAndAddTask('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload

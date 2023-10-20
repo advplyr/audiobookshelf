@@ -1,10 +1,8 @@
 <template>
   <div class="flex items-center px-1 overflow-hidden">
     <div class="w-8 flex items-center justify-center">
-      <!-- <div class="text-lg"> -->
       <span v-if="isFinished" :class="taskIconStatus" class="material-icons text-base">{{ actionIcon }}</span>
       <widgets-loading-spinner v-else />
-      <!-- </div> -->
     </div>
     <div class="flex-grow px-2 taskRunningCardContent">
       <p class="truncate text-sm">{{ title }}</p>
@@ -12,7 +10,9 @@
       <p class="truncate text-xs text-gray-300">{{ description }}</p>
 
       <p v-if="isFailed && failedMessage" class="text-xs truncate text-red-500">{{ failedMessage }}</p>
+      <p v-else-if="!isFinished && cancelingScan" class="text-xs truncate">Canceling...</p>
     </div>
+    <ui-btn v-if="userIsAdminOrUp && !isFinished && action === 'library-scan' && !cancelingScan" color="primary" :padding-y="1" :padding-x="1" class="text-xs w-16 max-w-16 truncate mr-1" @click.stop="cancelScan">{{ this.$strings.ButtonCancel }}</ui-btn>
   </div>
 </template>
 
@@ -25,9 +25,14 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      cancelingScan: false
+    }
   },
   computed: {
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     title() {
       return this.task.title || 'No Title'
     },
@@ -78,7 +83,17 @@ export default {
       return ''
     }
   },
-  methods: {},
+  methods: {
+    cancelScan() {
+      const libraryId = this.task?.data?.libraryId
+      if (!libraryId) {
+        console.error('No library id in library-scan task', this.task)
+        return
+      }
+      this.cancelingScan = true
+      this.$root.socket.emit('cancel_scan', libraryId)
+    }
+  },
   mounted() {}
 }
 </script>

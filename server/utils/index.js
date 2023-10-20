@@ -65,6 +65,9 @@ module.exports.getId = (prepend = '') => {
 }
 
 function elapsedPretty(seconds) {
+  if (seconds > 0 && seconds < 1) {
+    return `${Math.floor(seconds * 1000)} ms`
+  }
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec`
   }

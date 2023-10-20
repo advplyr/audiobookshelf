@@ -9,6 +9,7 @@ const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const { LogLevel, ScanResult } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
+const TaskManager = require('../managers/TaskManager')
 const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
@@ -68,7 +69,12 @@ class LibraryScanner {
     libraryScan.verbose = true
     this.librariesScanning.push(libraryScan.getScanEmitData)
 
-    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
+    const taskData = {
+      libraryId: library.id,
+      libraryName: library.name,
+      libraryMediaType: library.mediaType
+    }
+    const task = TaskManager.createAndAddTask('library-scan', `Scanning "${library.name}" library`, null, true, taskData)
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
@@ -85,9 +91,11 @@ class LibraryScanner {
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
 
     if (canceled && !libraryScan.totalResults) {
+      task.setFinished('Scan canceled')
+      TaskManager.taskFinished(task)
+
       const emitData = libraryScan.getScanEmitData
       emitData.results = null
-      SocketAuthority.emitter('scan_complete', emitData)
       return
     }
 
@@ -98,7 +106,8 @@ class LibraryScanner {
     }
     await Database.libraryModel.updateFromOld(library)
 
-    SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
+    task.setFinished(libraryScan.scanResultsString)
+    TaskManager.taskFinished(task)
 
     if (libraryScan.totalResults) {
       libraryScan.saveLog()
