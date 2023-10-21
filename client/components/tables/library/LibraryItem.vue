@@ -125,7 +125,7 @@ export default {
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force })
         .then(() => {
-          this.$toast.success(this.$strings.ToastLibraryScanStarted)
+          // this.$toast.success(this.$strings.ToastLibraryScanStarted)
         })
         .catch((error) => {
           console.error('Failed to start scan', error)

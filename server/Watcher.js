@@ -3,6 +3,8 @@ const EventEmitter = require('events')
 const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
 const LibraryScanner = require('./scanner/LibraryScanner')
+const Task = require('./objects/Task')
+const TaskManager = require('./managers/TaskManager')
 
 const { filePathToPOSIX } = require('./utils/fileUtils')
 
@@ -22,7 +24,10 @@ class FolderWatcher extends EventEmitter {
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []
     this.pendingDelay = 4000
+    /** @type {NodeJS.Timeout} */
     this.pendingTimeout = null
+    /** @type {Task} */
+    this.pendingTask = null
 
     /** @type {string[]} */
     this.ignoreDirs = []
@@ -202,6 +207,13 @@ class FolderWatcher extends EventEmitter {
 
     Logger.debug(`[Watcher] Modified file in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
 
+    if (!this.pendingTask) {
+      const taskData = {
+        libraryId,
+        libraryName: libwatcher.name
+      }
+      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', `Scanning file changes in "${libwatcher.name}"`, null, true, taskData)
+    }
     this.pendingFileUpdates.push({
       path,
       relPath,
@@ -213,8 +225,8 @@ class FolderWatcher extends EventEmitter {
     // Notify server of update after "pendingDelay"
     clearTimeout(this.pendingTimeout)
     this.pendingTimeout = setTimeout(() => {
-      // this.emit('files', this.pendingFileUpdates)
-      LibraryScanner.scanFilesChanged(this.pendingFileUpdates)
+      LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
+      this.pendingTask = null
       this.pendingFileUpdates = []
     }, this.pendingDelay)
   }
