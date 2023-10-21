@@ -775,6 +775,13 @@ class LibraryController {
     })
   }
 
+  /**
+   * GET: /api/libraries/:id/matchall
+   * Quick match all library items. Book libraries only.
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async matchAll(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)

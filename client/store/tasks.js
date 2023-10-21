@@ -9,7 +9,8 @@ export const getters = {
     return state.tasks.filter(t => t.data?.libraryItemId === libraryItemId)
   },
   getRunningLibraryScanTask: (state) => (libraryId) => {
-    return state.tasks.find(t => t.data?.libraryId === libraryId && !t.isFinished)
+    const libraryScanActions = ['library-scan', 'library-match-all']
+    return state.tasks.find(t => libraryScanActions.includes(t.action) && t.data?.libraryId === libraryId && !t.isFinished)
   }
 }
 

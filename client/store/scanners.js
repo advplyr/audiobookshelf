@@ -1,5 +1,4 @@
 export const state = () => ({
-  libraryScans: [],
   providers: [
     {
       text: 'Google Books',
@@ -72,26 +71,8 @@ export const state = () => ({
   ]
 })
 
-export const getters = {
-  getLibraryScan: state => id => {
-    return state.libraryScans.find(ls => ls.id === id)
-  }
-}
+export const getters = {}
 
-export const actions = {
+export const actions = {}
 
-}
-
-export const mutations = {
-  addUpdate(state, data) {
-    const index = state.libraryScans.findIndex(lib => lib.id === data.id)
-    if (index >= 0) {
-      state.libraryScans.splice(index, 1, data)
-    } else {
-      state.libraryScans.push(data)
-    }
-  },
-  remove(state, data) {
-    state.libraryScans = state.libraryScans.filter(scan => scan.id !== data.id)
-  }
-}
+export const mutations = {}

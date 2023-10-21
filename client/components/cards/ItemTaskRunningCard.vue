@@ -12,7 +12,7 @@
       <p v-if="isFailed && failedMessage" class="text-xs truncate text-red-500">{{ failedMessage }}</p>
       <p v-else-if="!isFinished && cancelingScan" class="text-xs truncate">Canceling...</p>
     </div>
-    <ui-btn v-if="userIsAdminOrUp && !isFinished && action === 'library-scan' && !cancelingScan" color="primary" :padding-y="1" :padding-x="1" class="text-xs w-16 max-w-16 truncate mr-1" @click.stop="cancelScan">{{ this.$strings.ButtonCancel }}</ui-btn>
+    <ui-btn v-if="userIsAdminOrUp && !isFinished && isLibraryScan && !cancelingScan" color="primary" :padding-y="1" :padding-x="1" class="text-xs w-16 max-w-16 truncate mr-1" @click.stop="cancelScan">{{ this.$strings.ButtonCancel }}</ui-btn>
   </div>
 </template>
 
@@ -81,6 +81,9 @@ export default {
       }
 
       return ''
+    },
+    isLibraryScan() {
+      return this.action === 'library-scan' || this.action === 'library-match-all'
     }
   },
   methods: {

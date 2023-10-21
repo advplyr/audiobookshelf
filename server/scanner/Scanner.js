@@ -12,6 +12,7 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
 const CoverManager = require('../managers/CoverManager')
+const TaskManager = require('../managers/TaskManager')
 
 class Scanner {
   constructor() { }
@@ -280,6 +281,14 @@ class Scanner {
     return false
   }
 
+  /**
+   * Quick match library items
+   * 
+   * @param {import('../objects/Library')} library 
+   * @param {import('../objects/LibraryItem')[]} libraryItems 
+   * @param {LibraryScan} libraryScan 
+   * @returns {Promise<boolean>} false if scan canceled
+   */
   async matchLibraryItemsChunk(library, libraryItems, libraryScan) {
     for (let i = 0; i < libraryItems.length; i++) {
       const libraryItem = libraryItems[i]
@@ -313,6 +322,11 @@ class Scanner {
     return true
   }
 
+  /**
+   * Quick match all library items for library
+   * 
+   * @param {import('../objects/Library')} library 
+   */
   async matchLibraryItems(library) {
     if (library.mediaType === 'podcast') {
       Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
@@ -330,11 +344,14 @@ class Scanner {
     const libraryScan = new LibraryScan()
     libraryScan.setData(library, 'match')
     LibraryScanner.librariesScanning.push(libraryScan.getScanEmitData)
-    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
-
+    const taskData = {
+      libraryId: library.id
+    }
+    const task = TaskManager.createAndAddTask('library-match-all', `Matching books in "${library.name}"`, null, true, taskData)
     Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
     let hasMoreChunks = true
+    let isCanceled = false
     while (hasMoreChunks) {
       const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
       if (!libraryItems.length) {
@@ -347,6 +364,7 @@ class Scanner {
 
       const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)
       if (!shouldContinue) {
+        isCanceled = true
         break
       }
     }
@@ -354,13 +372,15 @@ class Scanner {
     if (offset === 0) {
       Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
       libraryScan.setComplete('Library has no items')
+      task.setFailed(libraryScan.error)
     } else {
       libraryScan.setComplete()
+      task.setFinished(isCanceled ? 'Canceled' : libraryScan.scanResultsString)
     }
 
     delete LibraryScanner.cancelLibraryScan[libraryScan.libraryId]
     LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter(ls => ls.id !== library.id)
-    SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
+    TaskManager.taskFinished(task)
   }
 }
 module.exports = new Scanner()
