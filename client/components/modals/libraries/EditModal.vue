@@ -88,6 +88,8 @@ export default {
           component: 'modals-libraries-library-tools'
         }
       ].filter((tab) => {
+        // Do not show tools tab for new libraries
+        if (tab.id === 'tools' && !this.library) return false
         return tab.id !== 'scanner' || this.mediaType === 'book'
       })
     },
