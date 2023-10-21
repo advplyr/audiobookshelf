@@ -84,7 +84,7 @@ export const actions = {
 
 export const mutations = {
   addUpdate(state, data) {
-    var index = state.libraryScans.findIndex(lib => lib.id === data.id)
+    const index = state.libraryScans.findIndex(lib => lib.id === data.id)
     if (index >= 0) {
       state.libraryScans.splice(index, 1, data)
     } else {

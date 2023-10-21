@@ -123,15 +123,6 @@ export default {
     init(payload) {
       console.log('Init Payload', payload)
 
-      // Remove any current scans that are no longer running
-      var currentScans = [...this.$store.state.scanners.libraryScans]
-      currentScans.forEach((ls) => {
-        if (!payload.librariesScanning || !payload.librariesScanning.find((_ls) => _ls.id === ls.id)) {
-          this.$toast.dismiss(ls.toastId)
-          this.$store.commit('scanners/remove', ls)
-        }
-      })
-
       if (payload.usersOnline) {
         this.$store.commit('users/setUsersOnline', payload.usersOnline)
       }

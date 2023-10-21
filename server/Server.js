@@ -86,10 +86,6 @@ class Server {
     LibraryScanner.setCancelLibraryScan(libraryId)
   }
 
-  getLibrariesScanning() {
-    return LibraryScanner.librariesScanning
-  }
-
   /**
    * Initialize database, backups, logs, rss feeds, cron jobs & watcher
    * Cleanup stale/invalid data

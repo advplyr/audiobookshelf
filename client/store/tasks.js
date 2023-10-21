@@ -6,7 +6,10 @@ export const state = () => ({
 
 export const getters = {
   getTasksByLibraryItemId: (state) => (libraryItemId) => {
-    return state.tasks.filter(t => t.data && t.data.libraryItemId === libraryItemId)
+    return state.tasks.filter(t => t.data?.libraryItemId === libraryItemId)
+  },
+  getRunningLibraryScanTask: (state) => (libraryId) => {
+    return state.tasks.find(t => t.data?.libraryId === libraryId && !t.isFinished)
   }
 }
 
