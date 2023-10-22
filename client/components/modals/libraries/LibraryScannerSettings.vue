@@ -1,8 +1,17 @@
 <template>
   <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg text-gray-200">Metadata order of precedence</h2>
-      <ui-btn small @click="resetToDefault">Reset to default</ui-btn>
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base md:text-lg text-gray-200">{{ $strings.HeaderMetadataOrderOfPrecedence }}</h2>
+      <ui-btn small @click="resetToDefault">{{ $strings.ButtonResetToDefault }}</ui-btn>
+    </div>
+
+    <div class="flex items-center justify-between md:justify-start mb-4">
+      <p class="text-sm text-gray-300 pr-2">{{ $strings.LabelMetadataOrderOfPrecedenceDescription }}</p>
+      <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex">
+        <a href="https://www.audiobookshelf.org/guides/book-scanner" target="_blank" class="inline-flex">
+          <span class="material-icons text-xl w-5">help_outline</span>
+        </a>
+      </ui-tooltip>
     </div>
 
     <draggable v-model="metadataSourceMapped" v-bind="dragOptions" class="list-group" draggable=".item" handle=".drag-handle" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
