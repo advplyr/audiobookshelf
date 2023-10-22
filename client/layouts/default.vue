@@ -25,8 +25,6 @@
 </template>
 
 <script>
-import CloseButton from '@/components/widgets/CloseButton'
-
 export default {
   middleware: 'authenticated',
   data() {
