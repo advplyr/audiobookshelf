@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Guardar portadas con elementos",
   "LabelSettingsStoreCoversWithItemHelp": "Por defecto, las portadas se almacenan en /metadata/items. Si habilita esta opción, las portadas se almacenarán en la carpeta de elementos de su biblioteca. Se guardará un solo archivo llamado \"cover\".",
   "LabelSettingsStoreMetadataWithItem": "Guardar metadatos con elementos",
-  "LabelSettingsStoreMetadataWithItemHelp": "Por defecto, los archivos de metadatos se almacenan en /metadata/items. Si habilita esta opción, los archivos de metadatos se guardarán en la carpeta de elementos de su biblioteca. Usa la extensión .abs",
+  "LabelSettingsStoreMetadataWithItemHelp": "Por defecto, los archivos de metadatos se almacenan en /metadata/items. Si habilita esta opción, los archivos de metadatos se guardarán en la carpeta de elementos de su biblioteca",
   "LabelSettingsTimeFormat": "Formato de Tiempo",
   "LabelShowAll": "Mostrar Todos",
   "LabelSize": "Tamaño",

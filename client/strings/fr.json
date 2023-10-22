@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Enregistrer la couverture avec les articles",
   "LabelSettingsStoreCoversWithItemHelp": "Par défaut, les couvertures sont enregistrées dans /metadata/items. Activer ce paramètre enregistrera les couvertures dans le dossier avec les fichiers de l’article. Seul un fichier nommé « cover » sera conservé.",
   "LabelSettingsStoreMetadataWithItem": "Enregistrer les Métadonnées avec les articles",
-  "LabelSettingsStoreMetadataWithItemHelp": "Par défaut, les métadonnées sont enregistrées dans /metadata/items. Activer ce paramètre enregistrera les métadonnées dans le dossier de l’article avec une extension « .abs ».",
+  "LabelSettingsStoreMetadataWithItemHelp": "Par défaut, les métadonnées sont enregistrées dans /metadata/items",
   "LabelSettingsTimeFormat": "Format d’heure",
   "LabelShowAll": "Afficher Tout",
   "LabelSize": "Taille",

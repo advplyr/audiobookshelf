@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Store covers with item",
   "LabelSettingsStoreCoversWithItemHelp": "By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named \"cover\" will be kept",
   "LabelSettingsStoreMetadataWithItem": "Store metadata with item",
-  "LabelSettingsStoreMetadataWithItemHelp": "By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension",
+  "LabelSettingsStoreMetadataWithItemHelp": "By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders",
   "LabelSettingsTimeFormat": "Time Format",
   "LabelShowAll": "Show All",
   "LabelSize": "Size",

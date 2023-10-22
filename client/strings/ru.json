@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Хранить обложки с элементом",
   "LabelSettingsStoreCoversWithItemHelp": "По умолчанию обложки сохраняются в папке /metadata/items, при включении этой настройки обложка будет храниться в папке элемента. Будет сохраняться только один файл с именем \"cover\"",
   "LabelSettingsStoreMetadataWithItem": "Хранить метаинформацию с элементом",
-  "LabelSettingsStoreMetadataWithItemHelp": "По умолчанию метаинформация сохраняется в папке /metadata/items, при включении этой настройки метаинформация будет храниться в папке элемента. Используется расширение файла .abs",
+  "LabelSettingsStoreMetadataWithItemHelp": "По умолчанию метаинформация сохраняется в папке /metadata/items, при включении этой настройки метаинформация будет храниться в папке элемента",
   "LabelSettingsTimeFormat": "Формат времени",
   "LabelShowAll": "Показать все",
   "LabelSize": "Размер",

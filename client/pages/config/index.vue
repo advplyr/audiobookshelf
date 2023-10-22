@@ -47,10 +47,6 @@
             <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
           </div>
 
-          <div class="w-44 mb-2">
-            <ui-dropdown v-model="newServerSettings.metadataFileFormat" small :items="metadataFileFormats" label="Metadata File Format" @input="updateMetadataFileFormat" :disabled="updatingServerSettings" />
-          </div>
-
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsScanner }}</h2>
           </div>
@@ -237,17 +233,7 @@ export default {
       hasPrefixesChanged: false,
       newServerSettings: {},
       showConfirmPurgeCache: false,
-      savingPrefixes: false,
-      metadataFileFormats: [
-        {
-          text: '.json',
-          value: 'json'
-        },
-        {
-          text: '.abs (deprecated)',
-          value: 'abs'
-        }
-      ]
+      savingPrefixes: false
     }
   },
   watch: {
@@ -328,10 +314,6 @@ export default {
     },
     updateServerLanguage(val) {
       this.updateSettingsKey('language', val)
-    },
-    updateMetadataFileFormat(val) {
-      if (this.serverSettings.metadataFileFormat === val) return
-      this.updateSettingsKey('metadataFileFormat', val)
     },
     updateSettingsKey(key, val) {
       if (key === 'scannerDisableWatcher') {

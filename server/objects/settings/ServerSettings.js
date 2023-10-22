@@ -1,3 +1,4 @@
+const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
 
@@ -50,7 +51,8 @@ class ServerSettings {
 
     this.logLevel = Logger.logLevel
 
-    this.version = null
+    this.version = packageJson.version
+    this.buildNumber = packageJson.buildNumber
 
     if (settings) {
       this.construct(settings)
@@ -90,6 +92,7 @@ class ServerSettings {
     this.language = settings.language || 'en-us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
+    this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
     // Migrations
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
@@ -106,9 +109,9 @@ class ServerSettings {
       this.metadataFileFormat = 'abs'
     }
 
-    // Validation
-    if (!['abs', 'json'].includes(this.metadataFileFormat)) {
-      Logger.error(`[ServerSettings] construct: Invalid metadataFileFormat ${this.metadataFileFormat}`)
+    // As of v2.4.5 only json is supported
+    if (this.metadataFileFormat !== 'json') {
+      Logger.warn(`[ServerSettings] Invalid metadataFileFormat ${this.metadataFileFormat} (as of v2.4.5 only json is supported)`)
       this.metadataFileFormat = 'json'
     }
 
@@ -146,7 +149,8 @@ class ServerSettings {
       timeFormat: this.timeFormat,
       language: this.language,
       logLevel: this.logLevel,
-      version: this.version
+      version: this.version,
+      buildNumber: this.buildNumber
     }
   }
 

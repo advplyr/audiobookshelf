@@ -94,7 +94,7 @@ class Book {
     return {
       tags: [...this.tags],
       chapters: this.chapters.map(c => ({ ...c })),
-      metadata: this.metadata.toJSONForMetadataFile()
+      ...this.metadata.toJSONForMetadataFile()
     }
   }
 

@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Saugoti viršelius su elementu",
   "LabelSettingsStoreCoversWithItemHelp": "Pagal nutylėjimą viršeliai saugomi /metadata/items aplanke, įjungus šią parinktį viršeliai bus saugomi jūsų bibliotekos elemento aplanke. Bus išsaugotas tik vienas „cover“ pavadinimo failas.",
   "LabelSettingsStoreMetadataWithItem": "Saugoti metaduomenis su elementu",
-  "LabelSettingsStoreMetadataWithItemHelp": "Pagal nutylėjimą metaduomenų failai saugomi /metadata/items aplanke, įjungus šią parinktį metaduomenų failai bus saugomi jūsų bibliotekos elemento aplanke. Naudojamas .abs plėtinys.",
+  "LabelSettingsStoreMetadataWithItemHelp": "Pagal nutylėjimą metaduomenų failai saugomi /metadata/items aplanke, įjungus šią parinktį metaduomenų failai bus saugomi jūsų bibliotekos elemento aplanke",
   "LabelSettingsTimeFormat": "Laiko formatas",
   "LabelShowAll": "Rodyti viską",
   "LabelSize": "Dydis",

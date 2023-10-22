@@ -97,7 +97,19 @@ class Podcast {
   toJSONForMetadataFile() {
     return {
       tags: [...this.tags],
-      metadata: this.metadata.toJSON()
+      title: this.metadata.title,
+      author: this.metadata.author,
+      description: this.metadata.description,
+      releaseDate: this.metadata.releaseDate,
+      genres: [...this.metadata.genres],
+      feedURL: this.metadata.feedUrl,
+      imageURL: this.metadata.imageUrl,
+      itunesPageURL: this.metadata.itunesPageUrl,
+      itunesId: this.metadata.itunesId,
+      itunesArtistId: this.metadata.itunesArtistId,
+      explicit: this.metadata.explicit,
+      language: this.metadata.language,
+      podcastType: this.metadata.type
     }
   }
 

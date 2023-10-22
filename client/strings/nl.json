@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Bewaar covers bij onderdeel",
   "LabelSettingsStoreCoversWithItemHelp": "Standaard worden covers bewaard in /metadata/items, door deze instelling in te schakelen zullen covers in de map van je bibliotheekonderdeel bewaard worden. Slechts een bestand genaamd \"cover\" zal worden bewaard",
   "LabelSettingsStoreMetadataWithItem": "Bewaar metadata bij onderdeel",
-  "LabelSettingsStoreMetadataWithItemHelp": "Standaard worden metadata-bestanden bewaard in /metadata/items, door deze instelling in te schakelen zullen metadata bestanden in de map van je bibliotheekonderdeel bewaard worden. Gebruikt .abs-extensie",
+  "LabelSettingsStoreMetadataWithItemHelp": "Standaard worden metadata-bestanden bewaard in /metadata/items, door deze instelling in te schakelen zullen metadata bestanden in de map van je bibliotheekonderdeel bewaard worden",
   "LabelSettingsTimeFormat": "Tijdformat",
   "LabelShowAll": "Toon alle",
   "LabelSize": "Grootte",

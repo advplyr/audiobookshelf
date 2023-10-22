@@ -342,7 +342,7 @@ class PodcastScanner {
       AudioFileScanner.setPodcastMetadataFromAudioMetaTags(podcastEpisodes[0].audioFile, podcastMetadata, libraryScan)
     }
 
-    // Use metadata.json or metadata.abs file
+    // Use metadata.json file
     await AbsMetadataFileScanner.scanPodcastMetadataFile(libraryScan, libraryItemData, podcastMetadata, existingLibraryItemId)
 
     podcastMetadata.titleIgnorePrefix = getTitleIgnorePrefix(podcastMetadata.title)
@@ -367,115 +367,60 @@ class PodcastScanner {
       await fsExtra.ensureDir(metadataPath)
     }
 
-    const metadataFileFormat = global.ServerSettings.metadataFileFormat
-    const metadataFilePath = Path.join(metadataPath, `metadata.${metadataFileFormat}`)
-    if (metadataFileFormat === 'json') {
-      // Remove metadata.abs if it exists
-      if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.abs`))) {
-        libraryScan.addLog(LogLevel.DEBUG, `Removing metadata.abs for item "${libraryItem.media.title}"`)
-        await fsExtra.remove(Path.join(metadataPath, `metadata.abs`))
-        libraryItem.libraryFiles = libraryItem.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.abs`)))
-      }
+    const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
 
-      // TODO: Update to not use `metadata` so it fits the updated model
-      const jsonObject = {
-        tags: libraryItem.media.tags || [],
-        metadata: {
-          title: libraryItem.media.title,
-          author: libraryItem.media.author,
-          description: libraryItem.media.description,
-          releaseDate: libraryItem.media.releaseDate,
-          genres: libraryItem.media.genres || [],
-          feedUrl: libraryItem.media.feedURL,
-          imageUrl: libraryItem.media.imageURL,
-          itunesPageUrl: libraryItem.media.itunesPageURL,
-          itunesId: libraryItem.media.itunesId,
-          itunesArtistId: libraryItem.media.itunesArtistId,
-          asin: libraryItem.media.asin,
-          language: libraryItem.media.language,
-          explicit: !!libraryItem.media.explicit,
-          type: libraryItem.media.podcastType
-        }
-      }
-      return fsExtra.writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2)).then(async () => {
-        // Add metadata.json to libraryFiles array if it is new
-        let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-        if (storeMetadataWithItem) {
-          if (!metadataLibraryFile) {
-            const newLibraryFile = new LibraryFile()
-            await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
-            metadataLibraryFile = newLibraryFile.toJSON()
-            libraryItem.libraryFiles.push(metadataLibraryFile)
-          } else {
-            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-            if (fileTimestamps) {
-              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-              metadataLibraryFile.metadata.size = fileTimestamps.size
-              metadataLibraryFile.ino = fileTimestamps.ino
-            }
-          }
-          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
-          if (libraryItemDirTimestamps) {
-            libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
-            libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
-            let size = 0
-            libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
-            libraryItem.size = size
-          }
-        }
-
-        libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
-
-        return metadataLibraryFile
-      }).catch((error) => {
-        libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
-        return null
-      })
-    } else {
-      // Remove metadata.json if it exists
-      if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.json`))) {
-        libraryScan.addLog(LogLevel.DEBUG, `Removing metadata.json for item "${libraryItem.media.title}"`)
-        await fsExtra.remove(Path.join(metadataPath, `metadata.json`))
-        libraryItem.libraryFiles = libraryItem.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.json`)))
-      }
-
-      return abmetadataGenerator.generateFromNewModel(libraryItem, metadataFilePath).then(async (success) => {
-        if (!success) {
-          libraryScan.addLog(LogLevel.ERROR, `Failed saving abmetadata to "${metadataFilePath}"`)
-          return null
-        }
-        // Add metadata.abs to libraryFiles array if it is new
-        let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-        if (storeMetadataWithItem) {
-          if (!metadataLibraryFile) {
-            const newLibraryFile = new LibraryFile()
-            await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.abs`)
-            metadataLibraryFile = newLibraryFile.toJSON()
-            libraryItem.libraryFiles.push(metadataLibraryFile)
-          } else {
-            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-            if (fileTimestamps) {
-              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-              metadataLibraryFile.metadata.size = fileTimestamps.size
-              metadataLibraryFile.ino = fileTimestamps.ino
-            }
-          }
-          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
-          if (libraryItemDirTimestamps) {
-            libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
-            libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
-            let size = 0
-            libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
-            libraryItem.size = size
-          }
-        }
-
-        libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
-        return metadataLibraryFile
-      })
+    const jsonObject = {
+      tags: libraryItem.media.tags || [],
+      title: libraryItem.media.title,
+      author: libraryItem.media.author,
+      description: libraryItem.media.description,
+      releaseDate: libraryItem.media.releaseDate,
+      genres: libraryItem.media.genres || [],
+      feedURL: libraryItem.media.feedURL,
+      imageURL: libraryItem.media.imageURL,
+      itunesPageURL: libraryItem.media.itunesPageURL,
+      itunesId: libraryItem.media.itunesId,
+      itunesArtistId: libraryItem.media.itunesArtistId,
+      asin: libraryItem.media.asin,
+      language: libraryItem.media.language,
+      explicit: !!libraryItem.media.explicit,
+      podcastType: libraryItem.media.podcastType
     }
+    return fsExtra.writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2)).then(async () => {
+      // Add metadata.json to libraryFiles array if it is new
+      let metadataLibraryFile = libraryItem.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+      if (storeMetadataWithItem) {
+        if (!metadataLibraryFile) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+          metadataLibraryFile = newLibraryFile.toJSON()
+          libraryItem.libraryFiles.push(metadataLibraryFile)
+        } else {
+          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+          if (fileTimestamps) {
+            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+            metadataLibraryFile.metadata.size = fileTimestamps.size
+            metadataLibraryFile.ino = fileTimestamps.ino
+          }
+        }
+        const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
+        if (libraryItemDirTimestamps) {
+          libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
+          libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
+          let size = 0
+          libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+          libraryItem.size = size
+        }
+      }
+
+      libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
+
+      return metadataLibraryFile
+    }).catch((error) => {
+      libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
+      return null
+    })
   }
 }
 module.exports = new PodcastScanner()

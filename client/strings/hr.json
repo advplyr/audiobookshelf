@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Spremi cover uz stakvu",
   "LabelSettingsStoreCoversWithItemHelp": "By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named \"cover\" will be kept",
   "LabelSettingsStoreMetadataWithItem": "Spremi metapodatke uz stavku",
-  "LabelSettingsStoreMetadataWithItemHelp": "Po defaultu metapodatci su spremljeni u /metadata/items, uključujućite li ovu postavku, metapodatci će biti spremljeni u folderima od biblioteke. Koristi .abs ekstenziju.",
+  "LabelSettingsStoreMetadataWithItemHelp": "Po defaultu metapodatci su spremljeni u /metadata/items, uključujućite li ovu postavku, metapodatci će biti spremljeni u folderima od biblioteke",
   "LabelSettingsTimeFormat": "Time Format",
   "LabelShowAll": "Prikaži sve",
   "LabelSize": "Veličina",

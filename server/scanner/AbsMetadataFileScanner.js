@@ -8,7 +8,7 @@ class AbsMetadataFileScanner {
   constructor() { }
 
   /**
-   * Check for metadata.json or metadata.abs file and set book metadata
+   * Check for metadata.json file and set book metadata
    * 
    * @param {import('./LibraryScan')} libraryScan 
    * @param {import('./LibraryItemScanData')} libraryItemData 
@@ -16,54 +16,36 @@ class AbsMetadataFileScanner {
    * @param {string} [existingLibraryItemId] 
    */
   async scanBookMetadataFile(libraryScan, libraryItemData, bookMetadata, existingLibraryItemId = null) {
-    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile || libraryItemData.metadataAbsLibraryFile
+    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
     let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     let metadataFilePath = metadataLibraryFile?.metadata.path
-    let metadataFileFormat = libraryItemData.metadataJsonLibraryFile ? 'json' : 'abs'
 
     // When metadata file is not stored with library item then check in the /metadata/items folder for it
     if (!metadataText && existingLibraryItemId) {
       let metadataPath = Path.join(global.MetadataPath, 'items', existingLibraryItemId)
 
-      let altFormat = global.ServerSettings.metadataFileFormat === 'json' ? 'abs' : 'json'
-      // First check the metadata format set in server settings, fallback to the alternate
-      metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
-      metadataFileFormat = global.ServerSettings.metadataFileFormat
+      metadataFilePath = Path.join(metadataPath, 'metadata.json')
       if (await fsExtra.pathExists(metadataFilePath)) {
-        metadataText = await readTextFile(metadataFilePath)
-      } else if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.${altFormat}`))) {
-        metadataFilePath = Path.join(metadataPath, `metadata.${altFormat}`)
-        metadataFileFormat = altFormat
         metadataText = await readTextFile(metadataFilePath)
       }
     }
 
     if (metadataText) {
-      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}" - preferring`)
-      let abMetadata = null
-      if (metadataFileFormat === 'json') {
-        abMetadata = abmetadataGenerator.parseJson(metadataText)
-      } else {
-        abMetadata = abmetadataGenerator.parse(metadataText, 'book')
-      }
+      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}"`)
+      const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
+      for (const key in abMetadata) {
+        // TODO: When to override with null or empty arrays?
+        if (abMetadata[key] === undefined || abMetadata[key] === null) continue
+        if (key === 'tags' && !abMetadata.tags?.length) continue
+        if (key === 'chapters' && !abMetadata.chapters?.length) continue
 
-      if (abMetadata) {
-        if (abMetadata.tags?.length) {
-          bookMetadata.tags = abMetadata.tags
-        }
-        if (abMetadata.chapters?.length) {
-          bookMetadata.chapters = abMetadata.chapters
-        }
-        for (const key in abMetadata.metadata) {
-          if (abMetadata.metadata[key] === undefined || abMetadata.metadata[key] === null) continue
-          bookMetadata[key] = abMetadata.metadata[key]
-        }
+        bookMetadata[key] = abMetadata[key]
       }
     }
   }
 
   /**
-   * Check for metadata.json or metadata.abs file and set podcast metadata
+   * Check for metadata.json file and set podcast metadata
    * 
    * @param {import('./LibraryScan')} libraryScan 
    * @param {import('./LibraryItemScanData')} libraryItemData 
@@ -71,53 +53,28 @@ class AbsMetadataFileScanner {
    * @param {string} [existingLibraryItemId] 
    */
   async scanPodcastMetadataFile(libraryScan, libraryItemData, podcastMetadata, existingLibraryItemId = null) {
-    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile || libraryItemData.metadataAbsLibraryFile
+    const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
     let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     let metadataFilePath = metadataLibraryFile?.metadata.path
-    let metadataFileFormat = libraryItemData.metadataJsonLibraryFile ? 'json' : 'abs'
 
     // When metadata file is not stored with library item then check in the /metadata/items folder for it
     if (!metadataText && existingLibraryItemId) {
       let metadataPath = Path.join(global.MetadataPath, 'items', existingLibraryItemId)
 
-      let altFormat = global.ServerSettings.metadataFileFormat === 'json' ? 'abs' : 'json'
-      // First check the metadata format set in server settings, fallback to the alternate
-      metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
-      metadataFileFormat = global.ServerSettings.metadataFileFormat
+      metadataFilePath = Path.join(metadataPath, 'metadata.json')
       if (await fsExtra.pathExists(metadataFilePath)) {
-        metadataText = await readTextFile(metadataFilePath)
-      } else if (await fsExtra.pathExists(Path.join(metadataPath, `metadata.${altFormat}`))) {
-        metadataFilePath = Path.join(metadataPath, `metadata.${altFormat}`)
-        metadataFileFormat = altFormat
         metadataText = await readTextFile(metadataFilePath)
       }
     }
 
     if (metadataText) {
-      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}" - preferring`)
-      let abMetadata = null
-      if (metadataFileFormat === 'json') {
-        abMetadata = abmetadataGenerator.parseJson(metadataText)
-      } else {
-        abMetadata = abmetadataGenerator.parse(metadataText, 'podcast')
-      }
+      libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}"`)
+      const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
+      for (const key in abMetadata) {
+        if (abMetadata[key] === undefined || abMetadata[key] === null) continue
+        if (key === 'tags' && !abMetadata.tags?.length) continue
 
-      if (abMetadata) {
-        if (abMetadata.tags?.length) {
-          podcastMetadata.tags = abMetadata.tags
-        }
-        for (const key in abMetadata.metadata) {
-          if (abMetadata.metadata[key] === undefined) continue
-
-          // TODO: New podcast model changed some keys, need to update the abmetadataGenerator
-          let newModelKey = key
-          if (key === 'feedUrl') newModelKey = 'feedURL'
-          else if (key === 'imageUrl') newModelKey = 'imageURL'
-          else if (key === 'itunesPageUrl') newModelKey = 'itunesPageURL'
-          else if (key === 'type') newModelKey = 'podcastType'
-
-          podcastMetadata[newModelKey] = abMetadata.metadata[key]
-        }
+        podcastMetadata[key] = abMetadata[key]
       }
     }
   }

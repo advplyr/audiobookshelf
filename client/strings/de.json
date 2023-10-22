@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Titelbilder im Medienordner speichern",
   "LabelSettingsStoreCoversWithItemHelp": "Standardmäßig werden die Titelbilder in /metadata/items gespeichert. Wenn diese Option aktiviert ist, werden die Titelbilder als jpg Datei in dem gleichen Ordner gespeichert in welchem sich auch das Medium befindet. Es wird immer nur eine Datei mit dem Namen \"cover.jpg\" gespeichert.",
   "LabelSettingsStoreMetadataWithItem": "Metadaten als OPF-Datei im Medienordner speichern",
-  "LabelSettingsStoreMetadataWithItemHelp": "Standardmäßig werden die Metadaten in /metadata/items gespeichert. Wenn diese Option aktiviert ist, werden die Metadaten als OPF-Datei (Textdatei) in dem gleichen Ordner gespeichert in welchem sich auch das Medium befindet. Es wird immer nur eine Datei mit dem Namen \"matadata.abs\" gespeichert.",
+  "LabelSettingsStoreMetadataWithItemHelp": "Standardmäßig werden die Metadaten in /metadata/items gespeichert. Wenn diese Option aktiviert ist, werden die Metadaten als OPF-Datei (Textdatei) in dem gleichen Ordner gespeichert in welchem sich auch das Medium befindet",
   "LabelSettingsTimeFormat": "Zeitformat",
   "LabelShowAll": "Alles anzeigen",
   "LabelSize": "Größe",

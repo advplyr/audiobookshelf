@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Gem omslag med element",
   "LabelSettingsStoreCoversWithItemHelp": "Som standard gemmes omslag i /metadata/items, aktivering af denne indstilling vil gemme omslag i mappen for dit bibliotekselement. Kun én fil med navnet \"cover\" vil blive bevaret",
   "LabelSettingsStoreMetadataWithItem": "Gem metadata med element",
-  "LabelSettingsStoreMetadataWithItemHelp": "Som standard gemmes metadatafiler i /metadata/items, aktivering af denne indstilling vil gemme metadatafiler i dine bibliotekselementmapper. Bruger .abs-filudvidelsen",
+  "LabelSettingsStoreMetadataWithItemHelp": "Som standard gemmes metadatafiler i /metadata/items, aktivering af denne indstilling vil gemme metadatafiler i dine bibliotekselementmapper",
   "LabelSettingsTimeFormat": "Tidsformat",
   "LabelShowAll": "Vis alle",
   "LabelSize": "Størrelse",

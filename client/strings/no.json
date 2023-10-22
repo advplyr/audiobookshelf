@@ -429,7 +429,7 @@
   "LabelSettingsStoreCoversWithItem": "Lagre bokomslag med gjenstand",
   "LabelSettingsStoreCoversWithItemHelp": "Som standard vil bokomslag bli lagret under /metadata/items, aktiveres dette valget vil bokomslag bli lagret i samme mappe som gjenstanden. Kun en fil med navn \"cover\" vil bli beholdt",
   "LabelSettingsStoreMetadataWithItem": "Lagre metadata med gjenstand",
-  "LabelSettingsStoreMetadataWithItemHelp": "Som standard vil metadata bli lagret under /metadata/items, aktiveres dette valget vil metadata bli lagret i samme mappe som gjenstanden. Bruker .abs filetternavn",
+  "LabelSettingsStoreMetadataWithItemHelp": "Som standard vil metadata bli lagret under /metadata/items, aktiveres dette valget vil metadata bli lagret i samme mappe som gjenstanden",
   "LabelSettingsTimeFormat": "Tid format",
   "LabelShowAll": "Vis alt",
   "LabelSize": "Størrelse",
