@@ -244,7 +244,7 @@ export default {
           value: 'json'
         },
         {
-          text: '.abs',
+          text: '.abs (deprecated)',
           value: 'abs'
         }
       ]
