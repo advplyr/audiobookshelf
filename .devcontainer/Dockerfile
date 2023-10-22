@@ -11,5 +11,10 @@ RUN apt-get update && \
     curl tzdata ffmpeg && \
   rm -rf /var/lib/apt/lists/*
 
-# Move tone executable to appropriate directory
-COPY --from=sandreas/tone:v0.1.5 /usr/local/bin/tone /usr/local/bin/
+# Move tone executable to appropriate directory (this doesn't seem to work in devcontainer because it needs musl)
+# COPY --from=sandreas/tone:v0.1.5 /usr/local/bin/tone /usr/local/bin/
+RUN wget https://github.com/sandreas/tone/releases/download/v0.1.5/tone-0.1.5-linux-x64.tar.gz && \
+  tar xzf tone-*.tar.gz && \
+  mv tone*/tone /usr/local/bin/
+
+   

@@ -15,12 +15,18 @@
 		"source=abs-server-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
 		"source=abs-client-node_modules,target=${containerWorkspaceFolder}/client/node_modules,type=volume"
 	],
+	"features": {
+		"ghcr.io/devcontainers/features/desktop-lite:1": {
+			"password": "vscode"
+		}
+	},
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
 		3000,
-		3333
+		3333,
+		6080
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "sh .devcontainer/post-create.sh",

@@ -8,7 +8,7 @@
       </template>
     </draggable>
     <div v-if="!libraries.length" class="pb-4">
-      <ui-btn @click="clickAddLibrary">{{ $strings.ButtonAddYourFirstLibrary }}</ui-btn>
+      <ui-btn data-testid="ButtonAddYourFirstLibrary" @click="clickAddLibrary">{{ $strings.ButtonAddYourFirstLibrary }}</ui-btn>
     </div>
 
     <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">

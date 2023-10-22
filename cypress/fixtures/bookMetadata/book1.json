@@ -1,0 +1,410 @@
+{
+  "path": "/audiobooks/Caitlin Starling/Last to Leave the Room",
+  "relPath": "Caitlin Starling/Last to Leave the Room",
+  "isFile": false,
+  "isMissing": false,
+  "isInvalid": false,
+  "mediaType": "book",
+  "media": {
+    "metadata": {
+      "title": "Last to Leave the Room",
+      "subtitle": "A Novel",
+      "authors": [
+        {
+          "name": "Caitlin Starling"
+        }
+      ],
+      "narrators": [
+        "Xe Sands"
+      ],
+      "series": [],
+      "genres": [
+        "Literature & Fiction",
+        "Mystery, Thriller & Suspense"
+      ],
+      "publishedYear": "2023",
+      "publishedDate": null,
+      "publisher": "Macmillan Audio",
+      "description": "Last to Leave the Room is a new novel of genre-busting speculative horror from Caitlin Starling, the acclaimed author of The Death of Jane Lawrence.  The city of San Siroco is sinking. The basement of Dr. Tamsin Rivers, the arrogant, selfish head of the research team assigned to find the source of the subsidence, is sinking faster.   As Tamsin grows obsessed with the distorting dimensions of the room at the bottom of the stairs, she finds a door that didn’t exist before—and one night, it opens to reveal an exact physical copy of her. This doppelgänger is sweet and biddable where Tamsin is calculating and cruel. It appears fully, terribly human, passing every test Tamsin can devise. But the longer the double exists, the more Tamsin begins to forget pieces of her life, to lose track of time, to grow terrified of the outside world.   As her employer grows increasingly suspicious, Tamsin must try to hold herself together long enough to figure out what her double wants from her, and just where the mysterious door leads… A Macmillan Audio production from St. Martin’s Press.",
+      "isbn": null,
+      "asin": "B0BVKY5K9B",
+      "language": "English",
+      "explicit": false,
+      "abridged": false
+    },
+    "tags": [
+      "Horror",
+      "Thriller & Suspense",
+      "Supernatural"
+    ],
+    "audioFiles": [
+      {
+        "index": 1,
+        "metadata": {
+          "filename": "Caitlin Starling - Last to Leave the Room.mp3",
+          "ext": ".mp3",
+          "path": "/audiobooks/Caitlin Starling/Last to Leave the Room/Caitlin Starling - Last to Leave the Room.mp3",
+          "relPath": "Caitlin Starling - Last to Leave the Room.mp3"
+        },
+        "trackNumFromMeta": null,
+        "discNumFromMeta": null,
+        "trackNumFromFilename": null,
+        "discNumFromFilename": null,
+        "manuallyVerified": false,
+        "invalid": false,
+        "exclude": false,
+        "error": null,
+        "format": "MP2/3 (MPEG audio layer 2/3)",
+        "duration": 42690.862756,
+        "bitRate": 64000,
+        "language": null,
+        "codec": "mp3",
+        "timeBase": "1/14112000",
+        "channels": 2,
+        "channelLayout": "stereo",
+        "chapters": [],
+        "embeddedCoverArt": "mjpeg",
+        "metaTags": {
+          "tagAlbum": "Last to Leave the Room - A Novel",
+          "tagArtist": "Caitlin Starling",
+          "tagGenre": "Thriller",
+          "tagTitle": "Last to Leave the Room",
+          "tagSubtitle": "A Novel",
+          "tagDate": "2023",
+          "tagPublisher": "Macmillan Audio",
+          "tagComment": "<p><b><i>Last to Leave the Room</i> is a new novel of genre-busting speculative horror from Caitlin Starling, the acclaimed author of <i>The Death of Jane Lawrence</i>.</b><br>The city of San Siroco is sinking. The basement of Dr. Tamsin Rivers, the arrogant, selfish head of the research team assigned to find the source of the subsidence, is sinking faster. <br>As Tamsin grows obsessed with the distorting dimensions of the room at the bottom of the stairs, she finds a door that didn't exist before - and one night, it opens to reveal an exact physical copy of her. This doppelgänger is sweet and biddable where Tamsin is calculating and cruel. It appears fully, terribly human, passing every test Tamsin can devise. But the longer the double exists, the more Tamsin begins to forget pieces of her life, to lose track of time, to grow terrified of the outside world. <br>As her employer grows increasingly suspicious, Tamsin must try to hold herself together long enough to figure out what...",
+          "tagEncodedBy": "OverDrive, Inc.",
+          "tagLanguage": "English",
+          "tagOverdriveMediaMarker": "<Markers><Marker><Name>Last to Leave the Room</Name><Time>0:00.000</Time></Marker><Marker><Name>Chapter 1</Name><Time>0:33.000</Time></Marker><Marker><Name>Chapter 2</Name><Time>17:29.000</Time></Marker><Marker><Name>Chapter 3</Name><Time>34:04.000</Time></Marker><Marker><Name>Chapter 4</Name><Time>42:18.000</Time></Marker></Markers>"
+        },
+        "mimeType": "audio/mpeg"
+      }
+    ],
+    "chapters": [
+      {
+        "id": 0,
+        "start": 0,
+        "end": 32.035,
+        "title": "Opening Credits"
+      },
+      {
+        "id": 1,
+        "start": 32.035,
+        "end": 36.035,
+        "title": "Dedication"
+      },
+      {
+        "id": 2,
+        "start": 36.035,
+        "end": 73.035,
+        "title": "Epigraph"
+      },
+      {
+        "id": 3,
+        "start": 73.035,
+        "end": 76.035,
+        "title": "The City"
+      },
+      {
+        "id": 4,
+        "start": 76.035,
+        "end": 1048.906,
+        "title": "Chapter One"
+      },
+      {
+        "id": 5,
+        "start": 1048.906,
+        "end": 2044.856,
+        "title": "Chapter Two"
+      },
+      {
+        "id": 6,
+        "start": 2044.856,
+        "end": 2539.533,
+        "title": "Chapter Three"
+      },
+      {
+        "id": 7,
+        "start": 2539.533,
+        "end": 3684.416,
+        "title": "Chapter Four"
+      },
+      {
+        "id": 8,
+        "start": 3684.416,
+        "end": 3687.416,
+        "title": "The Door"
+      },
+      {
+        "id": 9,
+        "start": 3687.416,
+        "end": 4409.435,
+        "title": "Chapter Five"
+      },
+      {
+        "id": 10,
+        "start": 4409.435,
+        "end": 5535.37,
+        "title": "Chapter Six"
+      },
+      {
+        "id": 11,
+        "start": 5535.37,
+        "end": 6413.223,
+        "title": "Chapter Seven"
+      },
+      {
+        "id": 12,
+        "start": 6413.223,
+        "end": 7447.37,
+        "title": "Chapter Eight"
+      },
+      {
+        "id": 13,
+        "start": 7447.37,
+        "end": 8443.691,
+        "title": "Chapter Nine"
+      },
+      {
+        "id": 14,
+        "start": 8443.691,
+        "end": 9129.26,
+        "title": "Chapter Ten"
+      },
+      {
+        "id": 15,
+        "start": 9129.26,
+        "end": 9132.26,
+        "title": "The Double"
+      },
+      {
+        "id": 16,
+        "start": 9132.26,
+        "end": 10044.567,
+        "title": "Chapter Eleven"
+      },
+      {
+        "id": 17,
+        "start": 10044.567,
+        "end": 11180.998,
+        "title": "Chapter Twelve"
+      },
+      {
+        "id": 18,
+        "start": 11180.998,
+        "end": 12357.994,
+        "title": "Chapter Thirteen"
+      },
+      {
+        "id": 19,
+        "start": 12357.994,
+        "end": 12989.623,
+        "title": "Chapter Fourteen"
+      },
+      {
+        "id": 20,
+        "start": 12989.623,
+        "end": 13872.91,
+        "title": "Chapter Fifteen"
+      },
+      {
+        "id": 21,
+        "start": 13872.91,
+        "end": 15221.942,
+        "title": "Chapter Sixteen"
+      },
+      {
+        "id": 22,
+        "start": 15221.942,
+        "end": 16358.233,
+        "title": "Chapter Seventeen"
+      },
+      {
+        "id": 23,
+        "start": 16358.233,
+        "end": 17354.299,
+        "title": "Chapter Eighteen"
+      },
+      {
+        "id": 24,
+        "start": 17354.299,
+        "end": 18522.634,
+        "title": "Chapter Nineteen"
+      },
+      {
+        "id": 25,
+        "start": 18522.634,
+        "end": 19931.899,
+        "title": "Chapter Twenty"
+      },
+      {
+        "id": 26,
+        "start": 19931.899,
+        "end": 21005.938,
+        "title": "Chapter Twenty-One"
+      },
+      {
+        "id": 27,
+        "start": 21005.938,
+        "end": 21764.023,
+        "title": "Chapter Twenty-Two"
+      },
+      {
+        "id": 28,
+        "start": 21764.023,
+        "end": 22707.449,
+        "title": "Chapter Twenty-Three"
+      },
+      {
+        "id": 29,
+        "start": 22707.449,
+        "end": 23436.718,
+        "title": "Chapter Twenty-Four"
+      },
+      {
+        "id": 30,
+        "start": 23436.718,
+        "end": 24513.102,
+        "title": "Chapter Twenty-Five"
+      },
+      {
+        "id": 31,
+        "start": 24513.102,
+        "end": 25569.261,
+        "title": "Chapter Twenty-Six"
+      },
+      {
+        "id": 32,
+        "start": 25569.261,
+        "end": 26397.516,
+        "title": "Chapter Twenty-Seven"
+      },
+      {
+        "id": 33,
+        "start": 26397.516,
+        "end": 27311.43,
+        "title": "Chapter Twenty-Eight"
+      },
+      {
+        "id": 34,
+        "start": 27311.43,
+        "end": 27866.503,
+        "title": "Chapter Twenty-Nine"
+      },
+      {
+        "id": 35,
+        "start": 27866.503,
+        "end": 27870.503,
+        "title": "Tamsin0"
+      },
+      {
+        "id": 36,
+        "start": 27870.503,
+        "end": 29225.775,
+        "title": "Chapter Thirty"
+      },
+      {
+        "id": 37,
+        "start": 29225.775,
+        "end": 30688.678,
+        "title": "Chapter Thirty-One"
+      },
+      {
+        "id": 38,
+        "start": 30688.678,
+        "end": 31611.856,
+        "title": "Chapter Thirty-Two"
+      },
+      {
+        "id": 39,
+        "start": 31611.856,
+        "end": 32799.881,
+        "title": "Chapter Thirty-Three"
+      },
+      {
+        "id": 40,
+        "start": 32799.881,
+        "end": 33790.839,
+        "title": "Chapter Thirty-Four"
+      },
+      {
+        "id": 41,
+        "start": 33790.839,
+        "end": 34674.172,
+        "title": "Chapter Thirty-Five"
+      },
+      {
+        "id": 42,
+        "start": 34674.172,
+        "end": 36041.989,
+        "title": "Chapter Thirty-Six"
+      },
+      {
+        "id": 43,
+        "start": 36041.989,
+        "end": 37203.451,
+        "title": "Chapter Thirty-Seven"
+      },
+      {
+        "id": 44,
+        "start": 37203.451,
+        "end": 38207.388,
+        "title": "Chapter Thirty-Eight"
+      },
+      {
+        "id": 45,
+        "start": 38207.388,
+        "end": 39359.051,
+        "title": "Chapter Thirty-Nine"
+      },
+      {
+        "id": 46,
+        "start": 39359.051,
+        "end": 40372.323,
+        "title": "Chapter Forty"
+      },
+      {
+        "id": 47,
+        "start": 40372.323,
+        "end": 41780.102,
+        "title": "Chapter Forty-One"
+      },
+      {
+        "id": 48,
+        "start": 41780.102,
+        "end": 42619.387,
+        "title": "Chapter Forty-Two"
+      },
+      {
+        "id": 49,
+        "start": 42619.387,
+        "end": 42690.863,
+        "title": "End Credits"
+      }
+    ],
+    "missingParts": [],
+    "ebookFile": null
+  },
+  "libraryFiles": [
+    {
+      "metadata": {
+        "filename": "Caitlin Starling - Last to Leave the Room.jpg",
+        "ext": ".jpg",
+        "path": "/audiobooks/Caitlin Starling/Last to Leave the Room/Caitlin Starling - Last to Leave the Room.jpg",
+        "relPath": "Caitlin Starling - Last to Leave the Room.jpg"
+      },
+      "isSupplementary": null,
+      "fileType": "image"
+    },
+    {
+      "metadata": {
+        "filename": "Caitlin Starling - Last to Leave the Room.mp3",
+        "ext": ".mp3",
+        "path": "/audiobooks/Caitlin Starling/Last to Leave the Room/Caitlin Starling - Last to Leave the Room.mp3",
+        "relPath": "Caitlin Starling - Last to Leave the Room.mp3"
+      },
+      "isSupplementary": null,
+      "fileType": "audio"
+    }
+  ]
+}

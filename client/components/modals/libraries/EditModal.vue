@@ -16,7 +16,7 @@
 
       <div v-show="selectedTab !== 'tools'" class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
         <div class="flex justify-end">
-          <ui-btn @click="submit">{{ buttonText }}</ui-btn>
+          <ui-btn data-testid="createLibrary" @click="submit">{{ buttonText }}</ui-btn>
         </div>
       </div>
     </div>

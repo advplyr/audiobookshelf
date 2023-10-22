@@ -7,7 +7,7 @@
       <p class="text-center text-2xl mb-4 py-4">{{ libraryName }} Library is empty!</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
+        <ui-btn data-testid="ButtonScanLibrary" color="success" class="w-52" @click="scan">Scan Library</ui-btn>
       </div>
     </div>
     <div v-else-if="loaded && !shelves.length && search" class="w-full h-40 flex items-center justify-center">

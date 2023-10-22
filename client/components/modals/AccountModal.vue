@@ -10,16 +10,16 @@
         <div class="w-full p-8">
           <div class="flex py-2">
             <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-model="newUser.username" :label="$strings.LabelUsername" />
+              <ui-text-input-with-label v-model="newUser.username" data-testid="newUsername" :label="$strings.LabelUsername" />
             </div>
             <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-if="!isEditingRoot" v-model="newUser.password" :label="isNew ? $strings.LabelPassword : $strings.LabelChangePassword" type="password" />
-              <ui-text-input-with-label v-else v-model="newUser.email" :label="$strings.LabelEmail" />
+              <ui-text-input-with-label v-if="!isEditingRoot" data-testid="newPassword" v-model="newUser.password" :label="isNew ? $strings.LabelPassword : $strings.LabelChangePassword" type="password" />
+              <ui-text-input-with-label v-else data-testid="newEmail" v-model="newUser.email" :label="$strings.LabelEmail" />
             </div>
           </div>
           <div v-show="!isEditingRoot" class="flex py-2">
             <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-model="newUser.email" :label="$strings.LabelEmail" />
+              <ui-text-input-with-label data-testid="newEmail" v-model="newUser.email" :label="$strings.LabelEmail" />
             </div>
             <div class="px-2 w-52">
               <ui-dropdown v-model="newUser.type" :label="$strings.LabelAccountType" :disabled="isEditingRoot" :items="accountTypes" small @input="userTypeUpdated" />

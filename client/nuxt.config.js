@@ -132,7 +132,10 @@ module.exports = {
         tailwindcss: {},
         autoprefixer: {},
       },
-    }
+    },
+    babel: {
+      plugins: [['babel-plugin-istanbul', { extension: ['.js', '.vue'] }]],
+    },
   },
   watchers: {
     webpack: {

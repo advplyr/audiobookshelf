@@ -1,0 +1,246 @@
+{
+  "path": "/audiobooks/Becky Chambers/A Psalm for the Wild-Built",
+  "relPath": "Becky Chambers/A Psalm for the Wild-Built",
+  "isFile": false,
+  "isMissing": false,
+  "isInvalid": false,
+  "mediaType": "book",
+  "media": {
+    "metadata": {
+      "title": "A Psalm for the Wild-Built",
+      "subtitle": "Monk & Robot, Book 1",
+      "authors": [
+        {
+          "name": "Becky Chambers"
+        }
+      ],
+      "narrators": [
+        "Em Grosland"
+      ],
+      "series": [
+        {
+          "name": "Monk & Robot",
+          "sequence": "1"
+        }
+      ],
+      "genres": [
+        "Science Fiction & Fantasy"
+      ],
+      "publishedYear": "2021",
+      "publishedDate": null,
+      "publisher": "Tordotcom",
+      "description": "\"Narrator Emmett Grosland conjures the essence of a troubled soul in search of peace in this gentle audio.\"—AudioFile Magazine In A Psalm for the Wild-Built, Hugo Award-winner Becky Chambers's delightful new Monk and Robot series gives us hope for the future. It's been centuries since the robots of Panga gained self-awareness and laid down their tools; centuries since they wandered, en masse, into the wilderness, never to be seen again; centuries since they faded into myth and urban legend. One day, the life of a tea monk is upended by the arrival of a robot, there to honor the old promise of checking in. The robot cannot go back until the question of \"what do people need?\" is answered. But the answer to that question depends on who you ask, and how. They're going to need to ask it a lot. Becky Chambers's new series asks: in a world where people have what they want, does having more matter? A Macmillan Audio production from Tordotcom",
+      "isbn": null,
+      "asin": "1250807743",
+      "language": "English",
+      "explicit": false,
+      "abridged": false
+    },
+    "tags": [
+      "Science Fiction",
+      "Adventure",
+      "Post-Apocalyptic"
+    ],
+    "audioFiles": [
+      {
+        "index": 1,
+        "metadata": {
+          "filename": "Becky Chambers - A Psalm for the Wild-Built.m4b",
+          "ext": ".m4b",
+          "path": "/audiobooks/Becky Chambers/A Psalm for the Wild-Built/Becky Chambers - A Psalm for the Wild-Built.m4b",
+          "relPath": "Becky Chambers - A Psalm for the Wild-Built.m4b"
+        },
+        "trackNumFromMeta": 1,
+        "discNumFromMeta": null,
+        "trackNumFromFilename": null,
+        "discNumFromFilename": null,
+        "manuallyVerified": false,
+        "invalid": false,
+        "exclude": false,
+        "error": null,
+        "format": "QuickTime / MOV",
+        "duration": 14909.975,
+        "bitRate": 125588,
+        "language": "und",
+        "codec": "aac",
+        "timeBase": "1/44100",
+        "channels": 2,
+        "channelLayout": "stereo",
+        "chapters": [
+          {
+            "id": 0,
+            "start": 0,
+            "end": 21.942,
+            "title": "001"
+          },
+          {
+            "id": 1,
+            "start": 21.942,
+            "end": 321.108,
+            "title": "002"
+          },
+          {
+            "id": 2,
+            "start": 321.108,
+            "end": 2331.84,
+            "title": "003"
+          },
+          {
+            "id": 3,
+            "start": 2331.84,
+            "end": 5155.967,
+            "title": "004"
+          },
+          {
+            "id": 4,
+            "start": 5155.967,
+            "end": 6866.535,
+            "title": "005"
+          },
+          {
+            "id": 5,
+            "start": 6866.535,
+            "end": 7853.476,
+            "title": "006"
+          },
+          {
+            "id": 6,
+            "start": 7853.476,
+            "end": 9850.253,
+            "title": "007"
+          },
+          {
+            "id": 7,
+            "start": 9850.253,
+            "end": 10816.714,
+            "title": "008"
+          },
+          {
+            "id": 8,
+            "start": 10816.714,
+            "end": 12285.445,
+            "title": "009"
+          },
+          {
+            "id": 9,
+            "start": 12285.445,
+            "end": 14872.961,
+            "title": "010"
+          }
+        ],
+        "embeddedCoverArt": "mjpeg",
+        "metaTags": {
+          "tagAlbum": "A Psalm for the Wild-Built",
+          "tagArtist": "Becky Chambers",
+          "tagTitle": "A Psalm for the Wild-Built",
+          "tagTrack": "1",
+          "tagAlbumArtist": "Becky Chambers",
+          "tagDate": "2021-07-13",
+          "tagComposer": "Emmett Grosland",
+          "tagPublisher": "Tordotcom",
+          "tagComment": "It's been centuries since the robots of Panga gained self-awareness and laid down their tools",
+          "tagDescription": "It's been centuries since the robots of Panga gained self-awareness and laid down their tools"
+        },
+        "mimeType": "audio/mp4"
+      }
+    ],
+    "chapters": [
+      {
+        "id": 0,
+        "start": 0,
+        "end": 20.108,
+        "title": "Opening Credits"
+      },
+      {
+        "id": 1,
+        "start": 20.108,
+        "end": 25.108,
+        "title": "Dedication"
+      },
+      {
+        "id": 2,
+        "start": 25.108,
+        "end": 319.181,
+        "title": "Epigraph"
+      },
+      {
+        "id": 3,
+        "start": 319.181,
+        "end": 2329.982,
+        "title": "1. A Change in Vocation"
+      },
+      {
+        "id": 4,
+        "start": 2329.982,
+        "end": 5154.178,
+        "title": "2. The Best Tea Monk in Panga"
+      },
+      {
+        "id": 5,
+        "start": 5154.178,
+        "end": 6864.792,
+        "title": "3. Splendid Speckled Mosscap"
+      },
+      {
+        "id": 6,
+        "start": 6864.792,
+        "end": 7851.779,
+        "title": "4. An Object, and an Animal"
+      },
+      {
+        "id": 7,
+        "start": 7851.779,
+        "end": 9848.602,
+        "title": "5. Remnants"
+      },
+      {
+        "id": 8,
+        "start": 9848.602,
+        "end": 10815.109,
+        "title": "6. Grass Hen with Wilted Greens and Caramelized Onion"
+      },
+      {
+        "id": 9,
+        "start": 10815.109,
+        "end": 12283.91,
+        "title": "7. The Wild"
+      },
+      {
+        "id": 10,
+        "start": 12283.91,
+        "end": 14871.495,
+        "title": "8. The Summer Bear"
+      },
+      {
+        "id": 11,
+        "start": 14871.495,
+        "end": 14871.495,
+        "title": "End Credits"
+      }
+    ],
+    "missingParts": [],
+    "ebookFile": null
+  },
+  "libraryFiles": [
+    {
+      "metadata": {
+        "filename": "Becky Chambers - A Psalm for the Wild-Built.m4b",
+        "ext": ".m4b",
+        "path": "/audiobooks/Becky Chambers/A Psalm for the Wild-Built/Becky Chambers - A Psalm for the Wild-Built.m4b",
+        "relPath": "Becky Chambers - A Psalm for the Wild-Built.m4b"
+      },
+      "isSupplementary": null,
+      "fileType": "audio"
+    },
+    {
+      "metadata": {
+        "filename": "Becky Chambers - A Psalm for the Wild-Built.jpg",
+        "ext": ".jpg",
+        "path": "/audiobooks/Becky Chambers/A Psalm for the Wild-Built/Becky Chambers - A Psalm for the Wild-Built.jpg",
+        "relPath": "Becky Chambers - A Psalm for the Wild-Built.jpg"
+      },
+      "isSupplementary": null,
+      "fileType": "image"
+    }
+  ]
+}

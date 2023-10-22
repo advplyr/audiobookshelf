@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch server index.js",
+    "dev:coverage": "nyc --reporter=lcov --reporter=text-summary npm run dev",
     "start": "node index.js",
     "client": "cd client && npm ci && npm run generate",
     "prod": "npm run client && npm ci && node prod.js",
@@ -14,7 +15,11 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
-    "deploy-linux": "node deploy/linux"
+    "deploy-linux": "node deploy/linux",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:prepare": "mv ./config/absdatabase.sqlite ./config/absdatabase.sqlite.bak ; (cd client; npm run generate) ; node ./generateTestData.js",
+    "test": "npm run cypress:prepare ; start-server-and-test dev:coverage http://localhost:3333 cypress:run"
   },
   "bin": "prod.js",
   "pkg": {
@@ -43,6 +48,27 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "@cypress/code-coverage": "^3.12.4",
+    "@lensesio/cypress-websocket-testing": "^1.0.1",
+    "cypress": "^13.3.1",
+    "istanbul-lib-coverage": "^3.2.0",
+    "nodemon": "^2.0.20",
+    "nyc": "^15.1.0",
+    "start-server-and-test": "^2.0.1"
+  },
+  "nyc": {
+    "extension": [
+      ".js",
+      ".vue"
+    ],
+    "exclude": [
+      "server/libs/**"
+    ],
+    "include": [
+      "server/**",
+      "client/**"
+    ],
+    "sourceMap": true,
+    "instrument": true
   }
 }

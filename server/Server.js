@@ -124,6 +124,9 @@ class Server {
     await this.init()
 
     const app = express()
+    if (global.__coverage__) {
+      require('@cypress/code-coverage/middleware/express')(app)
+    }
     const router = express.Router()
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')

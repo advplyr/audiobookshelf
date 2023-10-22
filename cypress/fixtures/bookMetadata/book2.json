@@ -1,0 +1,433 @@
+{
+  "path": "/audiobooks/Amal El-Mohtar/This Is How You Lose the Time War",
+  "relPath": "Amal El-Mohtar/This Is How You Lose the Time War",
+  "isFile": false,
+  "isMissing": false,
+  "isInvalid": false,
+  "mediaType": "book",
+  "media": {
+    "metadata": {
+      "title": "This Is How You Lose the Time War",
+      "subtitle": null,
+      "authors": [
+        {
+          "name": "Amal El-Mohtar"
+        },
+        {
+          "name": "Max Gladstone"
+        }
+      ],
+      "narrators": [
+        "Cynthia Farrell",
+        "Emily Woo Zeller"
+      ],
+      "series": [],
+      "genres": [
+        "Romance",
+        "Science Fiction & Fantasy"
+      ],
+      "publishedYear": "2019",
+      "publishedDate": null,
+      "publisher": "Simon & Schuster Audio",
+      "description": "HUGO AWARD WINNER: BEST NOVELLA WINNER OF THE NEBULA AND LOCUS AWARDS: BEST NOVELLA “[An] exquisitely crafted tale...Part epistolary romance, part mind-blowing science fiction adventure, this dazzling story unfolds bit by bit, revealing layers of meaning as it plays with cause and effect, wildly imaginative technologies, and increasingly intricate wordplay...This short novel warrants multiple readings to fully unlock its complexities.” (Publishers Weekly, starred review).  From award-winning authors Amal El-Mohtar and Max Gladstone comes an enthralling, romantic novel spanning time and space about two time-traveling rivals who fall in love and must change the past to ensure their future.  Among the ashes of a dying world, an agent of the Commandment finds a letter. It reads: Burn before reading.  Thus begins an unlikely correspondence between two rival agents hellbent on securing the best possible future for their warring factions. Now, what began as a taunt, a battlefield boast, becomes something more. Something epic. Something romantic. Something that could change the past and the future.  Except the discovery of their bond would mean the death of each of them. There’s still a war going on, after all. And someone has to win. That’s how war works, right?  Cowritten by two beloved and award-winning sci-fi writers, This Is How You Lose the Time War is an epic love story spanning time and space.",
+      "isbn": "9781534430990",
+      "asin": "1508287058",
+      "language": "English",
+      "explicit": false,
+      "abridged": false
+    },
+    "tags": [
+      "Science Fiction",
+      "Time Travel"
+    ],
+    "audioFiles": [
+      {
+        "index": 1,
+        "metadata": {
+          "filename": "Amal El-Mohtar - This Is How You Lose the Time War.m4b",
+          "ext": ".m4b",
+          "path": "/audiobooks/Amal El-Mohtar/This Is How You Lose the Time War/Amal El-Mohtar - This Is How You Lose the Time War.m4b",
+          "relPath": "Amal El-Mohtar - This Is How You Lose the Time War.m4b"
+        },
+        "trackNumFromMeta": null,
+        "discNumFromMeta": null,
+        "trackNumFromFilename": null,
+        "discNumFromFilename": null,
+        "manuallyVerified": false,
+        "invalid": false,
+        "exclude": false,
+        "error": null,
+        "format": "QuickTime / MOV",
+        "duration": 15367.268,
+        "bitRate": 125588,
+        "language": "und",
+        "codec": "aac",
+        "timeBase": "1/44100",
+        "channels": 2,
+        "channelLayout": "stereo",
+        "chapters": [
+          {
+            "id": 0,
+            "start": 0,
+            "end": 45.65,
+            "title": "001"
+          },
+          {
+            "id": 1,
+            "start": 45.65,
+            "end": 735.84,
+            "title": "002"
+          },
+          {
+            "id": 2,
+            "start": 735.84,
+            "end": 1112.514,
+            "title": "003"
+          },
+          {
+            "id": 3,
+            "start": 1112.514,
+            "end": 1717.928,
+            "title": "004"
+          },
+          {
+            "id": 4,
+            "start": 1717.928,
+            "end": 2238.38,
+            "title": "005"
+          },
+          {
+            "id": 5,
+            "start": 2238.38,
+            "end": 2801.557,
+            "title": "006"
+          },
+          {
+            "id": 6,
+            "start": 2801.557,
+            "end": 3471.383,
+            "title": "007"
+          },
+          {
+            "id": 7,
+            "start": 3471.383,
+            "end": 4094.258,
+            "title": "008"
+          },
+          {
+            "id": 8,
+            "start": 4094.258,
+            "end": 4957.715,
+            "title": "009"
+          },
+          {
+            "id": 9,
+            "start": 4957.715,
+            "end": 5608.71,
+            "title": "010"
+          },
+          {
+            "id": 10,
+            "start": 5608.71,
+            "end": 6413.165,
+            "title": "011"
+          },
+          {
+            "id": 11,
+            "start": 6413.165,
+            "end": 7038.316,
+            "title": "012"
+          },
+          {
+            "id": 12,
+            "start": 7038.316,
+            "end": 7444.967,
+            "title": "013"
+          },
+          {
+            "id": 13,
+            "start": 7444.967,
+            "end": 8200.196,
+            "title": "014"
+          },
+          {
+            "id": 14,
+            "start": 8200.196,
+            "end": 8573.155,
+            "title": "015"
+          },
+          {
+            "id": 15,
+            "start": 8573.155,
+            "end": 9578.138,
+            "title": "016"
+          },
+          {
+            "id": 16,
+            "start": 9578.138,
+            "end": 9968.535,
+            "title": "017"
+          },
+          {
+            "id": 17,
+            "start": 9968.535,
+            "end": 10889.972,
+            "title": "018"
+          },
+          {
+            "id": 18,
+            "start": 10889.972,
+            "end": 11612.438,
+            "title": "019"
+          },
+          {
+            "id": 19,
+            "start": 11612.438,
+            "end": 11978.361,
+            "title": "020"
+          },
+          {
+            "id": 20,
+            "start": 11978.361,
+            "end": 12672.754,
+            "title": "021"
+          },
+          {
+            "id": 21,
+            "start": 12672.754,
+            "end": 13294.933,
+            "title": "022"
+          },
+          {
+            "id": 22,
+            "start": 13294.933,
+            "end": 13857.134,
+            "title": "023"
+          },
+          {
+            "id": 23,
+            "start": 13857.134,
+            "end": 14249.296,
+            "title": "024"
+          },
+          {
+            "id": 24,
+            "start": 14249.296,
+            "end": 14799.702,
+            "title": "025"
+          },
+          {
+            "id": 25,
+            "start": 14799.702,
+            "end": 15367.268,
+            "title": "026"
+          }
+        ],
+        "embeddedCoverArt": "mjpeg",
+        "metaTags": {
+          "tagAlbum": "This Is How You Lose the Time War",
+          "tagArtist": "Amal El-Mohtar, Max Gladstone",
+          "tagGenre": "Audiobook",
+          "tagTitle": "This Is How You Lose the Time War",
+          "tagDate": "2019",
+          "tagComposer": "Emily Woo Zeller, Cynthia Farrell",
+          "tagComment": "Among the ashes of a dying world, an agent of the Commandant finds a letter. It reads: Burn before reading. Thus begins an unlikely correspondence between two rival agents hellbent on securing the best possible future for their warring factions. Now, wha",
+          "tagDescription": "Among the ashes of a dying world, an agent of the Commandant finds a letter. It reads: Burn before reading. Thus begins an unlikely correspondence between two rival agents hellbent on securing the best possible future for their warring factions. Now, what began as a taunt, a battlefield boast, grows into something more. Something epic. Something romantic. Something that could change the past and the future. Except the discovery of their bond would mean death for each of them. There's still a war going on, after all. And someone has to win that war. That's how war works. Right?"
+        },
+        "mimeType": "audio/mp4"
+      }
+    ],
+    "chapters": [
+      {
+        "id": 0,
+        "start": 0,
+        "end": 45.65,
+        "title": "001"
+      },
+      {
+        "id": 1,
+        "start": 45.65,
+        "end": 735.84,
+        "title": "002"
+      },
+      {
+        "id": 2,
+        "start": 735.84,
+        "end": 1112.514,
+        "title": "003"
+      },
+      {
+        "id": 3,
+        "start": 1112.514,
+        "end": 1717.928,
+        "title": "004"
+      },
+      {
+        "id": 4,
+        "start": 1717.928,
+        "end": 2238.38,
+        "title": "005"
+      },
+      {
+        "id": 5,
+        "start": 2238.38,
+        "end": 2801.557,
+        "title": "006"
+      },
+      {
+        "id": 6,
+        "start": 2801.557,
+        "end": 3471.383,
+        "title": "007"
+      },
+      {
+        "id": 7,
+        "start": 3471.383,
+        "end": 4094.258,
+        "title": "008"
+      },
+      {
+        "id": 8,
+        "start": 4094.258,
+        "end": 4957.715,
+        "title": "009"
+      },
+      {
+        "id": 9,
+        "start": 4957.715,
+        "end": 5608.71,
+        "title": "010"
+      },
+      {
+        "id": 10,
+        "start": 5608.71,
+        "end": 6413.165,
+        "title": "011"
+      },
+      {
+        "id": 11,
+        "start": 6413.165,
+        "end": 7038.316,
+        "title": "012"
+      },
+      {
+        "id": 12,
+        "start": 7038.316,
+        "end": 7444.967,
+        "title": "013"
+      },
+      {
+        "id": 13,
+        "start": 7444.967,
+        "end": 8200.196,
+        "title": "014"
+      },
+      {
+        "id": 14,
+        "start": 8200.196,
+        "end": 8573.155,
+        "title": "015"
+      },
+      {
+        "id": 15,
+        "start": 8573.155,
+        "end": 9578.138,
+        "title": "016"
+      },
+      {
+        "id": 16,
+        "start": 9578.138,
+        "end": 9968.535,
+        "title": "017"
+      },
+      {
+        "id": 17,
+        "start": 9968.535,
+        "end": 10889.972,
+        "title": "018"
+      },
+      {
+        "id": 18,
+        "start": 10889.972,
+        "end": 11612.438,
+        "title": "019"
+      },
+      {
+        "id": 19,
+        "start": 11612.438,
+        "end": 11978.361,
+        "title": "020"
+      },
+      {
+        "id": 20,
+        "start": 11978.361,
+        "end": 12672.754,
+        "title": "021"
+      },
+      {
+        "id": 21,
+        "start": 12672.754,
+        "end": 13294.933,
+        "title": "022"
+      },
+      {
+        "id": 22,
+        "start": 13294.933,
+        "end": 13857.134,
+        "title": "023"
+      },
+      {
+        "id": 23,
+        "start": 13857.134,
+        "end": 14249.296,
+        "title": "024"
+      },
+      {
+        "id": 24,
+        "start": 14249.296,
+        "end": 14799.702,
+        "title": "025"
+      },
+      {
+        "id": 25,
+        "start": 14799.702,
+        "end": 14799.702,
+        "title": "026"
+      }
+    ],
+    "missingParts": [],
+    "ebookFile": null
+  },
+  "libraryFiles": [
+    {
+      "metadata": {
+        "filename": "Amal El-Mohtar - This Is How You Lose the Time War.jpg",
+        "ext": ".jpg",
+        "path": "/audiobooks/Amal El-Mohtar/This Is How You Lose the Time War/Amal El-Mohtar - This Is How You Lose the Time War.jpg",
+        "relPath": "Amal El-Mohtar - This Is How You Lose the Time War.jpg"
+      },
+      "isSupplementary": null,
+      "fileType": "image"
+    },
+    {
+      "metadata": {
+        "filename": "Amal El-Mohtar - This Is How You Lose the Time War (02).jpg",
+        "ext": ".jpg",
+        "path": "/audiobooks/Amal El-Mohtar/This Is How You Lose the Time War/Amal El-Mohtar - This Is How You Lose the Time War (02).jpg",
+        "relPath": "Amal El-Mohtar - This Is How You Lose the Time War (02).jpg"
+      },
+      "isSupplementary": null,
+      "fileType": "image"
+    },
+    {
+      "metadata": {
+        "filename": "Amal El-Mohtar - This Is How You Lose the Time War.m4b",
+        "ext": ".m4b",
+        "path": "/audiobooks/Amal El-Mohtar/This Is How You Lose the Time War/Amal El-Mohtar - This Is How You Lose the Time War.m4b",
+        "relPath": "Amal El-Mohtar - This Is How You Lose the Time War.m4b"
+      },
+      "isSupplementary": null,
+      "fileType": "audio"
+    }
+  ]
+}

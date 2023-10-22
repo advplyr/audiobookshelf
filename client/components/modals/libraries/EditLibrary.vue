@@ -6,13 +6,13 @@
           <ui-dropdown v-model="mediaType" :items="mediaTypes" :label="$strings.LabelMediaType" :disabled="!isNew" small @input="changedMediaType" />
         </div>
         <div class="w-full md:flex-grow px-1 py-1 md:py-0">
-          <ui-text-input-with-label ref="nameInput" v-model="name" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
+          <ui-text-input-with-label ref="nameInput" v-model="name" data-testid="LabelLibraryName" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
         </div>
         <div class="w-1/5 md:w-18 px-1 py-1 md:py-0">
           <ui-media-icon-picker v-model="icon" :label="$strings.LabelIcon" @input="iconChanged" />
         </div>
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
-          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelMetadataProvider" small @input="formUpdated" />
+          <ui-dropdown v-model="provider" data-testid="metadataProvider" :items="providers" :label="$strings.LabelMetadataProvider" small @input="formUpdated" />
         </div>
       </div>
 
@@ -25,7 +25,7 @@
         </div>
         <div class="flex py-1 px-2 items-center w-full">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
-          <ui-editable-text ref="newFolderInput" v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
+          <ui-editable-text ref="newFolderInput" data-testid="newFolderInput" v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 
         <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>

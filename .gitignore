@@ -16,3 +16,7 @@ test/
 sw.*
 .DS_STORE
 .idea/*
+audiobookshelf/config/absdatabase.sqlite
+/coverage/
+/.nyc_output/
+/cypress/fixtures/audiobooks/
