@@ -19,6 +19,13 @@ const filePathToPOSIX = (path) => {
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
+/**
+ * Check path is a child of or equal to another path
+ * 
+ * @param {string} parentPath 
+ * @param {string} childPath 
+ * @returns {boolean}
+ */
 function isSameOrSubPath(parentPath, childPath) {
   parentPath = filePathToPOSIX(parentPath)
   childPath = filePathToPOSIX(childPath)
