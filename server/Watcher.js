@@ -6,7 +6,7 @@ const LibraryScanner = require('./scanner/LibraryScanner')
 const Task = require('./objects/Task')
 const TaskManager = require('./managers/TaskManager')
 
-const { filePathToPOSIX } = require('./utils/fileUtils')
+const { filePathToPOSIX, isSameOrSubPath } = require('./utils/fileUtils')
 
 /**
  * @typedef PendingFileUpdate
@@ -183,7 +183,7 @@ class FolderWatcher extends EventEmitter {
     }
 
     // Get file folder
-    const folder = libwatcher.folders.find(fold => path.startsWith(filePathToPOSIX(fold.fullPath)))
+    const folder = libwatcher.folders.find(fold => isSameOrSubPath(fold.fullPath, path))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
@@ -233,7 +233,7 @@ class FolderWatcher extends EventEmitter {
 
   checkShouldIgnorePath(path) {
     return !!this.ignoreDirs.find(dirpath => {
-      return filePathToPOSIX(path).startsWith(dirpath)
+      return isSameOrSubPath(dirpath, path)
     })
   }
 
