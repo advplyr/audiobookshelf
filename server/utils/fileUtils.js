@@ -19,6 +19,25 @@ const filePathToPOSIX = (path) => {
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
+/**
+ * Check path is a child of or equal to another path
+ * 
+ * @param {string} parentPath 
+ * @param {string} childPath 
+ * @returns {boolean}
+ */
+function isSameOrSubPath(parentPath, childPath) {
+  parentPath = filePathToPOSIX(parentPath)
+  childPath = filePathToPOSIX(childPath)
+  if (parentPath === childPath) return true
+  const relativePath = Path.relative(parentPath, childPath)
+  return (
+    relativePath === '' // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
+    || !relativePath.startsWith('..') && !Path.isAbsolute(relativePath) // Sub path
+  )
+}
+module.exports.isSameOrSubPath = isSameOrSubPath
+
 async function getFileStat(path) {
   try {
     var stat = await fs.stat(path)
