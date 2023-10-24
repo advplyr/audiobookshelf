@@ -527,6 +527,54 @@ class MiscController {
     })
   }
 
+  /**
+  * POST: /api/watcher/update
+  * Update a watch path
+  * Req.body { libraryId, path, type, [oldPath] } 
+  * type = add, unlink, rename
+  * oldPath = required only for rename
+  * @param {*} req 
+  * @param {*} res 
+  */
+  updateWatchedPath(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user attempted to updateWatchedPath`)
+      return res.sendStatus(404)
+    }
+
+    const libraryId = req.body.libraryId
+    const path = req.body.path
+    const type = req.body.type
+    if (!libraryId || !path || !type) {
+      Logger.error(`[MiscController] Invalid request body for updateWatchedPath. libraryId: "${libraryId}", path: "${path}", type: "${type}"`)
+      return res.sendStatus(400)
+    }
+
+    switch (type) {
+      case 'add':
+        this.watcher.onNewFile(libraryId, path)
+        break;
+      case 'unlink':
+        this.watcher.onFileRemoved(libraryId, path)
+        break;
+      case 'rename':
+        const oldPath = req.body.oldPath
+        if (!oldPath) {
+          Logger.error(`[MiscController] Invalid request body for updateWatchedPath. oldPath is required for rename.`)
+          return res.sendStatus(400)
+        }
+        this.watcher.onRename(libraryId, oldPath, path)
+        break;
+      default:
+        Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
+        return res.sendStatus(400)
+    }
+
+    res.sendStatus(200)
+
+  }
+
+
   validateCronExpression(req, res) {
     const expression = req.body.expression
     if (!expression) {
