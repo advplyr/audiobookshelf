@@ -5,7 +5,14 @@
         <div class="absolute cover-bg" ref="coverBg" />
       </div>
 
-      <img v-if="libraryItem" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-fill'" />
+      <img v-if="libraryItem" ref="cover" :src="fullCoverUrl" loading="lazy" draggable="false" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-fill'" @click="clickCover" />
+
+      <modals-modal v-if="libraryItem && expandOnClick" v-model="showImageModal" name="cover" :width="'90%'" :height="'90%'" :contentMarginTop="0">
+        <div class="w-full h-full" @click="showImageModal = false">
+          <img loading="lazy" :src="rawCoverUrl" class="w-full h-full z-10 object-scale-down" />
+        </div>
+      </modals-modal>
+
       <div v-show="loading && libraryItem" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
         <p class="text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         <div class="absolute top-2 right-2">
@@ -43,10 +50,12 @@ export default {
       type: Number,
       default: 120
     },
+    expandOnClick: Boolean,
     bookCoverAspectRatio: Number
   },
   data() {
     return {
+      showImageModal: false,
       loading: true,
       imageFailed: false,
       showCoverBg: false,
@@ -102,6 +111,11 @@ export default {
       var store = this.$store || this.$nuxt.$store
       return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
     },
+    rawCoverUrl() {
+      if (!this.libraryItem) return null
+      var store = this.$store || this.$nuxt.$store
+      return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, null, true)
+    },
     cover() {
       return this.media.coverPath || this.placeholderUrl
     },
@@ -132,6 +146,9 @@ export default {
     }
   },
   methods: {
+    clickCover() {
+      this.showImageModal = true
+    },
     setCoverBg() {
       if (this.$refs.coverBg) {
         this.$refs.coverBg.style.backgroundImage = `url("${this.fullCoverUrl}")`
