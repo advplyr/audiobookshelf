@@ -38,22 +38,14 @@ function isSameOrSubPath(parentPath, childPath) {
 }
 module.exports.isSameOrSubPath = isSameOrSubPath
 
-async function getFileStat(path) {
+function getFileStat(path) {
   try {
-    var stat = await fs.stat(path)
-    return {
-      size: stat.size,
-      atime: stat.atime,
-      mtime: stat.mtime,
-      ctime: stat.ctime,
-      birthtime: stat.birthtime
-    }
+    return fs.stat(path)
   } catch (err) {
     Logger.error('[fileUtils] Failed to stat', err)
-    return false
+    return null
   }
 }
-module.exports.getFileStat = getFileStat
 
 async function getFileTimestampsWithIno(path) {
   try {
@@ -72,12 +64,25 @@ async function getFileTimestampsWithIno(path) {
 }
 module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
 
-async function getFileSize(path) {
-  var stat = await getFileStat(path)
-  if (!stat) return 0
-  return stat.size || 0
+/**
+ * Get file size
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>}
+ */
+module.exports.getFileSize = async (path) => {
+  return (await getFileStat(path))?.size || 0
 }
-module.exports.getFileSize = getFileSize
+
+/**
+ * Get file mtimeMs
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>} epoch timestamp
+ */
+module.exports.getFileMTimeMs = async (path) => {
+  return (await getFileStat(path))?.mtimeMs || 0
+}
 
 /**
  * 
