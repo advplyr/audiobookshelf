@@ -39,6 +39,7 @@ class ApiRouter {
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
     this.backupManager = Server.backupManager
+    /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager

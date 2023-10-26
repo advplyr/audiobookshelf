@@ -528,14 +528,16 @@ class MiscController {
   }
 
   /**
-  * POST: /api/watcher/update
-  * Update a watch path
-  * Req.body { libraryId, path, type, [oldPath] } 
-  * type = add, unlink, rename
-  * oldPath = required only for rename
-  * @param {*} req 
-  * @param {*} res 
-  */
+   * POST: /api/watcher/update
+   * Update a watch path
+   * Req.body { libraryId, path, type, [oldPath] } 
+   * type = add, unlink, rename
+   * oldPath = required only for rename
+   * @this import('../routers/ApiRouter')
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   updateWatchedPath(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user attempted to updateWatchedPath`)
@@ -552,7 +554,7 @@ class MiscController {
 
     switch (type) {
       case 'add':
-        this.watcher.onNewFile(libraryId, path)
+        this.watcher.onFileAdded(libraryId, path)
         break;
       case 'unlink':
         this.watcher.onFileRemoved(libraryId, path)
@@ -563,7 +565,7 @@ class MiscController {
           Logger.error(`[MiscController] Invalid request body for updateWatchedPath. oldPath is required for rename.`)
           return res.sendStatus(400)
         }
-        this.watcher.onRename(libraryId, oldPath, path)
+        this.watcher.onFileRename(libraryId, oldPath, path)
         break;
       default:
         Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
@@ -571,9 +573,7 @@ class MiscController {
     }
 
     res.sendStatus(200)
-
   }
-
 
   validateCronExpression(req, res) {
     const expression = req.body.expression
