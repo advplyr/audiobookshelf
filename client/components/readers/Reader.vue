@@ -63,7 +63,13 @@
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelTheme }}:</p>
           </div>
-          <ui-toggle-btns v-model="ereaderSettings.theme" :items="themeItems" @input="settingsUpdated" />
+          <ui-toggle-btns v-model="ereaderSettings.theme" :items="themeItems.theme" @input="settingsUpdated" />
+        </div>
+        <div class="flex items-center mb-4">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelFontFamily }}:</p>
+          </div>
+          <ui-toggle-btns v-model="ereaderSettings.font" :items="themeItems.font" @input="settingsUpdated" />
         </div>
         <div class="flex items-center mb-4">
           <div class="w-40">
@@ -103,6 +109,7 @@ export default {
       showSettings: false,
       ereaderSettings: {
         theme: 'dark',
+        font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
         spread: 'auto'
@@ -142,16 +149,28 @@ export default {
       ]
     },
     themeItems() {
-      return [
-        {
-          text: this.$strings.LabelThemeDark,
-          value: 'dark'
-        },
-        {
-          text: this.$strings.LabelThemeLight,
-          value: 'light'
-        }
-      ]
+      return {
+        theme: [
+          {
+            text: this.$strings.LabelThemeDark,
+            value: 'dark'
+          },
+          {
+            text: this.$strings.LabelThemeLight,
+            value: 'light'
+          }
+        ],
+        font: [
+          {
+            text: 'Sans',
+            value: 'sans-serif',
+          },
+          {
+            text: 'Serif',
+            value: 'serif',
+          }
+        ]
+      }
     },
     componentName() {
       if (this.ebookType === 'epub') return 'readers-epub-reader'
