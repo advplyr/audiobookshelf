@@ -42,6 +42,7 @@ export default {
       rendition: null,
       ereaderSettings: {
         theme: 'dark',
+        font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
         spread: 'auto'
@@ -130,6 +131,7 @@ export default {
 
       const fontScale = settings.fontScale || 100
       this.rendition.themes.fontSize(`${fontScale}%`)
+      this.rendition.themes.font(settings.font)
       this.rendition.spread(settings.spread || 'auto')
     },
     prev() {
