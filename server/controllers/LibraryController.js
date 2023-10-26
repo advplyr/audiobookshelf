@@ -621,7 +621,7 @@ class LibraryController {
         model: Database.bookModel,
         attributes: ['id', 'tags', 'explicit'],
         where: bookWhere,
-        required: false,
+        required: !req.user.isAdminOrUp, // Only show authors with 0 books for admin users or up
         through: {
           attributes: []
         }
