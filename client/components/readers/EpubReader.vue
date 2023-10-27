@@ -401,6 +401,26 @@ export default {
         this.chapters = tocTree
       })
     },
+    flattenChapters(chapters) {
+      // Convert the nested epub chapters into something that looks like audiobook chapters for player-ui
+      const unwrap = (chapters) => {
+        return chapters.reduce((acc, chapter) => {
+          return chapter.subitems ? [...acc, chapter, ...unwrap(chapter.subitems)] : [...acc, chapter]
+        }, [])
+      }
+      let flattenedChapters = unwrap(chapters)
+
+      flattenedChapters = flattenedChapters.sort((a, b) => a.start - b.start)
+      for (let i = 0; i < flattenedChapters.length; i++) {
+        flattenedChapters[i].id = i
+        if (i < flattenedChapters.length - 1) {
+          flattenedChapters[i].end = flattenedChapters[i + 1].start
+        } else {
+          flattenedChapters[i].end = 1
+        }
+      }
+      return flattenedChapters
+    },
     resize() {
       this.windowWidth = window.innerWidth
       this.windowHeight = window.innerHeight
