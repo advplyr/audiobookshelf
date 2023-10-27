@@ -40,6 +40,7 @@ export default {
       book: null,
       /** @type {ePub.Rendition} */
       rendition: null,
+      chapters: [],
       ereaderSettings: {
         theme: 'dark',
         font: 'serif',
@@ -67,10 +68,6 @@ export default {
     },
     hasNext() {
       return !this.rendition?.location?.atEnd
-    },
-    /** @returns {Array<ePub.NavItem>} */
-    chapters() {
-      return this.book?.navigation?.toc || []
     },
     userMediaProgress() {
       if (!this.libraryItemId) return
@@ -145,6 +142,40 @@ export default {
     goToChapter(href) {
       if (!this.rendition?.manager) return
       return this.rendition?.display(href)
+    },
+    /** @returns {object} Returns the chapter that the `position` in the book is in */
+    findChapterFromPosition(chapters, position) {
+      let foundChapter
+      for (let i = 0; i < chapters.length; i++) {
+        if (position >= chapters[i].start && (!chapters[i + 1] || position < chapters[i + 1].start)) {
+          foundChapter = chapters[i]
+          if (chapters[i].subitems && chapters[i].subitems.length > 0) {
+            return this.findChapterFromPosition(chapters[i].subitems, position, foundChapter)
+          }
+          break
+        }
+      }
+      return foundChapter
+    },
+    /** @returns {Array} Returns an array of chapters that only includes chapters with query results */
+    async searchBook(query) {
+      const chapters = structuredClone(await this.chapters)
+      const searchResults = await Promise.all(this.book.spine.spineItems.map((item) => item.load(this.book.load.bind(this.book)).then(item.find.bind(item, query)).finally(item.unload.bind(item))))
+      const mergedResults = [].concat(...searchResults)
+
+      mergedResults.forEach((chapter) => {
+        chapter.start = this.book.locations.percentageFromCfi(chapter.cfi)
+        const foundChapter = this.findChapterFromPosition(chapters, chapter.start)
+        if (foundChapter) foundChapter.searchResults.push(chapter)
+      })
+
+      let filteredResults = chapters.filter(function f(o) {
+        if (o.searchResults.length) return true
+        if (o.subitems.length) {
+          return (o.subitems = o.subitems.filter(f)).length
+        }
+      })
+      return filteredResults
     },
     keyUp(e) {
       const rtl = this.book.package.metadata.direction === 'rtl'
@@ -319,6 +350,55 @@ export default {
             this.checkSaveLocations(reader.book.locations.save())
           })
         }
+        this.getChapters()
+      })
+    },
+    getChapters() {
+      // Load the list of chapters in the book. See https://github.com/futurepress/epub.js/issues/759
+      const toc = this.book?.navigation?.toc || []
+
+      const tocTree = []
+
+      const resolveURL = (url, relativeTo) => {
+        // see https://github.com/futurepress/epub.js/issues/1084
+        // HACK-ish: abuse the URL API a little to resolve the path
+        // the base needs to be a valid URL, or it will throw a TypeError,
+        // so we just set a random base URI and remove it later
+        const base = 'https://example.invalid/'
+        return new URL(url, base + relativeTo).href.replace(base, '')
+      }
+
+      const basePath = this.book.packaging.navPath || this.book.packaging.ncxPath
+
+      const createTree = async (toc, parent) => {
+        const promises = toc.map(async (tocItem, i) => {
+          const href = resolveURL(tocItem.href, basePath)
+          const id = href.split('#')[1]
+          const item = this.book.spine.get(href)
+          await item.load(this.book.load.bind(this.book))
+          const el = id ? item.document.getElementById(id) : item.document.body
+
+          const cfi = item.cfiFromElement(el)
+
+          parent[i] = {
+            title: tocItem.label.trim(),
+            subitems: [],
+            href,
+            cfi,
+            start: this.book.locations.percentageFromCfi(cfi),
+            end: null, // set by flattenChapters()
+            id: null, // set by flattenChapters()
+            searchResults: []
+          }
+
+          if (tocItem.subitems) {
+            await createTree(tocItem.subitems, parent[i].subitems)
+          }
+        })
+        await Promise.all(promises)
+      }
+      return createTree(toc, tocTree).then(() => {
+        this.chapters = tocTree
       })
     },
     resize() {
