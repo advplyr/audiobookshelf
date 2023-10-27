@@ -19,6 +19,7 @@
     <modals-authors-edit-modal />
     <modals-batch-quick-match-model />
     <modals-rssfeed-open-close-modal />
+    <modals-raw-cover-preview-modal />
     <prompt-confirm />
     <readers-reader />
   </div>

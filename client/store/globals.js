@@ -11,6 +11,7 @@ export const state = () => ({
   showViewPodcastEpisodeModal: false,
   showRSSFeedOpenCloseModal: false,
   showConfirmPrompt: false,
+  showRawCoverPreviewModal: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
   rssFeedEntity: null,
@@ -20,6 +21,7 @@ export const state = () => ({
   selectedCollection: null,
   selectedAuthor: null,
   selectedMediaItems: [],
+  selectedLibraryItemId: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
@@ -155,6 +157,13 @@ export const mutations = {
   setConfirmPrompt(state, options) {
     state.confirmPromptOptions = options
     state.showConfirmPrompt = true
+  },
+  setShowRawCoverPreviewModal(state, val) {
+    state.showRawCoverPreviewModal = val
+  },
+  setRawCoverPreviewModal(state, libraryItemId) {
+    state.selectedLibraryItemId = libraryItemId
+    state.showRawCoverPreviewModal = true
   },
   setEditCollection(state, collection) {
     state.selectedCollection = collection
