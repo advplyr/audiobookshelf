@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Hinzufügen",
   "ButtonAddChapters": "Kapitel hinzufügen",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Podcasts hinzufügen",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Erstelle deine erste Bibliothek",
   "ButtonApply": "Übernehmen",
   "ButtonApplyChapters": "Kapitel anwenden",

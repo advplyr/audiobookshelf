@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Add",
   "ButtonAddChapters": "Add Chapters",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Add Podcasts",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Add your first library",
   "ButtonApply": "Apply",
   "ButtonApplyChapters": "Apply Chapters",

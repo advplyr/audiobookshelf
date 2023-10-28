@@ -52,8 +52,6 @@
         </tr>
       </table>
     </div>
-
-    <modals-account-modal ref="accountModal" v-model="showAccountModal" :account="selectedAccount" />
   </div>
 </template>
 
@@ -62,8 +60,6 @@ export default {
   data() {
     return {
       users: [],
-      selectedAccount: null,
-      showAccountModal: false,
       isDeletingUser: false
     }
   },
@@ -114,13 +110,8 @@ export default {
           })
       }
     },
-    clickAddUser() {
-      this.selectedAccount = null
-      this.showAccountModal = true
-    },
     editUser(user) {
-      this.selectedAccount = user
-      this.showAccountModal = true
+      this.$emit('edit', user)
     },
     loadUsers() {
       this.$axios

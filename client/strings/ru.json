@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Добавить",
   "ButtonAddChapters": "Добавить главы",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Добавить подкасты",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Добавьте Вашу первую библиотеку",
   "ButtonApply": "Применить",
   "ButtonApplyChapters": "Применить главы",

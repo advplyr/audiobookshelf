@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Dodaj",
   "ButtonAddChapters": "Dodaj poglavlja",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Dodaj podcaste",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Dodaj svoju prvu biblioteku",
   "ButtonApply": "Primijeni",
   "ButtonApplyChapters": "Primijeni poglavlja",

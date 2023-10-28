@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Agregar",
   "ButtonAddChapters": "Agregar Capitulo",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Agregar Podcasts",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Agrega tu Primera Biblioteca",
   "ButtonApply": "Aplicar",
   "ButtonApplyChapters": "Aplicar Capítulos",

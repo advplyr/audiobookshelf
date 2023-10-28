@@ -329,6 +329,7 @@ export default {
     init() {
       this.fetchAllTags()
       this.isNew = !this.account
+
       if (this.account) {
         this.newUser = {
           username: this.account.username,

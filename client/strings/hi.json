@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "जोड़ें",
   "ButtonAddChapters": "अध्याय जोड़ें",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "पॉडकास्ट जोड़ें",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "अपनी पहली पुस्तकालय जोड़ें",
   "ButtonApply": "लागू करें",
   "ButtonApplyChapters": "अध्यायों में परिवर्तन लागू करें",

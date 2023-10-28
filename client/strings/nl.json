@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Toevoegen",
   "ButtonAddChapters": "Hoofdstukken toevoegen",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "Podcasts toevoegen",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "Voeg je eerste bibliotheek toe",
   "ButtonApply": "Pas toe",
   "ButtonApplyChapters": "Hoofdstukken toepassen",

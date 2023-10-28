@@ -3,9 +3,7 @@
     <div class="flex items-center mb-2">
       <h1 class="text-xl">{{ headerText }}</h1>
 
-      <div v-if="showAddButton" class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clicked">
-        <button type="button" class="material-icons" :aria-label="$strings.ButtonAdd + ': ' + headerText" style="font-size: 1.4rem">add</button>
-      </div>
+      <slot name="header-items"></slot>
     </div>
 
     <p v-if="description" id="settings-description" class="mb-6 text-gray-200" v-html="description" />
@@ -19,14 +17,9 @@ export default {
   props: {
     headerText: String,
     description: String,
-    note: String,
-    showAddButton: Boolean
+    note: String
   },
-  methods: {
-    clicked() {
-      this.$emit('clicked')
-    }
-  }
+  methods: {}
 }
 </script>
 

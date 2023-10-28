@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "增加",
   "ButtonAddChapters": "添加章节",
+  "ButtonAddDevice": "Add Device",
+  "ButtonAddLibrary": "Add Library",
   "ButtonAddPodcasts": "添加播客",
+  "ButtonAddUser": "Add User",
   "ButtonAddYourFirstLibrary": "添加第一个媒体库",
   "ButtonApply": "应用",
   "ButtonApplyChapters": "应用到章节",
