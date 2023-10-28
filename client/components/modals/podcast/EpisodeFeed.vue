@@ -93,7 +93,7 @@ export default {
       return this.libraryItem.media.metadata.title || 'Unknown'
     },
     allDownloaded() {
-      return !this.episodesCleaned.some((episode) => this.getIsEpisodeDownloaded(episode))
+      return !this.episodesCleaned.some((episode) => !this.getIsEpisodeDownloaded(episode))
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
