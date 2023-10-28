@@ -66,7 +66,7 @@ function extractPodcastMetadata(channel) {
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
     let value = extractFirstArrayItem(channel, key)
-    if (value && value['_']) value = value['_']
+    if (value?.['_']) value = value['_']
     metadata[cleanKey] = value
   })
   return metadata
@@ -131,7 +131,9 @@ function extractEpisodeData(item) {
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
-    episode[cleanKey] = extractFirstArrayItem(item, key)
+    let value = extractFirstArrayItem(item, key)
+    if (value?.['_']) value = value['_']
+    episode[cleanKey] = value
   })
   return episode
 }
