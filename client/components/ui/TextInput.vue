@@ -68,7 +68,7 @@ export default {
   methods: {
     clear() {
       this.inputValue = ''
-      this.$emit('submit')
+      this.$emit('clear')
     },
     focused() {
       this.isFocused = true
