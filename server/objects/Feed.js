@@ -174,7 +174,7 @@ class Feed {
     this.xml = null
   }
 
-  setFromCollection(userId, slug, collectionExpanded, serverAddress) {
+  setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const feedUrl = `${serverAddress}/feed/${slug}`
 
     const itemsWithTracks = collectionExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
@@ -198,6 +198,9 @@ class Feed {
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/collection/${collectionExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.preventIndexing = preventIndexing
+    this.meta.ownerName = ownerName
+    this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
 
@@ -244,7 +247,7 @@ class Feed {
     this.xml = null
   }
 
-  setFromSeries(userId, slug, seriesExpanded, serverAddress) {
+  setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const feedUrl = `${serverAddress}/feed/${slug}`
 
     let itemsWithTracks = seriesExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
@@ -272,6 +275,9 @@ class Feed {
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/library/${libraryId}/series/${seriesExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.preventIndexing = preventIndexing
+    this.meta.ownerName = ownerName
+    this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
 
