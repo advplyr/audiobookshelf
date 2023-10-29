@@ -255,11 +255,11 @@ class ApiRouter {
     //
     // Email Routes (Admin and up)
     //
-    this.router.get('/emails/settings', EmailController.middleware.bind(this), EmailController.getSettings.bind(this))
-    this.router.patch('/emails/settings', EmailController.middleware.bind(this), EmailController.updateSettings.bind(this))
-    this.router.post('/emails/test', EmailController.middleware.bind(this), EmailController.sendTest.bind(this))
-    this.router.post('/emails/ereader-devices', EmailController.middleware.bind(this), EmailController.updateEReaderDevices.bind(this))
-    this.router.post('/emails/send-ebook-to-device', EmailController.middleware.bind(this), EmailController.sendEBookToDevice.bind(this))
+    this.router.get('/emails/settings', EmailController.adminMiddleware.bind(this), EmailController.getSettings.bind(this))
+    this.router.patch('/emails/settings', EmailController.adminMiddleware.bind(this), EmailController.updateSettings.bind(this))
+    this.router.post('/emails/test', EmailController.adminMiddleware.bind(this), EmailController.sendTest.bind(this))
+    this.router.post('/emails/ereader-devices', EmailController.adminMiddleware.bind(this), EmailController.updateEReaderDevices.bind(this))
+    this.router.post('/emails/send-ebook-to-device', EmailController.sendEBookToDevice.bind(this))
 
     //
     // Search Routes

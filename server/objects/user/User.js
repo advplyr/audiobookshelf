@@ -35,6 +35,9 @@ class User {
   get isAdmin() {
     return this.type === 'admin'
   }
+  get isUser() {
+    return this.type === 'user'
+  }
   get isGuest() {
     return this.type === 'guest'
   }
