@@ -193,3 +193,15 @@ module.exports.asciiOnlyToLowerCase = (str) => {
   }
   return temp
 }
+
+/**
+ * Escape string used in RegExp
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.escapeRegExp = (str) => {
+  if (typeof str !== 'string') return ''
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}

@@ -6,7 +6,7 @@ const Audnexus = require('../providers/Audnexus')
 const FantLab = require('../providers/FantLab')
 const AudiobookCovers = require('../providers/AudiobookCovers')
 const Logger = require('../Logger')
-const { levenshteinDistance } = require('../utils/index')
+const { levenshteinDistance, escapeRegExp } = require('../utils/index')
 
 class BookFinder {
   constructor() {
@@ -201,7 +201,7 @@ class BookFinder {
     add(title, position = 0) {
       // if title contains the author, remove it
       if (this.cleanAuthor) {
-        const authorRe = new RegExp(`(^| | by |)${this.cleanAuthor}(?= |$)`, "g")
+        const authorRe = new RegExp(`(^| | by |)${escapeRegExp(this.cleanAuthor)}(?= |$)`, "g")
         title = this.bookFinder.cleanAuthorForCompares(title).replace(authorRe, '').trim()
       }
 
