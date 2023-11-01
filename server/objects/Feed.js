@@ -1,3 +1,4 @@
+const Path = require('path')
 const uuidv4 = require("uuid").v4
 const FeedMeta = require('./FeedMeta')
 const FeedEpisode = require('./FeedEpisode')
@@ -101,11 +102,13 @@ class Feed {
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta = new FeedMeta()
     this.meta.title = mediaMetadata.title
     this.meta.description = mediaMetadata.description
     this.meta.author = author
-    this.meta.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/item/${libraryItem.id}`
     this.meta.explicit = !!mediaMetadata.explicit
@@ -145,10 +148,12 @@ class Feed {
     this.entityUpdatedAt = libraryItem.updatedAt
     this.coverPath = media.coverPath || null
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta.title = mediaMetadata.title
     this.meta.description = mediaMetadata.description
     this.meta.author = author
-    this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!mediaMetadata.explicit
     this.meta.type = mediaMetadata.type
     this.meta.language = mediaMetadata.language
@@ -190,11 +195,13 @@ class Feed {
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta = new FeedMeta()
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/collection/${collectionExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
@@ -225,10 +232,12 @@ class Feed {
     this.entityUpdatedAt = collectionExpanded.lastUpdate
     this.coverPath = firstItemWithCover?.coverPath || null
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
@@ -267,11 +276,13 @@ class Feed {
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta = new FeedMeta()
     this.meta.title = seriesExpanded.name
     this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/library/${libraryId}/series/${seriesExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
@@ -305,10 +316,12 @@ class Feed {
     this.entityUpdatedAt = seriesExpanded.updatedAt
     this.coverPath = firstItemWithCover?.coverPath || null
 
+    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+
     this.meta.title = seriesExpanded.name
     this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
