@@ -155,7 +155,7 @@ class Server {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    router.get('/feed/:slug/cover', (req, res) => {
+    router.get('/feed/:slug/cover*', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
