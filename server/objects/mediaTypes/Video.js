@@ -69,15 +69,6 @@ class Video {
   get hasMediaEntities() {
     return true
   }
-  get shouldSearchForCover() {
-    return false
-  }
-  get hasEmbeddedCoverArt() {
-    return false
-  }
-  get hasIssues() {
-    return false
-  }
   get duration() {
     return 0
   }

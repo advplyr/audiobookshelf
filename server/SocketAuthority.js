@@ -198,8 +198,7 @@ class SocketAuthority {
 
     const initialPayload = {
       userId: client.user.id,
-      username: client.user.username,
-      librariesScanning: this.Server.getLibrariesScanning()
+      username: client.user.username
     }
     if (user.isAdminOrUp) {
       initialPayload.usersOnline = this.getUsersOnline()

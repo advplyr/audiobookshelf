@@ -32,7 +32,6 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
-const TaskManager = require('./managers/TaskManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
@@ -64,15 +63,14 @@ class Server {
     this.auth = new Auth()
 
     // Managers
-    this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
     this.logManager = new LogManager()
-    this.abMergeManager = new AbMergeManager(this.taskManager)
+    this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager, this.taskManager)
-    this.audioMetadataManager = new AudioMetadataMangaer(this.taskManager)
+    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
+    this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
 
@@ -93,10 +91,6 @@ class Server {
 
   cancelLibraryScan(libraryId) {
     LibraryScanner.setCancelLibraryScan(libraryId)
-  }
-
-  getLibrariesScanning() {
-    return LibraryScanner.librariesScanning
   }
 
   /**
@@ -179,7 +173,6 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    // router.use('/api/v1', routes) // TODO: New routes
     router.use('/api', Auth.cors, this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
 
@@ -188,7 +181,7 @@ class Server {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    router.get('/feed/:slug/cover', (req, res) => {
+    router.get('/feed/:slug/cover*', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {

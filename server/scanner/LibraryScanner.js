@@ -9,9 +9,11 @@ const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const { LogLevel, ScanResult } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
+const TaskManager = require('../managers/TaskManager')
 const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
+const Task = require('../objects/Task')
 
 class LibraryScanner {
   constructor() {
@@ -19,7 +21,7 @@ class LibraryScanner {
     this.librariesScanning = []
 
     this.scanningFilesChanged = false
-    /** @type {import('../Watcher').PendingFileUpdate[][]} */
+    /** @type {[import('../Watcher').PendingFileUpdate[], Task][]} */
     this.pendingFileUpdatesToScan = []
   }
 
@@ -44,17 +46,23 @@ class LibraryScanner {
   /**
    * 
    * @param {import('../objects/Library')} library 
-   * @param {*} options 
+   * @param {boolean} [forceRescan] 
    */
-  async scan(library, options = {}) {
+  async scan(library, forceRescan = false) {
     if (this.isLibraryScanning(library.id)) {
-      Logger.error(`[Scanner] Already scanning ${library.id}`)
+      Logger.error(`[LibraryScanner] Already scanning ${library.id}`)
       return
     }
 
     if (!library.folders.length) {
-      Logger.warn(`[Scanner] Library has no folders to scan "${library.name}"`)
+      Logger.warn(`[LibraryScanner] Library has no folders to scan "${library.name}"`)
       return
+    }
+
+    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence?.join()) {
+      const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
+      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
+      forceRescan = true
     }
 
     const libraryScan = new LibraryScan()
@@ -62,30 +70,45 @@ class LibraryScanner {
     libraryScan.verbose = true
     this.librariesScanning.push(libraryScan.getScanEmitData)
 
-    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
+    const taskData = {
+      libraryId: library.id,
+      libraryName: library.name,
+      libraryMediaType: library.mediaType
+    }
+    const task = TaskManager.createAndAddTask('library-scan', `Scanning "${library.name}" library`, null, true, taskData)
 
-    Logger.info(`[Scanner] Starting library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+    Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    const canceled = await this.scanLibrary(libraryScan)
+    const canceled = await this.scanLibrary(libraryScan, forceRescan)
 
     if (canceled) {
-      Logger.info(`[Scanner] Library scan canceled for "${libraryScan.libraryName}"`)
+      Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
       delete this.cancelLibraryScan[libraryScan.libraryId]
     }
 
     libraryScan.setComplete()
 
-    Logger.info(`[Scanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+    Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
 
     if (canceled && !libraryScan.totalResults) {
+      task.setFinished('Scan canceled')
+      TaskManager.taskFinished(task)
+
       const emitData = libraryScan.getScanEmitData
       emitData.results = null
-      SocketAuthority.emitter('scan_complete', emitData)
       return
     }
 
-    SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
+    library.lastScan = Date.now()
+    library.lastScanVersion = packageJson.version
+    if (library.isBook) {
+      library.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+    }
+    await Database.libraryModel.updateFromOld(library)
+
+    task.setFinished(libraryScan.scanResultsString)
+    TaskManager.taskFinished(task)
 
     if (libraryScan.totalResults) {
       libraryScan.saveLog()
@@ -95,9 +118,10 @@ class LibraryScanner {
   /**
    * 
    * @param {import('./LibraryScan')} libraryScan 
-   * @returns {boolean} true if scan canceled
+   * @param {boolean} forceRescan
+   * @returns {Promise<boolean>} true if scan canceled
    */
-  async scanLibrary(libraryScan) {
+  async scanLibrary(libraryScan, forceRescan) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
     await libraryFilters.getFilterData(libraryScan.library.mediaType, libraryScan.libraryId)
@@ -155,17 +179,25 @@ class LibraryScanner {
         }
       } else {
         libraryItemDataFound = libraryItemDataFound.filter(lidf => lidf !== libraryItemData)
-        if (await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)) {
-          libraryScan.resultsUpdated++
-          if (libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
-            const libraryItem = await LibraryItemScanner.rescanLibraryItem(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
-            const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-            oldLibraryItemsUpdated.push(oldLibraryItem)
+        let libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
+        if (libraryItemDataUpdated || forceRescan) {
+          if (forceRescan || libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
+            const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
+            if (!forceRescan || wasUpdated) {
+              libraryScan.resultsUpdated++
+              const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
+              oldLibraryItemsUpdated.push(oldLibraryItem)
+            } else {
+              libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
+            }
           } else {
+            libraryScan.resultsUpdated++
             // TODO: Temporary while using old model to socket emit
             const oldLibraryItem = await Database.libraryItemModel.getOldById(existingLibraryItem.id)
             oldLibraryItemsUpdated.push(oldLibraryItem)
           }
+        } else {
+          libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
         }
       }
 
@@ -304,17 +336,24 @@ class LibraryScanner {
   /**
    * Scan files changed from Watcher
    * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates 
+   * @param {Task} pendingTask
    */
-  async scanFilesChanged(fileUpdates) {
+  async scanFilesChanged(fileUpdates, pendingTask) {
     if (!fileUpdates?.length) return
 
     // If already scanning files from watcher then add these updates to queue
     if (this.scanningFilesChanged) {
-      this.pendingFileUpdatesToScan.push(fileUpdates)
+      this.pendingFileUpdatesToScan.push([fileUpdates, pendingTask])
       Logger.debug(`[LibraryScanner] Already scanning files from watcher - file updates pushed to queue (size ${this.pendingFileUpdatesToScan.length})`)
       return
     }
     this.scanningFilesChanged = true
+
+    const results = {
+      added: 0,
+      updated: 0,
+      removed: 0
+    }
 
     // files grouped by folder
     const folderGroups = this.getFileUpdatesGrouped(fileUpdates)
@@ -346,17 +385,42 @@ class LibraryScanner {
       const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[LibraryScanner] Folder scan results`, folderScanResults)
 
+      // Tally results to share with client
+      let resetFilterData = false
+      Object.values(folderScanResults).forEach((scanResult) => {
+        if (scanResult === ScanResult.ADDED) {
+          resetFilterData = true
+          results.added++
+        } else if (scanResult === ScanResult.REMOVED) {
+          resetFilterData = true
+          results.removed++
+        } else if (scanResult === ScanResult.UPDATED) {
+          resetFilterData = true
+          results.updated++
+        }
+      })
+
       // If something was updated then reset numIssues filter data for library
-      if (Object.values(folderScanResults).some(scanResult => scanResult !== ScanResult.NOTHING && scanResult !== ScanResult.UPTODATE)) {
+      if (resetFilterData) {
         await Database.resetLibraryIssuesFilterData(libraryId)
       }
     }
+
+    // Complete task and send results to client
+    const resultStrs = []
+    if (results.added) resultStrs.push(`${results.added} added`)
+    if (results.updated) resultStrs.push(`${results.updated} updated`)
+    if (results.removed) resultStrs.push(`${results.removed} missing`)
+    let scanResultStr = 'Scan finished with no changes'
+    if (resultStrs.length) scanResultStr = resultStrs.join(', ')
+    pendingTask.setFinished(scanResultStr)
+    TaskManager.taskFinished(pendingTask)
 
     this.scanningFilesChanged = false
 
     if (this.pendingFileUpdatesToScan.length) {
       Logger.debug(`[LibraryScanner] File updates finished scanning with more updates in queue (${this.pendingFileUpdatesToScan.length})`)
-      this.scanFilesChanged(this.pendingFileUpdatesToScan.shift())
+      this.scanFilesChanged(...this.pendingFileUpdatesToScan.shift())
     }
   }
 
@@ -461,6 +525,7 @@ class LibraryScanner {
         path: potentialChildDirs
       })
 
+      let renamedPaths = {}
       if (!existingLibraryItem) {
         const dirIno = await fileUtils.getIno(fullPath)
         existingLibraryItem = await Database.libraryItemModel.findOneOld({
@@ -471,6 +536,8 @@ class LibraryScanner {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
           existingLibraryItem.relPath = itemDir
+          renamedPaths.path = fullPath
+          renamedPaths.relPath = itemDir
         }
       }
       if (existingLibraryItem) {
@@ -490,7 +557,7 @@ class LibraryScanner {
 
         // Scan library item for updates
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
-        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id)
+        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, renamedPaths)
         continue
       } else if (library.settings.audiobooksOnly && !fileUpdateGroup[itemDir].some?.(scanUtils.checkFilepathIsAudioFile)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)

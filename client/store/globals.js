@@ -11,6 +11,7 @@ export const state = () => ({
   showViewPodcastEpisodeModal: false,
   showRSSFeedOpenCloseModal: false,
   showConfirmPrompt: false,
+  showRawCoverPreviewModal: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
   rssFeedEntity: null,
@@ -20,6 +21,7 @@ export const state = () => ({
   selectedCollection: null,
   selectedAuthor: null,
   selectedMediaItems: [],
+  selectedLibraryItemId: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
@@ -80,7 +82,7 @@ export const state = () => ({
 })
 
 export const getters = {
-  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null) => {
+  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null, raw = false) => {
     if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItem) return placeholder
     const media = libraryItem.media
@@ -94,7 +96,7 @@ export const getters = {
     const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
 
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
     }
 
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
@@ -155,6 +157,13 @@ export const mutations = {
   setConfirmPrompt(state, options) {
     state.confirmPromptOptions = options
     state.showConfirmPrompt = true
+  },
+  setShowRawCoverPreviewModal(state, val) {
+    state.showRawCoverPreviewModal = val
+  },
+  setRawCoverPreviewModal(state, libraryItemId) {
+    state.selectedLibraryItemId = libraryItemId
+    state.showRawCoverPreviewModal = true
   },
   setEditCollection(state, collection) {
     state.selectedCollection = collection

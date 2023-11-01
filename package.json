@@ -1,6 +1,7 @@
 {
   "name": "audiobookshelf",
-  "version": "2.4.4",
+  "version": "2.5.0",
+  "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
@@ -45,6 +46,7 @@
     "sequelize": "^6.32.1",
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
+    "ssrf-req-filter": "^1.1.0",
     "xml2js": "^0.5.0"
   },
   "devDependencies": {

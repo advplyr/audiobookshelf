@@ -59,6 +59,7 @@ class User extends Model {
       id: userExpanded.id,
       oldUserId: userExpanded.extraData?.oldUserId || null,
       username: userExpanded.username,
+      email: userExpanded.email || null,
       pash: userExpanded.pash,
       type: userExpanded.type,
       token: userExpanded.token,
@@ -96,6 +97,7 @@ class User extends Model {
     return {
       id: oldUser.id,
       username: oldUser.username,
+      email: oldUser.email || null,
       pash: oldUser.pash || null,
       type: oldUser.type || null,
       token: oldUser.token || null,

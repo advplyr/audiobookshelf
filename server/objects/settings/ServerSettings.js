@@ -1,3 +1,4 @@
+const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
 
@@ -10,11 +11,8 @@ class ServerSettings {
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
     this.scannerCoverProvider = 'google'
-    this.scannerPreferAudioMetadata = false
-    this.scannerPreferOpfMetadata = false
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
-    this.scannerPreferOverdriveMediaMarker = false
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -53,7 +51,8 @@ class ServerSettings {
 
     this.logLevel = Logger.logLevel
 
-    this.version = null
+    this.version = packageJson.version
+    this.buildNumber = packageJson.buildNumber
 
     // Auth settings
     // Active auth methodes
@@ -82,11 +81,8 @@ class ServerSettings {
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
-    this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
-    this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
-    this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
@@ -113,6 +109,7 @@ class ServerSettings {
     this.language = settings.language || 'en-us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
+    this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
     this.authGoogleOauth20ClientID = settings.authGoogleOauth20ClientID || ''
@@ -173,9 +170,9 @@ class ServerSettings {
       this.metadataFileFormat = 'abs'
     }
 
-    // Validation
-    if (!['abs', 'json'].includes(this.metadataFileFormat)) {
-      Logger.error(`[ServerSettings] construct: Invalid metadataFileFormat ${this.metadataFileFormat}`)
+    // As of v2.4.5 only json is supported
+    if (this.metadataFileFormat !== 'json') {
+      Logger.warn(`[ServerSettings] Invalid metadataFileFormat ${this.metadataFileFormat} (as of v2.4.5 only json is supported)`)
       this.metadataFileFormat = 'json'
     }
 
@@ -191,11 +188,8 @@ class ServerSettings {
       scannerFindCovers: this.scannerFindCovers,
       scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
-      scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
-      scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
       scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
-      scannerPreferOverdriveMediaMarker: this.scannerPreferOverdriveMediaMarker,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       metadataFileFormat: this.metadataFileFormat,
@@ -217,6 +211,7 @@ class ServerSettings {
       language: this.language,
       logLevel: this.logLevel,
       version: this.version,
+      buildNumber: this.buildNumber,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authGoogleOauth20ClientID: this.authGoogleOauth20ClientID, // Do not return to client
       authGoogleOauth20ClientSecret: this.authGoogleOauth20ClientSecret, // Do not return to client

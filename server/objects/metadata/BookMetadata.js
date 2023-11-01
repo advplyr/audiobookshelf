@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
+const { areEquivalent, copyValue, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
@@ -144,20 +144,6 @@ class BookMetadata {
       return `${se.name} #${se.sequence}`
     }).join(', ')
   }
-  get seriesNameIgnorePrefix() {
-    if (!this.series.length) return ''
-    return this.series.map(se => {
-      if (!se.sequence) return getTitleIgnorePrefix(se.name)
-      return `${getTitleIgnorePrefix(se.name)} #${se.sequence}`
-    }).join(', ')
-  }
-  get seriesNamePrefixAtEnd() {
-    if (!this.series.length) return ''
-    return this.series.map(se => {
-      if (!se.sequence) return getTitlePrefixAtEnd(se.name)
-      return `${getTitlePrefixAtEnd(se.name)} #${se.sequence}`
-    }).join(', ')
-  }
   get firstSeriesName() {
     if (!this.series.length) return ''
     return this.series[0].name
@@ -169,35 +155,14 @@ class BookMetadata {
   get narratorName() {
     return this.narrators.join(', ')
   }
-  get coverSearchQuery() {
-    if (!this.authorName) return this.title
-    return this.title + '&' + this.authorName
-  }
 
-  hasAuthor(id) {
-    return !!this.authors.find(au => au.id == id)
-  }
-  hasSeries(seriesId) {
-    return !!this.series.find(se => se.id == seriesId)
-  }
-  hasNarrator(narratorName) {
-    return this.narrators.includes(narratorName)
-  }
   getSeries(seriesId) {
     return this.series.find(se => se.id == seriesId)
-  }
-  getFirstSeries() {
-    return this.series.length ? this.series[0] : null
   }
   getSeriesSequence(seriesId) {
     const series = this.series.find(se => se.id == seriesId)
     if (!series) return null
     return series.sequence || ''
-  }
-  getSeriesSortTitle(series) {
-    if (!series) return ''
-    if (!series.sequence) return series.name
-    return `${series.name} #${series.sequence}`
   }
 
   update(payload) {
@@ -230,206 +195,6 @@ class BookMetadata {
       id: newAuthor.id,
       name: newAuthor.name
     })
-  }
-
-  /**
-   * Update narrator name if narrator is in book
-   * @param {String} oldNarratorName - Narrator name to get updated
-   * @param {String} newNarratorName - Updated narrator name
-   * @return {Boolean} True if narrator was updated
-   */
-  updateNarrator(oldNarratorName, newNarratorName) {
-    if (!this.hasNarrator(oldNarratorName)) return false
-    this.narrators = this.narrators.filter(n => n !== oldNarratorName)
-    if (newNarratorName && !this.hasNarrator(newNarratorName)) {
-      this.narrators.push(newNarratorName)
-    }
-    return true
-  }
-
-  /**
-   * Remove narrator name if narrator is in book
-   * @param {String} narratorName - Narrator name to remove
-   * @return {Boolean} True if narrator was updated
-   */
-  removeNarrator(narratorName) {
-    if (!this.hasNarrator(narratorName)) return false
-    this.narrators = this.narrators.filter(n => n !== narratorName)
-    return true
-  }
-
-  setData(scanMediaData = {}) {
-    this.title = scanMediaData.title || null
-    this.subtitle = scanMediaData.subtitle || null
-    this.narrators = this.parseNarratorsTag(scanMediaData.narrators)
-    this.publishedYear = scanMediaData.publishedYear || null
-    this.description = scanMediaData.description || null
-    this.isbn = scanMediaData.isbn || null
-    this.asin = scanMediaData.asin || null
-    this.language = scanMediaData.language || null
-    this.genres = []
-    this.explicit = !!scanMediaData.explicit
-
-    if (scanMediaData.author) {
-      this.authors = this.parseAuthorsTag(scanMediaData.author)
-    }
-    if (scanMediaData.series) {
-      this.series = this.parseSeriesTag(scanMediaData.series, scanMediaData.sequence)
-    }
-  }
-
-  setDataFromAudioMetaTags(audioFileMetaTags, overrideExistingDetails = false) {
-    const MetadataMapArray = [
-      {
-        tag: 'tagComposer',
-        key: 'narrators'
-      },
-      {
-        tag: 'tagDescription',
-        altTag: 'tagComment',
-        key: 'description'
-      },
-      {
-        tag: 'tagPublisher',
-        key: 'publisher'
-      },
-      {
-        tag: 'tagDate',
-        key: 'publishedYear'
-      },
-      {
-        tag: 'tagSubtitle',
-        key: 'subtitle'
-      },
-      {
-        tag: 'tagAlbum',
-        altTag: 'tagTitle',
-        key: 'title',
-      },
-      {
-        tag: 'tagArtist',
-        altTag: 'tagAlbumArtist',
-        key: 'authors'
-      },
-      {
-        tag: 'tagGenre',
-        key: 'genres'
-      },
-      {
-        tag: 'tagSeries',
-        key: 'series'
-      },
-      {
-        tag: 'tagIsbn',
-        key: 'isbn'
-      },
-      {
-        tag: 'tagLanguage',
-        key: 'language'
-      },
-      {
-        tag: 'tagASIN',
-        key: 'asin'
-      }
-    ]
-
-    const updatePayload = {}
-
-    // Metadata is only mapped to the book if it is empty
-    MetadataMapArray.forEach((mapping) => {
-      let value = audioFileMetaTags[mapping.tag]
-      // let tagToUse = mapping.tag
-      if (!value && mapping.altTag) {
-        value = audioFileMetaTags[mapping.altTag]
-        // tagToUse = mapping.altTag
-      }
-
-      if (value && typeof value === 'string') {
-        value = value.trim() // Trim whitespace
-
-        if (mapping.key === 'narrators' && (!this.narrators.length || overrideExistingDetails)) {
-          updatePayload.narrators = this.parseNarratorsTag(value)
-        } else if (mapping.key === 'authors' && (!this.authors.length || overrideExistingDetails)) {
-          updatePayload.authors = this.parseAuthorsTag(value)
-        } else if (mapping.key === 'genres' && (!this.genres.length || overrideExistingDetails)) {
-          updatePayload.genres = this.parseGenresTag(value)
-        } else if (mapping.key === 'series' && (!this.series.length || overrideExistingDetails)) {
-          const sequenceTag = audioFileMetaTags.tagSeriesPart || null
-          updatePayload.series = this.parseSeriesTag(value, sequenceTag)
-        } else if (!this[mapping.key] || overrideExistingDetails) {
-          updatePayload[mapping.key] = value
-          // Logger.debug(`[Book] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload[mapping.key]}`)
-        }
-      }
-    })
-
-    if (Object.keys(updatePayload).length) {
-      return this.update(updatePayload)
-    }
-    return false
-  }
-
-  // Returns array of names in First Last format
-  parseNarratorsTag(narratorsTag) {
-    const parsed = parseNameString.parse(narratorsTag)
-    return parsed ? parsed.names : []
-  }
-
-  // Return array of authors minified with placeholder id
-  parseAuthorsTag(authorsTag) {
-    const parsed = parseNameString.parse(authorsTag)
-    if (!parsed) return []
-    return (parsed.names || []).map((au) => {
-      const findAuthor = this.authors.find(_au => _au.name == au)
-
-      return {
-        id: findAuthor?.id || `new-${Math.floor(Math.random() * 1000000)}`,
-        name: au
-      }
-    })
-  }
-
-  parseGenresTag(genreTag) {
-    if (!genreTag || !genreTag.length) return []
-    const separators = ['/', '//', ';']
-    for (let i = 0; i < separators.length; i++) {
-      if (genreTag.includes(separators[i])) {
-        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
-      }
-    }
-    return [genreTag]
-  }
-
-  // Return array with series with placeholder id
-  parseSeriesTag(seriesTag, sequenceTag) {
-    if (!seriesTag) return []
-    return [{
-      id: `new-${Math.floor(Math.random() * 1000000)}`,
-      name: seriesTag,
-      sequence: sequenceTag || ''
-    }]
-  }
-
-  searchSeries(query) {
-    return this.series.filter(se => cleanStringForSearch(se.name).includes(query))
-  }
-  searchAuthors(query) {
-    return this.authors.filter(au => cleanStringForSearch(au.name).includes(query))
-  }
-  searchNarrators(query) {
-    return this.narrators.filter(n => cleanStringForSearch(n).includes(query))
-  }
-  searchQuery(query) { // Returns key if match is found
-    const keysToCheck = ['title', 'asin', 'isbn', 'subtitle']
-    for (const key of keysToCheck) {
-      if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
-        return {
-          matchKey: key,
-          matchText: this[key]
-        }
-      }
-    }
-    return null
   }
 }
 module.exports = BookMetadata

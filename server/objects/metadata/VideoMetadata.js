@@ -55,19 +55,6 @@ class VideoMetadata {
     return getTitlePrefixAtEnd(this.title)
   }
 
-  searchQuery(query) { // Returns key if match is found
-    var keysToCheck = ['title']
-    for (var key of keysToCheck) {
-      if (this[key] && String(this[key]).toLowerCase().includes(query)) {
-        return {
-          matchKey: key,
-          matchText: this[key]
-        }
-      }
-    }
-    return null
-  }
-
   setData(mediaMetadata = {}) {
     this.title = mediaMetadata.title || null
     this.description = mediaMetadata.description || null

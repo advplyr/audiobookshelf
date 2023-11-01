@@ -51,8 +51,14 @@
       </div>
     </app-settings-content>
 
-    <app-settings-content :header-text="$strings.HeaderEreaderDevices" showAddButton :description="''" @clicked="addNewDeviceClick">
-      <table v-if="existingEReaderDevices.length" class="tracksTable my-4">
+    <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="''">
+      <template #header-items>
+        <div class="flex-grow" />
+
+        <ui-btn color="primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
+      </template>
+
+      <table v-if="existingEReaderDevices.length" class="tracksTable mt-4">
         <tr>
           <th class="text-left">{{ $strings.LabelName }}</th>
           <th class="text-left">{{ $strings.LabelEmail }}</th>

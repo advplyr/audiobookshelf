@@ -1,9 +1,8 @@
 const Logger = require('../../Logger')
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
-const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
-const abmetadataGenerator = require('../../utils/generators/abmetadataGenerator')
-const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
+const { areEquivalent, copyValue } = require('../../utils/index')
+const { filePathToPOSIX } = require('../../utils/fileUtils')
 
 class Podcast {
   constructor(podcast) {
@@ -98,7 +97,19 @@ class Podcast {
   toJSONForMetadataFile() {
     return {
       tags: [...this.tags],
-      metadata: this.metadata.toJSON()
+      title: this.metadata.title,
+      author: this.metadata.author,
+      description: this.metadata.description,
+      releaseDate: this.metadata.releaseDate,
+      genres: [...this.metadata.genres],
+      feedURL: this.metadata.feedUrl,
+      imageURL: this.metadata.imageUrl,
+      itunesPageURL: this.metadata.itunesPageUrl,
+      itunesId: this.metadata.itunesId,
+      itunesArtistId: this.metadata.itunesArtistId,
+      explicit: this.metadata.explicit,
+      language: this.metadata.language,
+      podcastType: this.metadata.type
     }
   }
 
@@ -109,15 +120,6 @@ class Podcast {
   }
   get hasMediaEntities() {
     return !!this.episodes.length
-  }
-  get shouldSearchForCover() {
-    return false
-  }
-  get hasEmbeddedCoverArt() {
-    return this.episodes.some(ep => ep.audioFile.embeddedCoverArt)
-  }
-  get hasIssues() {
-    return false
   }
   get duration() {
     let total = 0
@@ -187,10 +189,6 @@ class Podcast {
     return null
   }
 
-  findEpisodeWithInode(inode) {
-    return this.episodes.find(ep => ep.audioFile.ino === inode)
-  }
-
   setData(mediaData) {
     this.metadata = new PodcastMetadata()
     if (mediaData.metadata) {
@@ -201,62 +199,6 @@ class Podcast {
     this.autoDownloadEpisodes = !!mediaData.autoDownloadEpisodes
     this.autoDownloadSchedule = mediaData.autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule
     this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
-  }
-
-  async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
-    let metadataUpdatePayload = {}
-    let tagsUpdated = false
-
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
-    if (metadataAbs) {
-      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
-      const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast', isJSON)
-      if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
-        Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
-
-        if (abmetadataUpdates.tags) { // Set media tags if updated
-          this.tags = abmetadataUpdates.tags
-          tagsUpdated = true
-        }
-        if (abmetadataUpdates.metadata) {
-          metadataUpdatePayload = {
-            ...metadataUpdatePayload,
-            ...abmetadataUpdates.metadata
-          }
-        }
-      }
-    }
-
-    if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
-    }
-    return tagsUpdated
-  }
-
-  searchEpisodes(query) {
-    return this.episodes.filter(ep => ep.searchQuery(query))
-  }
-
-  searchQuery(query) {
-    const payload = {
-      tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
-      matchKey: null,
-      matchText: null
-    }
-    const metadataMatch = this.metadata.searchQuery(query)
-    if (metadataMatch) {
-      payload.matchKey = metadataMatch.matchKey
-      payload.matchText = metadataMatch.matchText
-    } else {
-      const matchingEpisodes = this.searchEpisodes(query)
-      if (matchingEpisodes.length) {
-        payload.matchKey = 'episode'
-        payload.matchText = matchingEpisodes[0].title
-      }
-    }
-
-    return payload
   }
 
   checkHasEpisode(episodeId) {
@@ -323,14 +265,6 @@ class Podcast {
     if (episodeId.startsWith('ep_')) return this.episodes.find(ep => ep.oldEpisodeId == episodeId)
 
     return this.episodes.find(ep => ep.id == episodeId)
-  }
-
-  // Audio file metadata tags map to podcast details
-  setMetadataFromAudioFile(overrideExistingDetails = false) {
-    if (!this.episodes.length) return false
-    const audioFile = this.episodes[0].audioFile
-    if (!audioFile?.metaTags) return false
-    return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
   }
 
   getChapters(episodeId) {

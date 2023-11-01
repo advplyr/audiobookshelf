@@ -26,7 +26,7 @@ class SearchController {
 
     let results = null
     if (podcast) results = await PodcastFinder.findCovers(query.title)
-    else results = await BookFinder.findCovers(query.provider || 'google', query.title, query.author || null)
+    else results = await BookFinder.findCovers(query.provider || 'google', query.title, query.author || '')
     res.json({
       results
     })

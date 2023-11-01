@@ -19,14 +19,13 @@
     <modals-authors-edit-modal />
     <modals-batch-quick-match-model />
     <modals-rssfeed-open-close-modal />
+    <modals-raw-cover-preview-modal />
     <prompt-confirm />
     <readers-reader />
   </div>
 </template>
 
 <script>
-import CloseButton from '@/components/widgets/CloseButton'
-
 export default {
   middleware: 'authenticated',
   data() {
@@ -123,22 +122,6 @@ export default {
     init(payload) {
       console.log('Init Payload', payload)
 
-      // Start scans currently running
-      if (payload.librariesScanning) {
-        payload.librariesScanning.forEach((libraryScan) => {
-          this.scanStart(libraryScan)
-        })
-      }
-
-      // Remove any current scans that are no longer running
-      var currentScans = [...this.$store.state.scanners.libraryScans]
-      currentScans.forEach((ls) => {
-        if (!payload.librariesScanning || !payload.librariesScanning.find((_ls) => _ls.id === ls.id)) {
-          this.$toast.dismiss(ls.toastId)
-          this.$store.commit('scanners/remove', ls)
-        }
-      })
-
       if (payload.usersOnline) {
         this.$store.commit('users/setUsersOnline', payload.usersOnline)
       }
@@ -227,54 +210,6 @@ export default {
       libraryItems.forEach((ab) => {
         this.libraryItemAdded(ab)
       })
-    },
-    scanComplete(data) {
-      console.log('Scan complete received', data)
-
-      let message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" complete!`
-      let toastType = 'success'
-      if (data.error) {
-        message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" finished with error:\n${data.error}`
-        toastType = 'error'
-      } else if (data.results) {
-        var scanResultMsgs = []
-        var results = data.results
-        if (results.added) scanResultMsgs.push(`${results.added} added`)
-        if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
-        if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
-        if (results.missing) scanResultMsgs.push(`${results.missing} missing`)
-        if (!scanResultMsgs.length) message += '\nEverything was up to date'
-        else message += '\n' + scanResultMsgs.join('\n')
-      } else {
-        message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" was canceled`
-      }
-
-      var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
-      if (existingScan && !isNaN(existingScan.toastId)) {
-        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: toastType, closeButton: false, onClose: () => null } }, true)
-      } else {
-        this.$toast[toastType](message, { timeout: 5000 })
-      }
-
-      this.$store.commit('scanners/remove', data)
-    },
-    onScanToastCancel(id) {
-      this.$root.socket.emit('cancel_scan', id)
-    },
-    scanStart(data) {
-      data.toastId = this.$toast(`${data.type === 'match' ? 'Matching' : 'Scanning'} "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, onClose: () => this.onScanToastCancel(data.id) })
-      this.$store.commit('scanners/addUpdate', data)
-    },
-    scanProgress(data) {
-      var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
-      if (existingScan && !isNaN(existingScan.toastId)) {
-        data.toastId = existingScan.toastId
-        this.$toast.update(existingScan.toastId, { content: `Scanning "${existingScan.name}"... ${data.progress.progress || 0}%`, options: { timeout: false } }, true)
-      } else {
-        data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, onClose: () => this.onScanToastCancel(data.id) })
-      }
-
-      this.$store.commit('scanners/addUpdate', data)
     },
     taskStarted(task) {
       console.log('Task started', task)
@@ -457,11 +392,6 @@ export default {
       this.socket.on('playlist_added', this.playlistAdded)
       this.socket.on('playlist_updated', this.playlistUpdated)
       this.socket.on('playlist_removed', this.playlistRemoved)
-
-      // Scan Listeners
-      this.socket.on('scan_start', this.scanStart)
-      this.socket.on('scan_complete', this.scanComplete)
-      this.socket.on('scan_progress', this.scanProgress)
 
       // Task Listeners
       this.socket.on('task_started', this.taskStarted)

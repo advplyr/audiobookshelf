@@ -330,14 +330,15 @@ class PlaybackSessionManager {
     Logger.debug(`[PlaybackSessionManager] Removed session "${sessionId}"`)
   }
 
-  // Check for streams that are not in memory and remove
+  /**
+   * Remove all stream folders in `/metadata/streams`
+   */
   async removeOrphanStreams() {
     await fs.ensureDir(this.StreamsPath)
     try {
       const streamsInPath = await fs.readdir(this.StreamsPath)
-      for (let i = 0; i < streamsInPath.length; i++) {
-        const streamId = streamsInPath[i]
-        if (streamId.startsWith('play_')) { // Make sure to only remove folders that are a stream
+      for (const streamId of streamsInPath) {
+        if (/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/.test(streamId)) { // Ensure is uuidv4
           const session = this.sessions.find(se => se.id === streamId)
           if (!session) {
             const streamPath = Path.join(this.StreamsPath, streamId)

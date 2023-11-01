@@ -65,6 +65,9 @@ module.exports.getId = (prepend = '') => {
 }
 
 function elapsedPretty(seconds) {
+  if (seconds > 0 && seconds < 1) {
+    return `${Math.floor(seconds * 1000)} ms`
+  }
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec`
   }
@@ -166,4 +169,39 @@ module.exports.getTitleIgnorePrefix = (title) => {
 module.exports.getTitlePrefixAtEnd = (title) => {
   let [sort, prefix] = getTitleParts(title)
   return prefix ? `${sort}, ${prefix}` : title
+}
+
+/**
+ * to lower case for only ascii characters
+ * used to handle sqlite that doesnt support unicode lower
+ * @see https://github.com/advplyr/audiobookshelf/issues/2187
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.asciiOnlyToLowerCase = (str) => {
+  if (!str) return ''
+
+  let temp = ''
+  for (let chars of str) {
+    let value = chars.charCodeAt()
+    if (value >= 65 && value <= 90) {
+      temp += String.fromCharCode(value + 32)
+    } else {
+      temp += chars
+    }
+  }
+  return temp
+}
+
+/**
+ * Escape string used in RegExp
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.escapeRegExp = (str) => {
+  if (typeof str !== 'string') return ''
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

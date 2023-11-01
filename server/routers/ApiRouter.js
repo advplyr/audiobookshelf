@@ -1,4 +1,3 @@
-const sequelize = require('sequelize')
 const express = require('express')
 const Path = require('path')
 
@@ -40,6 +39,7 @@ class ApiRouter {
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
     this.backupManager = Server.backupManager
+    /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager
@@ -47,7 +47,6 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
-    this.taskManager = Server.taskManager
 
     this.router = express()
     this.router.disable('x-powered-by')
@@ -84,6 +83,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
     this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
+    this.router.post('/libraries/:id/remove-metadata', LibraryController.middleware.bind(this), LibraryController.removeAllMetadataFiles.bind(this))
 
     //
     // Item Routes
@@ -202,6 +202,8 @@ class ApiRouter {
     this.router.delete('/authors/:id', AuthorController.middleware.bind(this), AuthorController.delete.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
     this.router.get('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.getImage.bind(this))
+    this.router.post('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.uploadImage.bind(this))
+    this.router.delete('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.deleteImage.bind(this))
 
     //
     // Series Routes
@@ -253,11 +255,11 @@ class ApiRouter {
     //
     // Email Routes (Admin and up)
     //
-    this.router.get('/emails/settings', EmailController.middleware.bind(this), EmailController.getSettings.bind(this))
-    this.router.patch('/emails/settings', EmailController.middleware.bind(this), EmailController.updateSettings.bind(this))
-    this.router.post('/emails/test', EmailController.middleware.bind(this), EmailController.sendTest.bind(this))
-    this.router.post('/emails/ereader-devices', EmailController.middleware.bind(this), EmailController.updateEReaderDevices.bind(this))
-    this.router.post('/emails/send-ebook-to-device', EmailController.middleware.bind(this), EmailController.sendEBookToDevice.bind(this))
+    this.router.get('/emails/settings', EmailController.adminMiddleware.bind(this), EmailController.getSettings.bind(this))
+    this.router.patch('/emails/settings', EmailController.adminMiddleware.bind(this), EmailController.updateSettings.bind(this))
+    this.router.post('/emails/test', EmailController.adminMiddleware.bind(this), EmailController.sendTest.bind(this))
+    this.router.post('/emails/ereader-devices', EmailController.adminMiddleware.bind(this), EmailController.updateEReaderDevices.bind(this))
+    this.router.post('/emails/send-ebook-to-device', EmailController.sendEBookToDevice.bind(this))
 
     //
     // Search Routes
@@ -308,6 +310,7 @@ class ApiRouter {
     this.router.delete('/genres/:genre', MiscController.deleteGenre.bind(this))
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
     this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
+    this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {

@@ -11,8 +11,8 @@
           <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">{{ $strings.ButtonQuickMatch }}</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="!!libraryScan" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
+        <ui-tooltip :disabled="isLibraryScanning" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
+          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="isLibraryScanning" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
         </ui-tooltip>
 
         <div class="flex-grow" />
@@ -80,9 +80,9 @@ export default {
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.libraryId) || 'google'
     },
-    libraryScan() {
+    isLibraryScanning() {
       if (!this.libraryId) return null
-      return this.$store.getters['scanners/getLibraryScan'](this.libraryId)
+      return !!this.$store.getters['tasks/getRunningLibraryScanTask'](this.libraryId)
     }
   },
   methods: {

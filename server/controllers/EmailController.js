@@ -51,32 +51,45 @@ class EmailController {
     })
   }
 
+  /**
+   * Send ebook to device
+   * User must have access to device and library item
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async sendEBookToDevice(req, res) {
-    Logger.debug(`[EmailController] Send ebook to device request for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
+    Logger.debug(`[EmailController] Send ebook to device requested by user "${req.user.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
+
+    const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
+    if (!device) {
+      return res.status(404).send('Ereader device not found')
+    }
+
+    // Check user has access to device
+    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.user)) {
+      return res.sendStatus(403)
+    }
 
     const libraryItem = await Database.libraryItemModel.getOldById(req.body.libraryItemId)
     if (!libraryItem) {
       return res.status(404).send('Library item not found')
     }
 
+    // Check user has access to library item
     if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
       return res.sendStatus(403)
     }
 
     const ebookFile = libraryItem.media.ebookFile
     if (!ebookFile) {
-      return res.status(404).send('EBook file not found')
-    }
-
-    const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
-    if (!device) {
-      return res.status(404).send('E-reader device not found')
+      return res.status(404).send('Ebook file not found')
     }
 
     this.emailManager.sendEBookToDevice(ebookFile, device, res)
   }
 
-  middleware(req, res, next) {
+  adminMiddleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(404)
     }

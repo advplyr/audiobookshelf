@@ -25,7 +25,7 @@ class LibraryItemScanData {
     this.relPath = data.relPath
     /** @type {boolean} */
     this.isFile = data.isFile
-    /** @type {{author:string, title:string, subtitle:string, series:string, sequence:string, publishedYear:string, narrators:string}} */
+    /** @type {import('../utils/scandir').LibraryItemFilenameMetadata} */
     this.mediaMetadata = data.mediaMetadata
     /** @type {import('../objects/files/LibraryFile')[]} */
     this.libraryFiles = data.libraryFiles
@@ -233,10 +233,9 @@ class LibraryItemScanData {
       }
       await existingLibraryItem.save()
       return true
-    } else {
-      libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
-      return false
     }
+
+    return false
   }
 
   /**
@@ -302,6 +301,35 @@ class LibraryItemScanData {
     }
 
     return !this.ebookLibraryFiles.some(lf => lf.ino === ebookFile.ino)
+  }
+
+  /**
+   * Set data parsed from filenames
+   * 
+   * @param {Object} bookMetadata 
+   */
+  setBookMetadataFromFilenames(bookMetadata) {
+    const keysToMap = ['title', 'subtitle', 'publishedYear', 'asin']
+    for (const key in this.mediaMetadata) {
+      if (keysToMap.includes(key) && this.mediaMetadata[key]) {
+        bookMetadata[key] = this.mediaMetadata[key]
+      }
+    }
+
+    if (this.mediaMetadata.authors?.length) {
+      bookMetadata.authors = this.mediaMetadata.authors
+    }
+    if (this.mediaMetadata.narrators?.length) {
+      bookMetadata.narrators = this.mediaMetadata.narrators
+    }
+    if (this.mediaMetadata.seriesName) {
+      bookMetadata.series = [
+        {
+          name: this.mediaMetadata.seriesName,
+          sequence: this.mediaMetadata.seriesSequence || null
+        }
+      ]
+    }
   }
 }
 module.exports = LibraryItemScanData

@@ -115,6 +115,13 @@ class UserController {
     }
   }
 
+  /**
+   * PATCH: /api/users/:id
+   * Update user
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async update(req, res) {
     const user = req.reqUser
 
@@ -126,6 +133,7 @@ class UserController {
     var account = req.body
     var shouldUpdateToken = false
 
+    // When changing username create a new API token
     if (account.username !== undefined && account.username !== user.username) {
       const usernameExists = await Database.userModel.getUserByUsername(account.username)
       if (usernameExists) {

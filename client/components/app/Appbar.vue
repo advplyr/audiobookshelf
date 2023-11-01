@@ -186,7 +186,7 @@ export default {
   methods: {
     requestBatchQuickEmbed() {
       const payload = {
-        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        message: this.$strings.MessageConfirmQuickEmbed,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
@@ -219,7 +219,7 @@ export default {
     },
     async batchRescan() {
       const payload = {
-        message: `Are you sure you want to re-scan ${this.selectedMediaItems.length} items?`,
+        message: this.$getString('MessageConfirmReScanLibraryItems', [this.selectedMediaItems.length]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
@@ -316,8 +316,8 @@ export default {
     },
     batchDeleteClick() {
       const payload = {
-        message: `This will delete ${this.numMediaItemsSelected} library items from the database and your file system. Are you sure?`,
-        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        message: this.$getString('MessageConfirmDeleteLibraryItems', [this.numMediaItemsSelected]),
+        checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
         checkboxDefaultValue: true,

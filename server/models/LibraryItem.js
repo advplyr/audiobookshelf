@@ -69,7 +69,7 @@ class LibraryItem extends Model {
    * 
    * @param {number} offset
    * @param {number} limit
-   * @returns {Promise<Model<LibraryItem>[]>} LibraryItem
+   * @returns {Promise<LibraryItem[]>} LibraryItem
    */
   static getLibraryItemsIncrement(offset, limit, where = null) {
     return this.findAll({

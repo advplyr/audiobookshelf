@@ -21,9 +21,10 @@ class LibraryItemScanner {
    * Scan single library item
    * 
    * @param {string} libraryItemId 
+   * @param {{relPath:string, path:string}} [renamedPaths] used by watcher when item folder was renamed
    * @returns {number} ScanResult
    */
-  async scanLibraryItem(libraryItemId) {
+  async scanLibraryItem(libraryItemId, renamedPaths = null) {
     // TODO: Add task manager
     const libraryItem = await Database.libraryItemModel.findByPk(libraryItemId)
     if (!libraryItem) {
@@ -50,27 +51,25 @@ class LibraryItemScanner {
 
     const scanLogger = new ScanLogger()
     scanLogger.verbose = true
-    scanLogger.setData('libraryItem', libraryItemId)
+    scanLogger.setData('libraryItem', renamedPaths?.relPath || libraryItem.relPath)
 
-    const libraryItemPath = fileUtils.filePathToPOSIX(libraryItem.path)
+    const libraryItemPath = renamedPaths?.path || fileUtils.filePathToPOSIX(libraryItem.path)
     const folder = library.libraryFolders[0]
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, false)
 
-    if (await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)) {
-      if (libraryItemScanData.hasLibraryFileChanges || libraryItemScanData.hasPathChange) {
-        const expandedLibraryItem = await this.rescanLibraryItem(libraryItem, libraryItemScanData, library.settings, scanLogger)
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(expandedLibraryItem)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+    let libraryItemDataUpdated = await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)
 
-        await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
-      } else {
-        // TODO: Temporary while using old model to socket emit
-        const oldLibraryItem = await Database.libraryItemModel.getOldById(libraryItem.id)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
-      }
+    const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
+    if (libraryItemDataUpdated || wasUpdated) {
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(expandedLibraryItem)
+      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+      await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
 
       return ScanResult.UPDATED
     }
+
+    scanLogger.addLog(LogLevel.DEBUG, `Library item is up-to-date`)
     return ScanResult.UPTODATE
   }
 
@@ -156,16 +155,14 @@ class LibraryItemScanner {
    * @param {LibraryItemScanData} libraryItemData 
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {LibraryScan} libraryScan
-   * @returns {Promise<LibraryItem>}
+   * @returns {Promise<{libraryItem:LibraryItem, wasUpdated:boolean}>}
    */
-  async rescanLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
-    let newLibraryItem = null
+  rescanLibraryItemMedia(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
     if (existingLibraryItem.mediaType === 'book') {
-      newLibraryItem = await BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
+      return BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
     } else {
-      newLibraryItem = await PodcastScanner.rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
+      return PodcastScanner.rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
     }
-    return newLibraryItem
   }
 
   /**

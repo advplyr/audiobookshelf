@@ -85,10 +85,29 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
+  /**
+   * GET: /api/items/:id/download
+   * Download library item. Zip file if multiple files.
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   download(req, res) {
     if (!req.user.canDownload) {
       Logger.warn('User attempted to download without permission', req.user)
       return res.sendStatus(403)
+    }
+
+    // If library item is a single file in root dir then no need to zip
+    if (req.libraryItem.isFile) {
+      // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(req.libraryItem.path))
+      if (audioMimeType) {
+        res.setHeader('Content-Type', audioMimeType)
+      }
+
+      res.download(req.libraryItem.path, req.libraryItem.relPath)
+      return
     }
 
     const libraryItemPath = req.libraryItem.path
@@ -163,22 +182,22 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
-    var libraryItem = req.libraryItem
+    let libraryItem = req.libraryItem
 
-    var result = null
-    if (req.body && req.body.url) {
+    let result = null
+    if (req.body?.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
       result = await CoverManager.downloadCoverFromUrl(libraryItem, req.body.url)
-    } else if (req.files && req.files.cover) {
+    } else if (req.files?.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
       result = await CoverManager.uploadCover(libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
 
-    if (result && result.error) {
+    if (result?.error) {
       return res.status(400).send(result.error)
-    } else if (!result || !result.cover) {
+    } else if (!result?.cover) {
       return res.status(500).send('Unknown error occurred')
     }
 
@@ -259,7 +278,6 @@ class LibraryItemController {
 
     // Check if library item media has a cover path
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      Logger.debug(`[LibraryItemController] getCover: Library item "${req.params.id}" has no cover path`)
       return res.sendStatus(404)
     }
 

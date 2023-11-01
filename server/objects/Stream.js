@@ -101,7 +101,6 @@ class Stream extends EventEmitter {
     return 'mpegts'
   }
   get segmentBasename() {
-    if (this.hlsSegmentType === 'fmp4') return 'output-%d.m4s'
     return 'output-%d.ts'
   }
   get segmentStartNumber() {
@@ -142,19 +141,21 @@ class Stream extends EventEmitter {
 
   async checkSegmentNumberRequest(segNum) {
     const segStartTime = segNum * this.segmentLength
-    if (this.startTime > segStartTime) {
-      Logger.warn(`[STREAM] Segment #${segNum} Request @${secondsToTimestamp(segStartTime)} is before start time (${secondsToTimestamp(this.startTime)}) - Reset Transcode`)
-      await this.reset(segStartTime - (this.segmentLength * 2))
+    if (this.segmentStartNumber > segNum) {
+      Logger.warn(`[STREAM] Segment #${segNum} Request is before starting segment number #${this.segmentStartNumber} - Reset Transcode`)
+      await this.reset(segStartTime - (this.segmentLength * 5))
       return segStartTime
     } else if (this.isTranscodeComplete) {
       return false
     }
 
-    const distanceFromFurthestSegment = segNum - this.furthestSegmentCreated
-    if (distanceFromFurthestSegment > 10) {
-      Logger.info(`Segment #${segNum} requested is ${distanceFromFurthestSegment} segments from latest (${secondsToTimestamp(segStartTime)}) - Reset Transcode`)
-      await this.reset(segStartTime - (this.segmentLength * 2))
-      return segStartTime
+    if (this.furthestSegmentCreated) {
+      const distanceFromFurthestSegment = segNum - this.furthestSegmentCreated
+      if (distanceFromFurthestSegment > 10) {
+        Logger.info(`Segment #${segNum} requested is ${distanceFromFurthestSegment} segments from latest (${secondsToTimestamp(segStartTime)}) - Reset Transcode`)
+        await this.reset(segStartTime - (this.segmentLength * 5))
+        return segStartTime
+      }
     }
 
     return false
@@ -171,7 +172,7 @@ class Stream extends EventEmitter {
       var files = await fs.readdir(this.streamPath)
       files.forEach((file) => {
         var extname = Path.extname(file)
-        if (extname === '.ts' || extname === '.m4s') {
+        if (extname === '.ts') {
           var basename = Path.basename(file, extname)
           var num_part = basename.split('-')[1]
           var part_num = Number(num_part)
@@ -251,6 +252,7 @@ class Stream extends EventEmitter {
     Logger.info(`[STREAM] START STREAM - Num Segments: ${this.numSegments}`)
 
     this.ffmpeg = Ffmpeg()
+    this.furthestSegmentCreated = 0
 
     var adjustedStartTime = Math.max(this.startTime - this.maxSeekBackTime, 0)
     var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, adjustedStartTime)
@@ -339,9 +341,9 @@ class Stream extends EventEmitter {
       } else {
         Logger.error('Ffmpeg Err', '"' + err.message + '"')
 
-        // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172
-        const aacErrorMsg = 'ffmpeg exited with code 1: Could not write header for output file #0 (incorrect codec parameters ?)'
-        if (audioCodec === 'copy' && this.isAACEncodable && err.message && err.message.startsWith(aacErrorMsg)) {
+        // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172 and https://github.com/advplyr/audiobookshelf/issues/2157
+        const aacErrorMsg = 'ffmpeg exited with code 1:'
+        if (audioCodec === 'copy' && this.isAACEncodable && err.message?.startsWith(aacErrorMsg)) {
           Logger.info(`[Stream] Re-attempting stream with AAC encode`)
           this.transcodeOptions.forceAAC = true
           this.reset(this.startTime)

@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" name="edit-library" :width="700" :height="'unset'" :processing="processing">
+  <modals-modal v-model="show" name="edit-library" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="text-xl md:text-3xl text-white truncate">{{ title }}</p>
@@ -12,9 +12,9 @@
     </div>
 
     <div class="px-2 md:px-4 w-full text-sm pt-2 md:pt-6 pb-20 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
-      <component v-if="libraryCopy && show" ref="tabComponent" :is="tabName" :is-new="!library" :library="libraryCopy" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
+      <component v-if="libraryCopy && show" ref="tabComponent" :is="tabName" :is-new="!library" :library="libraryCopy" :library-id="libraryId" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
 
-      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
+      <div v-show="selectedTab !== 'tools'" class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
         <div class="flex justify-end">
           <ui-btn @click="submit">{{ buttonText }}</ui-btn>
         </div>
@@ -54,6 +54,12 @@ export default {
     buttonText() {
       return this.library ? this.$strings.ButtonSave : this.$strings.ButtonCreate
     },
+    mediaType() {
+      return this.libraryCopy?.mediaType
+    },
+    libraryId() {
+      return this.library?.id
+    },
     tabs() {
       return [
         {
@@ -67,11 +73,25 @@ export default {
           component: 'modals-libraries-library-settings'
         },
         {
+          id: 'scanner',
+          title: this.$strings.HeaderSettingsScanner,
+          component: 'modals-libraries-library-scanner-settings'
+        },
+        {
           id: 'schedule',
           title: this.$strings.HeaderSchedule,
           component: 'modals-libraries-schedule-scan'
+        },
+        {
+          id: 'tools',
+          title: this.$strings.HeaderTools,
+          component: 'modals-libraries-library-tools'
         }
-      ]
+      ].filter((tab) => {
+        // Do not show tools tab for new libraries
+        if (tab.id === 'tools' && !this.library) return false
+        return tab.id !== 'scanner' || this.mediaType === 'book'
+      })
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
@@ -105,7 +125,9 @@ export default {
           disableWatcher: false,
           skipMatchingMediaWithAsin: false,
           skipMatchingMediaWithIsbn: false,
-          autoScanCronExpression: null
+          autoScanCronExpression: null,
+          hideSingleBookSeries: false,
+          metadataPrecedence: ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
         }
       }
     },

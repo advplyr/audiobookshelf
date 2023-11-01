@@ -14,10 +14,10 @@
     </div>
 
     <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
-      <div class="flex justify-between">
-        <p class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</p>
+      <div class="flex items-center justify-between">
+        <button type="button" class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</button>
 
-        <p class="font-mono text-xs text-gray-300 italic">{{ Source }}</p>
+        <p class="text-xs text-gray-300 italic">{{ Source }}</p>
       </div>
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
     </div>
