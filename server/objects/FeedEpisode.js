@@ -1,3 +1,4 @@
+const Path = require('path')
 const uuidv4 = require("uuid").v4
 const date = require('../libs/dateAndTime')
 const { secondsToTimestamp } = require('../utils/index')
@@ -69,7 +70,8 @@ class FeedEpisode {
   }
 
   setFromPodcastEpisode(libraryItem, serverAddress, slug, episode, meta) {
-    const contentUrl = `/feed/${slug}/item/${episode.id}/${episode.audioFile.metadata.filename}`
+    const contentFileExtension = Path.extname(episode.audioFile.metadata.filename)
+    const contentUrl = `/feed/${slug}/item/${episode.id}/media${contentFileExtension}`
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
@@ -108,7 +110,8 @@ class FeedEpisode {
     // e.g. Track 1 will have a pub date before Track 2
     const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 
-    const contentUrl = `/feed/${slug}/item/${episodeId}/${audioTrack.metadata.filename}`
+    const contentFileExtension = Path.extname(audioTrack.metadata.filename)
+    const contentUrl = `/feed/${slug}/item/${episodeId}/media${contentFileExtension}`
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
