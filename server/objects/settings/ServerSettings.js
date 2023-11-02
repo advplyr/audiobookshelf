@@ -70,6 +70,8 @@ class ServerSettings {
     this.authOpenIDUserInfoURL = ''
     this.authOpenIDClientID = ''
     this.authOpenIDClientSecret = ''
+    this.authOpenIDButtonText = 'Login with OpenId'
+    this.authOpenIDAutoLaunch = false
 
     if (settings) {
       this.construct(settings)
@@ -122,12 +124,14 @@ class ServerSettings {
     this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || ''
     this.authOpenIDClientID = settings.authOpenIDClientID || ''
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
+    this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
+    this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
     }
 
-    // remove uninitialized methods    
+    // remove uninitialized methods
     // GoogleOauth20
     if (this.authActiveAuthMethods.includes('google-oauth20') && (
       this.authGoogleOauth20ClientID === '' ||
@@ -137,7 +141,7 @@ class ServerSettings {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1)
     }
 
-    // remove uninitialized methods    
+    // remove uninitialized methods
     // OpenID
     if (this.authActiveAuthMethods.includes('openid') && (
       this.authOpenIDIssuerURL === '' ||
@@ -221,7 +225,9 @@ class ServerSettings {
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
-      authOpenIDClientSecret: this.authOpenIDClientSecret // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDButtonText: this.authOpenIDButtonText,
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch
     }
   }
 
@@ -246,8 +252,19 @@ class ServerSettings {
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
-      authOpenIDClientSecret: this.authOpenIDClientSecret // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDButtonText: this.authOpenIDButtonText,
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch
     }
+  }
+
+  get authFormData() {
+    const clientFormData = {}
+    if (this.authActiveAuthMethods.includes('openid')) {
+      clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
+      clientFormData.authOpenIDAutoLaunch = this.authOpenIDAutoLaunch
+    }
+    return clientFormData
   }
 
   /**

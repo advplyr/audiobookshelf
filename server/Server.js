@@ -230,7 +230,8 @@ class Server {
       const payload = {
         isInit: Database.hasRootUser,
         language: Database.serverSettings.language,
-        authMethods: Database.serverSettings.authActiveAuthMethods
+        authMethods: Database.serverSettings.authActiveAuthMethods,
+        authFormData: Database.serverSettings.authFormData
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath

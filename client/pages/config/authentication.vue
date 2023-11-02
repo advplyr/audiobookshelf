@@ -26,6 +26,14 @@
               <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
 
               <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
+
+              <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="'Button Text'" class="mb-2" />
+
+              <div class="flex items-center py-2 px-1">
+                <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
+                <p id="auto-redirect-toggle" class="pl-4">Auto Launch</p>
+                <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the /login page</p>
+              </div>
             </div>
           </transition>
         </div>

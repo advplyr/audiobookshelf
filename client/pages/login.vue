@@ -48,7 +48,7 @@
             <ui-btn color="primary" class="leading-none">Login with Google</ui-btn>
           </a>
           <a v-show="login_openid" :href="openidAuthUri">
-            <ui-btn color="primary" class="leading-none">Login with OpenId</ui-btn>
+            <ui-btn color="primary" class="leading-none">{{ openIDButtonText }}</ui-btn>
           </a>
         </div>
       </div>
@@ -77,7 +77,8 @@ export default {
       MetadataPath: '',
       login_local: true,
       login_google_oauth20: false,
-      login_openid: false
+      login_openid: false,
+      authFormData: null
     }
   },
   watch: {
@@ -116,6 +117,9 @@ export default {
     },
     openidAuthUri() {
       return `${process.env.serverUrl}/auth/openid?callback=${location.toString()}`
+    },
+    openIDButtonText() {
+      return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
     }
   },
   methods: {
@@ -221,7 +225,6 @@ export default {
       this.$axios
         .$get('/status')
         .then((data) => {
-          this.processing = false
           this.isInit = data.isInit
           this.showInitScreen = !data.isInit
           this.$setServerLanguageCode(data.language)
@@ -229,13 +232,16 @@ export default {
             this.ConfigPath = data.ConfigPath || ''
             this.MetadataPath = data.MetadataPath || ''
           } else {
+            this.authFormData = data.authFormData
             this.updateLoginVisibility(data.authMethods || [])
           }
         })
         .catch((error) => {
           console.error('Status check failed', error)
-          this.processing = false
           this.criticalError = 'Status check failed'
+        })
+        .finally(() => {
+          this.processing = false
         })
     },
     updateLoginVisibility(authMethods) {
@@ -252,6 +258,11 @@ export default {
       }
 
       if (authMethods.includes('openid')) {
+        // Auto redirect unless query string ?autoLaunch=0
+        if (this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') {
+          window.location.href = this.openidAuthUri
+        }
+
         this.login_openid = true
       } else {
         this.login_openid = false
