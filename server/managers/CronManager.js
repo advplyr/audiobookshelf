@@ -127,14 +127,16 @@ class CronManager {
     }
   }
 
-  async executePodcastCron(expression, libraryItemIds) {
-    Logger.debug(`[CronManager] Start executing podcast cron ${expression} for ${libraryItemIds.length} item(s)`)
+  async executePodcastCron(expression) {
     const podcastCron = this.podcastCrons.find(cron => cron.expression === expression)
     if (!podcastCron) {
       Logger.error(`[CronManager] Podcast cron not found for expression ${expression}`)
       return
     }
     this.podcastCronExpressionsExecuting.push(expression)
+
+    const libraryItemIds = podcastCron.libraryItemIds
+    Logger.debug(`[CronManager] Start executing podcast cron ${expression} for ${libraryItemIds.length} item(s)`)
 
     // Get podcast library items to check
     const libraryItems = []
