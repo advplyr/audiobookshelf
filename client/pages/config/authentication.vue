@@ -23,6 +23,10 @@
 
               <ui-text-input-with-label ref="userInfoUrl" v-model="newAuthSettings.authOpenIDUserInfoURL" :disabled="savingSettings" :label="'Userinfo URL'" class="mb-2" />
 
+              <ui-text-input-with-label ref="jwksUrl" v-model="newAuthSettings.authOpenIDJwksURL" :disabled="savingSettings" :label="'JWKS URL'" class="mb-2" />
+
+              <ui-text-input-with-label ref="logoutUrl" v-model="newAuthSettings.authOpenIDLogoutURL" :disabled="savingSettings" :label="'Logout URL'" class="mb-2" />
+
               <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
 
               <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
@@ -95,6 +99,10 @@ export default {
       }
       if (!this.newAuthSettings.authOpenIDUserInfoURL) {
         this.$toast.error('Userinfo URL required')
+        isValid = false
+      }
+      if (!this.newAuthSettings.authOpenIDJwksURL) {
+        this.$toast.error('JWKS URL required')
         isValid = false
       }
       if (!this.newAuthSettings.authOpenIDClientID) {

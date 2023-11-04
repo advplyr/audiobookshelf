@@ -68,6 +68,8 @@ class ServerSettings {
     this.authOpenIDAuthorizationURL = ''
     this.authOpenIDTokenURL = ''
     this.authOpenIDUserInfoURL = ''
+    this.authOpenIDJwksURL = ''
+    this.authOpenIDLogoutURL = ''
     this.authOpenIDClientID = ''
     this.authOpenIDClientSecret = ''
     this.authOpenIDButtonText = 'Login with OpenId'
@@ -122,6 +124,8 @@ class ServerSettings {
     this.authOpenIDAuthorizationURL = settings.authOpenIDAuthorizationURL || ''
     this.authOpenIDTokenURL = settings.authOpenIDTokenURL || ''
     this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || ''
+    this.authOpenIDJwksURL = settings.authOpenIDJwksURL || ''
+    this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || ''
     this.authOpenIDClientID = settings.authOpenIDClientID || ''
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
@@ -148,6 +152,7 @@ class ServerSettings {
       this.authOpenIDAuthorizationURL === '' ||
       this.authOpenIDTokenURL === '' ||
       this.authOpenIDUserInfoURL === '' ||
+      this.authOpenIDJwksURL === '' ||
       this.authOpenIDClientID === '' ||
       this.authOpenIDClientSecret === ''
     )) {
@@ -224,6 +229,8 @@ class ServerSettings {
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDJwksURL: this.authOpenIDJwksURL,
+      authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
       authOpenIDButtonText: this.authOpenIDButtonText,
@@ -251,6 +258,8 @@ class ServerSettings {
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDJwksURL: this.authOpenIDJwksURL,
+      authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
       authOpenIDButtonText: this.authOpenIDButtonText,

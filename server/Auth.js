@@ -5,8 +5,9 @@ const LocalStrategy = require('./libs/passportLocal')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
 const GoogleStrategy = require('passport-google-oauth20').Strategy
-const OpenIDConnectStrategy = require('passport-openidconnect')
+const OpenIDClient = require('openid-client')
 const Database = require('./Database')
+const Logger = require('./Logger')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -62,20 +63,33 @@ class Auth {
 
     // Check if we should load the openid strategy
     if (global.ServerSettings.authActiveAuthMethods.includes("openid")) {
-      passport.use(new OpenIDConnectStrategy({
+      const openIdIssuerClient = new OpenIDClient.Issuer({
         issuer: global.ServerSettings.authOpenIDIssuerURL,
-        authorizationURL: global.ServerSettings.authOpenIDAuthorizationURL,
-        tokenURL: global.ServerSettings.authOpenIDTokenURL,
-        userInfoURL: global.ServerSettings.authOpenIDUserInfoURL,
-        clientID: global.ServerSettings.authOpenIDClientID,
-        clientSecret: global.ServerSettings.authOpenIDClientSecret,
-        callbackURL: '/auth/openid/callback',
-        scope: ["openid", "email", "profile"],
-        skipUserProfile: false
-      }, async (issuer, profile, done) => {
-        // TODO: do we want to create the users which does not exist?
+        authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
+        token_endpoint: global.ServerSettings.authOpenIDTokenURL,
+        userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
+        jwks_uri: global.ServerSettings.authOpenIDJwksURL
+      }).Client
+      const openIdClient = new openIdIssuerClient({
+        client_id: global.ServerSettings.authOpenIDClientID,
+        client_secret: global.ServerSettings.authOpenIDClientSecret
+      })
+      const openIdClientStrategy = new OpenIDClient.Strategy({
+        client: openIdClient,
+        params: {
+          redirect_uri: '/auth/openid/callback',
+          scope: 'openid profile email'
+        }
+      }, async (tokenset, userinfo, done) => {
+        // TODO: Here is where to lookup the Abs user or register a new Abs user
+        Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
 
-        const user = await Database.userModel.getUserByUsername(profile.username)
+        let user = null
+        // TODO: Temporary lookup existing user by email. May be replaced by a setting to toggle this or use name
+        if (userinfo.email && userinfo.email_verified) {
+          user = await Database.userModel.getUserByEmail(userinfo.email)
+          // TODO: If using existing user then save userinfo.sub on user
+        }
 
         if (!user?.isActive) {
           // deny login
@@ -85,7 +99,12 @@ class Auth {
 
         // permit login
         return done(null, user)
-      }))
+      })
+      // The strategy name is set to the issuer hostname by default but didnt' see a way to override this
+      // @see https://github.com/panva/node-openid-client/blob/a84d022f195f82ca1c97f8f6b2567ebcef8738c3/lib/passport_strategy.js#L75
+      openIdClientStrategy.name = 'openid-client'
+
+      passport.use(openIdClientStrategy)
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -99,7 +118,7 @@ class Auth {
       process.nextTick(function () {
         // only store id to session
         return cb(null, JSON.stringify({
-          "id": user.id,
+          id: user.id,
         }))
       })
     })
@@ -216,7 +235,13 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
-      const auth_func = passport.authenticate('openidconnect')
+      // This is a (temporary?) hack to not have to get the full redirect URL from the user
+      //    it uses the URL made in this request and adds the relative URL /auth/openid/callback
+      const strategy = passport._strategy('openid-client')
+      strategy._params.redirect_uri = new URL(`${req.protocol}://${req.get('host')}/auth/openid/callback`).toString()
+
+
+      const auth_func = passport.authenticate('openid-client')
       // params (isRest, callback) to a cookie that will be send to the client
       this.paramsToCookies(req, res)
       auth_func(req, res, next)
@@ -224,7 +249,7 @@ class Auth {
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
-      passport.authenticate('openidconnect'),
+      passport.authenticate('openid-client'),
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this))
 
