@@ -463,7 +463,7 @@ class LibraryScanner {
     //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
     const updateGroup = { ...fileUpdateGroup }
     for (const itemDir in updateGroup) {
-      if (itemDir == fileUpdateGroup[itemDir]) continue // Media in root path
+      if (isSingleMediaFile(fileUpdateGroup, itemDir)) continue // Media in root path
 
       const itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
       if (!itemDirNestedFiles.length) continue
@@ -559,7 +559,7 @@ class LibraryScanner {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
         itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, renamedPaths)
         continue
-      } else if (library.settings.audiobooksOnly && !fileUpdateGroup[itemDir].some?.(scanUtils.checkFilepathIsAudioFile)) {
+      } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
         continue
       }
@@ -580,7 +580,7 @@ class LibraryScanner {
       }
 
       Logger.debug(`[LibraryScanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
-      const isSingleMediaItem = itemDir === fileUpdateGroup[itemDir]
+      const isSingleMediaItem = isSingleMediaFile(fileUpdateGroup, itemDir)
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
         const oldNewLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
@@ -593,3 +593,13 @@ class LibraryScanner {
   }
 }
 module.exports = new LibraryScanner()
+
+function hasAudioFiles(fileUpdateGroup, itemDir) {
+  return isSingleMediaFile(fileUpdateGroup, itemDir) ?
+    scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) :
+    fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
+}
+
+function isSingleMediaFile(fileUpdateGroup, itemDir) {
+  return itemDir === fileUpdateGroup[itemDir]
+}
