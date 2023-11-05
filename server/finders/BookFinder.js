@@ -154,9 +154,10 @@ class BookFinder {
       this.cleanAuthor = cleanAuthor
       this.priorities = {}
       this.positions = {}
+      this.currentPosition = 0
     }
 
-    add(title, position = 0) {
+    add(title) {
       // if title contains the author, remove it
       title = this.#removeAuthorFromTitle(title)
 
@@ -174,7 +175,7 @@ class BookFinder {
       if (!cleanTitle) return
       this.candidates.add(cleanTitle)
       this.priorities[cleanTitle] = 0
-      this.positions[cleanTitle] = position
+      this.positions[cleanTitle] = this.currentPosition
 
       let candidate = cleanTitle
 
@@ -185,10 +186,11 @@ class BookFinder {
         if (candidate) {
           this.candidates.add(candidate)
           this.priorities[candidate] = 0
-          this.positions[candidate] = position
+          this.positions[candidate] = this.currentPosition
         }
         this.priorities[cleanTitle] = 1
       }
+      this.currentPosition++
     }
 
     get size() {
@@ -210,11 +212,7 @@ class BookFinder {
         if (priorityDiff) return priorityDiff
         // if same priorirty, prefer candidates that are closer to the beginning (e.g. titles before subtitles)
         const positionDiff = this.positions[a] - this.positions[b]
-        if (positionDiff) return positionDiff
-        // Start with longer candidaets, as they are likely more specific
-        const lengthDiff = b.length - a.length
-        if (lengthDiff) return lengthDiff
-        return b.localeCompare(a)
+        return positionDiff // candidates with same priority always have different positions
       })
       Logger.debug(`[${this.constructor.name}] Found ${candidates.length} fuzzy title candidates`)
       Logger.debug(candidates)
@@ -342,8 +340,8 @@ class BookFinder {
       authorCandidates = await authorCandidates.getCandidates()
       for (const authorCandidate of authorCandidates) {
         let titleCandidates = new BookFinder.TitleCandidates(authorCandidate)
-        for (const [position, titlePart] of titleParts.entries())
-          titleCandidates.add(titlePart, position)
+        for (const titlePart of titleParts)
+          titleCandidates.add(titlePart)
         titleCandidates = titleCandidates.getCandidates()
         for (const titleCandidate of titleCandidates) {
           if (titleCandidate == title && authorCandidate == author) continue // We already tried this
