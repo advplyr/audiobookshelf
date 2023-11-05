@@ -228,6 +228,8 @@ class Server {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
+        app: 'audiobookshelf',
+        serverVersion: version,
         isInit: Database.hasRootUser,
         language: Database.serverSettings.language,
         authMethods: Database.serverSettings.authActiveAuthMethods,
