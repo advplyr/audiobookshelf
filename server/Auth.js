@@ -1,3 +1,4 @@
+const axios = require('axios')
 const passport = require('passport')
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
@@ -308,6 +309,32 @@ class Auth {
       passport.authenticate('openid-client'),
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this))
+
+    /**
+     * Used to auto-populate the openid URLs in config/authentication
+     */
+    router.get('/auth/openid/config', async (req, res) => {
+      if (!req.query.issuer) {
+        return res.status(400).send('Invalid request. Query param \'issuer\' is required')
+      }
+      let issuerUrl = req.query.issuer
+      if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
+
+      const configUrl = `${issuerUrl}/.well-known/openid-configuration`
+      axios.get(configUrl).then(({ data }) => {
+        res.json({
+          issuer: data.issuer,
+          authorization_endpoint: data.authorization_endpoint,
+          token_endpoint: data.token_endpoint,
+          userinfo_endpoint: data.userinfo_endpoint,
+          end_session_endpoint: data.end_session_endpoint,
+          jwks_uri: data.jwks_uri
+        })
+      }).catch((error) => {
+        Logger.error(`[Auth] Failed to get openid configuration at "${configUrl}"`, error)
+        res.status(error.statusCode || 400).send(`${error.code || 'UNKNOWN'}: Failed to get openid configuration`)
+      })
+    })
 
     // Logout route
     router.post('/logout', (req, res) => {

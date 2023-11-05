@@ -15,7 +15,17 @@
         <div class="overflow-hidden">
           <transition name="slide">
             <div v-if="enableOpenIDAuth" class="flex flex-wrap pt-4">
-              <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" class="mb-2" />
+              <div class="w-full flex items-center mb-2">
+                <div class="flex-grow">
+                  <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" />
+                </div>
+                <div class="w-36 mx-1 mt-[1.375rem]">
+                  <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" @click.stop="autoPopulateOIDCClick">
+                    <span class="material-icons text-base">auto_fix_high</span>
+                    <span class="whitespace-nowrap break-keep pl-1">Auto-populate</span></ui-btn
+                  >
+                </div>
+              </div>
 
               <ui-text-input-with-label ref="authorizationUrl" v-model="newAuthSettings.authOpenIDAuthorizationURL" :disabled="savingSettings" :label="'Authorize URL'" class="mb-2" />
 
@@ -83,6 +93,37 @@ export default {
     }
   },
   methods: {
+    autoPopulateOIDCClick() {
+      if (!this.newAuthSettings.authOpenIDIssuerURL) {
+        this.$toast.error('Issuer URL required')
+        return
+      }
+      // Remove trailing slash
+      let issuerUrl = this.newAuthSettings.authOpenIDIssuerURL
+      if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
+
+      // If the full config path is on the issuer url then remove it
+      if (issuerUrl.endsWith('/.well-known/openid-configuration')) {
+        issuerUrl = issuerUrl.replace('/.well-known/openid-configuration', '')
+        this.newAuthSettings.authOpenIDIssuerURL = this.newAuthSettings.authOpenIDIssuerURL.replace('/.well-known/openid-configuration', '')
+      }
+
+      this.$axios
+        .$get(`/auth/openid/config?issuer=${issuerUrl}`)
+        .then((data) => {
+          if (data.issuer) this.newAuthSettings.authOpenIDIssuerURL = data.issuer
+          if (data.authorization_endpoint) this.newAuthSettings.authOpenIDAuthorizationURL = data.authorization_endpoint
+          if (data.token_endpoint) this.newAuthSettings.authOpenIDTokenURL = data.token_endpoint
+          if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
+          if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
+          if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
+        })
+        .catch((error) => {
+          console.error('Failed to receive data', error)
+          const errorMsg = error.response?.data || 'Unknown error'
+          this.$toast.error(errorMsg)
+        })
+    },
     validateOpenID() {
       let isValid = true
       if (!this.newAuthSettings.authOpenIDIssuerURL) {
