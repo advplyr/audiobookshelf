@@ -31,52 +31,11 @@ class BookFinder {
     return book
   }
 
-  stripSubtitle(title) {
-    if (title.includes(':')) {
-      return title.split(':')[0].trim()
-    } else if (title.includes(' - ')) {
-      return title.split(' - ')[0].trim()
-    }
-    return title
-  }
-
-  replaceAccentedChars(str) {
-    try {
-      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-    } catch (error) {
-      Logger.error('[BookFinder] str normalize error', error)
-      return str
-    }
-  }
-
-  cleanTitleForCompares(title) {
-    if (!title) return ''
-    // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
-    let stripped = this.stripSubtitle(title)
-
-    // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
-    let cleaned = stripped.replace(/ *\([^)]*\) */g, "")
-
-    // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
-    cleaned = cleaned.replace(/'/g, '')
-    return this.replaceAccentedChars(cleaned).toLowerCase()
-  }
-
-  cleanAuthorForCompares(author) {
-    if (!author) return ''
-    let cleanAuthor = this.replaceAccentedChars(author).toLowerCase()
-    // separate initials
-    cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
-    // remove middle initials
-    cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
-    return cleanAuthor
-  }
-
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
-    var searchTitle = this.cleanTitleForCompares(title)
-    var searchAuthor = this.cleanAuthorForCompares(author)
+    var searchTitle = cleanTitleForCompares(title)
+    var searchAuthor = cleanAuthorForCompares(author)
     return books.map(b => {
-      b.cleanedTitle = this.cleanTitleForCompares(b.title)
+      b.cleanedTitle = cleanTitleForCompares(b.title)
       b.titleDistance = levenshteinDistance(b.cleanedTitle, title)
 
       // Total length of search (title or both title & author)
@@ -87,7 +46,7 @@ class BookFinder {
           b.authorDistance = author.length
         } else {
           b.totalPossibleDistance += b.author.length
-          b.cleanedAuthor = this.cleanAuthorForCompares(b.author)
+          b.cleanedAuthor = cleanAuthorForCompares(b.author)
 
           var cleanedAuthorDistance = levenshteinDistance(b.cleanedAuthor, searchAuthor)
           var authorDistance = levenshteinDistance(b.author || '', author)
@@ -190,8 +149,7 @@ class BookFinder {
 
   static TitleCandidates = class {
 
-    constructor(bookFinder, cleanAuthor) {
-      this.bookFinder = bookFinder
+    constructor(cleanAuthor) {
       this.candidates = new Set()
       this.cleanAuthor = cleanAuthor
       this.priorities = {}
@@ -202,7 +160,7 @@ class BookFinder {
       // if title contains the author, remove it
       if (this.cleanAuthor) {
         const authorRe = new RegExp(`(^| | by |)${escapeRegExp(this.cleanAuthor)}(?= |$)`, "g")
-        title = this.bookFinder.cleanAuthorForCompares(title).replace(authorRe, '').trim()
+        title = cleanAuthorForCompares(title).replace(authorRe, '').trim()
       }
 
       const titleTransformers = [
@@ -215,7 +173,7 @@ class BookFinder {
       ]
 
       // Main variant
-      const cleanTitle = this.bookFinder.cleanTitleForCompares(title).trim()
+      const cleanTitle = cleanTitleForCompares(title).trim()
       if (!cleanTitle) return
       this.candidates.add(cleanTitle)
       this.priorities[cleanTitle] = 0
@@ -283,7 +241,7 @@ class BookFinder {
       return this.bookFinder.audnexus.authorASINsRequest(name, region).then((asins) => {
         for (const [i, asin] of asins.entries()) {
           if (i > 10) break
-          let cleanName = this.bookFinder.cleanAuthorForCompares(asin.name)
+          let cleanName = cleanAuthorForCompares(asin.name)
           if (!cleanName) continue
           if (cleanName.includes(name)) return name
           if (name.includes(cleanName)) return cleanName
@@ -294,7 +252,7 @@ class BookFinder {
     }
 
     add(author) {
-      const cleanAuthor = this.bookFinder.cleanAuthorForCompares(author).trim()
+      const cleanAuthor = cleanAuthorForCompares(author).trim()
       if (!cleanAuthor) return
       this.candidates.add(cleanAuthor)
     }
@@ -362,7 +320,7 @@ class BookFinder {
       title = title.trim().toLowerCase()
       author = author?.trim().toLowerCase() || ''
 
-      const cleanAuthor = this.cleanAuthorForCompares(author)
+      const cleanAuthor = cleanAuthorForCompares(author)
 
       // Now run up to maxFuzzySearches fuzzy searches
       let authorCandidates = new BookFinder.AuthorCandidates(this, cleanAuthor)
@@ -375,7 +333,7 @@ class BookFinder {
         authorCandidates.add(titlePart)
       authorCandidates = await authorCandidates.getCandidates()
       for (const authorCandidate of authorCandidates) {
-        let titleCandidates = new BookFinder.TitleCandidates(this, authorCandidate)
+        let titleCandidates = new BookFinder.TitleCandidates(authorCandidate)
         for (const [position, titlePart] of titleParts.entries())
           titleCandidates.add(titlePart, position)
         titleCandidates = titleCandidates.getCandidates()
@@ -457,3 +415,44 @@ class BookFinder {
   }
 }
 module.exports = new BookFinder()
+
+function stripSubtitle(title) {
+  if (title.includes(':')) {
+    return title.split(':')[0].trim()
+  } else if (title.includes(' - ')) {
+    return title.split(' - ')[0].trim()
+  }
+  return title
+}
+
+function replaceAccentedChars(str) {
+  try {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+  } catch (error) {
+    Logger.error('[BookFinder] str normalize error', error)
+    return str
+  }
+}
+
+function cleanTitleForCompares(title) {
+  if (!title) return ''
+  // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
+  let stripped = stripSubtitle(title)
+
+  // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
+  let cleaned = stripped.replace(/ *\([^)]*\) */g, "")
+
+  // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
+  cleaned = cleaned.replace(/'/g, '')
+  return replaceAccentedChars(cleaned).toLowerCase()
+}
+
+function cleanAuthorForCompares(author) {
+  if (!author) return ''
+  let cleanAuthor = replaceAccentedChars(author).toLowerCase()
+  // separate initials
+  cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
+  // remove middle initials
+  cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
+  return cleanAuthor
+}
