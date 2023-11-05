@@ -74,7 +74,7 @@ class Auth {
         client_id: global.ServerSettings.authOpenIDClientID,
         client_secret: global.ServerSettings.authOpenIDClientSecret
       })
-      const openIdClientStrategy = new OpenIDClient.Strategy({
+      passport.use('openid-client', new OpenIDClient.Strategy({
         client: openIdClient,
         params: {
           redirect_uri: '/auth/openid/callback',
@@ -99,12 +99,7 @@ class Auth {
 
         // permit login
         return done(null, user)
-      })
-      // The strategy name is set to the issuer hostname by default but didnt' see a way to override this
-      // @see https://github.com/panva/node-openid-client/blob/a84d022f195f82ca1c97f8f6b2567ebcef8738c3/lib/passport_strategy.js#L75
-      openIdClientStrategy.name = 'openid-client'
-
-      passport.use(openIdClientStrategy)
+      }))
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -235,16 +230,77 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
-      // This is a (temporary?) hack to not have to get the full redirect URL from the user
-      //    it uses the URL made in this request and adds the relative URL /auth/openid/callback
-      const strategy = passport._strategy('openid-client')
-      strategy._params.redirect_uri = new URL(`${req.protocol}://${req.get('host')}/auth/openid/callback`).toString()
+      // helper function from openid-client
+      function pick(object, ...paths) {
+        const obj = {}
+        for (const path of paths) {
+          if (object[path] !== undefined) {
+            obj[path] = object[path]
+          }
+        }
+        return obj
+      }
 
+      // Get the OIDC client from the strategy
+      // We need to call the client manually, because the strategy does not support forwarding the code challenge
+      //    for API or mobile clients
+      const oidcStrategy = passport._strategy('openid-client')
+      oidcStrategy._params.redirect_uri = new URL(`${req.protocol}://${req.get('host')}/auth/openid/callback`).toString()
+      const client = oidcStrategy._client
+      const sessionKey = oidcStrategy._key
 
-      const auth_func = passport.authenticate('openid-client')
+      let code_challenge
+      let code_challenge_method
+
+      // If code_challenge is provided, expect that code_verifier will be handled by the client (mobile app)
+      // The web frontend of ABS does not need to do a PKCE itself, because it never handles the "code" of the oauth flow
+      //    and as such will not send a code challenge, we will generate then one
+      if (req.query.code_challenge) {
+        code_challenge = req.query.code_challenge
+        code_challenge_method = req.query.code_challenge_method || 'S256'
+
+        if (!['S256', 'plain'].includes(code_challenge_method)) {
+          return res.status(400).send('Invalid code_challenge_method')
+        }
+      } else {
+        // If no code_challenge is provided, assume a web application flow and generate one
+        const code_verifier = OpenIDClient.generators.codeVerifier()
+        code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
+        code_challenge_method = 'S256'
+
+        // Store the code_verifier in the session for later use in the token exchange
+        req.session[sessionKey] = { ...req.session[sessionKey], code_verifier }
+      }
+
+      const params = {
+        state: OpenIDClient.generators.random(),
+        // Other params by the passport strategy
+        ...oidcStrategy._params
+      }
+
+      if (!params.nonce && params.response_type.includes('id_token')) {
+        params.nonce = OpenIDClient.generators.random()
+      }
+
+      req.session[sessionKey] = {
+        ...req.session[sessionKey],
+        ...pick(params, 'nonce', 'state', 'max_age', 'response_type')
+      }
+
+      // Now get the URL to direct to
+      const authorizationUrl = client.authorizationUrl({
+        ...params,
+        scope: 'openid profile email',
+        response_type: 'code',
+        code_challenge,
+        code_challenge_method,
+      })
+
       // params (isRest, callback) to a cookie that will be send to the client
       this.paramsToCookies(req, res)
-      auth_func(req, res, next)
+
+      // Redirect the user agent (browser) to the authorization URL
+      res.redirect(authorizationUrl)
     })
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
