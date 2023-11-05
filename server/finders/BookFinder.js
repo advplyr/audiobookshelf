@@ -158,10 +158,7 @@ class BookFinder {
 
     add(title, position = 0) {
       // if title contains the author, remove it
-      if (this.cleanAuthor) {
-        const authorRe = new RegExp(`(^| | by |)${escapeRegExp(this.cleanAuthor)}(?= |$)`, "g")
-        title = cleanAuthorForCompares(title).replace(authorRe, '').trim()
-      }
+      title = this.#removeAuthorFromTitle(title)
 
       const titleTransformers = [
         [/([,:;_]| by ).*/g, ''],                  // Remove subtitle
@@ -226,6 +223,17 @@ class BookFinder {
 
     delete(title) {
       return this.candidates.delete(title)
+    }
+
+    #removeAuthorFromTitle(title) {
+      if (!this.cleanAuthor) return title
+      const authorRe = new RegExp(`(^| | by |)${escapeRegExp(this.cleanAuthor)}(?= |$)`, "g")
+      const authorCleanedTitle = cleanAuthorForCompares(title)
+      const authorCleanedTitleWithoutAuthor = authorCleanedTitle.replace(authorRe, '')
+      if (authorCleanedTitleWithoutAuthor !== authorCleanedTitle) {
+        return authorCleanedTitleWithoutAuthor.trim()
+      }
+      return title
     }
   }
 
