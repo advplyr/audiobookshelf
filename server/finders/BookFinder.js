@@ -201,11 +201,11 @@ class BookFinder {
       var candidates = [...this.candidates]
       candidates.sort((a, b) => {
         // Candidates that include the author are likely low quality
-        const includesAuthorDiff = !b.includes(this.cleanAuthor) - !a.includes(this.cleanAuthor)
+        const includesAuthorDiff = a.includes(this.cleanAuthor) - b.includes(this.cleanAuthor)
         if (includesAuthorDiff) return includesAuthorDiff
         // Candidates that include only digits are also likely low quality
         const onlyDigits = /^\d+$/
-        const includesOnlyDigitsDiff = !onlyDigits.test(b) - !onlyDigits.test(a)
+        const includesOnlyDigitsDiff = onlyDigits.test(a) - onlyDigits.test(b)
         if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
         // transformed candidates receive higher priority
         const priorityDiff = this.priorities[a] - this.priorities[b]
