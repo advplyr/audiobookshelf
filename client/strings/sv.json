@@ -726,4 +726,4 @@
   "ToastSocketFailedToConnect": "Socket misslyckades med att ansluta",
   "ToastUserDeleteFailed": "Misslyckades med att ta bort användaren",
   "ToastUserDeleteSuccess": "Användaren borttagen"
-  }
+}
