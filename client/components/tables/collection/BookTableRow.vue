@@ -30,7 +30,7 @@
               ><span :key="author.id + '-comma'" v-if="index < bookAuthors.length - 1">,&nbsp;</span>
             </template>
           </div>
-          <p class="text-xs md:text-sm text-gray-400">{{ bookDuration }}</p>
+          <p class="text-xs md:text-sm text-gray-400" v-if="media.duration > 0">{{ bookDuration }}</p>
         </div>
       </div>
     </div>
