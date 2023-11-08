@@ -12,45 +12,57 @@
           <ui-checkbox v-model="enableOpenIDAuth" checkbox-bg="bg" />
           <p class="text-lg pl-4">OpenID Connect Authentication</p>
         </div>
-        <div class="overflow-hidden">
-          <transition name="slide">
-            <div v-if="enableOpenIDAuth" class="flex flex-wrap pt-4">
-              <div class="w-full flex items-center mb-2">
-                <div class="flex-grow">
-                  <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" />
-                </div>
-                <div class="w-36 mx-1 mt-[1.375rem]">
-                  <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" @click.stop="autoPopulateOIDCClick">
-                    <span class="material-icons text-base">auto_fix_high</span>
-                    <span class="whitespace-nowrap break-keep pl-1">Auto-populate</span></ui-btn
-                  >
-                </div>
+
+        <transition name="slide">
+          <div v-if="enableOpenIDAuth" class="flex flex-wrap pt-4">
+            <div class="w-full flex items-center mb-2">
+              <div class="flex-grow">
+                <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" />
               </div>
-
-              <ui-text-input-with-label ref="authorizationUrl" v-model="newAuthSettings.authOpenIDAuthorizationURL" :disabled="savingSettings" :label="'Authorize URL'" class="mb-2" />
-
-              <ui-text-input-with-label ref="tokenUrl" v-model="newAuthSettings.authOpenIDTokenURL" :disabled="savingSettings" :label="'Token URL'" class="mb-2" />
-
-              <ui-text-input-with-label ref="userInfoUrl" v-model="newAuthSettings.authOpenIDUserInfoURL" :disabled="savingSettings" :label="'Userinfo URL'" class="mb-2" />
-
-              <ui-text-input-with-label ref="jwksUrl" v-model="newAuthSettings.authOpenIDJwksURL" :disabled="savingSettings" :label="'JWKS URL'" class="mb-2" />
-
-              <ui-text-input-with-label ref="logoutUrl" v-model="newAuthSettings.authOpenIDLogoutURL" :disabled="savingSettings" :label="'Logout URL'" class="mb-2" />
-
-              <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
-
-              <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
-
-              <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="'Button Text'" class="mb-2" />
-
-              <div class="flex items-center py-2 px-1">
-                <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
-                <p id="auto-redirect-toggle" class="pl-4">Auto Launch</p>
-                <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the /login page</p>
+              <div class="w-36 mx-1 mt-[1.375rem]">
+                <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" @click.stop="autoPopulateOIDCClick">
+                  <span class="material-icons text-base">auto_fix_high</span>
+                  <span class="whitespace-nowrap break-keep pl-1">Auto-populate</span></ui-btn
+                >
               </div>
             </div>
-          </transition>
-        </div>
+
+            <ui-text-input-with-label ref="authorizationUrl" v-model="newAuthSettings.authOpenIDAuthorizationURL" :disabled="savingSettings" :label="'Authorize URL'" class="mb-2" />
+
+            <ui-text-input-with-label ref="tokenUrl" v-model="newAuthSettings.authOpenIDTokenURL" :disabled="savingSettings" :label="'Token URL'" class="mb-2" />
+
+            <ui-text-input-with-label ref="userInfoUrl" v-model="newAuthSettings.authOpenIDUserInfoURL" :disabled="savingSettings" :label="'Userinfo URL'" class="mb-2" />
+
+            <ui-text-input-with-label ref="jwksUrl" v-model="newAuthSettings.authOpenIDJwksURL" :disabled="savingSettings" :label="'JWKS URL'" class="mb-2" />
+
+            <ui-text-input-with-label ref="logoutUrl" v-model="newAuthSettings.authOpenIDLogoutURL" :disabled="savingSettings" :label="'Logout URL'" class="mb-2" />
+
+            <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
+
+            <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
+
+            <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="'Button Text'" class="mb-2" />
+
+            <div class="flex items-center pt-1 mb-2">
+              <div class="w-44">
+                <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" label="Match existing users by" :disabled="savingSettings" />
+              </div>
+              <p class="pl-4 text-sm text-gray-300 mt-5">Used for connecting existing users. Once connected, users will be matched by a unique id from your SSO provider</p>
+            </div>
+
+            <div class="flex items-center py-4 px-1">
+              <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
+              <p id="auto-redirect-toggle" class="pl-4">Auto Launch</p>
+              <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the login page</p>
+            </div>
+
+            <div class="flex items-center py-4 px-1">
+              <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
+              <p id="auto-register-toggle" class="pl-4">Auto Register</p>
+              <p class="pl-4 text-sm text-gray-300">Automatically create new users after logging in</p>
+            </div>
+          </div>
+        </transition>
       </div>
       <div class="w-full flex items-center justify-end p-4">
         <ui-btn color="success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
@@ -90,6 +102,22 @@ export default {
   computed: {
     authMethods() {
       return this.authSettings.authActiveAuthMethods || []
+    },
+    matchingExistingOptions() {
+      return [
+        {
+          text: 'Do not match',
+          value: null
+        },
+        {
+          text: 'Match by email',
+          value: 'email'
+        },
+        {
+          text: 'Match by username',
+          value: 'username'
+        }
+      ]
     }
   },
   methods: {

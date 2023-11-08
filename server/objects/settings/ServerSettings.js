@@ -74,6 +74,8 @@ class ServerSettings {
     this.authOpenIDClientSecret = ''
     this.authOpenIDButtonText = 'Login with OpenId'
     this.authOpenIDAutoLaunch = false
+    this.authOpenIDAutoRegister = false
+    this.authOpenIDMatchExistingBy = null
 
     if (settings) {
       this.construct(settings)
@@ -130,6 +132,8 @@ class ServerSettings {
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
+    this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
+    this.authOpenIDMatchExistingBy = settings.authOpenIDMatchExistingBy || null
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -234,7 +238,9 @@ class ServerSettings {
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
       authOpenIDButtonText: this.authOpenIDButtonText,
-      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
+      authOpenIDAutoRegister: this.authOpenIDAutoRegister,
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy
     }
   }
 
@@ -263,7 +269,9 @@ class ServerSettings {
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
       authOpenIDButtonText: this.authOpenIDButtonText,
-      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
+      authOpenIDAutoRegister: this.authOpenIDAutoRegister,
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy
     }
   }
 
