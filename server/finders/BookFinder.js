@@ -439,6 +439,8 @@ function replaceAccentedChars(str) {
 
 function cleanTitleForCompares(title) {
   if (!title) return ''
+  title = stripRedundantSpaces(title)
+
   // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
   let stripped = stripSubtitle(title)
 
@@ -452,10 +454,16 @@ function cleanTitleForCompares(title) {
 
 function cleanAuthorForCompares(author) {
   if (!author) return ''
+  author = stripRedundantSpaces(author)
+  
   let cleanAuthor = replaceAccentedChars(author).toLowerCase()
   // separate initials
   cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
   // remove middle initials
   cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
   return cleanAuthor
+}
+
+function stripRedundantSpaces(str) {
+  return str.replace(/\s+/g, ' ').trim()
 }
