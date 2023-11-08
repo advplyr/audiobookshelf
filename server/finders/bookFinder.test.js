@@ -236,7 +236,6 @@ describe('search', () => {
       [`${t} - ${a} 2022 mp3`],
       [`01 ${t}`],
       [`2022_${t}_HQ`],
-//      [`${a} - ${t}`],
     ])(`returns result ('%s', '${a}') (1 fuzzy search)` , async (searchTitle) => {
       expect(await bookFinder.search('', searchTitle, a)).toEqual(r)
       expect(bookFinder.runSearch).toHaveBeenCalledTimes(2)
@@ -246,7 +245,6 @@ describe('search', () => {
     it.each([
       [`s-01 - ${t} (narrator) 64kbps 10:00:00`],
       [`${a} - series 01 - ${t}`],
-//      [`${a} - ${t}`],
     ])(`returns result ('%s', '${a}') (2 fuzzy searches)` , async (searchTitle) => {
       expect(await bookFinder.search('', searchTitle, a)).toEqual(r)
       expect(bookFinder.runSearch).toHaveBeenCalledTimes(3)
@@ -305,13 +303,7 @@ describe('search', () => {
       expect(await bookFinder.search('', searchTitle, u)).toEqual(r)
       expect(bookFinder.runSearch).toHaveBeenCalledTimes(2)
     })
-/*
-    it.each([
-    ])(`returns result ('%s', '') (2 fuzzy searches)` , async (searchTitle) => {
-      expect(await bookFinder.search('', searchTitle, u)).toEqual(r)
-      expect(bookFinder.runSearch).toHaveBeenCalledTimes(3)
-    })
-*/
+
     it.each([
       [`${t}`],
     ])(`returns result ('%s', '') (no fuzzy search)` , async (searchTitle) => {
