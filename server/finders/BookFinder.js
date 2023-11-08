@@ -233,15 +233,15 @@ class BookFinder {
   }
 
   static AuthorCandidates = class {
-    constructor(bookFinder, cleanAuthor) {
-      this.bookFinder = bookFinder
+    constructor(cleanAuthor, audnexus) {
+      this.audnexus = audnexus
       this.candidates = new Set()
       this.cleanAuthor = cleanAuthor
       if (cleanAuthor) this.candidates.add(cleanAuthor)
     }
 
     validateAuthor(name, region = '', maxLevenshtein = 2) {
-      return this.bookFinder.audnexus.authorASINsRequest(name, region).then((asins) => {
+      return this.audnexus.authorASINsRequest(name, region).then((asins) => {
         for (const [i, asin] of asins.entries()) {
           if (i > 10) break
           let cleanName = cleanAuthorForCompares(asin.name)
@@ -326,7 +326,7 @@ class BookFinder {
       const cleanAuthor = cleanAuthorForCompares(author)
 
       // Now run up to maxFuzzySearches fuzzy searches
-      let authorCandidates = new BookFinder.AuthorCandidates(this, cleanAuthor)
+      let authorCandidates = new BookFinder.AuthorCandidates(cleanAuthor, this.audnexus)
 
       // Remove underscores and parentheses with their contents, and replace with a separator
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, " - ")
