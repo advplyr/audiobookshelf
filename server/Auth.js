@@ -82,14 +82,51 @@ class Auth {
           scope: 'openid profile email'
         }
       }, async (tokenset, userinfo, done) => {
-        // TODO: Here is where to lookup the Abs user or register a new Abs user
         Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
 
-        let user = null
-        // TODO: Temporary lookup existing user by email. May be replaced by a setting to toggle this or use name
-        if (userinfo.email && userinfo.email_verified) {
-          user = await Database.userModel.getUserByEmail(userinfo.email)
-          // TODO: If using existing user then save userinfo.sub on user
+        if (!userinfo.sub) {
+          Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
+          return done(null, null)
+        }
+
+        // First check for matching user by sub
+        let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
+        if (!user) {
+          // Optionally match existing by email or username based on server setting "authOpenIDMatchExistingBy"
+          if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
+            Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
+            user = await Database.userModel.getUserByEmail(userinfo.email)
+            // Check that user is not already matched
+            if (user?.authOpenIDSub) {
+              Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
+              // TODO: Show some error log?
+              user = null
+            }
+          } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
+            Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
+            user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
+            // Check that user is not already matched
+            if (user?.authOpenIDSub) {
+              Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
+              // TODO: Show some error log?
+              user = null
+            }
+          }
+
+          // If existing user was matched and isActive then save sub to user
+          if (user?.isActive) {
+            Logger.info(`[Auth] openid: New user found matching existing user "${user.username}"`)
+            user.authOpenIDSub = userinfo.sub
+            await Database.userModel.updateFromOld(user)
+          } else if (user && !user.isActive) {
+            Logger.warn(`[Auth] openid: New user found matching existing user "${user.username}" but that user is deactivated`)
+          }
+
+          // Optionally auto register the user 
+          if (!user && Database.serverSettings.authOpenIDAutoRegister) {
+            Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+            user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
+          }
         }
 
         if (!user?.isActive) {
@@ -368,7 +405,7 @@ class Auth {
   /**
    * Function to generate a jwt token for a given user
    * 
-   * @param {Object} user 
+   * @param {{ id:string, username:string }} user 
    * @returns {string} token
    */
   generateAccessToken(user) {
@@ -405,7 +442,7 @@ class Auth {
     const users = await Database.userModel.getOldUsers()
     if (users.length) {
       for (const user of users) {
-        user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
+        user.token = await this.generateAccessToken(user)
       }
       await Database.updateBulkUsers(users)
     }

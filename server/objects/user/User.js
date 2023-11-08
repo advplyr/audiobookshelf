@@ -24,6 +24,8 @@ class User {
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsSelected = [] // Empty if ALL item tags accessible
 
+    this.authOpenIDSub = null
+
     if (user) {
       this.construct(user)
     }
@@ -66,7 +68,7 @@ class User {
   getDefaultUserPermissions() {
     return {
       download: true,
-      update: true,
+      update: this.type === 'root' || this.type === 'admin',
       delete: this.type === 'root',
       upload: this.type === 'root' || this.type === 'admin',
       accessAllLibraries: true,
@@ -93,7 +95,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      authOpenIDSub: this.authOpenIDSub
     }
   }
 
@@ -186,6 +189,8 @@ class User {
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
     this.itemTagsSelected = [...(user.itemTagsSelected || [])]
+
+    this.authOpenIDSub = user.authOpenIDSub || null
   }
 
   update(payload) {
