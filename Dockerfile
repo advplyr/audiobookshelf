@@ -29,6 +29,6 @@ RUN npm ci --only=production
 
 RUN apk del make python3 g++
 
-EXPOSE 80
+EXPOSE 13378
 
 CMD ["node", "index.js"]
