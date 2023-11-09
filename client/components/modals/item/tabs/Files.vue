@@ -14,8 +14,7 @@ export default {
   },
   data() {
     return {
-      tracks: [],
-      showFullPath: false
+      tracks: []
     }
   },
   watch: {
