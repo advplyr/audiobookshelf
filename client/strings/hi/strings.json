@@ -77,6 +77,8 @@
   "ButtonUploadBackup": "बैकअप अपलोड करें",
   "ButtonUploadCover": "कवर अपलोड करें",
   "ButtonUploadOPMLFile": "OPML फ़ाइल अपलोड करें",
+  "ButtonUserDelete": "उपयोगकर्ता {0} को हटाएं",
+  "ButtonUserEdit": "उपयोगकर्ता {0} को संपादित करें",
   "ButtonViewAll": "सभी को देखें",
   "ButtonYes": "हाँ",
   "HeaderAccount": "खाता",
@@ -85,5 +87,4 @@
   "LabelFontFamily": "फुहारा परिवार",
   "LabelSettingsPreferMatchedMetadataHelp": "Matched data will overide item details when using Quick Match. By default Quick Match will only fill in missing details.",
   "NoteChangeRootPassword": "रूट user is the only user that can have an empty password",
-  "ToastSendEbookToDeviceFailed": "Failed to Send Ebook to device"
 }
