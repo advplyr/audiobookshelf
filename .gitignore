@@ -11,6 +11,8 @@
 /client/dist/
 /dist/
 /deploy/
+/coverage/
+/.nyc_output/
 
 sw.*
 .DS_STORE

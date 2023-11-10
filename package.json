@@ -16,7 +16,8 @@
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
     "deploy-linux": "node deploy/linux",
-    "test": "mocha"
+    "test": "mocha",
+    "coverage": "nyc mocha"
   },
   "bin": "prod.js",
   "pkg": {
@@ -51,6 +52,7 @@
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
+    "nyc": "^15.1.0",
     "sinon": "^17.0.1"
   }
 }
