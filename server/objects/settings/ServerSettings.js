@@ -59,19 +59,19 @@ class ServerSettings {
     this.authActiveAuthMethods = ['local']
 
     // google-oauth20 settings
-    this.authGoogleOauth20ClientID = ''
-    this.authGoogleOauth20ClientSecret = ''
-    this.authGoogleOauth20CallbackURL = ''
+    this.authGoogleOauth20ClientID = null
+    this.authGoogleOauth20ClientSecret = null
+    this.authGoogleOauth20CallbackURL = null
 
     // openid settings
-    this.authOpenIDIssuerURL = ''
-    this.authOpenIDAuthorizationURL = ''
-    this.authOpenIDTokenURL = ''
-    this.authOpenIDUserInfoURL = ''
-    this.authOpenIDJwksURL = ''
-    this.authOpenIDLogoutURL = ''
-    this.authOpenIDClientID = ''
-    this.authOpenIDClientSecret = ''
+    this.authOpenIDIssuerURL = null
+    this.authOpenIDAuthorizationURL = null
+    this.authOpenIDTokenURL = null
+    this.authOpenIDUserInfoURL = null
+    this.authOpenIDJwksURL = null
+    this.authOpenIDLogoutURL = null
+    this.authOpenIDClientID = null
+    this.authOpenIDClientSecret = null
     this.authOpenIDButtonText = 'Login with OpenId'
     this.authOpenIDAutoLaunch = false
     this.authOpenIDAutoRegister = false
@@ -118,18 +118,18 @@ class ServerSettings {
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
-    this.authGoogleOauth20ClientID = settings.authGoogleOauth20ClientID || ''
-    this.authGoogleOauth20ClientSecret = settings.authGoogleOauth20ClientSecret || ''
-    this.authGoogleOauth20CallbackURL = settings.authGoogleOauth20CallbackURL || ''
+    this.authGoogleOauth20ClientID = settings.authGoogleOauth20ClientID || null
+    this.authGoogleOauth20ClientSecret = settings.authGoogleOauth20ClientSecret || null
+    this.authGoogleOauth20CallbackURL = settings.authGoogleOauth20CallbackURL || null
 
-    this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || ''
-    this.authOpenIDAuthorizationURL = settings.authOpenIDAuthorizationURL || ''
-    this.authOpenIDTokenURL = settings.authOpenIDTokenURL || ''
-    this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || ''
-    this.authOpenIDJwksURL = settings.authOpenIDJwksURL || ''
-    this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || ''
-    this.authOpenIDClientID = settings.authOpenIDClientID || ''
-    this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
+    this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null
+    this.authOpenIDAuthorizationURL = settings.authOpenIDAuthorizationURL || null
+    this.authOpenIDTokenURL = settings.authOpenIDTokenURL || null
+    this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || null
+    this.authOpenIDJwksURL = settings.authOpenIDJwksURL || null
+    this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || null
+    this.authOpenIDClientID = settings.authOpenIDClientID || null
+    this.authOpenIDClientSecret = settings.authOpenIDClientSecret || null
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
     this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
@@ -142,9 +142,9 @@ class ServerSettings {
     // remove uninitialized methods
     // GoogleOauth20
     if (this.authActiveAuthMethods.includes('google-oauth20') && (
-      this.authGoogleOauth20ClientID === '' ||
-      this.authGoogleOauth20ClientSecret === '' ||
-      this.authGoogleOauth20CallbackURL === ''
+      !this.authGoogleOauth20ClientID ||
+      !this.authGoogleOauth20ClientSecret ||
+      !this.authGoogleOauth20CallbackURL
     )) {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1)
     }
@@ -152,13 +152,13 @@ class ServerSettings {
     // remove uninitialized methods
     // OpenID
     if (this.authActiveAuthMethods.includes('openid') && (
-      this.authOpenIDIssuerURL === '' ||
-      this.authOpenIDAuthorizationURL === '' ||
-      this.authOpenIDTokenURL === '' ||
-      this.authOpenIDUserInfoURL === '' ||
-      this.authOpenIDJwksURL === '' ||
-      this.authOpenIDClientID === '' ||
-      this.authOpenIDClientSecret === ''
+      !this.authOpenIDIssuerURL ||
+      !this.authOpenIDAuthorizationURL ||
+      !this.authOpenIDTokenURL ||
+      !this.authOpenIDUserInfoURL ||
+      !this.authOpenIDJwksURL ||
+      !this.authOpenIDClientID ||
+      !this.authOpenIDClientSecret
     )) {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
     }
@@ -252,6 +252,10 @@ class ServerSettings {
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
     return json
+  }
+
+  get supportedAuthMethods() {
+    return ['local', 'openid']
   }
 
   get authenticationSettings() {

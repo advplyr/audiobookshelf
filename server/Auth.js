@@ -36,7 +36,12 @@ class Auth {
   async initPassportJs() {
     // Check if we should load the local strategy (username + password login)
     if (global.ServerSettings.authActiveAuthMethods.includes("local")) {
-      passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
+      this.initAuthStrategyPassword()
+    }
+
+    // Check if we should load the openid strategy
+    if (global.ServerSettings.authActiveAuthMethods.includes("openid")) {
+      this.initAuthStrategyOpenID()
     }
 
     // Check if we should load the google-oauth20 strategy
@@ -60,84 +65,6 @@ class Auth {
         // permit login
         return done(null, user)
       }).bind(this)))
-    }
-
-    // Check if we should load the openid strategy
-    if (global.ServerSettings.authActiveAuthMethods.includes("openid")) {
-      const openIdIssuerClient = new OpenIDClient.Issuer({
-        issuer: global.ServerSettings.authOpenIDIssuerURL,
-        authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
-        token_endpoint: global.ServerSettings.authOpenIDTokenURL,
-        userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
-        jwks_uri: global.ServerSettings.authOpenIDJwksURL
-      }).Client
-      const openIdClient = new openIdIssuerClient({
-        client_id: global.ServerSettings.authOpenIDClientID,
-        client_secret: global.ServerSettings.authOpenIDClientSecret
-      })
-      passport.use('openid-client', new OpenIDClient.Strategy({
-        client: openIdClient,
-        params: {
-          redirect_uri: '/auth/openid/callback',
-          scope: 'openid profile email'
-        }
-      }, async (tokenset, userinfo, done) => {
-        Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
-
-        if (!userinfo.sub) {
-          Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
-          return done(null, null)
-        }
-
-        // First check for matching user by sub
-        let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
-        if (!user) {
-          // Optionally match existing by email or username based on server setting "authOpenIDMatchExistingBy"
-          if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
-            Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
-            user = await Database.userModel.getUserByEmail(userinfo.email)
-            // Check that user is not already matched
-            if (user?.authOpenIDSub) {
-              Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-              // TODO: Show some error log?
-              user = null
-            }
-          } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
-            Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
-            user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
-            // Check that user is not already matched
-            if (user?.authOpenIDSub) {
-              Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
-              // TODO: Show some error log?
-              user = null
-            }
-          }
-
-          // If existing user was matched and isActive then save sub to user
-          if (user?.isActive) {
-            Logger.info(`[Auth] openid: New user found matching existing user "${user.username}"`)
-            user.authOpenIDSub = userinfo.sub
-            await Database.userModel.updateFromOld(user)
-          } else if (user && !user.isActive) {
-            Logger.warn(`[Auth] openid: New user found matching existing user "${user.username}" but that user is deactivated`)
-          }
-
-          // Optionally auto register the user 
-          if (!user && Database.serverSettings.authOpenIDAutoRegister) {
-            Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-            user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
-          }
-        }
-
-        if (!user?.isActive) {
-          // deny login
-          done(null, null)
-          return
-        }
-
-        // permit login
-        return done(null, user)
-      }))
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -165,6 +92,117 @@ class Auth {
         return cb(null, dbUser)
       }).bind(this))
     }).bind(this))
+  }
+
+  /**
+   * Passport use LocalStrategy
+   */
+  initAuthStrategyPassword() {
+    passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
+  }
+
+  /**
+   * Passport use OpenIDClient.Strategy
+   */
+  initAuthStrategyOpenID() {
+    const openIdIssuerClient = new OpenIDClient.Issuer({
+      issuer: global.ServerSettings.authOpenIDIssuerURL,
+      authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
+      token_endpoint: global.ServerSettings.authOpenIDTokenURL,
+      userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
+      jwks_uri: global.ServerSettings.authOpenIDJwksURL
+    }).Client
+    const openIdClient = new openIdIssuerClient({
+      client_id: global.ServerSettings.authOpenIDClientID,
+      client_secret: global.ServerSettings.authOpenIDClientSecret
+    })
+    passport.use('openid-client', new OpenIDClient.Strategy({
+      client: openIdClient,
+      params: {
+        redirect_uri: '/auth/openid/callback',
+        scope: 'openid profile email'
+      }
+    }, async (tokenset, userinfo, done) => {
+      Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
+
+      if (!userinfo.sub) {
+        Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
+        return done(null, null)
+      }
+
+      // First check for matching user by sub
+      let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
+      if (!user) {
+        // Optionally match existing by email or username based on server setting "authOpenIDMatchExistingBy"
+        if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
+          Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
+          user = await Database.userModel.getUserByEmail(userinfo.email)
+          // Check that user is not already matched
+          if (user?.authOpenIDSub) {
+            Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
+            // TODO: Show some error log?
+            user = null
+          }
+        } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
+          Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
+          user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
+          // Check that user is not already matched
+          if (user?.authOpenIDSub) {
+            Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
+            // TODO: Show some error log?
+            user = null
+          }
+        }
+
+        // If existing user was matched and isActive then save sub to user
+        if (user?.isActive) {
+          Logger.info(`[Auth] openid: New user found matching existing user "${user.username}"`)
+          user.authOpenIDSub = userinfo.sub
+          await Database.userModel.updateFromOld(user)
+        } else if (user && !user.isActive) {
+          Logger.warn(`[Auth] openid: New user found matching existing user "${user.username}" but that user is deactivated`)
+        }
+
+        // Optionally auto register the user 
+        if (!user && Database.serverSettings.authOpenIDAutoRegister) {
+          Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+          user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
+        }
+      }
+
+      if (!user?.isActive) {
+        // deny login
+        done(null, null)
+        return
+      }
+
+      // permit login
+      return done(null, user)
+    }))
+  }
+
+  /**
+   * Unuse strategy
+   * 
+   * @param {string} name 
+   */
+  unuseAuthStrategy(name) {
+    passport.unuse(name)
+  }
+
+  /**
+   * Use strategy
+   * 
+   * @param {string} name 
+   */
+  useAuthStrategy(name) {
+    if (name === 'openid') {
+      this.initAuthStrategyOpenID()
+    } else if (name === 'local') {
+      this.initAuthStrategyPassword()
+    } else {
+      Logger.error('[Auth] Invalid auth strategy ' + name)
+    }
   }
 
   /**

@@ -199,13 +199,19 @@ export default {
       if (this.enableOpenIDAuth) this.newAuthSettings.authActiveAuthMethods.push('openid')
 
       this.savingSettings = true
-      const success = await this.$store.dispatch('updateServerSettings', this.newAuthSettings)
-      this.savingSettings = false
-      if (success) {
-        this.$toast.success('Server settings updated')
-      } else {
-        this.$toast.error('Failed to update server settings')
-      }
+      this.$axios
+        .$patch('/api/auth-settings', this.newAuthSettings)
+        .then((data) => {
+          this.$store.commit('setServerSettings', data.serverSettings)
+          this.$toast.success('Server settings updated')
+        })
+        .catch((error) => {
+          console.error('Failed to update server settings', error)
+          this.$toast.error('Failed to update server settings')
+        })
+        .finally(() => {
+          this.savingSettings = false
+        })
     },
     init() {
       this.newAuthSettings = {
