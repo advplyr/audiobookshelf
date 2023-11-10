@@ -320,9 +320,11 @@ export default {
         checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
-        checkboxDefaultValue: true,
+        checkboxDefaultValue: !Number(localStorage.getItem('softDeleteDefault') || 0),
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
+            localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
+
             this.$store.commit('setProcessingBatch', true)
 
             this.$axios

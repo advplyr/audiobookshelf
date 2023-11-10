@@ -686,9 +686,11 @@ export default {
         checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
-        checkboxDefaultValue: true,
+        checkboxDefaultValue: !Number(localStorage.getItem('softDeleteDefault') || 0),
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
+            localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
+
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
