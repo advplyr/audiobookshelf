@@ -1,5 +1,5 @@
 import Vue from "vue"
-import enUsStrings from '../strings/en-us.json'
+import enUsStrings from '../strings/en-us/strings.json'
 import { supplant } from './utils'
 
 const defaultCode = 'en-us'
@@ -40,7 +40,7 @@ Vue.prototype.$strings = { ...enUsStrings }
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
-    return supplant(Vue.prototype.$strings[key], subs)
+    return supplant(Vue.prototype.$strings[key], subs, enUsStrings)
   }
   return Vue.prototype.$strings[key]
 }
@@ -51,7 +51,7 @@ var translations = {
 
 function loadTranslationStrings(code) {
   return new Promise((resolve) => {
-    import(`../strings/${code}`).then((fileContents) => {
+    import(`../strings/${code}/strings`).then((fileContents) => {
       resolve(fileContents.default)
     }).catch((error) => {
       console.error('Failed to load i18n strings', code, error)

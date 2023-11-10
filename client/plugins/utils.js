@@ -169,11 +169,11 @@ Vue.prototype.$downloadFile = (url, filename = null, openInNewTab = false) => {
   })
 }
 
-export function supplant(str, subs) {
+export function supplant(str, subs, defaultMapping) {
   // source: http://crockford.com/javascript/remedial.html
   return str.replace(/{([^{}]*)}/g,
     function (a, b) {
-      var r = subs[b]
+      var r = subs[b] || (defaultMapping && defaultMapping[b]);
       return typeof r === 'string' || typeof r === 'number' ? r : a
     }
   )
