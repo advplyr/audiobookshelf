@@ -1,0 +1,17 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 400,
+  "proseWrap": "never",
+  "trailingComma": "none",
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "options": {
+        "singleQuote": false,
+        "wrapAttributes": false,
+        "sortAttributes": false
+      }
+    }
+  ]
+}

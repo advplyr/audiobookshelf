@@ -9,7 +9,8 @@
     "dev2": "nuxt --hostname localhost --port 1337",
     "build": "nuxt build",
     "start": "nuxt start",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "format": "prettier --write **/*.js"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -36,6 +37,7 @@
     "@nuxtjs/tailwindcss": "^4.2.1",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.3.6",
-    "tailwindcss": "^3.1.4"
+    "tailwindcss": "^3.1.4",
+    "prettier": "^3.0.3"
   }
 }
