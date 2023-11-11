@@ -5,7 +5,6 @@ const jwt = require('./libs/jsonwebtoken')
 const LocalStrategy = require('./libs/passportLocal')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
-const GoogleStrategy = require('passport-google-oauth20').Strategy
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
@@ -42,29 +41,6 @@ class Auth {
     // Check if we should load the openid strategy
     if (global.ServerSettings.authActiveAuthMethods.includes("openid")) {
       this.initAuthStrategyOpenID()
-    }
-
-    // Check if we should load the google-oauth20 strategy
-    if (global.ServerSettings.authActiveAuthMethods.includes("google-oauth20")) {
-      passport.use(new GoogleStrategy({
-        clientID: global.ServerSettings.authGoogleOauth20ClientID,
-        clientSecret: global.ServerSettings.authGoogleOauth20ClientSecret,
-        callbackURL: global.ServerSettings.authGoogleOauth20CallbackURL
-      }, (async function (accessToken, refreshToken, profile, done) {
-        // TODO: do we want to create the users which does not exist?
-
-        // get user by email
-        const user = await Database.userModel.getUserByEmail(profile.emails[0].value.toLowerCase())
-
-        if (!user || !user.isActive) {
-          // deny login
-          done(null, null)
-          return
-        }
-
-        // permit login
-        return done(null, user)
-      }).bind(this)))
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -288,21 +264,6 @@ class Auth {
       // return the user login response json if the login was successfull
       res.json(await this.getUserLoginResponsePayload(req.user))
     })
-
-    // google-oauth20 strategy login route (this redirects to the google login)
-    router.get('/auth/google', (req, res, next) => {
-      const auth_func = passport.authenticate('google', { scope: ['email'] })
-      // params (isRest, callback) to a cookie that will be send to the client
-      this.paramsToCookies(req, res)
-      auth_func(req, res, next)
-    })
-
-    // google-oauth20 strategy callback route (this receives the token from google)
-    router.get('/auth/google/callback',
-      passport.authenticate('google'),
-      // on a successfull login: read the cookies and react like the client requested (callback or json)
-      this.handleLoginSuccessBasedOnCookie.bind(this)
-    )
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
