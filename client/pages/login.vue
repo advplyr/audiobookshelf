@@ -109,7 +109,7 @@ export default {
       return this.$store.state.user.user
     },
     openidAuthUri() {
-      return `${process.env.serverUrl}/auth/openid?callback=${location.toString()}`
+      return `${process.env.serverUrl}/auth/openid?callback=${location.href.split('?').shift()}`
     },
     openIDButtonText() {
       return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
@@ -238,6 +238,15 @@ export default {
         })
     },
     updateLoginVisibility(authMethods) {
+      if (this.$route.query?.error) {
+        this.error = this.$route.query.error
+
+        // Remove error query string
+        const newurl = new URL(location.href)
+        newurl.searchParams.delete('error')
+        window.history.replaceState({ path: newurl.href }, '', newurl.href)
+      }
+
       if (authMethods.includes('local') || !authMethods.length) {
         this.login_local = true
       } else {
@@ -257,8 +266,8 @@ export default {
     }
   },
   async mounted() {
-    if (new URLSearchParams(window.location.search).get('setToken')) {
-      localStorage.setItem('token', new URLSearchParams(window.location.search).get('setToken'))
+    if (this.$route.query?.setToken) {
+      localStorage.setItem('token', this.$route.query.setToken)
     }
     if (localStorage.getItem('token')) {
       if (await this.checkAuth()) return // if valid user no need to check status

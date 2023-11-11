@@ -652,7 +652,7 @@ class MiscController {
             Logger.warn(`[MiscController] Invalid value for ${key}. Expected boolean`)
             continue
           }
-        } else if (updatedValueType !== null && updatedValueType !== 'string') {
+        } else if (settingsUpdate[key] !== null && updatedValueType !== 'string') {
           Logger.warn(`[MiscController] Invalid value for ${key}. Expected string or null`)
           continue
         }

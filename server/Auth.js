@@ -101,9 +101,10 @@ class Auth {
     }, async (tokenset, userinfo, done) => {
       Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
 
+      let failureMessage = 'Unauthorized'
       if (!userinfo.sub) {
         Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
-        return done(null, null)
+        return done(null, null, failureMessage)
       }
 
       // First check for matching user by sub
@@ -116,7 +117,8 @@ class Auth {
           // Check that user is not already matched
           if (user?.authOpenIDSub) {
             Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Show some error log?
+            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
+            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
             user = null
           }
         } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
@@ -125,7 +127,8 @@ class Auth {
           // Check that user is not already matched
           if (user?.authOpenIDSub) {
             Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Show some error log?
+            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
+            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
             user = null
           }
         }
@@ -147,8 +150,11 @@ class Auth {
       }
 
       if (!user?.isActive) {
+        if (user && !user.isActive) {
+          failureMessage = 'Unauthorized'
+        }
         // deny login
-        done(null, null)
+        done(null, null, failureMessage)
         return
       }
 
@@ -366,7 +372,7 @@ class Auth {
       if (req.session[sessionKey].mobile) {
         return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' })(req, res, next)
       } else {
-        return passport.authenticate('openid-client')(req, res, next)
+        return passport.authenticate('openid-client', { failureRedirect: '/login?error=Unauthorized&autoLaunch=0' })(req, res, next)
       }
     },
       // on a successfull login: read the cookies and react like the client requested (callback or json)
