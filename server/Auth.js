@@ -306,82 +306,108 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
-      // helper function from openid-client
-      function pick(object, ...paths) {
-        const obj = {}
-        for (const path of paths) {
-          if (object[path] !== undefined) {
-            obj[path] = object[path]
+      try {
+        // helper function from openid-client
+        function pick(object, ...paths) {
+          const obj = {}
+          for (const path of paths) {
+            if (object[path] !== undefined) {
+              obj[path] = object[path]
+            }
           }
+          return obj
         }
-        return obj
-      }
 
-      // Get the OIDC client from the strategy
-      // We need to call the client manually, because the strategy does not support forwarding the code challenge
-      //    for API or mobile clients
-      const oidcStrategy = passport._strategy('openid-client')
-      oidcStrategy._params.redirect_uri = new URL(`${req.protocol}://${req.get('host')}/auth/openid/callback`).toString()
-      const client = oidcStrategy._client
-      const sessionKey = oidcStrategy._key
+        // Get the OIDC client from the strategy
+        // We need to call the client manually, because the strategy does not support forwarding the code challenge
+        //    for API or mobile clients
+        const oidcStrategy = passport._strategy('openid-client')
+        oidcStrategy._params.redirect_uri = new URL(`${req.protocol}://${req.get('host')}/auth/openid/callback`).toString()
+        const client = oidcStrategy._client
+        const sessionKey = oidcStrategy._key
 
-      let code_challenge
-      let code_challenge_method
+        let code_challenge
+        let code_challenge_method
 
-      // If code_challenge is provided, expect that code_verifier will be handled by the client (mobile app)
-      // The web frontend of ABS does not need to do a PKCE itself, because it never handles the "code" of the oauth flow
-      //    and as such will not send a code challenge, we will generate then one
-      if (req.query.code_challenge) {
-        code_challenge = req.query.code_challenge
-        code_challenge_method = req.query.code_challenge_method || 'S256'
+        // If code_challenge is provided, expect that code_verifier will be handled by the client (mobile app)
+        // The web frontend of ABS does not need to do a PKCE itself, because it never handles the "code" of the oauth flow
+        //    and as such will not send a code challenge, we will generate then one
+        if (req.query.code_challenge) {
+          code_challenge = req.query.code_challenge
+          code_challenge_method = req.query.code_challenge_method || 'S256'
 
-        if (!['S256', 'plain'].includes(code_challenge_method)) {
-          return res.status(400).send('Invalid code_challenge_method')
+          if (!['S256', 'plain'].includes(code_challenge_method)) {
+            return res.status(400).send('Invalid code_challenge_method')
+          }
+        } else {
+          // If no code_challenge is provided, assume a web application flow and generate one
+          const code_verifier = OpenIDClient.generators.codeVerifier()
+          code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
+          code_challenge_method = 'S256'
+
+          // Store the code_verifier in the session for later use in the token exchange
+          req.session[sessionKey] = { ...req.session[sessionKey], code_verifier }
         }
-      } else {
-        // If no code_challenge is provided, assume a web application flow and generate one
-        const code_verifier = OpenIDClient.generators.codeVerifier()
-        code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
-        code_challenge_method = 'S256'
 
-        // Store the code_verifier in the session for later use in the token exchange
-        req.session[sessionKey] = { ...req.session[sessionKey], code_verifier }
+        const params = {
+          state: OpenIDClient.generators.random(),
+          // Other params by the passport strategy
+          ...oidcStrategy._params
+        }
+
+        if (!params.nonce && params.response_type.includes('id_token')) {
+          params.nonce = OpenIDClient.generators.random()
+        }
+
+        req.session[sessionKey] = {
+          ...req.session[sessionKey],
+          ...pick(params, 'nonce', 'state', 'max_age', 'response_type')
+        }
+
+        // Now get the URL to direct to
+        const authorizationUrl = client.authorizationUrl({
+          ...params,
+          scope: 'openid profile email',
+          response_type: 'code',
+          code_challenge,
+          code_challenge_method,
+        })
+
+        // params (isRest, callback) to a cookie that will be send to the client
+        this.paramsToCookies(req, res)
+
+        // Redirect the user agent (browser) to the authorization URL
+        res.redirect(authorizationUrl)
+      } catch (error) {
+        Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
+        res.status(500).send('Internal Server Error')
       }
-
-      const params = {
-        state: OpenIDClient.generators.random(),
-        // Other params by the passport strategy
-        ...oidcStrategy._params
-      }
-
-      if (!params.nonce && params.response_type.includes('id_token')) {
-        params.nonce = OpenIDClient.generators.random()
-      }
-
-      req.session[sessionKey] = {
-        ...req.session[sessionKey],
-        ...pick(params, 'nonce', 'state', 'max_age', 'response_type')
-      }
-
-      // Now get the URL to direct to
-      const authorizationUrl = client.authorizationUrl({
-        ...params,
-        scope: 'openid profile email',
-        response_type: 'code',
-        code_challenge,
-        code_challenge_method,
-      })
-
-      // params (isRest, callback) to a cookie that will be send to the client
-      this.paramsToCookies(req, res)
-
-      // Redirect the user agent (browser) to the authorization URL
-      res.redirect(authorizationUrl)
     })
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
-    router.get('/auth/openid/callback',
-      passport.authenticate('openid-client'),
+    router.get('/auth/openid/callback', (req, res, next) => {
+      const oidcStrategy = passport._strategy('openid-client')
+      const sessionKey = oidcStrategy._key
+
+      if (!req.session[sessionKey]) {
+        return res.status(400).send('No session')
+      }
+
+      // If the client sends us a code_verifier, we will tell passport to use this to send this in the token request
+      // The code_verifier will be validated by the oauth2 provider by comparing it to the code_challenge in the first request
+      // Crucial for API/Mobile clients
+      if (req.query.code_verifier) {
+        req.session[sessionKey].code_verifier = req.query.code_verifier
+      }
+
+      // While not required by the standard, the passport plugin re-sends the original redirect_uri in the token request
+      // We need to set it correctly, as some SSO providers (e.g. keycloak) check that parameter when it is provided
+      if (req.session[sessionKey].mobile) {
+        return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' })(req, res, next)
+      } else {
+        return passport.authenticate('openid-client')(req, res, next)
+      }
+    },
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this))
 
