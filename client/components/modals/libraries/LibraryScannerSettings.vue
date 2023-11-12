@@ -64,6 +64,11 @@ export default {
           name: 'Audio file meta tags',
           include: true
         },
+        nfoFile: {
+          id: 'nfoFile',
+          name: 'NFO file',
+          include: true
+        },
         txtFiles: {
           id: 'txtFiles',
           name: 'desc.txt & reader.txt files',
