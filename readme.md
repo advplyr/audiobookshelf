@@ -302,6 +302,10 @@ If you are using VSCode, this project includes a couple of pre-defined targets t
 * `Debug client (nuxt)`—Run the client with live reload.
 * `Debug server and client (nuxt)`—Runs both the preceding two debug targets.
 
+### Translations
+Translations are completely community driven and are now managed on [GitLocalize](https://gitlocalize.com). If you would like to help translate an existing language or add a new language to the server, first link your GitHub account to GitLocalize, then reach out to be added to the project.
+
+Updates and corrections to existing translations are welcome.
 
 # How to Support
 
