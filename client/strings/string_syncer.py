@@ -179,8 +179,8 @@ def translations_to_add(english_dict, server_path, app_path, lang=None):
 
     file_path = '/'.join(server_path.split("/")[-2:])
     if lang:
-        stats[lang]['Server add'] = server_adds
-        stats[lang]['App add']    = app_adds
+        stats[lang]['Server add'] += server_adds
+        stats[lang]['App add']    += app_adds
 
 # Given the English lookup and a translation file, remove any keys that do
 # not exist in the English lookup
@@ -204,7 +204,7 @@ def remove_nonexistant(english_dict, translation_path, repo=None, lang=None):
         json.dump(file_data, file, indent=2, sort_keys=True)
 
     if lang:
-        stats[lang][f"{repo} del"] = len(keys_to_remove)
+        stats[lang][f"{repo} del"] += len(keys_to_remove)
 
 
 ##############
