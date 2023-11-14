@@ -71,7 +71,53 @@ def print_stats(data):
         print(" ".join(row))
 
 ##############
-# Functions
+# Helper functions
+##############
+
+# Write JSON object to file
+def write_to_file(dictionary, path):
+    with open(path, "w") as file:
+        json.dump(dictionary, file, indent=2, sort_keys=True)
+
+# Check that directory exists
+def is_dir(path):
+    return os.path.exists(path) and os.path.isdir(path)
+
+# Get list of all translation languages
+def get_languages(path):
+    langs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+    langs.remove("en-us")
+    return langs
+
+##############
+# Creation and moving
+##############
+
+# Create missing language directories
+def create_directories_from_list(directory_list, base_directory):
+    for directory_name in directory_list:
+        # Create the full path by joining the base directory and the directory name
+        full_path = os.path.join(base_directory, directory_name)
+        # Check if the directory already exists; if not, create it
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+
+# Copy all missing translation files between the two repositories
+def copy_missing_files(source_dir, target_dir):
+    if not os.path.exists(source_dir) or not os.path.exists(target_dir):
+        raise ValueError("Source and target directories must exist.")
+
+    for root, _, files in os.walk(source_dir):
+        for filename in files:
+            source_path = os.path.join(root, filename)
+            target_path = os.path.join(target_dir, filename)
+
+            if not os.path.exists(target_path):
+                shutil.copy(source_path, target_path)
+                print(f"Copied {source_path} to {target_path}")
+
+##############
+# Key management
 ##############
 
 # Return a dictionary of all key/values in a directory
@@ -161,43 +207,9 @@ def remove_nonexistant(english_dict, translation_path, repo=None, lang=None):
         stats[lang][f"{repo} del"] = len(keys_to_remove)
 
 
-# Write JSON object to file
-def write_to_file(dictionary, path):
-    with open(path, "w") as file:
-        json.dump(dictionary, file, indent=2, sort_keys=True)
-
-# Check that directory exists
-def is_dir(path):
-    return os.path.exists(path) and os.path.isdir(path)
-
-# Get list of all translation languages
-def get_languages(path):
-    langs = [d for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
-    langs.remove("en-us")
-    return langs
-
-# Create missing language directories
-def create_directories_from_list(directory_list, base_directory):
-    for directory_name in directory_list:
-        # Create the full path by joining the base directory and the directory name
-        full_path = os.path.join(base_directory, directory_name)
-        # Check if the directory already exists; if not, create it
-        if not os.path.exists(full_path):
-            os.makedirs(full_path)
-
-# Copy all missing translation files between the two repositories
-def copy_missing_files(source_dir, target_dir):
-    if not os.path.exists(source_dir) or not os.path.exists(target_dir):
-        raise ValueError("Source and target directories must exist.")
-
-    for root, _, files in os.walk(source_dir):
-        for filename in files:
-            source_path = os.path.join(root, filename)
-            target_path = os.path.join(target_dir, filename)
-                                                            
-            if not os.path.exists(target_path):
-                shutil.copy(source_path, target_path)
-                print(f"Copied {source_path} to {target_path}")
+##############
+# Main
+##############
 
 # Given two server directories, Do The Thing!
 def main():
@@ -207,14 +219,21 @@ def main():
     try:
         with open(stored_path, 'r') as file:
             repos = json.load(file)
-        print("Loaded repo paths from {stored_path}. To use a different path, please delete this file.")
+        print(f"Loaded repo paths from {stored_path}. To use different repo paths, please delete this file.")
         print()
-    finally:
+    except:
         # File does not exist, need command line arguments
         if len(sys.argv) < 3:
             print("Stored repositories not found and no command line arguments given.")
             print("Command usage:")
+            print("")
             print("  python string_syncer.py [audiobookshelf string dir] [audiobookshelf-app string dir]")
+            print("")
+            print("")
+            print("For example, if you are running this script from the server strings directory and the")
+            print("app repo is located at ../../../audiobookshelf-app, the command would be")
+            print("")
+            print('  python string_syncer.py "." "../../../audiobookshelf-app/strings"')
             return 1
 
         repos = {'server': sys.argv[1], 'app': sys.argv[2]}
