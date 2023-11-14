@@ -27,13 +27,52 @@
 
 
 ##############
-# Functions
+# Imports
 ##############
 
 import sys
 import os
 import json
 import shutil
+
+##############
+# Stat handling
+##############
+stats = {}
+dupes_found = 0
+
+def print_stats(data):
+    # Get a set of all column keys from nested dictionaries
+    column_keys = sorted(set().union(*(inner_dict.keys() for inner_dict in data.values())))
+
+    # Create a list of headers including an empty space for the row labels
+    headers = [""] + list(column_keys)
+
+    # Create a list to hold rows of the table
+    table = [headers]
+    table.append(["-" * len(cell) for cell in headers])
+
+    # Iterate through the top-level dictionary and create rows for each top-level key
+    for top_level_key, nested_dict in data.items():
+        row = [top_level_key] + [nested_dict.get(column, "") for column in headers[1:]]
+        table.append(row)
+
+    # Determine the maximum column width for each column
+    col_widths = [max(len(str(row[i])) for row in table) for i in range(len(headers))]
+
+    # Create the table with proper alignment
+    formatted_table = []
+    for row in table:
+        formatted_row = [" | ".join(f"{cell:{col_widths[i]}}" for i, cell in enumerate(row))]
+        formatted_table.append(formatted_row)
+
+    # Join the rows to create the table and print it
+    for row in formatted_table:
+        print(" ".join(row))
+
+##############
+# Functions
+##############
 
 # Return a dictionary of all key/values in a directory
 # (supports multiple files in case the JSON is broken into multiple files)
@@ -59,10 +98,12 @@ def dict_same(dict1, dict2):
         if k in dict2 and dict2[k] == v:
             result[k] = v
     
+    dupes_found = len(result.keys())
+
     return result
 
 # Get list of translations which need to be added between repositories
-def translations_to_add(english_dict, server_path, app_path):
+def translations_to_add(english_dict, server_path, app_path, lang=None):
     # Load the data
     with open(server_path, 'r') as file:
         server_dict = json.load(file)
@@ -91,34 +132,33 @@ def translations_to_add(english_dict, server_path, app_path):
         json.dump(   app_dict, file, indent=2, sort_keys=True)
 
     file_path = '/'.join(server_path.split("/")[-2:])
-    print(f"File: {file_path}\t\t\tAdded {app_adds} to the app and {server_adds} to the server")
-
+    if lang:
+        stats[lang]['Server add'] = server_adds
+        stats[lang]['App add']    = app_adds
 
 # Given the English lookup and a translation file, remove any keys that do
 # not exist in the English lookup
 # 
 # Return how many keys were removed
-def remove_nonexistant(english_dict, translation_path, repo=None):
-    keys_removed = 0
-
+def remove_nonexistant(english_dict, translation_path, repo=None, lang=None):
     # Load data
     with open(translation_path, 'r') as file:
         file_data = json.load(file)
 
     # Remove keys which don't exist in English
+    keys_to_remove = []
     for key in file_data:
         if key not in english_dict:
-            file_data.pop(key)
-            keys_removed += 1
+            keys_to_remove.append(key)
+    for key in keys_to_remove:
+        file_data.pop(key)
 
     # Write back to file
     with open(translation_path, 'w') as file:
         json.dump(file_data, file, indent=2, sort_keys=True)
 
-    if repo and keys_removed > 0:
-        print(f"Removed {keys_removed} from {repo} in {translation_path}")
-
-    return keys_removed
+    if lang:
+        stats[lang][f"{repo} del"] = len(keys_to_remove)
 
 
 # Write JSON object to file
@@ -168,6 +208,7 @@ def main():
         with open(stored_path, 'r') as file:
             repos = json.load(file)
         print("Loaded repo paths from {stored_path}. To use a different path, please delete this file.")
+        print()
     finally:
         # File does not exist, need command line arguments
         if len(sys.argv) < 3:
@@ -194,10 +235,16 @@ def main():
 
     all_langs      = sorted(list(set(server_langs) | set(app_langs)))
 
-    print(all_langs)
+    # add all languages to the stats
+    for lang in all_langs:
+        stats[lang] = {'Server add' : 0,
+                       'Server del' : 0,
+                       'App add'    : 0,
+                       'App del'    : 0
+                      }
+
 
     # Create all language directories in both repositories
-    print(repos)
     create_directories_from_list( all_langs, repos['server'] )
     create_directories_from_list( all_langs, repos['app']    )
 
@@ -216,13 +263,17 @@ def main():
                 app_file    = app_path    + "/" + filename
 
                 # Remove extra keys
-                remove_nonexistant(server_english, server_file, repo="server")
-                remove_nonexistant(   app_english,    app_file, repo="app"   )
+                remove_nonexistant(server_english, server_file, repo="Server", lang=lang)
+                remove_nonexistant(   app_english,    app_file, repo="App"   , lang=lang)
 
                 # Add identical key/values
-                translations_to_add(english_common, server_file, app_file)
+                translations_to_add(english_common, server_file, app_file, lang=lang)
 
-    print("All done")
+    print("")
+    print("")
+    print("")
+
+    print_stats(stats)
 
 if __name__ == "__main__":
     main()
