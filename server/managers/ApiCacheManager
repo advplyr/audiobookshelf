@@ -1,0 +1,43 @@
+const { LRUCache } = require('lru-cache')
+const Logger = require('../Logger')
+const { measure } = require('../utils/timing')
+
+class ApiCacheManager {
+  constructor() {
+    this.options = {
+      max: 1000,
+      maxSize: 10 * 1000 * 1000,
+      sizeCalculation: item => item.length,
+    }
+  }
+
+  init() {
+    this.cache = new LRUCache(this.options)
+  }
+
+  get middleware() {
+    return (req, res, next) => {
+      measure('ApiCacheManager.middleware', () => {
+        const key = req.originalUrl || req.url
+        Logger.debug(`[ApiCacheManager] Cache key: ${key}`)
+        Logger.debug(`[ApiCacheManager] Cache: ${this.cache} count: ${this.cache.size} size: ${this.cache.calculatedSize}`)
+        const cached = this.cache.get(key)
+        if (cached) {
+          Logger.debug(`[ApiCacheManager] Cache hit: ${key}`)
+          res.send(cached)
+          return
+        }
+        res.sendResponse = res.send
+        res.send = (body) => {
+          Logger.debug(`[ApiCacheManager] Cache miss: ${key}`)
+          measure('ApiCacheManager.middleware: res.send', () => {
+            this.cache.set(key, body)
+            res.sendResponse(body)
+          })
+        }
+        next()
+      })
+    }
+  }
+}
+module.exports = ApiCacheManager
