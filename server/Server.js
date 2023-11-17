@@ -31,7 +31,9 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
+const ApiCacheManager = require('./managers/ApiCacheManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
+const { measureMiddleware } = require('./utils/timing')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -67,6 +69,7 @@ class Server {
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
+    this.apiCacheManager = new ApiCacheManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -110,6 +113,7 @@ class Server {
 
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
+    this.apiCacheManager.init()
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -130,6 +134,7 @@ class Server {
 
     this.server = http.createServer(app)
 
+    router.use(measureMiddleware)
     router.use(this.auth.cors)
     router.use(fileUpload({
       defCharset: 'utf8',

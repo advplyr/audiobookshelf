@@ -32,6 +32,7 @@ const MiscController = require('../controllers/MiscController')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
+const { measureMiddleware } = require('../utils/timing')
 
 class ApiRouter {
   constructor(Server) {
@@ -47,6 +48,7 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
+    this.apiCacheManager = Server.apiCacheManager
 
     this.router = express()
     this.router.disable('x-powered-by')
@@ -54,16 +56,17 @@ class ApiRouter {
   }
 
   init() {
+    const cacheMiddleware = this.apiCacheManager.middleware
     //
     // Library Routes
     //
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
-    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))
+    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.findOne.bind(this))
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
-    this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
+    this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
