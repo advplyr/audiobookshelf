@@ -13,13 +13,17 @@
 ##############
 # Rules
 ##############
+# Any (non-English) files are copied between the two repositories if they do not exist. This
+# is to help add new language translations. After copying these files, any keys which were
+# copied where the English string for the key does not match between the two repositories
+# are removed from the destination file (in case of name collisions or the English string
+# not being updated yet).
+
 # If an English string exists in BOTH repositories (both the key and value are identical) and
 # a translation of the string does not exist in ONE repository, the translation is copied.
 
-# If a language translation exists in ONE repository, the translation is copied to the other
-# repository. After copying, any keys which do not appear in the English resource file
-# (`en-us/strings.json`) are removed from the destination repository to handle server/app
-# specific strings.
+# All keys in translation files which do not exist in the corresponding English file are
+# deleted to handle server/app specific strings.
 
 # If the English key exists in both repositories but the value is not identical, the translations
 # are not copied to help ensure there is not a name conflict.
@@ -103,7 +107,8 @@ def create_directories_from_list(directory_list, base_directory):
             os.makedirs(full_path)
 
 # Copy all missing translation files between the two repositories
-def copy_missing_files(source_dir, target_dir):
+def copy_missing_files(source_dir, target_dir, remove_keys):
+    had_missing_files = False
     if not os.path.exists(source_dir) or not os.path.exists(target_dir):
         raise ValueError("Source and target directories must exist.")
 
@@ -112,9 +117,13 @@ def copy_missing_files(source_dir, target_dir):
             source_path = os.path.join(root, filename)
             target_path = os.path.join(target_dir, filename)
 
-            if not os.path.exists(target_path):
+            if not os.path.exists(target_path) and target_path.endswith('.json'):
                 shutil.copy(source_path, target_path)
-                print(f"Copied {source_path} to {target_path}")
+                print(f"Copied {source_path}    ->    {target_path}")
+
+                remove_after_copy(remove_keys, target_path)
+                had_missing_files = True
+    return had_missing_files
 
 ##############
 # Key management
@@ -139,14 +148,37 @@ def load_json_files(directory_path):
 # Return matching key/value pairs from two dicts
 def dict_same(dict1, dict2):
     result = {}
+    diffs  = {}
 
+    print(f"=======================")
+    print(f"The English values differ between the two repositories for the following keys.")
+    print(f"Consider updating the keys to remove the name collision.")
     for k,v in dict1.items():
-        if k in dict2 and dict2[k] == v:
-            result[k] = v
+        if k in dict2:
+            if dict2[k] == v:
+                result[k] = v
+            else:
+                diffs[k] = v
+                print(f"  {k}")
+    print()
+    print(f"=======================")
     
     dupes_found = len(result.keys())
 
-    return result
+    return result, diffs
+
+# This function is called after copying a file to ensure
+# that the destination file does not have the wrong translation in case
+# of a name collision or an out-of-date English string.
+def remove_after_copy(remove_keys, path):
+    with open(path, 'r') as file:
+        file_data = json.load(file)
+
+    # Delete all keys which had different English values
+    for key in remove_keys:
+        file_data.pop(key, None)
+
+    write_to_file(file_data, path)
 
 # Get list of translations which need to be added between repositories
 def translations_to_add(english_dict, server_path, app_path, lang=None):
@@ -177,8 +209,8 @@ def translations_to_add(english_dict, server_path, app_path, lang=None):
 
     file_path = '/'.join(server_path.split("/")[-2:])
     if lang:
-        stats[lang]['Server add'] += server_adds
-        stats[lang]['App add']    += app_adds
+        stats[lang]['Server add'] = server_adds
+        stats[lang]['App add']    = app_adds
 
 # Given the English lookup and a translation file, remove any keys that do
 # not exist in the English lookup
@@ -242,7 +274,7 @@ def main():
     app_english    = load_json_files( repos['app']    + "/en-us" )
 
     # Get identical English key/value pairs
-    english_common = dict_same(server_english, app_english)
+    english_common, remove_keys = dict_same(server_english, app_english)
     
     # Get list of languages
     server_langs   = get_languages( repos['server'] )
@@ -268,8 +300,10 @@ def main():
         server_path = repos['server'] + "/" + lang
         app_path    = repos['app']    + "/" + lang
 
-        copy_missing_files( server_path,    app_path )
-        copy_missing_files(    app_path, server_path )
+        if copy_missing_files( server_path,    app_path, remove_keys ):
+            stats[lang]['Server del'] += len(remove_keys)
+        if copy_missing_files(    app_path, server_path, remove_keys ):
+            stats[lang]['App del'] += len(remove_keys)
 
         # After copying the files, update all files for language
         for filename in os.listdir(server_path):
