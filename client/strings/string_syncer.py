@@ -172,10 +172,8 @@ def translations_to_add(english_dict, server_path, app_path, lang=None):
             server_dict[key] = value
 
     # Store the data
-    with open(server_path, 'w') as file:
-        json.dump(server_dict, file, indent=2, sort_keys=True)
-    with open(   app_path, 'w') as file:
-        json.dump(   app_dict, file, indent=2, sort_keys=True)
+    write_to_file(server_dict, server_path)
+    write_to_file(   app_dict,    app_path)
 
     file_path = '/'.join(server_path.split("/")[-2:])
     if lang:
@@ -200,8 +198,7 @@ def remove_nonexistant(english_dict, translation_path, repo=None, lang=None):
         file_data.pop(key)
 
     # Write back to file
-    with open(translation_path, 'w') as file:
-        json.dump(file_data, file, indent=2, sort_keys=True)
+    write_to_file(file_data, translation_path)
 
     if lang:
         stats[lang][f"{repo} del"] += len(keys_to_remove)
@@ -238,8 +235,7 @@ def main():
 
         repos = {'server': sys.argv[1], 'app': sys.argv[2]}
         # Store the repo paths
-        with open(stored_path,'w') as file:
-            json.dump(repos, file, indent=2)
+        write_to_file(repos, stored_path)
 
     # Load English resource files
     server_english = load_json_files( repos['server'] + "/en-us" )
