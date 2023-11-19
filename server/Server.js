@@ -5,6 +5,7 @@ const http = require('http')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
+const cookieParser = require("cookie-parser")
 
 const { version } = require('../package.json')
 
@@ -32,6 +33,11 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
+
+//Import the main Passport and Express-Session library
+const passport = require('passport')
+const expressSession = require('express-session')
+
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -79,7 +85,8 @@ class Server {
   }
 
   authMiddleware(req, res, next) {
-    this.auth.authMiddleware(req, res, next)
+    // ask passportjs if the current request is authenticated
+    this.auth.isAuthenticated(req, res, next)
   }
 
   cancelLibraryScan(libraryId) {
@@ -124,20 +131,63 @@ class Server {
     await this.init()
 
     const app = express()
+
+    /**
+     * @temporary
+     * This is necessary for the ebook API endpoint in the mobile apps
+     * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
+     * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+     * @see https://ionicframework.com/docs/troubleshooting/cors
+     */
+    app.use((req, res, next) => {
+      if (req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
+        const allowedOrigins = ['capacitor://localhost', 'http://localhost']
+        if (allowedOrigins.some(o => o === req.get('origin'))) {
+          res.header('Access-Control-Allow-Origin', req.get('origin'))
+          res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
+          res.header('Access-Control-Allow-Headers', '*')
+          res.header('Access-Control-Allow-Credentials', true)
+          if (req.method === 'OPTIONS') {
+            return res.sendStatus(200)
+          }
+        }
+      }
+
+      next()
+    })
+
+    // parse cookies in requests
+    app.use(cookieParser())
+    // enable express-session
+    app.use(expressSession({
+      secret: global.ServerSettings.tokenSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        // also send the cookie if were are not on https (not every use has https)
+        secure: false
+      },
+    }))
+    // init passport.js
+    app.use(passport.initialize())
+    // register passport in express-session
+    app.use(passport.session())
+    // config passport.js
+    await this.auth.initPassportJs()
+
     const router = express.Router()
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
 
-    router.use(this.auth.cors)
     router.use(fileUpload({
       defCharset: 'utf8',
       defParamCharset: 'utf8',
       useTempFiles: true,
       tempFileDir: Path.join(global.MetadataPath, 'tmp')
     }))
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
     router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
@@ -163,6 +213,9 @@ class Server {
       this.rssFeedManager.getFeedItem(req, res)
     })
 
+    // Auth routes
+    await this.auth.initAuthRoutes(router)
+
     // Client dynamic routes
     const dyanimicRoutes = [
       '/item/:id',
@@ -186,8 +239,8 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
-    router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    // router.post('/login', passport.authenticate('local', this.auth.login), this.auth.loginResult.bind(this))
+    // router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
@@ -199,8 +252,12 @@ class Server {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
+        app: 'audiobookshelf',
+        serverVersion: version,
         isInit: Database.hasRootUser,
-        language: Database.serverSettings.language
+        language: Database.serverSettings.language,
+        authMethods: Database.serverSettings.authActiveAuthMethods,
+        authFormData: Database.serverSettings.authFormData
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath
