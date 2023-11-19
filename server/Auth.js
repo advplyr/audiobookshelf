@@ -69,6 +69,11 @@ class Auth {
    * Passport use OpenIDClient.Strategy
    */
   initAuthStrategyOpenID() {
+    if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
+      Logger.error(`[Auth] Cannot init openid auth strategy - invalid settings`)
+      return
+    }
+
     const openIdIssuerClient = new OpenIDClient.Issuer({
       issuer: global.ServerSettings.authOpenIDIssuerURL,
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,

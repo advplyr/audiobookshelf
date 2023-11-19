@@ -133,15 +133,7 @@ class ServerSettings {
 
     // remove uninitialized methods
     // OpenID
-    if (this.authActiveAuthMethods.includes('openid') && (
-      !this.authOpenIDIssuerURL ||
-      !this.authOpenIDAuthorizationURL ||
-      !this.authOpenIDTokenURL ||
-      !this.authOpenIDUserInfoURL ||
-      !this.authOpenIDJwksURL ||
-      !this.authOpenIDClientID ||
-      !this.authOpenIDClientSecret
-    )) {
+    if (this.authActiveAuthMethods.includes('openid') && !this.isOpenIDAuthSettingsValid) {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
     }
 
@@ -233,6 +225,19 @@ class ServerSettings {
 
   get supportedAuthMethods() {
     return ['local', 'openid']
+  }
+
+  /**
+   * Auth settings required for openid to be valid
+   */
+  get isOpenIDAuthSettingsValid() {
+    return this.authOpenIDIssuerURL &&
+      this.authOpenIDAuthorizationURL &&
+      this.authOpenIDTokenURL &&
+      this.authOpenIDUserInfoURL &&
+      this.authOpenIDJwksURL &&
+      this.authOpenIDClientID &&
+      this.authOpenIDClientSecret
   }
 
   get authenticationSettings() {

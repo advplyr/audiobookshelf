@@ -556,10 +556,10 @@ class MiscController {
     switch (type) {
       case 'add':
         this.watcher.onFileAdded(libraryId, path)
-        break;
+        break
       case 'unlink':
         this.watcher.onFileRemoved(libraryId, path)
-        break;
+        break
       case 'rename':
         const oldPath = req.body.oldPath
         if (!oldPath) {
@@ -567,7 +567,7 @@ class MiscController {
           return res.sendStatus(400)
         }
         this.watcher.onFileRename(libraryId, oldPath, path)
-        break;
+        break
       default:
         Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
         return res.sendStatus(400)
@@ -670,6 +670,8 @@ class MiscController {
     }
 
     if (hasUpdates) {
+      await Database.updateServerSettings()
+
       // Use/unuse auth methods
       Database.serverSettings.supportedAuthMethods.forEach((authMethod) => {
         if (originalAuthMethods.includes(authMethod) && !Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
@@ -682,8 +684,6 @@ class MiscController {
           this.auth.useAuthStrategy(authMethod)
         }
       })
-
-      await Database.updateServerSettings()
     }
 
     res.json({
