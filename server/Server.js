@@ -5,7 +5,7 @@ const http = require('http')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
-const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser")
 
 const { version } = require('../package.json')
 
@@ -132,6 +132,30 @@ class Server {
 
     const app = express()
 
+    /**
+     * @temporary
+     * This is necessary for the ebook API endpoint in the mobile apps
+     * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
+     * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+     * @see https://ionicframework.com/docs/troubleshooting/cors
+     */
+    app.use((req, res, next) => {
+      if (req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
+        const allowedOrigins = ['capacitor://localhost', 'http://localhost']
+        if (allowedOrigins.some(o => o === req.get('origin'))) {
+          res.header('Access-Control-Allow-Origin', req.get('origin'))
+          res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
+          res.header('Access-Control-Allow-Headers', '*')
+          res.header('Access-Control-Allow-Credentials', true)
+          if (req.method === 'OPTIONS') {
+            return res.sendStatus(200)
+          }
+        }
+      }
+
+      next()
+    })
+
     // parse cookies in requests
     app.use(cookieParser())
     // enable express-session
@@ -163,7 +187,7 @@ class Server {
       useTempFiles: true,
       tempFileDir: Path.join(global.MetadataPath, 'tmp')
     }))
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
     router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
@@ -173,7 +197,7 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    router.use('/api', Auth.cors, this.authMiddleware.bind(this), this.apiRouter.router)
+    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
 
     // RSS Feed temp route
