@@ -282,8 +282,9 @@ class Auth {
         // We need to call the client manually, because the strategy does not support forwarding the code challenge
         //    for API or mobile clients
         const oidcStrategy = passport._strategy('openid-client')
-        const protocol = req.secure ? 'https' : 'http'
+        const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
         oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
+        Logger.debug(`[Auth] Set oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
         const client = oidcStrategy._client
         const sessionKey = oidcStrategy._key
 
