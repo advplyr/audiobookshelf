@@ -187,7 +187,7 @@ class Auth {
    * @param {import('express').Response} res
    */
   paramsToCookies(req, res) {
-    if (req.query.isRest?.toLowerCase() == "true") {
+    if (req.query.isRest?.toLowerCase() == 'true') {
       // store the isRest flag to the is_rest cookie 
       res.cookie('is_rest', req.query.isRest.toLowerCase(), {
         maxAge: 120000, // 2 min
@@ -195,7 +195,7 @@ class Auth {
       })
     } else {
       // no isRest-flag set -> set is_rest cookie to false
-      res.cookie('is_rest', "false", {
+      res.cookie('is_rest', 'false', {
         maxAge: 120000, // 2 min
         httpOnly: true
       })
@@ -323,7 +323,8 @@ class Auth {
 
         req.session[sessionKey] = {
           ...req.session[sessionKey],
-          ...pick(params, 'nonce', 'state', 'max_age', 'response_type')
+          ...pick(params, 'nonce', 'state', 'max_age', 'response_type'),
+          mobile: req.query.isRest?.toLowerCase() === 'true' // Used in the abs callback later
         }
 
         // Now get the URL to direct to
