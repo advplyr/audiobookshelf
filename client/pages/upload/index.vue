@@ -18,7 +18,7 @@
         <ui-toggle-switch v-model="fetchMetadata.enabled" />
         <p class="pl-4 text-base">{{ $strings.LabelAutoFetchMetadata }}</p>
         <div class="flex-grow ml-4">
-          <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" :disabled="!fetchMetadata.enabled" />
+          <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" :disabled="!canFetchMetadata" />
         </div>
       </div>
 
