@@ -8,6 +8,12 @@
       <span class="text-base text-white text-opacity-80 font-mono material-icons">close</span>
     </div>
 
+    <div v-if="!isPodcast"
+      class="w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer"
+      @click="fetchMetadata">
+      <span class="text-base text-white text-opacity-80 font-mono material-icons">refresh</span>
+    </div>
+
     <template v-if="!uploadSuccess && !uploadFailed">
       <widgets-alert v-if="error" type="error">
         <p class="text-base">{{ error }}</p>
@@ -48,8 +54,8 @@
       <p class="text-base">{{ $strings.MessageUploaderItemFailed }}</p>
     </widgets-alert>
 
-    <div v-if="isUploading" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
-      <ui-loading-indicator :text="$strings.MessageUploading" />
+    <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
+      <ui-loading-indicator :text="nonInteractionLabel" />
     </div>
   </div>
 </template>
@@ -61,10 +67,11 @@ export default {
   props: {
     item: {
       type: Object,
-      default: () => {}
+      default: () => { }
     },
     mediaType: String,
-    processing: Boolean
+    processing: Boolean,
+    provider: String
   },
   data() {
     return {
@@ -76,7 +83,8 @@ export default {
       error: '',
       isUploading: false,
       uploadFailed: false,
-      uploadSuccess: false
+      uploadSuccess: false,
+      isFetchingMetadata: false
     }
   },
   computed: {
@@ -94,6 +102,16 @@ export default {
       } else {
         return this.itemData.title
       }
+    },
+    isNonInteractable() {
+      return this.isUploading || this.isFetchingMetadata
+    },
+    nonInteractionLabel() {
+      if (this.isUploading) {
+        return this.$strings.MessageUploading
+      } else if (this.isFetchingMetadata) {
+        return this.$strings.LabelFetchingMetadata
+      }
     }
   },
   methods: {
@@ -104,6 +122,30 @@ export default {
     },
     titleUpdated() {
       this.error = ''
+    },
+    async fetchMetadata() {
+      if (!this.itemData.title.trim().length) {
+        return
+      }
+
+      this.isFetchingMetadata = true
+
+      try {
+        const searchQueryString = `title=${this.itemData.title}&author=${this.itemData.author}&provider=${this.provider}`
+        const [bestCandidate, ..._rest] = await this.$axios.$get(`/api/search/books?${searchQueryString}`)
+
+        this.itemData = {
+          ...this.itemData,
+          title: bestCandidate?.title,
+          author: bestCandidate?.author,
+          series: (bestCandidate?.series || [])[0]?.series
+        }
+      } catch (e) {
+        console.error('Failed', e)
+        // TODO: do something with the error?
+      } finally {
+        this.isFetchingMetadata = false
+      }
     },
     getData() {
       if (!this.itemData.title) {
