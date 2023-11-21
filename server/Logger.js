@@ -11,7 +11,7 @@ class Logger {
   }
 
   get timestamp() {
-    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS')
   }
 
   get levelString() {

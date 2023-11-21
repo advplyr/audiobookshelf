@@ -15,7 +15,9 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
-    "deploy-linux": "node deploy/linux"
+    "deploy-linux": "node deploy/linux",
+    "test": "mocha",
+    "coverage": "nyc mocha"
   },
   "bin": "prod.js",
   "pkg": {
@@ -28,15 +30,23 @@
       "server/**/*.js"
     ]
   },
+  "mocha": {
+    "recursive": true
+  },
   "author": "advplyr",
   "license": "GPL-3.0",
   "dependencies": {
     "axios": "^0.27.2",
+    "cookie-parser": "^1.4.6",
     "express": "^4.17.1",
+    "express-session": "^1.17.3",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "node-tone": "^1.0.1",
     "nodemailer": "^6.9.2",
+    "openid-client": "^5.6.1",
+    "passport": "^0.6.0",
+    "passport-jwt": "^4.0.1",
     "sequelize": "^6.32.1",
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
@@ -44,6 +54,10 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "nodemon": "^2.0.20",
+    "nyc": "^15.1.0",
+    "sinon": "^17.0.1"
   }
 }

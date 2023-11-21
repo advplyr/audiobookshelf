@@ -35,6 +35,7 @@ const Series = require('../objects/entities/Series')
 
 class ApiRouter {
   constructor(Server) {
+    /** @type {import('../Auth')} */
     this.auth = Server.auth
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
@@ -309,6 +310,8 @@ class ApiRouter {
     this.router.post('/genres/rename', MiscController.renameGenre.bind(this))
     this.router.delete('/genres/:genre', MiscController.deleteGenre.bind(this))
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
+    this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
+    this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
   }
 
