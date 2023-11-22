@@ -66,7 +66,7 @@ export const getters = {
 
 export const actions = {
   updateServerSettings({ commit }, payload) {
-    var updatePayload = {
+    const updatePayload = {
       ...payload
     }
     return this.$axios.$patch('/api/settings', updatePayload).then((result) => {
