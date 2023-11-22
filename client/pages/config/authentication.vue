@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="authentication-settings">
     <app-settings-content :header-text="$strings.HeaderAuthentication">
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
@@ -52,13 +52,13 @@
 
             <div class="flex items-center py-4 px-1">
               <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
-              <p id="auto-redirect-toggle" class="pl-4">Auto Launch</p>
-              <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the login page</p>
+              <p id="auto-redirect-toggle" class="pl-4 whitespace-nowrap">Auto Launch</p>
+              <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the login page (manual override path <code>/login?autoLaunch=0</code>)</p>
             </div>
 
             <div class="flex items-center py-4 px-1">
               <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
-              <p id="auto-register-toggle" class="pl-4">Auto Register</p>
+              <p id="auto-register-toggle" class="pl-4 whitespace-nowrap">Auto Register</p>
               <p class="pl-4 text-sm text-gray-300">Automatically create new users after logging in</p>
             </div>
           </div>
@@ -227,3 +227,13 @@ export default {
 }
 </script>
 
+<style>
+#authentication-settings code {
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background-color: rgb(82, 82, 82);
+  color: white;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+</style>
