@@ -34,11 +34,12 @@ const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
-const { measureMiddleware } = require('./utils/timing')
 
 //Import the main Passport and Express-Session library
 const passport = require('passport')
 const expressSession = require('express-session')
+
+const { measureMiddleware } = require('./utils/timing')
 
 
 class Server {
@@ -185,7 +186,6 @@ class Server {
 
     this.server = http.createServer(app)
 
-    router.use(measureMiddleware)
     router.use(fileUpload({
       defCharset: 'utf8',
       defParamCharset: 'utf8',
