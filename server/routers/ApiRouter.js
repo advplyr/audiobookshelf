@@ -32,7 +32,6 @@ const MiscController = require('../controllers/MiscController')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
-const { measureMiddleware } = require('../utils/timing')
 
 class ApiRouter {
   constructor(Server) {
@@ -57,32 +56,32 @@ class ApiRouter {
   }
 
   init() {
-    const cacheMiddleware = this.apiCacheManager.middleware
     //
     // Library Routes
     //
+    this.router.get(/^\/libraries/, this.apiCacheManager.middleware)
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
-    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.findOne.bind(this))
+    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
-    this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getLibraryItems.bind(this))
+    this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
-    this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getEpisodeDownloadQueue.bind(this))
-    this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getAllSeriesForLibrary.bind(this))
+    this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
+    this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
-    this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getCollectionsForLibrary.bind(this))
-    this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getUserPlaylistsForLibrary.bind(this))
-    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getUserPersonalizedShelves.bind(this))
-    this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getLibraryFilterData.bind(this))
-    this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.search.bind(this))
+    this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
+    this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
+    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
+    this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
+    this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
-    this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getAuthors.bind(this))
-    this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.getNarrators.bind(this))
+    this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
+    this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), LibraryController.getNarrators.bind(this))
     this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.updateNarrator.bind(this))
     this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.removeNarrator.bind(this))
-    this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), cacheMiddleware, LibraryController.matchAll.bind(this))
+    this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
     this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
