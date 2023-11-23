@@ -39,9 +39,6 @@ const LibraryScanner = require('./scanner/LibraryScanner')
 const passport = require('passport')
 const expressSession = require('express-session')
 
-const { measureMiddleware } = require('./utils/timing')
-
-
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT

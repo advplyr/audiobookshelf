@@ -1,7 +1,6 @@
 const { performance } = require('perf_hooks')
 const Logger = require('../Logger')
 
-
 async function measure(tag, func) {
   const start = performance.now()
   const result = await func()
