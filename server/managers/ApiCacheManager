@@ -3,12 +3,16 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 
 class ApiCacheManager {
-  constructor(options = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: item => item.length }) {
-    this.options = options
+
+  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: item => item.length }
+  defaultTtlOptions = { ttl: 30 * 60 * 1000 }
+
+  constructor(cache = new LRUCache(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
+    this.cache = cache
+    this.ttlOptions = ttlOptions
   }
 
   init(database = Database) {
-    this.cache = new LRUCache(this.options)
     let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy']
     hooks.forEach(hook => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
   }
@@ -23,23 +27,22 @@ class ApiCacheManager {
       const key = { user: req.user.username, url: req.url }
       const stringifiedKey = JSON.stringify(key)
       Logger.debug(`[ApiCacheManager] count: ${this.cache.size} size: ${this.cache.calculatedSize}`)
-      Logger.debug(`[ApiCacheManager] Cache key: ${stringifiedKey}`)
       const cached = this.cache.get(stringifiedKey)
       if (cached) {
         Logger.debug(`[ApiCacheManager] Cache hit: ${stringifiedKey}`)
         res.send(cached)
         return
       }
-      res.sendResponse = res.send
+      res.originalSend = res.send
       res.send = (body) => {
         Logger.debug(`[ApiCacheManager] Cache miss: ${stringifiedKey}`)
         if (key.url.search(/^\/libraries\/.*?\/personalized/) !== -1) {
-          Logger.debug(`[ApiCacheManager] Caching personalized with 30 minues TTL`)
-          this.cache.set(stringifiedKey, body, { ttl: 30 * 60 * 1000 })
+          Logger.debug(`[ApiCacheManager] Caching with ${this.ttlOptions.ttl} ms TTL`)
+          this.cache.set(stringifiedKey, body, this.ttlOptions)
         } else {
           this.cache.set(stringifiedKey, body)
         }
-        res.sendResponse(body)
+        res.originalSend(body)
       }
       next()
     }
