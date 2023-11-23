@@ -566,6 +566,69 @@ class Auth {
       Source: global.Source
     }
   }
+
+  /**
+   * 
+   * @param {string} password 
+   * @param {*} user 
+   * @returns {boolean}
+   */
+  comparePassword(password, user) {
+    if (user.type === 'root' && !password && !user.pash) return true
+    if (!password || !user.pash) return false
+    return bcrypt.compare(password, user.pash)
+  }
+
+  /**
+   * User changes their password from request
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async userChangePassword(req, res) {
+    let { password, newPassword } = req.body
+    newPassword = newPassword || ''
+    const matchingUser = req.user
+
+    // Only root can have an empty password
+    if (matchingUser.type !== 'root' && !newPassword) {
+      return res.json({
+        error: 'Invalid new password - Only root can have an empty password'
+      })
+    }
+
+    // Check password match
+    const compare = await this.comparePassword(password, matchingUser)
+    if (!compare) {
+      return res.json({
+        error: 'Invalid password'
+      })
+    }
+
+    let pw = ''
+    if (newPassword) {
+      pw = await this.hashPass(newPassword)
+      if (!pw) {
+        return res.json({
+          error: 'Hash failed'
+        })
+      }
+    }
+
+    matchingUser.pash = pw
+
+    const success = await Database.updateUser(matchingUser)
+    if (success) {
+      Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
+      res.json({
+        success: true
+      })
+    } else {
+      res.json({
+        error: 'Unknown error'
+      })
+    }
+  }
 }
 
 module.exports = Auth
