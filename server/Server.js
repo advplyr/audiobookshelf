@@ -140,11 +140,13 @@ class Server {
      * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
      * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
      * @see https://ionicframework.com/docs/troubleshooting/cors
+     * 
+     * Running in development allows cors to allow testing the mobile apps in the browser 
      */
     app.use((req, res, next) => {
-      if (req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
+      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
-        if (allowedOrigins.some(o => o === req.get('origin'))) {
+        if (Logger.isDev || allowedOrigins.some(o => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
           res.header('Access-Control-Allow-Headers', '*')
