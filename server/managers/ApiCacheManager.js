@@ -4,7 +4,7 @@ const Database = require('../Database')
 
 class ApiCacheManager {
 
-  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: item => item.length }
+  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: item => (item.body.length + JSON.stringify(item.headers).length) }
   defaultTtlOptions = { ttl: 30 * 60 * 1000 }
 
   constructor(cache = new LRUCache(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
@@ -30,17 +30,20 @@ class ApiCacheManager {
       const cached = this.cache.get(stringifiedKey)
       if (cached) {
         Logger.debug(`[ApiCacheManager] Cache hit: ${stringifiedKey}`)
-        res.send(cached)
+        res.set(cached.headers)
+        res.status(cached.statusCode)
+        res.send(cached.body)
         return
       }
       res.originalSend = res.send
       res.send = (body) => {
         Logger.debug(`[ApiCacheManager] Cache miss: ${stringifiedKey}`)
+        const cached = { body, headers: res.getHeaders(), statusCode: res.statusCode }
         if (key.url.search(/^\/libraries\/.*?\/personalized/) !== -1) {
           Logger.debug(`[ApiCacheManager] Caching with ${this.ttlOptions.ttl} ms TTL`)
-          this.cache.set(stringifiedKey, body, this.ttlOptions)
+          this.cache.set(stringifiedKey, cached, this.ttlOptions)
         } else {
-          this.cache.set(stringifiedKey, body)
+          this.cache.set(stringifiedKey, cached)
         }
         res.originalSend(body)
       }
