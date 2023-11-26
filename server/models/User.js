@@ -99,11 +99,13 @@ class User extends Model {
    * Update User from old user model
    * 
    * @param {oldUser} oldUser 
+   * @param {boolean} [hooks=true] Run before / after bulk update hooks?
    * @returns {Promise<boolean>}
    */
-  static updateFromOld(oldUser) {
+  static updateFromOld(oldUser, hooks = true) {
     const user = this.getFromOld(oldUser)
     return this.update(user, {
+      hooks: !!hooks,
       where: {
         id: user.id
       }
