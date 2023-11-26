@@ -106,7 +106,7 @@ describe('parseNfoMetadata', () => {
   it('parses description', () => {
     const nfoText = 'Book Description\n=========\nThis is a book.\n It\'s good'
     const result = parseNfoMetadata(nfoText)
-    expect(result.description).to.equal('This is a book.\n It\'s good\n')
+    expect(result.description).to.equal('This is a book.\n It\'s good')
   })
 
   it('no value', () => {
