@@ -60,7 +60,7 @@ function parseNfoMetadata(nfoText) {
               metadata.publishedYear = year
             }
           }
-          break;
+          break
         case 'position in series':
           metadata.sequence = value
           break
@@ -76,19 +76,25 @@ function parseNfoMetadata(nfoText) {
         case 'asin':
           metadata.asin = value
           break
-        case 'isbn': 
-        case 'isbn-10': 
-        case 'isbn-13': 
+        case 'isbn':
+        case 'isbn-10':
+        case 'isbn-13':
           metadata.isbn = value
           break
-      }  
+      }
     }
   })
+
+  // Trim leading/trailing whitespace for description
+  if (metadata.description) {
+    metadata.description = metadata.description.trim()
+  }
+
   return metadata
 }
 module.exports = { parseNfoMetadata }
 
 function extractYear(str) {
   const match = str.match(/\d{4}/g)
-  return match ? match[match.length-1] : null
+  return match ? match[match.length - 1] : null
 }
