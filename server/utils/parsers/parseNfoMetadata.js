@@ -32,20 +32,20 @@ function parseNfoMetadata(nfoText) {
           }
           break
         case 'author':
-          metadata.authors = value.split(/\s*,\s*/)
+          metadata.authors = value.split(/\s*,\s*/).filter(v => v)
           break
         case 'narrator':
         case 'read by':
-          metadata.narrators = value.split(/\s*,\s*/)
+          metadata.narrators = value.split(/\s*,\s*/).filter(v => v)
           break
         case 'series name':
           metadata.series = value
           break
         case 'genre':
-          metadata.genres = value.split(/\s*,\s*/)
+          metadata.genres = value.split(/\s*,\s*/).filter(v => v)
           break
         case 'tags':
-          metadata.tags = value.split(/\s*,\s*/)
+          metadata.tags = value.split(/\s*,\s*/).filter(v => v)
           break
         case 'copyright':
         case 'audible.com release':
