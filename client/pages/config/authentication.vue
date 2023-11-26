@@ -1,16 +1,16 @@
 <template>
-  <div>
+  <div id="authentication-settings">
     <app-settings-content :header-text="$strings.HeaderAuthentication">
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
           <ui-checkbox v-model="enableLocalAuth" checkbox-bg="bg" />
-          <p class="text-lg pl-4">Password Authentication</p>
+          <p class="text-lg pl-4">{{ $strings.HeaderPasswordAuthentication }}</p>
         </div>
       </div>
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
           <ui-checkbox v-model="enableOpenIDAuth" checkbox-bg="bg" />
-          <p class="text-lg pl-4">OpenID Connect Authentication</p>
+          <p class="text-lg pl-4">{{ $strings.HeaderOpenIDConnectAuthentication }}</p>
         </div>
 
         <transition name="slide">
@@ -41,25 +41,25 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
-            <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="'Button Text'" class="mb-2" />
+            <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
             <div class="flex items-center pt-1 mb-2">
               <div class="w-44">
-                <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" label="Match existing users by" :disabled="savingSettings" />
+                <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" :label="$strings.LabelMatchExistingUsersBy" :disabled="savingSettings" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5">Used for connecting existing users. Once connected, users will be matched by a unique id from your SSO provider</p>
+              <p class="pl-4 text-sm text-gray-300 mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
             </div>
 
             <div class="flex items-center py-4 px-1">
               <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
-              <p id="auto-redirect-toggle" class="pl-4">Auto Launch</p>
-              <p class="pl-4 text-sm text-gray-300">Redirect to the auth provider automatically when navigating to the login page</p>
+              <p id="auto-redirect-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoLaunch }}</p>
+              <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelAutoLaunchDescription" />
             </div>
 
             <div class="flex items-center py-4 px-1">
               <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
-              <p id="auto-register-toggle" class="pl-4">Auto Register</p>
-              <p class="pl-4 text-sm text-gray-300">Automatically create new users after logging in</p>
+              <p id="auto-register-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoRegister }}</p>
+              <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
             </div>
           </div>
         </transition>
@@ -227,3 +227,13 @@ export default {
 }
 </script>
 
+<style>
+#authentication-settings code {
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background-color: rgb(82, 82, 82);
+  color: white;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+</style>
