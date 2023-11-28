@@ -65,8 +65,10 @@
 
 <script>
 import Path from 'path'
+import apiRequestHelpers from '@/mixins/apiRequestHelpers'
 
 export default {
+  mixins: [apiRequestHelpers],
   props: {
     item: {
       type: Object,
@@ -132,27 +134,36 @@ export default {
       }
 
       this.isFetchingMetadata = true
+      this.error = ''
 
       try {
-        const searchQueryString = `title=${this.itemData.title}&author=${this.itemData.author}&provider=${this.provider}`
+        const searchQueryString = this.buildQuerystring({
+          title: this.itemData.title,
+          author: this.itemData.author,
+          provider: this.provider
+        })
         const [bestCandidate, ..._rest] = await this.$axios.$get(`/api/search/books?${searchQueryString}`)
 
-        this.itemData = {
-          ...this.itemData,
-          title: bestCandidate?.title,
-          author: bestCandidate?.author,
-          series: (bestCandidate?.series || [])[0]?.series
+        if (bestCandidate) {
+          this.itemData = {
+            ...this.itemData,
+            title: bestCandidate?.title,
+            author: bestCandidate?.author,
+            series: (bestCandidate?.series || [])[0]?.series
+          }
+        } else {
+          this.error = this.$strings.ErrorUploadFetchMetadataNoResults
         }
       } catch (e) {
         console.error('Failed', e)
-        // TODO: do something with the error?
+        this.error = this.$strings.ErrorUploadFetchMetadataAPI
       } finally {
         this.isFetchingMetadata = false
       }
     },
     getData() {
       if (!this.itemData.title) {
-        this.error = 'Must have a title'
+        this.error = this.$strings.ErrorUploadLacksTitle
         return null
       }
       this.error = ''
