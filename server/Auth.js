@@ -363,10 +363,13 @@ class Auth {
         req.session[sessionKey].code_verifier = req.query.code_verifier
       }
 
-      function handleAuthError(isMobile, errorCode, errorMessage, logMessage, logMessageDetail) {
+      function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
         Logger.error(logMessage)
-        if (logMessageDetail) { 
-          Logger.debug(logMessageDetail.toString())
+        if (response) {
+          // Depending on the error, it can also have a body
+          // We also log the request header the passport plugin sents for the URL
+          const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
+          Logger.debug(header + '\n' + response.body?.toString())
         }
 
         if (isMobile) {
@@ -380,13 +383,12 @@ class Auth {
         return (err, user, info) => {
           const isMobile = req.session[sessionKey]?.mobile === true
           if (err) {
-            return handleAuthError(isMobile, 500, 'Error in callback', `[Auth] Error in openid callback - ${err}`, err?.response?.body)
+            return handleAuthError(isMobile, 500, 'Error in callback', `[Auth] Error in openid callback - ${err}`, err?.response)
           }
 
           if (!user) {
             // Info usually contains the error message from the SSO provider
-            // Depending on the error, it can also have a body
-            return handleAuthError(isMobile, 401, 'Unauthorized', `[Auth] No user in openid callback - ${info}`, info?.response?.body)
+            return handleAuthError(isMobile, 401, 'Unauthorized', `[Auth] No user in openid callback - ${info}`, info?.response)
           }
         
           req.logIn(user, (loginError) => {
