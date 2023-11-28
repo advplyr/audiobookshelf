@@ -15,10 +15,16 @@
       </div>
 
       <div v-if="!selectedLibraryIsPodcast" class="flex items-center py-2">
-        <ui-toggle-switch v-model="fetchMetadata.enabled" />
-        <p class="pl-4 text-base">{{ $strings.LabelAutoFetchMetadata }}</p>
+        <label class="flex cursor-pointer">
+          <ui-toggle-switch v-model="fetchMetadata.enabled" />
+          <span class="pl-2 text-base">{{ $strings.LabelAutoFetchMetadata }}</span>
+        </label>
+        <ui-tooltip :text="$strings.LabelAutoFetchMetadataHelp">
+          <span class="pl-1 material-icons icon-text text-sm cursor-pointer">info_outlined</span>
+        </ui-tooltip>
+
         <div class="flex-grow ml-4">
-          <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" :disabled="!canFetchMetadata" />
+          <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" />
         </div>
       </div>
 
@@ -110,7 +116,7 @@ export default {
       uploadFinished: false,
       fetchMetadata: {
         enabled: false,
-        provider: 'google'
+        provider: null
       }
     }
   },
@@ -195,7 +201,7 @@ export default {
       }
     },
     setMetadataProvider() {
-      this.fetchMetadata.provider = this.$store.getters['libraries/getLibraryProvider'](this.selectedLibraryId)
+      this.fetchMetadata.provider ||= this.$store.getters['libraries/getLibraryProvider'](this.selectedLibraryId)
     },
     removeItem(item) {
       this.items = this.items.filter((b) => b.index !== item.index)

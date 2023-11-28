@@ -8,12 +8,6 @@
       <span class="text-base text-white text-opacity-80 font-mono material-icons">close</span>
     </div>
 
-    <div v-if="!isPodcast"
-      class="w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer"
-      @click="fetchMetadata">
-      <span class="text-base text-white text-opacity-80 font-mono material-icons">refresh</span>
-    </div>
-
     <template v-if="!uploadSuccess && !uploadFailed">
       <widgets-alert v-if="error" type="error">
         <p class="text-base">{{ error }}</p>
@@ -21,24 +15,33 @@
 
       <div class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="itemData.title" :disabled="processing" :label="$strings.LabelTitle" @input="titleUpdated" />
+          <ui-text-input-with-label v-model.trim="itemData.title" :disabled="processing" :label="$strings.LabelTitle" @input="titleUpdated" />
         </div>
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-if="!isPodcast" v-model="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
+          <div v-if="!isPodcast" class="flex items-end">
+            <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
+            <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
+              <div
+                class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer"
+                @click="fetchMetadata">
+                <span class="text-base text-white text-opacity-80 font-mono material-icons">sync</span>
+              </div>
+            </ui-tooltip>
+          </div>
           <div v-else class="w-full">
             <p class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></p>
-            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 38px" />
+            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" />
           </div>
         </div>
       </div>
       <div v-if="!isPodcast" class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="itemData.series" :disabled="processing" :label="$strings.LabelSeries" note="(optional)" />
+          <ui-text-input-with-label v-model.trim="itemData.series" :disabled="processing" :label="$strings.LabelSeries" note="(optional)" inputClass="h-10" />
         </div>
         <div class="w-1/2 px-2">
           <div class="w-full">
-            <p class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></p>
-            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 38px" />
+            <label class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></label>
+            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs h-10" />
           </div>
         </div>
       </div>
