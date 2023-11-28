@@ -9,7 +9,7 @@ class LibrarySettings {
     this.autoScanCronExpression = null
     this.audiobooksOnly = false
     this.hideSingleBookSeries = false // Do not show series that only have 1 book 
-    this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
+    this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
 
     if (settings) {
       this.construct(settings)
@@ -28,7 +28,7 @@ class LibrarySettings {
       this.metadataPrecedence = [...settings.metadataPrecedence]
     } else {
       // Added in v2.4.5
-      this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
+      this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
     }
   }
 

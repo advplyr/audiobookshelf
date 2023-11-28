@@ -32,12 +32,12 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
+const ApiCacheManager = require('./managers/ApiCacheManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
 const passport = require('passport')
 const expressSession = require('express-session')
-
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -73,6 +73,7 @@ class Server {
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
+    this.apiCacheManager = new ApiCacheManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -117,6 +118,7 @@ class Server {
 
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
+    this.apiCacheManager.init()
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -138,11 +140,13 @@ class Server {
      * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
      * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
      * @see https://ionicframework.com/docs/troubleshooting/cors
+     * 
+     * Running in development allows cors to allow testing the mobile apps in the browser 
      */
     app.use((req, res, next) => {
-      if (req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
+      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
-        if (allowedOrigins.some(o => o === req.get('origin'))) {
+        if (Logger.isDev || allowedOrigins.some(o => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
           res.header('Access-Control-Allow-Headers', '*')

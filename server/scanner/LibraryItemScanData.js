@@ -132,6 +132,11 @@ class LibraryItemScanData {
     return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.opf')
   }
 
+  /** @type {LibraryItem.LibraryFileObject} */
+  get metadataNfoLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.nfo')
+  }
+
   /**
    * 
    * @param {LibraryItem} existingLibraryItem 

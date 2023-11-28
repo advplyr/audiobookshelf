@@ -192,9 +192,9 @@ class SocketAuthority {
 
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
-    // Update user lastSeen
+    // Update user lastSeen without firing sequelize bulk update hooks
     user.lastSeen = Date.now()
-    await Database.updateUser(user)
+    await Database.userModel.updateFromOld(user, false)
 
     const initialPayload = {
       userId: client.user.id,
