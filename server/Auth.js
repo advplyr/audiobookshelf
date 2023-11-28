@@ -379,7 +379,7 @@ class Auth {
         }
       }
 
-      function passportCallback(req, res, next) { 
+      function passportCallback(req, res, next) {
         return (err, user, info) => {
           const isMobile = req.session[sessionKey]?.mobile === true
           if (err) {
@@ -390,7 +390,7 @@ class Auth {
             // Info usually contains the error message from the SSO provider
             return handleAuthError(isMobile, 401, 'Unauthorized', `[Auth] No data in openid callback - ${info}`, info?.response)
           }
-        
+
           req.logIn(user, (loginError) => {
             if (loginError) {
               return handleAuthError(isMobile, 500, 'Error during login', `[Auth] Error in openid callback: ${loginError}`)
