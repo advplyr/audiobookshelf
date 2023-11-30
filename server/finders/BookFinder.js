@@ -463,7 +463,7 @@ function cleanAuthorForCompares(author) {
   // remove middle initials
   cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
   // remove et al.
-  cleanAuthor = cleanAuthor.replace(/et al\.?/g, '')
+  cleanAuthor = cleanAuthor.replace(/ et al\.?(?= |$)/g, '')
   return cleanAuthor
 }
 
