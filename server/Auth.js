@@ -363,12 +363,50 @@ class Auth {
         req.session[sessionKey].code_verifier = req.query.code_verifier
       }
 
+      function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
+        Logger.error(logMessage)
+        if (response) {
+          // Depending on the error, it can also have a body
+          // We also log the request header the passport plugin sents for the URL
+          const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
+          Logger.debug(header + '\n' + response.body?.toString())
+        }
+
+        if (isMobile) {
+          return res.status(errorCode).send(errorMessage)
+        } else {
+          return res.redirect(`/login?error=${encodeURIComponent(errorMessage)}&autoLaunch=0`)
+        }
+      }
+
+      function passportCallback(req, res, next) {
+        return (err, user, info) => {
+          const isMobile = req.session[sessionKey]?.mobile === true
+          if (err) {
+            return handleAuthError(isMobile, 500, 'Error in callback', `[Auth] Error in openid callback - ${err}`, err?.response)
+          }
+
+          if (!user) {
+            // Info usually contains the error message from the SSO provider
+            return handleAuthError(isMobile, 401, 'Unauthorized', `[Auth] No data in openid callback - ${info}`, info?.response)
+          }
+
+          req.logIn(user, (loginError) => {
+            if (loginError) {
+              return handleAuthError(isMobile, 500, 'Error during login', `[Auth] Error in openid callback: ${loginError}`)
+            }
+            next()
+          })
+        }
+      }
+
+
       // While not required by the standard, the passport plugin re-sends the original redirect_uri in the token request
       // We need to set it correctly, as some SSO providers (e.g. keycloak) check that parameter when it is provided
       if (req.session[sessionKey].mobile) {
-        return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' })(req, res, next)
+        return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' }, passportCallback(req, res, next))(req, res, next)
       } else {
-        return passport.authenticate('openid-client', { failureRedirect: '/login?error=Unauthorized&autoLaunch=0' })(req, res, next)
+        return passport.authenticate('openid-client', passportCallback(req, res, next))(req, res, next)
       }
     },
       // on a successfull login: read the cookies and react like the client requested (callback or json)

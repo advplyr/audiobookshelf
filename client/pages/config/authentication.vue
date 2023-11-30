@@ -11,6 +11,11 @@
         <div class="flex items-center">
           <ui-checkbox v-model="enableOpenIDAuth" checkbox-bg="bg" />
           <p class="text-lg pl-4">{{ $strings.HeaderOpenIDConnectAuthentication }}</p>
+          <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+            <a href="https://www.audiobookshelf.org/guides/oidc_authentication" target="_blank" class="inline-flex">
+              <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+            </a>
+          </ui-tooltip>
         </div>
 
         <transition name="slide">

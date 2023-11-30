@@ -18,6 +18,7 @@ const BookFinder = require('../finders/BookFinder')
 
 const LibraryScan = require("./LibraryScan")
 const OpfFileScanner = require('./OpfFileScanner')
+const NfoFileScanner = require('./NfoFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
 
 /**
@@ -593,7 +594,7 @@ class BookScanner {
     }
 
     const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, libraryItemData, libraryScan, existingLibraryItemId)
-    const metadataPrecedence = librarySettings.metadataPrecedence || ['folderStructure', 'audioMetatags', 'txtFiles', 'opfFile', 'absMetadata']
+    const metadataPrecedence = librarySettings.metadataPrecedence || ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
     libraryScan.addLog(LogLevel.DEBUG, `"${bookMetadata.title}" Getting metadata with precedence [${metadataPrecedence.join(', ')}]`)
     for (const metadataSource of metadataPrecedence) {
       if (bookMetadataSourceHandler[metadataSource]) {
@@ -649,6 +650,14 @@ class BookScanner {
       AudioFileScanner.setBookMetadataFromAudioMetaTags(bookTitle, this.audioFiles, this.bookMetadata, this.libraryScan)
     }
 
+    /**
+     * Metadata from .nfo file
+     */
+    async nfoFile() {
+      if (!this.libraryItemData.metadataNfoLibraryFile) return
+      await NfoFileScanner.scanBookNfoFile(this.libraryItemData.metadataNfoLibraryFile, this.bookMetadata)
+    }
+    
     /**
      * Description from desc.txt and narrator from reader.txt
      */

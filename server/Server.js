@@ -231,6 +231,7 @@ class Server {
       '/library/:library/search',
       '/library/:library/bookshelf/:id?',
       '/library/:library/authors',
+      '/library/:library/narrators',
       '/library/:library/series/:id?',
       '/library/:library/podcast/search',
       '/library/:library/podcast/latest',
