@@ -1,5 +1,5 @@
 import Vue from "vue"
-import enUsStrings from '../strngs/en-us/strings.json'
+import enUsStrings from '../strings/en-us/strings.json'
 import { supplant } from './utils'
 
 const defaultCode = 'en-us'
