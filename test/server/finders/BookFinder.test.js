@@ -111,6 +111,7 @@ describe('AuthorCandidates', () => {
         ['adds recognized author if edit distance from candidate is small', 'nicolai gogol', ['nikolai gogol']],
         ['does not add candidate if edit distance from any recognized author is large', 'nikolai google', []],
         ['adds normalized recognized candidate (contains redundant spaces)', 'nikolai    gogol', ['nikolai gogol']],
+        ['adds normalized recognized candidate (et al removed)', 'nikolai gogol et al.', ['nikolai gogol']],
         ['adds normalized recognized candidate (normalized initials)', 'j.k. rowling', ['j. k. rowling']],
       ].forEach(([name, author, expected]) => it(name, async () => {
         authorCandidates.add(author)
