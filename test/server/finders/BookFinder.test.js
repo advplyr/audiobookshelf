@@ -35,6 +35,8 @@ describe('TitleCandidates', () => {
         ['adds candidate + variant, removing edition 2', 'anna karenina 4th ed.', ['anna karenina', 'anna karenina 4th ed.']],
         ['adds candidate + variant, removing fie type', 'anna karenina.mp3', ['anna karenina', 'anna karenina.mp3']],
         ['adds candidate + variant, removing "a novel"', 'anna karenina a novel', ['anna karenina', 'anna karenina a novel']],
+        ['adds candidate + variant, removing "abridged"', 'abridged anna karenina', ['anna karenina', 'abridged anna karenina']],
+        ['adds candidate + variant, removing "unabridged"', 'anna karenina unabridged', ['anna karenina', 'anna karenina unabridged']],
         ['adds candidate + variant, removing preceding/trailing numbers', '1 anna karenina 2', ['anna karenina', '1 anna karenina 2']],
         ['does not add empty candidate', '', []],
         ['does not add spaces-only candidate', '   ', []],

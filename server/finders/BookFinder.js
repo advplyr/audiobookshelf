@@ -167,6 +167,7 @@ class BookFinder {
         [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, ''], // Remove edition
         [/(^| |\.)(m4b|m4a|mp3)( |$)/g, ''],       // Remove file-type
         [/ a novel.*$/g, ''],                      // Remove "a novel"
+        [/(^| )(un)?abridged( |$)/g, ' '],         // Remove "unabridged/abridged"
         [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
       ]
 
