@@ -14,12 +14,12 @@
         </div>
       </div>
 
-      <div v-if="!selectedLibraryIsPodcast" class="flex items-center py-2">
-        <label class="flex cursor-pointer">
-          <ui-toggle-switch v-model="fetchMetadata.enabled" />
+      <div v-if="!selectedLibraryIsPodcast" class="flex items-center mb-6">
+        <label class="flex cursor-pointer pt-4">
+          <ui-toggle-switch v-model="fetchMetadata.enabled" class="inline-flex" />
           <span class="pl-2 text-base">{{ $strings.LabelAutoFetchMetadata }}</span>
         </label>
-        <ui-tooltip :text="$strings.LabelAutoFetchMetadataHelp">
+        <ui-tooltip :text="$strings.LabelAutoFetchMetadataHelp" class="inline-flex pt-4">
           <span class="pl-1 material-icons icon-text text-sm cursor-pointer">info_outlined</span>
         </ui-tooltip>
 
@@ -75,16 +75,7 @@
       </widgets-alert>
 
       <!-- Item Upload cards -->
-      <cards-item-upload-card 
-        v-for="item in items"
-        :key="item.index"
-        :ref="`itemCard-${item.index}`"
-        :media-type="selectedLibraryMediaType"
-        :item="item"
-        :provider="fetchMetadata.provider"
-        :processing="processing"
-        @remove="removeItem(item)"
-      />
+      <cards-item-upload-card v-for="item in items" :key="item.index" :ref="`itemCard-${item.index}`" :media-type="selectedLibraryMediaType" :item="item" :provider="fetchMetadata.provider" :processing="processing" @remove="removeItem(item)" />
 
       <!-- Upload/Reset btns -->
       <div v-show="items.length" class="flex justify-end pb-8 pt-4">
@@ -307,8 +298,8 @@ export default {
       var form = new FormData()
       form.set('title', item.title)
       if (!this.selectedLibraryIsPodcast) {
-        form.set('author', item.author)
-        form.set('series', item.series)
+        form.set('author', item.author || '')
+        form.set('series', item.series || '')
       }
       form.set('library', this.selectedLibraryId)
       form.set('folder', this.selectedFolderId)
