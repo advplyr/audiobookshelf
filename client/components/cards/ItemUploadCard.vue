@@ -65,10 +65,8 @@
 
 <script>
 import Path from 'path'
-import apiRequestHelpers from '@/mixins/apiRequestHelpers'
 
 export default {
-  mixins: [apiRequestHelpers],
   props: {
     item: {
       type: Object,
@@ -137,7 +135,7 @@ export default {
       this.error = ''
 
       try {
-        const searchQueryString = this.buildQuerystring({
+        const searchQueryString = new URLSearchParams({
           title: this.itemData.title,
           author: this.itemData.author,
           provider: this.provider
@@ -147,9 +145,9 @@ export default {
         if (bestCandidate) {
           this.itemData = {
             ...this.itemData,
-            title: bestCandidate?.title,
-            author: bestCandidate?.author,
-            series: (bestCandidate?.series || [])[0]?.series
+            title: bestCandidate.title,
+            author: bestCandidate.author,
+            series: (bestCandidate.series || [])[0]?.series
           }
         } else {
           this.error = this.$strings.ErrorUploadFetchMetadataNoResults
