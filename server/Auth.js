@@ -542,13 +542,13 @@ class Auth {
     // Load the user given it's username
     const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
-    if (!user || !user.isActive) {
+    if (!user?.isActive) {
       done(null, null)
       return
     }
 
     // Check passwordless root user
-    if (user.type === 'root' && (!user.pash || user.pash === '')) {
+    if (user.type === 'root' && !user.pash) {
       if (password) {
         // deny login
         done(null, null)
@@ -556,6 +556,10 @@ class Auth {
       }
       // approve login
       done(null, user)
+      return
+    } else if (!user.pash) {
+      Logger.error(`[Auth] User "${user.username}"/"${user.type}" attempted to login without a password set`)
+      done(null, null)
       return
     }
 
