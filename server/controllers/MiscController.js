@@ -8,6 +8,7 @@ const Database = require('../Database')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
+const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
 
@@ -32,12 +33,9 @@ class MiscController {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
+
     const files = Object.values(req.files)
-    const title = req.body.title
-    const author = req.body.author
-    const series = req.body.series
-    const libraryId = req.body.library
-    const folderId = req.body.folder
+    const { title, author, series, folder: folderId, library: libraryId } = req.body
 
     const library = await Database.libraryModel.getOldById(libraryId)
     if (!library) {
@@ -52,43 +50,29 @@ class MiscController {
       return res.status(500).send(`Invalid post data`)
     }
 
-    // For setting permissions recursively
-    let outputDirectory = ''
-    let firstDirPath = ''
-
-    if (library.isPodcast) { // Podcasts only in 1 folder
-      outputDirectory = Path.join(folder.fullPath, title)
-      firstDirPath = outputDirectory
-    } else {
-      firstDirPath = Path.join(folder.fullPath, author)
-      if (series && author) {
-        outputDirectory = Path.join(folder.fullPath, author, series, title)
-      } else if (author) {
-        outputDirectory = Path.join(folder.fullPath, author, title)
-      } else {
-        outputDirectory = Path.join(folder.fullPath, title)
-      }
-    }
-
-    if (await fs.pathExists(outputDirectory)) {
-      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.status(500).send(`Directory "${outputDirectory}" already exists`)
-    }
+    // Podcasts should only be one folder deep
+    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+    // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
+    // before sanitizing all the directory parts to remove illegal chars and finally prepending
+    // the base folder path
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map(part => sanitizeFilename(part))
+    const outputDirectory = Path.join(...[folder.fullPath, ...cleanedOutputDirectoryParts])
 
     await fs.ensureDir(outputDirectory)
 
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
-    for (let i = 0; i < files.length; i++) {
-      var file = files[i]
+    for (const file of files) {
+      const path = Path.join(outputDirectory, sanitizeFilename(file.name))
 
-      var path = Path.join(outputDirectory, file.name)
-      await file.mv(path).then(() => {
-        return true
-      }).catch((error) => {
-        Logger.error('Failed to move file', path, error)
-        return false
-      })
+      await file.mv(path)
+        .then(() => {
+          return true
+        })
+        .catch((error) => {
+          Logger.error('Failed to move file', path, error)
+          return false
+        })
     }
 
     res.sendStatus(200)

@@ -98,13 +98,10 @@ export default {
       if (!this.itemData.title) return ''
       if (this.isPodcast) return this.itemData.title
 
-      if (this.itemData.series && this.itemData.author) {
-        return Path.join(this.itemData.author, this.itemData.series, this.itemData.title)
-      } else if (this.itemData.author) {
-        return Path.join(this.itemData.author, this.itemData.title)
-      } else {
-        return this.itemData.title
-      }
+      const outputPathParts = [this.itemData.author, this.itemData.series, this.itemData.title]
+      const cleanedOutputPathParts = outputPathParts.filter(Boolean).map(part => this.$sanitizeFilename(part))
+
+      return Path.join(...cleanedOutputPathParts)
     },
     isNonInteractable() {
       return this.isUploading || this.isFetchingMetadata
