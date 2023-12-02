@@ -5,7 +5,16 @@ class Logger {
   constructor() {
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
-    this.hideDevLogs = process.env.HIDE_DEV_LOGS === undefined ? !this.isDev : process.env.HIDE_DEV_LOGS === '1'
+
+    // Allow the user to override the log level if desired
+    if (process.env.LOG_LEVEL) {
+      this.logLevel = parseInt(LogLevel.strToLevel(process.env.LOG_LEVEL))
+    } else {
+      this.hideDevLogs = process.env.HIDE_DEV_LOGS === undefined
+        ? !this.isDev
+        : process.env.HIDE_DEV_LOGS === '1'
+    }
+
     this.socketListeners = []
 
     this.logManager = null

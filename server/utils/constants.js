@@ -23,7 +23,28 @@ module.exports.LogLevel = {
   WARN: 3,
   ERROR: 4,
   FATAL: 5,
-  NOTE: 6
+  NOTE: 6,
+
+  strToLevel(str) {
+    switch (str.toUpperCase()) {
+      case 'TRACE':
+        return this.TRACE
+      case 'DEBUG':
+        return this.DEBUG
+      case 'INFO':
+        return this.INFO
+      case 'WARN':
+        return this.WARN
+      case 'ERROR':
+        return this.ERROR
+      case 'FATAL':
+        return this.FATAL
+      case 'NOTE':
+        return this.NOTE
+      default:
+        return this.INFO
+    }
+  }
 }
 
 module.exports.PlayMethod = {
