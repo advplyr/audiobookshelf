@@ -359,7 +359,7 @@ class Auth {
           scope: 'openid profile email',
           response_type: 'code',
           code_challenge,
-          code_challenge_method,
+          code_challenge_method
         })
 
         // params (isRest, callback) to a cookie that will be send to the client
@@ -460,11 +460,8 @@ class Auth {
 
       // While not required by the standard, the passport plugin re-sends the original redirect_uri in the token request
       // We need to set it correctly, as some SSO providers (e.g. keycloak) check that parameter when it is provided
-      if (req.session[sessionKey].mobile) {
-        return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' }, passportCallback(req, res, next))(req, res, next)
-      } else {
-        return passport.authenticate('openid-client', passportCallback(req, res, next))(req, res, next)
-      }
+      // This is already done in the strategy in the route to /auth/openid using oidcStrategy._params.redirect_uri 
+      return passport.authenticate('openid-client', passportCallback(req, res, next))(req, res, next)
     },
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this))
