@@ -8,6 +8,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
+const e = require('express')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -15,6 +16,8 @@ const Logger = require('./Logger')
 class Auth {
 
   constructor() {
+    // Map of openId sessions indexed by oauth2 state-variable
+    this.openIdAuthSession = new Map()
   }
 
   /**
@@ -283,7 +286,26 @@ class Auth {
         //    for API or mobile clients
         const oidcStrategy = passport._strategy('openid-client')
         const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
-        oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
+
+        let redirect_uri = null
+
+        // The client wishes a different redirect_uri
+        // We will allow if it is in the whitelist, by saving it into this.openIdAuthSession and setting the redirect uri to /auth/openid/mobile-redirect
+        //    where we will handle the redirect to it
+        if (req.query.redirect_uri) {
+          // Check if the redirect_uri is in the whitelist
+          if (Database.serverSettings.authOpenIDMobileRedirectURIs.includes(req.query.redirect_uri) ||
+           (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
+            oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/mobile-redirect`).toString()
+            redirect_uri = req.query.redirect_uri
+          } else {
+            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri} - not in whitelist`)
+            return res.status(400).send('Invalid redirect_uri')
+          }
+        } else {
+          oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
+        }
+
         Logger.debug(`[Auth] Set oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
         const client = oidcStrategy._client
         const sessionKey = oidcStrategy._key
@@ -327,6 +349,10 @@ class Auth {
           mobile: req.query.isRest?.toLowerCase() === 'true' // Used in the abs callback later
         }
 
+        // We cannot save redirect_uri in the session, because it the mobile client uses browser instead of the API
+        //   for the request to mobile-redirect and as such the session is not shared
+        this.openIdAuthSession.set(params.state, { redirect_uri: redirect_uri })
+
         // Now get the URL to direct to
         const authorizationUrl = client.authorizationUrl({
           ...params,
@@ -343,6 +369,37 @@ class Auth {
         res.redirect(authorizationUrl)
       } catch (error) {
         Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
+        res.status(500).send('Internal Server Error')
+      }
+    })
+
+    // This will be the oauth2 callback route for mobile clients
+    // It will redirect to an app-link like audiobookshelf://oauth
+    router.get('/auth/openid/mobile-redirect', (req, res) => {
+      try {
+        // Extract the state parameter from the request
+        const { state, code } = req.query
+    
+        // Check if the state provided is in our list
+        if (!state || !this.openIdAuthSession.has(state)) {
+          Logger.error('[Auth] /auth/openid/mobile-redirect route: State parameter mismatch')
+          return res.status(400).send('State parameter mismatch')
+        }
+
+        let redirect_uri = this.openIdAuthSession.get(state).redirect_uri
+
+        if (!redirect_uri) {
+          Logger.error('[Auth] No redirect URI')
+          return res.status(400).send('No redirect URI')
+        }
+
+        this.openIdAuthSession.delete(state)
+
+        const redirectUri = `${redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
+        // Redirect to the overwrite URI saved in the map
+        res.redirect(redirectUri)
+      } catch (error) {
+        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}`)
         res.status(500).send('Internal Server Error')
       }
     })

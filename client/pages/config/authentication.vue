@@ -46,6 +46,9 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
+            <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
+            <p class="pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
+
             <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
             <div class="flex items-center pt-1 mb-2">
@@ -186,6 +189,25 @@ export default {
       if (!this.newAuthSettings.authOpenIDClientSecret) {
         this.$toast.error('Client Secret required')
         isValid = false
+      }
+
+      function isValidRedirectURI(uri) {
+        // Check for somestring://someother/string
+        const pattern = new RegExp('^\\w+://[\\w\\.-]+$', 'i')
+        return pattern.test(uri)
+      }
+
+      const uris = this.newAuthSettings.authOpenIDMobileRedirectURIs
+      if (uris.includes('*') && uris.length > 1) {
+        this.$toast.error('Mobile Redirect URIs: Asterisk (*) must be the only entry if used')
+        isValid = false
+      } else {
+        uris.forEach(uri => {
+          if (uri !== '*' && !isValidRedirectURI(uri)) {
+            this.$toast.error(`Mobile Redirect URIs: Invalid URI ${uri}`)
+            isValid = false
+          }
+        })
       }
       return isValid
     },

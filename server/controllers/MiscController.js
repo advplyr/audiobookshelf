@@ -629,6 +629,23 @@ class MiscController {
         } else {
           Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
         }
+      } else if (key === 'authOpenIDMobileRedirectURIs') {
+        function isValidRedirectURI(uri) {
+          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i');
+          return pattern.test(uri);
+        }
+
+        const uris = settingsUpdate[key]
+        if (!Array.isArray(uris) || 
+            (uris.includes('*') && uris.length > 1) || 
+            uris.some(uri => uri !== '*' && !isValidRedirectURI(uri))) {
+          Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
+          continue
+        }
+
+        // Update the URIs
+        Database.serverSettings[key] = uris
+        hasUpdates = true
       } else {
         const updatedValueType = typeof settingsUpdate[key]
         if (['authOpenIDAutoLaunch', 'authOpenIDAutoRegister'].includes(key)) {

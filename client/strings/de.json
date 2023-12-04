@@ -337,6 +337,8 @@
   "LabelMinute": "Minute",
   "LabelMissing": "Fehlend",
   "LabelMissingParts": "Fehlende Teile",
+  "LabelMobileRedirectURIs": "Erlaubte Weiterleitungs-URIs für die mobile App",
+  "LabelMobileRedirectURIsDescription": "Dies ist eine Whitelist gültiger Umleitungs-URIs für mobile Apps. Der Standardwert ist <code>audiobookshelf://oauth</code>, den Sie entfernen oder durch zusätzliche URIs für die Integration von Drittanbieter-Apps ergänzen können. Die Verwendung eines Sternchens (<code>*</code>) als alleiniger Eintrag erlaubt jede URI.",
   "LabelMore": "Mehr",
   "LabelMoreInfo": "Mehr Info",
   "LabelName": "Name",
