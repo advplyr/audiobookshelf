@@ -33,6 +33,7 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
+const BinaryManager = require('./managers/BinaryManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
@@ -74,6 +75,7 @@ class Server {
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
     this.apiCacheManager = new ApiCacheManager()
+    this.binaryManager = new BinaryManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -119,6 +121,7 @@ class Server {
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
     this.apiCacheManager.init()
+    await this.binaryManager.init()
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
