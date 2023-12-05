@@ -40,6 +40,7 @@
     "cookie-parser": "^1.4.6",
     "express": "^4.17.1",
     "express-session": "^1.17.3",
+    "ffbinaries": "^1.1.5",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "lru-cache": "^10.0.3",
