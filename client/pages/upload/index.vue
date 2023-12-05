@@ -14,6 +14,20 @@
         </div>
       </div>
 
+      <div v-if="!selectedLibraryIsPodcast" class="flex items-center mb-6">
+        <label class="flex cursor-pointer pt-4">
+          <ui-toggle-switch v-model="fetchMetadata.enabled" class="inline-flex" />
+          <span class="pl-2 text-base">{{ $strings.LabelAutoFetchMetadata }}</span>
+        </label>
+        <ui-tooltip :text="$strings.LabelAutoFetchMetadataHelp" class="inline-flex pt-4">
+          <span class="pl-1 material-icons icon-text text-sm cursor-pointer">info_outlined</span>
+        </ui-tooltip>
+
+        <div class="flex-grow ml-4">
+          <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" />
+        </div>
+      </div>
+
       <widgets-alert v-if="error" type="error">
         <p class="text-lg">{{ error }}</p>
       </widgets-alert>
@@ -61,9 +75,7 @@
       </widgets-alert>
 
       <!-- Item Upload cards -->
-      <template v-for="item in items">
-        <cards-item-upload-card :ref="`itemCard-${item.index}`" :key="item.index" :media-type="selectedLibraryMediaType" :item="item" :processing="processing" @remove="removeItem(item)" />
-      </template>
+      <cards-item-upload-card v-for="item in items" :key="item.index" :ref="`itemCard-${item.index}`" :media-type="selectedLibraryMediaType" :item="item" :provider="fetchMetadata.provider" :processing="processing" @remove="removeItem(item)" />
 
       <!-- Upload/Reset btns -->
       <div v-show="items.length" class="flex justify-end pb-8 pt-4">
@@ -92,13 +104,18 @@ export default {
       selectedLibraryId: null,
       selectedFolderId: null,
       processing: false,
-      uploadFinished: false
+      uploadFinished: false,
+      fetchMetadata: {
+        enabled: false,
+        provider: null
+      }
     }
   },
   watch: {
     selectedLibrary(newVal) {
       if (newVal && !this.selectedFolderId) {
         this.setDefaultFolder()
+        this.setMetadataProvider()
       }
     }
   },
@@ -133,6 +150,13 @@ export default {
     selectedLibraryIsPodcast() {
       return this.selectedLibraryMediaType === 'podcast'
     },
+    providers() {
+      if (this.selectedLibraryIsPodcast) return this.$store.state.scanners.podcastProviders
+      return this.$store.state.scanners.providers
+    },
+    canFetchMetadata() {
+      return !this.selectedLibraryIsPodcast && this.fetchMetadata.enabled
+    },
     selectedFolder() {
       if (!this.selectedLibrary) return null
       return this.selectedLibrary.folders.find((fold) => fold.id === this.selectedFolderId)
@@ -160,11 +184,15 @@ export default {
         }
       }
       this.setDefaultFolder()
+      this.setMetadataProvider()
     },
     setDefaultFolder() {
       if (!this.selectedFolderId && this.selectedLibrary && this.selectedLibrary.folders.length) {
         this.selectedFolderId = this.selectedLibrary.folders[0].id
       }
+    },
+    setMetadataProvider() {
+      this.fetchMetadata.provider ||= this.$store.getters['libraries/getLibraryProvider'](this.selectedLibraryId)
     },
     removeItem(item) {
       this.items = this.items.filter((b) => b.index !== item.index)
@@ -213,27 +241,49 @@ export default {
       var items = e.dataTransfer.items || []
 
       var itemResults = await this.uploadHelpers.getItemsFromDrop(items, this.selectedLibraryMediaType)
-      this.setResults(itemResults)
+      this.onItemsSelected(itemResults)
     },
     inputChanged(e) {
       if (!e.target || !e.target.files) return
       var _files = Array.from(e.target.files)
       if (_files && _files.length) {
         var itemResults = this.uploadHelpers.getItemsFromPicker(_files, this.selectedLibraryMediaType)
-        this.setResults(itemResults)
+        this.onItemsSelected(itemResults)
       }
     },
-    setResults(itemResults) {
+    onItemsSelected(itemResults) {
+      if (this.itemSelectionSuccessful(itemResults)) {
+        // setTimeout ensures the new item ref is attached before this method is called
+        setTimeout(this.attemptMetadataFetch, 0)
+      }
+    },
+    itemSelectionSuccessful(itemResults) {
+      console.log('Upload results', itemResults)
+
       if (itemResults.error) {
         this.error = itemResults.error
         this.items = []
         this.ignoredFiles = []
-      } else {
-        this.error = ''
-        this.items = itemResults.items
-        this.ignoredFiles = itemResults.ignoredFiles
+        return false
       }
-      console.log('Upload results', itemResults)
+
+      this.error = ''
+      this.items = itemResults.items
+      this.ignoredFiles = itemResults.ignoredFiles
+      return true
+    },
+    attemptMetadataFetch() {
+      if (!this.canFetchMetadata) {
+        return false
+      }
+
+      this.items.forEach((item) => {
+        let itemRef = this.$refs[`itemCard-${item.index}`]
+
+        if (itemRef?.length) {
+          itemRef[0].fetchMetadata(this.fetchMetadata.provider)
+        }
+      })
     },
     updateItemCardStatus(index, status) {
       var ref = this.$refs[`itemCard-${index}`]
@@ -248,8 +298,8 @@ export default {
       var form = new FormData()
       form.set('title', item.title)
       if (!this.selectedLibraryIsPodcast) {
-        form.set('author', item.author)
-        form.set('series', item.series)
+        form.set('author', item.author || '')
+        form.set('series', item.series || '')
       }
       form.set('library', this.selectedLibraryId)
       form.set('folder', this.selectedFolderId)
@@ -346,6 +396,8 @@ export default {
   },
   mounted() {
     this.selectedLibraryId = this.$store.state.libraries.currentLibraryId
+    this.setMetadataProvider()
+
     this.setDefaultFolder()
     window.addEventListener('dragenter', this.dragenter)
     window.addEventListener('dragleave', this.dragleave)

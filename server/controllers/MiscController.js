@@ -8,6 +8,7 @@ const Database = require('../Database')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
+const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
 
@@ -32,12 +33,9 @@ class MiscController {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
+
     const files = Object.values(req.files)
-    const title = req.body.title
-    const author = req.body.author
-    const series = req.body.series
-    const libraryId = req.body.library
-    const folderId = req.body.folder
+    const { title, author, series, folder: folderId, library: libraryId } = req.body
 
     const library = await Database.libraryModel.getOldById(libraryId)
     if (!library) {
@@ -52,43 +50,29 @@ class MiscController {
       return res.status(500).send(`Invalid post data`)
     }
 
-    // For setting permissions recursively
-    let outputDirectory = ''
-    let firstDirPath = ''
-
-    if (library.isPodcast) { // Podcasts only in 1 folder
-      outputDirectory = Path.join(folder.fullPath, title)
-      firstDirPath = outputDirectory
-    } else {
-      firstDirPath = Path.join(folder.fullPath, author)
-      if (series && author) {
-        outputDirectory = Path.join(folder.fullPath, author, series, title)
-      } else if (author) {
-        outputDirectory = Path.join(folder.fullPath, author, title)
-      } else {
-        outputDirectory = Path.join(folder.fullPath, title)
-      }
-    }
-
-    if (await fs.pathExists(outputDirectory)) {
-      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.status(500).send(`Directory "${outputDirectory}" already exists`)
-    }
+    // Podcasts should only be one folder deep
+    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+    // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
+    // before sanitizing all the directory parts to remove illegal chars and finally prepending
+    // the base folder path
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map(part => sanitizeFilename(part))
+    const outputDirectory = Path.join(...[folder.fullPath, ...cleanedOutputDirectoryParts])
 
     await fs.ensureDir(outputDirectory)
 
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
-    for (let i = 0; i < files.length; i++) {
-      var file = files[i]
+    for (const file of files) {
+      const path = Path.join(outputDirectory, sanitizeFilename(file.name))
 
-      var path = Path.join(outputDirectory, file.name)
-      await file.mv(path).then(() => {
-        return true
-      }).catch((error) => {
-        Logger.error('Failed to move file', path, error)
-        return false
-      })
+      await file.mv(path)
+        .then(() => {
+          return true
+        })
+        .catch((error) => {
+          Logger.error('Failed to move file', path, error)
+          return false
+        })
     }
 
     res.sendStatus(200)
@@ -119,8 +103,9 @@ class MiscController {
   /**
    * PATCH: /api/settings
    * Update server settings
-   * @param {*} req 
-   * @param {*} res 
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async updateServerSettings(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -128,7 +113,7 @@ class MiscController {
       return res.sendStatus(403)
     }
     const settingsUpdate = req.body
-    if (!settingsUpdate || !isObject(settingsUpdate)) {
+    if (!isObject(settingsUpdate)) {
       return res.status(400).send('Invalid settings update object')
     }
 
@@ -248,8 +233,8 @@ class MiscController {
    * POST: /api/authorize
    * Used to authorize an API token
    * 
-   * @param {*} req 
-   * @param {*} res 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
    */
   async authorize(req, res) {
     if (!req.user) {
@@ -555,10 +540,10 @@ class MiscController {
     switch (type) {
       case 'add':
         this.watcher.onFileAdded(libraryId, path)
-        break;
+        break
       case 'unlink':
         this.watcher.onFileRemoved(libraryId, path)
-        break;
+        break
       case 'rename':
         const oldPath = req.body.oldPath
         if (!oldPath) {
@@ -566,7 +551,7 @@ class MiscController {
           return res.sendStatus(400)
         }
         this.watcher.onFileRename(libraryId, oldPath, path)
-        break;
+        break
       default:
         Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
         return res.sendStatus(400)
@@ -588,6 +573,106 @@ class MiscController {
       Logger.warn(`[MiscController] Invalid cron expression ${expression}`, error.message)
       res.status(400).send(error.message)
     }
+  }
+
+  /**
+   * GET: api/auth-settings (admin only)
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  getAuthSettings(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
+      return res.sendStatus(403)
+    }
+    return res.json(Database.serverSettings.authenticationSettings)
+  }
+
+  /**
+   * PATCH: api/auth-settings
+   * @this import('../routers/ApiRouter')
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async updateAuthSettings(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to update auth settings`)
+      return res.sendStatus(403)
+    }
+
+    const settingsUpdate = req.body
+    if (!isObject(settingsUpdate)) {
+      return res.status(400).send('Invalid auth settings update object')
+    }
+
+    let hasUpdates = false
+
+    const currentAuthenticationSettings = Database.serverSettings.authenticationSettings
+    const originalAuthMethods = [...currentAuthenticationSettings.authActiveAuthMethods]
+
+    // TODO: Better validation of auth settings once auth settings are separated from server settings
+    for (const key in currentAuthenticationSettings) {
+      if (settingsUpdate[key] === undefined) continue
+
+      if (key === 'authActiveAuthMethods') {
+        let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
+        if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
+          updatedAuthMethods.sort()
+          currentAuthenticationSettings[key].sort()
+          if (updatedAuthMethods.join() !== currentAuthenticationSettings[key].join()) {
+            Logger.debug(`[MiscController] Updating auth settings key "authActiveAuthMethods" from "${currentAuthenticationSettings[key].join()}" to "${updatedAuthMethods.join()}"`)
+            Database.serverSettings[key] = updatedAuthMethods
+            hasUpdates = true
+          }
+        } else {
+          Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
+        }
+      } else {
+        const updatedValueType = typeof settingsUpdate[key]
+        if (['authOpenIDAutoLaunch', 'authOpenIDAutoRegister'].includes(key)) {
+          if (updatedValueType !== 'boolean') {
+            Logger.warn(`[MiscController] Invalid value for ${key}. Expected boolean`)
+            continue
+          }
+        } else if (settingsUpdate[key] !== null && updatedValueType !== 'string') {
+          Logger.warn(`[MiscController] Invalid value for ${key}. Expected string or null`)
+          continue
+        }
+        let updatedValue = settingsUpdate[key]
+        if (updatedValue === '') updatedValue = null
+        let currentValue = currentAuthenticationSettings[key]
+        if (currentValue === '') currentValue = null
+
+        if (updatedValue !== currentValue) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
+          Database.serverSettings[key] = updatedValue
+          hasUpdates = true
+        }
+      }
+    }
+
+    if (hasUpdates) {
+      await Database.updateServerSettings()
+
+      // Use/unuse auth methods
+      Database.serverSettings.supportedAuthMethods.forEach((authMethod) => {
+        if (originalAuthMethods.includes(authMethod) && !Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+          // Auth method has been removed
+          Logger.info(`[MiscController] Disabling active auth method "${authMethod}"`)
+          this.auth.unuseAuthStrategy(authMethod)
+        } else if (!originalAuthMethods.includes(authMethod) && Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+          // Auth method has been added
+          Logger.info(`[MiscController] Enabling active auth method "${authMethod}"`)
+          this.auth.useAuthStrategy(authMethod)
+        }
+      })
+    }
+
+    res.json({
+      serverSettings: Database.serverSettings.toJSONForBrowser()
+    })
   }
 }
 module.exports = new MiscController()

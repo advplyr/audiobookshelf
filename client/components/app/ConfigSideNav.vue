@@ -104,6 +104,11 @@ export default {
           id: 'config-rss-feeds',
           title: this.$strings.HeaderRSSFeeds,
           path: '/config/rss-feeds'
+        },
+        {
+          id: 'config-authentication',
+          title: this.$strings.HeaderAuthentication,
+          path: '/config/authentication'
         }
       ]
 

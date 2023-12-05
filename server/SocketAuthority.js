@@ -1,6 +1,7 @@
 const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
+const Auth = require('./Auth')
 
 class SocketAuthority {
   constructor() {
@@ -81,6 +82,7 @@ class SocketAuthority {
         methods: ["GET", "POST"]
       }
     })
+
     this.io.on('connection', (socket) => {
       this.clients[socket.id] = {
         id: socket.id,
@@ -144,14 +146,31 @@ class SocketAuthority {
     })
   }
 
-  // When setting up a socket connection the user needs to be associated with a socket id
-  //  for this the client will send a 'auth' event that includes the users API token
+  /**
+   * When setting up a socket connection the user needs to be associated with a socket id
+   * for this the client will send a 'auth' event that includes the users API token
+   * 
+   * @param {SocketIO.Socket} socket 
+   * @param {string} token JWT
+   */
   async authenticateSocket(socket, token) {
-    const user = await this.Server.auth.authenticateUser(token)
-    if (!user) {
+    // we don't use passport to authenticate the jwt we get over the socket connection.
+    // it's easier to directly verify/decode it.
+    const token_data = Auth.validateAccessToken(token)
+
+    if (!token_data?.userId) {
+      // Token invalid
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }
+    // get the user via the id from the decoded jwt.
+    const user = await Database.userModel.getUserByIdOrOldId(token_data.userId)
+    if (!user) {
+      // user not found
+      Logger.error('Cannot validate socket - invalid token')
+      return socket.emit('invalid_token')
+    }
+
     const client = this.clients[socket.id]
     if (!client) {
       Logger.error(`[SocketAuthority] Socket for user ${user.username} has no client`)
@@ -173,9 +192,9 @@ class SocketAuthority {
 
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
-    // Update user lastSeen
+    // Update user lastSeen without firing sequelize bulk update hooks
     user.lastSeen = Date.now()
-    await Database.updateUser(user)
+    await Database.userModel.updateFromOld(user, false)
 
     const initialPayload = {
       userId: client.user.id,

@@ -1,7 +1,9 @@
 const uuidv4 = require("uuid").v4
-const { DataTypes, Model, Op } = require('sequelize')
+const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
+const SocketAuthority = require('../SocketAuthority')
+const { DataTypes, Model } = sequelize
 
 class User extends Model {
   constructor(values, options) {
@@ -46,6 +48,12 @@ class User extends Model {
     return users.map(u => this.getOldUser(u))
   }
 
+  /**
+   * Get old user model from new
+   * 
+   * @param {Object} userExpanded 
+   * @returns {oldUser}
+   */
   static getOldUser(userExpanded) {
     const mediaProgress = userExpanded.mediaProgresses.map(mp => mp.getOldMediaProgress())
 
@@ -72,18 +80,32 @@ class User extends Model {
       createdAt: userExpanded.createdAt.valueOf(),
       permissions,
       librariesAccessible,
-      itemTagsSelected
+      itemTagsSelected,
+      authOpenIDSub: userExpanded.extraData?.authOpenIDSub || null
     })
   }
 
+  /**
+   * 
+   * @param {oldUser} oldUser 
+   * @returns {Promise<User>}
+   */
   static createFromOld(oldUser) {
     const user = this.getFromOld(oldUser)
     return this.create(user)
   }
 
-  static updateFromOld(oldUser) {
+  /**
+   * Update User from old user model
+   * 
+   * @param {oldUser} oldUser 
+   * @param {boolean} [hooks=true] Run before / after bulk update hooks?
+   * @returns {Promise<boolean>}
+   */
+  static updateFromOld(oldUser, hooks = true) {
     const user = this.getFromOld(oldUser)
     return this.update(user, {
+      hooks: !!hooks,
       where: {
         id: user.id
       }
@@ -93,7 +115,21 @@ class User extends Model {
     })
   }
 
+  /**
+   * Get new User model from old
+   * 
+   * @param {oldUser} oldUser 
+   * @returns {Object}
+   */
   static getFromOld(oldUser) {
+    const extraData = {
+      seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
+      oldUserId: oldUser.oldUserId
+    }
+    if (oldUser.authOpenIDSub) {
+      extraData.authOpenIDSub = oldUser.authOpenIDSub
+    }
+
     return {
       id: oldUser.id,
       username: oldUser.username,
@@ -103,10 +139,7 @@ class User extends Model {
       token: oldUser.token || null,
       isActive: !!oldUser.isActive,
       lastSeen: oldUser.lastSeen || null,
-      extraData: {
-        seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
-        oldUserId: oldUser.oldUserId
-      },
+      extraData,
       createdAt: oldUser.createdAt || Date.now(),
       permissions: {
         ...oldUser.permissions,
@@ -130,12 +163,12 @@ class User extends Model {
    * @param {string} username 
    * @param {string} pash 
    * @param {Auth} auth 
-   * @returns {oldUser}
+   * @returns {Promise<oldUser>}
    */
   static async createRootUser(username, pash, auth) {
     const userId = uuidv4()
 
-    const token = await auth.generateAccessToken({ userId, username })
+    const token = await auth.generateAccessToken({ id: userId, username })
 
     const newRoot = new oldUser({
       id: userId,
@@ -151,6 +184,38 @@ class User extends Model {
   }
 
   /**
+   * Create user from openid userinfo
+   * @param {Object} userinfo 
+   * @param {Auth} auth 
+   * @returns {Promise<oldUser>}
+   */
+  static async createUserFromOpenIdUserInfo(userinfo, auth) {
+    const userId = uuidv4()
+    // TODO: Ensure username is unique?
+    const username = userinfo.preferred_username || userinfo.name || userinfo.sub
+    const email = (userinfo.email && userinfo.email_verified) ? userinfo.email : null
+
+    const token = await auth.generateAccessToken({ id: userId, username })
+
+    const newUser = new oldUser({
+      id: userId,
+      type: 'user',
+      username,
+      email,
+      pash: null,
+      token,
+      isActive: true,
+      authOpenIDSub: userinfo.sub,
+      createdAt: Date.now()
+    })
+    if (await this.createFromOld(newUser)) {
+      SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
+      return newUser
+    }
+    return null
+  }
+
+  /**
    * Get a user by id or by the old database id
    * @temp User ids were updated in v2.3.0 migration and old API tokens may still use that id
    * @param {string} userId 
@@ -160,13 +225,13 @@ class User extends Model {
     if (!userId) return null
     const user = await this.findOne({
       where: {
-        [Op.or]: [
+        [sequelize.Op.or]: [
           {
             id: userId
           },
           {
             extraData: {
-              [Op.substring]: userId
+              [sequelize.Op.substring]: userId
             }
           }
         ]
@@ -187,7 +252,26 @@ class User extends Model {
     const user = await this.findOne({
       where: {
         username: {
-          [Op.like]: username
+          [sequelize.Op.like]: username
+        }
+      },
+      include: this.sequelize.models.mediaProgress
+    })
+    if (!user) return null
+    return this.getOldUser(user)
+  }
+
+  /**
+   * Get user by email case insensitive
+   * @param {string} username 
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getUserByEmail(email) {
+    if (!email) return null
+    const user = await this.findOne({
+      where: {
+        email: {
+          [sequelize.Op.like]: email
         }
       },
       include: this.sequelize.models.mediaProgress
@@ -204,6 +288,21 @@ class User extends Model {
   static async getUserById(userId) {
     if (!userId) return null
     const user = await this.findByPk(userId, {
+      include: this.sequelize.models.mediaProgress
+    })
+    if (!user) return null
+    return this.getOldUser(user)
+  }
+
+  /**
+   * Get user by openid sub
+   * @param {string} sub 
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getUserByOpenIDSub(sub) {
+    if (!sub) return null
+    const user = await this.findOne({
+      where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
       include: this.sequelize.models.mediaProgress
     })
     if (!user) return null

@@ -338,9 +338,15 @@ export default {
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
 
-      const isThisLibrary = !libraryItems.some((li) => li.libraryId !== this.currentLibraryId)
-      if (!this.search && isThisLibrary) {
-        this.fetchCategories()
+      const recentlyAddedShelf = this.shelves.find((shelf) => shelf.id === 'recently-added')
+      if (!recentlyAddedShelf) return
+
+      // Add new library item to the recently added shelf
+      for (const libraryItem of libraryItems) {
+        if (libraryItem.libraryId === this.currentLibraryId && !recentlyAddedShelf.entities.some((ent) => ent.id === libraryItem.id)) {
+          // Add to front of array
+          recentlyAddedShelf.entities.unshift(libraryItem)
+        }
       }
     },
     libraryItemsUpdated(items) {

@@ -308,6 +308,7 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
     .replace(lineBreaks, replacement)
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement)
+    .replace(/\s+/g, ' ') // Replace consecutive spaces with a single space
 
   // Check if basename is too many bytes
   const ext = Path.extname(sanitized) // separate out file extension

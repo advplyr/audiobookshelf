@@ -5,13 +5,14 @@ class Logger {
   constructor() {
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
+    this.hideDevLogs = process.env.HIDE_DEV_LOGS === undefined ? !this.isDev : process.env.HIDE_DEV_LOGS === '1'
     this.socketListeners = []
 
     this.logManager = null
   }
 
   get timestamp() {
-    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS')
   }
 
   get levelString() {
@@ -92,7 +93,7 @@ class Logger {
    * @param  {...any} args
    */
   dev(...args) {
-    if (!this.isDev || process.env.HIDE_DEV_LOGS === '1') return
+    if (this.hideDevLogs) return
     console.log(`[${this.timestamp}] DEV:`, ...args)
   }
 
