@@ -1,16 +1,14 @@
 const path = require('path')
 const which = require('../libs/which')
 const fs = require('../libs/fsExtra')
+const ffbinaries = require('../libs/ffbinaries')
 const Logger = require('../Logger')
-const ffbinaries = require('ffbinaries')
-const { promisify } = require('util')
 
-class BinaryManager  {
-  downloadBinaries = promisify(ffbinaries.downloadBinaries)
+class BinaryManager {
 
-  defaultRequiredBinaries = [ 
-    { name: 'ffmpeg', envVariable: 'FFMPEG_PATH' }, 
-    { name: 'ffprobe', envVariable: 'FFPROBE_PATH' } 
+  defaultRequiredBinaries = [
+    { name: 'ffmpeg', envVariable: 'FFMPEG_PATH' },
+    { name: 'ffprobe', envVariable: 'FFPROBE_PATH' }
   ]
 
   constructor(requiredBinaries = this.defaultRequiredBinaries) {
@@ -65,12 +63,12 @@ class BinaryManager  {
     if (binaries.length == 0) return
     Logger.info(`[BinaryManager] Installing binaries: ${binaries.join(', ')}`)
     let destination = this.mainInstallPath
-    try { 
+    try {
       await fs.access(destination, fs.constants.W_OK)
-    } catch (err) { 
+    } catch (err) {
       destination = this.altInstallPath
     }
-    await this.downloadBinaries(binaries, { destination })
+    await ffbinaries.downloadBinaries(binaries, { destination })
     Logger.info(`[BinaryManager] Binaries installed to ${destination}`)
   }
 
