@@ -2,6 +2,7 @@ const chai = require('chai')
 const sinon = require('sinon')
 const fs = require('../../../server/libs/fsExtra')
 const which = require('../../../server/libs/which')
+const ffbinaries = require('../../../server/libs/ffbinaries')
 const path = require('path')
 const BinaryManager = require('../../../server/managers/BinaryManager')
 
@@ -119,7 +120,7 @@ describe('BinaryManager', () => {
     beforeEach(() => {
       binaryManager = new BinaryManager()
       accessStub = sinon.stub(fs, 'access')
-      downloadBinariesStub = sinon.stub(binaryManager, 'downloadBinaries')
+      downloadBinariesStub = sinon.stub(ffbinaries, 'downloadBinaries')
       binaryManager.mainInstallPath = '/path/to/main/install'
       binaryManager.altInstallPath = '/path/to/alt/install'
     })
