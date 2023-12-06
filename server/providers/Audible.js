@@ -18,6 +18,27 @@ class Audible {
         }
     }
 
+    /**
+     * Audible will sometimes send sequences with "Book 1" or "2, Dramatized Adaptation"
+     * @see https://github.com/advplyr/audiobookshelf/issues/2380
+     * @see https://github.com/advplyr/audiobookshelf/issues/1339
+     * 
+     * @param {string} seriesName
+     * @param {string} sequence 
+     * @returns {string}
+     */
+    cleanSeriesSequence(seriesName, sequence) {
+        if (!sequence) return ''
+        let updatedSequence = sequence.replace(/Book /, '').trim()
+        if (updatedSequence.includes(' ')) {
+            updatedSequence = updatedSequence.split(' ').shift().replace(/,$/, '')
+        }
+        if (sequence !== updatedSequence) {
+            Logger.debug(`[Audible] Series "${seriesName}" sequence was cleaned from "${sequence}" to "${updatedSequence}"`)
+        }
+        return updatedSequence
+    }
+
     cleanResult(item) {
         const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin, formatType } = item
 
@@ -25,13 +46,13 @@ class Audible {
         if (seriesPrimary) {
             series.push({
                 series: seriesPrimary.name,
-                sequence: (seriesPrimary.position || '').replace(/Book /, '') // Can be badly formatted see #1339
+                sequence: this.cleanSeriesSequence(seriesPrimary.name, seriesPrimary.position || '')
             })
         }
         if (seriesSecondary) {
             series.push({
                 series: seriesSecondary.name,
-                sequence: (seriesSecondary.position || '').replace(/Book /, '')
+                sequence: this.cleanSeriesSequence(seriesSecondary.name, seriesSecondary.position || '')
             })
         }
 
@@ -64,7 +85,7 @@ class Audible {
     }
 
     asinSearch(asin, region) {
-        asin = encodeURIComponent(asin);
+        asin = encodeURIComponent(asin)
         var regionQuery = region ? `?region=${region}` : ''
         var url = `https://api.audnex.us/books/${asin}${regionQuery}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
