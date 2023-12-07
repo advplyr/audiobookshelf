@@ -4,6 +4,7 @@ const axios = require('axios')
 const fse = require('../fsExtra')
 const async = require('../async')
 const StreamZip = require('../nodeStreamZip')
+const { finished } = require('stream/promises')
 
 var API_URL = 'https://ffbinaries.com/api/v1'
 
@@ -169,9 +170,9 @@ function getVersionData(version) {
 /**
  * Download file(s) and save them in the specified directory
  */
-function downloadUrls(components, urls, opts, callback) {
-  var destinationDir = opts.destination
-  var results = []
+async function downloadUrls(components, urls, opts) {
+  const destinationDir = opts.destination
+  const results = []
   const remappedUrls = []
 
   if (components && !Array.isArray(components)) {
@@ -193,68 +194,61 @@ function downloadUrls(components, urls, opts, callback) {
   }
 
 
-  async function extractZipToDestination(zipFilename, cb) {
-    var oldpath = path.join(LOCAL_CACHE_DIR, zipFilename)
+  async function extractZipToDestination(zipFilename) {
+    const oldpath = path.join(LOCAL_CACHE_DIR, zipFilename)
     const zip = new StreamZip.async({ file: oldpath })
     const count = await zip.extract(null, destinationDir)
     await zip.close()
-    cb()
   }
 
 
-  async.each(remappedUrls, function (urlObject, cb) {
-    if (!urlObject?.url || !urlObject?.component) {
-      return cb()
-    }
-
-    var url = urlObject.url
-
-    var zipFilename = url.split('/').pop()
-    var binFilenameBase = urlObject.component
-    var binFilename = getBinaryFilename(binFilenameBase, opts.platform || detectPlatform())
-    var runningTotal = 0
-    var totalFilesize
-    var interval
-
-    if (typeof opts.tickerFn === 'function') {
-      opts.tickerInterval = parseInt(opts.tickerInterval, 10)
-      var tickerInterval = (!Number.isNaN(opts.tickerInterval)) ? opts.tickerInterval : 1000
-      var tickData = { filename: zipFilename, progress: 0 }
-
-      // Schedule next ticks
-      interval = setInterval(function () {
-        if (totalFilesize && runningTotal == totalFilesize) {
-          return clearInterval(interval)
-        }
-        tickData.progress = totalFilesize > -1 ? runningTotal / totalFilesize : 0
-
-        opts.tickerFn(tickData)
-      }, tickerInterval)
-    }
-
+  await async.each(remappedUrls, async function (urlObject) {
     try {
-      if (opts.force) {
-        throw new Error('Force mode specified - will overwrite existing binaries in target location')
+      const url = urlObject.url
+
+      const zipFilename = url.split('/').pop()
+      const binFilenameBase = urlObject.component
+      const binFilename = getBinaryFilename(binFilenameBase, opts.platform || detectPlatform())
+      
+      let runningTotal = 0
+      let totalFilesize
+      let interval
+
+      
+      if (typeof opts.tickerFn === 'function') {
+        opts.tickerInterval = parseInt(opts.tickerInterval, 10)
+        const tickerInterval = (!Number.isNaN(opts.tickerInterval)) ? opts.tickerInterval : 1000
+        const tickData = { filename: zipFilename, progress: 0 }
+
+        // Schedule next ticks
+        interval = setInterval(function () {
+          if (totalFilesize && runningTotal == totalFilesize) {
+            return clearInterval(interval)
+          }
+          tickData.progress = totalFilesize > -1 ? runningTotal / totalFilesize : 0
+
+          opts.tickerFn(tickData)
+        }, tickerInterval)
       }
+      
 
       // Check if file already exists in target directory
-      var binPath = path.join(destinationDir, binFilename)
-      fse.accessSync(binPath)
-      // if the accessSync method doesn't throw we know the binary already exists
-      results.push({
-        filename: binFilename,
-        path: destinationDir,
-        status: 'File exists',
-        code: 'FILE_EXISTS'
-      })
-      clearInterval(interval)
-      return cb()
-    } catch (errBinExists) {
-      var zipPath = path.join(LOCAL_CACHE_DIR, zipFilename)
+      const binPath = path.join(destinationDir, binFilename)
+      if (!opts.force && await fse.pathExists(binPath)) {
+        // if the accessSync method doesn't throw we know the binary already exists
+        results.push({
+          filename: binFilename,
+          path: destinationDir,
+          status: 'File exists',
+          code: 'FILE_EXISTS'
+        })
+        clearInterval(interval)
+        return
+      }
 
       // If there's no binary then check if the zip file is already in cache
-      try {
-        fse.accessSync(zipPath)
+      const zipPath = path.join(LOCAL_CACHE_DIR, zipFilename)
+      if (await fse.pathExists(zipPath)) {
         results.push({
           filename: binFilename,
           path: destinationDir,
@@ -262,51 +256,46 @@ function downloadUrls(components, urls, opts, callback) {
           code: 'DONE_FROM_CACHE'
         })
         clearInterval(interval)
-        return extractZipToDestination(zipFilename, cb)
-      } catch (errZipExists) {
-        // If zip is not cached then download it and store in cache
-        if (opts.quiet) clearInterval(interval)
-
-        var cacheFileTempName = zipPath + '.part'
-        var cacheFileFinalName = zipPath
-
-        axios({
-          url,
-          method: 'GET',
-          responseType: 'stream'
-        }).then((response) => {
-          totalFilesize = response.headers?.['content-length'] || []
-
-          // Write to filepath
-          const writer = fse.createWriteStream(cacheFileTempName)
-          response.data.pipe(writer)
-
-          writer.on('finish', () => {
-            results.push({
-              filename: binFilename,
-              path: destinationDir,
-              size: Math.floor(totalFilesize / 1024 / 1024 * 1000) / 1000 + 'MB',
-              status: 'File extracted to destination (downloaded from "' + url + '")',
-              code: 'DONE_CLEAN'
-            })
-
-            fse.renameSync(cacheFileTempName, cacheFileFinalName)
-            extractZipToDestination(zipFilename, cb)
-          })
-          writer.on('error', (err) => {
-            // TODO: Handle writer err
-            throw new Error(err)
-          })
-        }).catch((err) => {
-          // TODO: Handle error
-          console.error(`Failed to download file "${zipFilename}"`, err)
-          cb()
-        })
+        await extractZipToDestination(zipFilename)
+        return
       }
+
+      // If zip is not cached then download it and store in cache
+      if (opts.quiet) clearInterval(interval)
+
+      const cacheFileTempName = zipPath + '.part'
+      const cacheFileFinalName = zipPath
+
+      const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream'
+      })
+      totalFilesize = response.headers?.['content-length'] || []
+
+      // Write to cacheFileTempName
+      const writer = fse.createWriteStream(cacheFileTempName)
+      response.data.on('data', (chunk) => {        
+        runningTotal += chunk.length
+      }) 
+      response.data.pipe(writer)
+      await finished(writer)
+      await fse.rename(cacheFileTempName, cacheFileFinalName)
+      await extractZipToDestination(zipFilename)
+
+      results.push({
+        filename: binFilename,
+        path: destinationDir,
+        size: Math.floor(totalFilesize / 1024 / 1024 * 1000) / 1000 + 'MB',
+        status: 'File extracted to destination (downloaded from "' + url + '")',
+        code: 'DONE_CLEAN'
+      })
+    } catch (err) {
+      console.error(`Failed to download or extract file for component: ${urlObject.component}`, err)
     }
-  }, function () {
-    return callback(null, results)
   })
+
+  return results
 }
 
 /**
@@ -329,12 +318,7 @@ async function downloadBinaries(components, opts = {}) {
     throw new Error('No URLs!')
   }
 
-  return new Promise((resolve, reject) => {
-    downloadUrls(components, urls, opts, (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
+  return await downloadUrls(components, urls, opts)
 }
 
 function clearCache() {
