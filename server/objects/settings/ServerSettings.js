@@ -71,6 +71,7 @@ class ServerSettings {
     this.authOpenIDAutoLaunch = false
     this.authOpenIDAutoRegister = false
     this.authOpenIDMatchExistingBy = null
+    this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
 
     if (settings) {
       this.construct(settings)
@@ -126,6 +127,7 @@ class ServerSettings {
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
     this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
     this.authOpenIDMatchExistingBy = settings.authOpenIDMatchExistingBy || null
+    this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -211,7 +213,8 @@ class ServerSettings {
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
-      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy, 
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
     }
   }
 
@@ -220,6 +223,7 @@ class ServerSettings {
     delete json.tokenSecret
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
+    delete json.authOpenIDMobileRedirectURIs
     return json
   }
 
@@ -254,7 +258,8 @@ class ServerSettings {
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
-      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
     }
   }
 

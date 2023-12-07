@@ -8,6 +8,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
+const e = require('express')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -15,6 +16,8 @@ const Logger = require('./Logger')
 class Auth {
 
   constructor() {
+    // Map of openId sessions indexed by oauth2 state-variable
+    this.openIdAuthSession = new Map()
   }
 
   /**
@@ -187,9 +190,10 @@ class Auth {
    * @param {import('express').Response} res
    */
   paramsToCookies(req, res) {
-    if (req.query.isRest?.toLowerCase() == 'true') {
+    // Set if isRest flag is set or if mobile oauth flow is used
+    if (req.query.isRest?.toLowerCase() == 'true' || req.query.redirect_uri) {
       // store the isRest flag to the is_rest cookie 
-      res.cookie('is_rest', req.query.isRest.toLowerCase(), {
+      res.cookie('is_rest', 'true', {
         maxAge: 120000, // 2 min
         httpOnly: true
       })
@@ -283,8 +287,27 @@ class Auth {
         //    for API or mobile clients
         const oidcStrategy = passport._strategy('openid-client')
         const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
-        oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
-        Logger.debug(`[Auth] Set oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
+
+        let mobile_redirect_uri = null
+
+        // The client wishes a different redirect_uri
+        // We will allow if it is in the whitelist, by saving it into this.openIdAuthSession and setting the redirect uri to /auth/openid/mobile-redirect
+        //    where we will handle the redirect to it
+        if (req.query.redirect_uri) {
+          // Check if the redirect_uri is in the whitelist
+          if (Database.serverSettings.authOpenIDMobileRedirectURIs.includes(req.query.redirect_uri) ||
+           (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
+            oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/mobile-redirect`).toString()
+            mobile_redirect_uri = req.query.redirect_uri
+          } else {
+            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri} - not in whitelist`)
+            return res.status(400).send('Invalid redirect_uri')
+          }
+        } else {
+          oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
+        }
+
+        Logger.debug(`[Auth] Oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
         const client = oidcStrategy._client
         const sessionKey = oidcStrategy._key
 
@@ -324,8 +347,13 @@ class Auth {
         req.session[sessionKey] = {
           ...req.session[sessionKey],
           ...pick(params, 'nonce', 'state', 'max_age', 'response_type'),
-          mobile: req.query.isRest?.toLowerCase() === 'true' // Used in the abs callback later
+          mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
+          sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
+
+        // We cannot save redirect_uri in the session, because it the mobile client uses browser instead of the API
+        //   for the request to mobile-redirect and as such the session is not shared
+        this.openIdAuthSession.set(params.state, { mobile_redirect_uri: mobile_redirect_uri })
 
         // Now get the URL to direct to
         const authorizationUrl = client.authorizationUrl({
@@ -333,7 +361,7 @@ class Auth {
           scope: 'openid profile email',
           response_type: 'code',
           code_challenge,
-          code_challenge_method,
+          code_challenge_method
         })
 
         // params (isRest, callback) to a cookie that will be send to the client
@@ -343,6 +371,37 @@ class Auth {
         res.redirect(authorizationUrl)
       } catch (error) {
         Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
+        res.status(500).send('Internal Server Error')
+      }
+    })
+
+    // This will be the oauth2 callback route for mobile clients
+    // It will redirect to an app-link like audiobookshelf://oauth
+    router.get('/auth/openid/mobile-redirect', (req, res) => {
+      try {
+        // Extract the state parameter from the request
+        const { state, code } = req.query
+    
+        // Check if the state provided is in our list
+        if (!state || !this.openIdAuthSession.has(state)) {
+          Logger.error('[Auth] /auth/openid/mobile-redirect route: State parameter mismatch')
+          return res.status(400).send('State parameter mismatch')
+        }
+
+        let mobile_redirect_uri = this.openIdAuthSession.get(state).mobile_redirect_uri
+
+        if (!mobile_redirect_uri) {
+          Logger.error('[Auth] No redirect URI')
+          return res.status(400).send('No redirect URI')
+        }
+
+        this.openIdAuthSession.delete(state)
+
+        const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
+        // Redirect to the overwrite URI saved in the map
+        res.redirect(redirectUri)
+      } catch (error) {
+        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}`)
         res.status(500).send('Internal Server Error')
       }
     })
@@ -403,11 +462,8 @@ class Auth {
 
       // While not required by the standard, the passport plugin re-sends the original redirect_uri in the token request
       // We need to set it correctly, as some SSO providers (e.g. keycloak) check that parameter when it is provided
-      if (req.session[sessionKey].mobile) {
-        return passport.authenticate('openid-client', { redirect_uri: 'audiobookshelf://oauth' }, passportCallback(req, res, next))(req, res, next)
-      } else {
-        return passport.authenticate('openid-client', passportCallback(req, res, next))(req, res, next)
-      }
+      // We set it here again because the passport param can change between requests
+      return passport.authenticate('openid-client', { redirect_uri: req.session[sessionKey].sso_redirect_uri }, passportCallback(req, res, next))(req, res, next)
     },
       // on a successfull login: read the cookies and react like the client requested (callback or json)
       this.handleLoginSuccessBasedOnCookie.bind(this))
