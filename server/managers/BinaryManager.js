@@ -36,8 +36,10 @@ class BinaryManager {
       const binaryPath = await this.findBinary(binary.name, binary.envVariable)
       if (binaryPath) {
         Logger.info(`[BinaryManager] Found ${binary.name} at ${binaryPath}`)
-        Logger.info(`[BinaryManager] Updating process.env.${binary.envVariable}`)
-        process.env[binary.envVariable] = binaryPath
+        if (process.env[binary.envVariable] !== binaryPath) {
+          Logger.info(`[BinaryManager] Updating process.env.${binary.envVariable}`)
+          process.env[binary.envVariable] = binaryPath
+        }
       } else {
         Logger.info(`[BinaryManager] ${binary.name} not found`)
         missingBinaries.push(binary.name)
