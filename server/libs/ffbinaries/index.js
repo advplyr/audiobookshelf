@@ -197,7 +197,6 @@ function downloadUrls(components, urls, opts, callback) {
     var oldpath = path.join(LOCAL_CACHE_DIR, zipFilename)
     const zip = new StreamZip.async({ file: oldpath })
     const count = await zip.extract(null, destinationDir)
-    console.log(`Extracted ${count} entries`)
     await zip.close()
     cb()
   }
