@@ -202,7 +202,7 @@ export default {
         this.$toast.error('Mobile Redirect URIs: Asterisk (*) must be the only entry if used')
         isValid = false
       } else {
-        uris.forEach(uri => {
+        uris.forEach((uri) => {
           if (uri !== '*' && !isValidRedirectURI(uri)) {
             this.$toast.error(`Mobile Redirect URIs: Invalid URI ${uri}`)
             isValid = false
@@ -230,7 +230,11 @@ export default {
         .$patch('/api/auth-settings', this.newAuthSettings)
         .then((data) => {
           this.$store.commit('setServerSettings', data.serverSettings)
-          this.$toast.success('Server settings updated')
+          if (data.updated) {
+            this.$toast.success('Server settings updated')
+          } else {
+            this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+          }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)

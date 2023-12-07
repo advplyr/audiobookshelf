@@ -631,21 +631,25 @@ class MiscController {
         }
       } else if (key === 'authOpenIDMobileRedirectURIs') {
         function isValidRedirectURI(uri) {
-          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i');
-          return pattern.test(uri);
+          if (typeof uri !== 'string') return false
+          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i')
+          return pattern.test(uri)
         }
 
         const uris = settingsUpdate[key]
-        if (!Array.isArray(uris) || 
-            (uris.includes('*') && uris.length > 1) || 
-            uris.some(uri => uri !== '*' && !isValidRedirectURI(uri))) {
+        if (!Array.isArray(uris) ||
+          (uris.includes('*') && uris.length > 1) ||
+          uris.some(uri => uri !== '*' && !isValidRedirectURI(uri))) {
           Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
           continue
         }
 
         // Update the URIs
-        Database.serverSettings[key] = uris
-        hasUpdates = true
+        if (Database.serverSettings[key].some(uri => !uris.includes(uri)) || uris.some(uri => !Database.serverSettings[key].includes(uri))) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${Database.serverSettings[key]}" to "${uris}"`)
+          Database.serverSettings[key] = uris
+          hasUpdates = true
+        }
       } else {
         const updatedValueType = typeof settingsUpdate[key]
         if (['authOpenIDAutoLaunch', 'authOpenIDAutoRegister'].includes(key)) {
@@ -688,6 +692,7 @@ class MiscController {
     }
 
     res.json({
+      updated: hasUpdates,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
   }
