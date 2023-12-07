@@ -8,12 +8,11 @@ const { finished } = require('stream/promises')
 
 var API_URL = 'https://ffbinaries.com/api/v1'
 
-var LOCAL_CACHE_DIR = path.join(os.homedir() + '/.ffbinaries-cache')
 var RUNTIME_CACHE = {}
 var errorMsgs = {
   connectionIssues: 'Couldn\'t connect to ffbinaries.com API. Check your Internet connection.',
-  parsingVersionData: 'Couldn\'t parse retrieved version data. Try "ffbinaries clearcache".',
-  parsingVersionList: 'Couldn\'t parse the list of available versions. Try "ffbinaries clearcache".',
+  parsingVersionData: 'Couldn\'t parse retrieved version data.',
+  parsingVersionList: 'Couldn\'t parse the list of available versions.',
   notFound: 'Requested data not found.',
   incorrectVersionParam: '"version" parameter must be a string.'
 }
@@ -25,8 +24,6 @@ function ensureDirSync(dir) {
     fse.mkdirSync(dir)
   }
 }
-
-ensureDirSync(LOCAL_CACHE_DIR)
 
 /**
  * Resolves the platform key based on input string
@@ -195,7 +192,7 @@ async function downloadUrls(components, urls, opts) {
 
 
   async function extractZipToDestination(zipFilename) {
-    const oldpath = path.join(LOCAL_CACHE_DIR, zipFilename)
+    const oldpath = path.join(destinationDir, zipFilename)
     const zip = new StreamZip.async({ file: oldpath })
     const count = await zip.extract(null, destinationDir)
     await zip.close()
@@ -246,25 +243,11 @@ async function downloadUrls(components, urls, opts) {
         return
       }
 
-      // If there's no binary then check if the zip file is already in cache
-      const zipPath = path.join(LOCAL_CACHE_DIR, zipFilename)
-      if (await fse.pathExists(zipPath)) {
-        results.push({
-          filename: binFilename,
-          path: destinationDir,
-          status: 'File extracted to destination (archive found in cache)',
-          code: 'DONE_FROM_CACHE'
-        })
-        clearInterval(interval)
-        await extractZipToDestination(zipFilename)
-        return
-      }
-
-      // If zip is not cached then download it and store in cache
       if (opts.quiet) clearInterval(interval)
 
-      const cacheFileTempName = zipPath + '.part'
-      const cacheFileFinalName = zipPath
+      const zipPath = path.join(destinationDir, zipFilename)
+      const zipFileTempName = zipPath + '.part'
+      const zipFileFinalName = zipPath
 
       const response = await axios({
         url,
@@ -273,15 +256,15 @@ async function downloadUrls(components, urls, opts) {
       })
       totalFilesize = response.headers?.['content-length'] || []
 
-      // Write to cacheFileTempName
-      const writer = fse.createWriteStream(cacheFileTempName)
+      const writer = fse.createWriteStream(zipFileTempName)
       response.data.on('data', (chunk) => {        
         runningTotal += chunk.length
       }) 
       response.data.pipe(writer)
       await finished(writer)
-      await fse.rename(cacheFileTempName, cacheFileFinalName)
+      await fse.rename(zipFileTempName, zipFileFinalName)
       await extractZipToDestination(zipFilename)
+      await fse.remove(zipFileFinalName)
 
       results.push({
         filename: binFilename,
@@ -321,10 +304,6 @@ async function downloadBinaries(components, opts = {}) {
   return await downloadUrls(components, urls, opts)
 }
 
-function clearCache() {
-  fse.emptyDirSync(LOCAL_CACHE_DIR)
-}
-
 module.exports = {
   downloadBinaries: downloadBinaries,
   getVersionData: getVersionData,
@@ -332,6 +311,5 @@ module.exports = {
   listPlatforms: listPlatforms,
   detectPlatform: detectPlatform,
   resolvePlatform: resolvePlatform,
-  getBinaryFilename: getBinaryFilename,
-  clearCache: clearCache
+  getBinaryFilename: getBinaryFilename
 }
