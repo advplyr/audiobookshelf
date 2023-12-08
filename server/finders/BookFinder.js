@@ -299,6 +299,7 @@ class BookFinder {
   /**
    * Search for books including fuzzy searches
    * 
+   * @param {Object} libraryItem
    * @param {string} provider 
    * @param {string} title 
    * @param {string} author 
@@ -307,7 +308,7 @@ class BookFinder {
    * @param {{titleDistance:number, authorDistance:number, maxFuzzySearches:number}} options 
    * @returns {Promise<Object[]>}
    */
-  async search(provider, title, author, isbn, asin, options = {}) {
+  async search(libraryItem, provider, title, author, isbn, asin, options = {}) {
     let books = []
     const maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     const maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
@@ -336,6 +337,7 @@ class BookFinder {
       for (const titlePart of titleParts)
         authorCandidates.add(titlePart)
       authorCandidates = await authorCandidates.getCandidates()
+      loop_author:
       for (const authorCandidate of authorCandidates) {
         let titleCandidates = new BookFinder.TitleCandidates(authorCandidate)
         for (const titlePart of titleParts)
@@ -343,13 +345,27 @@ class BookFinder {
         titleCandidates = titleCandidates.getCandidates()
         for (const titleCandidate of titleCandidates) {
           if (titleCandidate == title && authorCandidate == author) continue // We already tried this
-          if (++numFuzzySearches > maxFuzzySearches) return books
+          if (++numFuzzySearches > maxFuzzySearches) break loop_author
           books = await this.runSearch(titleCandidate, authorCandidate, provider, asin, maxTitleDistance, maxAuthorDistance)
-          if (books.length) return books
+          if (books.length) break loop_author
         }
       }
     }
 
+    if (books.length) {
+      const resultsHaveDuration = provider.startsWith('audible')
+      if (resultsHaveDuration && libraryItem && libraryItem.media?.duration) {
+        const libraryItemDurationMinutes = libraryItem.media.duration/60      
+        // If provider results have duration, sort by ascendinge duration difference from libraryItem
+        books.sort((a, b) => {
+          const aDuration = a.duration || Number.POSITIVE_INFINITY
+          const bDuration = b.duration || Number.POSITIVE_INFINITY
+          const aDurationDiff = Math.abs(aDuration - libraryItemDurationMinutes)
+          const bDurationDiff = Math.abs(bDuration - libraryItemDurationMinutes)
+          return aDurationDiff - bDurationDiff
+        })
+      }
+    }
     return books
   }
 
@@ -393,12 +409,12 @@ class BookFinder {
 
     if (provider === 'all') {
       for (const providerString of this.providers) {
-        const providerResults = await this.search(providerString, title, author, options)
+        const providerResults = await this.search(null, providerString, title, author, options)
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)
       }
     } else {
-      searchResults = await this.search(provider, title, author, options)
+      searchResults = await this.search(null, provider, title, author, options)
     }
     Logger.debug(`[BookFinder] FindCovers search results: ${searchResults.length}`)
 

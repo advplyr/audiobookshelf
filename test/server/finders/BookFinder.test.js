@@ -225,14 +225,14 @@ describe('search', () => {
 
   describe('search title is empty', () => {
     it('returns empty result', async () => {
-      expect(await bookFinder.search('', '', a)).to.deep.equal([])
+      expect(await bookFinder.search(null, '', '', a)).to.deep.equal([])
       sinon.assert.callCount(bookFinder.runSearch, 0)
     })
   })
 
   describe('search title is a recognized title and search author is a recognized author', () => {
     it('returns non-empty result (no fuzzy searches)', async () => {
-      expect(await bookFinder.search('', t, a)).to.deep.equal(r)
+      expect(await bookFinder.search(null, '', t, a)).to.deep.equal(r)
       sinon.assert.callCount(bookFinder.runSearch, 1)
     })
   })
@@ -254,7 +254,7 @@ describe('search', () => {
       [`2022_${t}_HQ`],
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '${a}') returns non-empty result (with 1 fuzzy search)`, async () => {
-        expect(await bookFinder.search('', searchTitle, a)).to.deep.equal(r)
+        expect(await bookFinder.search(null, '', searchTitle, a)).to.deep.equal(r)
         sinon.assert.callCount(bookFinder.runSearch, 2)
       })
     });
@@ -264,7 +264,7 @@ describe('search', () => {
       [`${a} - series 01 - ${t}`],
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '${a}') returns non-empty result (with 2 fuzzy searches)`, async () => {
-        expect(await bookFinder.search('', searchTitle, a)).to.deep.equal(r)
+        expect(await bookFinder.search(null, '', searchTitle, a)).to.deep.equal(r)
         sinon.assert.callCount(bookFinder.runSearch, 3)
       })
     });
@@ -274,7 +274,7 @@ describe('search', () => {
       [`${t} junk`],
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '${a}') returns an empty result`, async () => {
-        expect(await bookFinder.search('', searchTitle, a)).to.deep.equal([])
+        expect(await bookFinder.search(null, '', searchTitle, a)).to.deep.equal([])
       })
     })
 
@@ -283,7 +283,7 @@ describe('search', () => {
         [`${t} - ${a}`],
       ].forEach(([searchTitle]) => {
         it(`search('${searchTitle}', '${a}') returns an empty result (with no fuzzy searches)`, async () => {
-          expect(await bookFinder.search('', searchTitle, a, null, null, { maxFuzzySearches: 0 })).to.deep.equal([])
+          expect(await bookFinder.search(null, '', searchTitle, a, null, null, { maxFuzzySearches: 0 })).to.deep.equal([])
           sinon.assert.callCount(bookFinder.runSearch, 1)
         })
       })
@@ -295,7 +295,7 @@ describe('search', () => {
         [`${a} - series 01 - ${t}`],
       ].forEach(([searchTitle]) => {
         it(`search('${searchTitle}', '${a}') returns an empty result (1 fuzzy search)`, async () => {
-          expect(await bookFinder.search('', searchTitle, a, null, null, { maxFuzzySearches: 1 })).to.deep.equal([])
+          expect(await bookFinder.search(null, '', searchTitle, a, null, null, { maxFuzzySearches: 1 })).to.deep.equal([])
           sinon.assert.callCount(bookFinder.runSearch, 2)
         })
       })
@@ -308,7 +308,7 @@ describe('search', () => {
       [`${a} - ${t}`],
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '') returns a non-empty result (1 fuzzy search)`, async () => {
-        expect(await bookFinder.search('', searchTitle, '')).to.deep.equal(r)
+        expect(await bookFinder.search(null, '', searchTitle, '')).to.deep.equal(r)
         sinon.assert.callCount(bookFinder.runSearch, 2)
       })
     });
@@ -319,7 +319,7 @@ describe('search', () => {
       [`${u} - ${t}`]
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '') returns an empty result`, async () => {
-        expect(await bookFinder.search('', searchTitle, '')).to.deep.equal([])
+        expect(await bookFinder.search(null, '', searchTitle, '')).to.deep.equal([])
       })
     })
   })
@@ -330,7 +330,7 @@ describe('search', () => {
       [`${u} - ${t}`]
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '${u}') returns a non-empty result (1 fuzzy search)`, async () => {
-        expect(await bookFinder.search('', searchTitle, u)).to.deep.equal(r)
+        expect(await bookFinder.search(null, '', searchTitle, u)).to.deep.equal(r)
         sinon.assert.callCount(bookFinder.runSearch, 2)
       })
     });
@@ -339,9 +339,41 @@ describe('search', () => {
       [`${t}`]
     ].forEach(([searchTitle]) => {
       it(`search('${searchTitle}', '${u}') returns a non-empty result (no fuzzy search)`, async () => {
-        expect(await bookFinder.search('', searchTitle, u)).to.deep.equal(r)
+        expect(await bookFinder.search(null, '', searchTitle, u)).to.deep.equal(r)
         sinon.assert.callCount(bookFinder.runSearch, 1)
       })
+    })
+  })
+
+  describe('search provider results have duration', () => {
+    const  libraryItem = { media: { duration: 60 * 1000 } }
+    const provider = 'audible'
+    const unsorted = [{ duration: 3000 }, { duration: 2000 }, { duration: 1000 }, { duration: 500 }]
+    const sorted = [{ duration: 1000 }, { duration: 500 }, { duration: 2000 }, { duration: 3000 }]
+    runSearchStub.withArgs(t, a, provider).resolves(unsorted)
+
+    it('returns results sorted by library item duration diff', async () => {
+      expect(await bookFinder.search(libraryItem, provider, t, a)).to.deep.equal(sorted)
+    })
+    
+    it('returns unsorted results if library item is null', async () => {
+      expect(await bookFinder.search(null, provider, t, a)).to.deep.equal(unsorted)
+    })
+
+    it('returns unsorted results if library item duration is undefined', async () => {
+      expect(await bookFinder.search({ media: {} }, provider, t, a)).to.deep.equal(unsorted)
+    })
+
+    it('returns unsorted results if library item media is undefined', async () => {
+      expect(await bookFinder.search({ }, provider, t, a)).to.deep.equal(unsorted)
+    })
+
+    it ('should return a result last if it has no duration', async () => {
+      const unsorted = [{}, { duration: 3000 }, { duration: 2000 }, { duration: 1000 }, { duration: 500 }]
+      const sorted = [{ duration: 1000 }, { duration: 500 }, { duration: 2000 }, { duration: 3000 }, {}]
+      runSearchStub.withArgs(t, a, provider).resolves(unsorted)
+
+      expect(await bookFinder.search(libraryItem, provider, t, a)).to.deep.equal(sorted)
     })
   })
 })
