@@ -46,6 +46,9 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
+            <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
+            <p class="pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
+
             <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
             <div class="flex items-center pt-1 mb-2">
@@ -187,6 +190,25 @@ export default {
         this.$toast.error('Client Secret required')
         isValid = false
       }
+
+      function isValidRedirectURI(uri) {
+        // Check for somestring://someother/string
+        const pattern = new RegExp('^\\w+://[\\w\\.-]+$', 'i')
+        return pattern.test(uri)
+      }
+
+      const uris = this.newAuthSettings.authOpenIDMobileRedirectURIs
+      if (uris.includes('*') && uris.length > 1) {
+        this.$toast.error('Mobile Redirect URIs: Asterisk (*) must be the only entry if used')
+        isValid = false
+      } else {
+        uris.forEach((uri) => {
+          if (uri !== '*' && !isValidRedirectURI(uri)) {
+            this.$toast.error(`Mobile Redirect URIs: Invalid URI ${uri}`)
+            isValid = false
+          }
+        })
+      }
       return isValid
     },
     async saveSettings() {
@@ -208,7 +230,11 @@ export default {
         .$patch('/api/auth-settings', this.newAuthSettings)
         .then((data) => {
           this.$store.commit('setServerSettings', data.serverSettings)
-          this.$toast.success('Server settings updated')
+          if (data.updated) {
+            this.$toast.success('Server settings updated')
+          } else {
+            this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+          }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)

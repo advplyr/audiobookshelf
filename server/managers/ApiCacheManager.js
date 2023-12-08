@@ -13,7 +13,7 @@ class ApiCacheManager {
   }
 
   init(database = Database) {
-    let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy']
+    let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy', 'afterUpsert']
     hooks.forEach(hook => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
   }
 
