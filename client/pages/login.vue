@@ -25,9 +25,12 @@
       </div>
       <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 -mt-40">
         <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
+
         <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+
         <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
-        <form @submit.prevent="submitForm">
+
+        <form v-show="login_local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
           <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
 
@@ -37,6 +40,14 @@
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
+
+        <div v-if="login_local && login_openid" class="w-full h-px bg-white bg-opacity-10 my-4" />
+
+        <div class="w-full flex py-3">
+          <a v-if="login_openid" :href="openidAuthUri" class="w-full abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center bg-primary text-white px-8 py-2 leading-none">
+            {{ openIDButtonText }}
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -60,7 +71,10 @@ export default {
       },
       confirmPassword: '',
       ConfigPath: '',
-      MetadataPath: ''
+      MetadataPath: '',
+      login_local: true,
+      login_openid: false,
+      authFormData: null
     }
   },
   watch: {
@@ -93,6 +107,12 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    openidAuthUri() {
+      return `${process.env.serverUrl}/auth/openid?callback=${location.href.split('?').shift()}`
+    },
+    openIDButtonText() {
+      return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
     }
   },
   methods: {
@@ -162,6 +182,7 @@ export default {
         else this.error = 'Unknown Error'
         return false
       })
+
       if (authRes?.error) {
         this.error = authRes.error
       } else if (authRes) {
@@ -196,28 +217,62 @@ export default {
       this.processing = true
       this.$axios
         .$get('/status')
-        .then((res) => {
-          this.processing = false
-          this.isInit = res.isInit
-          this.showInitScreen = !res.isInit
-          this.$setServerLanguageCode(res.language)
+        .then((data) => {
+          this.isInit = data.isInit
+          this.showInitScreen = !data.isInit
+          this.$setServerLanguageCode(data.language)
           if (this.showInitScreen) {
-            this.ConfigPath = res.ConfigPath || ''
-            this.MetadataPath = res.MetadataPath || ''
+            this.ConfigPath = data.ConfigPath || ''
+            this.MetadataPath = data.MetadataPath || ''
+          } else {
+            this.authFormData = data.authFormData
+            this.updateLoginVisibility(data.authMethods || [])
           }
         })
         .catch((error) => {
           console.error('Status check failed', error)
-          this.processing = false
           this.criticalError = 'Status check failed'
         })
+        .finally(() => {
+          this.processing = false
+        })
+    },
+    updateLoginVisibility(authMethods) {
+      if (this.$route.query?.error) {
+        this.error = this.$route.query.error
+
+        // Remove error query string
+        const newurl = new URL(location.href)
+        newurl.searchParams.delete('error')
+        window.history.replaceState({ path: newurl.href }, '', newurl.href)
+      }
+
+      if (authMethods.includes('local') || !authMethods.length) {
+        this.login_local = true
+      } else {
+        this.login_local = false
+      }
+
+      if (authMethods.includes('openid')) {
+        // Auto redirect unless query string ?autoLaunch=0
+        if (this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') {
+          window.location.href = this.openidAuthUri
+        }
+
+        this.login_openid = true
+      } else {
+        this.login_openid = false
+      }
     }
   },
   async mounted() {
-    if (localStorage.getItem('token')) {
-      var userfound = await this.checkAuth()
-      if (userfound) return // if valid user no need to check status
+    if (this.$route.query?.setToken) {
+      localStorage.setItem('token', this.$route.query.setToken)
     }
+    if (localStorage.getItem('token')) {
+      if (await this.checkAuth()) return // if valid user no need to check status
+    }
+
     this.checkStatus()
   }
 }

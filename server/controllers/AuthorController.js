@@ -67,30 +67,10 @@ class AuthorController {
     const payload = req.body
     let hasUpdated = false
 
-    // Updating/removing cover image
-    if (payload.imagePath !== undefined && payload.imagePath !== req.author.imagePath) {
-      if (!payload.imagePath && req.author.imagePath) { // If removing image then remove file
-        await CacheManager.purgeImageCache(req.author.id) // Purge cache
-        await CoverManager.removeFile(req.author.imagePath)
-      } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
-        const imageData = await AuthorFinder.saveAuthorImage(req.author.id, payload.imagePath)
-        if (imageData) {
-          if (req.author.imagePath) {
-            await CacheManager.purgeImageCache(req.author.id) // Purge cache
-          }
-          payload.imagePath = imageData.path
-          hasUpdated = true
-        }
-      } else if (payload.imagePath && payload.imagePath !== req.author.imagePath) { // Changing image path locally
-        if (!await fs.pathExists(payload.imagePath)) { // Make sure image path exists
-          Logger.error(`[AuthorController] Image path does not exist: "${payload.imagePath}"`)
-          return res.status(400).send('Author image path does not exist')
-        }
-
-        if (req.author.imagePath) {
-          await CacheManager.purgeImageCache(req.author.id) // Purge cache
-        }
-      }
+    // author imagePath must be set through other endpoints as of v2.4.5
+    if (payload.imagePath !== undefined) {
+      Logger.warn(`[AuthorController] Updating local author imagePath is not supported`)
+      delete payload.imagePath
     }
 
     const authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
@@ -131,7 +111,7 @@ class AuthorController {
       Database.removeAuthorFromFilterData(req.author.libraryId, req.author.id)
 
       // Send updated num books for merged author
-      const numBooks = await Database.libraryItemModel.getForAuthor(existingAuthor).length
+      const numBooks = (await Database.libraryItemModel.getForAuthor(existingAuthor)).length
       SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
 
       res.json({
@@ -191,6 +171,75 @@ class AuthorController {
     res.sendStatus(200)
   }
 
+  /**
+   * POST: /api/authors/:id/image
+   * Upload author image from web URL
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async uploadImage(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn('User attempted to upload an image without permission', req.user)
+      return res.sendStatus(403)
+    }
+    if (!req.body.url) {
+      Logger.error(`[AuthorController] Invalid request payload. 'url' not in request body`)
+      return res.status(400).send(`Invalid request payload. 'url' not in request body`)
+    }
+    if (!req.body.url.startsWith?.('http:') && !req.body.url.startsWith?.('https:')) {
+      Logger.error(`[AuthorController] Invalid request payload. Invalid url "${req.body.url}"`)
+      return res.status(400).send(`Invalid request payload. Invalid url "${req.body.url}"`)
+    }
+
+    Logger.debug(`[AuthorController] Requesting download author image from url "${req.body.url}"`)
+    const result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url)
+
+    if (result?.error) {
+      return res.status(400).send(result.error)
+    } else if (!result?.path) {
+      return res.status(500).send('Unknown error occurred')
+    }
+
+    if (req.author.imagePath) {
+      await CacheManager.purgeImageCache(req.author.id) // Purge cache
+    }
+
+    req.author.imagePath = result.path
+    await Database.authorModel.updateFromOld(req.author)
+
+    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
+    SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+    res.json({
+      author: req.author.toJSON()
+    })
+  }
+
+  /**
+   * DELETE: /api/authors/:id/image
+   * Remove author image & delete image file
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async deleteImage(req, res) {
+    if (!req.author.imagePath) {
+      Logger.error(`[AuthorController] Author "${req.author.imagePath}" has no imagePath set`)
+      return res.status(400).send('Author has no image path set')
+    }
+    Logger.info(`[AuthorController] Removing image for author "${req.author.name}" at "${req.author.imagePath}"`)
+    await CacheManager.purgeImageCache(req.author.id) // Purge cache
+    await CoverManager.removeFile(req.author.imagePath)
+    req.author.imagePath = null
+    await Database.authorModel.updateFromOld(req.author)
+
+    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
+    SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+    res.json({
+      author: req.author.toJSON()
+    })
+  }
+
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
@@ -215,7 +264,7 @@ class AuthorController {
       await CacheManager.purgeImageCache(req.author.id)
 
       const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image)
-      if (imageData) {
+      if (imageData?.path) {
         req.author.imagePath = imageData.path
         hasUpdates = true
       }
@@ -231,7 +280,7 @@ class AuthorController {
 
       await Database.updateAuthor(req.author)
 
-      const numBooks = await Database.libraryItemModel.getForAuthor(req.author).length
+      const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
       SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
 

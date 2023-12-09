@@ -1,6 +1,14 @@
 <template>
   <div>
     <app-settings-content :header-text="$strings.HeaderRSSFeeds">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/rss_feeds" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
       <div class="w-full py-2">
         <div class="flex -mb-px">
           <div

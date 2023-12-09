@@ -6,7 +6,7 @@
         <span class="text-sm font-mono">{{ files.length }}</span>
       </div>
       <div class="flex-grow" />
-      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
+      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
       </div>
@@ -84,6 +84,10 @@ export default {
     }
   },
   methods: {
+    toggleFullPath() {
+      this.showFullPath = !this.showFullPath
+      localStorage.setItem('showFullPath', this.showFullPath ? 1 : 0)
+    },
     clickBar() {
       this.showFiles = !this.showFiles
     },
@@ -93,6 +97,9 @@ export default {
     }
   },
   mounted() {
+    if (this.userIsAdmin) {
+      this.showFullPath = !!Number(localStorage.getItem('showFullPath') || 0)
+    }
     this.showFiles = this.expanded
   }
 }

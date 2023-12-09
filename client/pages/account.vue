@@ -19,8 +19,8 @@
 
         <div class="w-full h-px bg-white/10 my-4" />
 
-        <p v-if="!isGuest" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
-        <form v-if="!isGuest" @submit.prevent="submitChangePassword">
+        <p v-if="showChangePasswordForm" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
+        <form v-if="showChangePasswordForm" @submit.prevent="submitChangePassword">
           <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" :label="$strings.LabelPassword" class="my-2" />
           <ui-text-input-with-label v-model="newPassword" :disabled="changingPassword" type="password" :label="$strings.LabelNewPassword" class="my-2" />
           <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" :label="$strings.LabelConfirmPassword" class="my-2" />
@@ -68,6 +68,13 @@ export default {
     },
     isGuest() {
       return this.usertype === 'guest'
+    },
+    isPasswordAuthEnabled() {
+      const activeAuthMethods = this.$store.getters['getServerSetting']('authActiveAuthMethods') || []
+      return activeAuthMethods.includes('local')
+    },
+    showChangePasswordForm() {
+      return !this.isGuest && this.isPasswordAuthEnabled
     }
   },
   methods: {

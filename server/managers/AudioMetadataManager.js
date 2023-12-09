@@ -7,12 +7,12 @@ const fs = require('../libs/fsExtra')
 
 const toneHelpers = require('../utils/toneHelpers')
 
+const TaskManager = require('./TaskManager')
+
 const Task = require('../objects/Task')
 
 class AudioMetadataMangaer {
-  constructor(taskManager) {
-    this.taskManager = taskManager
-
+  constructor() {
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
 
     this.MAX_CONCURRENT_TASKS = 1
@@ -101,7 +101,7 @@ class AudioMetadataMangaer {
 
   async runMetadataEmbed(task) {
     this.tasksRunning.push(task)
-    this.taskManager.addTask(task)
+    TaskManager.addTask(task)
 
     Logger.info(`[AudioMetadataManager] Starting metadata embed task`, task.description)
 
@@ -176,7 +176,7 @@ class AudioMetadataMangaer {
   }
 
   handleTaskFinished(task) {
-    this.taskManager.taskFinished(task)
+    TaskManager.taskFinished(task)
     this.tasksRunning = this.tasksRunning.filter(t => t.id !== task.id)
 
     if (this.tasksRunning.length < this.MAX_CONCURRENT_TASKS && this.tasksQueued.length) {

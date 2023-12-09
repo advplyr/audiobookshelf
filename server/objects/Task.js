@@ -2,19 +2,30 @@ const uuidv4 = require("uuid").v4
 
 class Task {
   constructor() {
+    /** @type {string} */
     this.id = null
+    /** @type {string} */
     this.action = null // e.g. embed-metadata, encode-m4b, etc
+    /** @type {Object} custom data */
     this.data = null // additional info for the action like libraryItemId
 
+    /** @type {string} */
     this.title = null
+    /** @type {string} */
     this.description = null
+    /** @type {string} */
     this.error = null
-    this.showSuccess = false // If true client side should keep the task visible after success
+    /** @type {boolean} client should keep the task visible after success */
+    this.showSuccess = false
 
+    /** @type {boolean} */
     this.isFailed = false
+    /** @type {boolean} */
     this.isFinished = false
 
+    /** @type {number} */
     this.startedAt = null
+    /** @type {number} */
     this.finishedAt = null
   }
 
@@ -34,6 +45,15 @@ class Task {
     }
   }
 
+  /**
+   * Set initial task data
+   * 
+   * @param {string} action 
+   * @param {string} title 
+   * @param {string} description 
+   * @param {boolean} showSuccess 
+   * @param {Object} [data] 
+   */
   setData(action, title, description, showSuccess, data = {}) {
     this.id = uuidv4()
     this.action = action
@@ -44,6 +64,11 @@ class Task {
     this.startedAt = Date.now()
   }
 
+  /**
+   * Set task as failed
+   * 
+   * @param {string} message error message
+   */
   setFailed(message) {
     this.error = message
     this.isFailed = true
@@ -51,6 +76,11 @@ class Task {
     this.setFinished()
   }
 
+  /**
+   * Set task as finished
+   * 
+   * @param {string} [newDescription] update description
+   */
   setFinished(newDescription = null) {
     if (newDescription) {
       this.description = newDescription

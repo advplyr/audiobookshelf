@@ -1,7 +1,8 @@
-const fs = require('../libs/fsExtra')
-const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
+const ssrfFilter = require('ssrf-req-filter')
+const fs = require('../libs/fsExtra')
+const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
 
@@ -18,22 +19,33 @@ const filePathToPOSIX = (path) => {
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
-async function getFileStat(path) {
+/**
+ * Check path is a child of or equal to another path
+ * 
+ * @param {string} parentPath 
+ * @param {string} childPath 
+ * @returns {boolean}
+ */
+function isSameOrSubPath(parentPath, childPath) {
+  parentPath = filePathToPOSIX(parentPath)
+  childPath = filePathToPOSIX(childPath)
+  if (parentPath === childPath) return true
+  const relativePath = Path.relative(parentPath, childPath)
+  return (
+    relativePath === '' // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
+    || !relativePath.startsWith('..') && !Path.isAbsolute(relativePath) // Sub path
+  )
+}
+module.exports.isSameOrSubPath = isSameOrSubPath
+
+function getFileStat(path) {
   try {
-    var stat = await fs.stat(path)
-    return {
-      size: stat.size,
-      atime: stat.atime,
-      mtime: stat.mtime,
-      ctime: stat.ctime,
-      birthtime: stat.birthtime
-    }
+    return fs.stat(path)
   } catch (err) {
     Logger.error('[fileUtils] Failed to stat', err)
-    return false
+    return null
   }
 }
-module.exports.getFileStat = getFileStat
 
 async function getFileTimestampsWithIno(path) {
   try {
@@ -52,12 +64,25 @@ async function getFileTimestampsWithIno(path) {
 }
 module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
 
-async function getFileSize(path) {
-  var stat = await getFileStat(path)
-  if (!stat) return 0
-  return stat.size || 0
+/**
+ * Get file size
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>}
+ */
+module.exports.getFileSize = async (path) => {
+  return (await getFileStat(path))?.size || 0
 }
-module.exports.getFileSize = getFileSize
+
+/**
+ * Get file mtimeMs
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>} epoch timestamp
+ */
+module.exports.getFileMTimeMs = async (path) => {
+  return (await getFileStat(path))?.mtimeMs || 0
+}
 
 /**
  * 
@@ -203,15 +228,32 @@ async function recurseFiles(path, relPathToReplace = null) {
 }
 module.exports.recurseFiles = recurseFiles
 
-module.exports.downloadFile = (url, filepath) => {
+/**
+ * Download file from web to local file system
+ * Uses SSRF filter to prevent internal URLs
+ * 
+ * @param {string} url 
+ * @param {string} filepath path to download the file to
+ * @param {Function} [contentTypeFilter] validate content type before writing
+ * @returns {Promise}
+ */
+module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
     axios({
       url,
       method: 'GET',
       responseType: 'stream',
-      timeout: 30000
+      timeout: 30000,
+      httpAgent: ssrfFilter(url),
+      httpsAgent: ssrfFilter(url)
     }).then((response) => {
+      // Validate content type
+      if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
+        return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+      }
+
+      // Write to filepath
       const writer = fs.createWriteStream(filepath)
       response.data.pipe(writer)
 
@@ -222,6 +264,21 @@ module.exports.downloadFile = (url, filepath) => {
       reject(err)
     })
   })
+}
+
+/**
+ * Download image file from web to local file system
+ * Response header must have content-type of image/ (excluding svg)
+ * 
+ * @param {string} url 
+ * @param {string} filepath 
+ * @returns {Promise}
+ */
+module.exports.downloadImageFile = (url, filepath) => {
+  const contentTypeFilter = (contentType) => {
+    return contentType?.startsWith('image/') && contentType !== 'image/svg+xml'
+  }
+  return this.downloadFile(url, filepath, contentTypeFilter)
 }
 
 module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
@@ -251,6 +308,7 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
     .replace(lineBreaks, replacement)
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement)
+    .replace(/\s+/g, ' ') // Replace consecutive spaces with a single space
 
   // Check if basename is too many bytes
   const ext = Path.extname(sanitized) // separate out file extension

@@ -11,6 +11,7 @@ const oldLibrary = require('../objects/Library')
  * @property {string} autoScanCronExpression
  * @property {boolean} audiobooksOnly
  * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book 
+ * @property {string[]} metadataPrecedence
  */
 
 class Library extends Model {
@@ -79,6 +80,9 @@ class Library extends Model {
       mediaType: libraryExpanded.mediaType,
       provider: libraryExpanded.provider,
       settings: libraryExpanded.settings,
+      lastScan: libraryExpanded.lastScan?.valueOf() || null,
+      lastScanVersion: libraryExpanded.lastScanVersion || null,
+      lastScanMetadataPrecedence: libraryExpanded.extraData?.lastScanMetadataPrecedence || null,
       createdAt: libraryExpanded.createdAt.valueOf(),
       lastUpdate: libraryExpanded.updatedAt.valueOf()
     })
@@ -151,6 +155,9 @@ class Library extends Model {
     if (oldLibrary.oldLibraryId) {
       extraData.oldLibraryId = oldLibrary.oldLibraryId
     }
+    if (oldLibrary.lastScanMetadataPrecedence) {
+      extraData.lastScanMetadataPrecedence = oldLibrary.lastScanMetadataPrecedence
+    }
     return {
       id: oldLibrary.id,
       name: oldLibrary.name,
@@ -159,6 +166,8 @@ class Library extends Model {
       mediaType: oldLibrary.mediaType || null,
       provider: oldLibrary.provider,
       settings: oldLibrary.settings?.toJSON() || {},
+      lastScan: oldLibrary.lastScan || null,
+      lastScanVersion: oldLibrary.lastScanVersion || null,
       createdAt: oldLibrary.createdAt,
       updatedAt: oldLibrary.lastUpdate,
       extraData

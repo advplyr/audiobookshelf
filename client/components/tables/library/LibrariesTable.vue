@@ -42,13 +42,10 @@ export default {
       return this.$store.getters['libraries/getCurrentLibrary']
     },
     currentLibraryId() {
-      return this.currentLibrary ? this.currentLibrary.id : null
+      return this.currentLibrary?.id || null
     },
     libraries() {
       return this.$store.getters['libraries/getSortedLibraries']()
-    },
-    libraryScans() {
-      return this.$store.state.scanners.libraryScans
     }
   },
   methods: {

@@ -11,7 +11,7 @@
             </div>
             {{ item }}
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -50,7 +50,11 @@ export default {
     label: String,
     disabled: Boolean,
     readonly: Boolean,
-    showEdit: Boolean
+    showEdit: Boolean,
+    menuDisabled: {
+      type: Boolean,
+      default: false
+    },
   },
   data() {
     return {
@@ -77,7 +81,7 @@ export default {
       }
     },
     showMenu() {
-      return this.isFocused
+      return this.isFocused && !this.menuDisabled
     },
     wrapperClass() {
       var classes = []
@@ -144,6 +148,31 @@ export default {
       this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
+    },
+    inputPaste(evt) {
+      setTimeout(() => {
+        const pastedText = evt.target?.value || ''
+        console.log('Pasted text=', pastedText)
+        const pastedItems = [
+          ...new Set(
+            pastedText
+              .split(';')
+              .map((i) => i.trim())
+              .filter((i) => i)
+          )
+        ]
+
+        // Filter out items already selected
+        const itemsToAdd = pastedItems.filter((i) => !this.selected.some((_i) => _i.toLowerCase() === i.toLowerCase()))
+        if (pastedItems.length && !itemsToAdd.length) {
+          this.textInput = null
+          this.currentSearch = null
+        } else {
+          for (const itemToAdd of itemsToAdd) {
+            this.insertNewItem(itemToAdd)
+          }
+        }
+      }, 10)
     },
     inputFocus() {
       if (!this.menu) {

@@ -3,21 +3,21 @@
     <div class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
       <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
-          <div class="relative" style="height: fit-content">
-            <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+          <div class="relative group" style="height: fit-content">
+            <covers-book-cover class="relative group-hover:brightness-75 transition cursor-pointer" expand-on-click :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Item Progress Bar -->
             <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
             <!-- Item Cover Overlay -->
-            <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
+            <div class="absolute top-0 left-0 w-full h-full z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
               <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
                 <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="playItem">
                   <span class="material-icons text-4xl">play_circle_filled</span>
                 </div>
               </div>
 
-              <span class="absolute bottom-2.5 right-2.5 z-10 material-icons text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200" @click="showEditCover">edit</span>
+              <span class="absolute bottom-2.5 right-2.5 z-10 material-icons text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" @click="showEditCover">edit</span>
             </div>
           </div>
         </div>
@@ -42,7 +42,7 @@
                   <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}?library=${libraryItem.libraryId}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
@@ -124,7 +124,7 @@
             </ui-context-menu-dropdown>
           </div>
 
-          <div class="my-4 max-w-2xl">
+          <div class="my-4 w-full">
             <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
@@ -682,13 +682,15 @@ export default {
     },
     deleteLibraryItem() {
       const payload = {
-        message: 'This will delete the library item from the database and your file system. Are you sure?',
-        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        message: this.$strings.MessageConfirmDeleteLibraryItem,
+        checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
-        checkboxDefaultValue: true,
+        checkboxDefaultValue: !Number(localStorage.getItem('softDeleteDefault') || 0),
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
+            localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
+
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {

@@ -9,6 +9,8 @@
           <span class="material-icons text-1.5xl" aria-label="Activities" role="button">notifications</span>
         </ui-tooltip>
       </div>
+      <div v-if="showUnseenSuccessIndicator" class="w-2 h-2 rounded-full bg-success pointer-events-none absolute -top-1 -right-0.5" />
+      <div v-if="showUnseenSuccessIndicator" class="w-2 h-2 rounded-full bg-success/50 pointer-events-none absolute animate-ping -top-1 -right-0.5" />
     </button>
     <transition name="menu">
       <div class="sm:w-80 w-full relative">
@@ -46,7 +48,8 @@ export default {
         isActive: true
       },
       showMenu: false,
-      disabled: false
+      disabled: false,
+      tasksSeen: []
     }
   },
   computed: {
@@ -60,12 +63,20 @@ export default {
       // return just the tasks that are running or failed (or show success) in the last 1 minute
       const tasks = this.tasks.filter((t) => !t.isFinished || ((t.isFailed || t.showSuccess) && t.finishedAt > new Date().getTime() - 1000 * 60)) || []
       return tasks.sort((a, b) => b.startedAt - a.startedAt)
+    },
+    showUnseenSuccessIndicator() {
+      return this.tasksToShow.some((t) => t.isFinished && !t.isFailed && !this.tasksSeen.includes(t.id))
     }
   },
   methods: {
     clickShowMenu() {
       if (this.disabled) return
       this.showMenu = !this.showMenu
+      if (this.showMenu) {
+        this.tasksToShow.forEach((t) => {
+          if (!this.tasksSeen.includes(t.id)) this.tasksSeen.push(t.id)
+        })
+      }
     },
     clickedOutside() {
       this.showMenu = false
@@ -83,9 +94,20 @@ export default {
         default:
           return ''
       }
+    },
+    taskFinished(task) {
+      // add task as seen if menu is open when it finished
+      if (this.showMenu && !this.tasksSeen.includes(task.id)) {
+        this.tasksSeen.push(task.id)
+      }
     }
   },
-  mounted() {}
+  mounted() {
+    this.$root.socket?.on('task_finished', this.taskFinished)
+  },
+  beforeDestroy() {
+    this.$root.socket?.off('task_finished', this.taskFinished)
+  }
 }
 </script>
 

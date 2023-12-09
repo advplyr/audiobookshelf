@@ -26,11 +26,11 @@
           </div>
           <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
             <template v-for="(author, index) in bookAuthors">
-              <nuxt-link :key="author.id" :to="`/author/${author.id}?library=${book.libraryId}`" class="truncate hover:underline">{{ author.name }}</nuxt-link
+              <nuxt-link :key="author.id" :to="`/author/${author.id}`" class="truncate hover:underline">{{ author.name }}</nuxt-link
               ><span :key="author.id + '-comma'" v-if="index < bookAuthors.length - 1">,&nbsp;</span>
             </template>
           </div>
-          <p class="text-xs md:text-sm text-gray-400">{{ bookDuration }}</p>
+          <p v-if="media.duration" class="text-xs md:text-sm text-gray-400">{{ bookDuration }}</p>
         </div>
       </div>
     </div>

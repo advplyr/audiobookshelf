@@ -16,11 +16,11 @@
           v-for="(episode, index) in episodesList"
           :key="index"
           class="relative"
-          :class="itemEpisodeMap[episode.cleanUrl] ? 'bg-primary bg-opacity-40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
+          :class="getIsEpisodeDownloaded(episode) ? 'bg-primary bg-opacity-40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
           @click="toggleSelectEpisode(episode)"
         >
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <span v-if="itemEpisodeMap[episode.cleanUrl]" class="material-icons text-success text-xl">download_done</span>
+            <span v-if="getIsEpisodeDownloaded(episode)" class="material-icons text-success text-xl">download_done</span>
             <ui-checkbox v-else v-model="selectedEpisodes[episode.cleanUrl]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">
@@ -93,7 +93,7 @@ export default {
       return this.libraryItem.media.metadata.title || 'Unknown'
     },
     allDownloaded() {
-      return !this.episodesCleaned.some((episode) => !this.itemEpisodeMap[episode.cleanUrl])
+      return !this.episodesCleaned.some((episode) => !this.getIsEpisodeDownloaded(episode))
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
@@ -104,18 +104,7 @@ export default {
       return this.$getString('LabelDownloadNEpisodes', [this.episodesSelected.length])
     },
     itemEpisodes() {
-      if (!this.libraryItem) return []
-      return this.libraryItem.media.episodes || []
-    },
-    itemEpisodeMap() {
-      const map = {}
-      this.itemEpisodes.forEach((item) => {
-        if (item.enclosure) {
-          const cleanUrl = this.getCleanEpisodeUrl(item.enclosure.url)
-          map[cleanUrl] = true
-        }
-      })
-      return map
+      return this.libraryItem?.media.episodes || []
     },
     episodesList() {
       return this.episodesCleaned.filter((episode) => {
@@ -127,12 +116,23 @@ export default {
       if (this.episodesList.length === this.episodesCleaned.length) {
         return this.$strings.LabelSelectAllEpisodes
       }
-      const episodesNotDownloaded = this.episodesList.filter((ep) => !this.itemEpisodeMap[ep.cleanUrl]).length
+      const episodesNotDownloaded = this.episodesList.filter((ep) => !this.getIsEpisodeDownloaded(ep)).length
       return this.$getString('LabelSelectEpisodesShowing', [episodesNotDownloaded])
     }
   },
   methods: {
+    getIsEpisodeDownloaded(episode) {
+      return this.itemEpisodes.some((downloadedEpisode) => {
+        if (episode.guid && downloadedEpisode.guid === episode.guid) return true
+        if (!downloadedEpisode.enclosure?.url) return false
+        return this.getCleanEpisodeUrl(downloadedEpisode.enclosure.url) === episode.cleanUrl
+      })
+    },
     /**
+     * UPDATE: As of v2.4.5 guid is used for matching existing downloaded episodes if it is found on the RSS feed.
+     * Fallback to checking the clean url
+     * @see https://github.com/advplyr/audiobookshelf/issues/2207
+     *
      * RSS feed episode url is used for matching with existing downloaded episodes.
      * Some RSS feeds include timestamps in the episode url (e.g. patreon) that can change on requests.
      * These need to be removed in order to detect the same episode each time the feed is pulled.
@@ -169,13 +169,13 @@ export default {
     },
     toggleSelectAll(val) {
       for (const episode of this.episodesList) {
-        if (this.itemEpisodeMap[episode.cleanUrl]) this.selectedEpisodes[episode.cleanUrl] = false
+        if (this.getIsEpisodeDownloaded(episode)) this.selectedEpisodes[episode.cleanUrl] = false
         else this.$set(this.selectedEpisodes, episode.cleanUrl, val)
       }
     },
     checkSetIsSelectedAll() {
       for (const episode of this.episodesList) {
-        if (!this.itemEpisodeMap[episode.cleanUrl] && !this.selectedEpisodes[episode.cleanUrl]) {
+        if (!this.getIsEpisodeDownloaded(episode) && !this.selectedEpisodes[episode.cleanUrl]) {
           this.selectAll = false
           return
         }
@@ -183,7 +183,7 @@ export default {
       this.selectAll = true
     },
     toggleSelectEpisode(episode) {
-      if (this.itemEpisodeMap[episode.cleanUrl]) return
+      if (this.getIsEpisodeDownloaded(episode)) return
       this.$set(this.selectedEpisodes, episode.cleanUrl, !this.selectedEpisodes[episode.cleanUrl])
       this.checkSetIsSelectedAll()
     },

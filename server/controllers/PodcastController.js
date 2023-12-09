@@ -222,10 +222,9 @@ class PodcastController {
       Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
       return res.sendStatus(403)
     }
-    var libraryItem = req.libraryItem
-
-    var episodes = req.body
-    if (!episodes || !episodes.length) {
+    const libraryItem = req.libraryItem
+    const episodes = req.body
+    if (!episodes?.length) {
       return res.sendStatus(400)
     }
 
@@ -324,7 +323,7 @@ class PodcastController {
       const numItems = pmi.playlist.playlistMediaItems.length - 1
 
       if (!numItems) {
-        Logger.info(`[PodcastController] Playlist "${playlist.name}" has no more items - removing it`)
+        Logger.info(`[PodcastController] Playlist "${pmi.playlist.name}" has no more items - removing it`)
         const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
         SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_removed', jsonExpanded)
         await pmi.playlist.destroy()

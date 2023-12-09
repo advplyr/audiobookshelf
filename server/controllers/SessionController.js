@@ -6,7 +6,7 @@ class SessionController {
   constructor() { }
 
   async findOne(req, res) {
-    return res.json(req.session)
+    return res.json(req.playbackSession)
   }
 
   async getAllWithUserData(req, res) {
@@ -63,32 +63,32 @@ class SessionController {
   }
 
   async getOpenSession(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.session.libraryItemId)
-    const sessionForClient = req.session.toJSONForClient(libraryItem)
+    const libraryItem = await Database.libraryItemModel.getOldById(req.playbackSession.libraryItemId)
+    const sessionForClient = req.playbackSession.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }
 
   // POST: api/session/:id/sync
   sync(req, res) {
-    this.playbackSessionManager.syncSessionRequest(req.user, req.session, req.body, res)
+    this.playbackSessionManager.syncSessionRequest(req.user, req.playbackSession, req.body, res)
   }
 
   // POST: api/session/:id/close
   close(req, res) {
     let syncData = req.body
     if (syncData && !Object.keys(syncData).length) syncData = null
-    this.playbackSessionManager.closeSessionRequest(req.user, req.session, syncData, res)
+    this.playbackSessionManager.closeSessionRequest(req.user, req.playbackSession, syncData, res)
   }
 
   // DELETE: api/session/:id
   async delete(req, res) {
     // if session is open then remove it
-    const openSession = this.playbackSessionManager.getSession(req.session.id)
+    const openSession = this.playbackSessionManager.getSession(req.playbackSession.id)
     if (openSession) {
-      await this.playbackSessionManager.removeSession(req.session.id)
+      await this.playbackSessionManager.removeSession(req.playbackSession.id)
     }
 
-    await Database.removePlaybackSession(req.session.id)
+    await Database.removePlaybackSession(req.playbackSession.id)
     res.sendStatus(200)
   }
 
@@ -111,7 +111,7 @@ class SessionController {
       return res.sendStatus(404)
     }
 
-    req.session = playbackSession
+    req.playbackSession = playbackSession
     next()
   }
 
@@ -130,7 +130,7 @@ class SessionController {
       return res.sendStatus(403)
     }
 
-    req.session = playbackSession
+    req.playbackSession = playbackSession
     next()
   }
 }

@@ -126,6 +126,25 @@ class Podcast extends Model {
     return podcastsFiltered.map(p => this.getOldPodcast({media: p.dataValues}))
   }
 
+  getAbsMetadataJson() {
+    return {
+      tags: this.tags || [],
+      title: this.title,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: this.genres || [],
+      feedURL: this.feedURL,
+      imageURL: this.imageURL,
+      itunesPageURL: this.itunesPageURL,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      language: this.language,
+      explicit: !!this.explicit,
+      podcastType: this.podcastType
+    }
+  }
+
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize 

@@ -1,6 +1,14 @@
 const Logger = require('../../Logger')
 const { areEquivalent, copyValue, isNullOrNaN } = require('../../utils')
 
+/**
+ * @typedef EreaderDeviceObject
+ * @property {string} name
+ * @property {string} email
+ * @property {string} availabilityOption
+ * @property {string[]} users
+ */
+
 // REF: https://nodemailer.com/smtp/
 class EmailSettings {
   constructor(settings = null) {
@@ -13,7 +21,7 @@ class EmailSettings {
     this.testAddress = null
     this.fromAddress = null
 
-    // Array of { name:String, email:String }
+    /** @type {EreaderDeviceObject[]} */
     this.ereaderDevices = []
 
     if (settings) {
@@ -57,6 +65,26 @@ class EmailSettings {
 
     if (payload.ereaderDevices !== undefined && !Array.isArray(payload.ereaderDevices)) payload.ereaderDevices = undefined
 
+    if (payload.ereaderDevices?.length) {
+      // Validate ereader devices
+      payload.ereaderDevices = payload.ereaderDevices.map((device) => {
+        if (!device.name || !device.email) {
+          Logger.error(`[EmailSettings] Update ereader device is invalid`, device)
+          return null
+        }
+        if (!device.availabilityOption || !['adminOrUp', 'userOrUp', 'guestOrUp', 'specificUsers'].includes(device.availabilityOption)) {
+          device.availabilityOption = 'adminOrUp'
+        }
+        if (device.availabilityOption === 'specificUsers' && !device.users?.length) {
+          device.availabilityOption = 'adminOrUp'
+        }
+        if (device.availabilityOption !== 'specificUsers' && device.users?.length) {
+          device.users = []
+        }
+        return device
+      }).filter(d => d)
+    }
+
     let hasUpdates = false
 
     const json = this.toJSON()
@@ -88,15 +116,40 @@ class EmailSettings {
     return payload
   }
 
-  getEReaderDevices(user) {
-    // Only accessible to admin or up
-    if (!user.isAdminOrUp) {
-      return []
+  /**
+   * 
+   * @param {EreaderDeviceObject} device 
+   * @param {import('../user/User')} user 
+   * @returns {boolean}
+   */
+  checkUserCanAccessDevice(device, user) {
+    let deviceAvailability = device.availabilityOption || 'adminOrUp'
+    if (deviceAvailability === 'adminOrUp' && user.isAdminOrUp) return true
+    if (deviceAvailability === 'userOrUp' && (user.isAdminOrUp || user.isUser)) return true
+    if (deviceAvailability === 'guestOrUp') return true
+    if (deviceAvailability === 'specificUsers') {
+      let deviceUsers = device.users || []
+      return deviceUsers.includes(user.id)
     }
-
-    return this.ereaderDevices.map(d => ({ ...d }))
+    return false
   }
 
+  /**
+   * Get ereader devices accessible to user
+   * 
+   * @param {import('../user/User')} user 
+   * @returns {EreaderDeviceObject[]}
+   */
+  getEReaderDevices(user) {
+    return this.ereaderDevices.filter((device) => this.checkUserCanAccessDevice(device, user))
+  }
+
+  /**
+   * Get ereader device by name
+   * 
+   * @param {string} deviceName 
+   * @returns {EreaderDeviceObject}
+   */
   getEReaderDevice(deviceName) {
     return this.ereaderDevices.find(d => d.name === deviceName)
   }

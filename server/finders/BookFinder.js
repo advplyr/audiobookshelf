@@ -6,7 +6,7 @@ const Audnexus = require('../providers/Audnexus')
 const FantLab = require('../providers/FantLab')
 const AudiobookCovers = require('../providers/AudiobookCovers')
 const Logger = require('../Logger')
-const { levenshteinDistance } = require('../utils/index')
+const { levenshteinDistance, escapeRegExp } = require('../utils/index')
 
 class BookFinder {
   constructor() {
@@ -31,47 +31,11 @@ class BookFinder {
     return book
   }
 
-  stripSubtitle(title) {
-    if (title.includes(':')) {
-      return title.split(':')[0].trim()
-    } else if (title.includes(' - ')) {
-      return title.split(' - ')[0].trim()
-    }
-    return title
-  }
-
-  replaceAccentedChars(str) {
-    try {
-      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-    } catch (error) {
-      Logger.error('[BookFinder] str normalize error', error)
-      return str
-    }
-  }
-
-  cleanTitleForCompares(title) {
-    if (!title) return ''
-    // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
-    let stripped = this.stripSubtitle(title)
-
-    // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
-    let cleaned = stripped.replace(/ *\([^)]*\) */g, "")
-
-    // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
-    cleaned = cleaned.replace(/'/g, '')
-    return this.replaceAccentedChars(cleaned)
-  }
-
-  cleanAuthorForCompares(author) {
-    if (!author) return ''
-    return this.replaceAccentedChars(author)
-  }
-
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
-    var searchTitle = this.cleanTitleForCompares(title)
-    var searchAuthor = this.cleanAuthorForCompares(author)
+    var searchTitle = cleanTitleForCompares(title)
+    var searchAuthor = cleanAuthorForCompares(author)
     return books.map(b => {
-      b.cleanedTitle = this.cleanTitleForCompares(b.title)
+      b.cleanedTitle = cleanTitleForCompares(b.title)
       b.titleDistance = levenshteinDistance(b.cleanedTitle, title)
 
       // Total length of search (title or both title & author)
@@ -82,7 +46,7 @@ class BookFinder {
           b.authorDistance = author.length
         } else {
           b.totalPossibleDistance += b.author.length
-          b.cleanedAuthor = this.cleanAuthorForCompares(b.author)
+          b.cleanedAuthor = cleanAuthorForCompares(b.author)
 
           var cleanedAuthorDistance = levenshteinDistance(b.cleanedAuthor, searchAuthor)
           var authorDistance = levenshteinDistance(b.author || '', author)
@@ -136,6 +100,10 @@ class BookFinder {
     if (!booksFiltered.length && books.length) {
       if (this.verbose) Logger.debug(`Search has ${books.length} matches, but no close title matches`)
     }
+    booksFiltered.sort((a, b) => {
+      return a.totalDistance - b.totalDistance
+    })
+
     return booksFiltered
   }
 
@@ -179,34 +147,153 @@ class BookFinder {
     return books
   }
 
-  addTitleCandidate(title, candidates) {
-    // Main variant
-    const cleanTitle = this.cleanTitleForCompares(title).trim()
-    if (!cleanTitle) return
-    candidates.add(cleanTitle)
+  static TitleCandidates = class {
 
-    let candidate = cleanTitle
+    constructor(cleanAuthor) {
+      this.candidates = new Set()
+      this.cleanAuthor = cleanAuthor
+      this.priorities = {}
+      this.positions = {}
+      this.currentPosition = 0
+    }
 
-    // Remove subtitle
-    candidate = candidate.replace(/([,:;_]| by ).*/g, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+    add(title) {
+      // if title contains the author, remove it
+      title = this.#removeAuthorFromTitle(title)
 
-    // Remove preceding/trailing numbers
-    candidate = candidate.replace(/^\d+ | \d+$/g, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+      const titleTransformers = [
+        [/([,:;_]| by ).*/g, ''],                  // Remove subtitle
+        [/(^| )\d+k(bps)?( |$)/, ' '],             // Remove bitrate
+        [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, ''], // Remove edition
+        [/(^| |\.)(m4b|m4a|mp3)( |$)/g, ''],       // Remove file-type
+        [/ a novel.*$/g, ''],                      // Remove "a novel"
+        [/^\d+ | \d+$/g, ''],                      // Remove preceding/trailing numbers
+      ]
 
-    // Remove bitrate
-    candidate = candidate.replace(/(^| )\d+k(bps)?( |$)/, " ").trim()
-    if (candidate)
-      candidates.add(candidate)
+      // Main variant
+      const cleanTitle = cleanTitleForCompares(title).trim()
+      if (!cleanTitle) return
+      this.candidates.add(cleanTitle)
+      this.priorities[cleanTitle] = 0
+      this.positions[cleanTitle] = this.currentPosition
 
-    // Remove edition
-    candidate = candidate.replace(/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/, "").trim()
-    if (candidate)
-      candidates.add(candidate)
+      let candidate = cleanTitle
+
+      for (const transformer of titleTransformers)
+        candidate = candidate.replace(transformer[0], transformer[1]).trim()
+
+      if (candidate != cleanTitle) {
+        if (candidate) {
+          this.candidates.add(candidate)
+          this.priorities[candidate] = 0
+          this.positions[candidate] = this.currentPosition
+        }
+        this.priorities[cleanTitle] = 1
+      }
+      this.currentPosition++
+    }
+
+    get size() {
+      return this.candidates.size
+    }
+
+    getCandidates() {
+      var candidates = [...this.candidates]
+      candidates.sort((a, b) => {
+        // Candidates that include only digits are also likely low quality
+        const onlyDigits = /^\d+$/
+        const includesOnlyDigitsDiff = onlyDigits.test(a) - onlyDigits.test(b)
+        if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
+        // transformed candidates receive higher priority
+        const priorityDiff = this.priorities[a] - this.priorities[b]
+        if (priorityDiff) return priorityDiff
+        // if same priorirty, prefer candidates that are closer to the beginning (e.g. titles before subtitles)
+        const positionDiff = this.positions[a] - this.positions[b]
+        return positionDiff // candidates with same priority always have different positions
+      })
+      Logger.debug(`[${this.constructor.name}] Found ${candidates.length} fuzzy title candidates`)
+      Logger.debug(candidates)
+      return candidates
+    }
+
+    delete(title) {
+      return this.candidates.delete(title)
+    }
+
+    #removeAuthorFromTitle(title) {
+      if (!this.cleanAuthor) return title
+      const authorRe = new RegExp(`(^| | by |)${escapeRegExp(this.cleanAuthor)}(?= |$)`, "g")
+      const authorCleanedTitle = cleanAuthorForCompares(title)
+      const authorCleanedTitleWithoutAuthor = authorCleanedTitle.replace(authorRe, '')
+      if (authorCleanedTitleWithoutAuthor !== authorCleanedTitle) {
+        return authorCleanedTitleWithoutAuthor.trim()
+      }
+      return title
+    }
   }
+
+  static AuthorCandidates = class {
+    constructor(cleanAuthor, audnexus) {
+      this.audnexus = audnexus
+      this.candidates = new Set()
+      this.cleanAuthor = cleanAuthor
+      if (cleanAuthor) this.candidates.add(cleanAuthor)
+    }
+
+    validateAuthor(name, region = '', maxLevenshtein = 2) {
+      return this.audnexus.authorASINsRequest(name, region).then((asins) => {
+        for (const [i, asin] of asins.entries()) {
+          if (i > 10) break
+          let cleanName = cleanAuthorForCompares(asin.name)
+          if (!cleanName) continue
+          if (cleanName.includes(name)) return name
+          if (name.includes(cleanName)) return cleanName
+          if (levenshteinDistance(cleanName, name) <= maxLevenshtein) return cleanName
+        }
+        return ''
+      })
+    }
+
+    add(author) {
+      const cleanAuthor = cleanAuthorForCompares(author).trim()
+      if (!cleanAuthor) return
+      this.candidates.add(cleanAuthor)
+    }
+
+    get size() {
+      return this.candidates.size
+    }
+
+    get agressivelyCleanAuthor() {
+      if (this.cleanAuthor) {
+        const agressivelyCleanAuthor = this.cleanAuthor.replace(/[,/-].*$/, '').trim()
+        return agressivelyCleanAuthor ? agressivelyCleanAuthor : this.cleanAuthor
+      }
+      return ''
+    }
+
+    async getCandidates() {
+      var filteredCandidates = []
+      var promises = []
+      for (const candidate of this.candidates) {
+        promises.push(this.validateAuthor(candidate))
+      }
+      const results = [...new Set(await Promise.all(promises))]
+      filteredCandidates = results.filter(author => author)
+      // If no valid candidates were found, add back an aggresively cleaned author version
+      if (!filteredCandidates.length && this.cleanAuthor) filteredCandidates.push(this.agressivelyCleanAuthor)
+      // Always add an empty author candidate
+      filteredCandidates.push('')
+      Logger.debug(`[${this.constructor.name}] Found ${filteredCandidates.length} fuzzy author candidates`)
+      Logger.debug(filteredCandidates)
+      return filteredCandidates
+    }
+
+    delete(author) {
+      return this.candidates.delete(author)
+    }
+  }
+
 
   /**
    * Search for books including fuzzy searches
@@ -232,60 +319,34 @@ class BookFinder {
     books = await this.runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance)
 
     if (!books.length && maxFuzzySearches > 0) {
-      // normalize title and author
+      // Normalize title and author
       title = title.trim().toLowerCase()
       author = author?.trim().toLowerCase() || ''
 
-      // Now run up to maxFuzzySearches fuzzy searches
-      let candidates = new Set()
-      let cleanedAuthor = this.cleanAuthorForCompares(author)
-      this.addTitleCandidate(title, candidates)
+      const cleanAuthor = cleanAuthorForCompares(author)
 
-      // remove parentheses and their contents, and replace with a separator
-      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}/g, " - ")
+      // Now run up to maxFuzzySearches fuzzy searches
+      let authorCandidates = new BookFinder.AuthorCandidates(cleanAuthor, this.audnexus)
+
+      // Remove underscores and parentheses with their contents, and replace with a separator
+      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, " - ")
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
-      for (const titlePart of titleParts) {
-        this.addTitleCandidate(titlePart, candidates)
-      }
-      // We already searched for original title
-      if (author == cleanedAuthor) candidates.delete(title)
-      if (candidates.size > 0) {
-        candidates = [...candidates]
-        candidates.sort((a, b) => {
-          // Candidates that include the author are likely low quality
-          const includesAuthorDiff = !b.includes(cleanedAuthor) - !a.includes(cleanedAuthor)
-          if (includesAuthorDiff) return includesAuthorDiff
-          // Candidates that include only digits are also likely low quality
-          const onlyDigits = /^\d+$/
-          const includesOnlyDigitsDiff = !onlyDigits.test(b) - !onlyDigits.test(a)
-          if (includesOnlyDigitsDiff) return includesOnlyDigitsDiff
-          // Start with longer candidaets, as they are likely more specific
-          const lengthDiff = b.length - a.length
-          if (lengthDiff) return lengthDiff
-          return b.localeCompare(a)
-        })
-        Logger.debug(`[BookFinder] Found ${candidates.length} fuzzy title candidates`, candidates)
-        for (const candidate of candidates) {
+      for (const titlePart of titleParts)
+        authorCandidates.add(titlePart)
+      authorCandidates = await authorCandidates.getCandidates()
+      for (const authorCandidate of authorCandidates) {
+        let titleCandidates = new BookFinder.TitleCandidates(authorCandidate)
+        for (const titlePart of titleParts)
+          titleCandidates.add(titlePart)
+        titleCandidates = titleCandidates.getCandidates()
+        for (const titleCandidate of titleCandidates) {
+          if (titleCandidate == title && authorCandidate == author) continue // We already tried this
           if (++numFuzzySearches > maxFuzzySearches) return books
-          books = await this.runSearch(candidate, cleanedAuthor, provider, asin, maxTitleDistance, maxAuthorDistance)
-          if (books.length) break
-        }
-        if (!books.length) {
-          // Now try searching without the author
-          for (const candidate of candidates) {
-            if (++numFuzzySearches > maxFuzzySearches) return books
-            books = await this.runSearch(candidate, '', provider, asin, maxTitleDistance, maxAuthorDistance)
-            if (books.length) break
-          }
+          books = await this.runSearch(titleCandidate, authorCandidate, provider, asin, maxTitleDistance, maxAuthorDistance)
+          if (books.length) return books
         }
       }
-    }
-
-    if (provider === 'openlibrary') {
-      books.sort((a, b) => {
-        return a.totalDistance - b.totalDistance
-      })
     }
 
     return books
@@ -357,3 +418,52 @@ class BookFinder {
   }
 }
 module.exports = new BookFinder()
+
+function stripSubtitle(title) {
+  if (title.includes(':')) {
+    return title.split(':')[0].trim()
+  } else if (title.includes(' - ')) {
+    return title.split(' - ')[0].trim()
+  }
+  return title
+}
+
+function replaceAccentedChars(str) {
+  try {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+  } catch (error) {
+    Logger.error('[BookFinder] str normalize error', error)
+    return str
+  }
+}
+
+function cleanTitleForCompares(title) {
+  if (!title) return ''
+  title = stripRedundantSpaces(title)
+
+  // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
+  let stripped = stripSubtitle(title)
+
+  // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
+  let cleaned = stripped.replace(/ *\([^)]*\) */g, "")
+
+  // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
+  cleaned = cleaned.replace(/'/g, '')
+  return replaceAccentedChars(cleaned).toLowerCase()
+}
+
+function cleanAuthorForCompares(author) {
+  if (!author) return ''
+  author = stripRedundantSpaces(author)
+  
+  let cleanAuthor = replaceAccentedChars(author).toLowerCase()
+  // separate initials
+  cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
+  // remove middle initials
+  cleanAuthor = cleanAuthor.replace(/(?<=\w\w)(\s+[a-z]\.?)+(?=\s+\w\w)/g, '')
+  return cleanAuthor
+}
+
+function stripRedundantSpaces(str) {
+  return str.replace(/\s+/g, ' ').trim()
+}

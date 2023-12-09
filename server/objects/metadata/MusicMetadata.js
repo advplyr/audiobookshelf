@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
+const { areEquivalent, copyValue, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
 class MusicMetadata {
   constructor(metadata) {
@@ -131,19 +131,6 @@ class MusicMetadata {
 
   get titlePrefixAtEnd() {
     return getTitlePrefixAtEnd(this.title)
-  }
-
-  searchQuery(query) { // Returns key if match is found
-    const keysToCheck = ['title', 'album']
-    for (const key of keysToCheck) {
-      if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
-        return {
-          matchKey: key,
-          matchText: this[key]
-        }
-      }
-    }
-    return null
   }
 
   setData(mediaMetadata = {}) {

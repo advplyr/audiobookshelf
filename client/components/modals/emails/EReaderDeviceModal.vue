@@ -8,12 +8,20 @@
     <form @submit.prevent="submitForm">
       <div class="w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
         <div class="w-full px-3 py-5 md:p-12">
-          <div class="flex items-center -mx-1 mb-2">
+          <div class="flex items-center -mx-1 mb-4">
             <div class="w-full md:w-1/2 px-1">
               <ui-text-input-with-label ref="ereaderNameInput" v-model="newDevice.name" :disabled="processing" :label="$strings.LabelName" />
             </div>
             <div class="w-full md:w-1/2 px-1">
               <ui-text-input-with-label ref="ereaderEmailInput" v-model="newDevice.email" :disabled="processing" :label="$strings.LabelEmail" />
+            </div>
+          </div>
+          <div class="flex items-center -mx-1 mb-4">
+            <div class="w-full md:w-1/2 px-1">
+              <ui-dropdown v-model="newDevice.availabilityOption" :label="$strings.LabelDeviceIsAvailableTo" :items="userAvailabilityOptions" @input="availabilityOptionChanged" />
+            </div>
+            <div class="w-full md:w-1/2 px-1">
+              <ui-multi-select-dropdown v-if="newDevice.availabilityOption === 'specificUsers'" v-model="newDevice.users" :label="$strings.HeaderUsers" :items="userOptions" />
             </div>
           </div>
 
@@ -45,8 +53,11 @@ export default {
       processing: false,
       newDevice: {
         name: '',
-        email: ''
-      }
+        email: '',
+        availabilityOption: 'adminAndUp',
+        users: []
+      },
+      users: []
     }
   },
   watch: {
@@ -68,10 +79,55 @@ export default {
       }
     },
     title() {
-      return this.ereaderDevice ? 'Create Device' : 'Update Device'
+      return !this.ereaderDevice ? 'Create Device' : 'Update Device'
+    },
+    userAvailabilityOptions() {
+      return [
+        {
+          text: this.$strings.LabelAdminUsersOnly,
+          value: 'adminOrUp'
+        },
+        {
+          text: this.$strings.LabelAllUsersExcludingGuests,
+          value: 'userOrUp'
+        },
+        {
+          text: this.$strings.LabelAllUsersIncludingGuests,
+          value: 'guestOrUp'
+        },
+        {
+          text: this.$strings.LabelSelectUsers,
+          value: 'specificUsers'
+        }
+      ]
+    },
+    userOptions() {
+      return this.users.map((u) => ({ text: u.username, value: u.id }))
     }
   },
   methods: {
+    availabilityOptionChanged(option) {
+      if (option === 'specificUsers' && !this.users.length) {
+        this.loadUsers()
+      }
+    },
+    async loadUsers() {
+      this.processing = true
+      this.users = await this.$axios
+        .$get('/api/users')
+        .then((res) => {
+          return res.users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          return []
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
     submitForm() {
       this.$refs.ereaderNameInput.blur()
       this.$refs.ereaderEmailInput.blur()
@@ -81,19 +137,27 @@ export default {
         return
       }
 
+      if (this.newDevice.availabilityOption === 'specificUsers' && !this.newDevice.users.length) {
+        this.$toast.error('Must select at least one user')
+        return
+      }
+      if (this.newDevice.availabilityOption !== 'specificUsers') {
+        this.newDevice.users = []
+      }
+
       this.newDevice.name = this.newDevice.name.trim()
       this.newDevice.email = this.newDevice.email.trim()
 
       if (!this.ereaderDevice) {
         if (this.existingDevices.some((d) => d.name === this.newDevice.name)) {
-          this.$toast.error('EReader device with that name already exists')
+          this.$toast.error('Ereader device with that name already exists')
           return
         }
 
         this.submitCreate()
       } else {
         if (this.ereaderDevice.name !== this.newDevice.name && this.existingDevices.some((d) => d.name === this.newDevice.name)) {
-          this.$toast.error('EReader device with that name already exists')
+          this.$toast.error('Ereader device with that name already exists')
           return
         }
 
@@ -160,9 +224,17 @@ export default {
       if (this.ereaderDevice) {
         this.newDevice.name = this.ereaderDevice.name
         this.newDevice.email = this.ereaderDevice.email
+        this.newDevice.availabilityOption = this.ereaderDevice.availabilityOption || 'adminOrUp'
+        this.newDevice.users = this.ereaderDevice.users || []
+
+        if (this.newDevice.availabilityOption === 'specificUsers' && !this.users.length) {
+          this.loadUsers()
+        }
       } else {
         this.newDevice.name = ''
         this.newDevice.email = ''
+        this.newDevice.availabilityOption = 'adminOrUp'
+        this.newDevice.users = []
       }
     }
   },

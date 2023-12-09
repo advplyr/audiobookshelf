@@ -308,6 +308,8 @@ module.exports = {
   async getNewestAuthors(library, user, limit) {
     if (library.mediaType !== 'book') return { authors: [], count: 0 }
 
+    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
+
     const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: library.id,
@@ -315,9 +317,15 @@ module.exports = {
           [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
         }
       },
+      replacements,
       include: {
-        model: Database.bookAuthorModel,
-        required: true // Must belong to a book
+        model: Database.bookModel,
+        attributes: ['id', 'tags', 'explicit'],
+        where: bookWhere,
+        required: true, // Must belong to a book
+        through: {
+          attributes: []
+        }
       },
       limit,
       distinct: true,
@@ -328,7 +336,7 @@ module.exports = {
 
     return {
       authors: authors.map((au) => {
-        const numBooks = au.bookAuthors?.length || 0
+        const numBooks = au.books.length || 0
         return au.getOldAuthor().toJSONExpanded(numBooks)
       }),
       count

@@ -9,7 +9,8 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const seriesFilters = require('../utils/queries/seriesFilters')
 const fileUtils = require('../utils/fileUtils')
-const { sort, createNewSortInstance } = require('../libs/fastSort')
+const { asciiOnlyToLowerCase } = require('../utils/index')
+const { createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -555,7 +556,7 @@ class LibraryController {
       return res.status(400).send('No query string')
     }
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    const query = req.query.q.trim().toLowerCase()
+    const query = asciiOnlyToLowerCase(req.query.q.trim())
 
     const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)
@@ -620,7 +621,7 @@ class LibraryController {
         model: Database.bookModel,
         attributes: ['id', 'tags', 'explicit'],
         where: bookWhere,
-        required: false,
+        required: !req.user.isAdminOrUp, // Only show authors with 0 books for admin users or up
         through: {
           attributes: []
         }
@@ -774,6 +775,13 @@ class LibraryController {
     })
   }
 
+  /**
+   * GET: /api/libraries/:id/matchall
+   * Quick match all library items. Book libraries only.
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async matchAll(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)
@@ -783,7 +791,14 @@ class LibraryController {
     res.sendStatus(200)
   }
 
-  // POST: api/libraries/:id/scan
+  /**
+   * POST: /api/libraries/:id/scan
+   * Optional query:
+   * ?force=1
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
@@ -791,7 +806,8 @@ class LibraryController {
     }
     res.sendStatus(200)
 
-    await LibraryScanner.scan(req.library)
+    const forceRescan = req.query.force === '1'
+    await LibraryScanner.scan(req.library, forceRescan)
 
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')
@@ -843,6 +859,56 @@ class LibraryController {
     const opmlText = this.podcastManager.generateOPMLFileText(podcasts)
     res.type('application/xml')
     res.send(opmlText)
+  }
+
+  /**
+   * Remove all metadata.json or metadata.abs files in library item folders
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async removeAllMetadataFiles(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user attempted to remove all metadata files`, req.user)
+      return res.sendStatus(403)
+    }
+
+    const fileExt = req.query.ext === 'abs' ? 'abs' : 'json'
+    const metadataFilename = `metadata.${fileExt}`
+    const libraryItemsWithMetadata = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'libraryFiles'],
+      where: [
+        {
+          libraryId: req.library.id
+        },
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(libraryFiles) AND json_extract(json_each.value, "$.metadata.filename") = "${metadataFilename}")`), {
+          [Sequelize.Op.gte]: 1
+        })
+      ]
+    })
+    if (!libraryItemsWithMetadata.length) {
+      Logger.info(`[LibraryController] No ${metadataFilename} files found to remove`)
+      return res.json({
+        found: 0
+      })
+    }
+
+    Logger.info(`[LibraryController] Found ${libraryItemsWithMetadata.length} ${metadataFilename} files to remove`)
+
+    let numRemoved = 0
+    for (const libraryItem of libraryItemsWithMetadata) {
+      const metadataFilepath = libraryItem.libraryFiles.find(lf => lf.metadata.filename === metadataFilename)?.metadata.path
+      if (!metadataFilepath) continue
+      Logger.debug(`[LibraryController] Removing file "${metadataFilepath}"`)
+      if ((await fileUtils.removeFile(metadataFilepath))) {
+        numRemoved++
+      }
+    }
+
+    res.json({
+      found: libraryItemsWithMetadata.length,
+      removed: numRemoved
+    })
   }
 
   /**
