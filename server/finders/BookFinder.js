@@ -354,8 +354,8 @@ class BookFinder {
 
     if (books.length) {
       const resultsHaveDuration = provider.startsWith('audible')
-      if (resultsHaveDuration && libraryItem && libraryItem.media?.duration) {
-        const libraryItemDurationMinutes = libraryItem.media.duration/60      
+      if (resultsHaveDuration && libraryItem?.media?.duration) {
+        const libraryItemDurationMinutes = libraryItem.media.duration / 60
         // If provider results have duration, sort by ascendinge duration difference from libraryItem
         books.sort((a, b) => {
           const aDuration = a.duration || Number.POSITIVE_INFINITY
@@ -472,7 +472,7 @@ function cleanTitleForCompares(title) {
 function cleanAuthorForCompares(author) {
   if (!author) return ''
   author = stripRedundantSpaces(author)
-  
+
   let cleanAuthor = replaceAccentedChars(author).toLowerCase()
   // separate initials
   cleanAuthor = cleanAuthor.replace(/([a-z])\.([a-z])/g, '$1. $2')
