@@ -40,7 +40,11 @@
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
-
+  <div>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdqtLYUrVri5l-IB3bF6kZ-ioSG4q8jr3bjmE4BOE25Af4fHw/viewform" target="_blank">
+      Go to Google Form
+    </a>
+  </div>
         <div v-if="login_local && login_openid" class="w-full h-px bg-white bg-opacity-10 my-4" />
 
         <div class="w-full flex py-3">
