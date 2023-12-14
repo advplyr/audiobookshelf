@@ -3,6 +3,7 @@ const which = require('../libs/which')
 const fs = require('../libs/fsExtra')
 const ffbinaries = require('../libs/ffbinaries')
 const Logger = require('../Logger')
+const fileUtils = require('../utils/fileUtils')
 
 class BinaryManager {
 
@@ -64,16 +65,10 @@ class BinaryManager {
   async install(binaries) {
     if (binaries.length == 0) return
     Logger.info(`[BinaryManager] Installing binaries: ${binaries.join(', ')}`)
-    let destination = this.mainInstallPath
-    try {
-      await fs.access(destination, fs.constants.W_OK)
-    } catch (err) {
-      destination = this.altInstallPath
-    }
+    let destination = await fileUtils.isWritable(this.mainInstallPath) ? this.mainInstallPath : this.altInstallPath
     await ffbinaries.downloadBinaries(binaries, { destination })
     Logger.info(`[BinaryManager] Binaries installed to ${destination}`)
   }
-
 }
 
 module.exports = BinaryManager

@@ -1,6 +1,7 @@
 const chai = require('chai')
 const sinon = require('sinon')
 const fs = require('../../../server/libs/fsExtra')
+const fileUtils = require('../../../server/utils/fileUtils')
 const which = require('../../../server/libs/which')
 const ffbinaries = require('../../../server/libs/ffbinaries')
 const path = require('path')
@@ -114,19 +115,19 @@ describe('BinaryManager', () => {
   })
   
   describe('install', () => {
-    let accessStub
+    let isWritableStub
     let downloadBinariesStub
 
     beforeEach(() => {
       binaryManager = new BinaryManager()
-      accessStub = sinon.stub(fs, 'access')
+      isWritableStub = sinon.stub(fileUtils, 'isWritable')
       downloadBinariesStub = sinon.stub(ffbinaries, 'downloadBinaries')
       binaryManager.mainInstallPath = '/path/to/main/install'
       binaryManager.altInstallPath = '/path/to/alt/install'
     })
 
     afterEach(() => {
-      accessStub.restore()
+      isWritableStub.restore()
       downloadBinariesStub.restore()
     })
 
@@ -135,19 +136,19 @@ describe('BinaryManager', () => {
 
       await binaryManager.install(binaries)
 
-      expect(accessStub.called).to.be.false
+      expect(isWritableStub.called).to.be.false
       expect(downloadBinariesStub.called).to.be.false
     })
 
     it('should install binaries in main install path if has access', async () => {
       const binaries = ['ffmpeg']
       const destination = binaryManager.mainInstallPath
-      accessStub.withArgs(destination, fs.constants.W_OK).resolves()
+      isWritableStub.withArgs(destination).resolves(true)
       downloadBinariesStub.resolves()
       
       await binaryManager.install(binaries)
 
-      expect(accessStub.calledOnce).to.be.true
+      expect(isWritableStub.calledOnce).to.be.true
       expect(downloadBinariesStub.calledOnce).to.be.true
       expect(downloadBinariesStub.calledWith(binaries, sinon.match({ destination: destination }))).to.be.true  
     })
@@ -156,12 +157,12 @@ describe('BinaryManager', () => {
       const binaries = ['ffmpeg']
       const mainDestination = binaryManager.mainInstallPath
       const destination = binaryManager.altInstallPath
-      accessStub.withArgs(mainDestination, fs.constants.W_OK).rejects()
+      isWritableStub.withArgs(mainDestination).resolves(false)
       downloadBinariesStub.resolves()
       
       await binaryManager.install(binaries)
 
-      expect(accessStub.calledOnce).to.be.true
+      expect(isWritableStub.calledOnce).to.be.true
       expect(downloadBinariesStub.calledOnce).to.be.true
       expect(downloadBinariesStub.calledWith(binaries, sinon.match({ destination: destination }))).to.be.true  
     })
