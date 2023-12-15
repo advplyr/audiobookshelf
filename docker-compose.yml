@@ -3,12 +3,28 @@ version: "3.7"
 
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    # ABS runs on port 13378 by default. If you want to change
+    # the port, only change the external port, not the internal port
     ports:
       - 13378:80
     volumes:
+      # These volumes are needed to keep your library persistent
+      # and allow media to be accessed by the ABS server.
+      # The path to the left of the colon is the path on your computer,
+      # and the path to the right of the colon is where the data is
+      # available to ABS in Docker.
+      # You can change these media directories or add as many as you want
       - ./audiobooks:/audiobooks
       - ./podcasts:/podcasts
+      # The metadata directory can be stored anywhere on your computer
       - ./metadata:/metadata
+      # The config directory needs to be on the same physical machine
+      # you are running ABS on
       - ./config:/config
     restart: unless-stopped
+    # You can use the following environment variable to run the ABS
+    # docker container as a specific user. You will need to change
+    # the UID and GID to the correct values for your user.
+    #environment:
+    #  - user=1000:1000
