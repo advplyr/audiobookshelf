@@ -552,8 +552,8 @@ class LibraryController {
    * @param {import('express').Response} res 
    */
   async search(req, res) {
-    if (!req.query.q) {
-      return res.status(400).send('No query string')
+    if (!req.query.q || typeof req.query.q !== 'string') {
+      return res.status(400).send('Invalid request. Query param "q" must be a string')
     }
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     const query = asciiOnlyToLowerCase(req.query.q.trim())
