@@ -6,6 +6,7 @@ const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
+const { validateUrl } = require('../utils/index')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
@@ -102,15 +103,24 @@ class PodcastController {
     }
   }
 
+  /**
+   * POST: /api/podcasts/feed
+   * 
+   * @typedef getPodcastFeedReqBody
+   * @property {string} rssFeed
+   * 
+   * @param {import('express').Request<{}, {}, getPodcastFeedReqBody, {}} req 
+   * @param {import('express').Response} res 
+   */
   async getPodcastFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get podcast feed`)
       return res.sendStatus(403)
     }
 
-    var url = req.body.rssFeed
+    const url = validateUrl(req.body.rssFeed)
     if (!url) {
-      return res.status(400).send('Bad request')
+      return res.status(400).send('Invalid request body. "rssFeed" must be a valid URL')
     }
 
     const podcast = await getPodcastFeed(url)

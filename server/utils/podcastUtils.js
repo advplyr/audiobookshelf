@@ -1,5 +1,6 @@
-const Logger = require('../Logger')
 const axios = require('axios')
+const ssrfFilter = require('ssrf-req-filter')
+const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
@@ -216,9 +217,26 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
   }
 }
 
+/**
+ * Get podcast RSS feed as JSON
+ * Uses SSRF filter to prevent internal URLs
+ * 
+ * @param {string} feedUrl 
+ * @param {boolean} [excludeEpisodeMetadata=false]
+ * @returns {Promise}
+ */
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
-  return axios.get(feedUrl, { timeout: 12000, responseType: 'arraybuffer', headers: { Accept: 'application/rss+xml' } }).then(async (data) => {
+
+  return axios({
+    url: feedUrl,
+    method: 'GET',
+    timeout: 12000,
+    responseType: 'arraybuffer',
+    headers: { Accept: 'application/rss+xml' },
+    httpAgent: ssrfFilter(feedUrl),
+    httpsAgent: ssrfFilter(feedUrl)
+  }).then(async (data) => {
 
     // Adding support for ios-8859-1 encoded RSS feeds.
     //  See: https://github.com/advplyr/audiobookshelf/issues/1489
@@ -231,12 +249,12 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
 
     if (!data?.data) {
       Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
-      return false
+      return null
     }
     Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
     const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
     if (!payload) {
-      return false
+      return null
     }
 
     // RSS feed may be a private RSS feed
@@ -245,7 +263,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     return payload.podcast
   }).catch((error) => {
     Logger.error('[podcastUtils] getPodcastFeed Error', error)
-    return false
+    return null
   })
 }
 
