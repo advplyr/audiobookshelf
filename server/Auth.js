@@ -296,7 +296,7 @@ class Auth {
         if (req.query.redirect_uri) {
           // Check if the redirect_uri is in the whitelist
           if (Database.serverSettings.authOpenIDMobileRedirectURIs.includes(req.query.redirect_uri) ||
-           (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
+            (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
             oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/mobile-redirect`).toString()
             mobile_redirect_uri = req.query.redirect_uri
           } else {
@@ -381,7 +381,7 @@ class Auth {
       try {
         // Extract the state parameter from the request
         const { state, code } = req.query
-    
+
         // Check if the state provided is in our list
         if (!state || !this.openIdAuthSession.has(state)) {
           Logger.error('[Auth] /auth/openid/mobile-redirect route: State parameter mismatch')
@@ -469,17 +469,38 @@ class Auth {
       this.handleLoginSuccessBasedOnCookie.bind(this))
 
     /**
-     * Used to auto-populate the openid URLs in config/authentication
+     * Helper route used to auto-populate the openid URLs in config/authentication
+     * Takes an issuer URL as a query param and requests the config data at "/.well-known/openid-configuration"
+     * 
+     * @example /auth/openid/config?issuer=http://192.168.1.66:9000/application/o/audiobookshelf/
      */
-    router.get('/auth/openid/config', async (req, res) => {
+    router.get('/auth/openid/config', this.isAuthenticated, async (req, res) => {
+      if (!req.user.isAdminOrUp) {
+        Logger.error(`[Auth] Non-admin user "${req.user.username}" attempted to get issuer config`)
+        return res.sendStatus(403)
+      }
+
       if (!req.query.issuer) {
         return res.status(400).send('Invalid request. Query param \'issuer\' is required')
       }
+
+      // Strip trailing slash
       let issuerUrl = req.query.issuer
       if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
 
-      const configUrl = `${issuerUrl}/.well-known/openid-configuration`
-      axios.get(configUrl).then(({ data }) => {
+      // Append config pathname and validate URL
+      let configUrl = null
+      try {
+        configUrl = new URL(`${issuerUrl}/.well-known/openid-configuration`)
+        if (!configUrl.pathname.endsWith('/.well-known/openid-configuration')) {
+          throw new Error('Invalid pathname')
+        }
+      } catch (error) {
+        Logger.error(`[Auth] Failed to get openid configuration. Invalid URL "${configUrl}"`, error)
+        return res.status(400).send('Invalid request. Query param \'issuer\' is invalid')
+      }
+
+      axios.get(configUrl.toString()).then(({ data }) => {
         res.json({
           issuer: data.issuer,
           authorization_endpoint: data.authorization_endpoint,
