@@ -16,7 +16,7 @@ class PodcastController {
 
   async create(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user attempted to create podcast`, req.user)
+      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
       return res.sendStatus(403)
     }
     const payload = req.body
@@ -103,6 +103,11 @@ class PodcastController {
   }
 
   async getPodcastFeed(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get podcast feed`)
+      return res.sendStatus(403)
+    }
+
     var url = req.body.rssFeed
     if (!url) {
       return res.status(400).send('Bad request')
@@ -116,6 +121,11 @@ class PodcastController {
   }
 
   async getFeedsFromOPMLText(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get feeds from opml`)
+      return res.sendStatus(403)
+    }
+
     if (!req.body.opmlText) {
       return res.sendStatus(400)
     }
