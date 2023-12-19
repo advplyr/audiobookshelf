@@ -3,6 +3,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
 const { toNumber } = require('../utils/index')
+const userStats = require('../utils/queries/userStats')
 
 class MeController {
   constructor() { }
@@ -332,6 +333,21 @@ class MeController {
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())
+  }
+
+  /**
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async getStatsForYear(req, res) {
+    const year = Number(req.params.year)
+    if (isNaN(year) || year < 2000 || year > 9999) {
+      Logger.error(`[MeController] Invalid year "${year}"`)
+      return res.status(400).send('Invalid year')
+    }
+    const data = await userStats.getStatsForYear(req.user.id, year)
+    res.json(data)
   }
 }
 module.exports = new MeController()

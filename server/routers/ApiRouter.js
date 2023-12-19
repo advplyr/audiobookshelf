@@ -180,6 +180,7 @@ class ApiRouter {
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
+    this.router.get('/me/year/:year/stats', MeController.getStatsForYear.bind(this))
 
     //
     // Backup Routes

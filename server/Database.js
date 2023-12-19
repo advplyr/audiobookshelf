@@ -122,9 +122,14 @@ class Database {
     return this.models.feed
   }
 
-  /** @type {typeof import('./models/Feed')} */
+  /** @type {typeof import('./models/FeedEpisode')} */
   get feedEpisodeModel() {
     return this.models.feedEpisode
+  }
+
+  /** @type {typeof import('./models/PlaybackSession')} */
+  get playbackSessionModel() {
+    return this.models.playbackSession
   }
 
   /**
