@@ -26,23 +26,23 @@
     <div v-if="numPages" class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <p class="font-mono">{{ page }} / {{ numPages }}</p>
     </div>
-    <div v-if="mainImg" class="absolute top-0 right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 z-20 rounded-b-md px-2 h-9 hidden md:flex items-center text-center">
+    <div v-if="mainImg" class="absolute top-0 right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <ui-icon-btn icon="zoom_out" :size="8" :disabled="!canScaleDown" borderless class="mr-px" @click="zoomOut" />
       <ui-icon-btn icon="zoom_in" :size="8" :disabled="!canScaleUp" borderless class="ml-px" @click="zoomIn" />
     </div>
 
     <div class="w-full h-full relative">
-      <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
+      <div v-show="canGoPrev" ref="prevButton" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
         </div>
       </div>
-      <div v-show="canGoNext" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
+      <div v-show="canGoNext" ref="nextButton" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2 ml-auto">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
         </div>
       </div>
-      <div class="w-full h-full relative overflow-auto">
+      <div ref="imageContainer" class="w-full h-full relative overflow-auto">
         <div class="h-full flex" :class="scale > 100 ? '' : 'justify-center'">
           <img v-if="mainImg" :style="{ minWidth: scale + '%', width: scale + '%' }" :src="mainImg" class="object-contain m-auto" />
         </div>
@@ -354,9 +354,31 @@ export default {
     zoomOut() {
       this.scale -= 10
     },
+    scroll(event) {
+      const imageContainer = this.$refs.imageContainer
+
+      console.log("Scrolling by " + event.deltaY)
+      imageContainer.scrollBy({
+        top: event.deltaY,
+        behavior: "auto",
+      });
+    }
   },
-  mounted() {},
-  beforeDestroy() {}
+  mounted() {
+    const prevButton = this.$refs.prevButton
+    const nextButton = this.$refs.nextButton
+    
+    prevButton.addEventListener('wheel', this.scroll, { passive: false })
+    nextButton.addEventListener('wheel', this.scroll, { passive: false })
+
+  },
+  beforeDestroy() {
+    const prevButton = this.$refs.prevButton
+    const nextButton = this.$refs.nextButton
+
+    prevButton.removeEventListener('wheel', this.scroll, { passive: false })
+    nextButton.removeEventListener('wheel', this.scroll, { passive: false })
+  }
 }
 </script>
 
