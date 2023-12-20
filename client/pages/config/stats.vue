@@ -62,6 +62,13 @@
         </div>
       </div>
       <stats-heatmap v-if="listeningStats" :days-listening="listeningStats.days" class="my-2" />
+
+      <ui-btn small :loading="processingYearInReview" @click.stop="clickShowYearInReview">Year in Review</ui-btn>
+      <div v-if="showYearInReview">
+        <div class="w-full h-px bg-slate-200/10 my-4" />
+
+        <stats-year-in-review ref="yearInReview" :processing.sync="processingYearInReview" />
+      </div>
     </app-settings-content>
   </div>
 </template>
@@ -71,7 +78,9 @@ export default {
   data() {
     return {
       listeningStats: null,
-      windowWidth: 0
+      windowWidth: 0,
+      showYearInReview: false,
+      processingYearInReview: false
     }
   },
   watch: {
@@ -114,6 +123,13 @@ export default {
     }
   },
   methods: {
+    clickShowYearInReview() {
+      if (this.showYearInReview) {
+        this.$refs.yearInReview.refresh()
+      } else {
+        this.showYearInReview = true
+      }
+    },
     async init() {
       this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)

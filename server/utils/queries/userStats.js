@@ -2,7 +2,7 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const PlaybackSession = require('../../models/PlaybackSession')
 const MediaProgress = require('../../models/MediaProgress')
-const { elapsedPretty } = require('../index')
+const fsExtra = require('../../libs/fsExtra')
 
 module.exports = {
   /**
@@ -18,8 +18,21 @@ module.exports = {
         createdAt: {
           [Sequelize.Op.gte]: `${year}-01-01`,
           [Sequelize.Op.lt]: `${year + 1}-01-01`
+        },
+        timeListening: {
+          [Sequelize.Op.gt]: 5
         }
-      }
+      },
+      include: {
+        model: Database.bookModel,
+        attributes: ['id', 'coverPath'],
+        include: {
+          model: Database.libraryItemModel,
+          attributes: ['id', 'mediaId', 'mediaType']
+        },
+        required: false
+      },
+      order: Database.sequelize.random()
     })
     return sessions
   },
@@ -42,6 +55,10 @@ module.exports = {
       },
       include: {
         model: Database.bookModel,
+        include: {
+          model: Database.libraryItemModel,
+          attributes: ['id', 'mediaId', 'mediaType']
+        },
         required: true
       }
     })
@@ -63,8 +80,15 @@ module.exports = {
     let genreListeningMap = {}
     let narratorListeningMap = {}
     let monthListeningMap = {}
+    let bookListeningMap = {}
+    const booksWithCovers = []
 
-    listeningSessions.forEach((ls) => {
+    for (const ls of listeningSessions) {
+      // Grab first 16 that have a cover
+      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 16 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
+        booksWithCovers.push(ls.mediaItem.libraryItem.id)
+      }
+
       const listeningSessionListeningTime = ls.timeListening || 0
 
       const lsMonth = ls.createdAt.getMonth()
@@ -74,6 +98,12 @@ module.exports = {
       totalListeningTime += listeningSessionListeningTime
       if (ls.mediaItemType === 'book') {
         totalBookListeningTime += listeningSessionListeningTime
+
+        if (ls.displayTitle && !bookListeningMap[ls.displayTitle]) {
+          bookListeningMap[ls.displayTitle] = listeningSessionListeningTime
+        } else if (ls.displayTitle) {
+          bookListeningMap[ls.displayTitle] += listeningSessionListeningTime
+        }
 
         const authors = ls.mediaMetadata.authors || []
         authors.forEach((au) => {
@@ -96,64 +126,54 @@ module.exports = {
       } else {
         totalPodcastListeningTime += listeningSessionListeningTime
       }
-    })
+    }
 
     totalListeningTime = Math.round(totalListeningTime)
     totalBookListeningTime = Math.round(totalBookListeningTime)
     totalPodcastListeningTime = Math.round(totalPodcastListeningTime)
 
-    let mostListenedAuthor = null
-    for (const authorName in authorListeningMap) {
-      if (!mostListenedAuthor?.time || authorListeningMap[authorName] > mostListenedAuthor.time) {
-        mostListenedAuthor = {
-          time: Math.round(authorListeningMap[authorName]),
-          pretty: elapsedPretty(Math.round(authorListeningMap[authorName])),
-          name: authorName
-        }
-      }
-    }
+    let topAuthors = null
+    topAuthors = Object.keys(authorListeningMap).map(authorName => ({
+      name: authorName,
+      time: Math.round(authorListeningMap[authorName])
+    })).sort((a, b) => b.time - a.time).slice(0, 3)
+
     let mostListenedNarrator = null
     for (const narrator in narratorListeningMap) {
       if (!mostListenedNarrator?.time || narratorListeningMap[narrator] > mostListenedNarrator.time) {
         mostListenedNarrator = {
           time: Math.round(narratorListeningMap[narrator]),
-          pretty: elapsedPretty(Math.round(narratorListeningMap[narrator])),
           name: narrator
         }
       }
     }
-    let mostListenedGenre = null
-    for (const genre in genreListeningMap) {
-      if (!mostListenedGenre?.time || genreListeningMap[genre] > mostListenedGenre.time) {
-        mostListenedGenre = {
-          time: Math.round(genreListeningMap[genre]),
-          pretty: elapsedPretty(Math.round(genreListeningMap[genre])),
-          name: genre
-        }
-      }
-    }
+
+    let topGenres = null
+    topGenres = Object.keys(genreListeningMap).map(genre => ({
+      genre,
+      time: Math.round(genreListeningMap[genre])
+    })).sort((a, b) => b.time - a.time).slice(0, 3)
+
     let mostListenedMonth = null
     for (const month in monthListeningMap) {
       if (!mostListenedMonth?.time || monthListeningMap[month] > mostListenedMonth.time) {
         mostListenedMonth = {
           month: Number(month),
-          time: Math.round(monthListeningMap[month]),
-          pretty: elapsedPretty(Math.round(monthListeningMap[month]))
+          time: Math.round(monthListeningMap[month])
         }
       }
     }
 
-    const bookProgresses = await this.getBookMediaProgressFinishedForYear(userId, year)
+    const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
 
-    const numBooksFinished = bookProgresses.length
+    const numBooksFinished = bookProgressesFinished.length
     let longestAudiobookFinished = null
-    bookProgresses.forEach((mediaProgress) => {
+    bookProgressesFinished.forEach((mediaProgress) => {
       if (mediaProgress.duration && (!longestAudiobookFinished?.duration || mediaProgress.duration > longestAudiobookFinished.duration)) {
         longestAudiobookFinished = {
           id: mediaProgress.mediaItem.id,
           title: mediaProgress.mediaItem.title,
           duration: Math.round(mediaProgress.duration),
-          durationPretty: elapsedPretty(Math.round(mediaProgress.duration)),
           finishedAt: mediaProgress.finishedAt
         }
       }
@@ -162,17 +182,16 @@ module.exports = {
     return {
       totalListeningSessions: listeningSessions.length,
       totalListeningTime,
-      totalListeningTimePretty: elapsedPretty(totalListeningTime),
       totalBookListeningTime,
-      totalBookListeningTimePretty: elapsedPretty(totalBookListeningTime),
       totalPodcastListeningTime,
-      totalPodcastListeningTimePretty: elapsedPretty(totalPodcastListeningTime),
-      mostListenedAuthor,
+      topAuthors,
+      topGenres,
       mostListenedNarrator,
-      mostListenedGenre,
       mostListenedMonth,
       numBooksFinished,
-      longestAudiobookFinished
+      numBooksListened: Object.keys(bookListeningMap).length,
+      longestAudiobookFinished,
+      booksWithCovers
     }
   }
 }
