@@ -1,5 +1,5 @@
 const Path = require('path')
-const { Sequelize } = require('sequelize')
+const { Sequelize, Op } = require('sequelize')
 
 const packageJson = require('../package.json')
 const fs = require('./libs/fsExtra')
@@ -698,6 +698,7 @@ class Database {
    * Clean invalid records in database
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem
+   * Remove playback sessions that are 3 seconds or less
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -737,6 +738,18 @@ class Database {
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)
       await series.destroy()
+    }
+
+    // Remove playback sessions that were 3 seconds or less
+    const badSessionsRemoved = await this.playbackSessionModel.destroy({
+      where: {
+        timeListening: {
+          [Op.lte]: 3
+        }
+      }
+    })
+    if (badSessionsRemoved > 0) {
+      Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
   }
 }
