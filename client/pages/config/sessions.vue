@@ -18,7 +18,7 @@
                 <ui-btn small color="error" :loading="deletingSessions" @click.stop="removeSessionsClick">{{ $strings.ButtonRemove }}</ui-btn>
               </div>
             </th>
-            <th v-if="!numSelected" class="w-48 min-w-48 text-left group cursor-pointer" @click.stop="sortColumn('displayTitle')">
+            <th v-if="!numSelected" class="flex-grow sm:flex-grow-0 sm:w-48 sm:max-w-48 text-left group cursor-pointer" @click.stop="sortColumn('displayTitle')">
               <div class="inline-flex items-center">
                 {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
@@ -30,14 +30,14 @@
               </div>
             </th>
             <th v-if="!numSelected" class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
-            <th v-if="!numSelected" class="w-32 min-w-32 group cursor-pointer" @click.stop="sortColumn('timeListening')">
+            <th v-if="!numSelected" class="w-24 min-w-24 sm:w-32 sm:min-w-32 group cursor-pointer" @click.stop="sortColumn('timeListening')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-24 min-w-24 group cursor-pointer" @click.stop="sortColumn('currentTime')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="flex-grow hidden sm:table-cell cursor-pointer group" @click.stop="sortColumn('updatedAt')">
@@ -53,7 +53,7 @@
               <!-- overlay of the checkbox so that the entire box is clickable -->
               <div class="absolute inset-0 w-full h-full" @click.stop="session.selected = !session.selected" />
             </td>
-            <td class="py-1 w-48 max-w-48">
+            <td class="py-1 flex-grow sm:flex-grow-0 sm:w-48 sm:max-w-48">
               <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
               <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
             </td>
@@ -67,7 +67,7 @@
             <td class="hidden sm:table-cell w-32 min-w-32">
               <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
             </td>
-            <td class="text-center w-32 min-w-32">
+            <td class="text-center w-24 min-w-24 sm:w-32 sm:min-w-32">
               <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
             </td>
             <td class="text-center hover:underline w-24 min-w-24" @click.stop="clickCurrentTime(session)">
@@ -83,7 +83,7 @@
         <!-- table bottom options -->
         <div class="flex items-center my-2">
           <div class="flex-grow" />
-          <div class="inline-flex items-center">
+          <div class="hidden sm:inline-flex items-center">
             <p class="text-sm">{{ $strings.LabelRowsPerPage }}</p>
             <ui-dropdown v-model="itemsPerPage" :items="itemsPerPageOptions" small class="w-24 mx-2" @input="updatedItemsPerPage" />
           </div>
