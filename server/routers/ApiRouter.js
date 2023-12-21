@@ -221,6 +221,7 @@ class ApiRouter {
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
     this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
     this.router.get('/sessions/open', SessionController.getOpenSessions.bind(this))
+    this.router.post('/sessions/batch/delete', SessionController.batchDelete.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
     this.router.post('/session/local-all', SessionController.syncLocalSessions.bind(this))
     // TODO: Update these endpoints because they are only for open playback sessions
@@ -489,18 +490,6 @@ class ApiRouter {
   async getUserListeningSessionsHelper(userId) {
     const userSessions = await Database.getPlaybackSessions({ userId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
-  }
-
-  async getAllSessionsWithUserData() {
-    const sessions = await Database.getPlaybackSessions()
-    sessions.sort((a, b) => b.updatedAt - a.updatedAt)
-    const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
-    return sessions.map(se => {
-      return {
-        ...se,
-        user: minifiedUserObjects.find(u => u.id === se.userId) || null
-      }
-    })
   }
 
   async getUserListeningStatsHelpers(userId) {

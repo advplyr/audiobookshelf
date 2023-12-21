@@ -5,37 +5,72 @@
         <ui-dropdown v-model="selectedUser" :items="userItems" :label="$strings.LabelFilterByUser" small class="max-w-48" @input="updateUserFilter" />
       </div>
 
-      <div v-if="listeningSessions.length" class="block max-w-full">
+      <div v-if="listeningSessions.length" class="block max-w-full relative">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
-            <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
-            <th class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
-            <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
-            <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
-            <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
-            <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
-            <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
+            <th class="w-6 min-w-6 text-left hidden md:table-cell h-11">
+              <ui-checkbox v-model="isAllSelected" :partial="numSelected > 0 && !isAllSelected" small checkbox-bg="bg" />
+            </th>
+            <th v-if="numSelected" class="flex-grow text-left" :colspan="7">
+              <div class="flex items-center">
+                <p>{{ $getString('MessageSelected', [numSelected]) }}</p>
+                <div class="flex-grow" />
+                <ui-btn small color="error" :loading="deletingSessions" @click.stop="removeSessionsClick">{{ $strings.ButtonRemove }}</ui-btn>
+              </div>
+            </th>
+            <th v-if="!numSelected" class="w-48 min-w-48 text-left group cursor-pointer" @click.stop="sortColumn('displayTitle')">
+              <div class="inline-flex items-center">
+                {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+              </div>
+            </th>
+            <th v-if="!numSelected" class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
+            <th v-if="!numSelected" class="w-26 min-w-26 text-left hidden md:table-cell group cursor-pointer" @click.stop="sortColumn('playMethod')">
+              <div class="inline-flex items-center">
+                {{ $strings.LabelPlayMethod }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('playMethod') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+              </div>
+            </th>
+            <th v-if="!numSelected" class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+            <th v-if="!numSelected" class="w-32 min-w-32 group cursor-pointer" @click.stop="sortColumn('timeListening')">
+              <div class="inline-flex items-center">
+                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+              </div>
+            </th>
+            <th v-if="!numSelected" class="w-24 min-w-24 group cursor-pointer" @click.stop="sortColumn('currentTime')">
+              <div class="inline-flex items-center">
+                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+              </div>
+            </th>
+            <th v-if="!numSelected" class="flex-grow hidden sm:table-cell cursor-pointer group" @click.stop="sortColumn('updatedAt')">
+              <div class="inline-flex items-center">
+                {{ $strings.LabelLastUpdate }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('updatedAt') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+              </div>
+            </th>
           </tr>
 
-          <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
-            <td class="py-1 max-w-48">
+          <tr v-for="session in listeningSessions" :key="session.id" :class="{ selected: session.selected }" class="cursor-pointer" @click="clickSessionRow(session)">
+            <td class="hidden md:table-cell py-1 max-w-6 relative">
+              <ui-checkbox v-model="session.selected" small checkbox-bg="bg" />
+              <!-- overlay of the checkbox so that the entire box is clickable -->
+              <div class="absolute inset-0 w-full h-full" @click.stop="session.selected = !session.selected" />
+            </td>
+            <td class="py-1 w-48 max-w-48">
               <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
               <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
             </td>
-            <td class="hidden md:table-cell">
+            <td class="hidden md:table-cell w-20 min-w-20">
               <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
               <p v-else class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
             </td>
-            <td class="hidden md:table-cell">
+            <td class="hidden md:table-cell w-26 min-w-26">
               <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
             </td>
-            <td class="hidden sm:table-cell">
+            <td class="hidden sm:table-cell w-32 min-w-32">
               <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
             </td>
-            <td class="text-center">
+            <td class="text-center w-32 min-w-32">
               <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
             </td>
-            <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
+            <td class="text-center hover:underline w-24 min-w-24" @click.stop="clickCurrentTime(session)">
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
             </td>
             <td class="text-center hidden sm:table-cell">
@@ -45,10 +80,22 @@
             </td>
           </tr>
         </table>
-        <div class="flex items-center justify-end my-2">
-          <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
-          <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
-          <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
+        <!-- table bottom options -->
+        <div class="flex items-center my-2">
+          <div class="flex-grow" />
+          <div class="inline-flex items-center">
+            <p class="text-sm">{{ $strings.LabelRowsPerPage }}</p>
+            <ui-dropdown v-model="itemsPerPage" :items="itemsPerPageOptions" small class="w-24 mx-2" @input="updatedItemsPerPage" />
+          </div>
+          <div class="inline-flex items-center">
+            <p class="text-sm mx-2">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <ui-icon-btn icon="arrow_back_ios_new" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
+            <ui-icon-btn icon="arrow_forward_ios" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
+          </div>
+        </div>
+
+        <div v-if="deletingSessions || loading" class="absolute inset-0 w-full h-full flex items-center justify-center">
+          <ui-loading-indicator />
         </div>
       </div>
       <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
@@ -128,6 +175,7 @@ export default {
   },
   data() {
     return {
+      loading: false,
       showSessionModal: false,
       selectedSession: null,
       listeningSessions: [],
@@ -138,7 +186,11 @@ export default {
       itemsPerPage: 10,
       userFilter: null,
       selectedUser: '',
-      processingGoToTimestamp: false
+      sortBy: 'updatedAt',
+      sortDesc: true,
+      processingGoToTimestamp: false,
+      deletingSessions: false,
+      itemsPerPageOptions: [10, 25, 50, 100]
     }
   },
   computed: {
@@ -162,9 +214,85 @@ export default {
     },
     timeFormat() {
       return this.$store.state.serverSettings.timeFormat
+    },
+    numSelected() {
+      return this.listeningSessions.filter((s) => s.selected).length
+    },
+    isAllSelected: {
+      get() {
+        return this.numSelected === this.listeningSessions.length
+      },
+      set(val) {
+        this.setSelectionForAll(val)
+      }
     }
   },
   methods: {
+    isSortSelected(column) {
+      return this.sortBy === column
+    },
+    sortColumn(column) {
+      if (this.sortBy === column) {
+        this.sortDesc = !this.sortDesc
+      } else {
+        this.sortBy = column
+      }
+      this.loadSessions(this.currentPage)
+    },
+    removeSelectedSessions() {
+      if (!this.numSelected) return
+      this.deletingSessions = true
+
+      let isAllSessions = this.isAllSelected
+      const payload = {
+        sessions: this.listeningSessions.filter((s) => s.selected).map((s) => s.id)
+      }
+      this.$axios
+        .$post(`/api/sessions/batch/delete`, payload)
+        .then(() => {
+          this.$toast.success('Sessions removed')
+          if (isAllSessions) {
+            // If all sessions were removed from the current page then go to the previous page
+            if (this.currentPage > 0) {
+              this.currentPage--
+            }
+            this.loadSessions(this.currentPage)
+          } else {
+            // Filter out the deleted sessions
+            this.listeningSessions = this.listeningSessions.filter((ls) => !payload.sessions.includes(ls.id))
+          }
+        })
+        .catch((error) => {
+          const errorMsg = error.response?.data || 'Failed to remove sessions'
+          this.$toast.error(errorMsg)
+        })
+        .finally(() => {
+          this.deletingSessions = false
+        })
+    },
+    removeSessionsClick() {
+      if (!this.numSelected) return
+      const payload = {
+        message: this.$getString('MessageConfirmRemoveListeningSessions', [this.numSelected]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.removeSelectedSessions()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    setSelectionForAll(val) {
+      this.listeningSessions = this.listeningSessions.map((s) => {
+        s.selected = val
+        return s
+      })
+    },
+    updatedItemsPerPage() {
+      this.currentPage = 0
+      this.loadSessions(this.currentPage)
+    },
     closedSession() {
       this.loadOpenSessions()
     },
@@ -252,6 +380,13 @@ export default {
     nextPage() {
       this.loadSessions(this.currentPage + 1)
     },
+    clickSessionRow(session) {
+      if (this.numSelected > 0) {
+        session.selected = !session.selected
+      } else {
+        this.showSession(session)
+      }
+    },
     showSession(session) {
       this.selectedSession = session
       this.showSessionModal = true
@@ -274,11 +409,21 @@ export default {
       return 'Unknown'
     },
     async loadSessions(page) {
-      const userFilterQuery = this.selectedUser ? `&user=${this.selectedUser}` : ''
-      const data = await this.$axios.$get(`/api/sessions?page=${page}&itemsPerPage=${this.itemsPerPage}${userFilterQuery}`).catch((err) => {
+      this.loading = true
+      const urlSearchParams = new URLSearchParams()
+      urlSearchParams.set('page', page)
+      urlSearchParams.set('itemsPerPage', this.itemsPerPage)
+      urlSearchParams.set('sort', this.sortBy)
+      urlSearchParams.set('desc', this.sortDesc ? '1' : '0')
+      if (this.selectedUser) {
+        urlSearchParams.set('user', this.selectedUser)
+      }
+
+      const data = await this.$axios.$get(`/api/sessions?${urlSearchParams.toString()}`).catch((err) => {
         console.error('Failed to load listening sessions', err)
         return null
       })
+      this.loading = false
       if (!data) {
         this.$toast.error('Failed to load listening sessions')
         return
@@ -287,8 +432,13 @@ export default {
       this.numPages = data.numPages
       this.total = data.total
       this.currentPage = data.page
-      this.listeningSessions = data.sessions
-      this.userFilter = data.userFilter
+      this.listeningSessions = data.sessions.map((ls) => {
+        return {
+          ...ls,
+          selected: false
+        }
+      })
+      this.userFilter = data.userId
     },
     async loadOpenSessions() {
       const data = await this.$axios.$get('/api/sessions/open').catch((err) => {
@@ -326,13 +476,16 @@ export default {
 .userSessionsTable tr:first-child {
   background-color: #272727;
 }
-.userSessionsTable tr:not(:first-child) {
+.userSessionsTable tr:not(:first-child):not(.selected) {
   background-color: #373838;
 }
-.userSessionsTable tr:not(:first-child):nth-child(odd) {
+.userSessionsTable tr:not(:first-child):nth-child(odd):not(.selected):not(:hover) {
   background-color: #2f2f2f;
 }
 .userSessionsTable tr:hover:not(:first-child) {
+  background-color: #474747;
+}
+.userSessionsTable tr.selected {
   background-color: #474747;
 }
 .userSessionsTable td {

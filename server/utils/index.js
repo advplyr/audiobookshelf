@@ -1,4 +1,5 @@
 const Path = require('path')
+const uuid = require('uuid')
 const Logger = require('../Logger')
 const { parseString } = require("xml2js")
 const areEquivalent = require('./areEquivalent')
@@ -220,4 +221,15 @@ module.exports.validateUrl = (rawUrl) => {
     Logger.error(`Invalid URL "${rawUrl}"`, error)
     return null
   }
+}
+
+/**
+ * Check if a string is a valid UUID
+ * 
+ * @param {string} str 
+ * @returns {boolean}
+ */
+module.exports.isUUID = (str) => {
+  if (!str || typeof str !== 'string') return false
+  return uuid.validate(str)
 }
