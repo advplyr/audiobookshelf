@@ -37,10 +37,24 @@ export default {
         ctx.stroke()
       }
 
-      const addText = (text, fontSize, fontWeight, color, letterSpacing, x, y) => {
+      const addText = (text, fontSize, fontWeight, color, letterSpacing, x, y, maxWidth = 0) => {
         ctx.fillStyle = color
         ctx.font = `${fontWeight} ${fontSize} Source Sans Pro`
         ctx.letterSpacing = letterSpacing
+
+        // If maxWidth is specified then continue to remove chars until under maxWidth and add ellipsis
+        if (maxWidth) {
+          let txtWidth = ctx.measureText(text).width
+          while (txtWidth > maxWidth) {
+            console.warn(`Text "${text}" is greater than max width ${maxWidth} (width:${txtWidth})`)
+            if (text.endsWith('...')) text = text.slice(0, -4) // Repeated checks remove 1 char at a time
+            else text = text.slice(0, -3) // First check remove last 3 chars
+            text += '...'
+            txtWidth = ctx.measureText(text).width
+            console.log(`Checking text "${text}" (width:${txtWidth})`)
+          }
+        }
+
         ctx.fillText(text, x, y)
       }
 
@@ -131,21 +145,21 @@ export default {
       const topNarrator = this.yearStats.mostListenedNarrator
       if (topNarrator) {
         addText('TOP NARRATOR', '12px', 'normal', tanColor, '1px', 20, 260)
-        addText(topNarrator.name, '18px', 'bolder', 'white', '0px', 20, 282)
+        addText(topNarrator.name, '18px', 'bolder', 'white', '0px', 20, 282, 180)
         addText(this.$elapsedPrettyExtended(topNarrator.time, true, false), '14px', 'lighter', 'white', '1px', 20, 302)
       }
 
       const topGenre = this.yearStats.topGenres[0]
       if (topGenre) {
         addText('TOP GENRE', '12px', 'normal', tanColor, '1px', 215, 260)
-        addText(topGenre.genre, '18px', 'bolder', 'white', '0px', 215, 282)
+        addText(topGenre.genre, '18px', 'bolder', 'white', '0px', 215, 282, 180)
         addText(this.$elapsedPrettyExtended(topGenre.time, true, false), '14px', 'lighter', 'white', '1px', 215, 302)
       }
 
       const topAuthor = this.yearStats.topAuthors[0]
       if (topAuthor) {
         addText('TOP AUTHOR', '12px', 'normal', tanColor, '1px', 20, 335)
-        addText(topAuthor.name, '18px', 'bolder', 'white', '0px', 20, 357)
+        addText(topAuthor.name, '18px', 'bolder', 'white', '0px', 20, 357, 180)
         addText(this.$elapsedPrettyExtended(topAuthor.time, true, false), '14px', 'lighter', 'white', '1px', 20, 377)
       }
 
