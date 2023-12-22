@@ -99,6 +99,7 @@ function tryGrabTags(rawTagData, ...tags) {
 }
 
 function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
+  const tagData = { ffprobe: stream.tags }
   var info = {
     index: stream.index,
     type: stream.codec_type,
@@ -107,8 +108,8 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     codec_time_base: stream.codec_time_base || null,
     time_base: stream.time_base || null,
     bit_rate: tryGrabBitRate(stream, all_streams, total_bit_rate),
-    language: tryGrabTags(stream, 'language'),
-    title: tryGrabTags(stream, 'title'),
+    language: tryGrabTags(tagData, 'language'),
+    title: tryGrabTags(tagData, 'title'),
   }
   if (stream.tags) info.tags = stream.tags
 
