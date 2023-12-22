@@ -336,6 +336,7 @@ class MeController {
   }
 
   /**
+   * GET: /api/stats/year/:year
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
@@ -346,7 +347,7 @@ class MeController {
       Logger.error(`[MeController] Invalid year "${year}"`)
       return res.status(400).send('Invalid year')
     }
-    const data = await userStats.getStatsForYear(req.user.id, year)
+    const data = await userStats.getStatsForYear(req.user, year)
     res.json(data)
   }
 }

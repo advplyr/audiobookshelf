@@ -18,9 +18,6 @@ module.exports = {
         createdAt: {
           [Sequelize.Op.gte]: `${year}-01-01`,
           [Sequelize.Op.lt]: `${year + 1}-01-01`
-        },
-        timeListening: {
-          [Sequelize.Op.gt]: 5
         }
       },
       include: {
@@ -66,10 +63,11 @@ module.exports = {
   },
 
   /**
-   * @param {string} userId
+   * @param {import('../../objects/user/User')} user
    * @param {number} year YYYY
    */
-  async getStatsForYear(userId, year) {
+  async getStatsForYear(user, year) {
+    const userId = user.id
     const listeningSessions = await this.getUserListeningSessionsForYear(userId, year)
 
     let totalBookListeningTime = 0
@@ -84,8 +82,8 @@ module.exports = {
     const booksWithCovers = []
 
     for (const ls of listeningSessions) {
-      // Grab first 16 that have a cover
-      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 16 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
+      // Grab first 25 that have a cover
+      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
         booksWithCovers.push(ls.mediaItem.libraryItem.id)
       }
 

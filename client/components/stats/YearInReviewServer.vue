@@ -72,7 +72,9 @@ export default {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       // Cover image tiles
-      if (this.yearStats.booksWithCovers.length) {
+      let imgsToAdd = {}
+
+      if (this.yearStats.booksAddedWithCovers.length) {
         let index = 0
         ctx.globalAlpha = 0.25
         ctx.save()
@@ -82,8 +84,8 @@ export default {
         ctx.translate(-130, -120)
         for (let x = 0; x < 5; x++) {
           for (let y = 0; y < 5; y++) {
-            const coverIndex = index % this.yearStats.booksWithCovers.length
-            let libraryItemId = this.yearStats.booksWithCovers[coverIndex]
+            const coverIndex = index % this.yearStats.booksAddedWithCovers.length
+            let libraryItemId = this.yearStats.booksAddedWithCovers[coverIndex]
             index++
 
             await new Promise((resolve) => {
@@ -97,6 +99,14 @@ export default {
                 let sx = -(sw - img.width) / 2
                 let sy = -(sw - img.height) / 2
                 ctx.drawImage(img, sx, sy, sw, sw, 215 * x, 215 * y, 215, 215)
+                if (!imgsToAdd[libraryItemId]) {
+                  imgsToAdd[libraryItemId] = {
+                    img,
+                    sx,
+                    sy,
+                    sw
+                  }
+                }
                 resolve()
               })
               img.addEventListener('error', () => {
@@ -130,52 +140,43 @@ export default {
       addText(`${this.year} YEAR IN REVIEW`, '18px', 'bold', 'white', '1px', 65, 51)
 
       // Top left box
-      createRoundedRect(50, 100, 340, 160)
-      addText(this.yearStats.numBooksFinished, '64px', 'bold', 'white', '0px', 160, 165)
-      addText('books finished', '28px', 'normal', tanColor, '0px', 160, 210)
-      const readIconPath = new Path2D()
-      readIconPath.addPath(new Path2D('M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z'), { a: 2, d: 2, e: 100, f: 160 })
-      ctx.fillStyle = '#ffffff'
-      ctx.fill(readIconPath)
+      createRoundedRect(40, 100, 230, 100)
+      ctx.textAlign = 'center'
+      addText(this.yearStats.numBooksAdded, '48px', 'bold', 'white', '0px', 155, 140)
+      addText('books added', '18px', 'normal', tanColor, '0px', 155, 170)
 
       // Box top right
-      createRoundedRect(410, 100, 340, 160)
-      addText(this.$elapsedPrettyExtended(this.yearStats.totalListeningTime, true, false), '40px', 'bold', 'white', '0px', 500, 165)
-      addText('spent listening', '28px', 'normal', tanColor, '0.5px', 500, 205)
-      addIcon('watch_later', 'white', '52px', 440, 180)
+      createRoundedRect(285, 100, 230, 100)
+      addText(this.yearStats.numAuthorsAdded, '48px', 'bold', 'white', '0px', 400, 140)
+      addText('authors added', '18px', 'normal', tanColor, '0px', 400, 170)
 
       // Box bottom left
-      createRoundedRect(50, 280, 340, 160)
-      addText(this.yearStats.totalListeningSessions, '64px', 'bold', 'white', '0px', 160, 345)
-      addText('sessions', '28px', 'normal', tanColor, '1px', 160, 390)
-      addIcon('headphones', 'white', '52px', 95, 360)
-
-      // Box bottom right
-      createRoundedRect(410, 280, 340, 160)
-      addText(this.yearStats.numBooksListened, '64px', 'bold', 'white', '0px', 500, 345)
-      addText('books listened to', '28px', 'normal', tanColor, '0.5px', 500, 390)
-      addIcon('local_library', 'white', '52px', 440, 360)
+      createRoundedRect(530, 100, 230, 100)
+      addText(this.yearStats.numListeningSessions, '48px', 'bold', 'white', '0px', 645, 140)
+      addText('sessions', '18px', 'normal', tanColor, '1px', 645, 170)
 
       // Text stats
-      const topNarrator = this.yearStats.mostListenedNarrator
-      if (topNarrator) {
-        addText('TOP NARRATOR', '24px', 'normal', tanColor, '1px', 70, 520)
-        addText(topNarrator.name, '36px', 'bolder', 'white', '0px', 70, 564, 330)
-        addText(this.$elapsedPrettyExtended(topNarrator.time, true, false), '24px', 'lighter', 'white', '1px', 70, 599)
+      if (this.yearStats.totalBooksAddedSize) {
+        addText('Your book collection grew to...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 260)
+        addText(this.$bytesPretty(this.yearStats.totalBooksSize), '36px', 'bolder', 'white', '0px', canvas.width / 2, 300)
+        addText('+' + this.$bytesPretty(this.yearStats.totalBooksAddedSize), '20px', 'lighter', 'white', '0px', canvas.width / 2, 330)
       }
 
-      const topGenre = this.yearStats.topGenres[0]
-      if (topGenre) {
-        addText('TOP GENRE', '24px', 'normal', tanColor, '1px', 430, 520)
-        addText(topGenre.genre, '36px', 'bolder', 'white', '0px', 430, 564, 330)
-        addText(this.$elapsedPrettyExtended(topGenre.time, true, false), '24px', 'lighter', 'white', '1px', 430, 599)
+      if (this.yearStats.totalBooksAddedDuration) {
+        addText('With a total duration of...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 400)
+        addText(this.$elapsedPrettyExtended(this.yearStats.totalBooksDuration, true, false), '36px', 'bolder', 'white', '0px', canvas.width / 2, 440)
+        addText('+' + this.$elapsedPrettyExtended(this.yearStats.totalBooksAddedDuration, true, false), '20px', 'lighter', 'white', '0px', canvas.width / 2, 470)
       }
 
-      const topAuthor = this.yearStats.topAuthors[0]
-      if (topAuthor) {
-        addText('TOP AUTHOR', '24px', 'normal', tanColor, '1px', 70, 670)
-        addText(topAuthor.name, '36px', 'bolder', 'white', '0px', 70, 714, 330)
-        addText(this.$elapsedPrettyExtended(topAuthor.time, true, false), '24px', 'lighter', 'white', '1px', 70, 749)
+      // Bottom images
+      imgsToAdd = Object.values(imgsToAdd)
+      if (imgsToAdd.length >= 5) {
+        addText('Some additions include...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 540)
+
+        for (let i = 0; i < 5; i++) {
+          let imgToAdd = imgsToAdd[i]
+          ctx.drawImage(imgToAdd.img, imgToAdd.sx, imgToAdd.sy, imgToAdd.sw, imgToAdd.sw, 40 + 145 * i, 580, 140, 140)
+        }
       }
 
       this.dataUrl = canvas.toDataURL('png')
@@ -188,7 +189,7 @@ export default {
       let year = new Date().getFullYear()
       if (new Date().getMonth() < 11) year--
       this.year = year
-      this.yearStats = await this.$axios.$get(`/api/me/stats/year/${year}`).catch((err) => {
+      this.yearStats = await this.$axios.$get(`/api/stats/year/${year}`).catch((err) => {
         console.error('Failed to load stats for year', err)
         this.$toast.error('Failed to load year stats')
         return null

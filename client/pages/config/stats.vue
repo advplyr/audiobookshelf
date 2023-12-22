@@ -63,11 +63,13 @@
       </div>
       <stats-heatmap v-if="listeningStats" :days-listening="listeningStats.days" class="my-2" />
 
-      <ui-btn small :loading="processingYearInReview" @click.stop="clickShowYearInReview">Year in Review</ui-btn>
+      <ui-btn small :loading="processingYearInReview || processingYearInReviewAlt" @click.stop="clickShowYearInReview">{{ showYearInReview ? 'Refresh Year in Review' : 'Year in Review' }}</ui-btn>
       <div v-if="showYearInReview">
         <div class="w-full h-px bg-slate-200/10 my-4" />
 
         <stats-year-in-review ref="yearInReview" :processing.sync="processingYearInReview" />
+
+        <stats-year-in-review-server v-if="isAdminOrUp" ref="yearInReviewAlt" :processing.sync="processingYearInReviewAlt" />
       </div>
     </app-settings-content>
   </div>
@@ -80,7 +82,8 @@ export default {
       listeningStats: null,
       windowWidth: 0,
       showYearInReview: false,
-      processingYearInReview: false
+      processingYearInReview: false,
+      processingYearInReviewAlt: false
     }
   },
   watch: {
@@ -126,6 +129,10 @@ export default {
     clickShowYearInReview() {
       if (this.showYearInReview) {
         this.$refs.yearInReview.refresh()
+
+        if (this.$refs.yearInReviewAlt) {
+          this.$refs.yearInReviewAlt.refresh()
+        }
       } else {
         this.showYearInReview = true
       }

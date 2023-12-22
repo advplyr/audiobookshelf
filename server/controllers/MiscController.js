@@ -11,6 +11,7 @@ const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
+const adminStats = require('../utils/queries/adminStats')
 
 //
 // This is a controller for routes that don't have a home yet :(
@@ -695,6 +696,26 @@ class MiscController {
       updated: hasUpdates,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
+  }
+
+  /**
+   * GET: /api/me/stats/year/:year
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async getAdminStatsForYear(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin stats for year`)
+      return res.sendStatus(403)
+    }
+    const year = Number(req.params.year)
+    if (isNaN(year) || year < 2000 || year > 9999) {
+      Logger.error(`[MiscController] Invalid year "${year}"`)
+      return res.status(400).send('Invalid year')
+    }
+    const stats = await adminStats.getStatsForYear(year)
+    res.json(stats)
   }
 }
 module.exports = new MiscController()

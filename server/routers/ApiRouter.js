@@ -180,7 +180,7 @@ class ApiRouter {
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
-    this.router.get('/me/year/:year/stats', MeController.getStatsForYear.bind(this))
+    this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
 
     //
     // Backup Routes
@@ -317,6 +317,7 @@ class ApiRouter {
     this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
+    this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {
