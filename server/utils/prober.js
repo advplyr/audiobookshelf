@@ -256,7 +256,6 @@ function getDefaultAudioStream(audioStreams) {
 }
 
 function parseProbeData(data, mediaInfoTags, verbose = false) {
-  console.log(data)
   try {
     const { format, streams, chapters } = data
 
