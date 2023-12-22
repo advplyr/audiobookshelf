@@ -183,9 +183,6 @@ function parseTags(format, mediaInfoTags, verbose) {
     Logger.debug('mediainfo Tags', mediaInfoTags.fields)
   }
 
-  /**
-   * Comment.
-   */
   const rawTagData = {
     ffprobe: format.tags,
     mediaInfo: mediaInfoTags,
