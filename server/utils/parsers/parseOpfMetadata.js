@@ -100,13 +100,20 @@ function fetchLanguage(metadata) {
 }
 
 function fetchSeries(metadataMeta) {
-  if (!metadataMeta) return null
-  return fetchTagString(metadataMeta, "calibre:series")
-}
-
-function fetchVolumeNumber(metadataMeta) {
-  if (!metadataMeta) return null
-  return fetchTagString(metadataMeta, "calibre:series_index")
+  if (!metadataMeta) return []
+  const result = []
+  for (let i = 0; i < metadataMeta.length; i++) {
+    if (metadataMeta[i].$.name === "calibre:series") {
+      const name = metadataMeta[i].$.content
+      let sequence = null
+      if (i + 1 < metadataMeta.length &&
+          metadataMeta[i + 1].$.name === "calibre:series_index" && metadataMeta[i + 1].$.content) {
+        sequence = metadataMeta[i + 1].$.content
+      }
+      result.push({ name, sequence })
+    }
+  }
+  return result
 }
 
 function fetchNarrators(creators, metadata) {
@@ -173,8 +180,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     description: fetchDescription(metadata),
     genres: fetchGenres(metadata),
     language: fetchLanguage(metadata),
-    series: fetchSeries(metadata.meta),
-    sequence: fetchVolumeNumber(metadata.meta),
+    series: fetchSeries(metadataMeta),
     tags: fetchTags(metadata)
   }
   return data
