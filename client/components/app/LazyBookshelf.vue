@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-50" />
+    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
   </div>
 </template>
 
@@ -205,6 +205,9 @@ export default {
     sizeMultiplier() {
       const baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.entityWidth / baseSize
+    },
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {
