@@ -40,10 +40,10 @@ export default {
 
       const createRoundedRect = (x, y, w, h) => {
         const grd1 = ctx.createLinearGradient(x, y, x + w, y + h)
-        grd1.addColorStop(0, '#44444466')
-        grd1.addColorStop(1, '#ffffff22')
+        grd1.addColorStop(0, '#44444455')
+        grd1.addColorStop(1, '#ffffff11')
         ctx.fillStyle = grd1
-        ctx.strokeStyle = '#C0C0C0aa'
+        ctx.strokeStyle = '#C0C0C088'
         ctx.beginPath()
         ctx.roundRect(x, y, w, h, [20])
         ctx.fill()
@@ -258,7 +258,9 @@ export default {
             })
             .catch((error) => {
               console.error('Failed to share', error)
-              this.$toast.error('Failed to share: ' + error.message)
+              if (error.name !== 'AbortError') {
+                this.$toast.error('Failed to share: ' + error.message)
+              }
             })
         } else {
           this.$toast.error('Cannot share natively on this device')

@@ -15,6 +15,7 @@ export default {
   },
   data() {
     return {
+      canvas: null,
       dataUrl: null,
       yearStats: null
     }
@@ -146,7 +147,31 @@ export default {
       addText('books listened to', '20px', 'normal', tanColor, '0px', 400, 155)
       addIcon('local_library', 'white', '42px', 345, 130)
 
+      this.canvas = canvas
       this.dataUrl = canvas.toDataURL('png')
+    },
+    share() {
+      this.canvas.toBlob((blob) => {
+        const file = new File([blob], 'yearinreviewserver.png', { type: blob.type + 'cat' })
+        const shareData = {
+          files: [file]
+        }
+        if (navigator.canShare(shareData)) {
+          navigator
+            .share(shareData)
+            .then(() => {
+              console.log('Share success')
+            })
+            .catch((error) => {
+              console.error('Failed to share', error)
+              if (error.name !== 'AbortError') {
+                this.$toast.error('Failed to share: ' + error.message)
+              }
+            })
+        } else {
+          this.$toast.error('Cannot share natively on this device')
+        }
+      })
     },
     refresh() {
       this.init()
