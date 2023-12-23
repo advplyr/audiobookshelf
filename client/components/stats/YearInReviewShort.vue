@@ -152,7 +152,7 @@ export default {
     },
     share() {
       this.canvas.toBlob((blob) => {
-        const file = new File([blob], 'yearinreviewserver.png', { type: blob.type + 'cat' })
+        const file = new File([blob], 'yearinreviewshort.png', { type: blob.type })
         const shareData = {
           files: [file]
         }
