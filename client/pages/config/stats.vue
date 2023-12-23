@@ -1,6 +1,9 @@
 <template>
   <div>
-    <app-settings-content :header-text="$strings.HeaderYourStats">
+    <!-- Year in review banner shown at the top in December and January -->
+    <stats-year-in-review-banner v-if="showYearInReviewBanner" />
+
+    <app-settings-content :header-text="$strings.HeaderYourStats" class="!mb-4">
       <div class="flex justify-center">
         <div class="flex p-2">
           <svg class="hidden sm:block h-14 w-14 lg:h-18 lg:w-18" viewBox="0 0 24 24">
@@ -62,16 +65,10 @@
         </div>
       </div>
       <stats-heatmap v-if="listeningStats" :days-listening="listeningStats.days" class="my-2" />
-
-      <ui-btn small :loading="processingYearInReview || processingYearInReviewAlt" @click.stop="clickShowYearInReview">{{ showYearInReview ? 'Refresh Year in Review' : 'Year in Review' }}</ui-btn>
-      <div v-if="showYearInReview">
-        <div class="w-full h-px bg-slate-200/10 my-4" />
-
-        <stats-year-in-review ref="yearInReview" :processing.sync="processingYearInReview" />
-
-        <stats-year-in-review-server v-if="isAdminOrUp" ref="yearInReviewAlt" :processing.sync="processingYearInReviewAlt" />
-      </div>
     </app-settings-content>
+
+    <!-- Year in review banner shown at the bottom Feb - Nov -->
+    <stats-year-in-review-banner v-if="!showYearInReviewBanner" />
   </div>
 </template>
 
@@ -81,9 +78,7 @@ export default {
     return {
       listeningStats: null,
       windowWidth: 0,
-      showYearInReview: false,
-      processingYearInReview: false,
-      processingYearInReviewAlt: false
+      showYearInReviewBanner: false
     }
   },
   watch: {
@@ -126,22 +121,17 @@ export default {
     }
   },
   methods: {
-    clickShowYearInReview() {
-      if (this.showYearInReview) {
-        this.$refs.yearInReview.refresh()
-
-        if (this.$refs.yearInReviewAlt) {
-          this.$refs.yearInReviewAlt.refresh()
-        }
-      } else {
-        this.showYearInReview = true
-      }
-    },
     async init() {
       this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
       })
+
+      let month = new Date().getMonth()
+      // January and December show year in review banner
+      if (month === 11 || month === 0) {
+        this.showYearInReviewBanner = true
+      }
     }
   },
   mounted() {

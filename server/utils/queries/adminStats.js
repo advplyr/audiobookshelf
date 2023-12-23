@@ -88,11 +88,52 @@ module.exports = {
 
     const numAuthorsAdded = await this.getNumAuthorsAddedForYear(year)
 
+    let authorListeningMap = {}
+    let narratorListeningMap = {}
+    let genreListeningMap = {}
+
     const listeningSessions = await this.getListeningSessionsForYear(year)
     let totalListeningTime = 0
-    for (const listeningSession of listeningSessions) {
-      totalListeningTime += (listeningSession.timeListening || 0)
+    for (const ls of listeningSessions) {
+      totalListeningTime += (ls.timeListening || 0)
+
+      const authors = ls.mediaMetadata.authors || []
+      authors.forEach((au) => {
+        if (!authorListeningMap[au.name]) authorListeningMap[au.name] = 0
+        authorListeningMap[au.name] += (ls.timeListening || 0)
+      })
+
+      const narrators = ls.mediaMetadata.narrators || []
+      narrators.forEach((narrator) => {
+        if (!narratorListeningMap[narrator]) narratorListeningMap[narrator] = 0
+        narratorListeningMap[narrator] += (ls.timeListening || 0)
+      })
+
+      // Filter out bad genres like "audiobook" and "audio book"
+      const genres = (ls.mediaMetadata.genres || []).filter(g => !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
+      genres.forEach((genre) => {
+        if (!genreListeningMap[genre]) genreListeningMap[genre] = 0
+        genreListeningMap[genre] += (ls.timeListening || 0)
+      })
     }
+
+    let topAuthors = null
+    topAuthors = Object.keys(authorListeningMap).map(authorName => ({
+      name: authorName,
+      time: Math.round(authorListeningMap[authorName])
+    })).sort((a, b) => b.time - a.time).slice(0, 3)
+
+    let topNarrators = null
+    topNarrators = Object.keys(narratorListeningMap).map(narratorName => ({
+      name: narratorName,
+      time: Math.round(narratorListeningMap[narratorName])
+    })).sort((a, b) => b.time - a.time).slice(0, 3)
+
+    let topGenres = null
+    topGenres = Object.keys(genreListeningMap).map(genre => ({
+      genre,
+      time: Math.round(genreListeningMap[genre])
+    })).sort((a, b) => b.time - a.time).slice(0, 3)
 
     // Stats for total books, size and duration for everything added this year or earlier
     const [totalStatResultsRow] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.mediaType = 'book' AND li.createdAt < ":nextYear-01-01";`, {
@@ -112,7 +153,10 @@ module.exports = {
       totalBooksSize: totalStatResults?.totalSize || 0,
       totalBooksDuration: totalStatResults?.totalDuration || 0,
       totalListeningTime,
-      numBooks: totalStatResults?.totalItems || 0
+      numBooks: totalStatResults?.totalItems || 0,
+      topAuthors,
+      topNarrators,
+      topGenres
     }
   }
 }

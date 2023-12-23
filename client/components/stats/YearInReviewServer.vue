@@ -1,22 +1,32 @@
 <template>
   <div>
-    <div v-if="processing" class="w-[400px] h-[400px] flex items-center justify-center">
+    <div v-if="processing" class="max-w-[800px] h-80 md:h-[800px] mx-auto flex items-center justify-center">
       <widgets-loading-spinner />
     </div>
-    <img v-else-if="dataUrl" :src="dataUrl" />
+    <img v-else-if="dataUrl" :src="dataUrl" class="mx-auto" />
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    processing: Boolean
+    variant: {
+      type: Number,
+      default: 0
+    },
+    processing: Boolean,
+    year: Number
   },
   data() {
     return {
+      canvas: null,
       dataUrl: null,
-      year: null,
       yearStats: null
+    }
+  },
+  watch: {
+    variant() {
+      this.init()
     }
   },
   methods: {
@@ -59,12 +69,6 @@ export default {
         }
 
         ctx.fillText(text, x, y)
-      }
-
-      const addIcon = (icon, color, fontSize, x, y) => {
-        ctx.fillStyle = color
-        ctx.font = `${fontSize} Material Icons Outlined`
-        ctx.fillText(icon, x, y)
       }
 
       // Bg color
@@ -168,28 +172,81 @@ export default {
         addText('+' + this.$elapsedPrettyExtended(this.yearStats.totalBooksAddedDuration, true, false), '20px', 'lighter', 'white', '0px', canvas.width / 2, 470)
       }
 
-      // Bottom images
-      imgsToAdd = Object.values(imgsToAdd)
-      if (imgsToAdd.length >= 5) {
-        addText('Some additions include...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 540)
+      if (!this.variant) {
+        // Bottom images
+        imgsToAdd = Object.values(imgsToAdd)
+        if (imgsToAdd.length > 0) {
+          addText('Some additions include...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 540)
 
-        for (let i = 0; i < 5; i++) {
-          let imgToAdd = imgsToAdd[i]
-          ctx.drawImage(imgToAdd.img, imgToAdd.sx, imgToAdd.sy, imgToAdd.sw, imgToAdd.sw, 40 + 145 * i, 580, 140, 140)
+          for (let i = 0; i < Math.min(5, imgsToAdd.length); i++) {
+            let imgToAdd = imgsToAdd[i]
+            ctx.drawImage(imgToAdd.img, imgToAdd.sx, imgToAdd.sy, imgToAdd.sw, imgToAdd.sw, 40 + 145 * i, 580, 140, 140)
+          }
+        }
+      } else if (this.variant === 1) {
+        // Text stats
+        ctx.textAlign = 'left'
+        if (this.yearStats.topAuthors.length) {
+          addText('TOP AUTHORS', '24px', 'normal', tanColor, '1px', 70, 549)
+          for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
+            addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
+          }
+        }
+
+        if (this.yearStats.topNarrators.length) {
+          addText('TOP NARRATORS', '24px', 'normal', tanColor, '1px', 430, 549)
+          for (let i = 0; i < this.yearStats.topNarrators.length; i++) {
+            addText(this.yearStats.topNarrators[i].name, '36px', 'bolder', 'white', '0px', 430, 609 + i * 60, 330)
+          }
+        }
+      } else if (this.variant === 2) {
+        // Text stats
+        ctx.textAlign = 'left'
+        if (this.yearStats.topAuthors.length) {
+          addText('TOP AUTHORS', '24px', 'normal', tanColor, '1px', 70, 549)
+          for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
+            addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
+          }
+        }
+
+        if (this.yearStats.topGenres.length) {
+          addText('TOP GENRES', '24px', 'normal', tanColor, '1px', 430, 549)
+          for (let i = 0; i < this.yearStats.topGenres.length; i++) {
+            addText(this.yearStats.topGenres[i].genre, '36px', 'bolder', 'white', '0px', 430, 609 + i * 60, 330)
+          }
         }
       }
 
+      this.canvas = canvas
       this.dataUrl = canvas.toDataURL('png')
+    },
+    share() {
+      this.canvas.toBlob((blob) => {
+        const file = new File([blob], 'yearinreviewserver.png', { type: blob.type })
+        const shareData = {
+          files: [file]
+        }
+        if (navigator.canShare(shareData)) {
+          navigator
+            .share(shareData)
+            .then(() => {
+              console.log('Share success')
+            })
+            .catch((error) => {
+              console.error('Failed to share', error)
+              this.$toast.error('Failed to share: ' + error.message)
+            })
+        } else {
+          this.$toast.error('Cannot share natively on this device')
+        }
+      })
     },
     refresh() {
       this.init()
     },
     async init() {
       this.$emit('update:processing', true)
-      let year = new Date().getFullYear()
-      if (new Date().getMonth() < 11) year--
-      this.year = year
-      this.yearStats = await this.$axios.$get(`/api/stats/year/${year}`).catch((err) => {
+      this.yearStats = await this.$axios.$get(`/api/stats/year/${this.year}`).catch((err) => {
         console.error('Failed to load stats for year', err)
         this.$toast.error('Failed to load year stats')
         return null

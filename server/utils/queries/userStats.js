@@ -52,12 +52,14 @@ module.exports = {
       },
       include: {
         model: Database.bookModel,
+        attributes: ['id', 'title', 'coverPath'],
         include: {
           model: Database.libraryItemModel,
           attributes: ['id', 'mediaId', 'mediaType']
         },
         required: true
-      }
+      },
+      order: Database.sequelize.random()
     })
     return progresses
   },
@@ -69,6 +71,7 @@ module.exports = {
   async getStatsForYear(user, year) {
     const userId = user.id
     const listeningSessions = await this.getUserListeningSessionsForYear(userId, year)
+    const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
 
     let totalBookListeningTime = 0
     let totalPodcastListeningTime = 0
@@ -79,11 +82,33 @@ module.exports = {
     let narratorListeningMap = {}
     let monthListeningMap = {}
     let bookListeningMap = {}
-    const booksWithCovers = []
 
+    const booksWithCovers = []
+    const finishedBooksWithCovers = []
+
+    // Get finished book stats
+    const numBooksFinished = bookProgressesFinished.length
+    let longestAudiobookFinished = null
+    for (const mediaProgress of bookProgressesFinished) {
+      // Grab first 5 that have a cover
+      if (mediaProgress.mediaItem?.coverPath && !finishedBooksWithCovers.includes(mediaProgress.mediaItem.libraryItem.id) && finishedBooksWithCovers.length < 5 && await fsExtra.pathExists(mediaProgress.mediaItem.coverPath)) {
+        finishedBooksWithCovers.push(mediaProgress.mediaItem.libraryItem.id)
+      }
+
+      if (mediaProgress.duration && (!longestAudiobookFinished?.duration || mediaProgress.duration > longestAudiobookFinished.duration)) {
+        longestAudiobookFinished = {
+          id: mediaProgress.mediaItem.id,
+          title: mediaProgress.mediaItem.title,
+          duration: Math.round(mediaProgress.duration),
+          finishedAt: mediaProgress.finishedAt
+        }
+      }
+    }
+
+    // Get listening session stats
     for (const ls of listeningSessions) {
       // Grab first 25 that have a cover
-      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
+      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && !finishedBooksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
         booksWithCovers.push(ls.mediaItem.libraryItem.id)
       }
 
@@ -162,21 +187,6 @@ module.exports = {
       }
     }
 
-    const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
-
-    const numBooksFinished = bookProgressesFinished.length
-    let longestAudiobookFinished = null
-    bookProgressesFinished.forEach((mediaProgress) => {
-      if (mediaProgress.duration && (!longestAudiobookFinished?.duration || mediaProgress.duration > longestAudiobookFinished.duration)) {
-        longestAudiobookFinished = {
-          id: mediaProgress.mediaItem.id,
-          title: mediaProgress.mediaItem.title,
-          duration: Math.round(mediaProgress.duration),
-          finishedAt: mediaProgress.finishedAt
-        }
-      }
-    })
-
     return {
       totalListeningSessions: listeningSessions.length,
       totalListeningTime,
@@ -189,7 +199,8 @@ module.exports = {
       numBooksFinished,
       numBooksListened: Object.keys(bookListeningMap).length,
       longestAudiobookFinished,
-      booksWithCovers
+      booksWithCovers,
+      finishedBooksWithCovers
     }
   }
 }
