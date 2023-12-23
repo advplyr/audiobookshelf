@@ -14,19 +14,20 @@
       </div>
     </div>
 
-    <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-32' : 'left-20'">
-      <span class="material-icons text-xl">download</span>
-    </a>
-    <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
-      <span class="material-icons text-xl">more</span>
-    </div>
-    <div v-if="numPages" class="absolute top-0 left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
+    <div v-if="numPages" class="absolute top-0 left-4 sm:left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
       <span class="material-icons text-xl">menu</span>
     </div>
-    <div v-if="numPages" class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+    <div v-if="comicMetadata" class="absolute top-0 left-16 sm:left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
+      <span class="material-icons text-xl">more</span>
+    </div>
+    <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-28 sm:left-32' : 'left-16 sm:left-20'">
+      <span class="material-icons text-xl">download</span>
+    </a>
+
+    <div v-if="numPages" class="absolute top-0 right-14 sm:right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <p class="font-mono">{{ page }} / {{ numPages }}</p>
     </div>
-    <div v-if="mainImg" class="absolute top-0 right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+    <div v-if="mainImg" class="absolute top-0 right-36 sm:right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <ui-icon-btn icon="zoom_out" :size="8" :disabled="!canScaleDown" borderless class="mr-px" @click="zoomOut" />
       <ui-icon-btn icon="zoom_in" :size="8" :disabled="!canScaleUp" borderless class="ml-px" @click="zoomIn" />
     </div>
@@ -91,7 +92,7 @@ export default {
       loadTimeout: null,
       loadedFirstPage: false,
       comicMetadata: null,
-      scale: 80,
+      scale: 80
     }
   },
   watch: {
@@ -357,20 +358,19 @@ export default {
     scroll(event) {
       const imageContainer = this.$refs.imageContainer
 
-      console.log("Scrolling by " + event.deltaY)
       imageContainer.scrollBy({
         top: event.deltaY,
-        behavior: "auto",
-      });
+        left: event.deltaX,
+        behavior: 'auto'
+      })
     }
   },
   mounted() {
     const prevButton = this.$refs.prevButton
     const nextButton = this.$refs.nextButton
-    
+
     prevButton.addEventListener('wheel', this.scroll, { passive: false })
     nextButton.addEventListener('wheel', this.scroll, { passive: false })
-
   },
   beforeDestroy() {
     const prevButton = this.$refs.prevButton
