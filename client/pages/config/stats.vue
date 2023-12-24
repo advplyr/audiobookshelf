@@ -1,6 +1,9 @@
 <template>
   <div>
-    <app-settings-content :header-text="$strings.HeaderYourStats">
+    <!-- Year in review banner shown at the top in December and January -->
+    <stats-year-in-review-banner v-if="showYearInReviewBanner" />
+
+    <app-settings-content :header-text="$strings.HeaderYourStats" class="!mb-4">
       <div class="flex justify-center">
         <div class="flex p-2">
           <svg class="hidden sm:block h-14 w-14 lg:h-18 lg:w-18" viewBox="0 0 24 24">
@@ -63,6 +66,9 @@
       </div>
       <stats-heatmap v-if="listeningStats" :days-listening="listeningStats.days" class="my-2" />
     </app-settings-content>
+
+    <!-- Year in review banner shown at the bottom Feb - Nov -->
+    <stats-year-in-review-banner v-if="!showYearInReviewBanner" />
   </div>
 </template>
 
@@ -71,7 +77,8 @@ export default {
   data() {
     return {
       listeningStats: null,
-      windowWidth: 0
+      windowWidth: 0,
+      showYearInReviewBanner: false
     }
   },
   watch: {
@@ -119,6 +126,12 @@ export default {
         console.error('Failed to load listening sesions', err)
         return []
       })
+
+      let month = new Date().getMonth()
+      // January and December show year in review banner
+      if (month === 11 || month === 0) {
+        this.showYearInReviewBanner = true
+      }
     }
   },
   mounted() {

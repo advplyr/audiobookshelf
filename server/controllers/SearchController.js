@@ -35,8 +35,19 @@ class SearchController {
     })
   }
 
+  /**
+   * Find podcast RSS feeds given a term
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async findPodcasts(req, res) {
     const term = req.query.term
+    if (!term) {
+      Logger.error('[SearchController] Invalid request query param "term" is required')
+      return res.status(400).send('Invalid request query param "term" is required')
+    }
+
     const results = await PodcastFinder.search(term)
     res.json(results)
   }

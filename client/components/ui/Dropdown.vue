@@ -1,6 +1,6 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutsideObj">
-    <p class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
+    <p v-if="label" class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
     <button type="button" :aria-label="longLabel" :disabled="disabled" class="relative w-full border rounded shadow-sm pl-3 pr-8 py-2 text-left sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate font-sans" :class="{ 'font-semibold': selectedSubtext, 'text-sm': small }">{{ selectedText }}</span>
@@ -64,7 +64,7 @@ export default {
     },
     itemsToShow() {
       return this.items.map((i) => {
-        if (typeof i === 'string') {
+        if (typeof i === 'string' || typeof i === 'number') {
           return {
             text: i,
             value: i

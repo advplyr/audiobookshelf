@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <label class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</label>
+    <label v-if="label" class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</label>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
         <div ref="inputWrapper" class="input-wrapper flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-2" :class="disabled ? 'pointer-events-none bg-black-300 text-gray-400' : 'bg-primary'">
