@@ -103,12 +103,11 @@ function fetchSeries(metadataMeta) {
   if (!metadataMeta) return []
   const result = []
   for (let i = 0; i < metadataMeta.length; i++) {
-    if (metadataMeta[i].$.name === "calibre:series") {
-      const name = metadataMeta[i].$.content
+    if (metadataMeta[i].$?.name === "calibre:series" && metadataMeta[i].$.content?.trim()) {
+      const name = metadataMeta[i].$.content.trim()
       let sequence = null
-      if (i + 1 < metadataMeta.length &&
-          metadataMeta[i + 1].$.name === "calibre:series_index" && metadataMeta[i + 1].$.content) {
-        sequence = metadataMeta[i + 1].$.content
+      if (metadataMeta[i + 1]?.$?.name === "calibre:series_index" && metadataMeta[i + 1].$?.content?.trim()) {
+        sequence = metadataMeta[i + 1].$.content.trim()
       }
       result.push({ name, sequence })
     }
