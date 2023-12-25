@@ -32,11 +32,8 @@ class OpfFileScanner {
             bookMetadata.narrators = opfMetadata.narrators
           }
         } else if (key === 'series') {
-          if (opfMetadata.series) {
-            bookMetadata.series = [{
-              name: opfMetadata.series,
-              sequence: opfMetadata.sequence || null
-            }]
+          if (opfMetadata.series?.length) {
+            bookMetadata.series = opfMetadata.series
           }
         } else if (opfMetadata[key] && key !== 'sequence') {
           bookMetadata[key] = opfMetadata[key]
