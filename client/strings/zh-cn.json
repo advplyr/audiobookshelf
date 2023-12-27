@@ -51,6 +51,7 @@
   "ButtonPurgeItemsCache": "清理项目缓存",
   "ButtonPurgeMediaProgress": "清理媒体进度",
   "ButtonQueueAddItem": "添加到队列",
+  "ButtonQueuePlayNext": "Play Next",
   "ButtonQueueRemoveItem": "从队列中移除",
   "ButtonQuickMatch": "快速匹配",
   "ButtonRead": "读取",

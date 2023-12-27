@@ -51,6 +51,7 @@
   "ButtonPurgeItemsCache": "Очистить кэш элементов",
   "ButtonPurgeMediaProgress": "Очистить прогресс медиа",
   "ButtonQueueAddItem": "Добавить в очередь",
+  "ButtonQueuePlayNext": "Play Next",
   "ButtonQueueRemoveItem": "Удалить из очереди",
   "ButtonQuickMatch": "Быстрый поиск",
   "ButtonRead": "Читать",
