@@ -50,7 +50,11 @@ export default {
     label: String,
     disabled: Boolean,
     readonly: Boolean,
-    showEdit: Boolean
+    showEdit: Boolean,
+    menuDisabled: {
+      type: Boolean,
+      default: false
+    },
   },
   data() {
     return {
@@ -77,7 +81,7 @@ export default {
       }
     },
     showMenu() {
-      return this.isFocused
+      return this.isFocused && !this.menuDisabled
     },
     wrapperClass() {
       var classes = []

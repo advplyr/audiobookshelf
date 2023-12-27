@@ -217,7 +217,8 @@ class BookScanner {
       } else if (key === 'series') {
         // Check for series added
         for (const seriesObj of bookMetadata.series) {
-          if (!media.series.some(se => se.name === seriesObj.name)) {
+          const existingBookSeries = media.series.find(se => se.name === seriesObj.name)
+          if (!existingBookSeries) {
             const existingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
             if (existingSeries) {
               await Database.bookSeriesModel.create({
@@ -238,6 +239,11 @@ class BookScanner {
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
               seriesUpdated = true
             }
+          } else if (seriesObj.sequence && existingBookSeries.bookSeries.sequence !== seriesObj.sequence) {
+            libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" series "${seriesObj.name}" sequence "${existingBookSeries.bookSeries.sequence || ''}" => "${seriesObj.sequence}"`)
+            seriesUpdated = true
+            existingBookSeries.bookSeries.sequence = seriesObj.sequence
+            await existingBookSeries.bookSeries.save()
           }
         }
         // Check for series removed
@@ -657,7 +663,7 @@ class BookScanner {
       if (!this.libraryItemData.metadataNfoLibraryFile) return
       await NfoFileScanner.scanBookNfoFile(this.libraryItemData.metadataNfoLibraryFile, this.bookMetadata)
     }
-    
+
     /**
      * Description from desc.txt and narrator from reader.txt
      */

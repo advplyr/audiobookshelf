@@ -14,34 +14,40 @@
       </div>
     </div>
 
-    <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-32' : 'left-20'">
-      <span class="material-icons text-xl">download</span>
-    </a>
-    <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
-      <span class="material-icons text-xl">more</span>
-    </div>
-    <div v-if="numPages" class="absolute top-0 left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
+    <div v-if="numPages" class="absolute top-0 left-4 sm:left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
       <span class="material-icons text-xl">menu</span>
     </div>
-    <div v-if="numPages" class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+    <div v-if="comicMetadata" class="absolute top-0 left-16 sm:left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
+      <span class="material-icons text-xl">more</span>
+    </div>
+    <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-28 sm:left-32' : 'left-16 sm:left-20'">
+      <span class="material-icons text-xl">download</span>
+    </a>
+
+    <div v-if="numPages" class="absolute top-0 right-14 sm:right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <p class="font-mono">{{ page }} / {{ numPages }}</p>
     </div>
+    <div v-if="mainImg" class="absolute top-0 right-36 sm:right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+      <ui-icon-btn icon="zoom_out" :size="8" :disabled="!canScaleDown" borderless class="mr-px" @click="zoomOut" />
+      <ui-icon-btn icon="zoom_in" :size="8" :disabled="!canScaleUp" borderless class="ml-px" @click="zoomIn" />
+    </div>
 
-    <div class="overflow-hidden w-full h-full relative">
-      <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
+    <div class="w-full h-full relative">
+      <div v-show="canGoPrev" ref="prevButton" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
         </div>
       </div>
-      <div v-show="canGoNext" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
+      <div v-show="canGoNext" ref="nextButton" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2 ml-auto">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
         </div>
       </div>
-      <div class="h-full flex justify-center">
-        <img v-if="mainImg" :src="mainImg" class="object-contain h-full m-auto" />
+      <div ref="imageContainer" class="w-full h-full relative overflow-auto">
+        <div class="h-full flex" :class="scale > 100 ? '' : 'justify-center'">
+          <img v-if="mainImg" :style="{ minWidth: scale + '%', width: scale + '%' }" :src="mainImg" class="object-contain m-auto" />
+        </div>
       </div>
-
       <div v-show="loading" class="w-full h-full absolute top-0 left-0 flex items-center justify-center z-10">
         <ui-loading-indicator />
       </div>
@@ -53,6 +59,10 @@
 import Path from 'path'
 import { Archive } from 'libarchive.js/main.js'
 import { CompressedFile } from 'libarchive.js/src/compressed-file'
+
+// This is % with respect to the screen width
+const MAX_SCALE = 400
+const MIN_SCALE = 10
 
 Archive.init({
   workerUrl: '/libarchive/worker-bundle.js'
@@ -81,7 +91,8 @@ export default {
       showInfoMenu: false,
       loadTimeout: null,
       loadedFirstPage: false,
-      comicMetadata: null
+      comicMetadata: null,
+      scale: 80
     }
   },
   watch: {
@@ -136,6 +147,12 @@ export default {
           return p
         }) || []
       )
+    },
+    canScaleUp() {
+      return this.scale < MAX_SCALE
+    },
+    canScaleDown() {
+      return this.scale > MIN_SCALE
     }
   },
   methods: {
@@ -331,10 +348,37 @@ export default {
       orderedImages = orderedImages.concat(noNumImages.map((i) => i.filename))
 
       this.pages = orderedImages
+    },
+    zoomIn() {
+      this.scale += 10
+    },
+    zoomOut() {
+      this.scale -= 10
+    },
+    scroll(event) {
+      const imageContainer = this.$refs.imageContainer
+
+      imageContainer.scrollBy({
+        top: event.deltaY,
+        left: event.deltaX,
+        behavior: 'auto'
+      })
     }
   },
-  mounted() {},
-  beforeDestroy() {}
+  mounted() {
+    const prevButton = this.$refs.prevButton
+    const nextButton = this.$refs.nextButton
+
+    prevButton.addEventListener('wheel', this.scroll, { passive: false })
+    nextButton.addEventListener('wheel', this.scroll, { passive: false })
+  },
+  beforeDestroy() {
+    const prevButton = this.$refs.prevButton
+    const nextButton = this.$refs.nextButton
+
+    prevButton.removeEventListener('wheel', this.scroll, { passive: false })
+    nextButton.removeEventListener('wheel', this.scroll, { passive: false })
+  }
 }
 </script>
 

@@ -108,7 +108,7 @@ class Feed extends Model {
 
   /**
    * Find all library item ids that have an open feed (used in library filter)
-   * @returns {Promise<Array<String>>} array of library item ids
+   * @returns {Promise<string[]>} array of library item ids
    */
   static async findAllLibraryItemIds() {
     const feeds = await this.findAll({
@@ -122,8 +122,8 @@ class Feed extends Model {
 
   /**
    * Find feed where and return oldFeed
-   * @param {object} where sequelize where object
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @param {Object} where sequelize where object
+   * @returns {Promise<oldFeed>} oldFeed
    */
   static async findOneOld(where) {
     if (!where) return null
@@ -140,7 +140,7 @@ class Feed extends Model {
   /**
    * Find feed and return oldFeed
    * @param {string} id
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @returns {Promise<oldFeed>} oldFeed
    */
   static async findByPkOld(id) {
     if (!id) return null

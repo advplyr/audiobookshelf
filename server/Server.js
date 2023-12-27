@@ -279,6 +279,19 @@ class Server {
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
+    let sigintAlreadyReceived = false
+    process.on('SIGINT', async () => {
+      if (!sigintAlreadyReceived) {
+        sigintAlreadyReceived = true
+        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
+        await this.stop()
+        Logger.info('Server stopped. Exiting.')
+      } else {
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')        
+      }
+      process.exit(0)
+    })
+
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
       else Logger.info(`Listening on port :${this.Port}`)
@@ -386,6 +399,7 @@ class Server {
   }
 
   async stop() {
+    Logger.info('=== Stopping Server ===')
     await this.watcher.close()
     Logger.info('Watcher Closed')
 

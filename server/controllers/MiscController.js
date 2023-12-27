@@ -11,6 +11,7 @@ const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
+const adminStats = require('../utils/queries/adminStats')
 
 //
 // This is a controller for routes that don't have a home yet :(
@@ -629,6 +630,27 @@ class MiscController {
         } else {
           Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
         }
+      } else if (key === 'authOpenIDMobileRedirectURIs') {
+        function isValidRedirectURI(uri) {
+          if (typeof uri !== 'string') return false
+          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i')
+          return pattern.test(uri)
+        }
+
+        const uris = settingsUpdate[key]
+        if (!Array.isArray(uris) ||
+          (uris.includes('*') && uris.length > 1) ||
+          uris.some(uri => uri !== '*' && !isValidRedirectURI(uri))) {
+          Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
+          continue
+        }
+
+        // Update the URIs
+        if (Database.serverSettings[key].some(uri => !uris.includes(uri)) || uris.some(uri => !Database.serverSettings[key].includes(uri))) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${Database.serverSettings[key]}" to "${uris}"`)
+          Database.serverSettings[key] = uris
+          hasUpdates = true
+        }
       } else {
         const updatedValueType = typeof settingsUpdate[key]
         if (['authOpenIDAutoLaunch', 'authOpenIDAutoRegister'].includes(key)) {
@@ -671,8 +693,29 @@ class MiscController {
     }
 
     res.json({
+      updated: hasUpdates,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
+  }
+
+  /**
+   * GET: /api/me/stats/year/:year
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async getAdminStatsForYear(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin stats for year`)
+      return res.sendStatus(403)
+    }
+    const year = Number(req.params.year)
+    if (isNaN(year) || year < 2000 || year > 9999) {
+      Logger.error(`[MiscController] Invalid year "${year}"`)
+      return res.status(400).send('Invalid year')
+    }
+    const stats = await adminStats.getStatsForYear(year)
+    res.json(stats)
   }
 }
 module.exports = new MiscController()
