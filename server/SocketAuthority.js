@@ -73,6 +73,15 @@ class SocketAuthority {
     }
   }
 
+  close(callback) {
+    Logger.info('[SocketAuthority] Shutting down')
+    // This will close all open socket connections, and also close the underlying http server
+    if (this.io) 
+      this.io.close(callback)
+    else
+      callback()
+  }
+
   initialize(Server) {
     this.Server = Server
 

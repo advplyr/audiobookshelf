@@ -401,7 +401,7 @@ class Server {
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {
-      this.server.close((err) => {
+      SocketAuthority.close((err) => {
         if (err) {
           Logger.error('Failed to close server', err)
         } else {
