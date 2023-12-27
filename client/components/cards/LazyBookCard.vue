@@ -463,7 +463,7 @@ export default {
           if (!this.isQueued) {
             items.push({
               func: 'addToQueue',
-              text: this.$strings.ButtonQueuePlayNext
+              text: this.$strings.ButtonQueueAddItem
             },
             {
               func: 'playNext',
