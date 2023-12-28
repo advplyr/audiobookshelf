@@ -284,7 +284,7 @@ class Server {
         await this.stop()
         Logger.info('Server stopped. Exiting.')
       } else {
-        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')        
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
       }
       process.exit(0)
     })
@@ -395,6 +395,10 @@ class Server {
     res.sendStatus(200)
   }
 
+  /**
+   * Gracefully stop server
+   * Stops watcher and socket server
+   */
   async stop() {
     Logger.info('=== Stopping Server ===')
     await this.watcher.close()
