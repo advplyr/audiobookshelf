@@ -136,15 +136,16 @@ class Server {
 
     /**
      * @temporary
-     * This is necessary for the ebook API endpoint in the mobile apps
+     * This is necessary for the ebook & cover API endpoint in the mobile apps
      * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
      * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+     * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
      * @see https://ionicframework.com/docs/troubleshooting/cors
      * 
      * Running in development allows cors to allow testing the mobile apps in the browser 
      */
     app.use((req, res, next) => {
-      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/ebook(\/[0-9]+)?/)) {
+      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
         if (Logger.isDev || allowedOrigins.some(o => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
@@ -284,7 +285,7 @@ class Server {
         await this.stop()
         Logger.info('Server stopped. Exiting.')
       } else {
-        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')        
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
       }
       process.exit(0)
     })
