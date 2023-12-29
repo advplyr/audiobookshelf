@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Metti in Pausa Capitolo",
   "MessagePlayChapter": "Ascolta dall'inizio del capitolo",
   "MessagePlaylistCreateFromCollection": "Crea playlist da una Raccolta",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast non ha l'URL del feed RSS da utilizzare per il match",
   "MessageQuickMatchDescription": "Compila i dettagli dell'articolo vuoto e copri con il risultato della prima corrispondenza di '{0}'. Non sovrascrive i dettagli a meno che non sia abilitata l'impostazione del server \"Preferisci metadati corrispondenti\".",
   "MessageRemoveChapter": "Rimuovi Capitolo",

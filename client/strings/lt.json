@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Pristabdyti skyriaus grojimą",
   "MessagePlayChapter": "Paklausyti skyriaus pradžios",
   "MessagePlaylistCreateFromCollection": "Sukurti grojaraštį iš kolekcijos",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Tinklalidė neturi RSS srauto URL kuriuo būtų galima sulyginti",
   "MessageQuickMatchDescription": "Užpildykite tuščius elementų duomenis ir viršelius su pirmuoju atitikimo rezultatu iš „{0}“. Neneperrašo detalių, nebent įgalintas serverio nustatymas „Pirmenybė atitaikytiems metaduomenis“.",
   "MessageRemoveChapter": "Pašalinti skyrių",

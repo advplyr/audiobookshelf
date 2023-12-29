@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Zatrzymaj odtwarzanie rozdziały",
   "MessagePlayChapter": "Rozpocznij odtwarzanie od początku rozdziału",
   "MessagePlaylistCreateFromCollection": "Create playlist from collection",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast nie ma adresu url kanału RSS, który mógłby zostać użyty do dopasowania",
   "MessageQuickMatchDescription": "Wypełnij puste informacje i okładkę pierwszym wynikiem dopasowania z '{0}'. Nie nadpisuje szczegółów, chyba że włączone jest ustawienie serwera 'Preferuj dopasowane metadane'.",
   "MessageRemoveChapter": "Usuń rozdział",

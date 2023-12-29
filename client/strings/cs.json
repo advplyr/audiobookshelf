@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Pozastavit přehrávání kapitoly",
   "MessagePlayChapter": "Poslechnout si začátek kapitoly",
   "MessagePlaylistCreateFromCollection": "Vytvořit seznam skladeb z kolekce",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast nemá žádnou adresu URL kanálu RSS, kterou by mohl použít pro porovnávání",
   "MessageQuickMatchDescription": "Vyplňte prázdné detaily položky a obálku prvním výsledkem shody z '{0}'. Nepřepisuje podrobnosti, pokud není povoleno nastavení serveru \"Preferovat párování metadata\".",
   "MessageRemoveChapter": "Odstranit kapitolu",

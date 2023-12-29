@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Pause avspilling av kapittel",
   "MessagePlayChapter": "Lytter på begynnelsen av kapittel",
   "MessagePlaylistCreateFromCollection": "Lag spilleliste fra samling",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast har ingen RSS feed url til bruk av sammenligning",
   "MessageQuickMatchDescription": "Fyll inn tomme gjenstandsdetaljer og omslagsbilde med første resultat fra '{0}'. Overskriver ikke detaljene utenom 'Foretrekk funnet metadata' tjenerinstilling er aktivert.",
   "MessageRemoveChapter": "fjerne kapittel",

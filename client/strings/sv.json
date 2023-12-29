@@ -642,6 +642,7 @@
   "MessagePauseChapter": "Pausa kapiteluppspelning",
   "MessagePlayChapter": "Lyssna på kapitlets början",
   "MessagePlaylistCreateFromCollection": "Skapa spellista från samling",
+  "MessagePlayNext": "Play next",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcasten har ingen RSS-flödes-URL att använda för matchning",
   "MessageQuickMatchDescription": "Fyll tomma objektdetaljer och omslag med första matchningsresultat från '{0}'. Överskriver inte detaljer om inte serverinställningen 'Föredra matchad metadata' är aktiverad.",
   "MessageRemoveChapter": "Ta bort kapitel",
