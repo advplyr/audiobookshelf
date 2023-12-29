@@ -57,6 +57,10 @@
                 <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
                   <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
                 </button>
+
+                <button v-if="!playerQueueEpisodeIdMap[episode.id] && libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center" @click.stop="playNextBtnClick(episode)">
+                  <span class="material-icons-outlined text-xl">{{ 'queue_play_next' }}</span>
+                </button>
               </div>
             </div>
 
@@ -220,6 +224,19 @@ export default {
         }
         this.$store.commit('addItemToQueue', queueItem)
       }
+    },
+    playNextBtnClick(episode) {
+      const queueItem = {
+        libraryItemId: episode.libraryItemId,
+        libraryId: episode.libraryId,
+        episodeId: episode.id,
+        title: episode.title,
+        subtitle: episode.podcast.metadata.title,
+        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+        duration: episode.duration || null,
+        coverPath: episode.podcast.coverPath || null
+      }
+      this.$store.commit('addItemToTopOfQueue', queueItem)
     }
   },
   mounted() {
