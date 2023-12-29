@@ -59,7 +59,7 @@
                 </button>
 
                 <button v-if="!playerQueueEpisodeIdMap[episode.id] && libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center" @click.stop="playNextBtnClick(episode)">
-                  <span class="material-icons-outlined text-xl">{{ 'queue_play_next' }}</span>
+                  <span class="material-icons-outlined text-xl">queue_play_next</span>
                 </button>
               </div>
             </div>
