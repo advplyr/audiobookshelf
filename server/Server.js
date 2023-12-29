@@ -396,13 +396,17 @@ class Server {
     res.sendStatus(200)
   }
 
+  /**
+   * Gracefully stop server
+   * Stops watcher and socket server
+   */
   async stop() {
     Logger.info('=== Stopping Server ===')
     await this.watcher.close()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {
-      this.server.close((err) => {
+      SocketAuthority.close((err) => {
         if (err) {
           Logger.error('Failed to close server', err)
         } else {
