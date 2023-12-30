@@ -32,7 +32,7 @@
       </form>
     </div>
     <template v-for="episode in episodesList">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @addToPlaylist="addToPlaylist" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @queuePlayNext="addEpisodeToTopOfQueue" @addToPlaylist="addToPlaylist" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
@@ -273,6 +273,19 @@ export default {
         coverPath: this.media.coverPath || null
       }
       this.$store.commit('addItemToQueue', queueItem)
+    },
+    addEpisodeToTopOfQueue(episode) {
+      const queueItem = {
+        libraryItemId: this.libraryItem.id,
+        libraryId: this.libraryItem.libraryId,
+        episodeId: episode.id,
+        title: episode.title,
+        subtitle: this.mediaMetadata.title,
+        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+        duration: episode.audioFile.duration || null,
+        coverPath: this.media.coverPath || null
+      }
+      this.$store.commit('addItemToTopOfQueue', queueItem)
     },
     toggleBatchFinished() {
       this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)

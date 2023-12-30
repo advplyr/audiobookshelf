@@ -188,6 +188,15 @@ export const mutations = {
       state.playerQueueItems.push(item)
     }
   },
+  addItemToTopOfQueue(state, item) {
+    const exists = state.playerQueueItems.some(i => {
+      if (!i.episodeId) return i.libraryItemId === item.libraryItemId
+      return i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId
+    })
+    if (!exists) {
+      state.playerQueueItems.splice(1, 0, item)
+    }
+  },
   setPlayerQueueAutoPlay(state, autoPlay) {
     state.playerQueueAutoPlay = !!autoPlay
     localStorage.setItem('playerQueueAutoPlay', !!autoPlay ? '1' : '0')

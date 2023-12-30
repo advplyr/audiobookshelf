@@ -97,6 +97,10 @@
               <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :bg-color="isQueued ? 'primary' : 'success bg-opacity-60'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
             </ui-tooltip>
 
+            <ui-tooltip v-if="!isQueued && showQueueBtn" :text="$strings.ButtonQueuePlayNext" direction="top">
+              <ui-icon-btn icon="queue_play_next" class="mx-0.5" @click="playNextBtnClick" />
+            </ui-tooltip>
+
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons text-2xl -ml-2 pr-2 text-white">auto_stories</span>
               {{ $strings.ButtonRead }}
@@ -676,6 +680,19 @@ export default {
         }
         this.$store.commit('addItemToQueue', queueItem)
       }
+    },
+    playNextBtnClick() {
+      const queueItem = {
+        libraryItemId: this.libraryItemId,
+        libraryId: this.libraryId,
+        episodeId: null,
+        title: this.title,
+        subtitle: this.authors.map((au) => au.name).join(', '),
+        caption: '',
+        duration: this.duration || null,
+        coverPath: this.media.coverPath || null
+      }
+      this.$store.commit('addItemToTopOfQueue', queueItem)
     },
     downloadLibraryItem() {
       this.$downloadFile(this.downloadUrl)

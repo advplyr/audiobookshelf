@@ -25,6 +25,10 @@
             <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
           </ui-tooltip>
 
+          <ui-tooltip v-if="!isQueued && libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="$strings.MessagePlayNext" direction="top">
+            <ui-icon-btn class="scale-90" icon="queue_play_next" borderless @click="queuePlayNext" />
+          </ui-tooltip>
+
           <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
@@ -201,7 +205,9 @@ export default {
         // Add to queue
         this.$emit('addToQueue', this.episode)
       }
-    }
+    },
+    queuePlayNext() {
+      this.$emit('queuePlayNext', this.episode)}
   }
 }
 </script>
