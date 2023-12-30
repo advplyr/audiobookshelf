@@ -152,7 +152,12 @@ class PodcastEpisode extends Model {
       extraData: DataTypes.JSON
     }, {
       sequelize,
-      modelName: 'podcastEpisode'
+      modelName: 'podcastEpisode',
+      indexes: [
+        {
+          fields: ['createdAt']
+        }
+      ]
     })
 
     const { podcast } = sequelize.models

@@ -421,6 +421,10 @@ class LibraryItem extends Model {
     if (!libraryItemId) return null
 
     const libraryItem = await this.findByPk(libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
+      return null
+    }
 
     if (libraryItem.mediaType === 'podcast') {
       libraryItem.media = await libraryItem.getMedia({
@@ -453,7 +457,7 @@ class LibraryItem extends Model {
       })
     }
 
-    if (!libraryItem) return null
+    if (!libraryItem.media) return null
     return this.getOldLibraryItem(libraryItem)
   }
 
