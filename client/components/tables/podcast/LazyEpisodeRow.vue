@@ -135,7 +135,9 @@ export default {
       if (this.streamIsPlaying) return 'Playing'
       if (!this.itemProgress) return this.$elapsedPretty(this.episode?.duration || 0)
       if (this.userIsFinished) return 'Finished'
-      const remaining = Math.floor(this.itemProgress.duration - this.itemProgress.currentTime)
+
+      const duration = this.itemProgress.duration || this.episode?.duration || 0
+      const remaining = Math.floor(duration - this.itemProgress.currentTime)
       return `${this.$elapsedPretty(remaining)} left`
     }
   },
