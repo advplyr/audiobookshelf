@@ -21,9 +21,12 @@
 
     <div :style="{ height: pdfHeight + 'px' }" class="overflow-hidden m-auto">
       <div class="flex items-center justify-center">
-        <div :style="{ width: pdfWidth + 'px', height: pdfHeight + 'px' }" class="overflow-auto">
+        <div>
           <div v-if="loadedRatio > 0 && loadedRatio < 1" style="background-color: green; color: white; text-align: center" :style="{ width: loadedRatio * 100 + '%' }">{{ Math.floor(loadedRatio * 100) }}%</div>
-          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="pdfDocInitParams" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
+
+          <pdf ref="pdf" :src="pdfDocInitParams" :page="page" class="m-auto z-10 border border-black border-opacity-20 shadow-md" @link-clicked="page = $event" @numpages="numPagesLoaded" @loaded="loadedEvt" :scale.sync="scale" :style="{ scale: scale * 50 + '%' }">
+            <template slot="loading"> loading content here... </template>
+          </pdf>
         </div>
       </div>
     </div>
@@ -34,7 +37,8 @@
 </template>
 
 <script>
-import pdf from '@teckel/vue-pdf'
+import pdf from 'pdfvuer'
+/*import pdf from '@teckel/vue-pdf'*/
 
 export default {
   components: {

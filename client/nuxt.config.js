@@ -49,7 +49,7 @@ module.exports = {
     '@/plugins/axios.js',
     '@/plugins/toast.js',
     '@/plugins/utils.js',
-    '@/plugins/i18n.js'
+    '@/plugins/i18n.js',
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -132,7 +132,10 @@ module.exports = {
         tailwindcss: {},
         autoprefixer: {},
       },
-    }
+    },
+    transpile: [
+      'pdfjs-dist'
+    ]
   },
   watchers: {
     webpack: {
