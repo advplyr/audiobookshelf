@@ -22,6 +22,10 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
         </svg>
       </nuxt-link>
+      <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
+        <span v-else class="material-icons-outlined text-lg">queue_music</span>
+      </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
         <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
@@ -293,6 +297,9 @@ export default {
       }
 
       return items
+    },
+    showPlaylists() {
+      return this.$store.state.libraries.numUserPlaylists > 0
     }
   },
   methods: {
