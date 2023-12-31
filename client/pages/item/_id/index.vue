@@ -1,6 +1,6 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
+    <div id="item-page-wrapper" class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
       <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
           <div class="relative group" style="height: fit-content">
@@ -136,7 +136,7 @@
 
           <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :is-file="isFile" :media="media" />
 
-          <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
+          <tables-podcast-lazy-episodes-table v-if="isPodcast" :library-item="libraryItem" />
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 

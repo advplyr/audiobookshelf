@@ -49,6 +49,7 @@ class LibraryItemController {
           item.episodesDownloading = [this.podcastManager.currentDownload.toJSONForClient()]
         }
       }
+
       return res.json(item)
     }
     res.json(req.libraryItem)
