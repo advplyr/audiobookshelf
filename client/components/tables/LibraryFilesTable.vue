@@ -12,7 +12,7 @@
       </div>
     </div>
     <transition name="slide">
-      <div class="w-full" v-show="showFiles">
+      <div class="w-full" v-if="showFiles">
         <table class="text-sm tracksTable">
           <tr>
             <th class="text-left px-4">{{ $strings.LabelPath }}</th>
@@ -70,7 +70,7 @@ export default {
     },
     audioFiles() {
       if (this.libraryItem.mediaType === 'podcast') {
-        return this.libraryItem.media?.episodes.map((ep) => ep.audioFile) || []
+        return this.libraryItem.media?.episodes.map((ep) => ep.audioFile).filter((af) => af) || []
       }
       return this.libraryItem.media?.audioFiles || []
     },

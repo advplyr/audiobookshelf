@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full py-6">
+  <div id="lazy-episodes-table" class="w-full py-6">
     <div class="flex flex-wrap flex-col md:flex-row md:items-center mb-4">
       <div class="flex items-center flex-nowrap whitespace-nowrap mb-2 md:mb-0">
         <p class="text-lg mb-0 font-semibold">{{ $strings.HeaderEpisodes }}</p>
@@ -18,28 +18,41 @@
           <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
         </template>
         <template v-else>
-          <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" />
-          <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+          <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
+          <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="filterSortChanged" />
           <div class="flex-grow md:hidden" />
           <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
         </template>
       </div>
     </div>
-    <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
+    <!-- <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p> -->
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
       <form @submit.prevent="submit" class="flex flex-grow">
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
       </form>
     </div>
-    <template v-for="episode in episodesList">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @addToPlaylist="addToPlaylist" />
-    </template>
+    <div class="relative min-h-[176px]">
+      <template v-for="episode in totalEpisodes">
+        <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+          <!-- episode is mounted here -->
+        </div>
+      </template>
+      <div v-if="isSearching" class="w-full h-full absolute inset-0 flex justify-center py-12" :class="{ 'bg-black/50': totalEpisodes }">
+        <ui-loading-indicator />
+      </div>
+      <div v-else-if="!totalEpisodes" class="h-44 flex items-center justify-center">
+        <p class="text-lg">{{ $strings.MessageNoEpisodes }}</p>
+      </div>
+    </div>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
   </div>
 </template>
 
 <script>
+import Vue from 'vue'
+import LazyEpisodeRow from './LazyEpisodeRow.vue'
+
 export default {
   props: {
     libraryItem: {
@@ -60,7 +73,15 @@ export default {
       processing: false,
       search: null,
       searchTimeout: null,
-      searchText: null
+      searchText: null,
+      isSearching: false,
+      totalEpisodes: 0,
+      episodesPerPage: null,
+      episodeIndexesMounted: [],
+      episodeComponentRefs: {},
+      windowHeight: 0,
+      episodesTableOffsetTop: 0,
+      episodeRowHeight: 176
     }
   },
   watch: {
@@ -194,13 +215,19 @@ export default {
     submit() {},
     inputUpdate() {
       clearTimeout(this.searchTimeout)
+      this.isSearching = true
+      let searchStart = this.searchText
       this.searchTimeout = setTimeout(() => {
-        if (!this.search || !this.search.trim()) {
+        this.isSearching = false
+        if (!this.search?.trim()) {
           this.searchText = ''
-          return
+        } else {
+          this.searchText = this.search.toLowerCase().trim()
         }
-        this.searchText = this.search.toLowerCase().trim()
-      }, 500)
+        if (searchStart !== this.searchText) {
+          this.init()
+        }
+      }, 750)
     },
     contextMenuAction({ action }) {
       if (action === 'quick-match-episodes') {
@@ -304,23 +331,29 @@ export default {
       if (!val) this.episodesToRemove = []
     },
     clearSelected() {
-      const episodeRows = this.$refs.episodeRow
-      if (episodeRows && episodeRows.length) {
-        for (const epRow of episodeRows) {
-          if (epRow) epRow.isSelected = false
-        }
-      }
       this.selectedEpisodes = []
+      this.setSelectionModeForEpisodes()
     },
     removeSelectedEpisodes() {
       this.episodesToRemove = this.selectedEpisodes
       this.showPodcastRemoveModal = true
     },
     episodeSelected({ isSelected, episode }) {
+      let isSelectionModeBefore = this.isSelectionMode
       if (isSelected) {
         this.selectedEpisodes.push(episode)
       } else {
         this.selectedEpisodes = this.selectedEpisodes.filter((ep) => ep.id !== episode.id)
+      }
+      if (this.isSelectionMode !== isSelectionModeBefore) {
+        this.setSelectionModeForEpisodes()
+      }
+    },
+    setSelectionModeForEpisodes() {
+      for (const key in this.episodeComponentRefs) {
+        if (this.episodeComponentRefs[key]?.setSelectionMode) {
+          this.episodeComponentRefs[key].setSelectionMode(this.isSelectionMode)
+        }
       }
     },
     playEpisode(episode) {
@@ -367,12 +400,143 @@ export default {
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
     },
+    destroyEpisodeComponents() {
+      for (const key in this.episodeComponentRefs) {
+        if (this.episodeComponentRefs[key]?.destroy) {
+          this.episodeComponentRefs[key].destroy()
+        }
+      }
+      this.episodeComponentRefs = {}
+      this.episodeIndexesMounted = []
+    },
+    mountEpisode(index) {
+      const episodeEl = document.getElementById(`episode-${index}`)
+      if (!episodeEl) {
+        console.warn('Episode row el not found at ' + index)
+        return
+      }
+
+      this.episodeIndexesMounted.push(index)
+
+      if (this.episodeComponentRefs[index]) {
+        const episodeComponent = this.episodeComponentRefs[index]
+        episodeEl.appendChild(episodeComponent.$el)
+        if (this.isSelectionMode) {
+          episodeComponent.setSelectionMode(true)
+          if (this.selectedEpisodes.some((i) => i.id === episodeComponent.episodeId)) {
+            episodeComponent.isSelected = true
+          } else {
+            episodeComponent.isSelected = false
+          }
+        } else {
+          episodeComponent.setSelectionMode(false)
+        }
+      } else {
+        const _this = this
+        const ComponentClass = Vue.extend(LazyEpisodeRow)
+        const instance = new ComponentClass({
+          propsData: {
+            index,
+            libraryItemId: this.libraryItem.id,
+            episode: this.episodesList[index]
+          },
+          created() {
+            this.$on('selected', (payload) => {
+              _this.episodeSelected(payload)
+            })
+            this.$on('view', (payload) => {
+              _this.viewEpisode(payload)
+            })
+            this.$on('play', (payload) => {
+              _this.playEpisode(payload)
+            })
+            this.$on('addToQueue', (payload) => {
+              _this.addEpisodeToQueue(payload)
+            })
+            this.$on('remove', (payload) => {
+              _this.removeEpisode(payload)
+            })
+            this.$on('edit', (payload) => {
+              _this.editEpisode(payload)
+            })
+            this.$on('addToPlaylist', (payload) => {
+              _this.addToPlaylist(payload)
+            })
+          }
+        })
+        this.episodeComponentRefs[index] = instance
+        instance.$mount()
+        episodeEl.appendChild(instance.$el)
+
+        if (this.isSelectionMode) {
+          instance.setSelectionMode(true)
+          if (this.selectedEpisodes.some((i) => i.id === this.episodesList[index].id)) {
+            instance.isSelected = true
+          }
+        }
+      }
+    },
+    mountEpisodes(startIndex, endIndex) {
+      for (let i = startIndex; i < endIndex; i++) {
+        if (!this.episodeIndexesMounted.includes(i)) {
+          this.mountEpisode(i)
+        }
+      }
+    },
+    scroll(evt) {
+      if (!evt?.target?.scrollTop) return
+      const scrollTop = Math.max(evt.target.scrollTop - this.episodesTableOffsetTop, 0)
+      let firstEpisodeIndex = Math.floor(scrollTop / this.episodeRowHeight)
+      let lastEpisodeIndex = Math.ceil((scrollTop + this.windowHeight) / this.episodeRowHeight)
+      lastEpisodeIndex = Math.min(this.totalEpisodes - 1, lastEpisodeIndex)
+
+      this.episodeIndexesMounted = this.episodeIndexesMounted.filter((_index) => {
+        if (_index < firstEpisodeIndex || _index >= lastEpisodeIndex) {
+          const el = document.getElementById(`lazy-episode-${_index}`)
+          if (el) el.remove()
+          return false
+        }
+        return true
+      })
+      this.mountEpisodes(firstEpisodeIndex, lastEpisodeIndex + 1)
+    },
+    initListeners() {
+      const itemPageWrapper = document.getElementById('item-page-wrapper')
+      if (itemPageWrapper) {
+        itemPageWrapper.addEventListener('scroll', this.scroll)
+      }
+    },
+    removeListeners() {
+      const itemPageWrapper = document.getElementById('item-page-wrapper')
+      if (itemPageWrapper) {
+        itemPageWrapper.removeEventListener('scroll', this.scroll)
+      }
+    },
+    filterSortChanged() {
+      this.init()
+    },
     init() {
-      this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
+      this.destroyEpisodeComponents()
+      this.totalEpisodes = this.episodesList.length
+
+      const lazyEpisodesTableEl = document.getElementById('lazy-episodes-table')
+      this.episodesTableOffsetTop = (lazyEpisodesTableEl?.offsetTop || 0) + 64
+
+      this.windowHeight = window.innerHeight
+      this.episodesPerPage = Math.ceil(this.windowHeight / this.episodeRowHeight)
+
+      this.$nextTick(() => {
+        this.mountEpisodes(0, Math.min(this.episodesPerPage, this.totalEpisodes))
+      })
     }
   },
   mounted() {
+    this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
+    this.initListeners()
     this.init()
+  },
+  beforeDestroy() {
+    this.removeListeners()
   }
 }
 </script>

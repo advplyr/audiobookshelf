@@ -155,7 +155,9 @@ export default {
       if (this.episodeIdStreaming === episode.id) return this.streamIsPlaying ? 'Streaming' : 'Play'
       if (!episode.progress) return this.$elapsedPretty(episode.duration)
       if (episode.progress.isFinished) return 'Finished'
-      var remaining = Math.floor(episode.progress.duration - episode.progress.currentTime)
+
+      const duration = episode.progress.duration || episode.duration
+      const remaining = Math.floor(duration - episode.progress.currentTime)
       return `${this.$elapsedPretty(remaining)} left`
     },
     playClick(episodeToPlay) {

@@ -419,40 +419,45 @@ class LibraryItem extends Model {
    */
   static async getOldById(libraryItemId) {
     if (!libraryItemId) return null
-    const libraryItem = await this.findByPk(libraryItemId, {
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
+
+    const libraryItem = await this.findByPk(libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
+      return null
+    }
+
+    if (libraryItem.mediaType === 'podcast') {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
             }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
             }
-          ]
-        }
-      ],
-      order: [
-        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
-      ]
-    })
-    if (!libraryItem) return null
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+
+    if (!libraryItem.media) return null
     return this.getOldLibraryItem(libraryItem)
   }
 
