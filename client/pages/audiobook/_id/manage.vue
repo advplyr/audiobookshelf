@@ -240,7 +240,11 @@ export default {
     isM4BTool() {
       return this.selectedTool === 'm4b'
     },
-        libraryItemId() {
+    maxBitrate() {
+      const maxBitrate = this.audioFiles.reduce((max, current) => Math.max(max, current.bitRate), 0);
+      return maxBitrate === 0 ? this.encodingOptions.bitrate : (maxBitrate/1000) + "k"
+    },
+    libraryItemId() {
       return this.libraryItem.id
     },
     libraryItemRelPath() {
