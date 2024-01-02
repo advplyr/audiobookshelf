@@ -146,7 +146,7 @@
         <div class="flex py-2 px-4 bg-primary bg-opacity-25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
           <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
-          <div class="w-20 text-xs font-semibold uppercase text-gray-200">bitrate</div>
+          <div class="w-20 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelBitrate }}</div>
           <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
           <div class="w-20"></div>
         </div>
