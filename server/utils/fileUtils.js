@@ -359,3 +359,22 @@ module.exports.encodeUriPath = (path) => {
   const uri = new URL(path, "file://")
   return uri.pathname
 }
+
+/**
+ * Check if directory is writable.
+ * This method is necessary because fs.access(directory, fs.constants.W_OK) does not work on Windows
+ * 
+ * @param {string} directory 
+ * @returns {boolean}
+ */
+module.exports.isWritable = async (directory) => {
+  try {
+    const accessTestFile = path.join(directory, 'accessTest')
+    await fs.writeFile(accessTestFile, '')
+    await fs.remove(accessTestFile)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
