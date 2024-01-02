@@ -48,12 +48,14 @@ class PodcastEpisode {
     this.guid = episode.guid || null
     this.pubDate = episode.pubDate
     this.chapters = episode.chapters?.map(ch => ({ ...ch })) || []
-    this.audioFile = new AudioFile(episode.audioFile)
+    this.audioFile = episode.audioFile ? new AudioFile(episode.audioFile) : null
     this.publishedAt = episode.publishedAt
     this.addedAt = episode.addedAt
     this.updatedAt = episode.updatedAt
 
-    this.audioFile.index = 1 // Only 1 audio file per episode
+    if (this.audioFile) {
+      this.audioFile.index = 1 // Only 1 audio file per episode
+    }
   }
 
   toJSON() {
@@ -73,7 +75,7 @@ class PodcastEpisode {
       guid: this.guid,
       pubDate: this.pubDate,
       chapters: this.chapters.map(ch => ({ ...ch })),
-      audioFile: this.audioFile.toJSON(),
+      audioFile: this.audioFile?.toJSON() || null,
       publishedAt: this.publishedAt,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
@@ -97,8 +99,8 @@ class PodcastEpisode {
       guid: this.guid,
       pubDate: this.pubDate,
       chapters: this.chapters.map(ch => ({ ...ch })),
-      audioFile: this.audioFile.toJSON(),
-      audioTrack: this.audioTrack.toJSON(),
+      audioFile: this.audioFile?.toJSON() || null,
+      audioTrack: this.audioTrack?.toJSON() || null,
       publishedAt: this.publishedAt,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,
@@ -108,6 +110,7 @@ class PodcastEpisode {
   }
 
   get audioTrack() {
+    if (!this.audioFile) return null
     const audioTrack = new AudioTrack()
     audioTrack.setData(this.libraryItemId, this.audioFile, 0)
     return audioTrack
@@ -116,9 +119,9 @@ class PodcastEpisode {
     return [this.audioTrack]
   }
   get duration() {
-    return this.audioFile.duration
+    return this.audioFile?.duration || 0
   }
-  get size() { return this.audioFile.metadata.size }
+  get size() { return this.audioFile?.metadata.size || 0 }
   get enclosureUrl() {
     return this.enclosure?.url || null
   }

@@ -81,7 +81,12 @@ module.exports.getFileSize = async (path) => {
  * @returns {Promise<number>} epoch timestamp
  */
 module.exports.getFileMTimeMs = async (path) => {
-  return (await getFileStat(path))?.mtimeMs || 0
+  try {
+    return (await getFileStat(path))?.mtimeMs || 0
+  } catch (err) {
+    Logger.error(`[fileUtils] Failed to getFileMtimeMs`, err)
+    return 0
+  }
 }
 
 /**
