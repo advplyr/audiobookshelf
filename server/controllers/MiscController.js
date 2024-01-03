@@ -759,7 +759,7 @@ class MiscController {
    */
   async addCustomMetadataProviders(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin custom metadata providers`)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to add admin custom metadata providers`)
       return res.sendStatus(403)
     }
 
@@ -790,7 +790,7 @@ class MiscController {
    */
   async deleteCustomMetadataProviders(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin custom metadata providers`)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to delete admin custom metadata providers`)
       return res.sendStatus(403)
     }
 
