@@ -318,6 +318,10 @@ class ApiRouter {
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
     this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
+    this.router.get('/custom-metadata-providers', MiscController.getCustomMetadataProviders.bind(this))
+    this.router.get('/custom-metadata-providers/admin', MiscController.getAdminCustomMetadataProviders.bind(this))
+    this.router.patch('/custom-metadata-providers/admin', MiscController.addCustomMetadataProviders.bind(this))
+    this.router.delete('/custom-metadata-providers/admin/:id', MiscController.deleteCustomMetadataProviders.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {

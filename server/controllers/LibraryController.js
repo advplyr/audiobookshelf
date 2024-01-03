@@ -51,6 +51,11 @@ class LibraryController {
       }
     }
 
+    // Validate that the custom provider exists if given any
+    if (newLibraryPayload.provider && newLibraryPayload.provider.startsWith("custom-")) {
+      await Database.doesCustomProviderExistBySlug(newLibraryPayload.provider)
+    }
+
     const library = new Library()
 
     let currentLargestDisplayOrder = await Database.libraryModel.getMaxDisplayOrder()
@@ -173,6 +178,11 @@ class LibraryController {
           }
         }
       }
+    }
+
+    // Validate that the custom provider exists if given any
+    if (req.body.provider && req.body.provider.startsWith("custom-")) {
+      await Database.doesCustomProviderExistBySlug(req.body.provider)
     }
 
     const hasUpdates = library.update(req.body)

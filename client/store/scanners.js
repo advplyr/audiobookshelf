@@ -73,6 +73,33 @@ export const state = () => ({
 
 export const getters = {}
 
-export const actions = {}
+export const actions = {
+  reFetchCustom({ dispatch, commit }) {
+    return this.$axios
+        .$get(`/api/custom-metadata-providers`)
+        .then((data) => {
+          const providers = data.providers
 
-export const mutations = {}
+          commit('setCustomProviders', providers)
+          return data
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          return false
+        })
+  },
+}
+
+export const mutations = {
+  setCustomProviders(state, providers) {
+    // clear previous values, and add new values to the end
+    state.providers = state.providers.filter((p) => !p.value.startsWith("custom-"));
+    state.providers = [
+        ...state.providers,
+        ...providers.map((p) => {return {
+          text: p.name,
+          value: p.slug,
+        }})
+    ]
+  },
+}

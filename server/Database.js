@@ -132,6 +132,11 @@ class Database {
     return this.models.playbackSession
   }
 
+  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  get customMetadataProviderModel() {
+    return this.models.customMetadataProvider
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -245,6 +250,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
+    require('./models/CustomMetadataProvider').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
@@ -692,6 +698,45 @@ class Database {
         ]
       }
     })
+  }
+
+  /**
+   * Returns true if a custom provider with the given slug exists
+   * @param {string} providerSlug
+   * @return {boolean}
+   */
+  async doesCustomProviderExistBySlug(providerSlug) {
+    const id = providerSlug.split("custom-")[1]
+
+    if (!id) {
+      return false
+    }
+
+    return !!await this.customMetadataProviderModel.findByPk(id)
+  }
+
+  /**
+   * Removes a custom metadata provider
+   * @param {string} id
+   */
+  async removeCustomMetadataProviderById(id) {
+    // destroy metadta provider
+    await this.customMetadataProviderModel.destroy({
+      where: {
+        id,
+      }
+    })
+
+    const slug = `custom-${id}`;
+
+    // fallback libraries using it to google
+    await this.libraryModel.update({
+      provider: "google",
+    }, {
+      where: {
+        provider: slug,
+      }
+    });
   }
 
   /**

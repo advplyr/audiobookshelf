@@ -109,6 +109,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'config-custom-metadata-providers',
+          title: this.$strings.HeaderCustomMetadataProviders,
+          path: '/config/custom-metadata-providers'
         }
       ]
 

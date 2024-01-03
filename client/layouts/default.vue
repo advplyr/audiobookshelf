@@ -328,6 +328,9 @@ export default {
 
       this.$store.commit('libraries/setEReaderDevices', data.ereaderDevices)
     },
+    customMetadataProvidersChanged() {
+      this.$store.dispatch('scanners/reFetchCustom')
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -406,6 +409,10 @@ export default {
       this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
 
       this.socket.on('admin_message', this.adminMessageEvt)
+
+      // Custom metadata provider Listeners
+      this.socket.on('custom_metadata_provider_added', this.customMetadataProvidersChanged)
+      this.socket.on('custom_metadata_provider_removed', this.customMetadataProvidersChanged)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')
@@ -541,6 +548,7 @@ export default {
     window.addEventListener('keydown', this.keyDown)
 
     this.$store.dispatch('libraries/load')
+    this.$store.dispatch('scanners/reFetchCustom')
 
     this.initLocalStorage()
 
