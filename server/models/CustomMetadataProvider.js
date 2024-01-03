@@ -27,7 +27,7 @@ class CustomMetadataProvider extends Model {
   }
 
   static findByPk(id) {
-    this.findOne({
+    return this.findOne({
       where: {
         id,
       }

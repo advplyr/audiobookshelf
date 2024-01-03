@@ -8,13 +8,7 @@ class CustomProviderAdapter {
 
     async search(title, author, providerSlug) {
         const providerId = providerSlug.split("custom-")[1]
-
-        console.log(providerId)
-        const provider = await Database.customMetadataProviderModel.findOne({
-            where: {
-                id: providerId,
-            }
-        });
+        const provider = await Database.customMetadataProviderModel.findByPk(providerId);
 
         if (!provider) {
             throw new Error("Custom provider not found for the given id");

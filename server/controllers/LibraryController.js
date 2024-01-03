@@ -53,7 +53,7 @@ class LibraryController {
 
     // Validate that the custom provider exists if given any
     if (newLibraryPayload.provider && newLibraryPayload.provider.startsWith("custom-")) {
-      await Database.doesCustomProviderExistBySlug(newLibraryPayload.provider)
+      await Database.doesCustomProviderExistWithSlug(newLibraryPayload.provider)
     }
 
     const library = new Library()
@@ -182,7 +182,7 @@ class LibraryController {
 
     // Validate that the custom provider exists if given any
     if (req.body.provider && req.body.provider.startsWith("custom-")) {
-      await Database.doesCustomProviderExistBySlug(req.body.provider)
+      await Database.doesCustomProviderExistWithSlug(req.body.provider)
     }
 
     const hasUpdates = library.update(req.body)

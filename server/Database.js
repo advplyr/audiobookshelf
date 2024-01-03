@@ -705,7 +705,7 @@ class Database {
    * @param {string} providerSlug
    * @return {boolean}
    */
-  async doesCustomProviderExistBySlug(providerSlug) {
+  async doesCustomProviderExistWithSlug(providerSlug) {
     const id = providerSlug.split("custom-")[1]
 
     if (!id) {
