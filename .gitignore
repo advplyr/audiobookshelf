@@ -13,6 +13,8 @@
 /deploy/
 /coverage/
 /.nyc_output/
+/ffmpeg*
+/ffprobe*
 
 sw.*
 .DS_STORE
