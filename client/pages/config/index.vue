@@ -136,7 +136,7 @@
           </div>
 
           <div class="py-2">
-            <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="newServerSettings.language" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="(val) => updateSettingsKey('podcastSearchRegion', val)" />
+            <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="newServerSettings.podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="(val) => updateSettingsKey('podcastSearchRegion', val)" />
           </div>
 
           <!-- old experimental features -->
