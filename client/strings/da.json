@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Dine bogmærker",
   "LabelYourPlaylists": "Dine spillelister",
   "LabelYourProgress": "Din fremgang",
+  "LabelPodcastSearchRegion": "Podcast søgeområde",
   "MessageAddToPlayerQueue": "Tilføj til afspilningskø",
   "MessageAppriseDescription": "For at bruge denne funktion skal du have en instans af <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> kørende eller en API, der håndterer de samme anmodninger. <br /> Apprise API-webadressen skal være den fulde URL-sti for at sende underretningen, f.eks. hvis din API-instans er tilgængelig på <code>http://192.168.1.1:8337</code>, så skal du bruge <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Backups inkluderer brugere, brugerfremskridt, biblioteksvareoplysninger, serverindstillinger og billeder gemt i <code>/metadata/items</code> og <code>/metadata/authors</code>. Backups inkluderer <strong>ikke</strong> nogen filer gemt i dine biblioteksmapper.",

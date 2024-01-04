@@ -27,6 +27,16 @@ Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
     value: code
   }
 })
+const podcastSearchRegionMap = {
+  'us': { label: 'United States' },
+  'cn': { label: '中国' },
+}
+Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).map(code => {
+  return {
+    text: podcastSearchRegionMap[code].label,
+    value: code
+  }
+})
 
 Vue.prototype.$languageCodes = {
   default: defaultCode,

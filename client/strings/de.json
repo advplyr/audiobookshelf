@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Lesezeichen",
   "LabelYourPlaylists": "Eigene Wiedergabelisten",
   "LabelYourProgress": "Fortschritt",
+  "LabelPodcastSearchRegion": "Podcast-Suchregion",
   "MessageAddToPlayerQueue": "Zur Abspielwarteliste hinzufügen",
   "MessageAppriseDescription": "Um diese Funktion nutzen zu können, müssen Sie eine Instanz von <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> laufen haben oder eine API verwenden welche dieselbe Anfragen bearbeiten kann. <br />Die Apprise API Url muss der vollständige URL-Pfad sein, an den die Benachrichtigung gesendet werden soll, z.B. wenn Ihre API-Instanz unter <code>http://192.168.1.1:8337</code> läuft, würden Sie <code>http://192.168.1.1:8337/notify</code> eingeben.",
   "MessageBackupsDescription": "In einer Sicherung werden Benutzer, Benutzerfortschritte, Details zu den Bibliotheksobjekten, Servereinstellungen und Bilder welche in <code>/metadata/items</code> & <code>/metadata/authors</code> gespeichert sind gespeichert. Sicherungen enthalten keine Dateien welche in den einzelnen Bibliotheksordnern (Medien-Ordnern) gespeichert sind.",

@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Tvoje knjižne oznake",
   "LabelYourPlaylists": "Your Playlists",
   "LabelYourProgress": "Tvoj napredak",
+  "LabelPodcastSearchRegion": "Područje pretrage podcasta",
   "MessageAddToPlayerQueue": "Add to player queue",
   "MessageAppriseDescription": "To use this feature you will need to have an instance of <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> running or an api that will handle those same requests. <br />The Apprise API Url should be the full URL path to send the notification, e.g., if your API instance is served at <code>http://192.168.1.1:8337</code> then you would put <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Backups uključuju korisnike, korisnikov napredak, detalje stavki iz biblioteke, postavke server i slike iz <code>/metadata/items</code> & <code>/metadata/authors</code>. Backups ne uključuju nijedne datoteke koje su u folderima biblioteke.",

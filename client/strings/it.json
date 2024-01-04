@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "I tuoi Preferiti",
   "LabelYourPlaylists": "le tue Playlist",
   "LabelYourProgress": "Completato al",
+  "LabelPodcastSearchRegion": "Area di ricerca podcast",
   "MessageAddToPlayerQueue": "Aggiungi alla coda di riproduzione",
   "MessageAppriseDescription": "Per utilizzare questa funzione è necessario disporre di un'istanza di <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> in esecuzione o un'API che gestirà quelle stesse richieste. <br />L'API Url dovrebbe essere il percorso URL completo per inviare la notifica, ad esempio se la tua istanza API è servita cosi .<code>http://192.168.1.1:8337</code> Allora dovrai mettere <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "I backup includono utenti, progressi degli utenti, dettagli sugli elementi della libreria, impostazioni del server e immagini archiviate in <code>/metadata/items</code> & <code>/metadata/authors</code>. I backup non includono i file archiviati nelle cartelle della libreria.",

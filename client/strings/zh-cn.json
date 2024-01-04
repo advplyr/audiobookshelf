@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "你的书签",
   "LabelYourPlaylists": "你的播放列表",
   "LabelYourProgress": "你的进度",
+  "LabelPodcastSearchRegion": "播客搜索地区",
   "MessageAddToPlayerQueue": "添加到播放队列",
   "MessageAppriseDescription": "要使用此功能，您需要运行一个 <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> 实例或一个可以处理这些相同请求的 API. <br />Apprise API Url 应该是发送通知的完整 URL 路径, 例如: 如果你的 API 实例运行在 <code>http://192.168.1.1:8337</code>, 那么你可以输入 <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "备份包括用户, 用户进度, 媒体库项目详细信息, 服务器设置和图像, 存储在 <code>/metadata/items</code> & <code>/metadata/authors</code>. 备份不包括存储在您的媒体库文件夹中的任何文件.",

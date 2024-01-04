@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Twoje zakładki",
   "LabelYourPlaylists": "Your Playlists",
   "LabelYourProgress": "Twój postęp",
+  "LabelPodcastSearchRegion": "Obszar wyszukiwania podcastów",
   "MessageAddToPlayerQueue": "Add to player queue",
   "MessageAppriseDescription": "Aby użyć tej funkcji, konieczne jest posiadanie instancji <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> albo innego rozwiązania, które obsługuje schemat zapytań Apprise. <br />URL do interfejsu API powinno być całkowitą ścieżką, np., jeśli Twoje API do powiadomień jest dostępne pod adresem <code>http://192.168.1.1:8337</code> to wpisany tutaj URL powinien mieć postać: <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Kopie zapasowe obejmują użytkowników, postępy użytkowników, szczegóły pozycji biblioteki, ustawienia serwera i obrazy przechowywane w <code>/metadata/items</code> & <code>/metadata/authors</code>. Kopie zapasowe nie obejmują żadnych plików przechowywanych w folderach biblioteki.",

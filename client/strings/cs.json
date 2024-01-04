@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Vaše záložky",
   "LabelYourPlaylists": "Vaše seznamy přehrávání",
   "LabelYourProgress": "Váš pokrok",
+  "LabelPodcastSearchRegion": "Oblast vyhledávání podcastu",
   "MessageAddToPlayerQueue": "Přidat do fronty přehrávače",
   "MessageAppriseDescription": "Abyste mohli používat tuto funkci, musíte mít spuštěnou instanci <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> nebo API, které bude zpracovávat stejné požadavky. <br />Adresa URL API Apprise by měla být úplná URL cesta pro odeslání oznámení, např. pokud je vaše instance API obsluhována na adrese <code>http://192.168.1.1:8337</code> pak byste měli zadat <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Zálohy zahrnují uživatele, průběh uživatele, podrobnosti o položkách knihovny, nastavení serveru a obrázky uložené v <code>/metadata/items</code> a <code>/metadata/authors</code>. Zálohy <strong>ne</strong> zahrnují všechny soubory uložené ve složkách knihovny.",

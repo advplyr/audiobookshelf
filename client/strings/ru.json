@@ -540,6 +540,7 @@
   "LabelYourBookmarks": "Ваши закладки",
   "LabelYourPlaylists": "Ваши плейлисты",
   "LabelYourProgress": "Ваш прогресс",
+  "LabelPodcastSearchRegion": "Регион поиска подкастов",
   "MessageAddToPlayerQueue": "Добавить в очередь проигрывателя",
   "MessageAppriseDescription": "Для использования этой функции необходимо иметь запущенный экземпляр <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> или api которое обрабатывает те же самые запросы. <br />URL-адрес API Apprise должен быть полным URL-адресом для отправки уведомления, т.е., если API запущено по адресу <code>http://192.168.1.1:8337</code> тогда нужно указать <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Бэкап включает пользователей, прогресс пользователей, данные элементов библиотеки, настройки сервера и изображения хранящиеся в <code>/metadata/items</code> и <code>/metadata/authors</code>. Бэкапы <strong>НЕ</strong> сохраняют файлы из папок библиотек.",
