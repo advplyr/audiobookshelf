@@ -120,8 +120,8 @@ export default {
       this.skipMatchingMediaWithAsin = !!this.librarySettings.skipMatchingMediaWithAsin
       this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
       this.audiobooksOnly = !!this.librarySettings.audiobooksOnly
-      this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries,
-      this.podcastSearchRegion = this.librarySettings.podcastSearchRegion
+      this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries
+      this.podcastSearchRegion = this.librarySettings.podcastSearchRegion || 'us'
     }
   },
   mounted() {
