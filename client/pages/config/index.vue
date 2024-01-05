@@ -135,10 +135,6 @@
             <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
 
-          <div class="py-2">
-            <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="newServerSettings.podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="(val) => updateSettingsKey('podcastSearchRegion', val)" />
-          </div>
-
           <!-- old experimental features -->
           <!-- <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>

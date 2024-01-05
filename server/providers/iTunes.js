@@ -1,7 +1,6 @@
 const axios = require('axios')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
-const Database = require('../Database')
 
 class iTunes {
   constructor() { }
@@ -18,7 +17,7 @@ class iTunes {
       entity: options.entity,
       lang: options.lang,
       limit: options.limit,
-      country: options.country ? options.country : Database.serverSettings.podcastSearchRegion
+      country: options.country
     }
     return axios.get('https://itunes.apple.com/search', { params: query }).then((response) => {
       return response.data.results || []

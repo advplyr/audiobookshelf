@@ -48,7 +48,6 @@ class ServerSettings {
     this.dateFormat = 'MM/dd/yyyy'
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
-    this.podcastSearchRegion = 'us'
 
     this.logLevel = Logger.logLevel
 
@@ -110,7 +109,6 @@ class ServerSettings {
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
-    this.podcastSearchRegion = settings.podcastSearchRegion || 'us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
@@ -200,7 +198,6 @@ class ServerSettings {
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,
       language: this.language,
-      podcastSearchRegion: this.podcastSearchRegion,
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
