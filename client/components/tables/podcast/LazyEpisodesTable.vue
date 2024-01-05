@@ -87,7 +87,7 @@ export default {
   watch: {
     libraryItem: {
       handler() {
-        this.init()
+        this.refresh()
       }
     }
   },
@@ -513,6 +513,10 @@ export default {
       }
     },
     filterSortChanged() {
+      this.init()
+    },
+    refresh() {
+      this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
       this.init()
     },
     init() {
