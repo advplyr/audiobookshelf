@@ -45,7 +45,9 @@ Join us on [Discord](https://discord.gg/HQgCbd6E75) or [Matrix](https://matrix.t
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
 ### iOS App (beta)
-Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+**Beta is currently full. Apple has a hard limit of 10k beta testers. Updates will be posted in Discord/Matrix.**
+
+Using Test Flight: https://testflight.apple.com/join/wiic7QIW ***(beta is full)***
 
 ### Build your own tools & clients
 Check out the [API documentation](https://api.audiobookshelf.org/)
