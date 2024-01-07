@@ -136,11 +136,7 @@ function stripPrefix(str) {
   return str.split(':').pop()
 }
 
-module.exports.parseOpfMetadataXML = async (xml) => {
-  const json = await xmlToJSON(xml)
-
-  if (!json) return null
-
+module.exports.parseOpfMetadataJson = (json) => {
   // Handle <package ...> or with prefix <ns0:package ...>
   const packageKey = Object.keys(json).find(key => stripPrefix(key) === 'package')
   if (!packageKey) return null
@@ -167,7 +163,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   const creators = parseCreators(metadata)
   const authors = (fetchCreators(creators, 'aut') || []).map(au => au?.trim()).filter(au => au)
   const narrators = (fetchNarrators(creators, metadata) || []).map(nrt => nrt?.trim()).filter(nrt => nrt)
-  const data = {
+  return {
     title: fetchTitle(metadata),
     subtitle: fetchSubtitle(metadata),
     authors,
@@ -182,5 +178,10 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     series: fetchSeries(metadataMeta),
     tags: fetchTags(metadata)
   }
-  return data
+}
+
+module.exports.parseOpfMetadataXML = async (xml) => {
+  const json = await xmlToJSON(xml)
+  if (!json) return null
+  return this.parseOpfMetadataJson(json)
 }
