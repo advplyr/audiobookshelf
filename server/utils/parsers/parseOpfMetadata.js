@@ -103,13 +103,22 @@ function fetchSeries(metadataMeta) {
   if (!metadataMeta) return []
   const result = []
   for (let i = 0; i < metadataMeta.length; i++) {
-    if (metadataMeta[i].$?.name === "calibre:series" && metadataMeta[i].$.content?.trim()) {
+    if (metadataMeta[i].$?.name === 'calibre:series' && metadataMeta[i].$.content?.trim()) {
       const name = metadataMeta[i].$.content.trim()
       let sequence = null
-      if (metadataMeta[i + 1]?.$?.name === "calibre:series_index" && metadataMeta[i + 1].$?.content?.trim()) {
+      if (metadataMeta[i + 1]?.$?.name === 'calibre:series_index' && metadataMeta[i + 1].$?.content?.trim()) {
         sequence = metadataMeta[i + 1].$.content.trim()
       }
       result.push({ name, sequence })
+    }
+  }
+
+  // If one series was found with no series_index then check if any series_index meta can be found
+  //   this is to support when calibre:series_index is not directly underneath calibre:series
+  if (result.length === 1 && !result[0].sequence) {
+    const seriesIndexMeta = metadataMeta.find(m => m.$?.name === 'calibre:series_index' && m.$.content?.trim())
+    if (seriesIndexMeta) {
+      result[0].sequence = seriesIndexMeta.$.content.trim()
     }
   }
   return result
