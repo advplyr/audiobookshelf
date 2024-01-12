@@ -5,7 +5,6 @@ class Logger {
   constructor() {
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
-    this.hideDevLogs = process.env.HIDE_DEV_LOGS === undefined ? !this.isDev : process.env.HIDE_DEV_LOGS === '1'
     this.socketListeners = []
 
     this.logManager = null
@@ -86,15 +85,6 @@ class Logger {
   setLogLevel(level) {
     this.logLevel = level
     this.debug(`Set Log Level to ${this.levelString}`)
-  }
-
-  /**
-   * Only to console and only for development
-   * @param  {...any} args
-   */
-  dev(...args) {
-    if (this.hideDevLogs) return
-    console.log(`[${this.timestamp}] DEV:`, ...args)
   }
 
   trace(...args) {

@@ -68,7 +68,9 @@ export default {
       selectAll: false,
       search: null,
       searchTimeout: null,
-      searchText: null
+      searchText: null,
+      downloadedEpisodeGuidMap: {},
+      downloadedEpisodeUrlMap: {}
     }
   },
   watch: {
@@ -122,11 +124,13 @@ export default {
   },
   methods: {
     getIsEpisodeDownloaded(episode) {
-      return this.itemEpisodes.some((downloadedEpisode) => {
-        if (episode.guid && downloadedEpisode.guid === episode.guid) return true
-        if (!downloadedEpisode.enclosure?.url) return false
-        return this.getCleanEpisodeUrl(downloadedEpisode.enclosure.url) === episode.cleanUrl
-      })
+      if (episode.guid && !!this.downloadedEpisodeGuidMap[episode.guid]) {
+        return true
+      }
+      if (this.downloadedEpisodeUrlMap[episode.cleanUrl]) {
+        return true
+      }
+      return false
     },
     /**
      * UPDATE: As of v2.4.5 guid is used for matching existing downloaded episodes if it is found on the RSS feed.
@@ -219,6 +223,14 @@ export default {
         })
     },
     init() {
+      this.downloadedEpisodeGuidMap = {}
+      this.downloadedEpisodeUrlMap = {}
+
+      this.itemEpisodes.forEach((episode) => {
+        if (episode.guid) this.downloadedEpisodeGuidMap[episode.guid] = episode.id
+        if (episode.enclosure?.url) this.downloadedEpisodeUrlMap[this.getCleanEpisodeUrl(episode.enclosure.url)] = episode.id
+      })
+
       this.episodesCleaned = this.episodes
         .filter((ep) => ep.enclosure?.url)
         .map((_ep) => {

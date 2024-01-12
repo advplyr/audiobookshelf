@@ -1,6 +1,7 @@
 const axios = require('axios')
 const Path = require('path')
 const ssrfFilter = require('ssrf-req-filter')
+const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
@@ -378,3 +379,65 @@ module.exports.isWritable = async (directory) => {
   }
 }
 
+/**
+ * Get Windows drives as array e.g. ["C:/", "F:/"]
+ * 
+ * @returns {Promise<string[]>}
+ */
+module.exports.getWindowsDrives = async () => {
+  if (!global.isWin) {
+    return []
+  }
+  return new Promise((resolve, reject) => {
+    exec('wmic logicaldisk get name', async (error, stdout, stderr) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      let drives = stdout?.split(/\r?\n/).map(line => line.trim()).filter(line => line).slice(1)
+      const validDrives = []
+      for (const drive of drives) {
+        let drivepath = drive + '/'
+        if (await fs.pathExists(drivepath)) {
+          validDrives.push(drivepath)
+        } else {
+          Logger.error(`Invalid drive ${drivepath}`)
+        }
+      }
+      resolve(validDrives)
+    })
+  })
+}
+
+/**
+ * Get array of directory paths in a directory
+ * 
+ * @param {string} dirPath 
+ * @param {number} level
+ * @returns {Promise<{ path:string, dirname:string, level:number }[]>}
+ */
+module.exports.getDirectoriesInPath = async (dirPath, level) => {
+  try {
+    const paths = await fs.readdir(dirPath)
+    let dirs = await Promise.all(paths.map(async dirname => {
+      const fullPath = Path.join(dirPath, dirname)
+
+      const lstat = await fs.lstat(fullPath).catch((error) => {
+        Logger.debug(`Failed to lstat "${fullPath}"`, error)
+        return null
+      })
+      if (!lstat?.isDirectory()) return null
+
+      return {
+        path: this.filePathToPOSIX(fullPath),
+        dirname,
+        level
+      }
+    }))
+    dirs = dirs.filter(d => d)
+    return dirs
+  } catch (error) {
+    Logger.error('Failed to readdir', dirPath, error)
+    return []
+  }
+}

@@ -323,35 +323,6 @@ class ApiRouter {
     this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
   }
 
-  async getDirectories(dir, relpath, excludedDirs, level = 0) {
-    try {
-      const paths = await fs.readdir(dir)
-
-      let dirs = await Promise.all(paths.map(async dirname => {
-        const fullPath = Path.join(dir, dirname)
-        const path = Path.join(relpath, dirname)
-
-        const isDir = (await fs.lstat(fullPath)).isDirectory()
-        if (isDir && !excludedDirs.includes(path) && dirname !== 'node_modules') {
-          return {
-            path,
-            dirname,
-            fullPath,
-            level,
-            dirs: level < 4 ? (await this.getDirectories(fullPath, path, excludedDirs, level + 1)) : []
-          }
-        } else {
-          return false
-        }
-      }))
-      dirs = dirs.filter(d => d)
-      return dirs
-    } catch (error) {
-      Logger.error('Failed to readdir', dir, error)
-      return []
-    }
-  }
-
   //
   // Helper Methods
   //

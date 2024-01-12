@@ -7,6 +7,8 @@ const imageType = require('../libs/imageType')
 const globals = require('../utils/globals')
 const { downloadImageFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
+const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
+
 const CacheManager = require('../managers/CacheManager')
 
 class CoverManager {
@@ -234,6 +236,7 @@ class CoverManager {
 
   /**
    * Extract cover art from audio file and save for library item
+   * 
    * @param {import('../models/Book').AudioFileObject[]} audioFiles 
    * @param {string} libraryItemId 
    * @param {string} [libraryItemPath] null for isFile library items 
@@ -261,6 +264,44 @@ class CoverManager {
     }
 
     const success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
+    if (success) {
+      await CacheManager.purgeCoverCache(libraryItemId)
+      return coverFilePath
+    }
+    return null
+  }
+
+  /**
+   * Extract cover art from ebook and save for library item
+   * 
+   * @param {import('../utils/parsers/parseEbookMetadata').EBookFileScanData} ebookFileScanData 
+   * @param {string} libraryItemId 
+   * @param {string} [libraryItemPath] null for isFile library items 
+   * @returns {Promise<string>} returns cover path
+   */
+  async saveEbookCoverArt(ebookFileScanData, libraryItemId, libraryItemPath) {
+    if (!ebookFileScanData?.ebookCoverPath) return null
+
+    let coverDirPath = null
+    if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
+      coverDirPath = libraryItemPath
+    } else {
+      coverDirPath = Path.posix.join(global.MetadataPath, 'items', libraryItemId)
+    }
+    await fs.ensureDir(coverDirPath)
+
+    let extname = Path.extname(ebookFileScanData.ebookCoverPath) || '.jpg'
+    if (extname === '.jpeg') extname = '.jpg'
+    const coverFilename = `cover${extname}`
+    const coverFilePath = Path.join(coverDirPath, coverFilename)
+
+    // TODO: Overwrite if exists?
+    const coverAlreadyExists = await fs.pathExists(coverFilePath)
+    if (coverAlreadyExists) {
+      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${coverFilePath}" - overwriting`)
+    }
+
+    const success = await parseEbookMetadata.extractCoverImage(ebookFileScanData, coverFilePath)
     if (success) {
       await CacheManager.purgeCoverCache(libraryItemId)
       return coverFilePath
