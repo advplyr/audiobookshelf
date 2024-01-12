@@ -763,7 +763,7 @@ class MiscController {
       return res.sendStatus(403)
     }
 
-    const { name, url, apiKey } = req.body;
+    const { name, url, apiKey } = req.body
 
     if (!name || !url || !apiKey) {
       return res.status(500).send(`Invalid patch data`)
@@ -794,18 +794,18 @@ class MiscController {
       return res.sendStatus(403)
     }
 
-    const { id } = req.params;
+    const { id } = req.params
 
     if (!id) {
       return res.status(500).send(`Invalid delete data`)
     }
 
-    const provider = await Database.customMetadataProviderModel.findByPk(id);
-    await Database.removeCustomMetadataProviderById(id);
+    const provider = await Database.customMetadataProviderModel.findByPk(id)
+    await Database.removeCustomMetadataProviderById(id)
 
     SocketAuthority.adminEmitter('custom_metadata_provider_removed', provider)
 
-    res.json({})
+    res.sendStatus(200)
   }
 }
 module.exports = new MiscController()

@@ -1,6 +1,6 @@
 const Database = require('../Database')
-const axios = require("axios");
-const Logger = require("../Logger");
+const axios = require("axios")
+const Logger = require("../Logger")
 
 class CustomProviderAdapter {
     constructor() {
@@ -8,10 +8,10 @@ class CustomProviderAdapter {
 
     async search(title, author, providerSlug) {
         const providerId = providerSlug.split("custom-")[1]
-        const provider = await Database.customMetadataProviderModel.findByPk(providerId);
+        const provider = await Database.customMetadataProviderModel.findByPk(providerId)
 
         if (!provider) {
-            throw new Error("Custom provider not found for the given id");
+            throw new Error("Custom provider not found for the given id")
         }
 
         const matches = await axios.get(`${provider.url}/search?query=${encodeURIComponent(title)}${!!author ? `&author=${encodeURIComponent(author)}` : ""}`, {
@@ -27,7 +27,7 @@ class CustomProviderAdapter {
         })
 
         if (matches === null) {
-            throw new Error("Custom provider returned malformed response");
+            throw new Error("Custom provider returned malformed response")
         }
 
         // re-map keys to throw out
@@ -37,13 +37,14 @@ class CustomProviderAdapter {
             author,
             narrator,
             publisher,
-            published_year,
+            publishedYear,
             description,
             cover,
             isbn,
             asin,
             genres,
             tags,
+            series,
             language,
             duration,
         }) => {
@@ -53,13 +54,14 @@ class CustomProviderAdapter {
                 author,
                 narrator,
                 publisher,
-                publishedYear: published_year,
+                publishedYear,
                 description,
                 cover,
                 isbn,
                 asin,
                 genres,
                 tags: tags.join(","),
+                series: series.length ? series : null,
                 language,
                 duration,
             }

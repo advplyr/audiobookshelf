@@ -26,13 +26,7 @@ class CustomMetadataProvider extends Model {
     }
   }
 
-  static findByPk(id) {
-    return this.findOne({
-      where: {
-        id,
-      }
-    })
-  }
+
 
   /**
    * Initialize model
@@ -47,7 +41,7 @@ class CustomMetadataProvider extends Model {
       },
       name: DataTypes.STRING,
       url: DataTypes.STRING,
-      apiKey: DataTypes.STRING
+      apiKey: DataTypes.STRING,
     }, {
       sequelize,
       modelName: 'customMetadataProvider'

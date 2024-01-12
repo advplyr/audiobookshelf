@@ -9,7 +9,7 @@
         </ui-tooltip>
         <div class="flex-grow" />
 
-        <ui-btn color="primary" small @click="setShowAddModal()">{{ $strings.ButtonAdd }}</ui-btn>
+        <ui-btn color="primary" small @click="setShowAddModal">{{ $strings.ButtonAdd }}</ui-btn>
       </template>
 
       <tables-custom-metadata-provider-table class="pt-2" />
@@ -40,6 +40,4 @@ export default {
 }
 </script>
 
-<style>
-
-</style>
+<style></style>

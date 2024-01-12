@@ -86,7 +86,7 @@ components:
           type: string
         publisher:
           type: string
-        published_year:
+        publishedYear:
           type: string
         description:
           type: string
@@ -107,6 +107,17 @@ components:
           type: array
           items:
             type: string
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              series:
+                type: string
+                required: true
+              sequence:
+                type: number
+                format: int64
         language:
           type: string
         duration:
