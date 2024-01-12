@@ -284,13 +284,13 @@ backend default_backend
 
 ````
 
-#### PFsense and HAproxy
+### PFsense and HAproxy
 
-For PFsense the inputs are more graficals 
+For PFsense the inputs are graphical, and `Health checking` is enabled. 
 
-##### Frontend, Default backend, access control lists and actions
+#### Frontend, Default backend, access control lists and actions
 
-###### Access Control lists
+##### Access Control lists
 
 |      Name      |     Expression    | CS | Not |      Value      |
 |:--------------:|:-----------------:|:--:|:---:|:---------------:|
@@ -298,29 +298,29 @@ For PFsense the inputs are more graficals
 
 
 
-###### Actions
+##### Actions
 
 The `condition acl names` needs to match the name above `audiobookshelf`.
 
-|      Action      |     Parameters    |       Condition acl names      | Backend |
-|:--------------:|:-----------------:|:---------------:|:---------------:|
-| audiobookshelf | Host starts with: | audiobookshelf. | audiobookshelf|
+|      Action      |     Parameters    |       Condition acl names      |
+|:--------------:|:-----------------:|:---------------:|
+| `Use Backend` |audiobookshelf | audiobookshelf | 
 
-##### Backend
+#### Backend
 
 
-The `Name` needs to match the `Backend` above `audiobookshelf`.
+The `Name` needs to match the `Parameters` above `audiobookshelf`.
 
 |      Name      |     audiobookshelf    |    
 |--------------|-----------------|
 
-**Server list:** 
+##### Server list:
 
 |      Name      |     Expression    | CS | Not |      Value      |
 |:--------------:|:-----------------:|:--:|:---:|:---------------:|
 | audiobookshelf | Host starts with: |    |     | audiobookshelf. |
 
-##### Health checking
+##### Health checking:
 
 Health checking is enabled by default. `Http check method` of `OPTIONS` is not supported on Audiobookshelf.
 If Health check fails, data will not be forwared.
