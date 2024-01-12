@@ -241,6 +241,93 @@ subdomain.domain.com {
         reverse_proxy <LOCAL_IP>:<PORT>
 }
 ```
+### HAproxy
+
+Bellow is a geneic HAproxy config, using `audiobookshelf.YOUR_DOMAIN.COM`. 
+
+To use `http2`, `ssl` is needed.
+
+````make
+global
+    # ... (your global settings go here)
+
+defaults
+    mode http
+    # ... (your default settings go here)
+
+frontend my_frontend
+    # Bind to port 443, enable SSL, and specify the certificate list file
+    bind :443 name :443 ssl crt-list /path/to/cert.crt_list alpn h2,http/1.1
+    mode http
+
+    # Define an ACL for subdomains starting with "audiobookshelf"
+    acl is_audiobookshelf hdr_beg(host) -i audiobookshelf
+
+    # Use the ACL to route traffic to audiobookshelf_backend if the condition is met,
+    # otherwise, use the default_backend
+    use_backend audiobookshelf_backend if is_audiobookshelf
+    default_backend default_backend
+
+backend audiobookshelf_backend
+    mode http
+    # ... (backend settings for audiobookshelf go here)
+
+    # Define the server for the audiobookshelf backend
+    server audiobookshelf_server 127.0.0.99:13378
+
+backend default_backend
+    mode http
+    # ... (default backend settings go here)
+
+    # Define the server for the default backend
+    server default_server 127.0.0.123:8081
+
+````
+
+#### PFsense and HAproxy
+
+For PFsense the inputs are more graficals 
+
+##### Frontend, Default backend, access control lists and actions
+
+###### Access Control lists
+
+|      Name      |     Expression    | CS | Not |      Value      |
+|:--------------:|:-----------------:|:--:|:---:|:---------------:|
+| audiobookshelf | Host starts with: |    |     | audiobookshelf. |
+
+
+
+###### Actions
+
+The `condition acl names` needs to match the name above `audiobookshelf`.
+
+|      Action      |     Parameters    |       Condition acl names      | Backend |
+|:--------------:|:-----------------:|:---------------:|:---------------:|
+| audiobookshelf | Host starts with: | audiobookshelf. | audiobookshelf|
+
+##### Backend
+
+
+The `Name` needs to match the `Backend` above `audiobookshelf`.
+
+|      Name      |     audiobookshelf    |    
+|--------------|-----------------|
+
+**Server list:** 
+
+|      Name      |     Expression    | CS | Not |      Value      |
+|:--------------:|:-----------------:|:--:|:---:|:---------------:|
+| audiobookshelf | Host starts with: |    |     | audiobookshelf. |
+
+##### Health checking
+
+Health checking is enabled by default. `Http check method` of `OPTIONS` is not supported on Audiobookshelf.
+If Health check fails, data will not be forwared.
+Need to one of following:
+
+* Change `Health check method` to `none`. To disable. 
+* Change `Http check method` to `HEAD` or `GET`. To make Health checking function.
 
 
 # Run from source
