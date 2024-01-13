@@ -63,7 +63,7 @@ export default {
         },
         audioMetatags: {
           id: 'audioMetatags',
-          name: 'Audio file meta tags',
+          name: 'Audio file meta tags OR ebook metadata',
           include: true
         },
         nfoFile: {

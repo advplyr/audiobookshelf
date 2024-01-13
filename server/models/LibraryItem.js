@@ -264,7 +264,7 @@ class LibraryItem extends Model {
         for (const existingPodcastEpisode of existingPodcastEpisodes) {
           // Episode was removed
           if (!updatedPodcastEpisodes.some(ep => ep.id === existingPodcastEpisode.id)) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingPodcastEpisode.title}" was removed`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingPodcastEpisode.title}" was removed`)
             await existingPodcastEpisode.destroy()
             hasUpdates = true
           }
@@ -272,7 +272,7 @@ class LibraryItem extends Model {
         for (const updatedPodcastEpisode of updatedPodcastEpisodes) {
           const existingEpisodeMatch = existingPodcastEpisodes.find(ep => ep.id === updatedPodcastEpisode.id)
           if (!existingEpisodeMatch) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${updatedPodcastEpisode.title}" was added`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${updatedPodcastEpisode.title}" was added`)
             await this.sequelize.models.podcastEpisode.createFromOld(updatedPodcastEpisode)
             hasUpdates = true
           } else {
@@ -283,7 +283,7 @@ class LibraryItem extends Model {
               if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
               if (!areEquivalent(updatedEpisodeCleaned[key], existingValue, true)) {
-                Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
+                Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
                 episodeHasUpdates = true
               }
             }
@@ -304,7 +304,7 @@ class LibraryItem extends Model {
         for (const existingAuthor of existingAuthors) {
           // Author was removed from Book
           if (!updatedAuthors.some(au => au.id === existingAuthor.id)) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
             await this.sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
             hasUpdates = true
           }
@@ -312,7 +312,7 @@ class LibraryItem extends Model {
         for (const updatedAuthor of updatedAuthors) {
           // Author was added
           if (!existingAuthors.some(au => au.id === updatedAuthor.id)) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
             await this.sequelize.models.bookAuthor.create({ authorId: updatedAuthor.id, bookId: libraryItemExpanded.media.id })
             hasUpdates = true
           }
@@ -320,7 +320,7 @@ class LibraryItem extends Model {
         for (const existingSeries of existingSeriesAll) {
           // Series was removed
           if (!updatedSeriesAll.some(se => se.id === existingSeries.id)) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${existingSeries.name}" was removed`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${existingSeries.name}" was removed`)
             await this.sequelize.models.bookSeries.removeByIds(existingSeries.id, libraryItemExpanded.media.id)
             hasUpdates = true
           }
@@ -329,11 +329,11 @@ class LibraryItem extends Model {
           // Series was added/updated
           const existingSeriesMatch = existingSeriesAll.find(se => se.id === updatedSeries.id)
           if (!existingSeriesMatch) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" was added`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" was added`)
             await this.sequelize.models.bookSeries.create({ seriesId: updatedSeries.id, bookId: libraryItemExpanded.media.id, sequence: updatedSeries.sequence })
             hasUpdates = true
           } else if (existingSeriesMatch.bookSeries.sequence !== updatedSeries.sequence) {
-            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
             await existingSeriesMatch.bookSeries.update({ id: updatedSeries.id, sequence: updatedSeries.sequence })
             hasUpdates = true
           }
@@ -346,7 +346,7 @@ class LibraryItem extends Model {
         if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
         if (!areEquivalent(updatedMedia[key], existingValue, true)) {
-          Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
+          Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
           hasMediaUpdates = true
         }
       }
@@ -363,7 +363,7 @@ class LibraryItem extends Model {
       if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
       if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
-        Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
+        Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
         hasLibraryItemUpdates = true
       }
     }
@@ -541,7 +541,7 @@ class LibraryItem extends Model {
         })
       }
     }
-    Logger.dev(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening/Reading" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
+    Logger.debug(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening/Reading" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
     let start = Date.now()
     if (library.isBook) {
@@ -558,7 +558,7 @@ class LibraryItem extends Model {
           total: continueSeriesPayload.count
         })
       }
-      Logger.dev(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     } else if (library.isPodcast) {
       // "Newest Episodes" shelf
       const newestEpisodesPayload = await libraryFilters.getNewestPodcastEpisodes(library, user, limit)
@@ -572,7 +572,7 @@ class LibraryItem extends Model {
           total: newestEpisodesPayload.count
         })
       }
-      Logger.dev(`Loaded ${newestEpisodesPayload.libraryItems.length} of ${newestEpisodesPayload.count} episodes for "Newest Episodes" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.debug(`Loaded ${newestEpisodesPayload.libraryItems.length} of ${newestEpisodesPayload.count} episodes for "Newest Episodes" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     start = Date.now()
@@ -588,7 +588,7 @@ class LibraryItem extends Model {
         total: mostRecentPayload.count
       })
     }
-    Logger.dev(`Loaded ${mostRecentPayload.libraryItems.length} of ${mostRecentPayload.count} items for "Recently Added" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+    Logger.debug(`Loaded ${mostRecentPayload.libraryItems.length} of ${mostRecentPayload.count} items for "Recently Added" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     if (library.isBook) {
       start = Date.now()
@@ -604,7 +604,7 @@ class LibraryItem extends Model {
           total: seriesMostRecentPayload.count
         })
       }
-      Logger.dev(`Loaded ${seriesMostRecentPayload.series.length} of ${seriesMostRecentPayload.count} series for "Recent Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.debug(`Loaded ${seriesMostRecentPayload.series.length} of ${seriesMostRecentPayload.count} series for "Recent Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
       start = Date.now()
       // "Discover" shelf
@@ -619,7 +619,7 @@ class LibraryItem extends Model {
           total: discoverLibraryItemsPayload.count
         })
       }
-      Logger.dev(`Loaded ${discoverLibraryItemsPayload.libraryItems.length} of ${discoverLibraryItemsPayload.count} items for "Discover" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.debug(`Loaded ${discoverLibraryItemsPayload.libraryItems.length} of ${discoverLibraryItemsPayload.count} items for "Discover" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     start = Date.now()
@@ -650,7 +650,7 @@ class LibraryItem extends Model {
         })
       }
     }
-    Logger.dev(`Loaded ${mediaFinishedPayload.items.length} of ${mediaFinishedPayload.count} items for "Listen/Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+    Logger.debug(`Loaded ${mediaFinishedPayload.items.length} of ${mediaFinishedPayload.count} items for "Listen/Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     if (library.isBook) {
       start = Date.now()
@@ -666,7 +666,7 @@ class LibraryItem extends Model {
           total: newestAuthorsPayload.count
         })
       }
-      Logger.dev(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     }
 
     Logger.debug(`Loaded ${shelves.length} personalized shelves in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)

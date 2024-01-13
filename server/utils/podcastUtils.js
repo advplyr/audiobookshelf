@@ -233,7 +233,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     method: 'GET',
     timeout: 12000,
     responseType: 'arraybuffer',
-    headers: { Accept: 'application/rss+xml, application/xhtml+xml, application/xml' },
+    headers: { Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8' },
     httpAgent: ssrfFilter(feedUrl),
     httpsAgent: ssrfFilter(feedUrl)
   }).then(async (data) => {

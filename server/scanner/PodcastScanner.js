@@ -2,7 +2,6 @@ const uuidv4 = require("uuid").v4
 const Path = require('path')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix } = require('../utils/index')
-const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')

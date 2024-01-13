@@ -233,7 +233,7 @@ class Library extends Model {
     for (let i = 0; i < libraries.length; i++) {
       const library = libraries[i]
       if (library.displayOrder !== i + 1) {
-        Logger.dev(`[Library] Updating display order of library from ${library.displayOrder} to ${i + 1}`)
+        Logger.debug(`[Library] Updating display order of library from ${library.displayOrder} to ${i + 1}`)
         await library.update({ displayOrder: i + 1 }).catch((error) => {
           Logger.error(`[Library] Failed to update library display order to ${i + 1}`, error)
         })
