@@ -5,6 +5,7 @@ const http = require('http')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
+const cookieParser = require("cookie-parser")
 
 const { version } = require('../package.json')
 
@@ -31,8 +32,13 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
-const TaskManager = require('./managers/TaskManager')
+const ApiCacheManager = require('./managers/ApiCacheManager')
+const BinaryManager = require('./managers/BinaryManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
+
+//Import the main Passport and Express-Session library
+const passport = require('passport')
+const expressSession = require('express-session')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -58,17 +64,18 @@ class Server {
     this.auth = new Auth()
 
     // Managers
-    this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
     this.logManager = new LogManager()
-    this.abMergeManager = new AbMergeManager(this.taskManager)
+    this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager, this.taskManager)
-    this.audioMetadataManager = new AudioMetadataMangaer(this.taskManager)
+    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
+    this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager)
+    this.apiCacheManager = new ApiCacheManager()
+    this.binaryManager = new BinaryManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -81,15 +88,12 @@ class Server {
   }
 
   authMiddleware(req, res, next) {
-    this.auth.authMiddleware(req, res, next)
+    // ask passportjs if the current request is authenticated
+    this.auth.isAuthenticated(req, res, next)
   }
 
   cancelLibraryScan(libraryId) {
     LibraryScanner.setCancelLibraryScan(libraryId)
-  }
-
-  getLibrariesScanning() {
-    return LibraryScanner.librariesScanning
   }
 
   /**
@@ -116,6 +120,12 @@ class Server {
 
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
+    this.apiCacheManager.init()
+
+    // Download ffmpeg & ffprobe if not found (Currently only in use for Windows installs)
+    if (global.isWin || Logger.isDev) {
+      await this.binaryManager.init()
+    }
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -130,20 +140,66 @@ class Server {
     await this.init()
 
     const app = express()
+
+    /**
+     * @temporary
+     * This is necessary for the ebook & cover API endpoint in the mobile apps
+     * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
+     * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+     * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
+     * @see https://ionicframework.com/docs/troubleshooting/cors
+     * 
+     * Running in development allows cors to allow testing the mobile apps in the browser 
+     */
+    app.use((req, res, next) => {
+      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
+        const allowedOrigins = ['capacitor://localhost', 'http://localhost']
+        if (Logger.isDev || allowedOrigins.some(o => o === req.get('origin'))) {
+          res.header('Access-Control-Allow-Origin', req.get('origin'))
+          res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
+          res.header('Access-Control-Allow-Headers', '*')
+          res.header('Access-Control-Allow-Credentials', true)
+          if (req.method === 'OPTIONS') {
+            return res.sendStatus(200)
+          }
+        }
+      }
+
+      next()
+    })
+
+    // parse cookies in requests
+    app.use(cookieParser())
+    // enable express-session
+    app.use(expressSession({
+      secret: global.ServerSettings.tokenSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        // also send the cookie if were are not on https (not every use has https)
+        secure: false
+      },
+    }))
+    // init passport.js
+    app.use(passport.initialize())
+    // register passport in express-session
+    app.use(passport.session())
+    // config passport.js
+    await this.auth.initPassportJs()
+
     const router = express.Router()
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
 
-    router.use(this.auth.cors)
     router.use(fileUpload({
       defCharset: 'utf8',
       defParamCharset: 'utf8',
       useTempFiles: true,
       tempFileDir: Path.join(global.MetadataPath, 'tmp')
     }))
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
     router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
@@ -153,7 +209,6 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    // router.use('/api/v1', routes) // TODO: New routes
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
 
@@ -162,13 +217,16 @@ class Server {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    router.get('/feed/:slug/cover', (req, res) => {
+    router.get('/feed/:slug/cover*', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
+
+    // Auth routes
+    await this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
     const dyanimicRoutes = [
@@ -181,6 +239,7 @@ class Server {
       '/library/:library/search',
       '/library/:library/bookshelf/:id?',
       '/library/:library/authors',
+      '/library/:library/narrators',
       '/library/:library/series/:id?',
       '/library/:library/podcast/search',
       '/library/:library/podcast/latest',
@@ -193,8 +252,8 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
-    router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    // router.post('/login', passport.authenticate('local', this.auth.login), this.auth.loginResult.bind(this))
+    // router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
@@ -206,8 +265,12 @@ class Server {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
+        app: 'audiobookshelf',
+        serverVersion: version,
         isInit: Database.hasRootUser,
-        language: Database.serverSettings.language
+        language: Database.serverSettings.language,
+        authMethods: Database.serverSettings.authActiveAuthMethods,
+        authFormData: Database.serverSettings.authFormData
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath
@@ -220,6 +283,19 @@ class Server {
       res.json({ success: true })
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
+
+    let sigintAlreadyReceived = false
+    process.on('SIGINT', async () => {
+      if (!sigintAlreadyReceived) {
+        sigintAlreadyReceived = true
+        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
+        await this.stop()
+        Logger.info('Server stopped. Exiting.')
+      } else {
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
+      }
+      process.exit(0)
+    })
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -327,12 +403,17 @@ class Server {
     res.sendStatus(200)
   }
 
+  /**
+   * Gracefully stop server
+   * Stops watcher and socket server
+   */
   async stop() {
+    Logger.info('=== Stopping Server ===')
     await this.watcher.close()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {
-      this.server.close((err) => {
+      SocketAuthority.close((err) => {
         if (err) {
           Logger.error('Failed to close server', err)
         } else {

@@ -332,6 +332,7 @@ export default {
       if (this.isPodcast) return `term=${encodeURIComponent(this.searchTitle)}`
       var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle)}`
       if (this.searchAuthor) searchQuery += `&author=${encodeURIComponent(this.searchAuthor)}`
+      if (this.libraryItemId) searchQuery += `&id=${this.libraryItemId}`
       return searchQuery
     },
     submitSearch() {

@@ -45,6 +45,11 @@
 <script>
 export default {
   async asyncData({ params, query, store, app, redirect }) {
+    // Podcast search/add page is restricted to admins
+    if (!store.getters['user/getIsAdminOrUp']) {
+      return redirect(`/library/${params.library}`)
+    }
+
     var libraryId = params.library
     var libraryData = await store.dispatch('libraries/fetch', libraryId)
     if (!libraryData) {

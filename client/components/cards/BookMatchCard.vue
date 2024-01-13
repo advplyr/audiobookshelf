@@ -70,14 +70,14 @@ export default {
       return (this.book.duration || 0) * 60
     },
     bookDurationComparison() {
-      if (!this.bookDuration || !this.currentBookDuration) return ''
-      let differenceInSeconds = this.currentBookDuration - this.bookDuration
-      // Only show seconds on difference if difference is less than an hour
-      if (differenceInSeconds < 0) {
-        differenceInSeconds = Math.abs(differenceInSeconds)
-        return `(${this.$elapsedPrettyExtended(differenceInSeconds, false, differenceInSeconds < 3600)} shorter)`
-      } else if (differenceInSeconds > 0) {
-        return `(${this.$elapsedPrettyExtended(differenceInSeconds, false, differenceInSeconds < 3600)} longer)`
+      if (!this.book.duration || !this.currentBookDuration) return ''
+      const currentBookDurationMinutes = Math.floor(this.currentBookDuration / 60)
+      let differenceInMinutes = currentBookDurationMinutes - this.book.duration
+      if (differenceInMinutes < 0) {
+        differenceInMinutes = Math.abs(differenceInMinutes)
+        return `(${this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)} shorter)`
+      } else if (differenceInMinutes > 0) {
+        return `(${this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)} longer)`
       }
       return '(exact match)'
     }

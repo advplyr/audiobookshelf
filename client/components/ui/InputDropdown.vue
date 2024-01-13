@@ -1,10 +1,10 @@
 <template>
   <div class="w-full">
-    <label class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</label>
+    <label v-if="label" class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</label>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
         <div ref="inputWrapper" class="input-wrapper flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-2" :class="disabled ? 'pointer-events-none bg-black-300 text-gray-400' : 'bg-primary'">
-          <input ref="input" v-model="textInput" :disabled="disabled" :readonly="!editable" class="h-full w-full bg-transparent focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input ref="input" v-model="textInput" :disabled="disabled" :readonly="!editable" class="h-full w-full bg-transparent focus:outline-none px-1" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
 
@@ -48,8 +48,6 @@ export default {
   data() {
     return {
       isFocused: false,
-      // currentSearch: null,
-      typingTimeout: null,
       textInput: null
     }
   },
@@ -83,12 +81,6 @@ export default {
     }
   },
   methods: {
-    keydownInput() {
-      clearTimeout(this.typingTimeout)
-      this.typingTimeout = setTimeout(() => {
-        // this.currentSearch = this.textInput
-      }, 100)
-    },
     setFocus() {
       if (this.$refs.input && this.editable) this.$refs.input.focus()
     },
@@ -133,11 +125,9 @@ export default {
       if (val && !this.items.includes(val)) {
         this.$emit('newItem', val)
       }
-      // this.currentSearch = null
     },
     clickedOption(e, item) {
       this.textInput = null
-      // this.currentSearch = null
       this.input = item
       if (this.$refs.input) this.$refs.input.blur()
     }

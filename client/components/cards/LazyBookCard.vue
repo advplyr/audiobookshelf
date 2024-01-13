@@ -8,10 +8,10 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <div class="flex items-center">
-          <span class="truncate">{{ displayTitle }}</span>
+        <ui-tooltip :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+          <p ref="displayTitle" class="truncate">{{ displayTitle }}</p>
           <widgets-explicit-indicator :explicit="isExplicit" />
-        </div>
+        </ui-tooltip>
       </div>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
@@ -68,7 +68,8 @@
         <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
       </div>
 
-      <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
+      <!-- Radio button -->
+      <div v-if="!isAuthorBookshelfView" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
         <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
       </div>
 
@@ -163,6 +164,7 @@ export default {
       imageReady: false,
       selected: false,
       isSelectionMode: false,
+      displayTitleTruncated: false,
       showCoverBg: false
     }
   },
@@ -641,6 +643,12 @@ export default {
       }
 
       this.libraryItem = libraryItem
+
+      this.$nextTick(() => {
+        if (this.$refs.displayTitle) {
+          this.displayTitleTruncated = this.$refs.displayTitle.scrollWidth > this.$refs.displayTitle.clientWidth
+        }
+      })
     },
     clickCard(e) {
       if (this.processing) return
@@ -843,13 +851,15 @@ export default {
     },
     deleteLibraryItem() {
       const payload = {
-        message: 'This will delete the library item from the database and your file system. Are you sure?',
-        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        message: this.$strings.MessageConfirmDeleteLibraryItem,
+        checkboxLabel: this.$strings.LabelDeleteFromFileSystemCheckbox,
         yesButtonText: this.$strings.ButtonDelete,
         yesButtonColor: 'error',
-        checkboxDefaultValue: true,
+        checkboxDefaultValue: !Number(localStorage.getItem('softDeleteDefault') || 0),
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
+            localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
+
             this.processing = true
             const axios = this.$axios || this.$nuxt.$axios
             axios

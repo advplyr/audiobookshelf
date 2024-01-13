@@ -2,6 +2,7 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
+const { asciiOnlyToLowerCase } = require('../index')
 
 module.exports = {
   /**
@@ -364,7 +365,8 @@ module.exports = {
       let matchText = null
       let matchKey = null
       for (const key of ['title', 'author', 'itunesId', 'itunesArtistId']) {
-        if (podcast[key]?.toLowerCase().includes(query)) {
+        const valueToLower = asciiOnlyToLowerCase(podcast[key])
+        if (valueToLower.includes(query)) {
           matchText = podcast[key]
           matchKey = key
           break

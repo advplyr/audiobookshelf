@@ -1,5 +1,5 @@
 <template>
-  <nuxt-link :to="`/author/${author.id}?library=${currentLibraryId}`">
+  <nuxt-link :to="`/author/${author.id}`">
     <div @mouseover="mouseover" @mouseleave="mouseleave">
       <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
         <!-- Image or placeholder -->
@@ -8,7 +8,7 @@
         <!-- Author name & num books overlay -->
         <div v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
           <p class="text-center font-semibold truncate" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
-          <p class="text-center text-gray-200" :style="{ fontSize: sizeMultiplier * 0.65 + 'rem' }">{{ numBooks }} Book{{ numBooks === 1 ? '' : 's' }}</p>
+          <p class="text-center text-gray-200" :style="{ fontSize: sizeMultiplier * 0.65 + 'rem' }">{{ numBooks }} {{ $strings.LabelBooks }}</p>
         </div>
 
         <!-- Search icon btn -->

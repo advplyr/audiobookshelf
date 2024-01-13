@@ -1,5 +1,5 @@
 const Path = require('path')
-const { Sequelize } = require('sequelize')
+const { Sequelize, Op } = require('sequelize')
 
 const packageJson = require('../package.json')
 const fs = require('./libs/fsExtra')
@@ -122,9 +122,14 @@ class Database {
     return this.models.feed
   }
 
-  /** @type {typeof import('./models/Feed')} */
+  /** @type {typeof import('./models/FeedEpisode')} */
   get feedEpisodeModel() {
     return this.models.feedEpisode
+  }
+
+  /** @type {typeof import('./models/PlaybackSession')} */
+  get playbackSessionModel() {
+    return this.models.playbackSession
   }
 
   /**
@@ -172,11 +177,11 @@ class Database {
     if (process.env.QUERY_LOGGING === "log") {
       // Setting QUERY_LOGGING=log will log all Sequelize queries before they run
       Logger.info(`[Database] Query logging enabled`)
-      logging = (query) => Logger.dev(`Running the following query:\n ${query}`)
+      logging = (query) => Logger.debug(`Running the following query:\n ${query}`)
     } else if (process.env.QUERY_LOGGING === "benchmark") {
       // Setting QUERY_LOGGING=benchmark will log all Sequelize queries and their execution times, after they run
       Logger.info(`[Database] Query benchmarking enabled"`)
-      logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms:\n ${query}`)
+      logging = (query, time) => Logger.debug(`Ran the following query in ${time}ms:\n ${query}`)
       benchmark = true
     }
 
@@ -276,11 +281,17 @@ class Database {
     global.ServerSettings = this.serverSettings.toJSON()
 
     // Version specific migrations
-    if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') == 1) {
-      await dbMigration.migrationPatch(this)
+    if (packageJson.version !== this.serverSettings.version) {
+      if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') == 1) {
+        await dbMigration.migrationPatch(this)
+      }
+      if (['2.3.0', '2.3.1', '2.3.2', '2.3.3'].includes(this.serverSettings.version) && this.compareVersions(packageJson.version, '2.3.3') >= 0) {
+        await dbMigration.migrationPatch2(this)
+      }
     }
-    if (['2.3.0', '2.3.1', '2.3.2', '2.3.3'].includes(this.serverSettings.version) && this.compareVersions(packageJson.version, '2.3.3') >= 0) {
-      await dbMigration.migrationPatch2(this)
+    // Build migrations
+    if (this.serverSettings.buildNumber <= 0) {
+      await require('./utils/migrations/absMetadataMigration').migrate(this)
     }
 
     await this.cleanDatabase()
@@ -288,9 +299,19 @@ class Database {
     // Set if root user has been created
     this.hasRootUser = await this.models.user.getHasRootUser()
 
+    // Update server settings with version/build
+    let updateServerSettings = false
     if (packageJson.version !== this.serverSettings.version) {
       Logger.info(`[Database] Server upgrade detected from ${this.serverSettings.version} to ${packageJson.version}`)
       this.serverSettings.version = packageJson.version
+      this.serverSettings.buildNumber = packageJson.buildNumber
+      updateServerSettings = true
+    } else if (packageJson.buildNumber !== this.serverSettings.buildNumber) {
+      Logger.info(`[Database] Server v${packageJson.version} build upgraded from ${this.serverSettings.buildNumber} to ${packageJson.buildNumber}`)
+      this.serverSettings.buildNumber = packageJson.buildNumber
+      updateServerSettings = true
+    }
+    if (updateServerSettings) {
       await this.updateServerSettings()
     }
   }
@@ -677,6 +698,7 @@ class Database {
    * Clean invalid records in database
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem
+   * Remove playback sessions that are 3 seconds or less
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -716,6 +738,18 @@ class Database {
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)
       await series.destroy()
+    }
+
+    // Remove playback sessions that were 3 seconds or less
+    const badSessionsRemoved = await this.playbackSessionModel.destroy({
+      where: {
+        timeListening: {
+          [Op.lte]: 3
+        }
+      }
+    })
+    if (badSessionsRemoved > 0) {
+      Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
   }
 }

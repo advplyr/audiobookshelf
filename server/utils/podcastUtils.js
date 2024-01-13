@@ -1,10 +1,11 @@
-const Logger = require('../Logger')
 const axios = require('axios')
+const ssrfFilter = require('ssrf-req-filter')
+const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 function extractFirstArrayItem(json, key) {
-  if (!json[key] || !json[key].length) return null
+  if (!json[key]?.length) return null
   return json[key][0]
 }
 
@@ -66,7 +67,7 @@ function extractPodcastMetadata(channel) {
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
     let value = extractFirstArrayItem(channel, key)
-    if (value && value['_']) value = value['_']
+    if (value?.['_']) value = value['_']
     metadata[cleanKey] = value
   })
   return metadata
@@ -110,17 +111,30 @@ function extractEpisodeData(item) {
     const pubDate = extractFirstArrayItem(item, 'pubDate')
     if (typeof pubDate === 'string') {
       episode.pubDate = pubDate
-    } else if (pubDate && typeof pubDate._ === 'string') {
+    } else if (typeof pubDate?._ === 'string') {
       episode.pubDate = pubDate._
     } else {
       Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
     }
   }
 
+  if (item['guid']) {
+    const guidItem = extractFirstArrayItem(item, 'guid')
+    if (typeof guidItem === 'string') {
+      episode.guid = guidItem
+    } else if (typeof guidItem?._ === 'string') {
+      episode.guid = guidItem._
+    } else {
+      Logger.error(`[podcastUtils] Invalid guid ${item['guid']} for ${episode.enclosure.url}`)
+    }
+  }
+
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
-    episode[cleanKey] = extractFirstArrayItem(item, key)
+    let value = extractFirstArrayItem(item, key)
+    if (value?.['_']) value = value['_']
+    episode[cleanKey] = value
   })
   return episode
 }
@@ -142,6 +156,7 @@ function cleanEpisodeData(data) {
     explicit: data.explicit || '',
     publishedAt,
     enclosure: data.enclosure,
+    guid: data.guid || null,
     chaptersUrl: data.chaptersUrl || null,
     chaptersType: data.chaptersType || null
   }
@@ -159,16 +174,16 @@ function extractPodcastEpisodes(items) {
 }
 
 function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
-  if (!rssJson.channel || !rssJson.channel.length) {
+  if (!rssJson.channel?.length) {
     Logger.error(`[podcastUtil] Invalid podcast no channel object`)
     return null
   }
-  var channel = rssJson.channel[0]
-  if (!channel.item || !channel.item.length) {
+  const channel = rssJson.channel[0]
+  if (!channel.item?.length) {
     Logger.error(`[podcastUtil] Invalid podcast no episodes`)
     return null
   }
-  var podcast = {
+  const podcast = {
     metadata: extractPodcastMetadata(channel)
   }
   if (!excludeEpisodeMetadata) {
@@ -181,8 +196,8 @@ function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
 
 module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = false, includeRaw = false) => {
   if (!xml) return null
-  var json = await xmlToJSON(xml)
-  if (!json || !json.rss) {
+  const json = await xmlToJSON(xml)
+  if (!json?.rss) {
     Logger.error('[podcastUtils] Invalid XML or RSS feed')
     return null
   }
@@ -202,9 +217,26 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
   }
 }
 
+/**
+ * Get podcast RSS feed as JSON
+ * Uses SSRF filter to prevent internal URLs
+ * 
+ * @param {string} feedUrl 
+ * @param {boolean} [excludeEpisodeMetadata=false]
+ * @returns {Promise}
+ */
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
-  return axios.get(feedUrl, { timeout: 12000, responseType: 'arraybuffer' }).then(async (data) => {
+
+  return axios({
+    url: feedUrl,
+    method: 'GET',
+    timeout: 12000,
+    responseType: 'arraybuffer',
+    headers: { Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8' },
+    httpAgent: ssrfFilter(feedUrl),
+    httpsAgent: ssrfFilter(feedUrl)
+  }).then(async (data) => {
 
     // Adding support for ios-8859-1 encoded RSS feeds.
     //  See: https://github.com/advplyr/audiobookshelf/issues/1489
@@ -215,14 +247,14 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       data.data = data.data.toString()
     }
 
-    if (!data || !data.data) {
+    if (!data?.data) {
       Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
-      return false
+      return null
     }
     Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-    var payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+    const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
     if (!payload) {
-      return false
+      return null
     }
 
     // RSS feed may be a private RSS feed
@@ -231,7 +263,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     return payload.podcast
   }).catch((error) => {
     Logger.error('[podcastUtils] getPodcastFeed Error', error)
-    return false
+    return null
   })
 }
 
@@ -246,7 +278,7 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
 
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   searchTitle = searchTitle.toLowerCase().trim()
-  if (!feed || !feed.episodes) {
+  if (!feed?.episodes) {
     return null
   }
 

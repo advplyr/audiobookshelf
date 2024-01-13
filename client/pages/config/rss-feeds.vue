@@ -1,7 +1,15 @@
 <template>
   <div>
     <app-settings-content :header-text="$strings.HeaderRSSFeeds">
-      <div v-if="feeds.length" class="block max-w-full">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/rss_feeds" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
+      <div v-if="feeds.length" class="block max-w-full pt-2">
         <table class="rssFeedsTable text-xs">
           <tr class="bg-primary bg-opacity-40 h-12">
             <th class="w-16 min-w-16"></th>

@@ -5,8 +5,10 @@ const readChunk = require('../libs/readChunk')
 const imageType = require('../libs/imageType')
 
 const globals = require('../utils/globals')
-const { downloadFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
+const { downloadImageFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
+const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
+
 const CacheManager = require('../managers/CacheManager')
 
 class CoverManager {
@@ -120,13 +122,16 @@ class CoverManager {
       await fs.ensureDir(coverDirPath)
 
       var temppath = Path.posix.join(coverDirPath, 'cover')
-      var success = await downloadFile(url, temppath).then(() => true).catch((err) => {
-        Logger.error(`[CoverManager] Download image file failed for "${url}"`, err)
+
+      let errorMsg = ''
+      let success = await downloadImageFile(url, temppath).then(() => true).catch((err) => {
+        errorMsg = err.message || 'Unknown error'
+        Logger.error(`[CoverManager] Download image file failed for "${url}"`, errorMsg)
         return false
       })
       if (!success) {
         return {
-          error: 'Failed to download image from url'
+          error: 'Failed to download image from url: ' + errorMsg
         }
       }
 
@@ -231,6 +236,7 @@ class CoverManager {
 
   /**
    * Extract cover art from audio file and save for library item
+   * 
    * @param {import('../models/Book').AudioFileObject[]} audioFiles 
    * @param {string} libraryItemId 
    * @param {string} [libraryItemPath] null for isFile library items 
@@ -266,6 +272,44 @@ class CoverManager {
   }
 
   /**
+   * Extract cover art from ebook and save for library item
+   * 
+   * @param {import('../utils/parsers/parseEbookMetadata').EBookFileScanData} ebookFileScanData 
+   * @param {string} libraryItemId 
+   * @param {string} [libraryItemPath] null for isFile library items 
+   * @returns {Promise<string>} returns cover path
+   */
+  async saveEbookCoverArt(ebookFileScanData, libraryItemId, libraryItemPath) {
+    if (!ebookFileScanData?.ebookCoverPath) return null
+
+    let coverDirPath = null
+    if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
+      coverDirPath = libraryItemPath
+    } else {
+      coverDirPath = Path.posix.join(global.MetadataPath, 'items', libraryItemId)
+    }
+    await fs.ensureDir(coverDirPath)
+
+    let extname = Path.extname(ebookFileScanData.ebookCoverPath) || '.jpg'
+    if (extname === '.jpeg') extname = '.jpg'
+    const coverFilename = `cover${extname}`
+    const coverFilePath = Path.join(coverDirPath, coverFilename)
+
+    // TODO: Overwrite if exists?
+    const coverAlreadyExists = await fs.pathExists(coverFilePath)
+    if (coverAlreadyExists) {
+      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${coverFilePath}" - overwriting`)
+    }
+
+    const success = await parseEbookMetadata.extractCoverImage(ebookFileScanData, coverFilePath)
+    if (success) {
+      await CacheManager.purgeCoverCache(libraryItemId)
+      return coverFilePath
+    }
+    return null
+  }
+
+  /**
    * 
    * @param {string} url 
    * @param {string} libraryItemId 
@@ -284,7 +328,7 @@ class CoverManager {
       await fs.ensureDir(coverDirPath)
 
       const temppath = Path.posix.join(coverDirPath, 'cover')
-      const success = await downloadFile(url, temppath).then(() => true).catch((err) => {
+      const success = await downloadImageFile(url, temppath).then(() => true).catch((err) => {
         Logger.error(`[CoverManager] Download image file failed for "${url}"`, err)
         return false
       })

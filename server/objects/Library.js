@@ -15,6 +15,9 @@ class Library {
     this.provider = 'google'
 
     this.lastScan = 0
+    this.lastScanVersion = null
+    this.lastScanMetadataPrecedence = null
+
     this.settings = null
 
     this.createdAt = null
@@ -53,6 +56,10 @@ class Library {
       this.settings.disableWatcher = !!library.disableWatcher
     }
 
+    this.lastScan = library.lastScan
+    this.lastScanVersion = library.lastScanVersion
+    this.lastScanMetadataPrecedence = library.lastScanMetadataPrecedence
+
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
     this.cleanOldValues() // mediaType changed for v2 and icon change for v2.2.2
@@ -84,6 +91,8 @@ class Library {
       mediaType: this.mediaType,
       provider: this.provider,
       settings: this.settings.toJSON(),
+      lastScan: this.lastScan,
+      lastScanVersion: this.lastScanVersion,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }

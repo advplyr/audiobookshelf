@@ -39,13 +39,15 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
-Join us on [Discord](https://discord.gg/pJsjuNCKRq) or [Matrix](https://matrix.to/#/#audiobookshelf:matrix.org)
+Join us on [Discord](https://discord.gg/HQgCbd6E75) or [Matrix](https://matrix.to/#/#audiobookshelf:matrix.org)
 
 ### Android App (beta)
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
 ### iOS App (beta)
-Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+**Beta is currently full. Apple has a hard limit of 10k beta testers. Updates will be posted in Discord/Matrix.**
+
+Using Test Flight: https://testflight.apple.com/join/wiic7QIW ***(beta is full)***
 
 ### Build your own tools & clients
 Check out the [API documentation](https://api.audiobookshelf.org/)
@@ -174,16 +176,49 @@ serve that directly:
 
 [See LinuxServer.io config sample](https://github.com/linuxserver/reverse-proxy-confs/blob/master/audiobookshelf.subdomain.conf.sample)
 
-### Synology Reverse Proxy
+### Synology NAS Reverse Proxy Setup (DSM 7+/Quickconnect)
 
-1. Open Control Panel > Application Portal
-2. Change to the Reverse Proxy tab
-3. Select the proxy rule for which you want to enable Websockets and click on Edit
-4. Change to the "Custom Header" tab
-5. Click Create > WebSocket
-6. Click Save
+1. **Open Control Panel**
+   - Navigate to `Login Portal > Advanced`.
 
-[from @silentArtifact](https://github.com/advplyr/audiobookshelf/issues/241#issuecomment-1036732329)
+2. **General Tab**
+   - Click `Reverse Proxy` > `Create`.
+   
+   | Setting | Value          |
+   |---------|----------------|
+   | Reverse Proxy Name    | audiobookshelf |
+
+3. **Source Configuration**
+
+   | Setting                 | Value                               |
+   |-------------------------|-------------------------------------|
+   | Protocol                | HTTPS                               |
+   | Hostname                | `<sub>.<quickconnectdomain>.synology.me` |
+   | Port                    | 443                                 |
+   | Access Control Profile  | Leave as is                         |
+
+   - Example Hostname: `audiobookshelf.mydomain.synology.me`
+
+4. **Destination Configuration**
+
+   | Setting   | Value            |
+   |-----------|------------------|
+   | Protocol  | HTTP             |
+   | Hostname  | Your NAS IP      |
+   | Port      | 13378            |
+
+5. **Custom Header Tab**
+   - Go to `Create > Websocket`.
+   - Configure Headers (leave as is):
+
+    | Header Name | Value            |
+    |-------------|------------------|
+    | Upgrade     | `$http_upgrade`  |
+    | Connection  | `$connection_upgrade` |
+
+6. **Advanced Settings Tab**
+   - Leave as is.
+
 
 ### [Traefik Reverse Proxy](https://doc.traefik.io/traefik/)
 

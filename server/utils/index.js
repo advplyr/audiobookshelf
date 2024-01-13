@@ -1,4 +1,5 @@
 const Path = require('path')
+const uuid = require('uuid')
 const Logger = require('../Logger')
 const { parseString } = require("xml2js")
 const areEquivalent = require('./areEquivalent')
@@ -11,24 +12,24 @@ const levenshteinDistance = (str1, str2, caseSensitive = false) => {
     str2 = str2.toLowerCase()
   }
   const track = Array(str2.length + 1).fill(null).map(() =>
-    Array(str1.length + 1).fill(null));
+    Array(str1.length + 1).fill(null))
   for (let i = 0; i <= str1.length; i += 1) {
-    track[0][i] = i;
+    track[0][i] = i
   }
   for (let j = 0; j <= str2.length; j += 1) {
-    track[j][0] = j;
+    track[j][0] = j
   }
   for (let j = 1; j <= str2.length; j += 1) {
     for (let i = 1; i <= str1.length; i += 1) {
-      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1
       track[j][i] = Math.min(
         track[j][i - 1] + 1, // deletion
         track[j - 1][i] + 1, // insertion
         track[j - 1][i - 1] + indicator, // substitution
-      );
+      )
     }
   }
-  return track[str2.length][str1.length];
+  return track[str2.length][str1.length]
 }
 module.exports.levenshteinDistance = levenshteinDistance
 
@@ -65,6 +66,9 @@ module.exports.getId = (prepend = '') => {
 }
 
 function elapsedPretty(seconds) {
+  if (seconds > 0 && seconds < 1) {
+    return `${Math.floor(seconds * 1000)} ms`
+  }
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec`
   }
@@ -166,4 +170,66 @@ module.exports.getTitleIgnorePrefix = (title) => {
 module.exports.getTitlePrefixAtEnd = (title) => {
   let [sort, prefix] = getTitleParts(title)
   return prefix ? `${sort}, ${prefix}` : title
+}
+
+/**
+ * to lower case for only ascii characters
+ * used to handle sqlite that doesnt support unicode lower
+ * @see https://github.com/advplyr/audiobookshelf/issues/2187
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.asciiOnlyToLowerCase = (str) => {
+  if (!str) return ''
+
+  let temp = ''
+  for (let chars of str) {
+    let value = chars.charCodeAt()
+    if (value >= 65 && value <= 90) {
+      temp += String.fromCharCode(value + 32)
+    } else {
+      temp += chars
+    }
+  }
+  return temp
+}
+
+/**
+ * Escape string used in RegExp
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
+ * 
+ * @param {string} str 
+ * @returns {string}
+ */
+module.exports.escapeRegExp = (str) => {
+  if (typeof str !== 'string') return ''
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Validate url string with URL class
+ * 
+ * @param {string} rawUrl 
+ * @returns {string} null if invalid
+ */
+module.exports.validateUrl = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return null
+  try {
+    return new URL(rawUrl).toString()
+  } catch (error) {
+    Logger.error(`Invalid URL "${rawUrl}"`, error)
+    return null
+  }
+}
+
+/**
+ * Check if a string is a valid UUID
+ * 
+ * @param {string} str 
+ * @returns {boolean}
+ */
+module.exports.isUUID = (str) => {
+  if (!str || typeof str !== 'string') return false
+  return uuid.validate(str)
 }

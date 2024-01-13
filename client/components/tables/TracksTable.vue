@@ -6,7 +6,7 @@
         <span class="text-sm font-mono">{{ tracks.length }}</span>
       </div>
       <div class="flex-grow" />
-      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
+      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <nuxt-link v-if="userCanUpdate && !isFile" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
         <ui-btn small color="primary">{{ $strings.ButtonManageTracks }}</ui-btn>
       </nuxt-link>
@@ -74,6 +74,10 @@ export default {
     }
   },
   methods: {
+    toggleFullPath() {
+      this.showFullPath = !this.showFullPath
+      localStorage.setItem('showFullPath', this.showFullPath ? 1 : 0)
+    },
     clickBar() {
       this.showTracks = !this.showTracks
     },
@@ -82,6 +86,10 @@ export default {
       this.showAudioFileDataModal = true
     }
   },
-  mounted() {}
+  mounted() {
+    if (this.userIsAdmin) {
+      this.showFullPath = !!Number(localStorage.getItem('showFullPath') || 0)
+    }
+  }
 }
 </script>

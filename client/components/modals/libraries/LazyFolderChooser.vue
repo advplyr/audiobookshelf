@@ -4,29 +4,32 @@
       <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
       <p class="px-4 text-xl">{{ $strings.HeaderChooseAFolder }}</p>
     </div>
-    <div v-if="allFolders.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
-      <p class="font-mono truncate">{{ selectedPath || '\\' }}</p>
+    <div v-if="rootDirs.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
+      <p class="font-mono truncate">{{ selectedPath || '/' }}</p>
     </div>
-    <div v-if="allFolders.length" class="flex bg-primary bg-opacity-50 p-4 folder-container">
+    <div v-if="rootDirs.length" class="relative flex bg-primary bg-opacity-50 p-4 folder-container">
       <div class="w-1/2 border-r border-bg h-full overflow-y-auto">
-        <div v-if="level > 0" class="w-full p-1 cursor-pointer flex items-center" @click="goBack">
+        <div v-if="level > 0" class="w-full p-1 cursor-pointer flex items-center hover:bg-white/10" @click="goBack">
           <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2">..</p>
         </div>
-        <div v-for="dir in _directories" :key="dir.path" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200" :class="dir.className" @click="selectDir(dir)">
+        <div v-for="dir in _directories" :key="dir.path" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" :class="dir.className" @click="selectDir(dir)">
           <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
-          <span v-if="dir.dirs && dir.dirs.length && dir.path === selectedPath" class="material-icons" style="font-size: 1.1rem">arrow_right</span>
+          <span v-if="dir.path === selectedPath" class="material-icons" style="font-size: 1.1rem">arrow_right</span>
         </div>
       </div>
       <div class="w-1/2 h-full overflow-y-auto">
-        <div v-for="dir in _subdirs" :key="dir.path" :class="dir.className" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200" @click="selectSubDir(dir)">
+        <div v-for="dir in _subdirs" :key="dir.path" :class="dir.className" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" @click="selectSubDir(dir)">
           <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
         </div>
       </div>
+      <div v-if="loadingDirs" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/10">
+        <ui-loading-indicator />
+      </div>
     </div>
-    <div v-else-if="loadingFolders" class="py-12 text-center">
+    <div v-else-if="initialLoad" class="py-12 text-center">
       <p>{{ $strings.MessageLoadingFolders }}</p>
     </div>
     <div v-else class="py-12 text-center max-w-sm mx-auto">
@@ -51,11 +54,12 @@ export default {
   },
   data() {
     return {
-      loadingFolders: false,
-      allFolders: [],
+      initialLoad: false,
+      loadingDirs: false,
+      isPosix: true,
+      rootDirs: [],
       directories: [],
       selectedPath: '',
-      selectedFullPath: '',
       subdirs: [],
       level: 0,
       currentDir: null,
@@ -98,59 +102,88 @@ export default {
     }
   },
   methods: {
-    goBack() {
-      var splitPaths = this.selectedPath.split('\\').slice(1)
-      var prev = splitPaths.slice(0, -1).join('\\')
+    async goBack() {
+      let selPath = this.selectedPath.replace(/^\//, '')
+      var splitPaths = selPath.split('/')
 
-      var currDirs = this.allFolders
-      for (let i = 0; i < splitPaths.length; i++) {
-        var _dir = currDirs.find((dir) => dir.dirname === splitPaths[i])
-        if (_dir && _dir.path.slice(1) === prev) {
-          this.directories = currDirs
-          this.selectDir(_dir)
-          return
-        } else if (_dir) {
-          currDirs = _dir.dirs
-        }
+      let previousPath = ''
+      let lookupPath = ''
+
+      if (splitPaths.length > 2) {
+        lookupPath = splitPaths.slice(0, -2).join('/')
       }
+      previousPath = splitPaths.slice(0, -1).join('/')
+
+      if (!this.isPosix) {
+        // For windows drives add a trailing slash. e.g. C:/
+        if (!this.isPosix && lookupPath.endsWith(':')) {
+          lookupPath += '/'
+        }
+        if (!this.isPosix && previousPath.endsWith(':')) {
+          previousPath += '/'
+        }
+      } else {
+        // Add leading slash
+        if (previousPath) previousPath = '/' + previousPath
+        if (lookupPath) lookupPath = '/' + lookupPath
+      }
+
+      this.level--
+      this.subdirs = this.directories
+      this.selectedPath = previousPath
+      this.directories = await this.fetchDirs(lookupPath, this.level)
     },
-    selectDir(dir) {
+    async selectDir(dir) {
       if (dir.isUsed) return
       this.selectedPath = dir.path
-      this.selectedFullPath = dir.fullPath
       this.level = dir.level
-      this.subdirs = dir.dirs
+      this.subdirs = await this.fetchDirs(dir.path, dir.level + 1)
     },
-    selectSubDir(dir) {
+    async selectSubDir(dir) {
       if (dir.isUsed) return
       this.selectedPath = dir.path
-      this.selectedFullPath = dir.fullPath
       this.level = dir.level
       this.directories = this.subdirs
-      this.subdirs = dir.dirs
+      this.subdirs = await this.fetchDirs(dir.path, dir.level + 1)
     },
     selectFolder() {
       if (!this.selectedPath) {
         console.error('No Selected path')
         return
       }
-      if (this.paths.find((p) => p.startsWith(this.selectedFullPath))) {
+      if (this.paths.find((p) => p.startsWith(this.selectedPath))) {
         this.$toast.error(`Oops, you cannot add a parent directory of a folder already added`)
         return
       }
-      this.$emit('select', this.selectedFullPath)
+      this.$emit('select', this.selectedPath)
       this.selectedPath = ''
-      this.selectedFullPath = ''
+    },
+    fetchDirs(path, level) {
+      this.loadingDirs = true
+      return this.$axios
+        .$get(`/api/filesystem?path=${path}&level=${level}`)
+        .then((data) => {
+          console.log('Fetched directories', data.directories)
+          this.isPosix = !!data.posix
+          return data.directories
+        })
+        .catch((error) => {
+          console.error('Failed to get filesystem paths', error)
+          this.$toast.error('Failed to get filesystem paths')
+          return []
+        })
+        .finally(() => {
+          this.loadingDirs = false
+        })
     },
     async init() {
-      this.loadingFolders = true
-      this.allFolders = await this.$store.dispatch('libraries/loadFolders')
-      this.loadingFolders = false
+      this.initialLoad = true
+      this.rootDirs = await this.fetchDirs('', 0)
+      this.initialLoad = false
 
-      this.directories = this.allFolders
+      this.directories = this.rootDirs
       this.subdirs = []
       this.selectedPath = ''
-      this.selectedFullPath = ''
     }
   },
   mounted() {

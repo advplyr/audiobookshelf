@@ -1,7 +1,9 @@
-const fs = require('../libs/fsExtra')
-const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
+const ssrfFilter = require('ssrf-req-filter')
+const exec = require('child_process').exec
+const fs = require('../libs/fsExtra')
+const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
 
@@ -18,22 +20,33 @@ const filePathToPOSIX = (path) => {
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
-async function getFileStat(path) {
+/**
+ * Check path is a child of or equal to another path
+ * 
+ * @param {string} parentPath 
+ * @param {string} childPath 
+ * @returns {boolean}
+ */
+function isSameOrSubPath(parentPath, childPath) {
+  parentPath = filePathToPOSIX(parentPath)
+  childPath = filePathToPOSIX(childPath)
+  if (parentPath === childPath) return true
+  const relativePath = Path.relative(parentPath, childPath)
+  return (
+    relativePath === '' // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
+    || !relativePath.startsWith('..') && !Path.isAbsolute(relativePath) // Sub path
+  )
+}
+module.exports.isSameOrSubPath = isSameOrSubPath
+
+function getFileStat(path) {
   try {
-    var stat = await fs.stat(path)
-    return {
-      size: stat.size,
-      atime: stat.atime,
-      mtime: stat.mtime,
-      ctime: stat.ctime,
-      birthtime: stat.birthtime
-    }
+    return fs.stat(path)
   } catch (err) {
     Logger.error('[fileUtils] Failed to stat', err)
-    return false
+    return null
   }
 }
-module.exports.getFileStat = getFileStat
 
 async function getFileTimestampsWithIno(path) {
   try {
@@ -52,12 +65,30 @@ async function getFileTimestampsWithIno(path) {
 }
 module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
 
-async function getFileSize(path) {
-  var stat = await getFileStat(path)
-  if (!stat) return 0
-  return stat.size || 0
+/**
+ * Get file size
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>}
+ */
+module.exports.getFileSize = async (path) => {
+  return (await getFileStat(path))?.size || 0
 }
-module.exports.getFileSize = getFileSize
+
+/**
+ * Get file mtimeMs
+ * 
+ * @param {string} path 
+ * @returns {Promise<number>} epoch timestamp
+ */
+module.exports.getFileMTimeMs = async (path) => {
+  try {
+    return (await getFileStat(path))?.mtimeMs || 0
+  } catch (err) {
+    Logger.error(`[fileUtils] Failed to getFileMtimeMs`, err)
+    return 0
+  }
+}
 
 /**
  * 
@@ -203,15 +234,32 @@ async function recurseFiles(path, relPathToReplace = null) {
 }
 module.exports.recurseFiles = recurseFiles
 
-module.exports.downloadFile = (url, filepath) => {
+/**
+ * Download file from web to local file system
+ * Uses SSRF filter to prevent internal URLs
+ * 
+ * @param {string} url 
+ * @param {string} filepath path to download the file to
+ * @param {Function} [contentTypeFilter] validate content type before writing
+ * @returns {Promise}
+ */
+module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
     axios({
       url,
       method: 'GET',
       responseType: 'stream',
-      timeout: 30000
+      timeout: 30000,
+      httpAgent: ssrfFilter(url),
+      httpsAgent: ssrfFilter(url)
     }).then((response) => {
+      // Validate content type
+      if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
+        return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+      }
+
+      // Write to filepath
       const writer = fs.createWriteStream(filepath)
       response.data.pipe(writer)
 
@@ -222,6 +270,21 @@ module.exports.downloadFile = (url, filepath) => {
       reject(err)
     })
   })
+}
+
+/**
+ * Download image file from web to local file system
+ * Response header must have content-type of image/ (excluding svg)
+ * 
+ * @param {string} url 
+ * @param {string} filepath 
+ * @returns {Promise}
+ */
+module.exports.downloadImageFile = (url, filepath) => {
+  const contentTypeFilter = (contentType) => {
+    return contentType?.startsWith('image/') && contentType !== 'image/svg+xml'
+  }
+  return this.downloadFile(url, filepath, contentTypeFilter)
 }
 
 module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
@@ -251,6 +314,7 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
     .replace(lineBreaks, replacement)
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement)
+    .replace(/\s+/g, ' ') // Replace consecutive spaces with a single space
 
   // Check if basename is too many bytes
   const ext = Path.extname(sanitized) // separate out file extension
@@ -295,4 +359,85 @@ module.exports.removeFile = (path) => {
 module.exports.encodeUriPath = (path) => {
   const uri = new URL(path, "file://")
   return uri.pathname
+}
+
+/**
+ * Check if directory is writable.
+ * This method is necessary because fs.access(directory, fs.constants.W_OK) does not work on Windows
+ * 
+ * @param {string} directory 
+ * @returns {boolean}
+ */
+module.exports.isWritable = async (directory) => {
+  try {
+    const accessTestFile = path.join(directory, 'accessTest')
+    await fs.writeFile(accessTestFile, '')
+    await fs.remove(accessTestFile)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+/**
+ * Get Windows drives as array e.g. ["C:/", "F:/"]
+ * 
+ * @returns {Promise<string[]>}
+ */
+module.exports.getWindowsDrives = async () => {
+  if (!global.isWin) {
+    return []
+  }
+  return new Promise((resolve, reject) => {
+    exec('wmic logicaldisk get name', async (error, stdout, stderr) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      let drives = stdout?.split(/\r?\n/).map(line => line.trim()).filter(line => line).slice(1)
+      const validDrives = []
+      for (const drive of drives) {
+        let drivepath = drive + '/'
+        if (await fs.pathExists(drivepath)) {
+          validDrives.push(drivepath)
+        } else {
+          Logger.error(`Invalid drive ${drivepath}`)
+        }
+      }
+      resolve(validDrives)
+    })
+  })
+}
+
+/**
+ * Get array of directory paths in a directory
+ * 
+ * @param {string} dirPath 
+ * @param {number} level
+ * @returns {Promise<{ path:string, dirname:string, level:number }[]>}
+ */
+module.exports.getDirectoriesInPath = async (dirPath, level) => {
+  try {
+    const paths = await fs.readdir(dirPath)
+    let dirs = await Promise.all(paths.map(async dirname => {
+      const fullPath = Path.join(dirPath, dirname)
+
+      const lstat = await fs.lstat(fullPath).catch((error) => {
+        Logger.debug(`Failed to lstat "${fullPath}"`, error)
+        return null
+      })
+      if (!lstat?.isDirectory()) return null
+
+      return {
+        path: this.filePathToPOSIX(fullPath),
+        dirname,
+        level
+      }
+    }))
+    dirs = dirs.filter(d => d)
+    return dirs
+  } catch (error) {
+    Logger.error('Failed to readdir', dirPath, error)
+    return []
+  }
 }

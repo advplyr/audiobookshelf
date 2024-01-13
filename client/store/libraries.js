@@ -80,13 +80,11 @@ export const actions = {
         return state.folders
       }
     }
-    console.log('Loading folders')
     commit('setFoldersLastUpdate')
 
     return this.$axios
       .$get('/api/filesystem')
       .then((res) => {
-        console.log('Settings folders', res)
         commit('setFolders', res.directories)
         return res.directories
       })
@@ -119,15 +117,16 @@ export const actions = {
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
 
+        if (libraryChanging) {
+          commit('setCollections', [])
+          commit('setUserPlaylists', [])
+        }
+
         commit('addUpdate', library)
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setNumUserPlaylists', numUserPlaylists)
         commit('setCurrentLibrary', libraryId)
-        if (libraryChanging) {
-          commit('setCollections', [])
-          commit('setUserPlaylists', [])
-        }
         return data
       })
       .catch((error) => {

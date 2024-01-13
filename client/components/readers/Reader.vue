@@ -26,9 +26,9 @@
     <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" @touchstart="touchstart" @touchend="touchend" @hook:mounted="readerMounted" />
 
     <!-- TOC side nav -->
-    <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
-    <div v-if="isEpub" class="w-96 h-full max-h-full absolute top-0 left-0 shadow-xl transition-transform z-30 group-data-[theme=dark]:bg-primary group-data-[theme=dark]:text-white group-data-[theme=light]:bg-white group-data-[theme=light]:text-black" :class="tocOpen ? 'translate-x-0' : '-translate-x-96'" @click.stop.prevent="toggleToC">
-      <div class="p-4 h-full">
+    <div v-if="tocOpen" class="w-full h-full overflow-y-scroll absolute inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
+    <div v-if="isEpub" class="w-96 h-full max-h-full absolute top-0 left-0 shadow-xl transition-transform z-30 group-data-[theme=dark]:bg-primary group-data-[theme=dark]:text-white group-data-[theme=light]:bg-white group-data-[theme=light]:text-black" :class="tocOpen ? 'translate-x-0' : '-translate-x-96'" @click.stop.prevent>
+      <div class="flex flex-col p-4 h-full">
         <div class="flex items-center mb-2">
           <button @click.stop.prevent="toggleToC" type="button" aria-label="Close table of contents" class="inline-flex opacity-80 hover:opacity-100">
             <span class="material-icons text-2xl">arrow_back</span>
@@ -36,13 +36,28 @@
 
           <p class="text-lg font-semibold ml-2">{{ $strings.HeaderTableOfContents }}</p>
         </div>
-        <div class="tocContent">
+        <form @submit.prevent="searchBook" @click.stop.prevent>
+          <ui-text-input clearable ref="input" @clear="searchBook" v-model="searchQuery" :placeholder="$strings.PlaceholderSearch" class="h-8 w-full text-sm flex mb-2" />
+        </form>
+
+        <div class="overflow-y-auto">
+          <div v-if="isSearching && !this.searchResults.length" class="w-full h-40 justify-center">
+            <p class="text-center text-xl py-4">{{ $strings.MessageNoResults }}</p>
+          </div>
+
           <ul>
-            <li v-for="chapter in chapters" :key="chapter.id" class="py-1">
-              <a :href="chapter.href" class="opacity-80 hover:opacity-100" @click.prevent="$refs.readerComponent.goToChapter(chapter.href)">{{ chapter.label }}</a>
+            <li v-for="chapter in isSearching ? this.searchResults : chapters" :key="chapter.id" class="py-1">
+              <a :href="chapter.href" class="opacity-80 hover:opacity-100" @click.prevent="goToChapter(chapter.href)">{{ chapter.title }}</a>
+              <div v-for="searchResults in chapter.searchResults" :key="searchResults.cfi" class="text-sm py-1 pl-4">
+                <a :href="searchResults.cfi" class="opacity-50 hover:opacity-100" @click.prevent="goToChapter(searchResults.cfi)">{{ searchResults.excerpt }}</a>
+              </div>
+
               <ul v-if="chapter.subitems.length">
                 <li v-for="subchapter in chapter.subitems" :key="subchapter.id" class="py-1 pl-4">
-                  <a :href="subchapter.href" class="opacity-80 hover:opacity-100" @click.prevent="$refs.readerComponent.goToChapter(subchapter.href)">{{ subchapter.label }}</a>
+                  <a :href="subchapter.href" class="opacity-80 hover:opacity-100" @click.prevent="goToChapter(subchapter.href)">{{ subchapter.title }}</a>
+                  <div v-for="subChapterSearchResults in subchapter.searchResults" :key="subChapterSearchResults.cfi" class="text-sm py-1 pl-4">
+                    <a :href="subChapterSearchResults.cfi" class="opacity-50 hover:opacity-100" @click.prevent="goToChapter(subChapterSearchResults.cfi)">{{ subChapterSearchResults.excerpt }}</a>
+                  </div>
                 </li>
               </ul>
             </li>
@@ -63,7 +78,13 @@
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelTheme }}:</p>
           </div>
-          <ui-toggle-btns v-model="ereaderSettings.theme" :items="themeItems" @input="settingsUpdated" />
+          <ui-toggle-btns v-model="ereaderSettings.theme" :items="themeItems.theme" @input="settingsUpdated" />
+        </div>
+        <div class="flex items-center mb-4">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelFontFamily }}:</p>
+          </div>
+          <ui-toggle-btns v-model="ereaderSettings.font" :items="themeItems.font" @input="settingsUpdated" />
         </div>
         <div class="flex items-center mb-4">
           <div class="w-40">
@@ -99,10 +120,14 @@ export default {
       touchstartTime: 0,
       touchIdentifier: null,
       chapters: [],
+      isSearching: false,
+      searchResults: [],
+      searchQuery: '',
       tocOpen: false,
       showSettings: false,
       ereaderSettings: {
         theme: 'dark',
+        font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
         spread: 'auto'
@@ -142,16 +167,28 @@ export default {
       ]
     },
     themeItems() {
-      return [
-        {
-          text: this.$strings.LabelThemeDark,
-          value: 'dark'
-        },
-        {
-          text: this.$strings.LabelThemeLight,
-          value: 'light'
-        }
-      ]
+      return {
+        theme: [
+          {
+            text: this.$strings.LabelThemeDark,
+            value: 'dark'
+          },
+          {
+            text: this.$strings.LabelThemeLight,
+            value: 'light'
+          }
+        ],
+        font: [
+          {
+            text: 'Sans',
+            value: 'sans-serif'
+          },
+          {
+            text: 'Serif',
+            value: 'serif'
+          }
+        ]
+      }
     },
     componentName() {
       if (this.ebookType === 'epub') return 'readers-epub-reader'
@@ -235,6 +272,10 @@ export default {
     }
   },
   methods: {
+    goToChapter(uri) {
+      this.toggleToC()
+      this.$refs.readerComponent.goToChapter(uri)
+    },
     readerMounted() {
       if (this.isEpub) {
         this.loadEreaderSettings()
@@ -260,6 +301,15 @@ export default {
         this.prev()
       } else if (action === this.$hotkeys.EReader.CLOSE) {
         this.close()
+      }
+    },
+    async searchBook() {
+      if (this.searchQuery.length > 1) {
+        this.searchResults = await this.$refs.readerComponent.searchBook(this.searchQuery)
+        this.isSearching = true
+      } else {
+        this.isSearching = false
+        this.searchResults = []
       }
     },
     next() {
@@ -340,6 +390,8 @@ export default {
     },
     close() {
       this.unregisterListeners()
+      this.isSearching = false
+      this.searchQuery = ''
       this.show = false
     }
   },
@@ -353,10 +405,6 @@ export default {
 </script>
 
 <style>
-.tocContent {
-  height: calc(100% - 36px);
-  overflow-y: auto;
-}
 #reader {
   height: 100%;
 }

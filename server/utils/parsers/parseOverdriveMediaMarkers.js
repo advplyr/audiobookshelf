@@ -1,12 +1,5 @@
+const xml2js = require('xml2js')
 const Logger = require('../../Logger')
-
-// given a list of audio files, extract all of the Overdrive Media Markers metaTags, and return an array of them as XML
-function extractOverdriveMediaMarkers(includedAudioFiles) {
-  Logger.debug('[parseOverdriveMediaMarkers] Extracting overdrive media markers')
-  var markers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(af => af) || []
-
-  return markers
-}
 
 // given the array of Overdrive Media Markers from generateOverdriveMediaMarkers()
 //  parse and clean them in to something a bit more usable
@@ -29,12 +22,11 @@ function cleanOverdriveMediaMarkers(overdriveMediaMarkers) {
   ]
   */
 
-  var parseString = require('xml2js').parseString // function to convert xml to JSON
-  var parsedOverdriveMediaMarkers = []
-
+  const parsedOverdriveMediaMarkers = []
   overdriveMediaMarkers.forEach((item, index) => {
-    var parsed_result = null
-    parseString(item, function (err, result) {
+    let parsed_result = null
+    // convert xml to JSON
+    xml2js.parseString(item, function (err, result) {
       /*
       result.Markers.Marker is the result of parsing the XML for the MediaMarker tags for the MP3 file (Part##.mp3)
       it is shaped like this, and needs further cleaning below:
@@ -54,7 +46,7 @@ function cleanOverdriveMediaMarkers(overdriveMediaMarkers) {
       */
 
       // The values for Name and Time in results.Markers.Marker are returned as Arrays from parseString and should be strings
-      if (result && result.Markers && result.Markers.Marker) {
+      if (result?.Markers?.Marker) {
         parsed_result = objectValuesArrayToString(result.Markers.Marker)
       }
     })
@@ -138,22 +130,13 @@ function generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers
   return parsedChapters
 }
 
-module.exports.overdriveMediaMarkersExist = (includedAudioFiles) => {
-  return extractOverdriveMediaMarkers(includedAudioFiles).length > 1
-}
-
 module.exports.parseOverdriveMediaMarkersAsChapters = (includedAudioFiles) => {
-  Logger.info('[parseOverdriveMediaMarkers] Parsing of Overdrive Media Markers started')
-
-  var overdriveMediaMarkers = extractOverdriveMediaMarkers(includedAudioFiles)
+  const overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(af => af) || []
   if (!overdriveMediaMarkers.length) return null
 
   var cleanedOverdriveMediaMarkers = cleanOverdriveMediaMarkers(overdriveMediaMarkers)
   // TODO: generateParsedChapters requires overdrive media markers and included audio files length to be the same
   //         so if not equal then we must exit
   if (cleanedOverdriveMediaMarkers.length !== includedAudioFiles.length) return null
-
-  var parsedChapters = generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers)
-
-  return parsedChapters
+  return generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers)
 }

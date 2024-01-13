@@ -7,7 +7,7 @@
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
-          <div class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
+          <div v-if="userCanDelete" class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
             <ui-tooltip direction="top" :text="$strings.LabelRemoveCover">
               <span class="material-icons text-2xl">delete</span>
             </ui-tooltip>
@@ -16,15 +16,16 @@
       </div>
       <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
         <div class="flex items-center">
-          <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 pt-4 md:min-w-32">
+          <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
               <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
               <span class="material-icons text-2xl inline-block md:!hidden">upload</span>
             </ui-file-input>
           </div>
+
           <form @submit.prevent="submitForm" class="flex flex-grow">
-            <ui-text-input-with-label v-model="imageUrl" :label="$strings.LabelCoverImageURL" />
-            <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-2 sm:ml-3 w-24">{{ $strings.ButtonSave }}</ui-btn>
+            <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
+            <ui-btn color="success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
           </form>
         </div>
 
@@ -64,7 +65,7 @@
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
       <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
-        <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
+        <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
         </div>
       </template>
@@ -165,6 +166,9 @@ export default {
     userCanUpload() {
       return this.$store.getters['user/getUserCanUpload']
     },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
     userToken() {
       return this.$store.getters['user/getToken']
     },
@@ -222,71 +226,53 @@ export default {
         this.coversFound = []
         this.hasSearched = false
       }
-      this.imageUrl = this.media.coverPath || ''
+      this.imageUrl = ''
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
       else this.provider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
     },
     removeCover() {
-      if (!this.media.coverPath) {
-        this.imageUrl = ''
+      if (!this.coverPath) {
         return
       }
-      this.updateCover('')
+      this.isProcessing = true
+      this.$axios
+        .$delete(`/api/items/${this.libraryItemId}/cover`)
+        .then(() => {})
+        .catch((error) => {
+          console.error('Failed to remove cover', error)
+          if (error.response?.data) {
+            this.$toast.error(error.response.data)
+          }
+        })
+        .finally(() => {
+          this.isProcessing = false
+        })
     },
     submitForm() {
       this.updateCover(this.imageUrl)
     },
     async updateCover(cover) {
-      if (cover === this.coverPath) {
-        console.warn('Cover has not changed..', cover)
+      if (!cover.startsWith('http:') && !cover.startsWith('https:')) {
+        this.$toast.error('Invalid URL')
         return
       }
 
       this.isProcessing = true
-      var success = false
-
-      if (!cover) {
-        // Remove cover
-        success = await this.$axios
-          .$delete(`/api/items/${this.libraryItemId}/cover`)
-          .then(() => true)
-          .catch((error) => {
-            console.error('Failed to remove cover', error)
-            if (error.response && error.response.data) {
-              this.$toast.error(error.response.data)
-            }
-            return false
-          })
-      } else if (cover.startsWith('http:') || cover.startsWith('https:')) {
-        // Download cover from url and use
-        success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, { url: cover }).catch((error) => {
-          console.error('Failed to download cover from url', error)
-          if (error.response && error.response.data) {
-            this.$toast.error(error.response.data)
-          }
-          return false
+      this.$axios
+        .$post(`/api/items/${this.libraryItemId}/cover`, { url: cover })
+        .then(() => {
+          this.imageUrl = ''
+          this.$toast.success('Update Successful')
         })
-      } else {
-        // Update local cover url
-        const updatePayload = {
-          cover
-        }
-        success = await this.$axios.$patch(`/api/items/${this.libraryItemId}/cover`, updatePayload).catch((error) => {
-          console.error('Failed to update', error)
-          if (error.response && error.response.data) {
-            this.$toast.error(error.response.data)
-          }
-          return false
+        .catch((error) => {
+          console.error('Failed to update cover', error)
+          this.$toast.error(error.response?.data || 'Failed to update cover')
         })
-      }
-      if (success) {
-        this.$toast.success('Update Successful')
-      } else if (this.media.coverPath) {
-        this.imageUrl = this.media.coverPath
-      }
-      this.isProcessing = false
+        .finally(() => {
+          this.isProcessing = false
+        })
     },
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
@@ -319,7 +305,19 @@ export default {
       this.hasSearched = true
     },
     setCover(coverFile) {
-      this.updateCover(coverFile.metadata.path)
+      this.isProcessing = true
+      this.$axios
+        .$patch(`/api/items/${this.libraryItemId}/cover`, { cover: coverFile.metadata.path })
+        .then(() => {
+          this.$toast.success('Update Successful')
+        })
+        .catch((error) => {
+          console.error('Failed to set local cover', error)
+          this.$toast.error(error.response?.data || 'Failed to set cover')
+        })
+        .finally(() => {
+          this.isProcessing = false
+        })
     }
   }
 }

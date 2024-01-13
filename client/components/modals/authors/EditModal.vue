@@ -5,18 +5,23 @@
         <p class="text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
-      <form v-if="author" @submit.prevent="submitForm">
-        <div class="flex">
-          <div class="w-40 p-2">
-            <div class="w-full h-45 relative">
-              <covers-author-image :author="author" />
-              <div v-show="!processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
-                <span class="absolute top-2 right-2 material-icons text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
-              </div>
+    <div v-if="author" class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
+      <div class="flex">
+        <div class="w-40 p-2">
+          <div class="w-full h-45 relative">
+            <covers-author-image :author="author" />
+            <div v-if="userCanDelete && !processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
+              <span class="absolute top-2 right-2 material-icons text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
             </div>
           </div>
-          <div class="flex-grow">
+        </div>
+        <div class="flex-grow">
+          <form @submit.prevent="submitUploadCover" class="flex flex-grow mb-2 p-2">
+            <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
+            <ui-btn color="success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+          </form>
+
+          <form v-if="author" @submit.prevent="submitForm">
             <div class="flex">
               <div class="w-3/4 p-2">
                 <ui-text-input-with-label v-model="authorCopy.name" :disabled="processing" :label="$strings.LabelName" />
@@ -25,9 +30,9 @@
                 <ui-text-input-with-label v-model="authorCopy.asin" :disabled="processing" label="ASIN" />
               </div>
             </div>
-            <div class="p-2">
+            <!-- <div class="p-2">
               <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" :label="$strings.LabelPhotoPathURL" />
-            </div>
+            </div> -->
             <div class="p-2">
               <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" :label="$strings.LabelDescription" :rows="8" />
             </div>
@@ -39,9 +44,9 @@
 
               <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
             </div>
-          </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -53,9 +58,9 @@ export default {
       authorCopy: {
         name: '',
         asin: '',
-        description: '',
-        imagePath: ''
+        description: ''
       },
+      imageUrl: '',
       processing: false
     }
   },
@@ -100,10 +105,10 @@ export default {
   },
   methods: {
     init() {
+      this.imageUrl = ''
       this.authorCopy.name = this.author.name
       this.authorCopy.asin = this.author.asin
       this.authorCopy.description = this.author.description
-      this.authorCopy.imagePath = this.author.imagePath
     },
     removeClick() {
       const payload = {
@@ -131,7 +136,7 @@ export default {
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
     async submitForm() {
-      var keysToCheck = ['name', 'asin', 'description', 'imagePath']
+      var keysToCheck = ['name', 'asin', 'description']
       var updatePayload = {}
       keysToCheck.forEach((key) => {
         if (this.authorCopy[key] !== this.author[key]) {
@@ -160,21 +165,46 @@ export default {
       }
       this.processing = false
     },
-    async removeCover() {
-      var updatePayload = {
-        imagePath: null
-      }
+    removeCover() {
       this.processing = true
-      var result = await this.$axios.$patch(`/api/authors/${this.authorId}`, updatePayload).catch((error) => {
-        console.error('Failed', error)
-        this.$toast.error(this.$strings.ToastAuthorImageRemoveFailed)
-        return null
-      })
-      if (result && result.updated) {
-        this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
-        this.$store.commit('globals/showEditAuthorModal', result.author)
+      this.$axios
+        .$delete(`/api/authors/${this.authorId}/image`)
+        .then((data) => {
+          this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
+          this.$store.commit('globals/showEditAuthorModal', data.author)
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error(this.$strings.ToastAuthorImageRemoveFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
+    submitUploadCover() {
+      if (!this.imageUrl?.startsWith('http:') && !this.imageUrl?.startsWith('https:')) {
+        this.$toast.error('Invalid image url')
+        return
       }
-      this.processing = false
+
+      this.processing = true
+      const updatePayload = {
+        url: this.imageUrl
+      }
+      this.$axios
+        .$post(`/api/authors/${this.authorId}/image`, updatePayload)
+        .then((data) => {
+          this.imageUrl = ''
+          this.$toast.success('Author image updated')
+          this.$store.commit('globals/showEditAuthorModal', data.author)
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error(error.response.data || 'Failed to remove author image')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     async searchAuthor() {
       if (!this.authorCopy.name && !this.authorCopy.asin) {

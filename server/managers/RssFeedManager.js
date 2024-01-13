@@ -103,19 +103,29 @@ class RssFeedManager {
         await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = await Database.collectionModel.findByPk(feed.entityId)
+      const collection = await Database.collectionModel.findByPk(feed.entityId, {
+        include: Database.collectionBookModel
+      })
       if (collection) {
         const collectionExpanded = await collection.getOldJsonExpanded()
 
         // Find most recently updated item in collection
         let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
+        // Check for most recently updated book
         collectionExpanded.books.forEach((libraryItem) => {
           if (libraryItem.media.tracks.length && libraryItem.updatedAt > mostRecentlyUpdatedAt) {
             mostRecentlyUpdatedAt = libraryItem.updatedAt
           }
         })
+        // Check for most recently added collection book
+        collection.collectionBooks.forEach((collectionBook) => {
+          if (collectionBook.createdAt.valueOf() > mostRecentlyUpdatedAt) {
+            mostRecentlyUpdatedAt = collectionBook.createdAt.valueOf()
+          }
+        })
+        const hasBooksRemoved = collection.collectionBooks.length < feed.episodes.length
 
-        if (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
+        if (!feed.entityUpdatedAt || hasBooksRemoved || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
           Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
 
           feed.updateFromCollection(collectionExpanded)

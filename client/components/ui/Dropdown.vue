@@ -1,6 +1,6 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutsideObj">
-    <p class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
+    <p v-if="label" class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
     <button type="button" :aria-label="longLabel" :disabled="disabled" class="relative w-full border rounded shadow-sm pl-3 pr-8 py-2 text-left sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate font-sans" :class="{ 'font-semibold': selectedSubtext, 'text-sm': small }">{{ selectedText }}</span>
@@ -13,7 +13,7 @@
     </button>
 
     <transition name="menu">
-      <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm" tabindex="-1" role="listbox">
+      <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm" tabindex="-1" role="listbox">
         <template v-for="item in itemsToShow">
           <li :key="item.value" class="text-gray-100 relative py-2 cursor-pointer hover:bg-black-400" :id="'listbox-option-' + item.value" role="option" tabindex="0" @keyup.enter="clickedOption(item.value)" @click="clickedOption(item.value)">
             <div class="flex items-center">
@@ -64,7 +64,7 @@ export default {
     },
     itemsToShow() {
       return this.items.map((i) => {
-        if (typeof i === 'string') {
+        if (typeof i === 'string' || typeof i === 'number') {
           return {
             text: i,
             value: i

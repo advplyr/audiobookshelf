@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
-    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-50" />
+    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
 
     <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl mb-4 py-4">{{ libraryName }} Library is empty!</p>
@@ -94,6 +94,9 @@ export default {
     },
     selectedMediaItems() {
       return this.$store.state.globals.selectedMediaItems || []
+    },
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {
@@ -338,9 +341,15 @@ export default {
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
 
-      const isThisLibrary = !libraryItems.some((li) => li.libraryId !== this.currentLibraryId)
-      if (!this.search && isThisLibrary) {
-        this.fetchCategories()
+      const recentlyAddedShelf = this.shelves.find((shelf) => shelf.id === 'recently-added')
+      if (!recentlyAddedShelf) return
+
+      // Add new library item to the recently added shelf
+      for (const libraryItem of libraryItems) {
+        if (libraryItem.libraryId === this.currentLibraryId && !recentlyAddedShelf.entities.some((ent) => ent.id === libraryItem.id)) {
+          // Add to front of array
+          recentlyAddedShelf.entities.unshift(libraryItem)
+        }
       }
     },
     libraryItemsUpdated(items) {

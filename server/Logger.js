@@ -11,7 +11,7 @@ class Logger {
   }
 
   get timestamp() {
-    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS')
   }
 
   get levelString() {
@@ -85,15 +85,6 @@ class Logger {
   setLogLevel(level) {
     this.logLevel = level
     this.debug(`Set Log Level to ${this.levelString}`)
-  }
-
-  /**
-   * Only to console and only for development
-   * @param  {...any} args
-   */
-  dev(...args) {
-    if (!this.isDev || process.env.HIDE_DEV_LOGS === '1') return
-    console.log(`[${this.timestamp}] DEV:`, ...args)
   }
 
   trace(...args) {
