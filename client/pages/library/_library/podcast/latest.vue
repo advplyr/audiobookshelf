@@ -54,9 +54,16 @@
                   <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
                 </button>
 
-                <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
-                  <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
-                </button>
+                <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" direction="top">
+                  <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" />
+                  <!-- <button class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
+                    <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
+                  </button> -->
+                </ui-tooltip>
+
+                <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
+                  <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist(episode)" />
+                </ui-tooltip>
               </div>
             </div>
 
@@ -136,6 +143,15 @@ export default {
     }
   },
   methods: {
+    clickAddToPlaylist(episode) {
+      // Makeshift libraryItem
+      const libraryItem = {
+        id: episode.libraryItemId,
+        media: episode.podcast
+      }
+      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: libraryItem, episode }])
+      this.$store.commit('globals/setShowPlaylistsModal', true)
+    },
     async clickEpisode(episode) {
       if (this.openingItem) return
       this.openingItem = true
