@@ -60,10 +60,11 @@ module.exports.extractCoverImage = extractCoverImage
 /**
  * Parse metadata from epub
  * 
- * @param {string} epubPath 
+ * @param {import('../../models/Book').EBookFileObject} ebookFile 
  * @returns {Promise<import('./parseEbookMetadata').EBookFileScanData>}
  */
-async function parse(epubPath) {
+async function parse(ebookFile) {
+  const epubPath = ebookFile.metadata.path
   Logger.debug(`Parsing metadata from epub at "${epubPath}"`)
   // Entrypoint of the epub that contains the filepath to the package document (opf file)
   const containerJson = await extractXmlToJson(epubPath, 'META-INF/container.xml')

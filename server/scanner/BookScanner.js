@@ -681,7 +681,7 @@ class BookScanner {
         const bookTitle = this.bookMetadata.title || this.libraryItemData.mediaMetadata.title
         AudioFileScanner.setBookMetadataFromAudioMetaTags(bookTitle, this.audioFiles, this.bookMetadata, this.libraryScan)
       } else if (this.ebookFileScanData) {
-        const ebookMetdataObject = this.ebookFileScanData.metadata
+        const ebookMetdataObject = this.ebookFileScanData.metadata || {}
         for (const key in ebookMetdataObject) {
           if (key === 'tags') {
             if (ebookMetdataObject.tags.length) {
