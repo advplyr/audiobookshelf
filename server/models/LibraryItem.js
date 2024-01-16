@@ -15,6 +15,13 @@ const Podcast = require('./Podcast')
  * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
  */
 
+/**
+ * @typedef LibraryItemExpandedProperties
+ * @property {Book.BookExpanded|Podcast.PodcastExpanded} media 
+ * 
+ * @typedef {LibraryItem & LibraryItemExpandedProperties} LibraryItemExpanded
+ */
+
 class LibraryItem extends Model {
   constructor(values, options) {
     super(values, options)
@@ -410,6 +417,55 @@ class LibraryItem extends Model {
       },
       individualHooks: true
     })
+  }
+
+  /**
+   * 
+   * @param {string} libraryItemId 
+   * @returns {Promise<LibraryItemExpanded>}
+   */
+  static async getExpandedById(libraryItemId) {
+    if (!libraryItemId) return null
+
+    const libraryItem = await this.findByPk(libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
+      return null
+    }
+
+    if (libraryItem.mediaType === 'podcast') {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+
+    if (!libraryItem.media) return null
+    return libraryItem
   }
 
   /**

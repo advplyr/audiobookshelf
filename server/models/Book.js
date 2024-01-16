@@ -19,6 +19,19 @@ const Logger = require('../Logger')
  */
 
 /**
+ * @typedef SeriesExpandedProperties
+ * @property {{sequence:string}} bookSeries
+ * 
+ * @typedef {import('./Series') & SeriesExpandedProperties} SeriesExpanded
+ * 
+ * @typedef BookExpandedProperties
+ * @property {import('./Author')[]} authors
+ * @property {SeriesExpanded[]} series
+ * 
+ * @typedef {Book & BookExpandedProperties} BookExpanded
+ */
+
+/**
  * @typedef AudioFileObject
  * @property {number} index
  * @property {string} ino
@@ -53,6 +66,8 @@ class Book extends Model {
     this.title
     /** @type {string} */
     this.titleIgnorePrefix
+    /** @type {string} */
+    this.subtitle
     /** @type {string} */
     this.publishedYear
     /** @type {string} */
