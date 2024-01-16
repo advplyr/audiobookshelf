@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "L'utente root è l'unico utente che può avere una password vuota",
   "NoteChapterEditorTimes": "Nota: l'ora di inizio del primo capitolo deve rimanere alle 0:00 e l'ora di inizio dell'ultimo capitolo non può superare la durata di questo audiolibro.",
   "NoteFolderPicker": "Nota: le cartelle già mappate non verranno visualizzate",
-  "NoteFolderPickerDebian": "Nota: il selettore di cartelle per l'installazione di Debian non è completamente implementato. Dovresti inserire direttamente il percorso della tua libreria.",
   "NoteRSSFeedPodcastAppsHttps": "Avviso: la maggior parte delle app di podcast richiede che l'URL del feed RSS utilizzi HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Avviso: 1 o più delle tue puntate non hanno una data di pubblicazione. Alcune app di podcast lo richiedono.",
   "NoteUploaderFoldersWithMediaFiles": "Le cartelle con file multimediali verranno gestite come elementi della libreria separati.",
