@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Root korisnik je jedini korisnik koji može imati praznu lozinku",
   "NoteChapterEditorTimes": "Bilješka: Prvo početno vrijeme poglavlja mora ostati na 0:00 i posljednje vrijeme poglavlja ne smije preći vrijeme trajanja ove audio knjige.",
   "NoteFolderPicker": "Bilješka: več mapirani folderi neće biti prikazani",
-  "NoteFolderPickerDebian": "Bilješka: Folder picker za debian instalaciju nije potpuno implementiran. Trebate unjeti direktnu putanju do biblioteke.",
   "NoteRSSFeedPodcastAppsHttps": "Upozorenje: Večina podcasta će trebati RSS feed URL koji koristi HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Upozorenje: 1 ili više vaših epizoda nemaju datum objavljivanja. Neke podcast aplikacije zahtjevaju to.",
   "NoteUploaderFoldersWithMediaFiles": "Folderi sa media datotekama će biti tretirane kao odvojene stavke u biblioteki.",

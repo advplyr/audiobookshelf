@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Uživatel root je jediný uživatel, který může mít prázdné heslo",
   "NoteChapterEditorTimes": "Poznámka: Čas začátku první kapitoly musí zůstat v 0:00 a čas začátku poslední kapitoly nesmí překročit tuto dobu trvání audioknihy.",
   "NoteFolderPicker": "Poznámka: složky, které jsou již namapovány, nebudou zobrazeny",
-  "NoteFolderPickerDebian": "Poznámka: Výběr složek pro instalaci debianu není plně implementován. Cestu ke své knihovně byste měli zadat přímo.",
   "NoteRSSFeedPodcastAppsHttps": "Upozornění: Většina aplikací pro podcasty bude vyžadovat, aby adresa URL kanálu RSS používala protokol HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Upozornění: 1 nebo více epizod nemá datum vydání. Některé podcastové aplikace to vyžadují.",
   "NoteUploaderFoldersWithMediaFiles": "Se složkami s multimediálními soubory bude zacházeno jako se samostatnými položkami knihovny.",

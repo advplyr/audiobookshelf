@@ -1,10 +1,10 @@
 const axios = require('axios')
 const { levenshteinDistance } = require('../utils/index')
 const Logger = require('../Logger')
-const { RateLimiter } = require('limiter');
+const { RateLimiter } = require('limiter')
 
 class Audnexus {
-  static _instance = null;
+  static _instance = null
 
   constructor() {
     // ensures Audnexus class is singleton 

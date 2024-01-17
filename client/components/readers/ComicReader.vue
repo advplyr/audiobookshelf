@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
     <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-8 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400" :style="{ width: pageMenuWidth + 'px' }">
-      <div v-for="(file, index) in cleanedPageNames" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index + 1)">
+      <div v-for="(file, index) in cleanedPageNames" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index + 1 ? 'bg-black-200' : ''" @click="setPage(index + 1)">
         <p class="text-sm truncate">{{ file }}</p>
       </div>
     </div>
