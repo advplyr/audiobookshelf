@@ -167,7 +167,8 @@ async function recurseFiles(path, relPathToReplace = null) {
     extensions: true,
     deep: true,
     realPath: true,
-    normalizePath: true
+    normalizePath: true,
+    exclude: ['@eaDir', '#snapshot']
   }
   let list = await rra.list(path, options)
   if (list.error) {
