@@ -127,7 +127,7 @@ module.exports = {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-    postcss: {
+    postcssOptions: {
       plugins: {
         tailwindcss: {},
         autoprefixer: {},
