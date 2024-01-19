@@ -244,6 +244,10 @@ export default {
       const maxBitrate = this.audioFiles.reduce((max, current) => Math.max(max, current.bitRate), 0);
       return maxBitrate === 0 ? this.encodingOptions.bitrate : (maxBitrate/1000) + "k"
     },
+    minBitrate() {
+      const minBitrate = this.audioFiles.reduce((min, current) => Math.min(min, current.bitRate), 0);
+      return minBitrate === 0 ? this.encodingOptions.bitrate : (minBitrate/1000) + "k"
+    },
     libraryItemId() {
       return this.libraryItem.id
     },
