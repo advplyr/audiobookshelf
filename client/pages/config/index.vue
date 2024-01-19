@@ -178,9 +178,9 @@
       </a>
       <p class="pl-4 pr-2 text-sm text-yellow-400">
         {{ $strings.MessageJoinUsOn }}
-        <a class="underline" href="https://discord.gg/pJsjuNCKRq" target="_blank">discord</a>
+        <a class="underline" href="https://discord.gg/HQgCbd6E75" target="_blank">discord</a>
       </p>
-      <a href="https://discord.gg/pJsjuNCKRq" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
+      <a href="https://discord.gg/HQgCbd6E75" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
         <svg width="31" height="24" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g clip-path="url(#clip0)">
             <path

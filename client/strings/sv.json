@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Rotanvändaren är den enda användaren som kan ha ett tomt lösenord",
   "NoteChapterEditorTimes": "Obs: Starttiden för första kapitlet måste förbli 0:00 och starttiden för det sista kapitlet får inte överstiga ljudbokens varaktighet.",
   "NoteFolderPicker": "Obs: Mappar som redan är kartlagda kommer inte att visas",
-  "NoteFolderPickerDebian": "Obs: Mappväljaren för Debian-installationen är inte fullständigt implementerad. Du bör ange sökvägen till ditt bibliotek direkt.",
   "NoteRSSFeedPodcastAppsHttps": "Varning: De flesta podcastappar kräver att RSS-flödets URL används med HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Varning: 1 eller flera av dina avsnitt har inte ett publiceringsdatum. Vissa podcastappar kräver detta.",
   "NoteUploaderFoldersWithMediaFiles": "Mappar med mediefiler hanteras som separata biblioteksobjekt.",

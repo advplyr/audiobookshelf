@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Root-brugeren er den eneste bruger, der kan have en tom adgangskode",
   "NoteChapterEditorTimes": "Bemærk: Første kapitel starttidspunkt skal forblive kl. 0:00, og det sidste kapitel starttidspunkt må ikke overstige denne lydbogs varighed.",
   "NoteFolderPicker": "Bemærk: Mapper, der allerede er mappet, vises ikke",
-  "NoteFolderPickerDebian": "Bemærk: Mappicker for Debian-installationen er ikke fuldt implementeret. Du bør indtaste stien til dit bibliotek direkte.",
   "NoteRSSFeedPodcastAppsHttps": "Advarsel: De fleste podcast-apps kræver, at RSS-feedets URL bruger HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Advarsel: En eller flere af dine episoder har ikke en Pub Date. Nogle podcast-apps kræver dette.",
   "NoteUploaderFoldersWithMediaFiles": "Mapper med mediefiler håndteres som separate bibliotekselementer.",
