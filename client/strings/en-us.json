@@ -214,6 +214,7 @@
   "LabelBackupsNumberToKeep": "Number of backups to keep",
   "LabelBackupsNumberToKeepHelp": "Only 1 backup will be removed at a time so if you already have more backups than this you should manually remove them.",
   "LabelBitrate": "Bitrate",
+  "LabelBitrateType": "Bitrate Type",
   "LabelBooks": "Books",
   "LabelButtonText": "Button Text",
   "LabelChangePassword": "Change Password",

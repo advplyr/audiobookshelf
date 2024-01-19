@@ -23,10 +23,10 @@
         </div>
         <div class="flex-grow" />
         <div class="w-1/7 md:w-42 px-1 py-1 md:py-0">
-          <ui-dropdown v-model="bitrateType" :items="encodingPresets" :label="$strings.LabelMediaType" small @input="changedEncodingPresets" />
+          <ui-dropdown v-model="bitrateType" :items="encodingPresets" :label="$strings.LabelBitrateType" small @input="changedEncodingPresets" />
         </div>
         <div class="w-1/8 md:w-42 px-1 py-1 md:py-0">
-          <ui-text-input-with-label ref="nameInput" v-model="fixedBitrate" :disabled="!isFixedBitrate" :label="$strings.LabelLibraryName" />
+          <ui-text-input-with-label ref="nameInput" v-model="fixedBitrate" :disabled="!isFixedBitrate" :label="$strings.LabelBitrate" />
         </div>
       </div>
     </div>
@@ -59,9 +59,6 @@ export default {
     },
     isBookLibrary() {
       return this.mediaType === 'book'
-    },
-    bitrateType() {
-      return this.bitrateType
     },
     encodingPresets() {
       return [
@@ -129,8 +126,14 @@ export default {
         .finally(() => {
           this.$emit('update:processing', false)
         })
+    },
+    init() {
+      this.bitrateType = this.librarySettings.bitrateType
+      this.fixedBitrate = this.librarySettings.fixedBitrate
     }
   },
-  mounted() {}
+  mounted() {
+    this.init()
+  }
 }
 </script>
