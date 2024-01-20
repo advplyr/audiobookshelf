@@ -11,10 +11,9 @@
     "prod": "npm run client && npm ci && node prod.js",
     "build-win": "npm run client && pkg -t node18-win-x64 -o ./dist/win/audiobookshelf -C GZip .",
     "build-linux": "build/linuxpackager",
-    "docker": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push .  -t advplyr/audiobookshelf",
+    "docker": "docker buildx build --platform linux/amd64,linux/arm64 --push .  -t advplyr/audiobookshelf",
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
-    "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
     "deploy-linux": "node deploy/linux",
     "test": "mocha",
     "coverage": "nyc mocha"
