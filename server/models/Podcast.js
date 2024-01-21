@@ -1,5 +1,12 @@
 const { DataTypes, Model } = require('sequelize')
 
+/**
+ * @typedef PodcastExpandedProperties
+ * @property {import('./PodcastEpisode')[]} podcastEpisodes
+ * 
+ * @typedef {Podcast & PodcastExpandedProperties} PodcastExpanded
+ */
+
 class Podcast extends Model {
   constructor(values, options) {
     super(values, options)

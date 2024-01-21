@@ -48,7 +48,7 @@ Description: $DESCRIPTION"
 echo "$controlfile" > dist/debian/DEBIAN/control;
 
 # Package debian
-pkg -t node16-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
+pkg -t node18-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
 
 fakeroot dpkg-deb --build dist/debian
 

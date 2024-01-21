@@ -35,7 +35,6 @@
     <div v-else class="py-12 text-center max-w-sm mx-auto">
       <p class="text-lg mb-2">{{ $strings.MessageNoFoldersAvailable }}</p>
       <p class="text-gray-300 mb-2">{{ $strings.NoteFolderPicker }}</p>
-      <p v-if="isDebian" class="text-red-400">{{ $strings.NoteFolderPickerDebian }}</p>
     </div>
 
     <div class="w-full py-2">
@@ -93,12 +92,6 @@ export default {
           ...d
         }
       })
-    },
-    isDebian() {
-      return this.Source == 'debian'
-    },
-    Source() {
-      return this.$store.state.Source
     }
   },
   methods: {

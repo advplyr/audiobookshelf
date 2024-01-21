@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Tylko użytkownik root, może posiadać puste hasło",
   "NoteChapterEditorTimes": "Uwaga: Czas rozpoczęcia pierwszego rozdziału musi pozostać na poziomie 0:00, a czas rozpoczęcia ostatniego rozdziału nie może przekroczyć czasu trwania audiobooka.",
   "NoteFolderPicker": "Uwaga: dotychczas zmapowane foldery nie zostaną wyświetlone",
-  "NoteFolderPickerDebian": "Uwaga: Wybór folderu w instalcji opartej o system debian nie jest w pełni zaimplementowany. Powinieneś wprowadzić ścieżkę do swojej biblioteki bezpośrednio.",
   "NoteRSSFeedPodcastAppsHttps": "Ostrzeżenie: Większość aplikacji do obsługi podcastów wymaga, aby adres URL kanału RSS korzystał z protokołu HTTPS.",
   "NoteRSSFeedPodcastAppsPubDate": "Ostrzeżenie: 1 lub więcej odcinków nie ma daty publikacji. Niektóre aplikacje do słuchania podcastów tego wymagają.",
   "NoteUploaderFoldersWithMediaFiles": "Foldery z plikami multimedialnymi będą traktowane jako osobne elementy w bibliotece.",

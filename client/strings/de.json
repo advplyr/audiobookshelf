@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Der Root-Benutzer (Hauptbenutzer) ist der einzige Benutzer, der ein leeres Passwort haben kann",
   "NoteChapterEditorTimes": "Hinweis: Die Anfangszeit des ersten Kapitels muss bei 0:00 beginnen und die Anfangszeit des letzten Kapitels darf die Dauer des Mediums nicht überschreiten.",
   "NoteFolderPicker": "Hinweis: Bereits zugeordnete Ordner werden nicht angezeigt.",
-  "NoteFolderPickerDebian": "Hinweis: Der Ordnerauswahldialog für die Debian-Installation ist nicht vollständig implementiert. Sie sollten den Pfad zu Ihrer Bibliothek direkt eingeben.",
   "NoteRSSFeedPodcastAppsHttps": "Warnung: Die meisten Podcast-Apps verlangen, dass die URL des RSS-Feeds HTTPS verwendet.",
   "NoteRSSFeedPodcastAppsPubDate": "Warnung: 1 oder mehrere Ihrer Episoden haben kein Veröffentlichungsdatum. Einige Podcast-Apps verlangen dies.",
   "NoteUploaderFoldersWithMediaFiles": "Ordner mit Mediendateien werden als separate Bibliothekselemente behandelt.",

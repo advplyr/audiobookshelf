@@ -349,7 +349,7 @@ export default {
       }
 
       if ('mediaSession' in navigator) {
-        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png')
+        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
         const artwork = [
           {
             src: coverImageSrc

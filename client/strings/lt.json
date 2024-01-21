@@ -668,7 +668,6 @@
   "NoteChangeRootPassword": "Tik root vartotojas gali turėti tuščią slaptažodį",
   "NoteChapterEditorTimes": "Pastaba: Pirmasis skyriaus pradžios laikas turi likti 0:00, o paskutinio skyriaus pradžios laikas negali viršyti šios garso knygos trukmės.",
   "NoteFolderPicker": "Pastaba: jau susieti aplankai nebus rodomi",
-  "NoteFolderPickerDebian": "Pastaba: Aplanko pasirinkimo įrankis „Debian“ sistemoje nėra visiškai įgyvendintas. Turėtumėte tiesiogiai įvesti kelią į savo biblioteką.",
   "NoteRSSFeedPodcastAppsHttps": "Įspėjimas: Dauguma tinklalaidžių programų reikalauja, kad RSS kanalo URL būtų naudojamas su HTTPS",
   "NoteRSSFeedPodcastAppsPubDate": "Įspėjimas: Vienas ar daugiau jūsų epizodų neturi publikavimo datos. Kai kurios tinklalaidžių programos to reikalauja.",
   "NoteUploaderFoldersWithMediaFiles": "Aplankai su medijos failais bus tvarkomi kaip atskiri bibliotekos elementai.",
