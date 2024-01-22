@@ -8,7 +8,6 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
-const e = require('express')
 
 /**
  * @class Class for handling all the authentication related functionality.
