@@ -1,7 +1,7 @@
 const axios = require('axios')
 const { levenshteinDistance } = require('../utils/index')
 const Logger = require('../Logger')
-const { RateLimiter } = require('limiter')
+const pThrottle = require('p-throttle')
 
 class Audnexus {
   static _instance = null
@@ -14,11 +14,15 @@ class Audnexus {
 
     this.baseUrl = 'https://api.audnex.us'
 
+    // Rate limit is 100 requests per minute.
     // @see https://github.com/laxamentumtech/audnexus#-deployment-
-    this.limiter = new RateLimiter({
-      tokensPerInterval: 100,
-      fireImmediately: true,
-      interval: 'minute',
+    this.limiter = pThrottle({
+      // Setting the limit to 1 allows for a short pause between requests that is almost imperceptible to 
+      // the end user. A larger limit will grab blocks faster and then wait for the alloted time(interval) before
+      // fetching another batch.
+      limit: 1,
+      strict: true,
+      interval: 300
     })
 
     Audnexus._instance = this
@@ -31,8 +35,8 @@ class Audnexus {
 
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
-    return this._processRequest(() => axios.get(authorRequestUrl))
-      .then((res) => res.data || [])
+    const throttle = this.limiter(() => axios.get(authorRequestUrl))
+    return throttle().then((res) => res.data || [])
       .catch((error) => {
         Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error)
         return []
@@ -46,34 +50,12 @@ class Audnexus {
 
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
-    return this._processRequest(() => axios.get(authorRequestUrl))
-      .then((res) => res.data)
+    const throttle = this.limiter(() => axios.get(authorRequestUrl))
+    return throttle().then((res) => res.data)
       .catch((error) => {
         Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
         return null
       })
-  }
-
-  /**
-   * @description Process a request with a rate limiter
-   * 
-   * @param {*} request 
-   * @returns 
-   */
-  async _processRequest(request) {
-    const remainingTokens = await this.limiter.removeTokens(1)
-    Logger.info(`[Audnexus] Attempting request with ${remainingTokens} remaining tokens and ${this.limiter.tokensThisInterval} this interval`)
-
-    if (remainingTokens >= 1) {
-      return request()
-    }
-
-    // 100 tokens(requests) per minute give a refresh of ~1.67 per second, 
-    // so a 10 second wait will yield ~16.7 additional tokens
-    Logger.info('[Audnexus] Sleeping for 10 seconds')
-    await new Promise(resolve => setTimeout(resolve, 10000))
-
-    return this._processRequest(request)
   }
 
   async findAuthorByASIN(asin, region) {
@@ -111,8 +93,8 @@ class Audnexus {
   getChaptersByASIN(asin, region) {
     Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
 
-    return this._processRequest(() => axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`))
-      .then((res) => res.data)
+    const throttle = this.limiter(() => axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`))
+    return throttle().then((res) => res.data)
       .catch((error) => {
         Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
         return null
