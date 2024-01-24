@@ -326,8 +326,8 @@ Health checking is enabled by default. `Http check method` of `OPTIONS` is not s
 If Health check fails, data will not be forwared.
 Need to do one of following:
 
-* Change `Health check method` to `none`. To disable. 
-* Change `Http check method` to `HEAD` or `GET`. To make Health checking function.
+* To disable: Change `Health check method` to `none`.
+* To make Health checking function: Change `Http check method` to `HEAD` or `GET`.
 
 
 # Run from source
