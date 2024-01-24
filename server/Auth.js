@@ -81,7 +81,8 @@ class Auth {
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
       token_endpoint: global.ServerSettings.authOpenIDTokenURL,
       userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
-      jwks_uri: global.ServerSettings.authOpenIDJwksURL
+      jwks_uri: global.ServerSettings.authOpenIDJwksURL,
+      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
@@ -153,6 +154,9 @@ class Auth {
         return
       }
 
+      // We also have to save the id_token for later (used for logout) because we cannot set cookies here
+      user.openid_id_token = tokenset.id_token
+
       // permit login
       return done(null, user)
     }))
@@ -183,49 +187,42 @@ class Auth {
   }
 
   /**
-   * Stores the client's choice how the login callback should happen in temp cookies
+   * Stores the client's choice of login callback method in temporary cookies.
+   *
+   * The `authMethod` parameter specifies the authentication strategy and can have the following values:
+   * - 'local': Standard authentication,
+   * - 'api': Authentication for API use
+   * - 'openid': OpenID authentication directly over web
+   * - 'openid-mobile': OpenID authentication, but done via an mobile device
    * 
    * @param {import('express').Request} req
    * @param {import('express').Response} res
+   * @param {string} authMethod - The authentication method, default is 'local'.
    */
-  paramsToCookies(req, res) {
-    // Set if isRest flag is set or if mobile oauth flow is used
-    if (req.query.isRest?.toLowerCase() == 'true' || req.query.redirect_uri) {
-      // store the isRest flag to the is_rest cookie 
-      res.cookie('is_rest', 'true', {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
-    } else {
-      // no isRest-flag set -> set is_rest cookie to false
-      res.cookie('is_rest', 'false', {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
+  paramsToCookies(req, res, authMethod = 'local') {
+    const TWO_MINUTES = 120000 // 2 minutes in milliseconds
+    const isRest = ['api', 'openid-mobile'].includes(authMethod)
+    const callback = req.query.redirect_uri || req.query.callback
 
-      // persist state if passed in
+    // Set the 'is_rest' cookie based on the authentication method
+    res.cookie('is_rest', isRest.toString(), { maxAge: TWO_MINUTES, httpOnly: true })
+
+    // Additional handling for 'local' authMethod
+    if (!isRest) {
+      // Store 'auth_state' if present in the request
       if (req.query.state) {
-        res.cookie('auth_state', req.query.state, {
-          maxAge: 120000, // 2 min
-          httpOnly: true
-        })
+        res.cookie('auth_state', req.query.state, { maxAge: TWO_MINUTES, httpOnly: true })
       }
 
-      const callback = req.query.redirect_uri || req.query.callback
-
-      // check if we are missing a callback parameter - we need one if isRest=false
+      // Validate and store the callback URL
       if (!callback) {
-        res.status(400).send({
-          message: 'No callback parameter'
-        })
-        return
+        return res.status(400).send({ message: 'No callback parameter' })
       }
-      // store the callback url to the auth_cb cookie 
-      res.cookie('auth_cb', callback, {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
+      res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
     }
+
+    // Store the authentication method for a year
+    res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true })
   }
 
   /**
@@ -364,7 +361,7 @@ class Auth {
         })
 
         // params (isRest, callback) to a cookie that will be send to the client
-        this.paramsToCookies(req, res)
+        this.paramsToCookies(req, res, mobile_redirect_uri ? 'openid-mobile' : 'openid')
 
         // Redirect the user agent (browser) to the authorization URL
         res.redirect(authorizationUrl)
@@ -453,6 +450,12 @@ class Auth {
             if (loginError) {
               return handleAuthError(isMobile, 500, 'Error during login', `[Auth] Error in openid callback: ${loginError}`)
             }
+
+            // The id_token does not provide access to the user, but is used to identify the user to the SSO provider
+            //   instead it containts a JWT with userinfo like user email, username, etc.
+            //   the client will get to know it anyway in the logout url according to the oauth2 spec
+            //   so it is safe to send it to the client, but we use strict settings
+            res.cookie('openid_id_token', user.openid_id_token, { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true, secure: true, sameSite: 'Strict' })
             next()
           })
         }
@@ -521,7 +524,43 @@ class Auth {
         if (err) {
           res.sendStatus(500)
         } else {
-          res.sendStatus(200)
+          const authMethod = req.cookies.auth_method
+
+          res.clearCookie('auth_method')
+
+          if (authMethod === 'openid' || authMethod === 'openid-mobile') {
+            // If we are using openid, we need to redirect to the logout endpoint
+            // node-openid-client does not support doing it over passport
+            const oidcStrategy = passport._strategy('openid-client')
+            const client = oidcStrategy._client
+
+            let postLogoutRedirectUri = null
+
+            if (authMethod === 'openid') {
+              const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+              const host = req.get('host')
+              // TODO: ABS does currently not support subfolders for installation
+              // If we want to support it we need to include a config for the serverurl
+              postLogoutRedirectUri = `${protocol}://${host}/login`
+            }
+            // else for openid-mobile we keep postLogoutRedirectUri on null
+            //  nice would be to redirect to the app, but for example Authentik does not implement
+            //  the post_logout_redirect_uri parameter at all and for other providers
+            //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
+            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect)
+
+            const logoutUrl = client.endSessionUrl({
+              id_token_hint: req.cookies.openid_id_token,
+              post_logout_redirect_uri: postLogoutRedirectUri
+            })
+
+            res.clearCookie('openid_id_token')
+
+            // Tell the user agent (browser) to redirect to the authentification provider's logout URL
+            res.send({ redirect_url: logoutUrl })
+          } else {
+            res.sendStatus(200)
+          }
         }
       })
     })

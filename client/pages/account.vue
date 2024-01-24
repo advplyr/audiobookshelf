@@ -86,15 +86,24 @@ export default {
       const logoutPayload = {
         socketId: rootSocket.id
       }
-      this.$axios.$post('/logout', logoutPayload).catch((error) => {
-        console.error(error)
-      })
+
       if (localStorage.getItem('token')) {
         localStorage.removeItem('token')
       }
       this.$store.commit('libraries/setUserPlaylists', [])
       this.$store.commit('libraries/setCollections', [])
-      this.$router.push('/login')
+
+      this.$axios.$post('/logout').then((logoutPayload) => {
+        const redirect_url = logoutPayload.redirect_url
+
+        if (redirect_url) {
+          window.location.href = redirect_url
+        } else {
+          this.$router.push('/login')
+        }
+      }).catch((error) => {
+        console.error(error)
+      })
     },
     resetForm() {
       this.password = null
