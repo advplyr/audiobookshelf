@@ -284,9 +284,9 @@ backend default_backend
 
 ````
 
-### PFsense and HAproxy
+### pfSense and HAProxy
 
-For PFsense the inputs are graphical, and `Health checking` is enabled. 
+For pfSense the inputs are graphical, and `Health checking` is enabled.
 
 #### Frontend, Default backend, access control lists and actions
 
