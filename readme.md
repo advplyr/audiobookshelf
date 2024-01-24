@@ -243,7 +243,7 @@ subdomain.domain.com {
 ```
 ### HAproxy
 
-Bellow is a geneic HAproxy config, using `audiobookshelf.YOUR_DOMAIN.COM`. 
+Below is a generic HAProxy config, using `audiobookshelf.YOUR_DOMAIN.COM`. 
 
 To use `http2`, `ssl` is needed.
 
