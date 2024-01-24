@@ -241,7 +241,7 @@ subdomain.domain.com {
         reverse_proxy <LOCAL_IP>:<PORT>
 }
 ```
-### HAproxy
+### HAProxy
 
 Below is a generic HAProxy config, using `audiobookshelf.YOUR_DOMAIN.COM`. 
 
