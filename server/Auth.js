@@ -187,6 +187,16 @@ class Auth {
   }
 
   /**
+   * Returns if the given auth method is API based.
+   *
+   * @param {string} authMethod
+   * @returns {boolean}
+   */
+  isAuthMethodAPIBased(authMethod) {
+    return ['api', 'openid-mobile'].includes(authMethod)
+  }
+
+  /**
    * Stores the client's choice of login callback method in temporary cookies.
    *
    * The `authMethod` parameter specifies the authentication strategy and can have the following values:
@@ -201,14 +211,10 @@ class Auth {
    */
   paramsToCookies(req, res, authMethod = 'local') {
     const TWO_MINUTES = 120000 // 2 minutes in milliseconds
-    const isRest = ['api', 'openid-mobile'].includes(authMethod)
     const callback = req.query.redirect_uri || req.query.callback
 
-    // Set the 'is_rest' cookie based on the authentication method
-    res.cookie('is_rest', isRest.toString(), { maxAge: TWO_MINUTES, httpOnly: true })
-
-    // Additional handling for 'local' authMethod
-    if (!isRest) {
+    // Additional handling for non-API based authMethod
+    if (!this.isAuthMethodAPIBased(authMethod)) {
       // Store 'auth_state' if present in the request
       if (req.query.state) {
         res.cookie('auth_state', req.query.state, { maxAge: TWO_MINUTES, httpOnly: true })
@@ -236,7 +242,7 @@ class Auth {
     // get userLogin json (information about the user, server and the session)
     const data_json = await this.getUserLoginResponsePayload(req.user)
 
-    if (req.cookies.is_rest === 'true') {
+    if (this.isAuthMethodAPIBased(req.cookies.auth_method)) {
       // REST request - send data
       res.json(data_json)
     } else {
