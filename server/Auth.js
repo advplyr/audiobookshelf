@@ -221,8 +221,8 @@ class Auth {
       res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
     }
 
-    // Store the authentication method for a year
-    res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true })
+    // Store the authentication method for long
+    res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
   }
 
   /**
