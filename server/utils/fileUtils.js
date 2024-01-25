@@ -370,11 +370,12 @@ module.exports.encodeUriPath = (path) => {
  */
 module.exports.isWritable = async (directory) => {
   try {
-    const accessTestFile = path.join(directory, 'accessTest')
+    const accessTestFile = Path.join(directory, 'accessTest')
     await fs.writeFile(accessTestFile, '')
     await fs.remove(accessTestFile)
     return true
   } catch (err) {
+    Logger.info(`[fileUtils] Directory is not writable "${directory}"`, err)
     return false
   }
 }
