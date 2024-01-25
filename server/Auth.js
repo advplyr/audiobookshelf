@@ -315,23 +315,19 @@ class Auth {
 
         let { code_challenge, code_challenge_method, code_verifier } = generatePkce(req, isMobileFlow)
 
-        const params = {
-          state,
-          // other passport strategy params and redirect_uri
-          ...oidcStrategy._params
-        }
-
         req.session[sessionKey] = {
           ...req.session[sessionKey],
-          ...pick(params, 'state', 'max_age', 'response_type'),
+          state: state,
+          max_age: oidcStrategy._params.max_age,
+          response_type: 'code',
           code_verifier: code_verifier, // not null if web flow
           mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
         const authorizationUrl = client.authorizationUrl({
-          ...params,
-          scope: 'openid profile email',
+          ...oidcStrategy._params,
+          state: state,
           response_type: 'code',
           code_challenge,
           code_challenge_method
@@ -368,17 +364,6 @@ class Auth {
         // Check if the redirect_uri is in the whitelist
         return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) ||
           (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
-      }
-
-      // helper function from openid-client
-      function pick(object, ...paths) {
-        const obj = {}
-        for (const path of paths) {
-          if (object[path] !== undefined) {
-            obj[path] = object[path]
-          }
-        }
-        return obj
       }
     })
 
