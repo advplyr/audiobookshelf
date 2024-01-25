@@ -451,7 +451,7 @@ class Auth {
             //   instead it containts a JWT with userinfo like user email, username, etc.
             //   the client will get to know it anyway in the logout url according to the oauth2 spec
             //   so it is safe to send it to the client, but we use strict settings
-            res.cookie('openid_id_token', user.openid_id_token, { maxAge: 1000 * 60 * 60 * 24 * 365, httpOnly: true, secure: true, sameSite: 'Strict' })
+            res.cookie('openid_id_token', user.openid_id_token, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true, secure: true, sameSite: 'Strict' })
             next()
           })
         }
