@@ -633,7 +633,7 @@ class MiscController {
       } else if (key === 'authOpenIDMobileRedirectURIs') {
         function isValidRedirectURI(uri) {
           if (typeof uri !== 'string') return false
-          const pattern = new RegExp('^\\w+://[\\w.-]+$', 'i')
+          const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
           return pattern.test(uri)
         }
 
