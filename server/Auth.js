@@ -266,92 +266,69 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
+      // Get the OIDC client from the strategy
+      // We need to call the client manually, because the strategy does not support forwarding the code challenge
+      //    for API or mobile clients
+      const oidcStrategy = passport._strategy('openid-client')
+      const client = oidcStrategy._client
+      const sessionKey = oidcStrategy._key
+
       try {
-        // helper function from openid-client
-        function pick(object, ...paths) {
-          const obj = {}
-          for (const path of paths) {
-            if (object[path] !== undefined) {
-              obj[path] = object[path]
-            }
-          }
-          return obj
+        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+        const hostUrl = new URL(`${protocol}://${req.get('host')}`)
+        const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
+
+        // Only allow code flow (for mobile clients)
+        if (req.query.response_type && req.query.response_type !== 'code') {
+          Logger.debug(`[Auth] OIDC Invalid response_type=${req.query.response_type}`)
+          return res.status(400).send('Invalid response_type, only code supported')
         }
 
-        // Get the OIDC client from the strategy
-        // We need to call the client manually, because the strategy does not support forwarding the code challenge
-        //    for API or mobile clients
-        const oidcStrategy = passport._strategy('openid-client')
-        const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+        // Generate a state on web flow or if no state supplied
+        const state = (!isMobileFlow || !req.query.state) ? OpenIDClient.generators.random() : req.query.state
 
-        let mobile_redirect_uri = null
-
-        // The client wishes a different redirect_uri
-        // We will allow if it is in the whitelist, by saving it into this.openIdAuthSession and setting the redirect uri to /auth/openid/mobile-redirect
-        //    where we will handle the redirect to it
-        if (req.query.redirect_uri) {
-          // Check if the redirect_uri is in the whitelist
-          if (Database.serverSettings.authOpenIDMobileRedirectURIs.includes(req.query.redirect_uri) ||
-            (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
-            oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/mobile-redirect`).toString()
-            mobile_redirect_uri = req.query.redirect_uri
-          } else {
-            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri} - not in whitelist`)
+        // Redirect URL for the SSO provider
+        let redirectUri
+        if (isMobileFlow) {
+          // Mobile required redirect uri
+          // If it is in the whitelist, we will save into this.openIdAuthSession and set the redirect uri to /auth/openid/mobile-redirect
+          //    where we will handle the redirect to it
+          if (!req.query.redirect_uri || !isValidRedirectUri(req.query.redirect_uri)) {
+            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri}`)
             return res.status(400).send('Invalid redirect_uri')
           }
+          // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
+          //   for the request to mobile-redirect and as such the session is not shared
+          this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
+
+          redirectUri = new URL('/auth/openid/mobile-redirect', hostUrl).toString()
         } else {
-          oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
-        }
+          redirectUri = new URL('/auth/openid/callback', hostUrl).toString()
 
-        Logger.debug(`[Auth] Oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
-        const client = oidcStrategy._client
-        const sessionKey = oidcStrategy._key
-
-        let code_challenge
-        let code_challenge_method
-
-        // If code_challenge is provided, expect that code_verifier will be handled by the client (mobile app)
-        // The web frontend of ABS does not need to do a PKCE itself, because it never handles the "code" of the oauth flow
-        //    and as such will not send a code challenge, we will generate then one
-        if (req.query.code_challenge) {
-          code_challenge = req.query.code_challenge
-          code_challenge_method = req.query.code_challenge_method || 'S256'
-
-          if (!['S256', 'plain'].includes(code_challenge_method)) {
-            return res.status(400).send('Invalid code_challenge_method')
+          if (req.query.state) {
+            Logger.debug(`[Auth] Invalid state - not allowed on web openid flow`)
+            return res.status(400).send('Invalid state, not allowed on web flow')
           }
-        } else {
-          // If no code_challenge is provided, assume a web application flow and generate one
-          const code_verifier = OpenIDClient.generators.codeVerifier()
-          code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
-          code_challenge_method = 'S256'
-
-          // Store the code_verifier in the session for later use in the token exchange
-          req.session[sessionKey] = { ...req.session[sessionKey], code_verifier }
         }
+        oidcStrategy._params.redirect_uri = redirectUri
+        Logger.debug(`[Auth] OIDC redirect_uri=${redirectUri}`)
+
+        let { code_challenge, code_challenge_method, code_verifier } = generatePkce(req, isMobileFlow)
 
         const params = {
-          state: OpenIDClient.generators.random(),
-          // Other params by the passport strategy
+          state,
+          // other passport strategy params and redirect_uri
           ...oidcStrategy._params
-        }
-
-        if (!params.nonce && params.response_type.includes('id_token')) {
-          params.nonce = OpenIDClient.generators.random()
         }
 
         req.session[sessionKey] = {
           ...req.session[sessionKey],
-          ...pick(params, 'nonce', 'state', 'max_age', 'response_type'),
+          ...pick(params, 'state', 'max_age', 'response_type'),
+          code_verifier: code_verifier, // not null if web flow
           mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
-        // We cannot save redirect_uri in the session, because it the mobile client uses browser instead of the API
-        //   for the request to mobile-redirect and as such the session is not shared
-        this.openIdAuthSession.set(params.state, { mobile_redirect_uri: mobile_redirect_uri })
-
-        // Now get the URL to direct to
         const authorizationUrl = client.authorizationUrl({
           ...params,
           scope: 'openid profile email',
@@ -360,14 +337,48 @@ class Auth {
           code_challenge_method
         })
 
-        // params (isRest, callback) to a cookie that will be send to the client
-        this.paramsToCookies(req, res, mobile_redirect_uri ? 'openid-mobile' : 'openid')
+        this.paramsToCookies(req, res, isMobileFlow ? 'openid-mobile' : 'openid')
 
-        // Redirect the user agent (browser) to the authorization URL
         res.redirect(authorizationUrl)
       } catch (error) {
         Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
         res.status(500).send('Internal Server Error')
+      }
+
+      function generatePkce(req, isMobileFlow) {
+        if (isMobileFlow) {
+          if (!req.query.code_challenge) {
+            throw new Error('code_challenge required for mobile flow (PKCE)')
+          }
+          if (req.query.code_challenge_method && req.query.code_challenge_method !== 'S256') {
+            throw new Error('Only S256 code_challenge_method method supported')
+          }
+          return {
+            code_challenge: req.query.code_challenge,
+            code_challenge_method: req.query.code_challenge_method || 'S256'
+          }
+        } else {
+          const code_verifier = OpenIDClient.generators.codeVerifier()
+          const code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
+          return { code_challenge, code_challenge_method: 'S256', code_verifier }
+        }
+      }
+
+      function isValidRedirectUri(uri) {
+        // Check if the redirect_uri is in the whitelist
+        return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) ||
+          (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
+      }
+
+      // helper function from openid-client
+      function pick(object, ...paths) {
+        const obj = {}
+        for (const path of paths) {
+          if (object[path] !== undefined) {
+            obj[path] = object[path]
+          }
+        }
+        return obj
       }
     })
 
@@ -544,10 +555,13 @@ class Auth {
               postLogoutRedirectUri = `${protocol}://${host}/login`
             }
             // else for openid-mobile we keep postLogoutRedirectUri on null
-            //  nice would be to redirect to the app, but for example Authentik does not implement
+            //  nice would be to redirect to the app here, but for example Authentik does not implement
             //  the post_logout_redirect_uri parameter at all and for other providers
             //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
-            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect)
+            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
+            //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
+            //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
+            //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
 
             const logoutUrl = client.endSessionUrl({
               id_token_hint: req.cookies.openid_id_token,
