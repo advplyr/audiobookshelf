@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="default-style">
     <p v-if="label" class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': disabled }">
       {{ label }}
     </p>
@@ -29,7 +29,7 @@ export default {
     config() {
       return {
         toolbar: {
-          getDefaultHTML: () => `    <div class="trix-button-row">
+          getDefaultHTML: () => `<div class="trix-button-row">
       <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
         <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="#{lang.bold}" tabindex="-1">#{lang.bold}</button>
         <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="#{lang.italic}" tabindex="-1">#{lang.italic}</button>
