@@ -336,7 +336,7 @@
   "LabelMatchExistingUsersByDescription": "Wird zum Verbinden vorhandener Benutzer verwendet. Sobald die Verbindung hergestellt ist, wird den Benutzern eine eindeutige ID vom SSO-Anbieter zugeordnet",
   "LabelMediaPlayer": "Mediaplayer",
   "LabelMediaType": "Medientyp",
-  "LabelMetadataOrderOfPrecedenceDescription": "Höher priorisierte Quelle für Metadaten überschreiben Metadaten aus Quellen die niedriger priorisiert sind.",
+  "LabelMetadataOrderOfPrecedenceDescription": "Höher priorisierte Quellen für Metadaten überschreiben Metadaten aus Quellen die niedriger priorisiert sind.",
   "LabelMetadataProvider": "Metadatenanbieter",
   "LabelMetaTag": "Meta Schlagwort",
   "LabelMetaTags": "Meta Tags",
