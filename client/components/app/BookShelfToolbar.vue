@@ -205,8 +205,8 @@ export default {
           value: 'addedAt'
         },
         {
-          text: this.$strings.LabelLastUpdated,
-          value: 'lastUpdated'
+          text: this.$strings.LabelUpdatedAt,
+          value: 'updatedAt'
         }
       ]
     },
