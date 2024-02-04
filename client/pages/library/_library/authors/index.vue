@@ -48,9 +48,12 @@ export default {
   },
   methods: {
     async init() {
+      this.settings = { ...this.$store.state.user.settings }
       this.authors = await this.$axios
         .$get(`/api/libraries/${this.currentLibraryId}/authors`)
-        .then((response) => response.authors)
+        .then((response) => {
+          return this.sortAuthors(response.authors)
+        })
         .catch((error) => {
           console.error('Failed to load authors', error)
           return []
@@ -78,15 +81,33 @@ export default {
     },
     editAuthor(author) {
       this.$store.commit('globals/showEditAuthorModal', author)
+    },
+    sortAuthors(authors) {
+      const sortProp = this.settings.authorSortBy
+      const bDesc = this.settings.authorSortDesc === true ? -1 : 1
+      return authors.sort((a, b) => {
+        if (typeof a[sortProp] === 'number' && typeof b[sortProp] === 'number') {
+          return a[sortProp] > b[sortProp] ? 1 * bDesc : -1 * bDesc
+        }
+        return a[sortProp].localeCompare(b[sortProp], undefined, { sensitivity: 'base' }) * bDesc
+      })
+    },
+    settingsUpdated(settings) {
+      for (const key in settings) {
+        this.settings[key] = settings[key]
+      }
+      this.sortAuthors(this.authors)
     }
   },
   mounted() {
     this.init()
+    this.$eventBus.$on('user-settings', this.settingsUpdated)
     this.$root.socket.on('author_added', this.authorAdded)
     this.$root.socket.on('author_updated', this.authorUpdated)
     this.$root.socket.on('author_removed', this.authorRemoved)
   },
   beforeDestroy() {
+    this.$eventBus.$off('user-settings', this.settingsUpdated)
     this.$root.socket.off('author_added', this.authorAdded)
     this.$root.socket.off('author_updated', this.authorUpdated)
     this.$root.socket.off('author_removed', this.authorRemoved)
