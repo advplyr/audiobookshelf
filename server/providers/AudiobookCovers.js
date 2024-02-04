@@ -5,7 +5,7 @@ class AudiobookCovers {
   constructor() { }
 
   async search(search) {
-    const url = `https://api.audiobookcovers.com/cover/bytext/`
+    const url = `https://api.audiobookcovers.com/cover/ai-search`
     const params = new URLSearchParams([['q', search]])
     const items = await axios.get(url, { params }).then((res) => {
       if (!res || !res.data) return []
