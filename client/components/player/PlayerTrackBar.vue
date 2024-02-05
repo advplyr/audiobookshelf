@@ -39,7 +39,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    playbackRate: Number
+    playbackRate: Number,
+    usePercent: Boolean
   },
   data() {
     return {
@@ -172,7 +173,7 @@ export default {
         this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
       }
       if (this.$refs.hoverTimestampText) {
-        var hoverText = this.$secondsToTimestamp(progressTime / this._playbackRate)
+        var hoverText = this.usePercent ? ((progressTime / duration) * 100).toFixed(1) + '%' : this.$secondsToTimestamp(progressTime / this._playbackRate)
 
         var chapter = this.chapters.find((chapter) => chapter.start <= totalTime && totalTime < chapter.end)
         if (chapter && chapter.title) {

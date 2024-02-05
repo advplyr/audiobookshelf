@@ -1,15 +1,18 @@
 <template>
-  <div id="epub-reader" class="h-full w-full">
-    <div class="h-full flex items-center justify-center">
+  <div id="epub-reader" class="h-full w-full flex flex-col">
+    <div class="flex flex-grow items-center justify-center">
       <button type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
         <span v-if="hasPrev" class="material-icons text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
       </button>
-      <div id="frame" class="w-full" style="height: 80%">
+      <div id="frame" class="w-full shrink">
         <div id="viewer"></div>
       </div>
       <button type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
         <span v-if="hasNext" class="material-icons text-6xl" @mousedown.prevent @click="next">chevron_right</span>
       </button>
+    </div>
+    <div class="group-data-[theme=light]:invert z-50 px-2 md:px-4 pb-1 md:pb-4 pt-2" :class="themeRules">
+      <player-ui ref="audioPlayer" :chapters="flattenedChapters" isBook @seek="seek" />
     </div>
   </div>
 </template>
@@ -41,6 +44,7 @@ export default {
       /** @type {ePub.Rendition} */
       rendition: null,
       chapters: [],
+      flattenedChapters: [],
       ereaderSettings: {
         theme: 'dark',
         font: 'serif',
@@ -138,6 +142,11 @@ export default {
     next() {
       if (!this.rendition?.manager) return
       return this.rendition?.next()
+    },
+    seek(location) {
+      if (!this.rendition?.manager) return
+      console.log(this.book.locations.cfiFromLocation(Math.round(location)))
+      return this.rendition?.display(this.book.locations.cfiFromPercentage(location))
     },
     goToChapter(href) {
       if (!this.rendition?.manager) return
@@ -288,6 +297,7 @@ export default {
       }
 
       if (location.end.percentage) {
+        this.$refs.audioPlayer.setCurrentTime(location.end.percentage)
         this.updateProgress({
           ebookLocation: location.start.cfi,
           ebookProgress: location.end.percentage
@@ -298,7 +308,28 @@ export default {
         })
       }
     },
-    initEpub() {
+    estimatePages() {
+      // This uses the existing audio player ui by changes the 'playback rate' to scale percentage to pages.
+
+      // Estimating page count isn't straightforward for Epubs.
+      // https://github.com/futurepress/epub.js/issues/744
+      // https://github.com/johnfactotum/foliate/issues/175
+
+      // Method 1: count pages in the current chapter and extrapolate the total number of pages from that.
+      // Downsides: total page count changes when chapters change, only accurate for long chapters.
+      // let currentLocation = this.rendition.currentLocation()
+      // let sectionIndex = currentLocation.start.index
+      // let sectionPages = currentLocation.start.displayed.total
+      // let sectionBaseCFI = this.book.spine.get(sectionIndex).cfiBase
+      // let sectionLocations = this.book.locations._locations.filter((item) => item.startsWith('epubcfi(' + sectionBaseCFI)).length
+      // let totalLocations = this.book.locations.total
+      // let estPages = (totalLocations * sectionPages) / sectionLocations
+      // this.$refs.audioPlayer.playbackRate = 1 / estPages
+
+      //  Method 2: use a location size of 1024 characters to approximates pages. Isn't actually a page, more but stable.
+      this.$refs.audioPlayer.playbackRate = 1 / this.book.locations.total
+    },
+    async initEpub() {
       /** @type {EpubReader} */
       const reader = this
 
@@ -330,29 +361,33 @@ export default {
         this.applyTheme()
       })
 
-      reader.book.ready.then(() => {
-        // set up event listeners
-        reader.rendition.on('relocated', reader.relocated)
-        reader.rendition.on('keydown', reader.keyUp)
-
-        reader.rendition.on('touchstart', (event) => {
-          this.$emit('touchstart', event)
-        })
-        reader.rendition.on('touchend', (event) => {
-          this.$emit('touchend', event)
-        })
-
-        // load ebook cfi locations
-        const savedLocations = this.loadLocations()
-        if (savedLocations) {
-          reader.book.locations.load(savedLocations)
-        } else {
-          reader.book.locations.generate().then(() => {
-            this.checkSaveLocations(reader.book.locations.save())
-          })
-        }
-        this.getChapters()
+      await reader.book.ready
+      // set up event listeners
+      reader.rendition.on('relocated', reader.relocated)
+      reader.rendition.on('keydown', reader.keyUp)
+      // reader.rendition.on('rendered', this.estimatePages)
+      reader.rendition.on('touchstart', (event) => {
+        this.$emit('touchstart', event)
       })
+      reader.rendition.on('touchend', (event) => {
+        this.$emit('touchend', event)
+      })
+
+      // load ebook cfi locations
+      const savedLocations = this.loadLocations()
+      if (savedLocations) {
+        reader.book.locations.load(savedLocations)
+      } else {
+        await reader.book.locations.generate(1024)
+        this.checkSaveLocations(reader.book.locations.save())
+      }
+
+      await this.getChapters()
+      this.$refs.audioPlayer.setDuration(this.book.locations.total)
+      this.$refs.audioPlayer.setDuration(1)
+
+      this.estimatePages()
+      this.$refs.audioPlayer.setCurrentTime(this.book.locations.percentageFromCfi(this.savedEbookLocation || reader.book.locations.start))
     },
     getChapters() {
       // Load the list of chapters in the book. See https://github.com/futurepress/epub.js/issues/759
@@ -400,16 +435,17 @@ export default {
       }
       return createTree(toc, tocTree).then(() => {
         this.chapters = tocTree
+        this.flattenChapters()
       })
     },
-    flattenChapters(chapters) {
+    flattenChapters() {
       // Convert the nested epub chapters into something that looks like audiobook chapters for player-ui
       const unwrap = (chapters) => {
         return chapters.reduce((acc, chapter) => {
           return chapter.subitems ? [...acc, chapter, ...unwrap(chapter.subitems)] : [...acc, chapter]
         }, [])
       }
-      let flattenedChapters = unwrap(chapters)
+      let flattenedChapters = unwrap(this.chapters)
 
       flattenedChapters = flattenedChapters.sort((a, b) => a.start - b.start)
       for (let i = 0; i < flattenedChapters.length; i++) {
@@ -417,10 +453,11 @@ export default {
         if (i < flattenedChapters.length - 1) {
           flattenedChapters[i].end = flattenedChapters[i + 1].start
         } else {
+          // flattenedChapters[i].end = this.book.locations.total
           flattenedChapters[i].end = 1
         }
       }
-      return flattenedChapters
+      this.flattenedChapters = flattenedChapters
     },
     resize() {
       this.windowWidth = window.innerWidth
@@ -434,11 +471,11 @@ export default {
       })
     }
   },
-  mounted() {
+  async mounted() {
     this.windowWidth = window.innerWidth
     this.windowHeight = window.innerHeight
     window.addEventListener('resize', this.resize)
-    this.initEpub()
+    await this.initEpub()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
