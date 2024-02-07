@@ -372,6 +372,9 @@ class LibraryItem extends Model {
       if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
         Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
         hasLibraryItemUpdates = true
+        if (key === 'updatedAt') {
+          libraryItemExpanded.changed('updatedAt', true)
+        }
       }
     }
     if (hasLibraryItemUpdates) {
@@ -399,6 +402,7 @@ class LibraryItem extends Model {
       isInvalid: !!oldLibraryItem.isInvalid,
       mtime: oldLibraryItem.mtimeMs,
       ctime: oldLibraryItem.ctimeMs,
+      updatedAt: oldLibraryItem.updatedAt,
       birthtime: oldLibraryItem.birthtimeMs,
       size: oldLibraryItem.size,
       lastScan: oldLibraryItem.lastScan,
