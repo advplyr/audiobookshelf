@@ -6,18 +6,23 @@
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="min-height: 400px; max-height: 80vh">
+      <div class="px-4 w-full flex items-center text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="min-height: 400px; max-height: 80vh">
         <div class="w-full p-8">
-          <div class="w-full mb-4">
-            <ui-text-input-with-label v-model="newName" :label="$strings.LabelName" />
+          <div class="flex mb-2">
+            <div class="w-3/4 p-1">
+              <ui-text-input-with-label v-model="newName" :label="$strings.LabelName" />
+            </div>
+            <div class="w-1/4 p-1">
+              <ui-text-input-with-label value="Book" readonly :label="$strings.LabelMediaType" />
+            </div>
           </div>
-          <div class="w-full mb-4">
-            <ui-text-input-with-label v-model="newUrl" :label="$strings.LabelUrl" />
+          <div class="w-full mb-2 p-1">
+            <ui-text-input-with-label v-model="newUrl" label="URL" />
           </div>
-          <div class="w-full mb-4">
-            <ui-text-input-with-label v-model="newApiKey" :label="$strings.LabelApiKey" type="password" />
+          <div class="w-full mb-2 p-1">
+            <ui-text-input-with-label v-model="newAuthHeaderValue" :label="'Authorization Header Value'" type="password" />
           </div>
-          <div class="flex pt-4 px-2">
+          <div class="flex px-1 pt-4">
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">{{ $strings.ButtonAdd }}</ui-btn>
           </div>
@@ -30,14 +35,14 @@
 <script>
 export default {
   props: {
-    value: Boolean,
+    value: Boolean
   },
   data() {
     return {
       processing: false,
-      newName: "",
-      newUrl: "",
-      newApiKey: "",
+      newName: '',
+      newUrl: '',
+      newAuthHeaderValue: ''
     }
   },
   watch: {
@@ -57,46 +62,42 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
-    },
+    }
   },
   methods: {
-    close() {
-      // Force close when navigating - used in the table
-      if (this.$refs.modal) this.$refs.modal.setHide()
-    },
     submitForm() {
-      if (!this.newName || !this.newUrl || !this.newApiKey) {
-        this.$toast.error('Must add name, url and API key')
+      if (!this.newName || !this.newUrl) {
+        this.$toast.error('Must add name and url')
         return
       }
 
       this.processing = true
       this.$axios
-          .$patch('/api/custom-metadata-providers/admin', {
-            name: this.newName,
-            url: this.newUrl,
-            apiKey: this.newApiKey,
-          })
-          .then((data) => {
-            this.processing = false
-            if (data.error) {
-              this.$toast.error(`Failed to add provider: ${data.error}`)
-            } else {
-              this.$toast.success('New provider added')
-              this.show = false
-            }
-          })
-          .catch((error) => {
-            this.processing = false
-            console.error('Failed to add provider', error)
-            this.$toast.error('Failed to add provider')
-          })
+        .$post('/api/custom-metadata-providers', {
+          name: this.newName,
+          url: this.newUrl,
+          mediaType: 'book', // Currently only supporting book mediaType
+          authHeaderValue: this.newAuthHeaderValue
+        })
+        .then((data) => {
+          this.$emit('added', data.provider)
+          this.$toast.success('New provider added')
+          this.show = false
+        })
+        .catch((error) => {
+          const errorMsg = error.response?.data || 'Unknown error'
+          console.error('Failed to add provider', error)
+          this.$toast.error('Failed to add provider: ' + errorMsg)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     init() {
       this.processing = false
-      this.newName = ""
-      this.newUrl = ""
-      this.newApiKey = ""
+      this.newName = ''
+      this.newUrl = ''
+      this.newAuthHeaderValue = ''
     }
   },
   mounted() {}

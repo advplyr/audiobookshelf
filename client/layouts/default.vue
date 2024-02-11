@@ -328,8 +328,13 @@ export default {
 
       this.$store.commit('libraries/setEReaderDevices', data.ereaderDevices)
     },
-    customMetadataProvidersChanged() {
-      this.$store.dispatch('scanners/reFetchCustom')
+    customMetadataProviderAdded(provider) {
+      if (!provider?.id) return
+      this.$store.commit('scanners/addCustomMetadataProvider', provider)
+    },
+    customMetadataProviderRemoved(provider) {
+      if (!provider?.id) return
+      this.$store.commit('scanners/removeCustomMetadataProvider', provider)
     },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
@@ -411,8 +416,8 @@ export default {
       this.socket.on('admin_message', this.adminMessageEvt)
 
       // Custom metadata provider Listeners
-      this.socket.on('custom_metadata_provider_added', this.customMetadataProvidersChanged)
-      this.socket.on('custom_metadata_provider_removed', this.customMetadataProvidersChanged)
+      this.socket.on('custom_metadata_provider_added', this.customMetadataProviderAdded)
+      this.socket.on('custom_metadata_provider_removed', this.customMetadataProviderRemoved)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')
@@ -548,7 +553,6 @@ export default {
     window.addEventListener('keydown', this.keyDown)
 
     this.$store.dispatch('libraries/load')
-    this.$store.dispatch('scanners/reFetchCustom')
 
     this.initLocalStorage()
 

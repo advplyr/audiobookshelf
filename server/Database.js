@@ -701,45 +701,6 @@ class Database {
   }
 
   /**
-   * Returns true if a custom provider with the given slug exists
-   * @param {string} providerSlug
-   * @return {boolean}
-   */
-  async doesCustomProviderExistWithSlug(providerSlug) {
-    const id = providerSlug.split("custom-")[1]
-
-    if (!id) {
-      return false
-    }
-
-    return !!await this.customMetadataProviderModel.findByPk(id)
-  }
-
-  /**
-   * Removes a custom metadata provider
-   * @param {string} id
-   */
-  async removeCustomMetadataProviderById(id) {
-    // destroy metadta provider
-    await this.customMetadataProviderModel.destroy({
-      where: {
-        id,
-      }
-    })
-
-    const slug = `custom-${id}`;
-
-    // fallback libraries using it to google
-    await this.libraryModel.update({
-      provider: "google",
-    }, {
-      where: {
-        provider: slug,
-      }
-    });
-  }
-
-  /**
    * Clean invalid records in database
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem

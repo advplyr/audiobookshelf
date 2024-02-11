@@ -1,32 +1,40 @@
 const Database = require('../Database')
-const axios = require("axios")
-const Logger = require("../Logger")
+const axios = require('axios')
+const Logger = require('../Logger')
 
 class CustomProviderAdapter {
-    constructor() {
-    }
+    constructor() { }
 
+    /**
+     * 
+     * @param {string} title 
+     * @param {string} author 
+     * @param {string} providerSlug 
+     * @returns {Promise<Object[]>}
+     */
     async search(title, author, providerSlug) {
-        const providerId = providerSlug.split("custom-")[1]
+        const providerId = providerSlug.split('custom-')[1]
         const provider = await Database.customMetadataProviderModel.findByPk(providerId)
 
         if (!provider) {
             throw new Error("Custom provider not found for the given id")
         }
 
-        const matches = await axios.get(`${provider.url}/search?query=${encodeURIComponent(title)}${!!author ? `&author=${encodeURIComponent(author)}` : ""}`, {
-            headers: {
-                "Authorization": provider.apiKey,
-            },
-        }).then((res) => {
-            if (!res || !res.data || !Array.isArray(res.data.matches)) return null
+        const axiosOptions = {}
+        if (provider.authHeaderValue) {
+            axiosOptions.headers = {
+                'Authorization': provider.authHeaderValue
+            }
+        }
+        const matches = await axios.get(`${provider.url}/search?query=${encodeURIComponent(title)}${!!author ? `&author=${encodeURIComponent(author)}` : ""}`, axiosOptions).then((res) => {
+            if (!res?.data || !Array.isArray(res.data.matches)) return null
             return res.data.matches
         }).catch(error => {
             Logger.error('[CustomMetadataProvider] Search error', error)
             return []
         })
 
-        if (matches === null) {
+        if (!matches) {
             throw new Error("Custom provider returned malformed response")
         }
 
@@ -46,7 +54,7 @@ class CustomProviderAdapter {
             tags,
             series,
             language,
-            duration,
+            duration
         }) => {
             return {
                 title,
@@ -60,10 +68,10 @@ class CustomProviderAdapter {
                 isbn,
                 asin,
                 genres,
-                tags: tags.join(","),
-                series: series.length ? series : null,
+                tags: tags?.join(',') || null,
+                series: series?.length ? series : null,
                 language,
-                duration,
+                duration
             }
         })
     }

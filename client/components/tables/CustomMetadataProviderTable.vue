@@ -1,96 +1,73 @@
 <template>
-  <div>
-    <div class="text-center">
-      <table id="providers">
-        <tr>
-          <th>{{ $strings.LabelName }}</th>
-          <th>{{ $strings.LabelUrl }}</th>
-          <th>{{ $strings.LabelApiKey }}</th>
-          <th class="w-12"></th>
-        </tr>
-        <tr v-for="provider in providers" :key="provider.id">
-          <td class="text-sm">{{ provider.name }}</td>
-          <td class="text-sm">{{ provider.url }}</td>
-          <td class="text-sm">
-            <span class="custom-provider-api-key">{{ provider.apiKey }}</span>
-          </td>
-          <td class="py-0">
-            <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="removeProvider(provider)">
-              <button type="button" :aria-label="$strings.ButtonDelete" class="material-icons text-base">delete</button>
-            </div>
-          </td>
-        </tr>
-      </table>
+  <div class="min-h-40">
+    <table v-if="providers.length" id="providers">
+      <tr>
+        <th>{{ $strings.LabelName }}</th>
+        <th>URL</th>
+        <th>Authorization Header Value</th>
+        <th class="w-12"></th>
+      </tr>
+      <tr v-for="provider in providers" :key="provider.id">
+        <td class="text-sm">{{ provider.name }}</td>
+        <td class="text-sm">{{ provider.url }}</td>
+        <td class="text-sm">
+          <span v-if="provider.authHeaderValue" class="custom-provider-api-key">{{ provider.authHeaderValue }}</span>
+        </td>
+        <td class="py-0">
+          <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="removeProvider(provider)">
+            <button type="button" :aria-label="$strings.ButtonDelete" class="material-icons text-base">delete</button>
+          </div>
+        </td>
+      </tr>
+    </table>
+    <div v-else-if="!processing" class="text-center py-8">
+      <p class="text-lg">No custom metadata providers</p>
+    </div>
+
+    <div v-if="processing" class="absolute inset-0 h-full flex items-center justify-center bg-black/40 rounded-md">
+      <ui-loading-indicator />
     </div>
   </div>
 </template>
 
 <script>
 export default {
+  props: {
+    providers: {
+      type: Array,
+      default: () => []
+    },
+    processing: Boolean
+  },
   data() {
-    return {
-      providers: [],
-    }
+    return {}
   },
   methods: {
-    addedProvider(provider) {
-      if (!Array.isArray(this.providers)) return
-
-      this.providers.push(provider)
-    },
-    removedProvider(provider) {
-      this.providers = this.providers.filter((p) => p.id !== provider.id)
-    },
     removeProvider(provider) {
-      this.$axios
-          .$delete(`/api/custom-metadata-providers/admin/${provider.id}`)
-          .then((data) => {
-            if (data.error) {
-              this.$toast.error(`Failed to remove provider: ${data.error}`)
-            } else {
-              this.$toast.success('Provider removed')
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to remove provider', error)
-            this.$toast.error('Failed to remove provider')
-          })
-    },
-    loadProviders() {
-      this.$axios.$get('/api/custom-metadata-providers/admin')
-          .then((res) => {
-            this.providers = res.providers
-          })
-          .catch((error) => {
-            console.error('Failed', error)
-          })
-    },
-    init(attempts = 0) {
-      if (!this.$root.socket) {
-        if (attempts > 10) {
-          return console.error('Failed to setup socket listeners')
-        }
-        setTimeout(() => {
-          this.init(++attempts)
-        }, 250)
-        return
-      }
-      this.$root.socket.on('custom_metadata_provider_added', this.addedProvider)
-      this.$root.socket.on('custom_metadata_provider_removed', this.removedProvider)
-    }
-  },
-  mounted() {
-    this.loadProviders()
-    this.init()
-  },
-  beforeDestroy() {
-    if (this.$refs.addModal) {
-      this.$refs.addModal.close()
-    }
+      const payload = {
+        message: `Are you sure you want remove custom metadata provider "${provider.name}"?`,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$emit('update:processing', true)
 
-    if (this.$root.socket) {
-      this.$root.socket.off('custom_metadata_provider_added', this.addedProvider)
-      this.$root.socket.off('custom_metadata_provider_removed', this.removedProvider)
+            this.$axios
+              .$delete(`/api/custom-metadata-providers/${provider.id}`)
+              .then(() => {
+                this.$toast.success('Provider removed')
+                this.$emit('removed', provider.id)
+              })
+              .catch((error) => {
+                console.error('Failed to remove provider', error)
+                this.$toast.error('Failed to remove provider')
+              })
+              .finally(() => {
+                this.$emit('update:processing', false)
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     }
   }
 }
