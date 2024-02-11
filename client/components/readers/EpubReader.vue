@@ -4,7 +4,18 @@
       <button type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
         <span v-if="hasPrev" class="material-icons text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
       </button>
-      <div id="frame" class="w-full" style="height: 80%">
+      <div id="frame" class="w-full shrink">
+        <div id="viewer" ref="viewer"></div>
+
+        <div v-if="showAnnotator" class="rounded bg-bg absolute" :style="{ top: annotatorPosition.top + 'px', left: annotatorPosition.left + 'px' }">
+          <button v-if="isTextSelected" class="opacity-80 hover:opacity-100" @mousedown.prevent @mouseup.prevent @click="addAnotationClicked">
+            <span class="material-icons text-4xl"> bookmark_add </span>
+          </button>
+          <button v-else class="opacity-80 hover:opacity-100" @mousedown.prevent @mouseup.prevent @click.stop="removeAnnotation">
+            <span class="material-icons text-4xl"> bookmark_remove </span>
+          </button>
+        </div>
+
         <div id="viewer"></div>
       </div>
       <button type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
@@ -22,6 +33,23 @@ import ePub from 'epubjs'
  * @property {ePub.Book} book
  * @property {ePub.Rendition} rendition
  */
+/**
+ * @typedef {object} Chapter
+ * @property {string} title
+ * @property {string} cfi
+ * @property {number} start - percentage
+ * @property {number} end - percentage
+ * @property {string} href
+ * @property {number} id
+ * @property {Annotation[]} searchResults
+ * @property {Chapter[]} subitems - nested chapters
+ */
+/**
+ * @typedef {object} Annotation
+ * @property {string} cfi
+ * @property {number} start - percentage
+ * @property {string} excerpt - highlighted text
+ */
 export default {
   props: {
     libraryItem: {
@@ -34,13 +62,22 @@ export default {
   },
   data() {
     return {
+      annotatorPosition: { top: 0, left: 0 },
+      isTextSelected: false,
+      showAnnotator: false,
+      mousePosition: { x: 0, y: 0 },
       windowWidth: 0,
       windowHeight: 0,
       /** @type {ePub.Book} */
       book: null,
       /** @type {ePub.Rendition} */
       rendition: null,
+      /** @type {Chapter[]} */
       chapters: [],
+      /** @type {Annotation[]} */
+      bookmarks: [],
+      selectedCFI: '',
+      flattenedChapters: [],
       ereaderSettings: {
         theme: 'dark',
         font: 'serif',
@@ -157,25 +194,104 @@ export default {
       }
       return foundChapter
     },
-    /** @returns {Array} Returns an array of chapters that only includes chapters with query results */
-    async searchBook(query) {
-      const chapters = structuredClone(await this.chapters)
-      const searchResults = await Promise.all(this.book.spine.spineItems.map((item) => item.load(this.book.load.bind(this.book)).then(item.find.bind(item, query)).finally(item.unload.bind(item))))
-      const mergedResults = [].concat(...searchResults)
-
-      mergedResults.forEach((chapter) => {
+    addResultsToChapters(chapters, results) {
+      results.forEach((chapter) => {
         chapter.start = this.book.locations.percentageFromCfi(chapter.cfi)
         const foundChapter = this.findChapterFromPosition(chapters, chapter.start)
         if (foundChapter) foundChapter.searchResults.push(chapter)
       })
 
-      let filteredResults = chapters.filter(function f(o) {
+      return chapters.filter(function f(o) {
         if (o.searchResults.length) return true
         if (o.subitems.length) {
           return (o.subitems = o.subitems.filter(f)).length
         }
       })
+    },
+    async searchBook(query) {
+      const chapters = structuredClone(await this.chapters)
+      const searchResults = await Promise.all(this.book.spine.spineItems.map((item) => item.load(this.book.load.bind(this.book)).then(item.find.bind(item, query)).finally(item.unload.bind(item))))
+      const mergedResults = [].concat(...searchResults)
+
+      const filteredResults = this.addResultsToChapters(chapters, mergedResults)
       return filteredResults
+    },
+    getBookmarks() {
+      const chapters = structuredClone(this.chapters)
+      const mergedResults = structuredClone(this.bookmarks)
+      let filteredResults = this.addResultsToChapters(chapters, mergedResults)
+      return filteredResults
+    },
+    captureMousePosition(evt, contents) {
+      const viewElementRect = contents.document.defaultView.frameElement.getBoundingClientRect()
+      this.annotatorPosition = { top: evt.clientY + viewElementRect.top + 20, left: evt.clientX + viewElementRect.left - 10 }
+    },
+    onTextSelected(cfiRange, contents) {
+      this.isTextSelected = true
+      this.showAnnotator = true
+      this.selectedCFI = cfiRange
+    },
+    onAnnotationClicked(cfiRange) {
+      this.isTextSelected = false
+      this.showAnnotator = true
+
+      this.selectedCFI = cfiRange
+    },
+    removeAnnotation() {
+      this.rendition.annotations.remove(this.selectedCFI, 'highlight')
+      this.bookmarks = this.bookmarks.filter((item) => item.cfi !== this.selectedCFI)
+      this.showAnnotator = false
+
+      var bookmark = {
+        title: this.rendition.getRange(this.selectedCFI).toString(),
+        time: this.selectedCFI
+      }
+      this.$axios
+        .$delete(`/api/me/item/${this.libraryItemId}/bookmark/${encodeURIComponent(bookmark.time)}?type=epub`)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastBookmarkRemoveSuccess)
+        })
+        .catch((error) => {
+          this.$toast.error(this.$strings.ToastBookmarkRemoveFailed)
+          console.error(error)
+        })
+    },
+    addAnotationClicked() {
+      var bookmark = {
+        title: this.rendition.getRange(this.selectedCFI).toString(),
+        time: this.selectedCFI,
+        type: 'epub'
+      }
+      this.submitCreateBookmark(bookmark)
+      this.addAnotation(bookmark)
+
+      // Deselect text
+      this.rendition.getContents().forEach((contents) => contents.window.getSelection().removeAllRanges())
+      this.showAnnotator = false
+      this.isTextSelected = false
+    },
+    addAnotation(bookmark) {
+      this.bookmarks.push({
+        excerpt: bookmark.title,
+        cfi: bookmark.time,
+        start: this.book.locations.percentageFromCfi(bookmark.time)
+      })
+      this.rendition.annotations.add('highlight', bookmark.time, {}, null, 'hl', {
+        fill: 'red',
+        'fill-opacity': '0.5',
+        'mix-blend-mode': 'multiply'
+      })
+    },
+    submitCreateBookmark(bookmark) {
+      this.$axios
+        .$post(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastBookmarkCreateSuccess)
+        })
+        .catch((error) => {
+          this.$toast.error(this.$strings.ToastBookmarkCreateFailed)
+          console.error(error)
+        })
     },
     keyUp(e) {
       const rtl = this.book.package.metadata.direction === 'rtl'
@@ -283,6 +399,7 @@ export default {
     },
     /** @param {string} location - CFI of the new location */
     relocated(location) {
+      this.showAnnotator = false
       if (this.savedEbookLocation === location.start.cfi) {
         return
       }
@@ -342,6 +459,15 @@ export default {
           this.$emit('touchend', event)
         })
 
+        // Show popup to annotate selected text
+        reader.rendition.on('selected', this.onTextSelected)
+        reader.rendition.on('mouseup', this.captureMousePosition)
+        reader.rendition.on('mousedown', () => {
+          this.showAnnotator = false
+        })
+        // Show popup to remove an annotation
+        reader.rendition.on('markClicked', this.onAnnotationClicked)
+
         // load ebook cfi locations
         const savedLocations = this.loadLocations()
         if (savedLocations) {
@@ -352,6 +478,11 @@ export default {
           })
         }
         this.getChapters()
+      })
+
+      const bookmarks = this.$store.getters['user/getUserBookmarksForItem'](this.libraryItemId, 'epub')
+      bookmarks.forEach((bookmark) => {
+        this.addAnotation(bookmark)
       })
     },
     getChapters() {
@@ -400,6 +531,8 @@ export default {
       }
       return createTree(toc, tocTree).then(() => {
         this.chapters = tocTree
+        this.$emit('chaptersLoaded', this.chapters)
+        this.flattenChapters()
       })
     },
     flattenChapters(chapters) {

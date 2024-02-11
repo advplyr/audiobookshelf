@@ -124,9 +124,10 @@ class MeController {
   // POST: api/me/item/:id/bookmark
   async createBookmark(req, res) {
     if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    req.body.type = req.body.type || 'audio'
 
-    const { time, title } = req.body
-    const bookmark = req.user.createBookmark(req.params.id, time, title)
+    const { type, time, title } = req.body
+    const bookmark = req.user.createBookmark(req.params.id, type, time, title)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
@@ -135,14 +136,15 @@ class MeController {
   // PATCH: api/me/item/:id/bookmark
   async updateBookmark(req, res) {
     if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    req.body.type = req.body.type || 'audio'
 
-    const { time, title } = req.body
-    if (!req.user.findBookmark(req.params.id, time)) {
+    const { type, time, title } = req.body
+    if (!req.user.findBookmark(req.params.id, type, time)) {
       Logger.error(`[MeController] updateBookmark not found`)
       return res.sendStatus(404)
     }
 
-    const bookmark = req.user.updateBookmark(req.params.id, time, title)
+    const bookmark = req.user.updateBookmark(req.params.id, type, time, title)
     if (!bookmark) return res.sendStatus(500)
 
     await Database.updateUser(req.user)
@@ -150,19 +152,25 @@ class MeController {
     res.json(bookmark)
   }
 
-  // DELETE: api/me/item/:id/bookmark/:time
+  // DELETE: api/me/item/:id/bookmark
   async removeBookmark(req, res) {
     if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    req.query.type = req.query.type || 'audio'
 
-    const time = Number(req.params.time)
-    if (isNaN(time)) return res.sendStatus(500)
+    if (req.query.type == 'audio') {
+      var time = Number(req.params.time)
+      if (isNaN(time)) return res.sendStatus(500)
+    }
+    else {
+      var time = req.params.time
+    }
 
-    if (!req.user.findBookmark(req.params.id, time)) {
+    if (!req.user.findBookmark(req.params.id, req.query.type, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
 
-    req.user.removeBookmark(req.params.id, time)
+    req.user.removeBookmark(req.params.id, req.query.type, time)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)

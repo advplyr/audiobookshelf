@@ -1,10 +1,13 @@
 <template>
   <div v-if="show" id="reader" :data-theme="ereaderTheme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black" :class="{ 'reader-player-open': !!streamLibraryItem }">
-    <div class="absolute top-4 left-4 z-20 flex items-center">
-      <button v-if="isEpub" @click="toggleToC" type="button" aria-label="Table of contents menu" class="inline-flex opacity-80 hover:opacity-100">
+    <div class="absolute top-4 left-4 z-20 inline-flex gap-4 items-center">
+      <button v-if="isEpub" @click="openToC" type="button" aria-label="Table of contents menu" class="opacity-80 hover:opacity-100">
         <span class="material-icons text-2xl">menu</span>
       </button>
-      <button v-if="hasSettings" @click="openSettings" type="button" aria-label="Ereader settings" class="mx-4 inline-flex opacity-80 hover:opacity-100">
+      <button v-if="isEpub" @click="openBookmarks" type="button" aria-label="Bookmarks" class="opacity-80 hover:opacity-100">
+        <span class="material-icons text-2xl">bookmarks</span>
+      </button>
+      <button v-if="hasSettings" @click="openSettings" type="button" aria-label="Ereader settings" class="opacity-80 hover:opacity-100">
         <span class="material-icons text-1.5xl">settings</span>
       </button>
     </div>
@@ -23,48 +26,9 @@
       </button>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" @touchstart="touchstart" @touchend="touchend" @hook:mounted="readerMounted" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" @touchstart="touchstart" @touchend="touchend" @hook:mounted="readerMounted" @chaptersLoaded="chaptersLoaded" />
 
-    <!-- TOC side nav -->
-    <div v-if="tocOpen" class="w-full h-full overflow-y-scroll absolute inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
-    <div v-if="isEpub" class="w-96 h-full max-h-full absolute top-0 left-0 shadow-xl transition-transform z-30 group-data-[theme=dark]:bg-primary group-data-[theme=dark]:text-white group-data-[theme=light]:bg-white group-data-[theme=light]:text-black" :class="tocOpen ? 'translate-x-0' : '-translate-x-96'" @click.stop.prevent>
-      <div class="flex flex-col p-4 h-full">
-        <div class="flex items-center mb-2">
-          <button @click.stop.prevent="toggleToC" type="button" aria-label="Close table of contents" class="inline-flex opacity-80 hover:opacity-100">
-            <span class="material-icons text-2xl">arrow_back</span>
-          </button>
-
-          <p class="text-lg font-semibold ml-2">{{ $strings.HeaderTableOfContents }}</p>
-        </div>
-        <form @submit.prevent="searchBook" @click.stop.prevent>
-          <ui-text-input clearable ref="input" @clear="searchBook" v-model="searchQuery" :placeholder="$strings.PlaceholderSearch" class="h-8 w-full text-sm flex mb-2" />
-        </form>
-
-        <div class="overflow-y-auto">
-          <div v-if="isSearching && !this.searchResults.length" class="w-full h-40 justify-center">
-            <p class="text-center text-xl py-4">{{ $strings.MessageNoResults }}</p>
-          </div>
-
-          <ul>
-            <li v-for="chapter in isSearching ? this.searchResults : chapters" :key="chapter.id" class="py-1">
-              <a :href="chapter.href" class="opacity-80 hover:opacity-100" @click.prevent="goToChapter(chapter.href)">{{ chapter.title }}</a>
-              <div v-for="searchResults in chapter.searchResults" :key="searchResults.cfi" class="text-sm py-1 pl-4">
-                <a :href="searchResults.cfi" class="opacity-50 hover:opacity-100" @click.prevent="goToChapter(searchResults.cfi)">{{ searchResults.excerpt }}</a>
-              </div>
-
-              <ul v-if="chapter.subitems.length">
-                <li v-for="subchapter in chapter.subitems" :key="subchapter.id" class="py-1 pl-4">
-                  <a :href="subchapter.href" class="opacity-80 hover:opacity-100" @click.prevent="goToChapter(subchapter.href)">{{ subchapter.title }}</a>
-                  <div v-for="subChapterSearchResults in subchapter.searchResults" :key="subChapterSearchResults.cfi" class="text-sm py-1 pl-4">
-                    <a :href="subChapterSearchResults.cfi" class="opacity-50 hover:opacity-100" @click.prevent="goToChapter(subChapterSearchResults.cfi)">{{ subChapterSearchResults.excerpt }}</a>
-                  </div>
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    <readers-sidebar v-if="isEpub" ref="sidebar" :chapters="chapters" :bookmarks="bookmarks" :bookmarksOpen="bookmarksOpen" :sidebarOpen="sidebarOpen" @toggle-sidebar="sidebarOpen = false" @goToChapter="goToChapter" />
 
     <!-- ereader settings modal -->
     <modals-modal v-model="showSettings" name="ereader-settings-modal" :width="500" :height="'unset'" :processing="false">
@@ -119,11 +83,12 @@ export default {
       touchendY: 0,
       touchstartTime: 0,
       touchIdentifier: null,
+      bookmarks: [],
       chapters: [],
       isSearching: false,
-      searchResults: [],
       searchQuery: '',
-      tocOpen: false,
+      sidebarOpen: false,
+      bookmarksOpen: false,
       showSettings: false,
       ereaderSettings: {
         theme: 'dark',
@@ -273,7 +238,7 @@ export default {
   },
   methods: {
     goToChapter(uri) {
-      this.toggleToC()
+      this.sidebarOpen = false
       this.$refs.readerComponent.goToChapter(uri)
     },
     readerMounted() {
@@ -285,9 +250,17 @@ export default {
       this.$refs.readerComponent?.updateSettings?.(this.ereaderSettings)
       localStorage.setItem('ereaderSettings', JSON.stringify(this.ereaderSettings))
     },
-    toggleToC() {
-      this.tocOpen = !this.tocOpen
-      this.chapters = this.$refs.readerComponent.chapters
+    openToC() {
+      this.sidebarOpen = true
+      this.bookmarksOpen = false
+    },
+    chaptersLoaded(chapters) {
+      this.chapters = chapters
+    },
+    openBookmarks() {
+      this.sidebarOpen = true
+      this.bookmarksOpen = true
+      this.bookmarks = this.$refs.readerComponent.getBookmarks()
     },
     openSettings() {
       this.showSettings = true
@@ -301,15 +274,6 @@ export default {
         this.prev()
       } else if (action === this.$hotkeys.EReader.CLOSE) {
         this.close()
-      }
-    },
-    async searchBook() {
-      if (this.searchQuery.length > 1) {
-        this.searchResults = await this.$refs.readerComponent.searchBook(this.searchQuery)
-        this.isSearching = true
-      } else {
-        this.isSearching = false
-        this.searchResults = []
       }
     },
     next() {
@@ -390,8 +354,8 @@ export default {
     },
     close() {
       this.unregisterListeners()
-      this.isSearching = false
-      this.searchQuery = ''
+      this.$refs.sidebar.isSearching = false
+      this.$refs.sidebar.searchQuery = ''
       this.show = false
     }
   },

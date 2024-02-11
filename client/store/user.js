@@ -28,9 +28,10 @@ export const getters = {
       return li.libraryItemId == libraryItemId
     })
   },
-  getUserBookmarksForItem: (state) => (libraryItemId) => {
+  getUserBookmarksForItem: (state) => (libraryItemId, bookmarkType) => {
     if (!state.user.bookmarks) return []
-    return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId)
+    bookmarkType = bookmarkType || 'audio'
+    return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId && bm.type === bookmarkType)
   },
   getUserSetting: (state) => (key) => {
     return state.settings?.[key] || null
