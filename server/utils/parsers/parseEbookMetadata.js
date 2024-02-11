@@ -1,4 +1,5 @@
 const parseEpubMetadata = require('./parseEpubMetadata')
+const parseComicMetadata = require('./parseComicMetadata')
 
 /**
  * @typedef EBookFileScanData
@@ -18,7 +19,9 @@ async function parse(ebookFile) {
   if (!ebookFile) return null
 
   if (ebookFile.ebookFormat === 'epub') {
-    return parseEpubMetadata.parse(ebookFile.metadata.path)
+    return parseEpubMetadata.parse(ebookFile)
+  } else if (['cbz', 'cbr'].includes(ebookFile.ebookFormat)) {
+    return parseComicMetadata.parse(ebookFile)
   }
   return null
 }
@@ -36,6 +39,8 @@ async function extractCoverImage(ebookFileScanData, outputCoverPath) {
 
   if (ebookFileScanData.ebookFormat === 'epub') {
     return parseEpubMetadata.extractCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
+  } else if (['cbz', 'cbr'].includes(ebookFileScanData.ebookFormat)) {
+    return parseComicMetadata.extractCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
   }
   return false
 }

@@ -39,6 +39,7 @@ module.exports = {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
+    '@/assets/tailwind.css',
     '@/assets/app.css'
   ],
 
@@ -58,9 +59,7 @@ module.exports = {
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/pwa',
-    '@nuxt/postcss8'
+    '@nuxtjs/pwa'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -108,12 +107,12 @@ module.exports = {
       icons: [
         {
           src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "any"
+          sizes: 'any'
         },
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon64.png',
-          type: "image/png",
-          sizes: "64x64"
+          src: (process.env.ROUTER_BASE_PATH || '') + '/icon192.png',
+          type: 'image/png',
+          sizes: 'any'
         }
       ]
     },

@@ -44,6 +44,7 @@ body:
       options:
         - Docker
         - Debian/PPA
+        - Windows Tray App
         - Built from source
         - Other
     validations:

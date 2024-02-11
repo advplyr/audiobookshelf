@@ -55,7 +55,7 @@ class ServerSettings {
     this.buildNumber = packageJson.buildNumber
 
     // Auth settings
-    // Active auth methodes
+    this.authLoginCustomMessage = null
     this.authActiveAuthMethods = ['local']
 
     // openid settings
@@ -113,6 +113,7 @@ class ServerSettings {
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
+    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.7.3
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
 
     this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null
@@ -201,6 +202,7 @@ class ServerSettings {
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
+      authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
@@ -213,7 +215,7 @@ class ServerSettings {
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
-      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy, 
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
     }
   }
@@ -246,6 +248,7 @@ class ServerSettings {
 
   get authenticationSettings() {
     return {
+      authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
@@ -264,7 +267,9 @@ class ServerSettings {
   }
 
   get authFormData() {
-    const clientFormData = {}
+    const clientFormData = {
+      authLoginCustomMessage: this.authLoginCustomMessage
+    }
     if (this.authActiveAuthMethods.includes('openid')) {
       clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
       clientFormData.authOpenIDAutoLaunch = this.authOpenIDAutoLaunch

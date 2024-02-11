@@ -8,7 +8,7 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <ui-tooltip :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+        <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
           <p ref="displayTitle" class="truncate">{{ displayTitle }}</p>
           <widgets-explicit-indicator :explicit="isExplicit" />
         </ui-tooltip>
