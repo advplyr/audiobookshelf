@@ -5,6 +5,7 @@ const iTunes = require('../providers/iTunes')
 const Audnexus = require('../providers/Audnexus')
 const FantLab = require('../providers/FantLab')
 const AudiobookCovers = require('../providers/AudiobookCovers')
+const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
 const { levenshteinDistance, escapeRegExp } = require('../utils/index')
 
@@ -17,6 +18,7 @@ class BookFinder {
     this.audnexus = new Audnexus()
     this.fantLab = new FantLab()
     this.audiobookCovers = new AudiobookCovers()
+    this.customProviderAdapter = new CustomProviderAdapter()
 
     this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
@@ -144,6 +146,20 @@ class BookFinder {
     const books = await this.audible.search(title, author, asin, region)
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
+    return books
+  }
+
+  /**
+   * 
+   * @param {string} title 
+   * @param {string} author 
+   * @param {string} providerSlug 
+   * @returns {Promise<Object[]>}
+   */
+  async getCustomProviderResults(title, author, providerSlug) {
+    const books = await this.customProviderAdapter.search(title, author, providerSlug)
+    if (this.verbose) Logger.debug(`Custom provider '${providerSlug}' Search Results: ${books.length || 0}`)
+
     return books
   }
 
@@ -315,6 +331,11 @@ class BookFinder {
     const maxFuzzySearches = !isNaN(options.maxFuzzySearches) ? Number(options.maxFuzzySearches) : 5
     let numFuzzySearches = 0
 
+    // Custom providers are assumed to be correct
+    if (provider.startsWith('custom-')) {
+      return this.getCustomProviderResults(title, author, provider)
+    }
+
     if (!title)
       return books
 
@@ -397,8 +418,7 @@ class BookFinder {
       books = await this.getFantLabResults(title, author)
     } else if (provider === 'audiobookcovers') {
       books = await this.getAudiobookCoversResults(title)
-    }
-    else {
+    } else {
       books = await this.getGoogleBooksResults(title, author)
     }
     return books

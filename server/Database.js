@@ -132,6 +132,11 @@ class Database {
     return this.models.playbackSession
   }
 
+  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  get customMetadataProviderModel() {
+    return this.models.customMetadataProvider
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -245,6 +250,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
+    require('./models/CustomMetadataProvider').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
