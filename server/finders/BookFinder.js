@@ -157,7 +157,7 @@ class BookFinder {
    * @returns {Promise<Object[]>}
    */
   async getCustomProviderResults(title, author, providerSlug) {
-    const books = await this.customProviderAdapter.search(title, author, providerSlug)
+    const books = await this.customProviderAdapter.search(title, author, providerSlug, 'book')
     if (this.verbose) Logger.debug(`Custom provider '${providerSlug}' Search Results: ${books.length || 0}`)
 
     return books
