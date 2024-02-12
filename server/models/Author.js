@@ -35,7 +35,7 @@ class Author extends Model {
     return new oldAuthor({
       id: this.id,
       asin: this.asin,
-      name: this.name,
+      name: this.name.trim(),
       description: this.description,
       imagePath: this.imagePath,
       libraryId: this.libraryId,
@@ -66,7 +66,7 @@ class Author extends Model {
   static getFromOld(oldAuthor) {
     return {
       id: oldAuthor.id,
-      name: oldAuthor.name,
+      name: oldAuthor.name.trim(),
       lastFirst: oldAuthor.lastFirst,
       asin: oldAuthor.asin,
       description: oldAuthor.description,

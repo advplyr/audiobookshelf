@@ -351,7 +351,8 @@ class LibraryItem extends Model {
       for (const key in updatedMedia) {
         let existingValue = libraryItemExpanded.media[key]
         if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
+        // Check for trimming. Why not instanceof? var str = "string" isn't instance of String
+        if (typeof updatedMedia[key] === "string") updatedMedia[key] = updatedMedia[key].trim()
         if (!areEquivalent(updatedMedia[key], existingValue, true)) {
           Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
           hasMediaUpdates = true

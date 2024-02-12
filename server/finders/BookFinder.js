@@ -451,6 +451,7 @@ class BookFinder {
   }
 
   findChapters(asin, region) {
+    asin = asin.trim()
     return this.audnexus.getChaptersByASIN(asin, region)
   }
 }

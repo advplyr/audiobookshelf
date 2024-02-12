@@ -30,7 +30,7 @@ class Series extends Model {
   getOldSeries() {
     return new oldSeries({
       id: this.id,
-      name: this.name,
+      name: this.name.trim(),
       description: this.description,
       libraryId: this.libraryId,
       addedAt: this.createdAt.valueOf(),

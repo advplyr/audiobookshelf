@@ -232,7 +232,7 @@ class Book extends Model {
       chapters: this.chapters?.map(c => ({ ...c })) || [],
       title: this.title,
       subtitle: this.subtitle,
-      authors: this.authors.map(a => a.name),
+      authors: this.authors.map(a => a.name.trim()),
       narrators: this.narrators,
       series: this.series.map(se => {
         const sequence = se.bookSeries?.sequence || ''
