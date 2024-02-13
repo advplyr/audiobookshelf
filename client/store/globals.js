@@ -95,19 +95,12 @@ export const getters = {
     const lastUpdate = libraryItem.updatedAt || Date.now()
     const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
 
-    if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
-    }
-
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
   },
   getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, timestamp = null, raw = false) => {
     const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItemId) return placeholder
     const userToken = rootGetters['user/getToken']
-    if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
-    }
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
   },
   getIsBatchSelectingMediaItems: (state) => {

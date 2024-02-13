@@ -6,7 +6,7 @@ module.exports = {
   target: 'static',
   dev: process.env.NODE_ENV !== 'production',
   env: {
-    serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH || '' : 'http://localhost:3333',
+    serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH || '' : process.env.DEV_SERVER_URL || 'http://localhost:3333',
     chromecastReceiver: 'FD1F76C5'
   },
   telemetry: false,
@@ -70,14 +70,14 @@ module.exports = {
   ],
 
   proxy: {
-    '/api/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } }
+    '/api/': { target: process.env.NODE_ENV !== 'production' ? process.env.DEV_SERVER_URL || 'http://localhost:3333' : '/' },
+    '/dev/': { target: process.env.DEV_SERVER_URL || 'http://localhost:3333', pathRewrite: { '^/dev/': '' } }
   },
 
   io: {
     sockets: [{
       name: 'dev',
-      url: 'http://localhost:3333'
+      url: process.env.DEV_SERVER_URL || 'http://localhost:3333'
     },
     {
       name: 'prod'
