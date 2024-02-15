@@ -29,7 +29,7 @@
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <span class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</span>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
