@@ -2,6 +2,7 @@ const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
+const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
@@ -21,11 +22,11 @@ const SocketAuthority = require('./SocketAuthority')
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 
+const LogManager = require('./managers/LogManager')
 const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
-const LogManager = require('./managers/LogManager')
 const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
@@ -67,7 +68,6 @@ class Server {
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
-    this.logManager = new LogManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
@@ -81,7 +81,7 @@ class Server {
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.auth, this.playbackSessionManager)
 
-    Logger.logManager = this.logManager
+    Logger.logManager = new LogManager()
 
     this.server = null
     this.io = null
@@ -102,9 +102,12 @@ class Server {
    */
   async init() {
     Logger.info('[Server] Init v' + version)
+
     await this.playbackSessionManager.removeOrphanStreams()
 
     await Database.init(false)
+
+    await Logger.logManager.init()
 
     // Create token secret if does not exist (Added v2.1.0)
     if (!Database.serverSettings.tokenSecret) {
@@ -115,7 +118,6 @@ class Server {
     await CacheManager.ensureCachePaths()
 
     await this.backupManager.init()
-    await this.logManager.init()
     await this.rssFeedManager.init()
 
     const libraries = await Database.libraryModel.getAllOldLibraries()
@@ -135,8 +137,41 @@ class Server {
     }
   }
 
+  /**
+   * Listen for SIGINT and uncaught exceptions
+   */
+  initProcessEventListeners() {
+    let sigintAlreadyReceived = false
+    process.on('SIGINT', async () => {
+      if (!sigintAlreadyReceived) {
+        sigintAlreadyReceived = true
+        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
+        await this.stop()
+        Logger.info('Server stopped. Exiting.')
+      } else {
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
+      }
+      process.exit(0)
+    })
+
+    /**
+     * @see https://nodejs.org/api/process.html#event-uncaughtexceptionmonitor
+     */
+    process.on('uncaughtExceptionMonitor', async (error, origin) => {
+      await Logger.fatal(`[Server] Uncaught exception origin: ${origin}, error:`, util.format('%O', error))
+    })
+    /**
+     * @see https://nodejs.org/api/process.html#event-unhandledrejection
+     */
+    process.on('unhandledRejection', async (reason, promise) => {
+      await Logger.fatal(`[Server] Unhandled rejection: ${reason}, promise:`, util.format('%O', promise))
+      process.exit(1)
+    })
+  }
+
   async start() {
     Logger.info('=== Starting Server ===')
+    this.initProcessEventListeners()
     await this.init()
 
     const app = express()
@@ -283,19 +318,6 @@ class Server {
       res.json({ success: true })
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
-
-    let sigintAlreadyReceived = false
-    process.on('SIGINT', async () => {
-      if (!sigintAlreadyReceived) {
-        sigintAlreadyReceived = true
-        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
-        await this.stop()
-        Logger.info('Server stopped. Exiting.')
-      } else {
-        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
-      }
-      process.exit(0)
-    })
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)

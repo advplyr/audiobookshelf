@@ -699,7 +699,7 @@ class MiscController {
   }
 
   /**
-   * GET: /api/me/stats/year/:year
+   * GET: /api/stats/year/:year
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
@@ -716,6 +716,24 @@ class MiscController {
     }
     const stats = await adminStats.getStatsForYear(year)
     res.json(stats)
+  }
+
+  /**
+   * GET: /api/logger-data
+   * admin or up
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async getLoggerData(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get logger data`)
+      return res.sendStatus(403)
+    }
+
+    res.json({
+      currentDailyLogs: Logger.logManager.getMostRecentCurrentDailyLogs()
+    })
   }
 }
 module.exports = new MiscController()

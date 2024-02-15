@@ -327,6 +327,7 @@ class ApiRouter {
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
     this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
+    this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
   }
 
   //
