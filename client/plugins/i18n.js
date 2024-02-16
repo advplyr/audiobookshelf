@@ -84,7 +84,7 @@ async function loadi18n(code) {
 
   Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
-  this.$eventBus.$emit('change-lang', code)
+  this?.$eventBus?.$emit('change-lang', code)
   return true
 }
 
