@@ -141,7 +141,7 @@ module.exports = {
         })
 
         // Filter out bad genres like "audiobook" and "audio book"
-        const genres = (ls.mediaMetadata.genres || []).filter(g => !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
+        const genres = (ls.mediaMetadata.genres || []).filter(g => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
         genres.forEach((genre) => {
           if (!genreListeningMap[genre]) genreListeningMap[genre] = 0
           genreListeningMap[genre] += listeningSessionListeningTime
