@@ -29,7 +29,8 @@ module.exports = {
     ],
     script: [],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' },
+      { rel: 'apple-touch-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/icon256.png' }
     ]
   },
 
@@ -110,7 +111,7 @@ module.exports = {
           sizes: 'any'
         },
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon256.png',
+          src: (process.env.ROUTER_BASE_PATH || '') + '/icon192.png',
           type: 'image/png',
           sizes: 'any'
         }
