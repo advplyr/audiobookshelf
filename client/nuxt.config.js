@@ -29,7 +29,8 @@ module.exports = {
     ],
     script: [],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' },
+      { rel: 'apple-touch-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/ios_icon.png' }
     ]
   },
 
