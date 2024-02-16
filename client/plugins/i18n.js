@@ -17,6 +17,7 @@ const languageCodeMap = {
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'no': { label: 'Norsk', dateFnsLocale: 'no' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
+  'pt-br': { label: 'Português (Brasil)', dateFnsLocale: 'ptBR' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
   'sv': { label: 'Svenska', dateFnsLocale: 'sv' },
   'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
@@ -83,7 +84,7 @@ async function loadi18n(code) {
 
   Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
-  this.$eventBus.$emit('change-lang', code)
+  this?.$eventBus?.$emit('change-lang', code)
   return true
 }
 
