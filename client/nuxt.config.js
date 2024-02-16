@@ -110,7 +110,7 @@ module.exports = {
           sizes: 'any'
         },
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon192.png',
+          src: (process.env.ROUTER_BASE_PATH || '') + '/icon256.png',
           type: 'image/png',
           sizes: 'any'
         }
