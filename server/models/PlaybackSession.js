@@ -118,7 +118,9 @@ class PlaybackSession extends Model {
 
   static createFromOld(oldPlaybackSession) {
     const playbackSession = this.getFromOld(oldPlaybackSession)
-    return this.create(playbackSession)
+    return this.create(playbackSession, {
+      silent: true
+    })
   }
 
   static updateFromOld(oldPlaybackSession) {
@@ -126,7 +128,8 @@ class PlaybackSession extends Model {
     return this.update(playbackSession, {
       where: {
         id: playbackSession.id
-      }
+      },
+      silent: true
     })
   }
 

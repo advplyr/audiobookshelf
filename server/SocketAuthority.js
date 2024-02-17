@@ -116,7 +116,6 @@ class SocketAuthority {
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
-      socket.on('fetch_daily_logs', () => this.Server.logManager.socketRequestDailyLogs(socket))
 
       // Sent automatically from socket.io clients
       socket.on('disconnect', (reason) => {
