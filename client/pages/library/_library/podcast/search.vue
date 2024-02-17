@@ -87,7 +87,7 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
-    librarySetting() {
+    librarySettings() {
       return this.$store.getters['libraries/getCurrentLibrarySettings']
     }
   },
@@ -154,7 +154,12 @@ export default {
     async submitSearch(term) {
       this.processing = true
       this.termSearched = ''
-      let results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(term)}&country=${encodeURIComponent(this.librarySetting?.podcastSearchRegion)}`).catch((error) => {
+
+      const searchParams = new URLSearchParams({
+        term,
+        country: this.librarySettings?.podcastSearchRegion || 'us'
+      })
+      let results = await this.$axios.$get(`/api/search/podcast?${searchParams.toString()}`).catch((error) => {
         console.error('Search request failed', error)
         return []
       })

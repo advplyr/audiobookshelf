@@ -28,9 +28,11 @@ Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
     value: code
   }
 })
+
+// iTunes search API uses ISO 3166 country codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 const podcastSearchRegionMap = {
   'us': { label: 'United States' },
-  'cn': { label: '中国' },
+  'cn': { label: '中国' }
 }
 Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).map(code => {
   return {
