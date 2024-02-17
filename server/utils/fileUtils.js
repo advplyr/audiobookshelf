@@ -366,7 +366,7 @@ module.exports.encodeUriPath = (path) => {
  * This method is necessary because fs.access(directory, fs.constants.W_OK) does not work on Windows
  * 
  * @param {string} directory 
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
 module.exports.isWritable = async (directory) => {
   try {
