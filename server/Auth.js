@@ -656,7 +656,7 @@ class Auth {
    * Checks if a username and password tuple is valid and the user active.
    * @param {string} username 
    * @param {string} password 
-   * @param {function} done 
+   * @param {Promise<function>} done 
    */
   async localAuthCheckUserPw(username, password, done) {
     // Load the user given it's username
@@ -698,7 +698,7 @@ class Auth {
   /**
    * Hashes a password with bcrypt.
    * @param {string} password 
-   * @returns {string} hash 
+   * @returns {Promise<string>} hash 
    */
   hashPass(password) {
     return new Promise((resolve) => {
@@ -732,8 +732,8 @@ class Auth {
   /**
    * 
    * @param {string} password 
-   * @param {*} user 
-   * @returns {boolean}
+   * @param {import('./models/User')} user 
+   * @returns {Promise<boolean>}
    */
   comparePassword(password, user) {
     if (user.type === 'root' && !password && !user.pash) return true
