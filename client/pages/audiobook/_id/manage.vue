@@ -94,7 +94,7 @@
         <transition name="slide">
           <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
             <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" />
+              <ui-text-input-with-label ref="bitrateInput" v-model="maxBitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" />
               <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" />
               <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" />
             </div>
@@ -146,8 +146,9 @@
         <div class="flex py-2 px-4 bg-primary bg-opacity-25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
           <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="w-20 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelBitrate }}</div>
           <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
-          <div class="w-24"></div>
+          <div class="w-20"></div>
         </div>
         <template v-for="file in audioFiles">
           <div :key="file.index" class="flex py-2 px-4 text-sm" :class="file.index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
@@ -155,10 +156,13 @@
             <div class="flex-grow">
               {{ file.metadata.filename }}
             </div>
+            <div class="w-20 font-mono text-gray-200">
+              {{ $bitratePretty(file.bitRate) }}
+            </div>
             <div class="w-16 font-mono text-gray-200">
               {{ $bytesPretty(file.metadata.size) }}
             </div>
-            <div class="w-24">
+            <div class="w-20">
               <div class="flex justify-center">
                 <span v-if="audiofilesFinished[file.ino]" class="material-icons text-xl text-success leading-none">check_circle</span>
                 <div v-else-if="audiofilesEncoding[file.ino]">
@@ -235,6 +239,14 @@ export default {
     },
     isM4BTool() {
       return this.selectedTool === 'm4b'
+    },
+    maxBitrate() {
+      const maxBitrate = this.audioFiles.reduce((max, current) => Math.max(max, current.bitRate), 0);
+      return maxBitrate === 0 ? this.encodingOptions.bitrate : (maxBitrate/1000) + "k"
+    },
+    minBitrate() {
+      const minBitrate = this.audioFiles.reduce((min, current) => Math.min(min, current.bitRate), 0);
+      return minBitrate === 0 ? this.encodingOptions.bitrate : (minBitrate/1000) + "k"
     },
     libraryItemId() {
       return this.libraryItem.id

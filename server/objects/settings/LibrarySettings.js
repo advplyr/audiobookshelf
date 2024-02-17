@@ -9,6 +9,7 @@ class LibrarySettings {
     this.autoScanCronExpression = null
     this.audiobooksOnly = false
     this.hideSingleBookSeries = false // Do not show series that only have 1 book 
+    this.bitrateType = 'maxBitrate'
     this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
 
     if (settings) {
@@ -24,6 +25,7 @@ class LibrarySettings {
     this.autoScanCronExpression = settings.autoScanCronExpression || null
     this.audiobooksOnly = !!settings.audiobooksOnly
     this.hideSingleBookSeries = !!settings.hideSingleBookSeries
+    this.bitrateType = settings.bitrateType || 'maxBitrate'
     if (settings.metadataPrecedence) {
       this.metadataPrecedence = [...settings.metadataPrecedence]
     } else {
@@ -41,6 +43,7 @@ class LibrarySettings {
       autoScanCronExpression: this.autoScanCronExpression,
       audiobooksOnly: this.audiobooksOnly,
       hideSingleBookSeries: this.hideSingleBookSeries,
+      bitrateType: this.bitrateType,
       metadataPrecedence: [...this.metadataPrecedence]
     }
   }

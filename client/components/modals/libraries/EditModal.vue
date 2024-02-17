@@ -14,7 +14,7 @@
     <div class="px-2 md:px-4 w-full text-sm pt-2 md:pt-6 pb-20 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
       <component v-if="libraryCopy && show" ref="tabComponent" :is="tabName" :is-new="!library" :library="libraryCopy" :library-id="libraryId" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
 
-      <div v-show="selectedTab !== 'tools'" class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
+      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
         <div class="flex justify-end">
           <ui-btn @click="submit">{{ buttonText }}</ui-btn>
         </div>
@@ -190,6 +190,15 @@ export default {
           }
         } else if (key === 'settings') {
           for (const settingsKey in this.libraryCopy.settings) {
+            console.log('Settings settings key', this.library.settings[settingsKey])
+            if (this.libraryCopy.settings[settingsKey] !== this.library.settings[settingsKey]) {
+              if (!updatePayload.settings) updatePayload.settings = {}
+              updatePayload.settings[settingsKey] = this.libraryCopy.settings[settingsKey]
+            }
+          }
+        } else if (key === 'tools') {
+          for (const settingsKey in this.libraryCopy.settings) {
+            console.log('Tools settings key', this.library.settings[settingsKey])
             if (this.libraryCopy.settings[settingsKey] !== this.library.settings[settingsKey]) {
               if (!updatePayload.settings) updatePayload.settings = {}
               updatePayload.settings[settingsKey] = this.libraryCopy.settings[settingsKey]

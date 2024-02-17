@@ -13,6 +13,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Begin default library encoding section -->
+    <div class="w-full border border-black-200 p-4 my-8">
+      <div class="flex flex-wrap items-center">
+        <div>
+          <p class="text-lg">Default encoding settings</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Default values used for all library encoding</p>
+        </div>
+        <div class="flex-grow" />
+        <div class="w-1/7 md:w-42 px-1 py-1 md:py-0">
+          <ui-dropdown v-model="bitrateType" :items="encodingPresets" :label="$strings.LabelBitrateType" small @input="changedEncodingPresets" />
+        </div>
+        <div class="w-1/8 md:w-42 px-1 py-1 md:py-0">
+          <ui-text-input-with-label ref="nameInput" v-model="fixedBitrate" :disabled="!isFixedBitrate" :label="$strings.LabelBitrate" />
+        </div>
+      </div>
+    </div>
+    <!-- End default library encoding section -->
   </div>
 </template>
 
@@ -27,7 +45,10 @@ export default {
     processing: Boolean
   },
   data() {
-    return {}
+    return {
+      bitrateType : 'maxBitrate',
+      fixedBitrate : 64000
+    }
   },
   computed: {
     librarySettings() {
@@ -38,9 +59,40 @@ export default {
     },
     isBookLibrary() {
       return this.mediaType === 'book'
+    },
+    encodingPresets() {
+      return [
+        {
+          value: 'maxBitrate',
+          text: "Max Bitrate"
+        },
+        {
+          value: 'minBitrate',
+          text: "Min Bitrate"
+        },
+        {
+          value: 'fixedBitrate',
+          text: "Fixed Bitrate"
+        }
+      ]
+    },
+    isFixedBitrate() {
+      return this.bitrateType === 'fixedBitrate'
     }
   },
   methods: {
+    getLibraryData() {
+      return {
+        bitrateType : this.bitrateType,
+        fixedBitrate : this.fixedBitrate
+      }
+    },
+    formUpdated() {
+      this.$emit('update', this.getLibraryData())
+    },
+    changedEncodingPresets() {
+      this.formUpdated()
+    },
     removeAllMetadataClick(ext) {
       const payload = {
         message: `Are you sure you want to remove all metadata.${ext} files in your library item folders?`,
@@ -74,8 +126,14 @@ export default {
         .finally(() => {
           this.$emit('update:processing', false)
         })
+    },
+    init() {
+      this.bitrateType = this.librarySettings.bitrateType
+      this.fixedBitrate = this.librarySettings.fixedBitrate
     }
   },
-  mounted() {}
+  mounted() {
+    this.init()
+  }
 }
 </script>
