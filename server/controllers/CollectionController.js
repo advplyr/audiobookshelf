@@ -9,10 +9,40 @@ class CollectionController {
   constructor() { }
 
   /**
-   * POST: /api/collections
-   * Create new collection
-   * @param {*} req 
-   * @param {*} res 
+   * @openapi
+   * /api/collections:
+   *   post:
+   *     operationId: createCollection
+   *     summary: Create a new collection
+   *     tags:
+   *       - Collections
+   *     requestBody:
+   *       description: Data for creating a new collection
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               books:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *             required:
+   *               name
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collection'
+   *       400:
+   *         description: Invalid collection data
    */
   async create(req, res) {
     const newCollection = new Collection()
@@ -48,7 +78,23 @@ class CollectionController {
     SocketAuthority.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
   }
-
+  /**
+   * @openapi
+   * /api/collections:
+   *   get:
+   *     operationId: getAllCollections
+   *     summary: Get all collections
+   *     deprecated: true
+   *     tags:
+   *       - Collections
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   */
   async findAll(req, res) {
     const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
     res.json({
@@ -69,10 +115,49 @@ class CollectionController {
   }
 
   /**
-   * PATCH: /api/collections/:id
-   * Update collection
-   * @param {*} req 
-   * @param {*} res 
+   * @openapi
+   * /api/collections/{id}:
+   *   patch:
+   *     operationId: updateCollection
+   *     summary: Update an existing collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       description: Data for updating an existing collection
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               libraryId:
+   *                 type: string
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: [string, null]
+   *               books:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   *       403:
+   *         A user with update permissions is required to update collections
+   *       404:
+   *         description: No collection with the specified ID exists
    */
   async update(req, res) {
     let wasUpdated = false
@@ -122,7 +207,29 @@ class CollectionController {
     }
     res.json(jsonExpanded)
   }
-
+  /**
+   * @openapi
+   * /api/collections/{id}:
+   *   delete:
+   *     operationId: deleteCollection
+   *     summary: Delete specified collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *       403:
+   *         description: A user with delete permissions is required to delete a collection
+   *       404:
+   *         description: No collection with the specified ID exists
+   */
   async delete(req, res) {
     const jsonExpanded = await req.collection.getOldJsonExpanded()
 
@@ -141,6 +248,49 @@ class CollectionController {
    * Req.body { id: <library item id> }
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/collections/{id}/book:
+   *   post:
+   *     operationId: collectionAddBook
+   *     summary: Add a single book to a collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       description: Data for adding a single book to a collection
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               libraryId:
+   *                 type: string
+   *               books:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   *       403:
+   *         A user with update permissions is required to update collections
+   *       404:
+   *         description: No collection with the specified ID exists
+   *       500:
+   *         description: The provided library ID could not be found, is in
+   *                      a different library, or is already in a collection
    */
   async addBook(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.body.id)

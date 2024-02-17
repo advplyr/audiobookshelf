@@ -26,6 +26,30 @@ class LibraryItemController {
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
    */
+  /**
+   * @openapi
+   * /api/items/{id}:
+   *   get:
+   *     summary: Get a library item
+   *     tags:
+   *       - Items
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Library Item ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Got the library item
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/libraryItem'
+   *       400:
+   *         description: Invalid collection data
+   */
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
     if (req.query.expanded == 1) {

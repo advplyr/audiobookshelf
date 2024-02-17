@@ -2,7 +2,67 @@ const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
 
-
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     collection:
+ *       type: object
+ *       description: A public collection of library items which can be ordered and has a description.
+ *       properties:
+ *         id:
+ *           description: The ID of the collection.
+ *           type: string
+ *         libraryId:
+ *           description: The ID of the library the collection belongs to.
+ *           type: string
+ *         name:
+ *           description: The name of the collection.
+ *           type: string
+ *         description:
+ *           description: The description of the collection.
+ *           type: [string, null]
+ *         books:
+ *           description: The books that belong to the collection.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/libraryItem'
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the collection was last updated.
+ *           type: integer
+ *         createdAt:
+ *           description: The time (in ms since POSIX epoch) when the collection was created.
+ *           type: integer
+ *     collectionExpanded:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the collection.
+ *           type: string
+ *         libraryId:
+ *           description: The ID of the library the collection belongs to.
+ *           type: string
+ *         userId:
+ *           description: The ID of the user that created the collection.
+ *           type: string
+ *         name:
+ *           description: The name of the collection.
+ *           type: string
+ *         description:
+ *           description: The name of the collection.
+ *           type: [string, null]
+ *         books:
+ *           description: The books that belong to the collection.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/libraryItemExpanded'
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the collection was last updated.
+ *           type: integer
+ *         createdAt:
+ *           description: The time (in ms since POSIX epoch) when the collection was created.
+ *           type: integer
+ */
 class Collection extends Model {
   constructor(values, options) {
     super(values, options)

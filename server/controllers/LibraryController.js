@@ -451,6 +451,31 @@ class LibraryController {
    * @param {*} req 
    * @param {*} res 
    */
+  /**
+   * @openapi
+   * /api/libraries/{id}/collections:
+   *   get:
+   *     operationId: getLibraryCollections
+   *     summary: Get all collections in a library
+   *     tags:
+   *       - Library
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Library ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/collectionExpanded'
+   */
   async getCollectionsForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
