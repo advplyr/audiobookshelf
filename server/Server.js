@@ -5,7 +5,6 @@ const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
-const rateLimit = require('./libs/expressRateLimit')
 const cookieParser = require("cookie-parser")
 
 const { version } = require('../package.json')
@@ -287,8 +286,6 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    // router.post('/login', passport.authenticate('local', this.auth.login), this.auth.loginResult.bind(this))
-    // router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
@@ -399,30 +396,6 @@ class Server {
         await Database.updateUser(_user)
       }
     }
-  }
-
-  // First time login rate limit is hit
-  loginLimitReached(req, res, options) {
-    Logger.error(`[Server] Login rate limit (${options.max}) was hit for ip ${req.ip}`)
-    options.message = 'Too many attempts. Login temporarily locked.'
-  }
-
-  getLoginRateLimiter() {
-    return rateLimit({
-      windowMs: Database.serverSettings.rateLimitLoginWindow, // 5 minutes
-      max: Database.serverSettings.rateLimitLoginRequests,
-      skipSuccessfulRequests: true,
-      onLimitReached: this.loginLimitReached
-    })
-  }
-
-  logout(req, res) {
-    if (req.body.socketId) {
-      Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${req.body.socketId}`)
-      SocketAuthority.logout(req.body.socketId)
-    }
-
-    res.sendStatus(200)
   }
 
   /**
