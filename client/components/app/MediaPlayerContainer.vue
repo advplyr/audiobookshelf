@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
     <div class="absolute left-2 top-2 md:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
@@ -29,7 +29,7 @@
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <span class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</span>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
@@ -349,7 +349,7 @@ export default {
       }
 
       if ('mediaSession' in navigator) {
-        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png')
+        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
         const artwork = [
           {
             src: coverImageSrc
@@ -380,7 +380,7 @@ export default {
       if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === data.stream) {
         if (!data.numSegments) return
         var chunks = data.chunks
-        console.log(`[StreamContainer] Stream Progress ${data.percent}`)
+        console.log(`[MediaPlayerContainer] Stream Progress ${data.percent}`)
         if (this.$refs.audioPlayer) {
           this.$refs.audioPlayer.setChunksReady(chunks, data.numSegments)
         } else {
@@ -397,17 +397,17 @@ export default {
       this.playerHandler.prepareOpenSession(session, this.currentPlaybackRate)
     },
     streamOpen(session) {
-      console.log(`[StreamContainer] Stream session open`, session)
+      console.log(`[MediaPlayerContainer] Stream session open`, session)
     },
     streamClosed(streamId) {
       // Stream was closed from the server
       if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === streamId) {
-        console.warn('[StreamContainer] Closing stream due to request from server')
+        console.warn('[MediaPlayerContainer] Closing stream due to request from server')
         this.playerHandler.closePlayer()
       }
     },
     streamReady() {
-      console.log(`[StreamContainer] Stream Ready`)
+      console.log(`[MediaPlayerContainer] Stream Ready`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setStreamReady()
       } else {
@@ -417,7 +417,7 @@ export default {
     streamError(streamId) {
       // Stream had critical error from the server
       if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === streamId) {
-        console.warn('[StreamContainer] Closing stream due to stream error from server')
+        console.warn('[MediaPlayerContainer] Closing stream due to stream error from server')
         this.playerHandler.closePlayer()
       }
     },
@@ -496,7 +496,7 @@ export default {
 </script>
 
 <style>
-#streamContainer {
+#mediaPlayerContainer {
   box-shadow: 0px -6px 8px #1111113f;
 }
 </style>

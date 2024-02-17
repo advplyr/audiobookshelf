@@ -110,4 +110,21 @@ describe('parseOpfMetadata - test series', async () => {
             { "name": "Serie 1", "sequence": null }
         ])
     })
+
+    it('test series and series index not directly underneath', async () => {
+        const opf = `
+            <?xml version='1.0' encoding='UTF-8'?>
+            <package xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf" xml:lang="en" version="3.0" unique-identifier="bookid">
+              <metadata>
+                  <meta name="calibre:series" content="Serie 1"/>
+                  <meta name="calibre:title_sort" content="Test Title"/>
+                  <meta name="calibre:series_index" content="1"/>
+              </metadata>
+            </package>
+        `
+        const parsedOpf = await parseOpfMetadataXML(opf)
+        expect(parsedOpf.series).to.deep.equal([
+            { "name": "Serie 1", "sequence": "1" }
+        ])
+    })
 })

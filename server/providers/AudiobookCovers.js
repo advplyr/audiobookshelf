@@ -14,7 +14,7 @@ class AudiobookCovers {
       Logger.error('[AudiobookCovers] Cover search error', error)
       return []
     })
-    return items.map(item => ({ cover: item.filename }))
+    return items.map(item => ({ cover: item.versions.png.original }))
   }
 }
 

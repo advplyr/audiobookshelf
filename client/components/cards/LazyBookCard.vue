@@ -8,10 +8,10 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <div class="flex items-center">
-          <span class="truncate">{{ displayTitle }}</span>
+        <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+          <p ref="displayTitle" class="truncate">{{ displayTitle }}</p>
           <widgets-explicit-indicator :explicit="isExplicit" />
-        </div>
+        </ui-tooltip>
       </div>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
@@ -164,6 +164,7 @@ export default {
       imageReady: false,
       selected: false,
       isSelectionMode: false,
+      displayTitleTruncated: false,
       showCoverBg: false
     }
   },
@@ -642,6 +643,12 @@ export default {
       }
 
       this.libraryItem = libraryItem
+
+      this.$nextTick(() => {
+        if (this.$refs.displayTitle) {
+          this.displayTitleTruncated = this.$refs.displayTitle.scrollWidth > this.$refs.displayTitle.clientWidth
+        }
+      })
     },
     clickCard(e) {
       if (this.processing) return

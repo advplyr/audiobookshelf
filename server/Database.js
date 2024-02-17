@@ -132,6 +132,11 @@ class Database {
     return this.models.playbackSession
   }
 
+  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  get customMetadataProviderModel() {
+    return this.models.customMetadataProvider
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -177,11 +182,11 @@ class Database {
     if (process.env.QUERY_LOGGING === "log") {
       // Setting QUERY_LOGGING=log will log all Sequelize queries before they run
       Logger.info(`[Database] Query logging enabled`)
-      logging = (query) => Logger.dev(`Running the following query:\n ${query}`)
+      logging = (query) => Logger.debug(`Running the following query:\n ${query}`)
     } else if (process.env.QUERY_LOGGING === "benchmark") {
       // Setting QUERY_LOGGING=benchmark will log all Sequelize queries and their execution times, after they run
       Logger.info(`[Database] Query benchmarking enabled"`)
-      logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms:\n ${query}`)
+      logging = (query, time) => Logger.debug(`Ran the following query in ${time}ms:\n ${query}`)
       benchmark = true
     }
 
@@ -245,6 +250,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
+    require('./models/CustomMetadataProvider').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }

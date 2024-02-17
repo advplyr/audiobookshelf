@@ -99,7 +99,7 @@ export const getters = {
       return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
     }
 
-    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}${raw ? '&raw=1' : ''}`
   },
   getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, timestamp = null, raw = false) => {
     const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`

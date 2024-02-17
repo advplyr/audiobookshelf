@@ -36,6 +36,8 @@ class AbsMetadataFileScanner {
       for (const key in abMetadata) {
         // TODO: When to override with null or empty arrays?
         if (abMetadata[key] === undefined || abMetadata[key] === null) continue
+        if (key === 'authors' && !abMetadata.authors?.length) continue
+        if (key === 'genres' && !abMetadata.genres?.length) continue
         if (key === 'tags' && !abMetadata.tags?.length) continue
         if (key === 'chapters' && !abMetadata.chapters?.length) continue
 

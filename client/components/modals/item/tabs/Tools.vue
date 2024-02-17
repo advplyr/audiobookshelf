@@ -2,8 +2,11 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <p class="text-xl font-semibold mb-2">{{ $strings.HeaderAudiobookTools }}</p>
 
+    <!-- alert for windows install -->
+    <widgets-alert v-if="isWindowsInstall" type="warning" class="my-8 text-base">Not supported for the Windows install yet</widgets-alert>
+
     <!-- Merge to m4b -->
-    <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="showM4bDownload && !isWindowsInstall" class="w-full border border-black-200 p-4 my-8">
       <div class="flex flex-wrap items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsMakeM4b }}</p>
@@ -19,22 +22,8 @@
       </div>
     </div>
 
-    <!-- Split to mp3 -->
-    <!-- <div v-if="showMp3Split" class="w-full border border-black-200 p-4 my-8">
-      <div class="flex items-center">
-        <div>
-          <p class="text-lg">{{ $strings.LabelToolsSplitM4b }}</p>
-          <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $strings.LabelToolsSplitM4bDescription }}</p>
-        </div>
-        <div class="flex-grow" />
-        <div>
-          <ui-btn :disabled="true">{{ $strings.MessageNotYetImplemented }}</ui-btn>
-        </div>
-      </div>
-    </div> -->
-
     <!-- Embed Metadata -->
-    <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="mediaTracks.length && !isWindowsInstall" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsEmbedMetadata }}</p>
@@ -122,6 +111,12 @@ export default {
     },
     isEncodeTaskRunning() {
       return this.encodeTask && !this.encodeTask?.isFinished
+    },
+    isWindowsInstall() {
+      return this.Source == 'windows'
+    },
+    Source() {
+      return this.$store.state.Source
     }
   },
   methods: {

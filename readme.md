@@ -39,13 +39,15 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
-Join us on [Discord](https://discord.gg/pJsjuNCKRq) or [Matrix](https://matrix.to/#/#audiobookshelf:matrix.org)
+Join us on [Discord](https://discord.gg/HQgCbd6E75) or [Matrix](https://matrix.to/#/#audiobookshelf:matrix.org)
 
 ### Android App (beta)
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
 ### iOS App (beta)
-Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+**Beta is currently full. Apple has a hard limit of 10k beta testers. Updates will be posted in Discord/Matrix.**
+
+Using Test Flight: https://testflight.apple.com/join/wiic7QIW ***(beta is full)***
 
 ### Build your own tools & clients
 Check out the [API documentation](https://api.audiobookshelf.org/)
@@ -239,6 +241,93 @@ subdomain.domain.com {
         reverse_proxy <LOCAL_IP>:<PORT>
 }
 ```
+### HAProxy
+
+Below is a generic HAProxy config, using `audiobookshelf.YOUR_DOMAIN.COM`. 
+
+To use `http2`, `ssl` is needed.
+
+````make
+global
+    # ... (your global settings go here)
+
+defaults
+    mode http
+    # ... (your default settings go here)
+
+frontend my_frontend
+    # Bind to port 443, enable SSL, and specify the certificate list file
+    bind :443 name :443 ssl crt-list /path/to/cert.crt_list alpn h2,http/1.1
+    mode http
+
+    # Define an ACL for subdomains starting with "audiobookshelf"
+    acl is_audiobookshelf hdr_beg(host) -i audiobookshelf
+
+    # Use the ACL to route traffic to audiobookshelf_backend if the condition is met,
+    # otherwise, use the default_backend
+    use_backend audiobookshelf_backend if is_audiobookshelf
+    default_backend default_backend
+
+backend audiobookshelf_backend
+    mode http
+    # ... (backend settings for audiobookshelf go here)
+
+    # Define the server for the audiobookshelf backend
+    server audiobookshelf_server 127.0.0.99:13378
+
+backend default_backend
+    mode http
+    # ... (default backend settings go here)
+
+    # Define the server for the default backend
+    server default_server 127.0.0.123:8081
+
+````
+
+### pfSense and HAProxy
+
+For pfSense the inputs are graphical, and `Health checking` is enabled.
+
+#### Frontend, Default backend, access control lists and actions
+
+##### Access Control lists
+
+|      Name      |     Expression    | CS | Not |      Value      |
+|:--------------:|:-----------------:|:--:|:---:|:---------------:|
+| audiobookshelf | Host starts with: |    |     | audiobookshelf. |
+
+
+
+##### Actions
+
+The `condition acl names` needs to match the name above `audiobookshelf`.
+
+|      Action      |     Parameters    |       Condition acl names      |
+|:--------------:|:-----------------:|:---------------:|
+| `Use Backend` |audiobookshelf | audiobookshelf | 
+
+#### Backend
+
+
+The `Name` needs to match the `Parameters` above `audiobookshelf`.
+
+|      Name      |     audiobookshelf    |    
+|--------------|-----------------|
+
+##### Server list:
+
+|      Name      |     Expression    | CS | Not |      Value      |
+|:--------------:|:-----------------:|:--:|:---:|:---------------:|
+| audiobookshelf | Host starts with: |    |     | audiobookshelf. |
+
+##### Health checking:
+
+Health checking is enabled by default. `Http check method` of `OPTIONS` is not supported on Audiobookshelf.
+If Health check fails, data will not be forwared.
+Need to do one of following:
+
+* To disable: Change `Health check method` to `none`.
+* To make Health checking function: Change `Http check method` to `HEAD` or `GET`.
 
 
 # Run from source
@@ -307,7 +396,7 @@ You are now ready to start development!
 
 ### Manual Environment Setup
 
-If you don't want to use the dev container, you can still develop this project. First, you will need to install [NodeJs](https://nodejs.org/) (version 16) and [FFmpeg](https://ffmpeg.org/).
+If you don't want to use the dev container, you can still develop this project. First, you will need to install [NodeJs](https://nodejs.org/) (version 20) and [FFmpeg](https://ffmpeg.org/).
 
 Next you will need to create a `dev.js` file in the project's root directory. This contains configuration information and paths unique to your development environment. You can find an example of this file in `.devcontainer/dev.js`.
 

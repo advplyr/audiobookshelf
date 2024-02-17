@@ -161,7 +161,7 @@ class SessionController {
    * @typedef batchDeleteReqBody
    * @property {string[]} sessions
    * 
-   * @param {import('express').Request<{}, {}, batchDeleteReqBody, {}} req 
+   * @param {import('express').Request<{}, {}, batchDeleteReqBody, {}>} req 
    * @param {import('express').Response} res 
    */
   async batchDelete(req, res) {
