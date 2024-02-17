@@ -2,9 +2,9 @@ const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
+const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
-const rateLimit = require('./libs/expressRateLimit')
 const cookieParser = require("cookie-parser")
 
 const { version } = require('../package.json')
@@ -21,11 +21,11 @@ const SocketAuthority = require('./SocketAuthority')
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 
+const LogManager = require('./managers/LogManager')
 const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
-const LogManager = require('./managers/LogManager')
 const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
@@ -67,7 +67,6 @@ class Server {
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
     this.backupManager = new BackupManager()
-    this.logManager = new LogManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
@@ -81,7 +80,7 @@ class Server {
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.auth, this.playbackSessionManager)
 
-    Logger.logManager = this.logManager
+    Logger.logManager = new LogManager()
 
     this.server = null
     this.io = null
@@ -102,9 +101,12 @@ class Server {
    */
   async init() {
     Logger.info('[Server] Init v' + version)
+
     await this.playbackSessionManager.removeOrphanStreams()
 
     await Database.init(false)
+
+    await Logger.logManager.init()
 
     // Create token secret if does not exist (Added v2.1.0)
     if (!Database.serverSettings.tokenSecret) {
@@ -115,7 +117,6 @@ class Server {
     await CacheManager.ensureCachePaths()
 
     await this.backupManager.init()
-    await this.logManager.init()
     await this.rssFeedManager.init()
 
     const libraries = await Database.libraryModel.getAllOldLibraries()
@@ -135,8 +136,41 @@ class Server {
     }
   }
 
+  /**
+   * Listen for SIGINT and uncaught exceptions
+   */
+  initProcessEventListeners() {
+    let sigintAlreadyReceived = false
+    process.on('SIGINT', async () => {
+      if (!sigintAlreadyReceived) {
+        sigintAlreadyReceived = true
+        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
+        await this.stop()
+        Logger.info('Server stopped. Exiting.')
+      } else {
+        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
+      }
+      process.exit(0)
+    })
+
+    /**
+     * @see https://nodejs.org/api/process.html#event-uncaughtexceptionmonitor
+     */
+    process.on('uncaughtExceptionMonitor', async (error, origin) => {
+      await Logger.fatal(`[Server] Uncaught exception origin: ${origin}, error:`, util.format('%O', error))
+    })
+    /**
+     * @see https://nodejs.org/api/process.html#event-unhandledrejection
+     */
+    process.on('unhandledRejection', async (reason, promise) => {
+      await Logger.fatal(`[Server] Unhandled rejection: ${reason}, promise:`, util.format('%O', promise))
+      process.exit(1)
+    })
+  }
+
   async start() {
     Logger.info('=== Starting Server ===')
+    this.initProcessEventListeners()
     await this.init()
 
     const app = express()
@@ -252,8 +286,6 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    // router.post('/login', passport.authenticate('local', this.auth.login), this.auth.loginResult.bind(this))
-    // router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
@@ -283,19 +315,6 @@ class Server {
       res.json({ success: true })
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
-
-    let sigintAlreadyReceived = false
-    process.on('SIGINT', async () => {
-      if (!sigintAlreadyReceived) {
-        sigintAlreadyReceived = true
-        Logger.info('SIGINT (Ctrl+C) received. Shutting down...')
-        await this.stop()
-        Logger.info('Server stopped. Exiting.')
-      } else {
-        Logger.info('SIGINT (Ctrl+C) received again. Exiting immediately.')
-      }
-      process.exit(0)
-    })
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -377,30 +396,6 @@ class Server {
         await Database.updateUser(_user)
       }
     }
-  }
-
-  // First time login rate limit is hit
-  loginLimitReached(req, res, options) {
-    Logger.error(`[Server] Login rate limit (${options.max}) was hit for ip ${req.ip}`)
-    options.message = 'Too many attempts. Login temporarily locked.'
-  }
-
-  getLoginRateLimiter() {
-    return rateLimit({
-      windowMs: Database.serverSettings.rateLimitLoginWindow, // 5 minutes
-      max: Database.serverSettings.rateLimitLoginRequests,
-      skipSuccessfulRequests: true,
-      onLimitReached: this.loginLimitReached
-    })
-  }
-
-  logout(req, res) {
-    if (req.body.socketId) {
-      Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${req.body.socketId}`)
-      SocketAuthority.logout(req.body.socketId)
-    }
-
-    res.sendStatus(200)
   }
 
   /**

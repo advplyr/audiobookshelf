@@ -3,6 +3,18 @@
     <app-settings-content :header-text="$strings.HeaderAuthentication">
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
+          <ui-checkbox v-model="showCustomLoginMessage" checkbox-bg="bg" />
+          <p class="text-lg pl-4">Custom Message on Login</p>
+        </div>
+        <transition name="slide">
+          <div v-if="showCustomLoginMessage" class="w-full pt-4">
+            <ui-rich-text-editor v-model="newAuthSettings.authLoginCustomMessage" />
+          </div>
+        </transition>
+      </div>
+
+      <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
+        <div class="flex items-center">
           <ui-checkbox v-model="enableLocalAuth" checkbox-bg="bg" />
           <p class="text-lg pl-4">{{ $strings.HeaderPasswordAuthentication }}</p>
         </div>
@@ -103,6 +115,7 @@ export default {
     return {
       enableLocalAuth: false,
       enableOpenIDAuth: false,
+      showCustomLoginMessage: false,
       savingSettings: false,
       newAuthSettings: {}
     }
@@ -193,7 +206,7 @@ export default {
 
       function isValidRedirectURI(uri) {
         // Check for somestring://someother/string
-        const pattern = new RegExp('^\\w+://[\\w\\.-]+$', 'i')
+        const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
         return pattern.test(uri)
       }
 
@@ -219,6 +232,10 @@ export default {
 
       if (this.enableOpenIDAuth && !this.validateOpenID()) {
         return
+      }
+
+      if (!this.showCustomLoginMessage || !this.newAuthSettings.authLoginCustomMessage?.trim()) {
+        this.newAuthSettings.authLoginCustomMessage = null
       }
 
       this.newAuthSettings.authActiveAuthMethods = []
@@ -250,6 +267,7 @@ export default {
       }
       this.enableLocalAuth = this.authMethods.includes('local')
       this.enableOpenIDAuth = this.authMethods.includes('openid')
+      this.showCustomLoginMessage = !!this.authSettings.authLoginCustomMessage
     }
   },
   mounted() {

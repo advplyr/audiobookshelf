@@ -84,7 +84,7 @@
         <div class="flex items-center my-2">
           <div class="flex-grow" />
           <div class="hidden sm:inline-flex items-center">
-            <p class="text-sm">{{ $strings.LabelRowsPerPage }}</p>
+            <p class="text-sm whitespace-nowrap">{{ $strings.LabelRowsPerPage }}</p>
             <ui-dropdown v-model="itemsPerPage" :items="itemsPerPageOptions" small class="w-24 mx-2" @input="updatedItemsPerPage" />
           </div>
           <div class="inline-flex items-center">
