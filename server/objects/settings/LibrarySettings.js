@@ -10,6 +10,7 @@ class LibrarySettings {
     this.audiobooksOnly = false
     this.hideSingleBookSeries = false // Do not show series that only have 1 book 
     this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+    this.podcastSearchRegion = 'us'
 
     if (settings) {
       this.construct(settings)
@@ -30,6 +31,7 @@ class LibrarySettings {
       // Added in v2.4.5
       this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
     }
+    this.podcastSearchRegion = settings.podcastSearchRegion || 'us'
   }
 
   toJSON() {
@@ -41,7 +43,8 @@ class LibrarySettings {
       autoScanCronExpression: this.autoScanCronExpression,
       audiobooksOnly: this.audiobooksOnly,
       hideSingleBookSeries: this.hideSingleBookSeries,
-      metadataPrecedence: [...this.metadataPrecedence]
+      metadataPrecedence: [...this.metadataPrecedence],
+      podcastSearchRegion: this.podcastSearchRegion
     }
   }
 

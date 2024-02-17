@@ -396,6 +396,7 @@
   "LabelPlayMethod": "播放方法",
   "LabelPodcast": "播客",
   "LabelPodcasts": "播客",
+  "LabelPodcastSearchRegion": "播客搜索地区",
   "LabelPodcastType": "播客类型",
   "LabelPort": "端口",
   "LabelPrefixesToIgnore": "忽略的前缀 (不区分大小写)",

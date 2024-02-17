@@ -396,6 +396,7 @@
   "LabelPlayMethod": "Метод воспроизведения",
   "LabelPodcast": "Подкаст",
   "LabelPodcasts": "Подкасты",
+  "LabelPodcastSearchRegion": "Регион поиска подкастов",
   "LabelPodcastType": "Тип подкаста",
   "LabelPort": "Порт",
   "LabelPrefixesToIgnore": "Игнорируемые префиксы (без учета регистра)",
