@@ -125,7 +125,10 @@
           </div>
 
           <div class="my-4 w-full">
-            <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
+            <p ref="description" id="item-description" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
+            <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
+              {{ showFullDescription ? 'Read less' : 'Read more' }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
+            </button>
           </div>
 
           <div v-if="invalidAudioFiles.length" class="bg-error border-red-800 shadow-md p-4">
@@ -182,7 +185,9 @@ export default {
       podcastFeedEpisodes: [],
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      showBookmarksModal: false
+      showBookmarksModal: false,
+      isDescriptionClamped: false,
+      showFullDescription: false
     }
   },
   computed: {
@@ -596,10 +601,15 @@ export default {
       this.$store.commit('setBookshelfBookIds', [])
       this.$store.commit('showEditModal', this.libraryItem)
     },
+    checkDescriptionClamped() {
+      if (!this.$refs.description) return
+      this.isDescriptionClamped = this.$refs.description.scrollHeight > this.$refs.description.clientHeight
+    },
     libraryItemUpdated(libraryItem) {
       if (libraryItem.id === this.libraryItemId) {
         console.log('Item was updated', libraryItem)
         this.libraryItem = libraryItem
+        this.$nextTick(this.checkDescriptionClamped)
       }
     },
     clearProgressClick() {
@@ -756,6 +766,8 @@ export default {
     }
   },
   mounted() {
+    this.checkDescriptionClamped()
+
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
@@ -782,3 +794,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+#item-description {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  max-height: 6.25rem;
+  transition: all 0.3s ease-in-out;
+}
+#item-description.show-full {
+  -webkit-line-clamp: unset;
+  max-height: 999rem;
+}
+</style>
