@@ -130,7 +130,7 @@ class ApiRouter {
     this.router.get('/users/:id', UserController.middleware.bind(this), UserController.findOne.bind(this))
     this.router.patch('/users/:id', UserController.middleware.bind(this), UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.middleware.bind(this), UserController.delete.bind(this))
-
+    this.router.patch('/users/:id/openid-unlink', UserController.middleware.bind(this), UserController.unlinkFromOpenID.bind(this))
     this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
 
