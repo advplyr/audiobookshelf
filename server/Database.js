@@ -419,10 +419,21 @@ class Database {
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
   }
 
+  /**
+   * Save metadata file and update library item
+   * 
+   * @param {import('./objects/LibraryItem')} oldLibraryItem 
+   * @returns {Promise<boolean>}
+   */
   async updateLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
     await oldLibraryItem.saveMetadata()
-    return this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    // Clear library filter data cache
+    if (updated) {
+      delete this.libraryFilterData[oldLibraryItem.libraryId]
+    }
+    return updated
   }
 
   async removeLibraryItem(libraryItemId) {
