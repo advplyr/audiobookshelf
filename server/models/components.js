@@ -2,14 +2,26 @@
  * @openapi
  * components:
  *   schemas:
+ *     oldLibraryId:
+ *       type: string
+ *       description: The ID of the libraries created on server version 2.2.23 and before.
+ *       format: "lib_[a-z0-9]{18}"
+ *       examples:
+ *         - lib_o78uaoeuh78h6aoeif
+ *         - lib_74obqytfms9o8oeumg
+ *     libraryId:
+ *       type: string
+ *       description: The library ID for any libraries after 2.3.0.
+ *       format: uuid
+ *       example:
+ *         - e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     library:
  *       type: object
  *       properties:
  *         id:
- *           type: string
- *           description: The ID of the library. (Read Only)
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         name:
  *           type: string
  *           description: The name of the library.
@@ -138,10 +150,9 @@
  *           example:
  *             - /podcasts
  *         libraryId:
- *           description: The ID of the library the folder belongs to. (Read Only)
- *           type: string
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         addedAt:
  *           description: The time (in ms since POSIX epoch) when the folder was added. (Read Only)
  *           type: integer
@@ -157,8 +168,9 @@
  *           description: The inode of the library item.
  *           type: string
  *         libraryId:
- *           description: The ID of the library the item belongs to.
- *           type: string
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         folderId:
  *           description: The ID of the folder the library item is in.
  *           type: string
@@ -225,10 +237,9 @@
  *           example:
  *             - '649641337522215266'
  *         libraryId:
- *           description: The ID of the library the item belongs to.
- *           type: string
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         folderId:
  *           description: The ID of the folder the library item is in.
  *           type: string
@@ -320,10 +331,9 @@
  *           example:
  *             - '649641337522215266'
  *         libraryId:
- *           description: The ID of the library the item belongs to.
- *           type: string
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         folderId:
  *           description: The ID of the folder the library item is in.
  *           type: string
@@ -1510,10 +1520,9 @@
  *           example:
  *             - li_bufnnmp4y5o2gbbxfm
  *         libraryId:
- *           description: The ID of the library the episode's podcast belongs to.
- *           type: string
- *           example:
- *             - lib_p9wkw2i85qy9oltijt
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         isFinished:
  *           description: Whether the episode has finished downloading.
  *           type: boolean
@@ -2285,10 +2294,9 @@
  *           example:
  *             - pl_qbwet64998s5ra6dcu
  *         libraryId:
- *           description: The ID of the library the playlist belongs to.
- *           type: string
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         userId:
  *           description: The ID of the user the playlist belongs to.
  *           type: string
@@ -2329,10 +2337,9 @@
  *           example:
  *             - pl_qbwet64998s5ra6dcu
  *         libraryId:
- *           description: The ID of the library the playlist belongs to.
- *           type: string
- *           example:
- *             - lib_c1u6t4p45c35rf0nzd
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         userId:
  *           description: The ID of the user the playlist belongs to.
  *           type: string
@@ -2530,10 +2537,9 @@
  *           example:
  *             - root
  *         libraryId:
- *           description: The ID of the library that contains the library item.
- *           type: string
- *           example:
- *             - lib_p9wkw2i85qy9oltijt
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         libraryItemId:
  *           description: The ID of the library item.
  *           type: string
@@ -2648,10 +2654,9 @@
  *           example:
  *             - root
  *         libraryId:
- *           description: The ID of the library that contains the library item.
- *           type: string
- *           example:
- *             - lib_p9wkw2i85qy9oltijt
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/libraryId'
  *         libraryItemId:
  *           description: The ID of the library item.
  *           type: string
