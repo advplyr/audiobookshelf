@@ -15,6 +15,10 @@
  *       format: uuid
  *       example:
  *         - e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     mediaType:
+ *       type: string
+ *       description: What kind of media the library item contains. Will be book or podcast.
+ *       enum: [book, podcast]
  *     library:
  *       type: object
  *       properties:
@@ -43,10 +47,7 @@
  *           example:
  *             - audiobookshelf
  *         mediaType:
- *           type: string
- *           description: The type of media that the library contains. Will be book or podcast. (Read Only)
- *           example:
- *             - book
+ *           - $ref: '#/components/schemas/mediaType'
  *         provider:
  *           type: string
  *           description: Preferred metadata provider for the library. See [Metadata Providers](https://api.audiobookshelf.org/#metadata-providers) for a list of possible providers.
@@ -211,8 +212,7 @@
  *           description: Whether the library item was scanned and no longer has media files.
  *           type: boolean
  *         mediaType:
- *           description: What kind of media the library item contains. Will be book or podcast.
- *           type: string
+ *           - $ref: '#/components/schemas/mediaType'
  *         media:
  *           description: The media of the library item.
  *           oneOf:
@@ -296,10 +296,7 @@
  *           example:
  *             - false
  *         mediaType:
- *           description: What kind of media the library item contains. Will be book or podcast.
- *           type: string
- *           example:
- *             - book
+ *           - $ref: '#/components/schemas/mediaType'
  *         media:
  *           description: The media of the library item.
  *           type: object
@@ -400,10 +397,7 @@
  *           example:
  *             - false
  *         mediaType:
- *           description: What kind of media the library item contains. Will be book or podcast.
- *           type: string
- *           example:
- *             - book
+ *           - $ref: '#/components/schemas/mediaType'
  *         media:
  *           description: The media of the library item.
  *           type: object
@@ -2551,10 +2545,7 @@
  *           example:
  *             - ep_lh6ko39pumnrma3dhv
  *         mediaType:
- *           description: The media type of the library item. Will be book or podcast.
- *           type: string
- *           example:
- *             - podcast
+ *           - $ref: '#/components/schemas/mediaType'
  *         mediaMetadata:
  *           description: The metadata of the library item's media.
  *           type: object
@@ -2668,10 +2659,7 @@
  *           example:
  *             - ep_lh6ko39pumnrma3dhv
  *         mediaType:
- *           description: The media type of the library item. Will be book or podcast.
- *           type: string
- *           example:
- *             - podcast
+ *           - $ref: '#/components/schemas/mediaType'
  *         mediaMetadata:
  *           description: The metadata of the library item's media.
  *           type: object
