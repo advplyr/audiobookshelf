@@ -77,7 +77,7 @@
  *             - false
  *         autoScanCronExpression:
  *           description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     libraryFilterData:
  *       type: object
  *       properties:
@@ -423,7 +423,7 @@
  *           $ref: '#/components/schemas/bookMetadata'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
@@ -455,7 +455,7 @@
  *           $ref: '#/components/schemas/bookMetadataMinified'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
@@ -502,7 +502,7 @@
  *             - 268824228
  *         ebookFormat:
  *           description: The format of ebook of the book. Will be null if the book is an audiobook.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     bookExpanded:
  *       type: object
  *       properties:
@@ -515,7 +515,7 @@
  *           $ref: '#/components/schemas/bookMetadataExpanded'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
@@ -559,12 +559,12 @@
  *       properties:
  *         title:
  *           description: The title of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Wizards First Rule
  *         subtitle:
  *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         authors:
  *           description: The authors of the book.
  *           type: array
@@ -591,20 +591,20 @@
  *               - Fantasy
  *         publishedYear:
  *           description: The year the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2008'
  *         publishedDate:
  *           description: The date the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         publisher:
  *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Brilliance Audio
  *         description:
  *           description: A description for the book. Will be null if empty.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               The masterpiece that started Terry Goodkind's New York Times bestselling
@@ -626,15 +626,15 @@
  *               book. One Rule. Witness the birth of a legend.
  *         isbn:
  *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         asin:
  *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - B002V0QK4C
  *         language:
  *           description: The language of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         explicit:
  *           description: Whether the book has been marked as explicit.
  *           type: boolean
@@ -645,7 +645,7 @@
  *       properties:
  *         title:
  *           description: The title of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Wizards First Rule
  *         titleIgnorePrefix:
@@ -653,7 +653,7 @@
  *           type: string
  *         subtitle:
  *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         authorName:
  *           description: The name of the book's author(s).
  *           type: string
@@ -683,20 +683,20 @@
  *               - Fantasy
  *         publishedYear:
  *           description: The year the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2008'
  *         publishedDate:
  *           description: The date the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         publisher:
  *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Brilliance Audio
  *         description:
  *           description: A description for the book. Will be null if empty.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               The masterpiece that started Terry Goodkind's New York Times bestselling
@@ -718,15 +718,15 @@
  *               book. One Rule. Witness the birth of a legend.
  *         isbn:
  *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         asin:
  *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - B002V0QK4C
  *         language:
  *           description: The language of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         explicit:
  *           description: Whether the book has been marked as explicit.
  *           type: boolean
@@ -737,7 +737,7 @@
  *       properties:
  *         title:
  *           description: The title of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Wizards First Rule
  *         titleIgnorePrefix:
@@ -745,7 +745,7 @@
  *           type: string
  *         subtitle:
  *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         authorName:
  *           description: The name of the book's author(s).
  *           type: string
@@ -792,20 +792,20 @@
  *               - Fantasy
  *         publishedYear:
  *           description: The year the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2008'
  *         publishedDate:
  *           description: The date the book was published. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         publisher:
  *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Brilliance Audio
  *         description:
  *           description: A description for the book. Will be null if empty.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               The masterpiece that started Terry Goodkind's New York Times bestselling
@@ -827,15 +827,15 @@
  *               book. One Rule. Witness the birth of a legend.
  *         isbn:
  *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         asin:
  *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - B002V0QK4C
  *         language:
  *           description: The language of the book. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         explicit:
  *           description: Whether the book has been marked as explicit.
  *           type: boolean
@@ -876,7 +876,7 @@
  *           $ref: '#/components/schemas/podcastMetadata'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
@@ -928,7 +928,7 @@
  *           $ref: '#/components/schemas/podcastMetadata'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
@@ -985,7 +985,7 @@
  *           $ref: '#/components/schemas/podcastMetadataExpanded'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
@@ -1035,24 +1035,24 @@
  *       properties:
  *         title:
  *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Welcome to Night Vale
  *         author:
  *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Night Vale Presents
  *         description:
  *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - |2-
  * 
  *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
  *         releaseDate:
  *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2022-10-20T19:00:00Z'
  *           format: date-time
@@ -1067,32 +1067,32 @@
  *               - Fiction
  *         feedUrl:
  *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - http://feeds.nightvalepresents.com/welcometonightvalepodcast
  *           format: url
  *         imageUrl:
  *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
  *           format: url
  *         itunesPageUrl:
  *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
  *           format: url
  *         itunesId:
  *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 536258179
  *         itunesArtistId:
  *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 718704794
  *         explicit:
@@ -1102,10 +1102,10 @@
  *             - false
  *         language:
  *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         type:
  *           description: The type of the podcast.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - episodic
  *     podcastMetadataMinified:
@@ -1113,7 +1113,7 @@
  *       properties:
  *         title:
  *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Welcome to Night Vale
  *         titleIgnorePrefix:
@@ -1123,19 +1123,19 @@
  *              - Welcome to Night Vale
  *         author:
  *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Night Vale Presents
  *         description:
  *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - |2-
  * 
  *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
  *         releaseDate:
  *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2022-10-20T19:00:00Z'
  *           format: date-time
@@ -1150,32 +1150,32 @@
  *               - Fiction
  *         feedUrl:
  *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - http://feeds.nightvalepresents.com/welcometonightvalepodcast
  *           format: url
  *         imageUrl:
  *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
  *           format: url
  *         itunesPageUrl:
  *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
  *           format: url
  *         itunesId:
  *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 536258179
  *         itunesArtistId:
  *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 718704794
  *         explicit:
@@ -1185,10 +1185,10 @@
  *             - false
  *         language:
  *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         type:
  *           description: The type of the podcast.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - episodic
  *     podcastMetadataExpanded:
@@ -1196,7 +1196,7 @@
  *       properties:
  *         title:
  *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Welcome to Night Vale
  *         titleIgnorePrefix:
@@ -1206,19 +1206,19 @@
  *              - Welcome to Night Vale
  *         author:
  *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Night Vale Presents
  *         description:
  *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - |2-
  * 
  *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
  *         releaseDate:
  *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '2022-10-20T19:00:00Z'
  *           format: date-time
@@ -1233,32 +1233,32 @@
  *               - Fiction
  *         feedUrl:
  *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - http://feeds.nightvalepresents.com/welcometonightvalepodcast
  *           format: url
  *         imageUrl:
  *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
  *           format: url
  *         itunesPageUrl:
  *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - >-
  *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
  *           format: url
  *         itunesId:
  *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 536258179
  *         itunesArtistId:
  *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 718704794
  *         explicit:
@@ -1268,14 +1268,14 @@
  *             - false
  *         language:
  *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         type:
  *           description: The type of the podcast.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - episodic
  *     podcastEpisode:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         libraryItemId:
  *           description: The ID of the library item that contains the podcast.
@@ -1360,7 +1360,7 @@
  *           example:
  *             - 1667326679503
  *     podcastEpisodeExpanded:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         libraryItemId:
  *           description: The ID of the library item that contains the podcast.
@@ -1465,7 +1465,7 @@
  *           example:
  *              - 23653735
  *     podcastEpisodeEnclousure:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         url:
  *           description: The URL where the podcast episode's audio file was downloaded from.
@@ -1526,7 +1526,7 @@
  *             - false
  *         startedAt:
  *           description: The time (in ms since POSIX epoch) when the episode started downloading. Will be null if it has not started downloading yet.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         createdAt:
  *           description: The time (in ms since POSIX epoch) when the podcast episode download request was created.
  *           type: integer
@@ -1534,10 +1534,10 @@
  *             - 1668122813409
  *         finishedAt:
  *           description: The time (in ms since POSIX epoch) when the episode finished downloading. Will be null if it has not finished.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         podcastTitle:
  *           description: The title of the episode's podcast.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Welcome to Night Vale
  *         podcastExplicit:
@@ -1547,12 +1547,12 @@
  *             - false
  *         season:
  *           description: The season of the podcast episode.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - ''
  *         episode:
  *           description: The episode number of the podcast episode.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - ''
  *         episodeType:
@@ -1562,7 +1562,7 @@
  *             - full
  *         publishedAt:
  *           description: The time (in ms since POSIX epoch) when the episode was published.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 1341144000000
  *     podcastFeed:
@@ -1782,20 +1782,20 @@
  *             - 1651830828023
  *         trackNumFromMeta:
  *           description: The track number of the audio file as pulled from the file's metadata. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 1
  *         discNumFromMeta:
  *           description: The disc number of the audio file as pulled from the file's metadata. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         trackNumFromFilename:
  *           description: The track number of the audio file as determined from the file's name. Will be null if unknown.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 1
  *         discNumFromFilename:
  *           description: The track number of the audio file as determined from the file's name. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         manuallyVerified:
  *           description: Whether the audio file has been manually verified by a user.
  *           type: boolean
@@ -1813,7 +1813,7 @@
  *             - false
  *         error:
  *           description: Any error with the audio file. Will be null if there is none.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         format:
  *           description: The format of the audio file.
  *           type: string
@@ -1831,7 +1831,7 @@
  *             - 64000
  *         language:
  *           description: The language of the audio file.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         codec:
  *           description: The codec of the audio file.
  *           type: string
@@ -1859,7 +1859,7 @@
  *             $ref: '#/components/schemas/bookChapter'
  *         embeddedCoverArt:
  *           description: The type of embedded cover art in the audio file. Will be null if none exists.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         metaTags:
  *           $ref: '#/components/schemas/audioMetaTags'
  *         mimeType:
@@ -1872,79 +1872,79 @@
  *       type: object
  *       properties:
  *         tagAlbum:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - SOT Bk01
  *         tagArtist:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Terry Goodkind
  *         tagGenre:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Audiobook Fantasy
  *         tagTitle:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Wizards First Rule 01
  *         tagSeries:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagSeriesPart:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagTrack:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - 01/20
  *         tagDisc:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagSubtitle:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagAlbumArtist:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Terry Goodkind
  *         tagDate:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagComposer:
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Terry Goodkind
  *         tagPublisher:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagComment:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagDescription:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagEncoder:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagEncodedBy:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagIsbn:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagLanguage:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagASIN:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagOverdriveMediaMarker:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagOriginalYear:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagReleaseCountry:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagReleaseType:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagReleaseStatus:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagISRC:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagMusicBrainzTrackId:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagMusicBrainzAlbumId:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagMusicBrainzAlbumArtistId:
- *           type: [string, null]
+ *           type: [string, 'null']
  *         tagMusicBrainzArtistId:
- *           type: [string, null]
+ *           type: [string, 'null']
  *     audioTrack:
  *       type: object
  *       properties:
@@ -1983,7 +1983,7 @@
  *         metadata:
  *           $ref: '#/components/schemas/fileMetadata'
  *     ebookFile:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         ino:
  *           description: The inode of the ebook file.
@@ -2033,7 +2033,7 @@
  *           example:
  *             - audio
  *     fileMetadata:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         filename:
  *           description: The filename of the file.
@@ -2087,7 +2087,7 @@
  *             - aut_z3leimgybl7uf3y4ab
  *         asin:
  *           description: The ASIN of the author. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         name:
  *           description: The name of the author.
  *           type: string
@@ -2095,10 +2095,10 @@
  *             - Terry Goodkind
  *         description:
  *           description: A description of the author. Will be null if there is none.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         imagePath:
  *           description: The absolute path for the author image. Will be null if there is no image.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         addedAt:
  *           description: The time (in ms since POSIX epoch) when the author was added.
  *           type: integer
@@ -2132,7 +2132,7 @@
  *             - aut_z3leimgybl7uf3y4ab
  *         asin:
  *           description: The ASIN of the author. Will be null if unknown.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         name:
  *           description: The name of the author.
  *           type: string
@@ -2140,10 +2140,10 @@
  *             - Terry Goodkind
  *         description:
  *           description: A description of the author. Will be null if there is none.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         imagePath:
  *           description: The absolute path for the author image. Will be null if there is no image.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         addedAt:
  *           description: The time (in ms since POSIX epoch) when the author was added.
  *           type: integer
@@ -2174,7 +2174,7 @@
  *             - Sword of Truth
  *         description:
  *           description: A description for the series. Will be null if there is none.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         addedAt:
  *           description: The time (in ms since POSIX epoch) when the series was added.
  *           type: integer
@@ -2301,10 +2301,10 @@
  *             - Favorites
  *         description:
  *           description: The playlist's description.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         coverPath:
  *           description: The path of the playlist's cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         items:
  *           description: The items in the playlist.
  *           type: array
@@ -2345,10 +2345,10 @@
  *             - Favorites
  *         description:
  *           description: The playlist's description.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         coverPath:
  *           description: The path of the playlist's cover.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         items:
  *           description: The items in the playlist.
  *           type: array
@@ -2374,7 +2374,7 @@
  *             - li_8gch9ve09orgn4fdz8
  *         episodeId:
  *           description: The ID of the podcast episode the playlist item is for.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     playlistItemExpanded:
  *       type: object
  *       properties:
@@ -2385,7 +2385,7 @@
  *             - li_8gch9ve09orgn4fdz8
  *         episodeId:
  *           description: The ID of the podcast episode the playlist item is for.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         episode:
  *           $ref: '#/components/schemas/podcastEpisodeExpanded'
  *         libraryItem:
@@ -2410,7 +2410,7 @@
  *             - li_bufnnmp4y5o2gbbxfm
  *         episodeId:
  *           description: The ID of the podcast episode the media progress is of. Will be null if the progress is for a book.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - ep_lh6ko39pumnrma3dhv
  *         duration:
@@ -2450,7 +2450,7 @@
  *             - 1668120083771
  *         finishedAt:
  *           description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     mediaProgressWithMedia:
  *       type: object
  *       properties:
@@ -2466,7 +2466,7 @@
  *             - li_bufnnmp4y5o2gbbxfm
  *         episodeId:
  *           description: The ID of the podcast episode the media progress is of. Will be null if the progress is for a book.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - ep_lh6ko39pumnrma3dhv
  *         duration:
@@ -2506,7 +2506,7 @@
  *             - 1668120083771
  *         finishedAt:
  *           description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         media:
  *           description: The media of the library item the media progress is for.
  *           type: object
@@ -2635,7 +2635,7 @@
  *           example:
  *             - 1668206493239
  *     playbackSessionExpanded:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         id:
  *           description: The ID of the playback session.
@@ -2759,7 +2759,7 @@
  *             $ref: '#/components/schemas/audioFile'
  *         videoTrack:
  *           description: The video track that is being played with the playback session. Will be null if the playback session is for a book or podcast. (Video Track Object does not exist)
- *           type: [string, null]
+ *           type: [string, 'null']
  *         libraryItem:
  *           $ref: '#/components/schemas/libraryItemExpanded'
  *     deviceInfo:
@@ -2784,45 +2784,45 @@
  *             - 4dd05e7fadca538b
  *         ipAddress:
  *           description: The IP address that the request came from.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - 192.168.1.118
  *           format: ipv4
  *         browserName:
  *           description: The browser name, taken from the user agent.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Firefox
  *         browserVersion:
  *           description: The browser version, taken from the user agent.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - '106.0'
  *         osName:
  *           description: The name of OS, taken from the user agent.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Linux
  *         osVersion:
  *           description: The version of the OS, taken from the user agent.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - x86_64
  *         deviceName:
  *           description: The device name, constructed automatically from other attributes.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         deviceType:
  *           description: The device name, constructed automatically from other attributes.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         manufacturer:
  *           description: The client device's manufacturer, as provided in the request.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         model:
  *           description: The client device's model, as provided in the request.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         sdkVersion:
  *           description: For an Android device, the Android SDK version of the client, as provided in the request.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         clientName:
  *           description: Name of the client, as provided in the request.
  *           type: string
@@ -3140,7 +3140,7 @@
  *             - notification-settings
  *         appriseType:
  *           description: The type of Apprise that will be used. At the moment, only api is available.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - api
  *         appriseApiUrl:
@@ -3179,7 +3179,7 @@
  *             - noti_nod281qwkj5ow7h7fi
  *         libraryId:
  *           description: The ID of the library the notification is associated with.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         eventName:
  *           description: The name of the event the notification will fire on.
  *           type: string
@@ -3214,7 +3214,7 @@
  *             - info
  *         lastFiredAt:
  *           description: The time (in ms since POSIX epoch) when the notification was last fired. Will be null if the notification has not fired.
- *           type: [integer, null]
+ *           type: [integer, 'null']
  *           example:
  *             - 1668776410792
  *         lastAttemptFailed:
@@ -3252,7 +3252,7 @@
  *             - true
  *         libraryMediaType:
  *           description: The type of media of the library the notification depends on existing. Will not exist if requiresLibrary is false.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - podcast
  *         description:
@@ -3544,7 +3544,7 @@
  *           example:
  *             - 1669031843179
  *     rssFeedMinified:
- *       type: [object, null]
+ *       type: [object, 'null']
  *       properties:
  *         id:
  *           description: The ID of the RSS feed.
@@ -3579,14 +3579,14 @@
  *             - Welcome to Night Vale
  *         description:
  *           description: The description of the entity the RSS feed is for.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - |2-
  * 
  *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
  *         author:
  *           description: The author of the entity the RSS feed is for.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - Night Vale Presents
  *         imageUrl:
@@ -3614,12 +3614,12 @@
  *             - false
  *         type:
  *           description: The type of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - episodic
  *         language:
  *           description: The language of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - en
  *         preventIndexing:
@@ -3629,10 +3629,10 @@
  *             - true
  *         ownerName:
  *           description: The owner name of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         ownerEmail:
  *           description: The owner email of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     rssFeedMetadataMinified:
  *       type: object
  *       properties:
@@ -3643,7 +3643,7 @@
  *             - Welcome to Night Vale
  *         description:
  *           description: The description of the entity the RSS feed is for.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - |2-
  * 
@@ -3655,10 +3655,10 @@
  *             - true
  *         ownerName:
  *           description: The owner name of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         ownerEmail:
  *           description: The owner email of the RSS feed.
- *           type: [string, null]
+ *           type: [string, 'null']
  *     rssFeedEpisode:
  *       type: object
  *       properties:
@@ -3733,13 +3733,13 @@
  *             - 1454.18449
  *         season:
  *           description: The season of the RSS feed episode.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         episode:
  *           description: The episode number of the RSS feed episode.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         episodeType:
  *           description: The type of the RSS feed episode.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         libraryItemId:
  *           description: The ID of the library item the RSS feed is for.
  *           type: string
@@ -3747,7 +3747,7 @@
  *             - li_bufnnmp4y5o2gbbxfm
  *         episodeId:
  *           description: The ID of the podcast episode the RSS feed episode is for. Will be null if the RSS feed is for a book.
- *           type: [string, null]
+ *           type: [string, 'null']
  *           example:
  *             - ep_lh6ko39pumnrma3dhv
  *         trackIndex:

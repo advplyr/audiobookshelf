@@ -50,7 +50,7 @@ const oldCollection = require('../objects/Collection')
  *           type: string
  *         description:
  *           description: The name of the collection.
- *           type: [string, null]
+ *           type: [string, 'null']
  *         books:
  *           description: The books that belong to the collection.
  *           type: array

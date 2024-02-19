@@ -142,7 +142,7 @@ class CollectionController {
    *               name:
    *                 type: string
    *               description:
-   *                 type: [string, null]
+   *                 type: [string, 'null']
    *               books:
    *                 type: array
    *                 items:
