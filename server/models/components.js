@@ -19,6 +19,11 @@
  *       type: string
  *       description: What kind of media the library item contains. Will be book or podcast.
  *       enum: [book, podcast]
+ *     createdAt:
+ *       type: integer
+ *       description: The time (in ms since POSIX epoch) when the item was created.
+ *       example:
+ *         - 1633522963509
  *     library:
  *       type: object
  *       properties:
@@ -56,10 +61,7 @@
  *         settings:
  *           $ref: '#/components/schemas/librarySettings'
  *         createdAt:
- *           type: integer
- *           description: The time (in ms since POSIX epoch) when the library was created. (Read Only)
- *           example:
- *             - 1633522963509
+ *           $ref: '#/components/schemas/createdAt'
  *         lastUpdate:
  *           type: integer
  *           description: The time (in ms since POSIX epoch) when the library was last updated. (Read Only)
@@ -1531,10 +1533,7 @@
  *           description: The time (in ms since POSIX epoch) when the episode started downloading. Will be null if it has not started downloading yet.
  *           type: [string, 'null']
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode download request was created.
- *           type: integer
- *           example:
- *             - 1668122813409
+ *           $ref: '#/components/schemas/createdAt'
  *         finishedAt:
  *           description: The time (in ms since POSIX epoch) when the episode finished downloading. Will be null if it has not finished.
  *           type: [string, 'null']
@@ -2318,10 +2317,7 @@
  *           example:
  *             - 1669623431313
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the playlist was created.
- *           type: integer
- *           example:
- *             - 1669623431313
+ *           $ref: '#/components/schemas/createdAt'
  *     playlistExpanded:
  *       type: object
  *       properties:
@@ -2361,10 +2357,7 @@
  *           example:
  *             - 1669623431313
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the playlist was created.
- *           type: integer
- *           example:
- *             - 1669623431313
+ *           $ref: '#/components/schemas/createdAt'
  *     playlistItem:
  *       type: object
  *       properties:
@@ -2882,10 +2875,7 @@
  *           example:
  *             - 1668296147437
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the user was created.
- *           type: integer
- *           example:
- *             - 1666543632566
+ *           $ref: '#/components/schemas/createdAt'
  *         permissions:
  *           $ref: '#/components/schemas/userPermissions'
  *         librariesAccessible:
@@ -2958,10 +2948,7 @@
  *           example:
  *             - 1668296147437
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the user was created.
- *           type: integer
- *           example:
- *             - 1666543632566
+ *           $ref: '#/components/schemas/createdAt'
  *         permissions:
  *           $ref: '#/components/schemas/userPermissions'
  *         librariesAccessible:
@@ -3004,10 +2991,7 @@
  *           example:
  *             - 1668296147437
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the user was created.
- *           type: integer
- *           example:
- *             - 1666543632566
+ *           $ref: '#/components/schemas/createdAt'
  *     userPermissions:
  *       type: object
  *       properties:
@@ -3065,10 +3049,7 @@
  *           example:
  *             - 16
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the bookmark was created.
- *           type: integer
- *           example:
- *             - 1668120083771
+ *           $ref: '#/components/schemas/createdAt'
  * 
  *     backup:
  *       type: object
@@ -3114,10 +3095,7 @@
  *           example:
  *             - 7776983
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the backup was created.
- *           type: integer
- *           example:
- *             - 1668411000329
+ *           $ref: '#/components/schemas/createdAt'
  *         serverVersion:
  *           description: The version of the server when the backup was created.
  *           type: string
@@ -3226,10 +3204,7 @@
  *           example:
  *             - 5
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the notification was created.
- *           type: integer
- *           example:
- *             - 1666545142424
+ *           $ref: '#/components/schemas/createdAt'
  *     notificationEvents:
  *       type: object
  *       properties:
@@ -3527,10 +3502,7 @@
  *           items:
  *             $ref: '#/components/schemas/rssFeedEpisode'
  *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the RSS feed was created.
- *           type: integer
- *           example:
- *             - 1669031843179
+ *           $ref: '#/components/schemas/createdAt'
  *         updatedAt:
  *           description: The time (in ms since POSIX epoch) when the RSS feed was last updated.
  *           type: integer
