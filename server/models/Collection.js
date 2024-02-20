@@ -6,9 +6,9 @@ const oldCollection = require('../objects/Collection')
  * @openapi
  * components:
  *   schemas:
- *     collection:
+ *     collectionBase:
  *       type: object
- *       description: A public collection of library items which can be ordered and has a description.
+ *       description: A public collection of library items which can be ordered and has a description, base schema.
  *       properties:
  *         id:
  *           description: The ID of the collection.
@@ -22,46 +22,32 @@ const oldCollection = require('../objects/Collection')
  *         description:
  *           description: The description of the collection.
  *           type: [string, null]
- *         books:
- *           description: The books that belong to the collection.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/libraryItem'
  *         lastUpdate:
  *           description: The time (in ms since POSIX epoch) when the collection was last updated.
  *           type: integer
  *         createdAt:
  *           description: The time (in ms since POSIX epoch) when the collection was created.
  *           type: integer
+ *     collection:
+ *       type: object
+ *       description: A public collection of library items which can be ordered and has a description.
+ *       allOf:
+ *         - $ref: '#/components/schemas/collectionBase'
+ *         - books:
+ *             description: The books that belong to the collection.
+ *             type: array
+ *             items:
+ *               $ref: '#/components/schemas/libraryItem'
  *     collectionExpanded:
  *       type: object
- *       properties:
- *         id:
- *           description: The ID of the collection.
- *           type: string
- *         libraryId:
- *           description: The ID of the library the collection belongs to.
- *           type: string
- *         userId:
- *           description: The ID of the user that created the collection.
- *           type: string
- *         name:
- *           description: The name of the collection.
- *           type: string
- *         description:
- *           description: The name of the collection.
- *           type: [string, 'null']
- *         books:
- *           description: The books that belong to the collection.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/libraryItemExpanded'
- *         lastUpdate:
- *           description: The time (in ms since POSIX epoch) when the collection was last updated.
- *           type: integer
- *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the collection was created.
- *           type: integer
+ *       description: A public collection of library items which can be ordered and has a description. Replaces `libraryItem` with `libraryItemExtended`.
+ *       allOf:
+ *         - $ref: '#/components/schemas/collectionBase'
+ *         - books:
+ *             description: The books that belong to the collection.
+ *             type: array
+ *             items:
+ *               $ref: '#/components/schemas/libraryItemExpanded'
  */
 class Collection extends Model {
   constructor(values, options) {
