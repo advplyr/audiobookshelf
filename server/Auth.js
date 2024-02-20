@@ -8,7 +8,6 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
-const e = require('express')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -82,7 +81,8 @@ class Auth {
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
       token_endpoint: global.ServerSettings.authOpenIDTokenURL,
       userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
-      jwks_uri: global.ServerSettings.authOpenIDJwksURL
+      jwks_uri: global.ServerSettings.authOpenIDJwksURL,
+      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
@@ -154,6 +154,9 @@ class Auth {
         return
       }
 
+      // We also have to save the id_token for later (used for logout) because we cannot set cookies here
+      user.openid_id_token = tokenset.id_token
+
       // permit login
       return done(null, user)
     }))
@@ -184,49 +187,48 @@ class Auth {
   }
 
   /**
-   * Stores the client's choice how the login callback should happen in temp cookies
+   * Returns if the given auth method is API based.
+   *
+   * @param {string} authMethod
+   * @returns {boolean}
+   */
+  isAuthMethodAPIBased(authMethod) {
+    return ['api', 'openid-mobile'].includes(authMethod)
+  }
+
+  /**
+   * Stores the client's choice of login callback method in temporary cookies.
+   *
+   * The `authMethod` parameter specifies the authentication strategy and can have the following values:
+   * - 'local': Standard authentication,
+   * - 'api': Authentication for API use
+   * - 'openid': OpenID authentication directly over web
+   * - 'openid-mobile': OpenID authentication, but done via an mobile device
    * 
    * @param {import('express').Request} req
    * @param {import('express').Response} res
+   * @param {string} authMethod - The authentication method, default is 'local'.
    */
-  paramsToCookies(req, res) {
-    // Set if isRest flag is set or if mobile oauth flow is used
-    if (req.query.isRest?.toLowerCase() == 'true' || req.query.redirect_uri) {
-      // store the isRest flag to the is_rest cookie 
-      res.cookie('is_rest', 'true', {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
-    } else {
-      // no isRest-flag set -> set is_rest cookie to false
-      res.cookie('is_rest', 'false', {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
+  paramsToCookies(req, res, authMethod = 'local') {
+    const TWO_MINUTES = 120000 // 2 minutes in milliseconds
+    const callback = req.query.redirect_uri || req.query.callback
 
-      // persist state if passed in
+    // Additional handling for non-API based authMethod
+    if (!this.isAuthMethodAPIBased(authMethod)) {
+      // Store 'auth_state' if present in the request
       if (req.query.state) {
-        res.cookie('auth_state', req.query.state, {
-          maxAge: 120000, // 2 min
-          httpOnly: true
-        })
+        res.cookie('auth_state', req.query.state, { maxAge: TWO_MINUTES, httpOnly: true })
       }
 
-      const callback = req.query.redirect_uri || req.query.callback
-
-      // check if we are missing a callback parameter - we need one if isRest=false
+      // Validate and store the callback URL
       if (!callback) {
-        res.status(400).send({
-          message: 'No callback parameter'
-        })
-        return
+        return res.status(400).send({ message: 'No callback parameter' })
       }
-      // store the callback url to the auth_cb cookie 
-      res.cookie('auth_cb', callback, {
-        maxAge: 120000, // 2 min
-        httpOnly: true
-      })
+      res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
     }
+
+    // Store the authentication method for long
+    res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
   }
 
   /**
@@ -240,7 +242,7 @@ class Auth {
     // get userLogin json (information about the user, server and the session)
     const data_json = await this.getUserLoginResponsePayload(req.user)
 
-    if (req.cookies.is_rest === 'true') {
+    if (this.isAuthMethodAPIBased(req.cookies.auth_method)) {
       // REST request - send data
       res.json(data_json)
     } else {
@@ -270,108 +272,104 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', (req, res, next) => {
+      // Get the OIDC client from the strategy
+      // We need to call the client manually, because the strategy does not support forwarding the code challenge
+      //    for API or mobile clients
+      const oidcStrategy = passport._strategy('openid-client')
+      const client = oidcStrategy._client
+      const sessionKey = oidcStrategy._key
+
       try {
-        // helper function from openid-client
-        function pick(object, ...paths) {
-          const obj = {}
-          for (const path of paths) {
-            if (object[path] !== undefined) {
-              obj[path] = object[path]
-            }
-          }
-          return obj
+        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+        const hostUrl = new URL(`${protocol}://${req.get('host')}`)
+        const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
+
+        // Only allow code flow (for mobile clients)
+        if (req.query.response_type && req.query.response_type !== 'code') {
+          Logger.debug(`[Auth] OIDC Invalid response_type=${req.query.response_type}`)
+          return res.status(400).send('Invalid response_type, only code supported')
         }
 
-        // Get the OIDC client from the strategy
-        // We need to call the client manually, because the strategy does not support forwarding the code challenge
-        //    for API or mobile clients
-        const oidcStrategy = passport._strategy('openid-client')
-        const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+        // Generate a state on web flow or if no state supplied
+        const state = (!isMobileFlow || !req.query.state) ? OpenIDClient.generators.random() : req.query.state
 
-        let mobile_redirect_uri = null
-
-        // The client wishes a different redirect_uri
-        // We will allow if it is in the whitelist, by saving it into this.openIdAuthSession and setting the redirect uri to /auth/openid/mobile-redirect
-        //    where we will handle the redirect to it
-        if (req.query.redirect_uri) {
-          // Check if the redirect_uri is in the whitelist
-          if (Database.serverSettings.authOpenIDMobileRedirectURIs.includes(req.query.redirect_uri) ||
-            (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')) {
-            oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/mobile-redirect`).toString()
-            mobile_redirect_uri = req.query.redirect_uri
-          } else {
-            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri} - not in whitelist`)
+        // Redirect URL for the SSO provider
+        let redirectUri
+        if (isMobileFlow) {
+          // Mobile required redirect uri
+          // If it is in the whitelist, we will save into this.openIdAuthSession and set the redirect uri to /auth/openid/mobile-redirect
+          //    where we will handle the redirect to it
+          if (!req.query.redirect_uri || !isValidRedirectUri(req.query.redirect_uri)) {
+            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri}`)
             return res.status(400).send('Invalid redirect_uri')
           }
+          // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
+          //   for the request to mobile-redirect and as such the session is not shared
+          this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
+
+          redirectUri = new URL('/auth/openid/mobile-redirect', hostUrl).toString()
         } else {
-          oidcStrategy._params.redirect_uri = new URL(`${protocol}://${req.get('host')}/auth/openid/callback`).toString()
-        }
+          redirectUri = new URL('/auth/openid/callback', hostUrl).toString()
 
-        Logger.debug(`[Auth] Oidc redirect_uri=${oidcStrategy._params.redirect_uri}`)
-        const client = oidcStrategy._client
-        const sessionKey = oidcStrategy._key
-
-        let code_challenge
-        let code_challenge_method
-
-        // If code_challenge is provided, expect that code_verifier will be handled by the client (mobile app)
-        // The web frontend of ABS does not need to do a PKCE itself, because it never handles the "code" of the oauth flow
-        //    and as such will not send a code challenge, we will generate then one
-        if (req.query.code_challenge) {
-          code_challenge = req.query.code_challenge
-          code_challenge_method = req.query.code_challenge_method || 'S256'
-
-          if (!['S256', 'plain'].includes(code_challenge_method)) {
-            return res.status(400).send('Invalid code_challenge_method')
+          if (req.query.state) {
+            Logger.debug(`[Auth] Invalid state - not allowed on web openid flow`)
+            return res.status(400).send('Invalid state, not allowed on web flow')
           }
-        } else {
-          // If no code_challenge is provided, assume a web application flow and generate one
-          const code_verifier = OpenIDClient.generators.codeVerifier()
-          code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
-          code_challenge_method = 'S256'
-
-          // Store the code_verifier in the session for later use in the token exchange
-          req.session[sessionKey] = { ...req.session[sessionKey], code_verifier }
         }
+        oidcStrategy._params.redirect_uri = redirectUri
+        Logger.debug(`[Auth] OIDC redirect_uri=${redirectUri}`)
 
-        const params = {
-          state: OpenIDClient.generators.random(),
-          // Other params by the passport strategy
-          ...oidcStrategy._params
-        }
-
-        if (!params.nonce && params.response_type.includes('id_token')) {
-          params.nonce = OpenIDClient.generators.random()
-        }
+        let { code_challenge, code_challenge_method, code_verifier } = generatePkce(req, isMobileFlow)
 
         req.session[sessionKey] = {
           ...req.session[sessionKey],
-          ...pick(params, 'nonce', 'state', 'max_age', 'response_type'),
+          state: state,
+          max_age: oidcStrategy._params.max_age,
+          response_type: 'code',
+          code_verifier: code_verifier, // not null if web flow
           mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
-        // We cannot save redirect_uri in the session, because it the mobile client uses browser instead of the API
-        //   for the request to mobile-redirect and as such the session is not shared
-        this.openIdAuthSession.set(params.state, { mobile_redirect_uri: mobile_redirect_uri })
-
-        // Now get the URL to direct to
         const authorizationUrl = client.authorizationUrl({
-          ...params,
-          scope: 'openid profile email',
+          ...oidcStrategy._params,
+          state: state,
           response_type: 'code',
           code_challenge,
           code_challenge_method
         })
 
-        // params (isRest, callback) to a cookie that will be send to the client
-        this.paramsToCookies(req, res)
+        this.paramsToCookies(req, res, isMobileFlow ? 'openid-mobile' : 'openid')
 
-        // Redirect the user agent (browser) to the authorization URL
         res.redirect(authorizationUrl)
       } catch (error) {
         Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
         res.status(500).send('Internal Server Error')
+      }
+
+      function generatePkce(req, isMobileFlow) {
+        if (isMobileFlow) {
+          if (!req.query.code_challenge) {
+            throw new Error('code_challenge required for mobile flow (PKCE)')
+          }
+          if (req.query.code_challenge_method && req.query.code_challenge_method !== 'S256') {
+            throw new Error('Only S256 code_challenge_method method supported')
+          }
+          return {
+            code_challenge: req.query.code_challenge,
+            code_challenge_method: req.query.code_challenge_method || 'S256'
+          }
+        } else {
+          const code_verifier = OpenIDClient.generators.codeVerifier()
+          const code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
+          return { code_challenge, code_challenge_method: 'S256', code_verifier }
+        }
+      }
+
+      function isValidRedirectUri(uri) {
+        // Check if the redirect_uri is in the whitelist
+        return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) ||
+          (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
       }
     })
 
@@ -454,6 +452,12 @@ class Auth {
             if (loginError) {
               return handleAuthError(isMobile, 500, 'Error during login', `[Auth] Error in openid callback: ${loginError}`)
             }
+
+            // The id_token does not provide access to the user, but is used to identify the user to the SSO provider
+            //   instead it containts a JWT with userinfo like user email, username, etc.
+            //   the client will get to know it anyway in the logout url according to the oauth2 spec
+            //   so it is safe to send it to the client, but we use strict settings
+            res.cookie('openid_id_token', user.openid_id_token, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true, secure: true, sameSite: 'Strict' })
             next()
           })
         }
@@ -522,7 +526,46 @@ class Auth {
         if (err) {
           res.sendStatus(500)
         } else {
-          res.sendStatus(200)
+          const authMethod = req.cookies.auth_method
+
+          res.clearCookie('auth_method')
+
+          if (authMethod === 'openid' || authMethod === 'openid-mobile') {
+            // If we are using openid, we need to redirect to the logout endpoint
+            // node-openid-client does not support doing it over passport
+            const oidcStrategy = passport._strategy('openid-client')
+            const client = oidcStrategy._client
+
+            let postLogoutRedirectUri = null
+
+            if (authMethod === 'openid') {
+              const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+              const host = req.get('host')
+              // TODO: ABS does currently not support subfolders for installation
+              // If we want to support it we need to include a config for the serverurl
+              postLogoutRedirectUri = `${protocol}://${host}/login`
+            }
+            // else for openid-mobile we keep postLogoutRedirectUri on null
+            //  nice would be to redirect to the app here, but for example Authentik does not implement
+            //  the post_logout_redirect_uri parameter at all and for other providers
+            //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
+            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
+            //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
+            //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
+            //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
+
+            const logoutUrl = client.endSessionUrl({
+              id_token_hint: req.cookies.openid_id_token,
+              post_logout_redirect_uri: postLogoutRedirectUri
+            })
+
+            res.clearCookie('openid_id_token')
+
+            // Tell the user agent (browser) to redirect to the authentification provider's logout URL
+            res.send({ redirect_url: logoutUrl })
+          } else {
+            res.sendStatus(200)
+          }
         }
       })
     })
@@ -613,7 +656,7 @@ class Auth {
    * Checks if a username and password tuple is valid and the user active.
    * @param {string} username 
    * @param {string} password 
-   * @param {function} done 
+   * @param {Promise<function>} done 
    */
   async localAuthCheckUserPw(username, password, done) {
     // Load the user given it's username
@@ -655,7 +698,7 @@ class Auth {
   /**
    * Hashes a password with bcrypt.
    * @param {string} password 
-   * @returns {string} hash 
+   * @returns {Promise<string>} hash 
    */
   hashPass(password) {
     return new Promise((resolve) => {
@@ -689,8 +732,8 @@ class Auth {
   /**
    * 
    * @param {string} password 
-   * @param {*} user 
-   * @returns {boolean}
+   * @param {import('./models/User')} user 
+   * @returns {Promise<boolean>}
    */
   comparePassword(password, user) {
     if (user.type === 'root' && !password && !user.pash) return true

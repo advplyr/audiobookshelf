@@ -43,12 +43,15 @@ class SearchController {
    */
   async findPodcasts(req, res) {
     const term = req.query.term
+    const country = req.query.country || 'us'
     if (!term) {
       Logger.error('[SearchController] Invalid request query param "term" is required')
       return res.status(400).send('Invalid request query param "term" is required')
     }
 
-    const results = await PodcastFinder.search(term)
+    const results = await PodcastFinder.search(term, {
+      country
+    })
     res.json(results)
   }
 

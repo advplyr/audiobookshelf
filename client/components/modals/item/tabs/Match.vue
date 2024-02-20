@@ -328,6 +328,17 @@ export default {
         console.error('PersistProvider', error)
       }
     },
+    getDefaultBookProvider() {
+      let provider = localStorage.getItem('book-provider')
+      if (!provider) return 'google'
+      // Validate book provider
+      if (!this.$store.getters['scanners/checkBookProviderExists'](provider)) {
+        console.error('Stored book provider does not exist', provider)
+        localStorage.removeItem('book-provider')
+        return 'google'
+      }
+      return provider
+    },
     getSearchQuery() {
       if (this.isPodcast) return `term=${encodeURIComponent(this.searchTitle)}`
       var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle)}`
@@ -434,7 +445,9 @@ export default {
       this.searchTitle = this.libraryItem.media.metadata.title
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-provider') || 'google'
+      else {
+        this.provider = this.getDefaultBookProvider()
+      }
 
       // Prefer using ASIN if set and using audible provider
       if (this.provider.startsWith('audible') && this.libraryItem.media.metadata.asin) {

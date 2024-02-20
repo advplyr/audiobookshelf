@@ -29,7 +29,8 @@ module.exports = {
     ],
     script: [],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' },
+      { rel: 'apple-touch-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/ios_icon.png' }
     ]
   },
 
@@ -95,7 +96,7 @@ module.exports = {
     meta: {
       appleStatusBarStyle: 'black',
       name: 'Audiobookshelf',
-      theme_color: '#373838',
+      theme_color: '#232323',
       mobileAppIOS: true,
       nativeUI: true
     },
@@ -103,16 +104,16 @@ module.exports = {
       name: 'Audiobookshelf',
       short_name: 'Audiobookshelf',
       display: 'standalone',
-      background_color: '#373838',
+      background_color: '#232323',
       icons: [
         {
           src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "any"
+          sizes: 'any'
         },
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon64.png',
-          type: "image/png",
-          sizes: "64x64"
+          src: (process.env.ROUTER_BASE_PATH || '') + '/icon192.png',
+          type: 'image/png',
+          sizes: 'any'
         }
       ]
     },

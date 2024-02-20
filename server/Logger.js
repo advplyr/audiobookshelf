@@ -3,13 +3,17 @@ const { LogLevel } = require('./utils/constants')
 
 class Logger {
   constructor() {
+    /** @type {import('./managers/LogManager')} */
+    this.logManager = null
+
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
     this.socketListeners = []
-
-    this.logManager = null
   }
 
+  /**
+   * @returns {string}
+   */
   get timestamp() {
     return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS')
   }
@@ -23,6 +27,9 @@ class Logger {
     return 'UNKNOWN'
   }
 
+  /**
+   * @returns {string}
+   */
   get source() {
     try {
       throw new Error()
@@ -62,7 +69,12 @@ class Logger {
     this.socketListeners = this.socketListeners.filter(s => s.id !== socketId)
   }
 
-  handleLog(level, args) {
+  /**
+   * 
+   * @param {number} level 
+   * @param {string[]} args 
+   */
+  async handleLog(level, args) {
     const logObj = {
       timestamp: this.timestamp,
       source: this.source,
@@ -71,15 +83,17 @@ class Logger {
       level
     }
 
-    if (level >= this.logLevel && this.logManager) {
-      this.logManager.logToFile(logObj)
-    }
-
+    // Emit log to sockets that are listening to log events
     this.socketListeners.forEach((socketListener) => {
       if (socketListener.level <= level) {
         socketListener.socket.emit('log', logObj)
       }
     })
+
+    // Save log to file
+    if (level >= this.logLevel) {
+      await this.logManager.logToFile(logObj)
+    }
   }
 
   setLogLevel(level) {
@@ -117,9 +131,15 @@ class Logger {
     this.handleLog(LogLevel.ERROR, args)
   }
 
+  /**
+   * Fatal errors are ones that exit the process
+   * Fatal logs are saved to crash_logs.txt
+   * 
+   * @param  {...any} args 
+   */
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
-    this.handleLog(LogLevel.FATAL, args)
+    return this.handleLog(LogLevel.FATAL, args)
   }
 
   note(...args) {
