@@ -30,6 +30,7 @@ class LibraryItemController {
    * @openapi
    * /api/items/{id}:
    *   get:
+   *     operationId: getLibraryItem
    *     summary: Get a library item
    *     tags:
    *       - Items

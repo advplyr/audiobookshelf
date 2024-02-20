@@ -155,7 +155,7 @@ class CollectionController {
    *             schema:
    *               $ref: '#/components/schemas/collectionExpanded'
    *       403:
-   *         A user with update permissions is required to update collections
+   *         description: A user with update permissions is required to update collections
    *       404:
    *         description: No collection with the specified ID exists
    */
@@ -280,12 +280,13 @@ class CollectionController {
    *                   type: string
    *     responses:
    *       200:
+   *         description: OK
    *         content:
    *           application/json:
    *             schema:
    *               $ref: '#/components/schemas/collectionExpanded'
    *       403:
-   *         A user with update permissions is required to update collections
+   *         description: A user with update permissions is required to update collections
    *       404:
    *         description: No collection with the specified ID exists
    *       500:

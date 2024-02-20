@@ -2900,11 +2900,11 @@
  *           example: 2
  *         homeBookshelfView:
  *           description: Whether the home page should use a skeuomorphic design with wooden shelves.
- *           type: string
+ *           type: integer
  *           example: 1
  *         bookshelfView:
  *           description: Whether other bookshelf pages should use a skeuomorphic design with wooden shelves.
- *           type: string
+ *           type: integer
  *           example: 1
  *         sortingIgnorePrefix:
  *           description: Whether to ignore prefixes when sorting. For example, for the prefix the, the book title The Book Title would sort as Book Title, The.
@@ -3236,4 +3236,4 @@
  *           description: The total number of segments of the stream.
  *           type: integer
  *           example: 6200 
- */ 
+ */
