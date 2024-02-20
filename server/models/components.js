@@ -6,36 +6,40 @@
  *       type: string
  *       description: The ID of the libraries created on server version 2.2.23 and before.
  *       format: "lib_[a-z0-9]{18}"
- *       examples:
- *         - lib_o78uaoeuh78h6aoeif
- *         - lib_74obqytfms9o8oeumg
- *     libraryId:
+ *       example: lib_o78uaoeuh78h6aoeif
+ *     newLibraryId:
  *       type: string
  *       description: The library ID for any libraries after 2.3.0.
  *       format: uuid
- *       example:
- *         - e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
  *     mediaType:
  *       type: string
- *       description: What kind of media the library item contains. Will be book or podcast.
+ *       description: The type of media, will be book or podcast.
  *       enum: [book, podcast]
  *     createdAt:
  *       type: integer
  *       description: The time (in ms since POSIX epoch) when the item was created.
- *       example:
- *         - 1633522963509
+ *       example: 1633522963509
+ *     tags:
+ *       description: Tags applied items.
+ *       type: array
+ *       items:
+ *         type: string
+ *       examples:
+ *         - Favorite
+ *         - Nonfiction/History
+ *         - Content: Violence
  *     library:
  *       type: object
  *       properties:
  *         id:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         name:
  *           type: string
  *           description: The name of the library.
- *           example:
- *             - Main
+ *           example: Main
  *         folders:
  *           type: array
  *           description: The folders that the library is composed of on the server.
@@ -44,20 +48,17 @@
  *         displayOrder:
  *           type: integer
  *           description: Display position of the library in the list of libraries. Must be >= 1.
- *           example:
- *             - 1
+ *           example: 1
  *         icon:
  *           type: string
  *           description: The selected icon for the library. See [Library Icons](https://api.audiobookshelf.org/#library-icons) for a list of possible icons.
- *           example:
- *             - audiobookshelf
+ *           example: audiobookshelf
  *         mediaType:
  *           - $ref: '#/components/schemas/mediaType'
  *         provider:
  *           type: string
  *           description: Preferred metadata provider for the library. See [Metadata Providers](https://api.audiobookshelf.org/#metadata-providers) for a list of possible providers.
- *           example:
- *             - audible
+ *           example: audible
  *         settings:
  *           $ref: '#/components/schemas/librarySettings'
  *         createdAt:
@@ -65,15 +66,14 @@
  *         lastUpdate:
  *           type: integer
  *           description: The time (in ms since POSIX epoch) when the library was last updated. (Read Only)
- *           example:
- *             - 1646520916818
+ *           example: 1646520916818
  *     librarySettings:
  *       type: object
  *       properties:
  *         coverAspectRatio:
  *           type: integer
  *           description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
- *           example:
+ *           example: 
  *             - 1
  *         disableWatcher:
  *           type: boolean
@@ -83,8 +83,7 @@
  *         skipMatchingMediaWithAsin:
  *           type: boolean
  *           description: Whether to skip matching books that already have an ASIN.
- *           example:
- *             - false
+ *           example: false
  *         skipMatchingMediaWithIsbn:
  *           type: boolean
  *           description: Whether to skip matching books that already have an ISBN.
@@ -109,10 +108,7 @@
  *             example:
  *               - Fantasy
  *         tags:
- *           description: The tags in the library.
- *           type: array
- *           items:
- *             type: string
+ *           $ref: '#/components/schemas/tags'
  *         series:
  *           description: The series in the library. The series will only have their id and name.
  *           type: array
@@ -155,7 +151,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         addedAt:
  *           description: The time (in ms since POSIX epoch) when the folder was added. (Read Only)
  *           type: integer
@@ -167,13 +163,14 @@
  *         id:
  *           description: The ID of the library item.
  *           type: string
+ *           format: uuid
  *         ino:
  *           description: The inode of the library item.
  *           type: string
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         folderId:
  *           description: The ID of the folder the library item is in.
  *           type: string
@@ -332,7 +329,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         folderId:
  *           description: The ID of the folder the library item is in.
  *           type: string
@@ -433,12 +430,7 @@
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
- *           description: The book's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         audioFiles:
  *           type: array
  *           items:
@@ -465,12 +457,7 @@
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
- *           description: The book's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         numTracks:
  *           description: The number of tracks the book's audio files have.
  *           type: integer
@@ -525,12 +512,7 @@
  *           example:
  *             - /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg
  *         tags:
- *           description: The book's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         audioFiles:
  *           type: array
  *           items:
@@ -886,12 +868,7 @@
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
- *           description: The podcast's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         episodes:
  *           description: The downloaded episodes of the podcast.
  *           type: array
@@ -938,12 +915,7 @@
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
- *           description: The podcast's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         numEpisodes:
  *           description: The number of downloaded episodes for the podcast.
  *           type: integer
@@ -995,12 +967,7 @@
  *           example:
  *             - /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
- *           description: The podcast's tags.
- *           type: array
- *           items:
- *             type: string
- *             example:
- *               - Favorite
+ *           $ref: '#/components/schemas/tags'
  *         episodes:
  *           description: The downloaded episodes of the podcast.
  *           type: array
@@ -1518,7 +1485,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         isFinished:
  *           description: Whether the episode has finished downloading.
  *           type: boolean
@@ -2289,7 +2256,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         userId:
  *           description: The ID of the user the playlist belongs to.
  *           type: string
@@ -2329,7 +2296,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         userId:
  *           description: The ID of the user the playlist belongs to.
  *           type: string
@@ -2526,7 +2493,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         libraryItemId:
  *           description: The ID of the library item.
  *           type: string
@@ -2640,7 +2607,7 @@
  *         libraryId:
  *           oneOf:
  *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/libraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
  *         libraryItemId:
  *           description: The ID of the library item.
  *           type: string
@@ -3718,26 +3685,22 @@
  *         trackIndex:
  *           description: The RSS feed episode's track index.
  *           type: integer
- *           example:
- *             - 0
+ *           example: 0
  *         fullPath:
  *           description: The path on the server of the audio file the RSS feed episode is for.
  *           type: string
- *           example:
- *             - /podcasts/Welcome to Night Vale/1 - Pilot.mp3
+ *           example: /podcasts/Welcome to Night Vale/1 - Pilot.mp3
  *     stream:
  *       type: object
  *       properties:
  *         id:
  *           description: The ID of the stream. It will be the same as the ID of the playback session that the stream is for.
  *           type: string
- *           example:
- *             - play_c786zm3qtjz6bd5q3n
+ *           example: play_c786zm3qtjz6bd5q3n
  *         userId:
  *           description: The ID of the user that started the stream.
  *           type: string
- *           example:
- *             - root
+ *           example: root
  *         libraryItem:
  *           $ref: '#/components/schemas/libraryItemExpanded'
  *         episode:
@@ -3745,56 +3708,46 @@
  *         segmentLength:
  *           description: The length (in seconds) of each segment of the stream.
  *           type: integer
- *           example:
- *             - 6
+ *           example: 6
  *         playlistPath:
  *           description: The path on the server of the stream output.
  *           type: string
- *           example:
- *             - /metadata/streams/play_c786zm3qtjz6bd5q3n/output.m3u8
+ *           example: /metadata/streams/play_c786zm3qtjz6bd5q3n/output.m3u8
  *         clientPlaylistUri:
  *           description: The URI path for the client to access the stream.
  *           type: string
- *           example:
- *             - /hls/play_c786zm3qtjz6bd5q3n/output.m3u8
+ *           example: /hls/play_c786zm3qtjz6bd5q3n/output.m3u8
  *         startTime:
  *           description: The time (in seconds) where the playback session started.
  *           type: integer
- *           example:
- *             - 0
+ *           example: 0
  *         segmentStartNumber:
  *           description: The segment where the transcoding began.
  *           type: integer
- *           example:
- *             - 0
+ *           example: 0
  *         isTranscodeComplete:
  *           description: Whether transcoding is complete.
  *           type: boolean
- *           example:
- *             - false
+ *           example: false 
  *     streamProgress:
  *       type: object
  *       properties:
  *         stream:
  *           description: The ID of the stream the progress is for.
  *           type: string
- *           example:
- *             - play_c786zm3qtjz6bd5q3n
+ *           example: play_c786zm3qtjz6bd5q3n
  *         percent:
  *           description: A human-readable percentage of transcode completion.
  *           type: string
- *           example:
- *             - 8.66%
+ *           example: 8.66% 
  *         chunks:
  *           description: The segment ranges that have been transcoded.
  *           type: array
  *           items:
  *             type: string
- *             example:
- *               - 0-536
+ *             example: 0-536 
  *         numSegments:
  *           description: The total number of segments of the stream.
  *           type: integer
- *           example:
- *             - 6200
- */
+ *           example: 6200 
+ */ 
