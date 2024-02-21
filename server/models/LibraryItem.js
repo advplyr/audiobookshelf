@@ -225,6 +225,12 @@ class LibraryItem extends Model {
     return newLibraryItem
   }
 
+  /**
+   * Updates libraryItem, book, authors and series from old library item
+   * 
+   * @param {oldLibraryItem} oldLibraryItem 
+   * @returns {Promise<boolean>} true if updates were made
+   */
   static async fullUpdateFromOld(oldLibraryItem) {
     const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
       include: [

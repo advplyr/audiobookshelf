@@ -142,7 +142,7 @@
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
         <div v-if="!chapterData" class="flex p-20">
-          <ui-text-input-with-label v-model="asinInput" label="ASIN" />
+          <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
           <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 mx-1" />
           <ui-btn small color="primary" class="mt-5" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
         </div>

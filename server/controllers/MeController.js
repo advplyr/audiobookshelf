@@ -336,7 +336,7 @@ class MeController {
   }
 
   /**
-   * GET: /api/stats/year/:year
+   * GET: /api/me/stats/year/:year
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
