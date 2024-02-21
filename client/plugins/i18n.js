@@ -14,6 +14,7 @@ const languageCodeMap = {
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
   'lt': { label: 'Lietuvių', dateFnsLocale: 'lt' },
+  'hu': { label: 'Magyar', dateFnsLocale: 'hu' },
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'no': { label: 'Norsk', dateFnsLocale: 'no' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
