@@ -542,4 +542,26 @@ module.exports = {
       }
     })
   }
+
+  /** Get podcasts with feed url */
+  // async getPodcastsWithFeedUrl() {
+  //   const podcasts = await Database.podcastModel.findAll({
+  //     where: {
+  //       feedURL: {
+  //         [Sequelize.Op.ne]: null
+  //       }
+  //     },
+  //     include: {
+  //       model: Database.libraryItemModel,
+  //       attributes: ['id', 'libraryId']
+  //     }
+  //   })
+  //   return podcasts.map(podcast => {
+  //     return {
+  //       id: podcast.libraryItem.id,
+  //       title: podcast.title,
+  //       feedURL: podcast.feedURL
+  //     }
+  //   })
+  // }
 }

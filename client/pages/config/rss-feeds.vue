@@ -15,13 +15,13 @@
               class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer"
               :class="!showIncomingFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
               @click="showIncomingFeedsView = false">
-            <p class="text-sm">Opened Feeds</p>
+            <p class="text-sm">{{$strings.HeaderOpenedRSSFeeds}}</p>
           </div>
           <div
               class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer"
               :class="showIncomingFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
               @click="showIncomingFeedsView = true">
-            <p class="text-sm">Subscribed Feeds</p>
+            <p class="text-sm">{{$strings.HeaderExternalFeedURLHealthChecker}}</p>
           </div>
         </div>
         <div class="px-2 py-4 md:p-4 border border-black-200 rounded-b-md mr-px" style="min-height: 280px">
@@ -45,6 +45,7 @@
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedLastChecked }}</th>
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedLastSuccessfulCheck }}</th>
                   <th class="w-16 min-w-16 text-left">{{ $strings.LabelFeedHealthy }}</th>
+                  <th class="w-16 min-w-16 text-left">{{ $strings.LabelFeedAutoDownloadEnabled}}</th>
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedNextAutomaticCheck }}</th>
                   <th class="w-16 text-center"></th>
                 </tr>
@@ -84,6 +85,11 @@
                     <widgets-feed-healthy-indicator :value="!!incomingFeed.metadata.feedHealthy" />
                   </td>
                   <!--  -->
+                  <td class="text-center leading-none lg:table-cell">
+                      <span class="material-icons text-2xl" v-if="incomingFeed.autoDownloadEpisodes">check</span>
+                      <span class="material-icons text-2xl" v-else>close</span>
+                  </td>
+                  <!--  -->
                   <td class="text-left">
                     <ui-tooltip v-if="incomingFeed.autoDownloadEpisodes" direction="top"
                                 :text="`${$strings.LabelCronExpression}: ${incomingFeed.autoDownloadSchedule}`">
@@ -113,6 +119,10 @@
                   </td>
                 </tr>
               </table>
+
+              <div>
+                <pre>{{incomingFeedsList}}</pre>
+              </div>
             </div>
           </template>
           <template v-else>
@@ -120,6 +130,10 @@
               <form @submit.prevent="feedsSubmit" class="flex flex-grow">
                 <ui-text-input v-model="feedsSearch" @input="feedsInputUpdate" type="search" :placeholder="$strings.PlaceholderSearchTitle" class="flex-grow mb-3 text-sm md:text-base" />
               </form>
+
+              <div>
+                <pre>{{feedsList}}</pre>
+              </div>
 
               <table class="rssFeedsTable text-xs">
                 <tr class="bg-primary bg-opacity-40 h-12">
