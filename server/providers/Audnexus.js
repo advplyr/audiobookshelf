@@ -3,6 +3,14 @@ const { levenshteinDistance } = require('../utils/index')
 const Logger = require('../Logger')
 const Throttle = require('p-throttle')
 
+/**
+ * @typedef AuthorSearchObj
+ * @property {string} asin
+ * @property {string} description
+ * @property {string} image
+ * @property {string} name
+ */
+
 class Audnexus {
   static _instance = null
 
@@ -28,11 +36,19 @@ class Audnexus {
     Audnexus._instance = this
   }
 
+  /**
+   * 
+   * @param {string} name 
+   * @param {string} region 
+   * @returns {Promise<{asin:string, name:string}[]>} 
+   */
   authorASINsRequest(name, region) {
-    name = encodeURIComponent(name)
-    const regionQuery = region ? `&region=${region}` : ''
-    const authorRequestUrl = `${this.baseUrl}/authors?name=${name}${regionQuery}`
+    const searchParams = new URLSearchParams()
+    searchParams.set('name', name)
 
+    if (region) searchParams.set('region', region)
+
+    const authorRequestUrl = `${this.baseUrl}/authors?${searchParams.toString()}`
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
     return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
@@ -43,6 +59,12 @@ class Audnexus {
       })
   }
 
+  /**
+   * 
+   * @param {string} asin 
+   * @param {string} region 
+   * @returns {Promise<AuthorSearchObj>}
+   */
   authorRequest(asin, region) {
     asin = encodeURIComponent(asin)
     const regionQuery = region ? `?region=${region}` : ''
@@ -58,6 +80,12 @@ class Audnexus {
       })
   }
 
+  /**
+   * 
+   * @param {string} asin 
+   * @param {string} region 
+   * @returns {Promise<AuthorSearchObj>}
+   */
   async findAuthorByASIN(asin, region) {
     const author = await this.authorRequest(asin, region)
 
@@ -70,24 +98,40 @@ class Audnexus {
       } : null
   }
 
+  /**
+   * 
+   * @param {string} name 
+   * @param {string} region 
+   * @param {number} maxLevenshtein 
+   * @returns {Promise<AuthorSearchObj>}
+   */
   async findAuthorByName(name, region, maxLevenshtein = 3) {
     Logger.debug(`[Audnexus] Looking up author by name ${name}`)
+    const authorAsinObjs = await this.authorASINsRequest(name, region)
 
-    const asins = await this.authorASINsRequest(name, region)
-    const matchingAsin = asins.find(obj => levenshteinDistance(obj.name, name) <= maxLevenshtein)
+    let closestMatch = null
+    authorAsinObjs.forEach((authorAsinObj) => {
+      authorAsinObj.levenshteinDistance = levenshteinDistance(authorAsinObj.name, name)
+      if (!closestMatch || closestMatch.levenshteinDistance > authorAsinObj.levenshteinDistance) {
+        closestMatch = authorAsinObj
+      }
+    })
 
-    if (!matchingAsin) {
+    if (!closestMatch || closestMatch.levenshteinDistance > maxLevenshtein) {
       return null
     }
 
-    const author = await this.authorRequest(matchingAsin.asin)
-    return author ?
-      {
-        description: author.description,
-        image: author.image || null,
-        asin: author.asin,
-        name: author.name
-      } : null
+    const author = await this.authorRequest(closestMatch.asin)
+    if (!author) {
+      return null
+    }
+
+    return {
+      asin: author.asin,
+      description: author.description,
+      image: author.image || null,
+      name: author.name
+    }
   }
 
   getChaptersByASIN(asin, region) {
@@ -124,4 +168,3 @@ class Audnexus {
 }
 
 module.exports = Audnexus
-

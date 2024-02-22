@@ -132,6 +132,11 @@ class Database {
     return this.models.playbackSession
   }
 
+  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  get customMetadataProviderModel() {
+    return this.models.customMetadataProvider
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -245,6 +250,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
+    require('./models/CustomMetadataProvider').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
@@ -413,10 +419,21 @@ class Database {
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
   }
 
+  /**
+   * Save metadata file and update library item
+   * 
+   * @param {import('./objects/LibraryItem')} oldLibraryItem 
+   * @returns {Promise<boolean>}
+   */
   async updateLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
     await oldLibraryItem.saveMetadata()
-    return this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    // Clear library filter data cache
+    if (updated) {
+      delete this.libraryFilterData[oldLibraryItem.libraryId]
+    }
+    return updated
   }
 
   async removeLibraryItem(libraryItemId) {

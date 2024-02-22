@@ -7,7 +7,7 @@
       <Nuxt :key="currentLang" />
     </div>
 
-    <app-stream-container ref="streamContainer" />
+    <app-media-player-container ref="mediaPlayerContainer" />
 
     <modals-item-edit-modal />
     <modals-collections-add-create-modal />
@@ -129,23 +129,23 @@ export default {
       this.$eventBus.$emit('socket_init')
     },
     streamOpen(stream) {
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamOpen(stream)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamOpen(stream)
     },
     streamClosed(streamId) {
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamClosed(streamId)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamClosed(streamId)
     },
     streamProgress(data) {
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamProgress(data)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamProgress(data)
     },
     streamReady() {
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamReady()
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamReady()
     },
     streamReset(payload) {
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamReset(payload)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamReset(payload)
     },
     streamError({ id, errorMessage }) {
       this.$toast.error(`Stream Failed: ${errorMessage}`)
-      if (this.$refs.streamContainer) this.$refs.streamContainer.streamError(id)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.streamError(id)
     },
     libraryAdded(library) {
       this.$store.commit('libraries/addUpdate', library)
@@ -247,7 +247,7 @@ export default {
         this.multiSessionCurrentSessionId = null
         this.$toast.dismiss('multiple-sessions')
       }
-      if (this.$refs.streamContainer) this.$refs.streamContainer.sessionClosedEvent(sessionId)
+      if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.sessionClosedEvent(sessionId)
     },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
@@ -328,6 +328,14 @@ export default {
 
       this.$store.commit('libraries/setEReaderDevices', data.ereaderDevices)
     },
+    customMetadataProviderAdded(provider) {
+      if (!provider?.id) return
+      this.$store.commit('scanners/addCustomMetadataProvider', provider)
+    },
+    customMetadataProviderRemoved(provider) {
+      if (!provider?.id) return
+      this.$store.commit('scanners/removeCustomMetadataProvider', provider)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -406,6 +414,10 @@ export default {
       this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
 
       this.socket.on('admin_message', this.adminMessageEvt)
+
+      // Custom metadata provider Listeners
+      this.socket.on('custom_metadata_provider_added', this.customMetadataProviderAdded)
+      this.socket.on('custom_metadata_provider_removed', this.customMetadataProviderRemoved)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

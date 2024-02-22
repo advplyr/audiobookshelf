@@ -19,7 +19,7 @@
       <div class="w-full p-1">
         <ui-textarea-with-label v-model="newEpisode.subtitle" :label="$strings.LabelSubtitle" :rows="3" />
       </div>
-      <div class="w-full p-1 default-style">
+      <div class="w-full p-1">
         <ui-rich-text-editor :label="$strings.LabelDescription" v-model="newEpisode.description" />
       </div>
     </div>

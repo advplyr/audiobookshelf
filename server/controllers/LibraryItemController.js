@@ -124,11 +124,6 @@ class LibraryItemController {
     const libraryItem = req.libraryItem
     const mediaPayload = req.body
 
-    // Item has cover and update is removing cover so purge it from cache
-    if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
-      await CacheManager.purgeCoverCache(libraryItem.id)
-    }
-
     // Book specific
     if (libraryItem.isBook) {
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
