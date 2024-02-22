@@ -113,7 +113,7 @@ class ServerSettings {
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
-    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.7.3
+    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.8.0
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
 
     this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null

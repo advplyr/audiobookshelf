@@ -316,6 +316,7 @@ export default {
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
         height: this.readerHeight * 0.8,
+        allowScriptedContent: true,
         spread: 'auto',
         snap: true,
         manager: 'continuous',

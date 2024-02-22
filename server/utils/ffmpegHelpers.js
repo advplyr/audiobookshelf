@@ -101,8 +101,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
     if (!response) return resolve(false)
 
-
     const ffmpeg = Ffmpeg(response.data)
+    ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions(
       '-c', 'copy',
       '-metadata', 'podcast=1'
@@ -110,6 +110,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
     const podcastEpisode = podcastEpisodeDownload.podcastEpisode
+    const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
     const taggings = {
       'album': podcastMetadata.title,
@@ -147,12 +148,29 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     ffmpeg.addOutput(podcastEpisodeDownload.targetPath)
 
+    const stderrLines = []
+    ffmpeg.on('stderr', (stderrLine) => {
+      if (typeof stderrLine === 'string') {
+        stderrLines.push(stderrLine)
+      }
+    })
     ffmpeg.on('start', (cmd) => {
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Cmd: ${cmd}`)
     })
-    ffmpeg.on('error', (err, stdout, stderr) => {
-      Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Error ${err} ${stdout} ${stderr}`)
+    ffmpeg.on('error', (err) => {
+      Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Error ${err}`)
+      if (stderrLines.length) {
+        Logger.error(`Full stderr dump for episode url "${podcastEpisodeDownload.url}": ${stderrLines.join('\n')}`)
+      }
       resolve(false)
+    })
+    ffmpeg.on('progress', (progress) => {
+      let progressPercent = 0
+      if (finalSizeInBytes && progress.targetSize && !isNaN(progress.targetSize)) {
+        const finalSizeInKb = Math.floor(finalSizeInBytes / 1000)
+        progressPercent = Math.min(1, progress.targetSize / finalSizeInKb) * 100
+      }
+      Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Progress estimate ${progressPercent.toFixed(0)}% (${progress?.targetSize || 'N/A'} KB) for "${podcastEpisodeDownload.url}"`)
     })
     ffmpeg.on('end', () => {
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Complete`)

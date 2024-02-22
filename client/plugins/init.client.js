@@ -156,14 +156,14 @@ Vue.prototype.$copyToClipboard = (str, ctx) => {
 }
 
 function xmlToJson(xml) {
-  const json = {};
+  const json = {}
   for (const res of xml.matchAll(/(?:<(\w*)(?:\s[^>]*)*>)((?:(?!<\1).)*)(?:<\/\1>)|<(\w*)(?:\s*)*\/>/gm)) {
-    const key = res[1] || res[3];
-    const value = res[2] && xmlToJson(res[2]);
-    json[key] = ((value && Object.keys(value).length) ? value : res[2]) || null;
+    const key = res[1] || res[3]
+    const value = res[2] && xmlToJson(res[2])
+    json[key] = ((value && Object.keys(value).length) ? value : res[2]) || null
 
   }
-  return json;
+  return json
 }
 Vue.prototype.$xmlToJson = xmlToJson
 

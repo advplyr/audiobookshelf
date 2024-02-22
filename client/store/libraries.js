@@ -113,6 +113,7 @@ export const actions = {
         const library = data.library
         const filterData = data.filterdata
         const issues = data.issues || 0
+        const customMetadataProviders = data.customMetadataProviders || []
         const numUserPlaylists = data.numUserPlaylists
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
@@ -126,6 +127,8 @@ export const actions = {
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setNumUserPlaylists', numUserPlaylists)
+        commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
+
         commit('setCurrentLibrary', libraryId)
         return data
       })
