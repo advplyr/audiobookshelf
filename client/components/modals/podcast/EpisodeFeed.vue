@@ -33,7 +33,7 @@
               <div class="break-words">{{ episode.title }}</div>
               <widgets-podcast-type-indicator :type="episode.episodeType" />
             </div>
-            <p v-if="episode.subtitle" class="break-words mb-1 text-sm text-gray-300 episode-subtitle">{{ episode.subtitle }}</p>
+            <p v-if="episode.subtitle" class="mb-1 text-sm text-gray-300 line-clamp-2">{{ episode.subtitle }}</p>
             <p class="text-xs text-gray-300">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
           </div>
         </div>

@@ -194,6 +194,23 @@ class UserController {
     })
   }
 
+  /**
+   * PATCH: /api/users/:id/openid-unlink
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async unlinkFromOpenID(req, res) {
+    Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
+    req.reqUser.authOpenIDSub = null
+    if (await Database.userModel.updateFromOld(req.reqUser)) {
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toJSONForBrowser())
+      res.sendStatus(200)
+    } else {
+      res.sendStatus(500)
+    }
+  }
+
   // GET: api/users/:id/listening-sessions
   async getListeningSessions(req, res) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)

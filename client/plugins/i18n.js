@@ -14,9 +14,11 @@ const languageCodeMap = {
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
   'lt': { label: 'Lietuvių', dateFnsLocale: 'lt' },
+  'hu': { label: 'Magyar', dateFnsLocale: 'hu' },
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'no': { label: 'Norsk', dateFnsLocale: 'no' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
+  'pt-br': { label: 'Português (Brasil)', dateFnsLocale: 'ptBR' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
   'sv': { label: 'Svenska', dateFnsLocale: 'sv' },
   'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
@@ -24,6 +26,18 @@ const languageCodeMap = {
 Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
   return {
     text: languageCodeMap[code].label,
+    value: code
+  }
+})
+
+// iTunes search API uses ISO 3166 country codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+const podcastSearchRegionMap = {
+  'us': { label: 'United States' },
+  'cn': { label: '中国' }
+}
+Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).map(code => {
+  return {
+    text: podcastSearchRegionMap[code].label,
     value: code
   }
 })
@@ -83,7 +97,7 @@ async function loadi18n(code) {
 
   Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
-  this.$eventBus.$emit('change-lang', code)
+  this?.$eventBus?.$emit('change-lang', code)
   return true
 }
 

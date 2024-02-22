@@ -2,16 +2,46 @@ const axios = require('axios')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
+/**
+ * @typedef iTunesSearchParams
+ * @property {string} term
+ * @property {string} country
+ * @property {string} media
+ * @property {string} entity
+ * @property {number} limit
+ */
+
+/**
+ * @typedef iTunesPodcastSearchResult
+ * @property {string} id
+ * @property {string} artistId
+ * @property {string} title
+ * @property {string} artistName
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} releaseDate
+ * @property {string[]} genres
+ * @property {string} cover
+ * @property {string} feedUrl
+ * @property {string} pageUrl
+ * @property {boolean} explicit
+ */
+
 class iTunes {
   constructor() { }
 
-  // https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/Searching.html
+  /**
+   * @see https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/Searching.html
+   * 
+   * @param {iTunesSearchParams} options 
+   * @returns {Promise<Object[]>}
+   */
   search(options) {
     if (!options.term) {
       Logger.error('[iTunes] Invalid search options - no term')
       return []
     }
-    var query = {
+    const query = {
       term: options.term,
       media: options.media,
       entity: options.entity,
@@ -82,6 +112,11 @@ class iTunes {
     })
   }
 
+  /**
+   * 
+   * @param {Object} data 
+   * @returns {iTunesPodcastSearchResult}
+   */
   cleanPodcast(data) {
     return {
       id: data.collectionId,
@@ -100,6 +135,12 @@ class iTunes {
     }
   }
 
+  /**
+   * 
+   * @param {string} term 
+   * @param {{country:string}} options 
+   * @returns {Promise<iTunesPodcastSearchResult[]>}
+   */
   searchPodcasts(term, options = {}) {
     return this.search({ term, entity: 'podcast', media: 'podcast', ...options }).then((results) => {
       return results.map(this.cleanPodcast.bind(this))
