@@ -7,9 +7,10 @@
     </div>
 
     <div class="flex items-center">
-      <p class="hidden md:block text-xl font-semibold">{{ yearInReviewYear }} Year in Review</p>
+      <p class="hidden md:block text-xl font-semibold">{{ $getString('HeaderYearReview', [yearInReviewYear]) }}</p>
       <div class="hidden md:block flex-grow" />
-      <ui-btn class="w-full md:w-auto" @click.stop="clickShowYearInReview">{{ showYearInReview ? 'Hide Year in Review' : 'See Year in Review' }}</ui-btn>
+      <ui-btn class="w-full md:w-auto" @click.stop="clickShowYearInReview">{{ showYearInReview ? $strings.LabelYearReviewHide :
+        $strings.LabelYearReviewShow }}</ui-btn>
     </div>
 
     <!-- your year in review -->
@@ -20,24 +21,27 @@
         <!-- previous button -->
         <ui-btn small :disabled="!yearInReviewVariant || processingYearInReview" class="inline-flex items-center font-semibold" @click="yearInReviewVariant--">
           <span class="material-icons text-lg sm:pr-1 py-px sm:py-0">chevron_left</span>
-          <span class="hidden sm:inline-block pr-2">Previous</span>
+          <span class="hidden sm:inline-block pr-2">{{ $strings.ButtonPrevious }}</span>
         </ui-btn>
         <!-- share button -->
-        <ui-btn v-if="showShareButton" small :disabled="processingYearInReview" class="inline-flex sm:hidden items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReview"> Share </ui-btn>
+        <ui-btn v-if="showShareButton" small :disabled="processingYearInReview" class="inline-flex sm:hidden items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReview">{{
+          $strings.ButtonShare }}
+        </ui-btn>
 
         <div class="flex-grow" />
-        <p class="hidden sm:block text-lg font-semibold">Your Year in Review ({{ yearInReviewVariant + 1 }})</p>
+        <p class="hidden sm:block text-lg font-semibold">{{ $getString('LabelPersonalYearReview', [yearInReviewVariant + 1]) }}
+        </p>
         <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewVariant + 1 }}</p>
         <div class="flex-grow" />
 
         <!-- refresh button -->
         <ui-btn small :disabled="processingYearInReview" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReview">
-          <span class="hidden sm:inline-block">Refresh</span>
+          <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
           <span class="material-icons sm:!hidden text-lg py-px">refresh</span>
         </ui-btn>
         <!-- next button -->
         <ui-btn small :disabled="yearInReviewVariant >= 2 || processingYearInReview" class="inline-flex items-center font-semibold" @click="yearInReviewVariant++">
-          <span class="hidden sm:inline-block pl-2">Next</span>
+          <span class="hidden sm:inline-block pl-2">{{ $strings.ButtonNext }}</span>
           <span class="material-icons-outlined text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
         </ui-btn>
       </div>
@@ -46,7 +50,7 @@
       <!-- your year in review short -->
       <div class="w-full max-w-[800px] mx-auto my-4">
         <!-- share button -->
-        <ui-btn v-if="showShareButton" small :disabled="processingYearInReviewShort" class="inline-flex sm:hidden items-center font-semibold mb-1" @click="shareYearInReviewShort"> Share </ui-btn>
+        <ui-btn v-if="showShareButton" small :disabled="processingYearInReviewShort" class="inline-flex sm:hidden items-center font-semibold mb-1" @click="shareYearInReviewShort">{{ $strings.ButtonShare }}</ui-btn>
         <stats-year-in-review-short ref="yearInReviewShort" :year="yearInReviewYear" :processing.sync="processingYearInReviewShort" />
       </div>
 
@@ -56,24 +60,25 @@
           <!-- previous button -->
           <ui-btn small :disabled="!yearInReviewServerVariant || processingYearInReviewServer" class="inline-flex items-center font-semibold" @click="yearInReviewServerVariant--">
             <span class="material-icons text-lg sm:pr-1 py-px sm:py-0">chevron_left</span>
-            <span class="hidden sm:inline-block pr-2">Previous</span>
+            <span class="hidden sm:inline-block pr-2">{{ $strings.ButtonPrevious }}</span>
           </ui-btn>
           <!-- share button -->
-          <ui-btn v-if="showShareButton" small :disabled="processingYearInReviewServer" class="inline-flex sm:hidden items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReviewServer"> Share </ui-btn>
+          <ui-btn v-if="showShareButton" small :disabled="processingYearInReviewServer" class="inline-flex sm:hidden items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReviewServer">{{ $strings.ButtonShare }}
+          </ui-btn>
 
           <div class="flex-grow" />
-          <p class="hidden sm:block text-lg font-semibold">Server Year in Review ({{ yearInReviewServerVariant + 1 }})</p>
+          <p class="hidden sm:block text-lg font-semibold">{{ $getString('LabelServerYearReview', [yearInReviewServerVariant + 1]) }}</p>
           <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewServerVariant + 1 }}</p>
           <div class="flex-grow" />
 
           <!-- refresh button -->
           <ui-btn small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReviewServer">
-            <span class="hidden sm:inline-block">Refresh</span>
+            <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
             <span class="material-icons sm:!hidden text-lg py-px">refresh</span>
           </ui-btn>
           <!-- next button -->
           <ui-btn small :disabled="yearInReviewServerVariant >= 2 || processingYearInReviewServer" class="inline-flex items-center font-semibold" @click="yearInReviewServerVariant++">
-            <span class="hidden sm:inline-block pl-2">Next</span>
+            <span class="hidden sm:inline-block pl-2">{{ $strings.ButtonNext }}</span>
             <span class="material-icons-outlined text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
           </ui-btn>
         </div>
