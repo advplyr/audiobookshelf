@@ -10,9 +10,9 @@
 
         <form @submit.prevent="submitServerSetup">
           <p class="text-lg font-semibold mb-2 pl-1 text-center">Create Root User</p>
-          <ui-text-input-with-label v-model="newRoot.username" label="Username" :disabled="processing" class="w-full mb-3 text-sm" />
-          <ui-text-input-with-label v-model="newRoot.password" label="Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
-          <ui-text-input-with-label v-model="confirmPassword" label="Confirm Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
+          <ui-text-input-with-label v-model.trim="newRoot.username" label="Username" :disabled="processing" class="w-full mb-3 text-sm" />
+          <ui-text-input-with-label v-model.trim="newRoot.password" label="Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
+          <ui-text-input-with-label v-model.trim="confirmPassword" label="Confirm Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
 
           <p class="text-lg font-semibold mt-6 mb-2 pl-1 text-center">Directory Paths</p>
           <ui-text-input-with-label v-model="ConfigPath" label="Config Path" disabled class="w-full mb-3 text-sm" />
@@ -34,10 +34,10 @@
 
         <form v-show="login_local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
-          <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
+          <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" />
 
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
-          <ui-text-input v-model="password" type="password" :disabled="processing" class="w-full mb-3" />
+          <ui-text-input v-model.trim="password" type="password" :disabled="processing" class="w-full mb-3" />
           <div class="w-full flex justify-end py-3">
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
