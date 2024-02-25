@@ -2,53 +2,6 @@ const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
 
-/**
- * @openapi
- * components:
- *   schemas:
- *     collectionBase:
- *       type: object
- *       description: A public collection of library items which can be ordered and has a description, base schema.
- *       properties:
- *         id:
- *           description: The ID of the collection.
- *           type: string
- *         libraryId:
- *           description: The ID of the library the collection belongs to.
- *           type: string
- *         name:
- *           description: The name of the collection.
- *           type: string
- *         description:
- *           description: The description of the collection.
- *           type: [string, null]
- *         lastUpdate:
- *           description: The time (in ms since POSIX epoch) when the collection was last updated.
- *           type: integer
- *         createdAt:
- *           description: The time (in ms since POSIX epoch) when the collection was created.
- *           type: integer
- *     collection:
- *       type: object
- *       description: A public collection of library items which can be ordered and has a description.
- *       allOf:
- *         - $ref: '#/components/schemas/collectionBase'
- *         - books:
- *             description: The books that belong to the collection.
- *             type: array
- *             items:
- *               $ref: '#/components/schemas/libraryItem'
- *     collectionExpanded:
- *       type: object
- *       description: A public collection of library items which can be ordered and has a description. Replaces `libraryItem` with `libraryItemExtended`.
- *       allOf:
- *         - $ref: '#/components/schemas/collectionBase'
- *         - books:
- *             description: The books that belong to the collection.
- *             type: array
- *             items:
- *               $ref: '#/components/schemas/libraryItemExpanded'
- */
 class Collection extends Model {
   constructor(values, options) {
     super(values, options)
