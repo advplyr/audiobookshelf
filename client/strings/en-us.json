@@ -653,6 +653,7 @@
   "MessageNoMediaProgress": "No Media Progress",
   "MessageNoNotifications": "No Notifications",
   "MessageNoPodcastsFound": "No podcasts found",
+  "MessageNoQueryResults": "No results for query",
   "MessageNoResults": "No Results",
   "MessageNoSearchResultsFor": "No search results for \"{0}\"",
   "MessageNoSeries": "No Series",
