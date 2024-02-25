@@ -20,13 +20,16 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  *       description: The library ID for any libraries after 2.3.0.
  *       format: uuid
  *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     libraryId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldLibraryId'
+ *         - $ref: '#/components/schemas/newLibraryId'
  *     library:
  *       type: object
  *       properties:
  *         id:
- *           oneOf:
- *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/newLibraryId'
+ *           $ref: '#/components/schemas/libraryId'
  *         name:
  *           type: string
  *           description: The name of the library.
