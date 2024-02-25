@@ -66,51 +66,57 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *       description: A single item on the server, like a book or podcast.
  *       allOf:
  *         - $ref : '#/components/schemas/libraryItemBase'
- *         - folderId:
- *           - $ref : '#/components/schemas/folderId'
- *         - lastScan:
- *           description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
- *           type: integer
- *         - scanVersion:
- *           description: The version of the scanner when last scanned. Will be null if it has not been scanned.
- *           type: string
- *         - media:
- *           - $ref: '#/components/schemas/media'
- *         - libraryFiles:
- *           description: The files of the library item.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/libraryFile'
+ *         - type: object
+ *           properties:
+ *             folderId:
+ *               $ref : '#/components/schemas/folderId'
+ *             lastScan:
+ *               description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
+ *               type: integer
+ *             scanVersion:
+ *               description: The version of the scanner when last scanned. Will be null if it has not been scanned.
+ *               type: string
+ *             media:
+ *               $ref: '#/components/schemas/media'
+ *             libraryFiles:
+ *               description: The files of the library item.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/libraryFile'
  *     libraryItemMinified:
  *       type: object
  *       description: A single item on the server, like a book or podcast. Minified media format.
  *       allOf:
  *         - $ref : '#/components/schemas/libraryItemBase'
- *         - media:
- *           - $ref: '#/components/schemas/mediaMinified'
+ *         - type: object
+ *           properties:
+ *             media:
+ *               $ref: '#/components/schemas/mediaMinified'
  *     libraryItemExpanded:
  *       type: object
  *       allOf:
  *         - $ref : '#/components/schemas/libraryItemBase'
- *         - folderId:
- *           - $ref : '#/components/schemas/folderId'
- *         - lastScan:
- *           description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
- *           type: integer
- *         - scanVersion:
- *           description: The version of the scanner when last scanned. Will be null if it has not been scanned.
- *           type: string
- *         - media:
- *           - $ref: '#/components/schemas/mediaExpanded'
- *         - libraryFiles:
- *           description: The files of the library item.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/libraryFile'
- *         - size:
- *           description: The total size (in bytes) of the library item.
- *           type: integer
- *           example: 268990279
+ *         - type: object
+ *           properties:
+ *             folderId:
+ *               $ref : '#/components/schemas/folderId'
+ *             lastScan:
+ *               description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
+ *               type: integer
+ *             scanVersion:
+ *               description: The version of the scanner when last scanned. Will be null if it has not been scanned.
+ *               type: string
+ *             media:
+ *               $ref: '#/components/schemas/mediaExpanded'
+ *             libraryFiles:
+ *               description: The files of the library item.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/libraryFile'
+ *             size:
+ *               description: The total size (in bytes) of the library item.
+ *               type: integer
+ *               example: 268990279
  */
 class LibraryItem {
   constructor(libraryItem = null) {
