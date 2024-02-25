@@ -6,10 +6,6 @@ const { filePathToPOSIX } = require('../utils/fileUtils')
  * @openapi
  * components:
  *   schemas:
- *     mediaType:
- *       type: string
- *       description: The type of media, will be book or podcast.
- *       enum: [book, podcast]
  *     oldLibraryId:
  *       type: string
  *       description: The ID of the libraries created on server version 2.2.23 and before.

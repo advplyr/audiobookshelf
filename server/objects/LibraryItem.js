@@ -14,7 +14,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  * @openapi
  * components:
  *   schemas:
- *     libraryItem:
+ *     libraryItemBase:
  *       type: object
  *       properties:
  *         id:
@@ -24,13 +24,11 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *         ino:
  *           description: The inode of the library item.
  *           type: string
+ *           format: "[0-9]*"
  *         libraryId:
- *           oneOf:
- *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/newLibraryId'
+ *           $ref: '#/components/schemas/libraryId'
  *         folderId:
- *           description: The ID of the folder the library item is in.
- *           type: string
+ *           $ref: '#/components/schemas/folderId'
  *         path:
  *           description: The path of the library item on the server.
  *           type: string
@@ -55,12 +53,6 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *         updatedAt:
  *           description: The time (in ms since POSIX epoch) when the library item was last updated. (Read Only)
  *           type: integer
- *         lastScan:
- *           description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
- *           type: integer
- *         scanVersion:
- *           description: The version of the scanner when last scanned. Will be null if it has not been scanned.
- *           type: string
  *         isMissing:
  *           description: Whether the library item was scanned and no longer exists.
  *           type: boolean
@@ -69,174 +61,53 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *           type: boolean
  *         mediaType:
  *           - $ref: '#/components/schemas/mediaType'
- *         media:
- *           description: The media of the library item.
- *           oneOf:
- *             - $ref: '#/components/schemas/book'
- *             - $ref: '#/components/schemas/podcast'
- *         libraryFiles:
+ *     libraryItem:
+ *       type: object
+ *       description: A single item on the server, like a book or podcast.
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - folderId:
+ *           - $ref : '#/components/schemas/folderId'
+ *         - lastScan:
+ *           description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
+ *           type: integer
+ *         - scanVersion:
+ *           description: The version of the scanner when last scanned. Will be null if it has not been scanned.
+ *           type: string
+ *         - media:
+ *           - $ref: '#/components/schemas/media'
+ *         - libraryFiles:
  *           description: The files of the library item.
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/libraryFile'
  *     libraryItemMinified:
  *       type: object
- *       properties:
- *         id:
- *           description: The ID of the library item.
- *           type: string
- *           example: li_8gch9ve09orgn4fdz8
- *         ino:
- *           description: The inode of the library item.
- *           type: string
- *           example: '649641337522215266'
- *         libraryId:
- *           oneOf:
- *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/newLibraryId'
- *         folderId:
- *           description: The ID of the folder the library item is in.
- *           type: string
- *           example: fol_bev1zuxhb0j0s1wehr
- *         path:
- *           description: The path of the library item on the server.
- *           type: string
- *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule
- *         relPath:
- *           description: The path, relative to the library folder, of the library item.
- *           type: string
- *           example: Terry Goodkind/Sword of Truth/Wizards First Rule
- *         isFile:
- *           description: Whether the library item is a single file in the root of the library folder.
- *           type: boolean
- *           example: false
- *         mtimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item was last modified on disk.
- *           type: integer
- *           example: 1650621074299
- *         ctimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item status was changed on disk.
- *           type: integer
- *           example: 1650621074299
- *         birthtimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.
- *           type: integer
- *           example: 0
- *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was added to the library.
- *           type: integer
- *           example: 1650621073750
- *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was last updated. (Read Only)
- *           type: integer
- *           example: 1650621110769
- *         isMissing:
- *           description: Whether the library item was scanned and no longer exists.
- *           type: boolean
- *           example: false
- *         isInvalid:
- *           description: Whether the library item was scanned and no longer has media files.
- *           type: boolean
- *           example: false
- *         mediaType:
- *           - $ref: '#/components/schemas/mediaType'
- *         media:
- *           description: The media of the library item.
- *           type: object
- *           additionalProperties:
- *             oneOf:
- *               - $ref: '#/components/schemas/bookMinified'
- *               - $ref: '#/components/schemas/podcastMinified'
- *         numFiles:
- *           description: The number of library files for the library item.
- *           type: integer
- *           example: 2
- *         size:
- *           description: The total size (in bytes) of the library item.
- *           type: integer
- *           example: 268990279
+ *       description: A single item on the server, like a book or podcast. Minified media format.
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - media:
+ *           - $ref: '#/components/schemas/mediaMinified'
  *     libraryItemExpanded:
  *       type: object
- *       properties:
- *         id:
- *           description: The ID of the library item.
- *           type: string
- *           example: li_8gch9ve09orgn4fdz8
- *         ino:
- *           description: The inode of the library item.
- *           type: string
- *           example: '649641337522215266'
- *         libraryId:
- *           oneOf:
- *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/newLibraryId'
- *         folderId:
- *           description: The ID of the folder the library item is in.
- *           type: string
- *           example: fol_bev1zuxhb0j0s1wehr
- *         path:
- *           description: The path of the library item on the server.
- *           type: string
- *           example: /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule
- *         relPath:
- *           description: The path, relative to the library folder, of the library item.
- *           type: string
- *           example: Terry Goodkind/Sword of Truth/Wizards First Rule
- *         isFile:
- *           description: Whether the library item is a single file in the root of the library folder.
- *           type: boolean
- *           example: false
- *         mtimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item was last modified on disk.
- *           type: integer
- *           example: 1650621074299
- *         ctimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item status was changed on disk.
- *           type: integer
- *           example: 1650621074299
- *         birthtimeMs:
- *           description: The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.
- *           type: integer
- *           example: 0
- *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was added to the library.
- *           type: integer
- *           example: 1650621073750
- *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was last updated. (Read Only)
- *           type: integer
- *           example: 1650621110769
- *         lastScan:
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - folderId:
+ *           - $ref : '#/components/schemas/folderId'
+ *         - lastScan:
  *           description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
  *           type: integer
- *           example: 1651830827825
- *         scanVersion:
+ *         - scanVersion:
  *           description: The version of the scanner when last scanned. Will be null if it has not been scanned.
  *           type: string
- *           example: 2.0.21
- *         isMissing:
- *           description: Whether the library item was scanned and no longer exists.
- *           type: boolean
- *           example: false
- *         isInvalid:
- *           description: Whether the library item was scanned and no longer has media files.
- *           type: boolean
- *           example: false
- *         mediaType:
- *           - $ref: '#/components/schemas/mediaType'
- *         media:
- *           description: The media of the library item.
- *           type: object
- *           additionalProperties:
- *             oneOf:
- *               - $ref: '#/components/schemas/bookExpanded'
- *               - $ref: '#/components/schemas/podcastExpanded'
- *         libraryFiles:
+ *         - media:
+ *           - $ref: '#/components/schemas/mediaExpanded'
+ *         - libraryFiles:
  *           description: The files of the library item.
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/libraryFile'
- *         size:
+ *         - size:
  *           description: The total size (in bytes) of the library item.
  *           type: integer
  *           example: 268990279
