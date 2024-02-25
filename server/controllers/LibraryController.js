@@ -79,6 +79,22 @@ class LibraryController {
     res.json(library)
   }
 
+  /**
+   * @openapi
+   * /api/libraries:
+   *   get:
+   *     operationId: getAllLibraries
+   *     summary: Get all libraries on server
+   *     tags:
+   *       - Libraries
+   *     responses:
+   *       200:
+   *         description: OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/library'
+   */
   async findAll(req, res) {
     const libraries = await Database.libraryModel.getAllOldLibraries()
 
@@ -289,6 +305,69 @@ class LibraryController {
    * 
    * @param {import('express').Request} req 
    * @param {import('express').Response} res 
+   */
+  /**
+   * /api/libraries/{id}/items:
+   *   get:
+   *     summary: Get media items
+   *     parameters:
+   *       - name: filterBy
+   *         in: query
+   *         description: Filter media items by author
+   *         schema:
+   *           type: string
+   *       - name: sortBy
+   *         in: query
+   *         description: Sort media items by a specific field
+   *         schema:
+   *           type: string
+   *       - name: sortDesc
+   *         in: query
+   *         description: Whether to sort in descending order
+   *         schema:
+   *           type: boolean
+   *       - name: limit
+   *         in: query
+   *         description: Maximum number of items to return
+   *         schema:
+   *           type: integer
+   *       - name: page
+   *         in: query
+   *         description: Page number for pagination
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       '200':
+   *         description: Successful response
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 results:
+   *                   type: array
+   *                   items:
+   *                     $ref: '#/components/schemas/MediaItem'
+   *                 total:
+   *                   type: integer
+   *                 limit:
+   *                   type: integer
+   *                 page:
+   *                   type: integer
+   *                 sortBy:
+   *                   type: string
+   *                 sortDesc:
+   *                   type: boolean
+   *                 filterBy:
+   *                   type: string
+   *                 mediaType:
+   *                   type: string
+   *                 minified:
+   *                   type: boolean
+   *                 collapseseries:
+   *                   type: boolean
+   *                 include:
+   *                   type: string
    */
   async getLibraryItems(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
