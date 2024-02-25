@@ -2,7 +2,124 @@ const uuidv4 = require("uuid").v4
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
 const { filePathToPOSIX } = require('../utils/fileUtils')
-
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     mediaType:
+ *       type: string
+ *       description: The type of media, will be book or podcast.
+ *       enum: [book, podcast]
+ *     oldLibraryId:
+ *       type: string
+ *       description: The ID of the libraries created on server version 2.2.23 and before.
+ *       format: "lib_[a-z0-9]{18}"
+ *       example: lib_o78uaoeuh78h6aoeif
+ *     newLibraryId:
+ *       type: string
+ *       description: The library ID for any libraries after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     library:
+ *       type: object
+ *       properties:
+ *         id:
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
+ *         name:
+ *           type: string
+ *           description: The name of the library.
+ *           example: Main
+ *         folders:
+ *           type: array
+ *           description: The folders that the library is composed of on the server.
+ *           items:
+ *             $ref: '#/components/schemas/folder'
+ *         displayOrder:
+ *           type: integer
+ *           description: Display position of the library in the list of libraries. Must be >= 1.
+ *           example: 1
+ *         icon:
+ *           type: string
+ *           description: The selected icon for the library. See [Library Icons](https://api.audiobookshelf.org/#library-icons) for a list of possible icons.
+ *           example: audiobookshelf
+ *         mediaType:
+ *           - $ref: '#/components/schemas/mediaType'
+ *         provider:
+ *           type: string
+ *           description: Preferred metadata provider for the library. See [Metadata Providers](https://api.audiobookshelf.org/#metadata-providers) for a list of possible providers.
+ *           example: audible
+ *         settings:
+ *           $ref: '#/components/schemas/librarySettings'
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *         lastUpdate:
+ *           type: integer
+ *           description: The time (in ms since POSIX epoch) when the library was last updated. (Read Only)
+ *           example: 1646520916818
+ *     librarySettings:
+ *       type: object
+ *       properties:
+ *         coverAspectRatio:
+ *           type: integer
+ *           description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
+ *           example: 1
+ *         disableWatcher:
+ *           type: boolean
+ *           description: Whether to disable the folder watcher for the library.
+ *           example: false
+ *         skipMatchingMediaWithAsin:
+ *           type: boolean
+ *           description: Whether to skip matching books that already have an ASIN.
+ *           example: false
+ *         skipMatchingMediaWithIsbn:
+ *           type: boolean
+ *           description: Whether to skip matching books that already have an ISBN.
+ *           example: false
+ *         autoScanCronExpression:
+ *           description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
+ *           type: [string, 'null']
+ *     libraryFilterData:
+ *       type: object
+ *       properties:
+ *         authors:
+ *           description: The authors of books in the library.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/authorMinified'
+ *         genres:
+ *           description: The genres of books in the library.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: Fantasy
+ *         tags:
+ *           $ref: '#/components/schemas/tags'
+ *         series:
+ *           description: The series in the library. The series will only have their id and name.
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 example: ser_cabkj4jeu8be3rap4g
+ *               name:
+ *                 type: string
+ *                 example: Sword of Truth
+ *         narrators:
+ *           description: The narrators of books in the library.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: Sam Tsoutsouvas
+ *         languages:
+ *           description: The languages of books in the library.
+ *           type: array
+ *           items:
+ *             type: string
+ */
 class Library {
   constructor(library = null) {
     this.id = null

@@ -2,6 +2,44 @@ const Logger = require('../../Logger')
 const Notification = require('../Notification')
 const { isNullOrNaN } = require('../../utils')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     notificationSettings:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the notification settings.
+ *           type: string
+ *           example: notification-settings
+ *         appriseType:
+ *           description: The type of Apprise that will be used. At the moment, only api is available.
+ *           type: [string, 'null']
+ *           example: api
+ *         appriseApiUrl:
+ *           description: The full URL where the Apprise API to use is located.
+ *           type: string
+ *           example: https://apprise.example.com/notify
+ *           format: url
+ *         notifications:
+ *           description: The set notifications.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/notification'
+ *         maxFailedAttempts:
+ *           description: The maximum number of times a notification fails before being disabled.
+ *           type: integer
+ *           example: 5
+ *         maxNotificationQueue:
+ *           description: The maximum number of notifications in the notification queue before events are ignored.
+ *           type: integer
+ *           example: 20
+ *         notificationDelay:
+ *           description: The time (in ms) between notification pushes.
+ *           type: integer
+ *           example: 1000
+ */
 class NotificationSettings {
   constructor(settings = null) {
     this.id = 'notification-settings'

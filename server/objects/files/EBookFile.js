@@ -1,5 +1,32 @@
 const FileMetadata = require('../metadata/FileMetadata')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     ebookFile:
+ *       type: [object, 'null']
+ *       properties:
+ *         ino:
+ *           description: The inode of the ebook file.
+ *           type: string
+ *           example: '9463162'
+ *         metadata:
+ *           $ref: '#/components/schemas/fileMetadata'
+ *         ebookFormat:
+ *           description: The ebook format of the ebook file.
+ *           type: string
+ *           example: epub
+ *         addedAt:
+ *           description: The time (in ms since POSIX epoch) when the library file was added.
+ *           type: integer
+ *           example: 1650621073750
+ *         updatedAt:
+ *           description: The time (in ms since POSIX epoch) when the library file was last updated.
+ *           type: integer
+ *           example: 1650621110769
+ */
+
 class EBookFile {
   constructor(file) {
     this.ino = null

@@ -2,6 +2,52 @@ const Path = require('path')
 const date = require('../libs/dateAndTime')
 const version = require('../../package.json').version
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     backup:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the backup. Will be the date and time when the backup was created.
+ *           type: string
+ *           example: 2022-11-14T0130
+ *         backupMetadataCovers:
+ *           description: Whether the backup includes library item covers and author images located in metadata.
+ *           type: boolean
+ *           example: true
+ *         backupDirPath:
+ *           description: The backup directory path.
+ *           type: string
+ *           example: /metadata/backups
+ *         datePretty:
+ *           description: The date and time when the backup was created in a human-readable format.
+ *           type: string
+ *           example: Mon, Nov 14 2022 01:30
+ *         fullPath:
+ *           description: The full path of the backup on the server.
+ *           type: string
+ *           example: /metadata/backups/2022-11-14T0130.audiobookshelf
+ *         path:
+ *           description: The path of the backup relative to the metadata directory.
+ *           type: string
+ *           example: backups/2022-11-14T0130.audiobookshelf
+ *         filename:
+ *           description: The filename of the backup.
+ *           type: string
+ *           example: 2022-11-14T0130.audiobookshelf
+ *         fileSize:
+ *           description: The size (in bytes) of the backup file.
+ *           type: integer
+ *           example: 7776983
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *         serverVersion:
+ *           description: The version of the server when the backup was created.
+ *           type: string
+ *           example: 2.2.4
+ */
 class Backup {
   constructor(data = null) {
     this.id = null

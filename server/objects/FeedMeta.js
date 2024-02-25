@@ -1,3 +1,85 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     rssFeedMetadata:
+ *       type: object
+ *       properties:
+ *         title:
+ *           description: The title of the entity the RSS feed is for.
+ *           type: string
+ *           example: Welcome to Night Vale
+ *         description:
+ *           description: The description of the entity the RSS feed is for.
+ *           type: [string, 'null']
+ *           example: |2-
+ * 
+ *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
+ *         author:
+ *           description: The author of the entity the RSS feed is for.
+ *           type: [string, 'null']
+ *           example: Night Vale Presents
+ *         imageUrl:
+ *           description: The URL of the RSS feed's image.
+ *           type: string
+ *           example: https://abs.example.com/feed/li_bufnnmp4y5o2gbbxfm/cover
+ *           format: url
+ *         feedUrl:
+ *           description: The URL of the RSS feed.
+ *           type: string
+ *           example: https://abs.example.com/feed/li_bufnnmp4y5o2gbbxfm
+ *           format: url
+ *         link:
+ *           description: The URL of the entity the RSS feed is for.
+ *           type: string
+ *           example: https://abs.example.com/item/li_bufnnmp4y5o2gbbxfm
+ *           format: url
+ *         explicit:
+ *           description: Whether the RSS feed's contents are explicit.
+ *           type: boolean
+ *           example: false
+ *         type:
+ *           description: The type of the RSS feed.
+ *           type: [string, 'null']
+ *           example: episodic
+ *         language:
+ *           description: The language of the RSS feed.
+ *           type: [string, 'null']
+ *           example: en
+ *         preventIndexing:
+ *           description: Whether the RSS feed is marked to prevent indexing of the feed.
+ *           type: boolean
+ *           example: true
+ *         ownerName:
+ *           description: The owner name of the RSS feed.
+ *           type: [string, 'null']
+ *         ownerEmail:
+ *           description: The owner email of the RSS feed.
+ *           type: [string, 'null']
+ *     rssFeedMetadataMinified:
+ *       type: object
+ *       properties:
+ *         title:
+ *           description: The title of the entity the RSS feed is for.
+ *           type: string
+ *           example: Welcome to Night Vale
+ *         description:
+ *           description: The description of the entity the RSS feed is for.
+ *           type: [string, 'null']
+ *           example: |2-
+ * 
+ *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
+ *         preventIndexing:
+ *           description: Whether the RSS feed is marked to prevent indexing of the feed.
+ *           type: boolean
+ *           example: true
+ *         ownerName:
+ *           description: The owner name of the RSS feed.
+ *           type: [string, 'null']
+ *         ownerEmail:
+ *           description: The owner email of the RSS feed.
+ *           type: [string, 'null']
+ */
 class FeedMeta {
   constructor(meta) {
     this.title = null

@@ -1,3 +1,39 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     audioTrack:
+ *       type: object
+ *       properties:
+ *         index:
+ *           description: The index of the audio track.
+ *           type: integer
+ *           example: 1
+ *         startOffset:
+ *           description: When in the audio file (in seconds) the track starts.
+ *           type: number
+ *           example: 0
+ *         duration:
+ *           description: The length (in seconds) of the audio track.
+ *           type: number
+ *           example: 33854.905
+ *         title:
+ *           description: The filename of the audio file the audio track belongs to.
+ *           type: string
+ *           example: Wizards First Rule 01.mp3
+ *         contentUrl:
+ *           description: The URL path of the audio file.
+ *           type: string
+ *           example: >-
+ *               /s/item/li_8gch9ve09orgn4fdz8/Terry Goodkind - SOT Bk01 - Wizards First
+ *               Rule 01.mp3
+ *         mimeType:
+ *           description: The MIME type of the audio file.
+ *           type: string
+ *           example: audio/mpeg
+ *         metadata:
+ *           $ref: '#/components/schemas/fileMetadata'
+ */
 class AudioTrack {
   constructor() {
     this.index = null

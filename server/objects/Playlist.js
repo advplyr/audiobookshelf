@@ -1,5 +1,111 @@
 const uuidv4 = require("uuid").v4
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     playlist:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the playlist.
+ *           type: string
+ *           example: pl_qbwet64998s5ra6dcu
+ *         libraryId:
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
+ *         userId:
+ *           description: The ID of the user the playlist belongs to.
+ *           type: string
+ *           example: root
+ *         name:
+ *           description: The playlist's name.
+ *           type: string
+ *           example: Favorites
+ *         description:
+ *           description: The playlist's description.
+ *           type: [string, 'null']
+ *         coverPath:
+ *           description: The path of the playlist's cover.
+ *           type: [string, 'null']
+ *         items:
+ *           description: The items in the playlist.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/playlistItem'
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the playlist was last updated.
+ *           type: integer
+ *           example: 1669623431313
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *     playlistExpanded:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the playlist.
+ *           type: string
+ *           example: pl_qbwet64998s5ra6dcu
+ *         libraryId:
+ *           oneOf:
+ *             - $ref: '#/components/schemas/oldLibraryId'
+ *             - $ref: '#/components/schemas/newLibraryId'
+ *         userId:
+ *           description: The ID of the user the playlist belongs to.
+ *           type: string
+ *           example: root
+ *         name:
+ *           description: The playlist's name.
+ *           type: string
+ *           example: Favorites
+ *         description:
+ *           description: The playlist's description.
+ *           type: [string, 'null']
+ *         coverPath:
+ *           description: The path of the playlist's cover.
+ *           type: [string, 'null']
+ *         items:
+ *           description: The items in the playlist.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/playlistItemExpanded'
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the playlist was last updated.
+ *           type: integer
+ *           example: 1669623431313
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *     playlistItem:
+ *       type: object
+ *       properties:
+ *         libraryItemId:
+ *           description: The ID of the library item the playlist item is for.
+ *           type: string
+ *           example: li_8gch9ve09orgn4fdz8
+ *         episodeId:
+ *           description: The ID of the podcast episode the playlist item is for.
+ *           type: [string, 'null']
+ *     playlistItemExpanded:
+ *       type: object
+ *       properties:
+ *         libraryItemId:
+ *           description: The ID of the library item the playlist item is for.
+ *           type: string
+ *           example: li_8gch9ve09orgn4fdz8
+ *         episodeId:
+ *           description: The ID of the podcast episode the playlist item is for.
+ *           type: [string, 'null']
+ *         episode:
+ *           $ref: '#/components/schemas/podcastEpisodeExpanded'
+ *         libraryItem:
+ *           description: The library item the playlist item is for. Will be Library Item Minified if episodeId is not null.
+ *           type: object
+ *           additionalProperties:
+ *             oneOf:
+ *             - $ref: '#/components/schemas/libraryItemMinified'
+ *             - $ref: '#/components/schemas/libraryItemExpanded'
+ */
 class Playlist {
   constructor(playlist) {
     this.id = null

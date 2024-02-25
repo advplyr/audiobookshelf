@@ -2,6 +2,106 @@ const { AudioMimeType } = require('../../utils/constants')
 const AudioMetaTags = require('../metadata/AudioMetaTags')
 const FileMetadata = require('../metadata/FileMetadata')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     audioFile:
+ *       type: object
+ *       properties:
+ *         index:
+ *           description: The index of the audio file.
+ *           type: integer
+ *           example: 1
+ *         ino:
+ *           description: The inode of the audio file.
+ *           type: string
+ *           example: '649644248522215260'
+ *         metadata:
+ *           $ref: '#/components/schemas/fileMetadata'
+ *         addedAt:
+ *           description: The time (in ms since POSIX epoch) when the audio file was added to the library.
+ *           type: integer
+ *           example: 1650621074131
+ *         updatedAt:
+ *           description: The time (in ms since POSIX epoch) when the audio file last updated. (Read Only)
+ *           type: integer
+ *           example: 1651830828023
+ *         trackNumFromMeta:
+ *           description: The track number of the audio file as pulled from the file's metadata. Will be null if unknown.
+ *           type: [integer, 'null']
+ *           example: 1
+ *         discNumFromMeta:
+ *           description: The disc number of the audio file as pulled from the file's metadata. Will be null if unknown.
+ *           type: [string, 'null']
+ *         trackNumFromFilename:
+ *           description: The track number of the audio file as determined from the file's name. Will be null if unknown.
+ *           type: [integer, 'null']
+ *           example: 1
+ *         discNumFromFilename:
+ *           description: The track number of the audio file as determined from the file's name. Will be null if unknown.
+ *           type: [string, 'null']
+ *         manuallyVerified:
+ *           description: Whether the audio file has been manually verified by a user.
+ *           type: boolean
+ *           example: false
+ *         invalid:
+ *           description: Whether the audio file is missing from the server.
+ *           type: boolean
+ *           example: false
+ *         exclude:
+ *           description: Whether the audio file has been marked for exclusion.
+ *           type: boolean
+ *           example: false
+ *         error:
+ *           description: Any error with the audio file. Will be null if there is none.
+ *           type: [string, 'null']
+ *         format:
+ *           description: The format of the audio file.
+ *           type: string
+ *           example: MP2/3 (MPEG audio layer 2/3)
+ *         duration:
+ *           description: The total length (in seconds) of the audio file.
+ *           type: number
+ *           example: 6004.6675
+ *         bitRate:
+ *           description: The bit rate (in bit/s) of the audio file.
+ *           type: integer
+ *           example: 64000
+ *         language:
+ *           description: The language of the audio file.
+ *           type: [string, 'null']
+ *         codec:
+ *           description: The codec of the audio file.
+ *           type: string
+ *           example: mp3
+ *         timeBase:
+ *           description: The time base of the audio file.
+ *           type: string
+ *           example: 1/14112000
+ *         channels:
+ *           description: The number of channels the audio file has.
+ *           type: integer
+ *           example: 2
+ *         channelLayout:
+ *           description: The layout of the audio file's channels.
+ *           type: string
+ *           example: stereo
+ *         chapters:
+ *           description: If the audio file is part of an audiobook, the chapters the file contains.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/bookChapter'
+ *         embeddedCoverArt:
+ *           description: The type of embedded cover art in the audio file. Will be null if none exists.
+ *           type: [string, 'null']
+ *         metaTags:
+ *           $ref: '#/components/schemas/audioMetaTags'
+ *         mimeType:
+ *           description: The MIME type of the audio file.
+ *           type: string
+ *           example: audio/mpeg
+ */
 class AudioFile {
   constructor(data) {
     this.index = null

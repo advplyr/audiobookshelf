@@ -1,5 +1,111 @@
 const uuidv4 = require("uuid").v4
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     mediaProgress:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the media progress. If the media progress is for a book, this will just be the libraryItemId. If for a podcast episode, it will be a hyphenated combination of the libraryItemId and episodeId.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm-ep_lh6ko39pumnrma3dhv
+ *         libraryItemId:
+ *           description: The ID of the library item the media progress is of.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         episodeId:
+ *           description: The ID of the podcast episode the media progress is of. Will be null if the progress is for a book.
+ *           type: [string, 'null']
+ *           example: ep_lh6ko39pumnrma3dhv
+ *         duration:
+ *           description: The total duration (in seconds) of the media. Will be 0 if the media was marked as finished without the user listening to it.
+ *           type: number
+ *           example: 1454.18449
+ *         progress:
+ *           description: The percentage completion progress of the media. Will be 1 if the media is finished.
+ *           type: number
+ *           example: 0.011193983371394644
+ *         currentTime:
+ *           description: The current time (in seconds) of the user's progress. If the media has been marked as finished, this will be the time the user was at beforehand.
+ *           type: number
+ *           example: 16.278117
+ *         isFinished:
+ *           description: Whether the media is finished.
+ *           type: boolean
+ *           example: false
+ *         hideFromContinueListening:
+ *           description: Whether the media will be hidden from the "Continue Listening" shelf.
+ *           type: boolean
+ *           example: false
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the media progress was last updated.
+ *           type: integer
+ *           example: 1668120246620
+ *         startedAt:
+ *           description: The time (in ms since POSIX epoch) when the media progress was created.
+ *           type: integer
+ *           example: 1668120083771
+ *         finishedAt:
+ *           description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
+ *           type: [string, 'null']
+ *     mediaProgressWithMedia:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the media progress. If the media progress is for a book, this will just be the libraryItemId. If for a podcast episode, it will be a hyphenated combination of the libraryItemId and episodeId.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm-ep_lh6ko39pumnrma3dhv
+ *         libraryItemId:
+ *           description: The ID of the library item the media progress is of.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         episodeId:
+ *           description: The ID of the podcast episode the media progress is of. Will be null if the progress is for a book.
+ *           type: [string, 'null']
+ *           example: ep_lh6ko39pumnrma3dhv
+ *         duration:
+ *           description: The total duration (in seconds) of the media. Will be 0 if the media was marked as finished without the user listening to it.
+ *           type: number
+ *           example: 1454.18449
+ *         progress:
+ *           description: The percentage completion progress of the media. Will be 1 if the media is finished.
+ *           type: number
+ *           example: 0.011193983371394644
+ *         currentTime:
+ *           description: The current time (in seconds) of the user's progress. If the media has been marked as finished, this will be the time the user was at beforehand.
+ *           type: number
+ *           example: 16.278117
+ *         isFinished:
+ *           description: Whether the media is finished.
+ *           type: boolean
+ *           example: false
+ *         hideFromContinueListening:
+ *           description: Whether the media will be hidden from the "Continue Listening" shelf.
+ *           type: boolean
+ *           example: false
+ *         lastUpdate:
+ *           description: The time (in ms since POSIX epoch) when the media progress was last updated.
+ *           type: integer
+ *           example: 1668120246620
+ *         startedAt:
+ *           description: The time (in ms since POSIX epoch) when the media progress was created.
+ *           type: integer
+ *           example: 1668120083771
+ *         finishedAt:
+ *           description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
+ *           type: [string, 'null']
+ *         media:
+ *           description: The media of the library item the media progress is for.
+ *           type: object
+ *           additionalProperties:
+ *             oneOf:
+ *             - $ref: '#/components/schemas/bookExpanded'
+ *             - $ref: '#/components/schemas/podcastExpanded'
+ *         episode:
+ *           $ref: '#/components/schemas/podcastEpisode'
+ */
 class MediaProgress {
   constructor(progress) {
     this.id = null

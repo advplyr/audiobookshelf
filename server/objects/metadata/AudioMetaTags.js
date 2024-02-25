@@ -1,3 +1,79 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     audioMetaTags:
+ *       description: ID3 metadata tags pulled from the audio file on import. Only non-null tags will be returned in requests.
+ *       type: object
+ *       properties:
+ *         tagAlbum:
+ *           type: [string, 'null']
+ *           example: SOT Bk01
+ *         tagArtist:
+ *           type: [string, 'null']
+ *           example: Terry Goodkind
+ *         tagGenre:
+ *           type: [string, 'null']
+ *           example: Audiobook Fantasy
+ *         tagTitle:
+ *           type: [string, 'null']
+ *           example: Wizards First Rule 01
+ *         tagSeries:
+ *           type: [string, 'null']
+ *         tagSeriesPart:
+ *           type: [string, 'null']
+ *         tagTrack:
+ *           type: [string, 'null']
+ *           example: 01/20
+ *         tagDisc:
+ *           type: [string, 'null']
+ *         tagSubtitle:
+ *           type: [string, 'null']
+ *         tagAlbumArtist:
+ *           type: [string, 'null']
+ *           example: Terry Goodkind
+ *         tagDate:
+ *           type: [string, 'null']
+ *         tagComposer:
+ *           type: [string, 'null']
+ *           example: Terry Goodkind
+ *         tagPublisher:
+ *           type: [string, 'null']
+ *         tagComment:
+ *           type: [string, 'null']
+ *         tagDescription:
+ *           type: [string, 'null']
+ *         tagEncoder:
+ *           type: [string, 'null']
+ *         tagEncodedBy:
+ *           type: [string, 'null']
+ *         tagIsbn:
+ *           type: [string, 'null']
+ *         tagLanguage:
+ *           type: [string, 'null']
+ *         tagASIN:
+ *           type: [string, 'null']
+ *         tagOverdriveMediaMarker:
+ *           type: [string, 'null']
+ *         tagOriginalYear:
+ *           type: [string, 'null']
+ *         tagReleaseCountry:
+ *           type: [string, 'null']
+ *         tagReleaseType:
+ *           type: [string, 'null']
+ *         tagReleaseStatus:
+ *           type: [string, 'null']
+ *         tagISRC:
+ *           type: [string, 'null']
+ *         tagMusicBrainzTrackId:
+ *           type: [string, 'null']
+ *         tagMusicBrainzAlbumId:
+ *           type: [string, 'null']
+ *         tagMusicBrainzAlbumArtistId:
+ *           type: [string, 'null']
+ *         tagMusicBrainzArtistId:
+ *           type: [string, 'null']
+ */
 class AudioMetaTags {
   constructor(metadata) {
     this.tagAlbum = null

@@ -13,6 +13,71 @@ const { AudioMimeType } = require('../utils/constants')
 const hlsPlaylistGenerator = require('../utils/generators/hlsPlaylistGenerator')
 const AudioTrack = require('./files/AudioTrack')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     stream:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the stream. It will be the same as the ID of the playback session that the stream is for.
+ *           type: string
+ *           example: play_c786zm3qtjz6bd5q3n
+ *         userId:
+ *           description: The ID of the user that started the stream.
+ *           type: string
+ *           example: root
+ *         libraryItem:
+ *           $ref: '#/components/schemas/libraryItemExpanded'
+ *         episode:
+ *           $ref: '#/components/schemas/podcastEpisodeExpanded'
+ *         segmentLength:
+ *           description: The length (in seconds) of each segment of the stream.
+ *           type: integer
+ *           example: 6
+ *         playlistPath:
+ *           description: The path on the server of the stream output.
+ *           type: string
+ *           example: /metadata/streams/play_c786zm3qtjz6bd5q3n/output.m3u8
+ *         clientPlaylistUri:
+ *           description: The URI path for the client to access the stream.
+ *           type: string
+ *           example: /hls/play_c786zm3qtjz6bd5q3n/output.m3u8
+ *         startTime:
+ *           description: The time (in seconds) where the playback session started.
+ *           type: integer
+ *           example: 0
+ *         segmentStartNumber:
+ *           description: The segment where the transcoding began.
+ *           type: integer
+ *           example: 0
+ *         isTranscodeComplete:
+ *           description: Whether transcoding is complete.
+ *           type: boolean
+ *           example: false 
+ *     streamProgress:
+ *       type: object
+ *       properties:
+ *         stream:
+ *           description: The ID of the stream the progress is for.
+ *           type: string
+ *           example: play_c786zm3qtjz6bd5q3n
+ *         percent:
+ *           description: A human-readable percentage of transcode completion.
+ *           type: string
+ *           example: 8.66% 
+ *         chunks:
+ *           description: The segment ranges that have been transcoded.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: 0-536 
+ *         numSegments:
+ *           description: The total number of segments of the stream.
+ *           type: integer
+ *           example: 6200 
+ */
 class Stream extends EventEmitter {
   constructor(sessionId, streamPath, user, libraryItem, episodeId, startTime, transcodeOptions = {}) {
     super()
@@ -195,7 +260,7 @@ class Stream extends EventEmitter {
       var current_chunk = []
       var last_seg_in_chunk = -1
 
-      var segments = Array.from(this.segmentsCreated).sort((a, b) => a - b);
+      var segments = Array.from(this.segmentsCreated).sort((a, b) => a - b)
       var lastSegment = segments[segments.length - 1]
       if (lastSegment > this.furthestSegmentCreated) {
         this.furthestSegmentCreated = lastSegment

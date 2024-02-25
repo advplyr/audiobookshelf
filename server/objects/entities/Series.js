@@ -1,6 +1,109 @@
 const uuidv4 = require("uuid").v4
 const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     series:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the series.
+ *           type: string
+ *           example: ser_cabkj4jeu8be3rap4g
+ *         name:
+ *           description: The name of the series.
+ *           type: string
+ *           example: Sword of Truth
+ *         description:
+ *           description: A description for the series. Will be null if there is none.
+ *           type: [string, 'null']
+ *         addedAt:
+ *           description: The time (in ms since POSIX epoch) when the series was added.
+ *           type: integer
+ *           example: 1650621073750
+ *         updatedAt:
+ *           description: The time (in ms since POSIX epoch) when the series was last updated.
+ *           type: integer
+ *           example: 1650621073750
+ *     seriesNumBooks:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the series.
+ *           type: string
+ *           example: ser_cabkj4jeu8be3rap4g
+ *         name:
+ *           description: The name of the series.
+ *           type: string
+ *           example: Sword of Truth
+ *         nameIgnorePrefix:
+ *           description: The name of the series with any prefix moved to the end.
+ *           type: string
+ *           example: Sword of Truth
+ *         libraryItemIds:
+ *           description: The IDs of the library items in the series.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: li_8gch9ve09orgn4fdz8
+ *         numBooks:
+ *           description: The number of books in the series.
+ *           type: integer
+ *           example: 1
+ *     seriesBooks:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the series.
+ *           type: string
+ *           example: ser_cabkj4jeu8be3rap4g
+ *         name:
+ *           description: The name of the series.
+ *           type: string
+ *           example: Sword of Truth
+ *         nameIgnorePrefix:
+ *           description: The name of the series with any prefix moved to the end.
+ *           type: string
+ *           example: Sword of Truth
+ *         nameIgnorePrefixSort:
+ *           description: The name of the series with any prefix removed.
+ *           type: string
+ *           example: Sword of Truth
+ *         type:
+ *           description: Will always be series.
+ *           type: string
+ *           example: series
+ *         books:
+ *           description: The library items that contain the books in the series. A sequence attribute that denotes the position in the series the book is in, is tacked on.
+ *           type: array
+ *           items: 
+ *             $ref: '#/components/schemas/libraryItem'
+ *         addedAt:
+ *           description: The time (in ms since POSIX epoch) when the series was added.
+ *           type: integer
+ *           example: 1650621073750
+ *         totalDuration:
+ *           description: The combined duration (in seconds) of all books in the series.
+ *           type: number
+ *           example: 12000.946
+ *     seriesSequence:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the series.
+ *           type: string
+ *           example: ser_cabkj4jeu8be3rap4g
+ *         name:
+ *           description: The name of the series.
+ *           type: string
+ *           example: Sword of Truth
+ *         sequence:
+ *           description: The position in the series the book is.
+ *           type: string
+ *           example: '1'
+ */
 class Series {
   constructor(series) {
     this.id = null

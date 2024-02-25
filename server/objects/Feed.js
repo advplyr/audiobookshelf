@@ -8,6 +8,83 @@ const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     rssFeed:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the RSS feed.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         slug:
+ *           description: The slug (the last part of the URL) for the RSS feed.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         userId:
+ *           description: The ID of the user that created the RSS feed.
+ *           type: string
+ *           example: root
+ *         entityType:
+ *           description: The type of entity the RSS feed is for.
+ *           type: string
+ *           example: item
+ *         entityId:
+ *           description: The ID of the entity the RSS feed is for.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         coverPath:
+ *           description: The path of the cover to use for the RSS feed.
+ *           type: string
+ *           example: /metadata/items/li_bufnnmp4y5o2gbbxfm/cover.jpg
+ *         serverAddress:
+ *           description: The server's address.
+ *           type: string
+ *           example: https://abs.example.com
+ *           format: url
+ *         feedUrl:
+ *           description: The full URL of the RSS feed.
+ *           type: string
+ *           example: https://abs.example.com/feed/li_bufnnmp4y5o2gbbxfm
+ *           format: url
+ *         meta:
+ *           $ref: '#/components/schemas/rssFeedMetadata'
+ *         episodes:
+ *           description: The RSS feed's episodes.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/rssFeedEpisode'
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *         updatedAt:
+ *           description: The time (in ms since POSIX epoch) when the RSS feed was last updated.
+ *           type: integer
+ *           example: 1669031843179
+ *     rssFeedMinified:
+ *       type: [object, 'null']
+ *       properties:
+ *         id:
+ *           description: The ID of the RSS feed.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         entityType:
+ *           description: The type of entity the RSS feed is for.
+ *           type: string
+ *           example: item
+ *         entityId:
+ *           description: The ID of the entity the RSS feed is for.
+ *           type: string
+ *           example: li_bufnnmp4y5o2gbbxfm
+ *         feedUrl:
+ *           description: The full URL of the RSS feed.
+ *           type: string
+ *           example: https://abs.example.com/feed/li_bufnnmp4y5o2gbbxfm
+ *           format: url
+ *         meta:
+ *           $ref: '#/components/schemas/rssFeedMetadataMinified'
+ */
 class Feed {
   constructor(feed) {
     this.id = null
