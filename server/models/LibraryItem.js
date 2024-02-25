@@ -312,17 +312,18 @@ class LibraryItem extends Model {
         const existingAuthors = libraryItemExpanded.media.authors || []
         const existingSeriesAll = libraryItemExpanded.media.series || []
         const updatedAuthors = oldLibraryItem.media.metadata.authors || []
+        const uniqueUpdatedAuthors = updatedAuthors.filter((au, idx) => updatedAuthors.findIndex(a => a.id === au.id) === idx)
         const updatedSeriesAll = oldLibraryItem.media.metadata.series || []
 
         for (const existingAuthor of existingAuthors) {
           // Author was removed from Book
-          if (!updatedAuthors.some(au => au.id === existingAuthor.id)) {
+          if (!uniqueUpdatedAuthors.some(au => au.id === existingAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
             await this.sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
             hasUpdates = true
           }
         }
-        for (const updatedAuthor of updatedAuthors) {
+        for (const updatedAuthor of uniqueUpdatedAuthors) {
           // Author was added
           if (!existingAuthors.some(au => au.id === updatedAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
