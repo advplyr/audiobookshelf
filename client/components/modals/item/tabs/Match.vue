@@ -42,13 +42,13 @@
 
           <div class="flex py-2">
             <div>
-              <p class="text-center text-gray-200">{{ $string.LabelNew }}</p>
+              <p class="text-center text-gray-200">{{ $strings.LabelNew }}</p>
               <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
             <div v-if="media.coverPath">
-              <p class="text-center text-gray-200">{{ $string.LabelCurrent }}</p>
+              <p class="text-center text-gray-200">{{ $strings.LabelCurrent }}</p>
               <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
