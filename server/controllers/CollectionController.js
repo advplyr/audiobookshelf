@@ -285,13 +285,13 @@ class CollectionController {
    *           application/json:
    *             schema:
    *               $ref: '#/components/schemas/collectionExpanded'
+   *       400:
+   *         description: The provided library ID could not be found, is in
+   *                      a different library, or is already in a collection
    *       403:
    *         description: A user with update permissions is required to update collections
    *       404:
    *         description: No collection with the specified ID exists
-   *       500:
-   *         description: The provided library ID could not be found, is in
-   *                      a different library, or is already in a collection
    */
   async addBook(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.body.id)
@@ -325,6 +325,39 @@ class CollectionController {
    * TODO: bookId is actually libraryItemId. Clients need updating to use bookId
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/collections/{id}/book/{bookId}:
+   *   delete:
+   *     operationId: collectionRemoveBook
+   *     summary: Remove a single book from a collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - name: bookId
+   *         in: path
+   *         description: Book ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: OK
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   *       403:
+   *         description: A user with update permissions is required to update collections
+   *       404:
+   *         description: No collection with the specified ID exists
    */
   async removeBook(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.params.bookId)
@@ -369,6 +402,47 @@ class CollectionController {
    * Req.body { books: <Array of library item ids> }
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/collections/{id}/batch/add:
+   *   post:
+   *     operationId: batchAddToCollection
+   *     summary: Batch add books to an existing collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       description: Data for updating an existing collection
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               books:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Collection created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   *       403:
+   *         description: A user with update permissions is required to update collections
+   *       404:
+   *         description: No collection with the specified ID exists
+   *       500:
+   *         description: The provided `books` array must not be empty
    */
   async addBatch(req, res) {
     // filter out invalid libraryItemIds
@@ -427,6 +501,47 @@ class CollectionController {
    * Req.body { books: <Array of library item ids> }
    * @param {*} req 
    * @param {*} res 
+   */
+  /**
+   * @openapi
+   * /api/collections/{id}/batch/remove:
+   *   post:
+   *     operationId: batchRemoveFromCollection
+   *     summary: Batch remove books from a collection
+   *     tags:
+   *       - Collections
+   *     parameters:
+   *       - name: id
+   *         in: path
+   *         description: Collection ID
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       description: Data for updating an existing collection
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               books:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Books removed from collection successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/collectionExpanded'
+   *       403:
+   *         description: A user with update permissions is required to update collections
+   *       404:
+   *         description: No collection with the specified ID exists
+   *       500:
+   *         description: The provided `books` array must not be empty
    */
   async removeBatch(req, res) {
     // filter out invalid libraryItemIds
