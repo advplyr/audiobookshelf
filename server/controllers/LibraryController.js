@@ -551,9 +551,10 @@ class LibraryController {
    *         content:
    *           application/json:
    *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/collectionExpanded'
+   *               results:
+   *                 type: array
+   *                 items:
+   *                   $ref: '#/components/schemas/collectionExpanded'
    */
   async getCollectionsForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
