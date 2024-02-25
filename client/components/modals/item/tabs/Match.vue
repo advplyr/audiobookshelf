@@ -546,24 +546,11 @@ export default {
       // Persist in local storage
       localStorage.setItem('selectedMatchUsage', JSON.stringify(this.selectedMatchUsage))
 
-      if (updatePayload.metadata.cover) {
-        const coverPayload = {
-          url: updatePayload.metadata.cover
-        }
-        const success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
-          console.error('Failed to update', error)
-          return false
-        })
-        if (success) {
-          this.$toast.success(this.$strings.ToastItemCoverUpdateSuccess)
-        } else {
-          this.$toast.error(this.$strings.ToastItemCoverUpdateFailed)
-        }
-        console.log('Updated cover')
-        delete updatePayload.metadata.cover
-      }
-
       if (Object.keys(updatePayload).length) {
+        if (updatePayload.metadata.cover) {
+          updatePayload.url = updatePayload.metadata.cover
+          delete updatePayload.metadata.cover
+        }
         const mediaUpdatePayload = updatePayload
         const updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)

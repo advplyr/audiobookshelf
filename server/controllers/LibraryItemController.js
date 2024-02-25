@@ -124,6 +124,11 @@ class LibraryItemController {
     const libraryItem = req.libraryItem
     const mediaPayload = req.body
 
+    if (mediaPayload.url) {
+      await LibraryItemController.prototype.uploadCover.bind(this)(req, res, false)
+      if (res.writableEnded) return
+    }
+
     // Book specific
     if (libraryItem.isBook) {
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
@@ -146,7 +151,7 @@ class LibraryItemController {
       seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
     }
 
-    const hasUpdates = libraryItem.media.update(mediaPayload)
+    const hasUpdates = libraryItem.media.update(mediaPayload) || mediaPayload.url
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
 
@@ -171,7 +176,7 @@ class LibraryItemController {
   }
 
   // POST: api/items/:id/cover
-  async uploadCover(req, res) {
+  async uploadCover(req, res, updateAndReturnJson = true) {
     if (!req.user.canUpload) {
       Logger.warn('User attempted to upload a cover without permission', req.user)
       return res.sendStatus(403)
@@ -196,12 +201,14 @@ class LibraryItemController {
       return res.status(500).send('Unknown error occurred')
     }
 
-    await Database.updateLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json({
-      success: true,
-      cover: result.cover
-    })
+    if (updateAndReturnJson) {
+      await Database.updateLibraryItem(libraryItem)
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+      res.json({
+        success: true,
+        cover: result.cover
+      })
+    }
   }
 
   // PATCH: api/items/:id/cover
