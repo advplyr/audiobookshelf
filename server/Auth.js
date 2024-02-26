@@ -76,6 +76,9 @@ class Auth {
       return
     }
 
+    // Custom req timeout see: https://github.com/panva/node-openid-client/blob/main/docs/README.md#customizing
+    OpenIDClient.custom.setHttpOptionsDefaults({ timeout: 10000 })
+
     const openIdIssuerClient = new OpenIDClient.Issuer({
       issuer: global.ServerSettings.authOpenIDIssuerURL,
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
