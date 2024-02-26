@@ -76,6 +76,8 @@ class Auth {
       return
     }
 
+    OpenIDClient.custom.setHttpOptionsDefaults({timeout: 30000});
+
     const openIdIssuerClient = new OpenIDClient.Issuer({
       issuer: global.ServerSettings.authOpenIDIssuerURL,
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
