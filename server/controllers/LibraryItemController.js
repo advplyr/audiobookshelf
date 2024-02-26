@@ -283,6 +283,9 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
+    if (req.query.ts)
+      res.set('Cache-Control', 'private, max-age=86400')
+
     if (raw) { // any value
       if (global.XAccel) {
         const encodedURI = encodeUriPath(global.XAccel + libraryItem.media.coverPath)
