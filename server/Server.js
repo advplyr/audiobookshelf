@@ -52,6 +52,7 @@ class Server {
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
+    global.DisableSSRF = process.env.DISABLE_SSRF
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)

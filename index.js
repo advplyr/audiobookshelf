@@ -22,6 +22,7 @@ const UID = process.env.AUDIOBOOKSHELF_UID
 const GID = process.env.AUDIOBOOKSHELF_GID
 const SOURCE = process.env.SOURCE || 'docker'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
+const DISABLE_SSRF = process.env.DISABLE_SSRF || false
 
 console.log('Config', CONFIG_PATH, METADATA_PATH)
 

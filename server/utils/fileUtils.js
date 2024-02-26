@@ -251,8 +251,8 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
       method: 'GET',
       responseType: 'stream',
       timeout: 30000,
-      httpAgent: ssrfFilter(url),
-      httpsAgent: ssrfFilter(url)
+      httpAgent: !global.DisableSSRF ? ssrfFilter(url) : undefined,
+      httpsAgent: !global.DisableSSRF ? ssrfFilter(url) : undefined
     }).then((response) => {
       // Validate content type
       if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
