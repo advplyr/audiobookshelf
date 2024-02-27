@@ -14,13 +14,26 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  * @openapi
  * components:
  *   schemas:
+ *     oldLibraryItemId:
+ *       description: The ID of library items on server version 2.2.23 and before.
+ *       type: string
+ *       format: "li_[a-z0-9]{18}"
+ *       example: li_o78uaoeuh78h6aoeif
+ *     newLibraryItemId:
+ *       type: string
+ *       description: The ID of library items after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     libraryItemId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldLibraryItemId'
+ *         - $ref: '#/components/schemas/newLibraryItemId'
  *     libraryItemBase:
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the library item.
- *           type: string
- *           format: uuid
+ *           $ref: '#/components/schemas/libraryItemId'
  *         ino:
  *           description: The inode of the library item.
  *           type: string
