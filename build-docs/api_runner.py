@@ -25,7 +25,13 @@ server_port = 9090
 ### Setup
 ###########################
 BASEURL = f"{server_ip}:{server_port}"
-HEADERS = {}
+HEADERS = {'Content-Type': 'application/json'}
+
+def ping_server():
+  url = f"{BASEURL}/ping"
+
+  # Post response
+  r = requests.get(url = url, headers = HEADERS)
 
 def get_token():
   url = f"{BASEURL}/login"
@@ -40,6 +46,7 @@ def get_token():
 
   return my_token
 
+#ping_server()
 # Update HEADERS to include token
 HEADERS['Authorization'] = f"Bearer {get_token()}"
 
@@ -92,7 +99,7 @@ def get_item(id):
 
 print("Getting book details!")
 resp = get_item(books[0])
-write_to_json("book.json", resp)
+#write_to_json("book.json", resp)
 
 ###########################
 ### Collections tests
@@ -108,13 +115,16 @@ def create_collection(library_id, collection_name, desc=None, books=None):
   if books:
     params['books'] = books
 
+  json_data = json.dumps(params)
+  print(json_data)
   # Post response
-  r = requests.post(url = url, headers = HEADERS, json = params)
-  data = r.json()
+  r = requests.post(url = url, headers = HEADERS, data = json_data)
 
   print(r.request.url)
   print(r.request.headers)
   print(r.request.body)
+
+  data = r.json()
 
   return data
 
@@ -192,7 +202,12 @@ def collection_delete_book(id, book):
 def collection_add_book_batch(id, books):
   url = f"{BASEURL}/api/collections/{id}/batch/add"
   data = {'books': books}
-  r = requests.patch(url = url, headers = HEADERS, json = data)
+  r = requests.post(url = url, headers = HEADERS, json = data)
+
+def collection_remove_book_batch(id, books):
+  url = f"{BASEURL}/api/collections/{id}/batch/remove"
+  data = {'books': books}
+  r = requests.post(url = url, headers = HEADERS, json = data)
 
 def delete_collections(id):
   url = f"{BASEURL}/api/collections/{id}"
@@ -200,8 +215,8 @@ def delete_collections(id):
   # Delete response
   r = requests.delete(url = url, headers = HEADERS)
 
-resp = create_collection(library_ids[0], "First None", None, None)
 if True:
+  resp = create_collection(library_ids[0], "First None", None, None)
   descriptions = [None, "First description", "Hello, here we go with some extra things."]
   book_arrs    = [None, [books[0]], books[1:3], books[3:7]]
   
@@ -221,39 +236,41 @@ if True:
         print(f"  Description: {desc}")
       if book:
         print(f"  Books: {len(book)}")
-      print()
-      print("Response:")
-      write_to_json(f"collection_{title_idx}.json", resp)
+      #write_to_json(f"collection_{title_idx}.json", resp)
   
       #input("Press enter to continue...\n")
       title_idx += 1
   
-print("Getting collections")
-# Get all collections in library
-collections = get_collections(library_ids[0])
+  print("Getting collections")
+  # Get all collections in library
+  collections = get_collections(library_ids[0])
 
-print("Updating a collection")
-update_collections(collections[0], books[6:])
-
-print("Add book to collection")
-collection_add_book(collections[0], books[0])
-collection_add_book(collections[0], books[0])
-collection_add_book("", books[0])
-collection_add_book(collections[0], "aoeu8a56oue")
-
-print("Delete book from collection")
-collection_delete_book(collections[0], books[0])
-collection_delete_book(collections[0], books[0])
-collection_delete_book("", books[0])
-collection_delete_book(collections[0], "aoeu8a56oue")
-
-print("Batch add to collection")
-collection_add_book_batch(collections[0], books[0:3])
-collection_add_book_batch(collections[0], books[0:3])
-collection_add_book_batch("", books[0:3])
-collection_add_book_batch(collections[0:3], [])
-
-print("Deleting collections")
-# Delete all collections
-for collection in collections:
-  delete_collections(collection)
+  print("Updating a collection")
+  update_collections(collections[0], books[6:])
+  
+  print("Add book to collection")
+  collection_add_book(collections[0], books[0])
+  collection_add_book(collections[0], books[0])
+  collection_add_book("aoeu", books[0])
+  collection_add_book(collections[0], "aoeu8a56oue")
+  
+  print("Delete book from collection")
+  collection_delete_book(collections[0], books[0])
+  collection_delete_book(collections[0], books[0])
+  collection_delete_book("yfgcr", books[0])
+  collection_delete_book(collections[0], "aoeu8a56oue")
+  
+  print("Batch add and remove books to/from collection")
+  collection_add_book_batch(collections[0], books[0:3])
+  collection_add_book_batch(collections[0], books[0:3])
+  collection_remove_book_batch(collections[0], books[0:3])
+  collection_remove_book_batch(collections[0], books[0:3])
+  collection_add_book_batch("aoeui", books[0:3])
+  collection_remove_book_batch("aoeui", books[0:3])
+  collection_add_book_batch(collections[0:3], [])
+  collection_remove_book_batch(collections[0:3], [])
+  
+  print("Deleting collections")
+  # Delete all collections
+  for collection in collections:
+    delete_collections(collection)
