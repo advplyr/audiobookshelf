@@ -204,6 +204,10 @@ module.exports = {
         mediaWhere['ebookFile'] = {
           [Sequelize.Op.not]: null
         }
+      } else if (value == 'no-ebook') {
+        mediaWhere['ebookFile'] = {
+          [Sequelize.Op.eq]: null
+        }
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
@@ -420,6 +424,10 @@ module.exports = {
       // TODO: Temp workaround for filtering supplementary ebook
       libraryItemWhere['libraryFiles'] = {
         [Sequelize.Op.substring]: `"isSupplementary":true`
+      }
+    } else if (filterGroup === 'ebooks' && filterValue === 'no-supplementary') {
+      libraryItemWhere['libraryFiles'] = {
+        [Sequelize.Op.notLike]: Sequelize.literal(`\'%"isSupplementary":true%\'`),
       }
     } else if (filterGroup === 'missing' && filterValue === 'authors') {
       authorInclude = {
