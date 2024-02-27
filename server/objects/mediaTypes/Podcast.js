@@ -8,26 +8,15 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  * @openapi
  * components:
  *   schemas:
- *     podcast:
+ *     podcastBase:
  *       type: object
  *       properties:
- *         libraryItemId:
- *           description: The ID of the library item that contains the podcast.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
- *         metadata:
- *           $ref: '#/components/schemas/podcastMetadata'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
  *           type: [string, 'null']
  *           example: /podcasts/Welcome to Night Vale/cover.jpg
  *         tags:
  *           $ref: '#/components/schemas/tags'
- *         episodes:
- *           description: The downloaded episodes of the podcast.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/podcastEpisode'
  *         autoDownloadEpisodes:
  *           description: Whether the server will automatically download podcast episodes according to the schedule.
  *           type: boolean
@@ -48,15 +37,27 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           description: The maximum number of podcast episodes to download when automatically downloading new episodes. If 0, all episodes will be downloaded.
  *           type: integer
  *           example: 3
+ *     podcast:
+ *       type: object
+ *       description: A podcast on the server
+ *       allOf:
+ *         - $ref: '#/components/schemas/podcastBase'
+ *         - type: object
+ *           properties:
+ *             libraryItemId:
+ *               $ref: '#/components/schemas/libraryItemId'
+ *             metadata:
+ *               $ref: '#/components/schemas/podcastMetadata'
+ *             episodes:
+ *               description: The downloaded episodes of the podcast.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/podcastEpisode'
  *     podcastMinified:
  *       type: object
  *       properties:
- *         libraryItemId:
- *           description: The ID of the library item that contains the podcast.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
  *         metadata:
- *           $ref: '#/components/schemas/podcastMetadata'
+ *           $ref: '#/components/schemas/podcastMetadataMinified'
  *         coverPath:
  *           description: The absolute path on the server of the cover file. Will be null if there is no cover.
  *           type: [string, 'null']
