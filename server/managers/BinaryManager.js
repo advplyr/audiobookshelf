@@ -11,8 +11,8 @@ const fileUtils = require('../utils/fileUtils')
 class BinaryManager {
 
   defaultRequiredBinaries = [
-    { name: 'ffmpeg', envVariable: 'FFMPEG_PATH', validVersions: ['5.1', '6'] },
-    { name: 'ffprobe', envVariable: 'FFPROBE_PATH', validVersions: ['5.1', '6'] }
+    { name: 'ffmpeg', envVariable: 'FFMPEG_PATH', validVersions: ['5.1'] },
+    { name: 'ffprobe', envVariable: 'FFPROBE_PATH', validVersions: ['5.1'] }
   ]
 
   constructor(requiredBinaries = this.defaultRequiredBinaries) {
@@ -135,7 +135,7 @@ class BinaryManager {
     if (!binaries.length) return
     Logger.info(`[BinaryManager] Installing binaries: ${binaries.join(', ')}`)
     let destination = await fileUtils.isWritable(this.mainInstallPath) ? this.mainInstallPath : this.altInstallPath
-    await ffbinaries.downloadBinaries(binaries, { destination, version: '6.1', force: true })
+    await ffbinaries.downloadBinaries(binaries, { destination, version: '5.1', force: true })
     Logger.info(`[BinaryManager] Binaries installed to ${destination}`)
   }
 
