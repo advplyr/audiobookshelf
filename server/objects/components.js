@@ -2,6 +2,10 @@
  * @openapi
  * components:
  *   schemas:
+ *     addedAt:
+ *       type: integer
+ *       description: The time (in ms since POSIX epoch) when added to the server.
+ *       example: 1633522963509
  *     createdAt:
  *       type: integer
  *       description: The time (in ms since POSIX epoch) when was created.
