@@ -103,9 +103,7 @@ const VideoMetadata = require('./metadata/VideoMetadata')
  *           type: integer
  *           example: 1668206493239
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the playback session was last updated.
- *           type: integer
- *           example: 1668206493239
+ *           $ref: '#/components/schemas/updatedAt'
  *     playbackSessionExpanded:
  *       type: [object, 'null']
  *       properties:
@@ -199,9 +197,7 @@ const VideoMetadata = require('./metadata/VideoMetadata')
  *           type: integer
  *           example: 1668206493239
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the playback session was last updated.
- *           type: integer
- *           example: 1668206493239
+ *           $ref: '#/components/schemas/updatedAt'
  *         audioTracks:
  *           description: The audio tracks that are being played with the playback session.
  *           type: array

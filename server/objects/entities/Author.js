@@ -27,13 +27,9 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *           description: The absolute path for the author image. Will be null if there is no image.
  *           type: [string, 'null']
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the author was added.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the author was last updated.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/updatedAt'
  *     authorMinified:
  *       type: object
  *       properties:
@@ -66,13 +62,9 @@ const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/par
  *           description: The absolute path for the author image. Will be null if there is no image.
  *           type: [string, 'null']
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the author was added.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the author was last updated.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/updatedAt'
  *         numBooks:
  *           description: The number of books associated with the author in the library.
  *           type: integer

@@ -20,13 +20,9 @@ const { getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index
  *           description: A description for the series. Will be null if there is none.
  *           type: [string, 'null']
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the series was added.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the series was last updated.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/updatedAt'
  *     seriesNumBooks:
  *       type: object
  *       properties:

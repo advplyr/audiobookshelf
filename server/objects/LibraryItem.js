@@ -61,11 +61,9 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
  *           description: The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.
  *           type: integer
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was added to the library.
- *           type: integer
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the library item was last updated. (Read Only)
- *           type: integer
+ *           $ref: '#/components/schemas/updatedAt'
  *         isMissing:
  *           description: Whether the library item was scanned and no longer exists.
  *           type: boolean

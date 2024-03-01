@@ -452,13 +452,9 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *             audioFile:
  *               $ref: '#/components/schemas/audioFile'
  *             addedAt:
- *               description: The time (in ms since POSIX epoch) when the podcast episode was added to the library.
- *               type: integer
- *               example: 1667326679503
+ *               $ref: '#/components/schemas/addedAt'
  *             updatedAt:
- *               description: The time (in ms since POSIX epoch) when the podcast episode was last updated.
- *               type: integer
- *               example: 1667326679503
+ *               $ref: '#/components/schemas/updatedAt'
  *     podcastEpisodeExpanded:
  *       type: [object, 'null']
  *       allOf:

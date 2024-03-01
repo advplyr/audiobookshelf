@@ -59,9 +59,7 @@ const naturalSort = createNewSortInstance({
  *         createdAt:
  *           $ref: '#/components/schemas/createdAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the RSS feed was last updated.
- *           type: integer
- *           example: 1669031843179
+ *           $ref: '#/components/schemas/updatedAt'
  *     rssFeedMinified:
  *       type: [object, 'null']
  *       properties:

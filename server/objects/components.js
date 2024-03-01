@@ -4,7 +4,11 @@
  *   schemas:
  *     createdAt:
  *       type: integer
- *       description: The time (in ms since POSIX epoch) when the item was created.
+ *       description: The time (in ms since POSIX epoch) when was created.
+ *       example: 1633522963509
+ *     updatedAt:
+ *       type: integer
+ *       description: The time (in ms since POSIX epoch) when last updated.
  *       example: 1633522963509
  *     tags:
  *       description: Tags applied to items.

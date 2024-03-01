@@ -17,13 +17,9 @@ const FileMetadata = require('../metadata/FileMetadata')
  *         metadata:
  *           $ref: '#/components/schemas/fileMetadata'
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the library file was added.
- *           type: integer
- *           example: 1650621052494
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the library file was last updated.
- *           type: integer
- *           example: 1650621052494
+ *           $ref: '#/components/schemas/updatedAt'
  *         fileType:
  *           description: The type of file that the library file is (audio, image, etc.).
  *           type: string

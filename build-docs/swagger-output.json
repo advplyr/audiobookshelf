@@ -720,7 +720,12 @@
       },
       "createdAt": {
         "type": "integer",
-        "description": "The time (in ms since POSIX epoch) when the item was created.",
+        "description": "The time (in ms since POSIX epoch) when was created.",
+        "example": 1633522963509
+      },
+      "updatedAt": {
+        "type": "integer",
+        "description": "The time (in ms since POSIX epoch) when last updated.",
         "example": 1633522963509
       },
       "tags": {
@@ -880,14 +885,10 @@
             ]
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the author was added.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the author was last updated.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/updatedAt"
           }
         }
       },
@@ -941,14 +942,10 @@
             ]
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the author was added.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the author was last updated.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/updatedAt"
           },
           "numBooks": {
             "description": "The number of books associated with the author in the library.",
@@ -978,14 +975,10 @@
             ]
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the series was added.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the series was last updated.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/updatedAt"
           }
         }
       },
@@ -1148,9 +1141,7 @@
             "$ref": "#/components/schemas/createdAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the RSS feed was last updated.",
-            "type": "integer",
-            "example": 1669031843179
+            "$ref": "#/components/schemas/updatedAt"
           }
         }
       },
@@ -1432,14 +1423,10 @@
             "$ref": "#/components/schemas/fileMetadata"
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the audio file was added to the library.",
-            "type": "integer",
-            "example": 1650621074131
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the audio file last updated. (Read Only)",
-            "type": "integer",
-            "example": 1651830828023
+            "$ref": "#/components/schemas/updatedAt"
           },
           "trackNumFromMeta": {
             "description": "The track number of the audio file as pulled from the file's metadata. Will be null if unknown.",
@@ -1617,14 +1604,10 @@
             "example": "epub"
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library file was added.",
-            "type": "integer",
-            "example": 1650621073750
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library file was last updated.",
-            "type": "integer",
-            "example": 1650621110769
+            "$ref": "#/components/schemas/updatedAt"
           }
         }
       },
@@ -1640,14 +1623,10 @@
             "$ref": "#/components/schemas/fileMetadata"
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library file was added.",
-            "type": "integer",
-            "example": 1650621052494
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library file was last updated.",
-            "type": "integer",
-            "example": 1650621052494
+            "$ref": "#/components/schemas/updatedAt"
           },
           "fileType": {
             "description": "The type of file that the library file is (audio, image, etc.).",
@@ -1928,12 +1907,10 @@
             "type": "integer"
           },
           "addedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library item was added to the library.",
-            "type": "integer"
+            "$ref": "#/components/schemas/addedAt"
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the library item was last updated. (Read Only)",
-            "type": "integer"
+            "$ref": "#/components/schemas/updatedAt"
           },
           "isMissing": {
             "description": "Whether the library item was scanned and no longer exists.",
@@ -2841,14 +2818,10 @@
                 "$ref": "#/components/schemas/audioFile"
               },
               "addedAt": {
-                "description": "The time (in ms since POSIX epoch) when the podcast episode was added to the library.",
-                "type": "integer",
-                "example": 1667326679503
+                "$ref": "#/components/schemas/addedAt"
               },
               "updatedAt": {
-                "description": "The time (in ms since POSIX epoch) when the podcast episode was last updated.",
-                "type": "integer",
-                "example": 1667326679503
+                "$ref": "#/components/schemas/updatedAt"
               }
             }
           }
@@ -3773,9 +3746,7 @@
             "example": 1668206493239
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the playback session was last updated.",
-            "type": "integer",
-            "example": 1668206493239
+            "$ref": "#/components/schemas/updatedAt"
           }
         }
       },
@@ -3911,9 +3882,7 @@
             "example": 1668206493239
           },
           "updatedAt": {
-            "description": "The time (in ms since POSIX epoch) when the playback session was last updated.",
-            "type": "integer",
-            "example": 1668206493239
+            "$ref": "#/components/schemas/updatedAt"
           },
           "audioTracks": {
             "description": "The audio tracks that are being played with the playback session.",

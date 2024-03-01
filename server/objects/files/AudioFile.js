@@ -20,13 +20,9 @@ const FileMetadata = require('../metadata/FileMetadata')
  *         metadata:
  *           $ref: '#/components/schemas/fileMetadata'
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the audio file was added to the library.
- *           type: integer
- *           example: 1650621074131
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the audio file last updated. (Read Only)
- *           type: integer
- *           example: 1651830828023
+ *           $ref: '#/components/schemas/updatedAt'
  *         trackNumFromMeta:
  *           description: The track number of the audio file as pulled from the file's metadata. Will be null if unknown.
  *           type: [integer, 'null']

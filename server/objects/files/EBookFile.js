@@ -18,13 +18,9 @@ const FileMetadata = require('../metadata/FileMetadata')
  *           type: string
  *           example: epub
  *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the library file was added.
- *           type: integer
- *           example: 1650621073750
+ *           $ref: '#/components/schemas/addedAt'
  *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the library file was last updated.
- *           type: integer
- *           example: 1650621110769
+ *           $ref: '#/components/schemas/updatedAt'
  */
 
 class EBookFile {
