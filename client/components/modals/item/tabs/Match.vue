@@ -49,8 +49,8 @@
             </div>
             <div v-if="media.coverPath">
               <p class="text-center text-gray-200">Current</p>
-              <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
-                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              <a :href="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
           </div>
