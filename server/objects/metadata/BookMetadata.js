@@ -6,262 +6,159 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  * @openapi
  * components:
  *   schemas:
+ *     bookMetadataBase:
+ *       type: object
+ *       properties:
+ *         title:
+ *           description: The title of the book. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: Wizards First Rule
+ *         subtitle:
+ *           description: The subtitle of the book. Will be null if there is no subtitle.
+ *           type: [string, 'null']
+ *         genres:
+ *           description: The genres of the book.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: Fantasy
+ *         publishedYear:
+ *           description: The year the book was published. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: '2008'
+ *         publishedDate:
+ *           description: The date the book was published. Will be null if unknown.
+ *           type: [string, 'null']
+ *         publisher:
+ *           description: The publisher of the book. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: Brilliance Audio
+ *         description:
+ *           description: A description for the book. Will be null if empty.
+ *           type: [string, 'null']
+ *           example: >-
+ *               The masterpiece that started Terry Goodkind's New York Times bestselling
+ *               epic Sword of Truth In the aftermath of the brutal murder of his father,
+ *               a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest
+ *               sanctuary seeking help...and more. His world, his very beliefs, are
+ *               shattered when ancient debts come due with thundering violence. In a
+ *               dark age it takes courage to live, and more than mere courage to
+ *               challenge those who hold dominion, Richard and Kahlan must take up that
+ *               challenge or become the next victims. Beyond awaits a bewitching land
+ *               where even the best of their hearts could betray them. Yet, Richard
+ *               fears nothing so much as what secrets his sword might reveal about his
+ *               own soul. Falling in love would destroy them - for reasons Richard can't
+ *               imagine and Kahlan dare not say. In their darkest hour, hunted
+ *               relentlessly, tormented by treachery and loss, Kahlan calls upon Richard
+ *               to reach beyond his sword - to invoke within himself something more
+ *               noble. Neither knows that the rules of battle have just changed...or
+ *               that their time has run out. Wizard's First Rule is the beginning. One
+ *               book. One Rule. Witness the birth of a legend.
+ *         isbn:
+ *           description: The ISBN of the book. Will be null if unknown.
+ *           type: [string, 'null']
+ *         asin:
+ *           description: The ASIN of the book. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: B002V0QK4C
+ *         language:
+ *           description: The language of the book. Will be null if unknown.
+ *           type: [string, 'null']
+ *         explicit:
+ *           description: Whether the book has been marked as explicit.
+ *           type: boolean
+ *           example: false
  *     bookMetadata:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Wizards First Rule
- *         subtitle:
- *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, 'null']
- *         authors:
- *           description: The authors of the book.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/authorMinified'
- *         narrators:
- *           description: The narrators of the audiobook.
- *           type: array
- *           items:
- *             type: string
- *             example: Sam Tsoutsouvas
- *         series:
- *           description: The series the book belongs to.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/seriesSequence'
- *         genres:
- *           description: The genres of the book.
- *           type: array
- *           items:
- *             type: string
- *             example: Fantasy
- *         publishedYear:
- *           description: The year the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2008'
- *         publishedDate:
- *           description: The date the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *         publisher:
- *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Brilliance Audio
- *         description:
- *           description: A description for the book. Will be null if empty.
- *           type: [string, 'null']
- *           example: >-
- *               The masterpiece that started Terry Goodkind's New York Times bestselling
- *               epic Sword of Truth In the aftermath of the brutal murder of his father,
- *               a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest
- *               sanctuary seeking help...and more. His world, his very beliefs, are
- *               shattered when ancient debts come due with thundering violence. In a
- *               dark age it takes courage to live, and more than mere courage to
- *               challenge those who hold dominion, Richard and Kahlan must take up that
- *               challenge or become the next victims. Beyond awaits a bewitching land
- *               where even the best of their hearts could betray them. Yet, Richard
- *               fears nothing so much as what secrets his sword might reveal about his
- *               own soul. Falling in love would destroy them - for reasons Richard can't
- *               imagine and Kahlan dare not say. In their darkest hour, hunted
- *               relentlessly, tormented by treachery and loss, Kahlan calls upon Richard
- *               to reach beyond his sword - to invoke within himself something more
- *               noble. Neither knows that the rules of battle have just changed...or
- *               that their time has run out. Wizard's First Rule is the beginning. One
- *               book. One Rule. Witness the birth of a legend.
- *         isbn:
- *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         asin:
- *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: B002V0QK4C
- *         language:
- *           description: The language of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         explicit:
- *           description: Whether the book has been marked as explicit.
- *           type: boolean
- *           example: false
+ *       description: The metadata for a book in the database.
+ *       allOf:
+ *         - $ref : '#/components/schemas/bookMetadataBase'
+ *         - type: object
+ *           properties:
+ *             authors:
+ *               description: The authors of the book.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/authorMinified'
+ *             narrators:
+ *               description: The narrators of the audiobook.
+ *               type: array
+ *               items:
+ *                 type: string
+ *                 example: Sam Tsoutsouvas
+ *             series:
+ *               description: The series the book belongs to.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/seriesSequence'
  *     bookMetadataMinified:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Wizards First Rule
- *         titleIgnorePrefix:
- *           description: The title of the book with any prefix moved to the end.
- *           type: string
- *         subtitle:
- *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, 'null']
- *         authorName:
- *           description: The name of the book's author(s).
- *           type: string
- *           example: Terry Goodkind
- *         authorNameLF:
- *           description: The name of the book's author(s) with last names first.
- *           type: string
- *           example: Goodkind, Terry
- *         narratorName:
- *           description: The name of the audiobook's narrator(s).
- *           type: string
- *           example: Sam Tsoutsouvas
- *         seriesName:
- *           description: The name of the book's series.
- *           type: string
- *           example: Sword of Truth
- *         genres:
- *           description: The genres of the book.
- *           type: array
- *           items:
- *             type: string
- *             example: Fantasy
- *         publishedYear:
- *           description: The year the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2008'
- *         publishedDate:
- *           description: The date the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *         publisher:
- *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Brilliance Audio
- *         description:
- *           description: A description for the book. Will be null if empty.
- *           type: [string, 'null']
- *           example: >-
- *               The masterpiece that started Terry Goodkind's New York Times bestselling
- *               epic Sword of Truth In the aftermath of the brutal murder of his father,
- *               a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest
- *               sanctuary seeking help...and more. His world, his very beliefs, are
- *               shattered when ancient debts come due with thundering violence. In a
- *               dark age it takes courage to live, and more than mere courage to
- *               challenge those who hold dominion, Richard and Kahlan must take up that
- *               challenge or become the next victims. Beyond awaits a bewitching land
- *               where even the best of their hearts could betray them. Yet, Richard
- *               fears nothing so much as what secrets his sword might reveal about his
- *               own soul. Falling in love would destroy them - for reasons Richard can't
- *               imagine and Kahlan dare not say. In their darkest hour, hunted
- *               relentlessly, tormented by treachery and loss, Kahlan calls upon Richard
- *               to reach beyond his sword - to invoke within himself something more
- *               noble. Neither knows that the rules of battle have just changed...or
- *               that their time has run out. Wizard's First Rule is the beginning. One
- *               book. One Rule. Witness the birth of a legend.
- *         isbn:
- *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         asin:
- *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: B002V0QK4C
- *         language:
- *           description: The language of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         explicit:
- *           description: Whether the book has been marked as explicit.
- *           type: boolean
- *           example: false
+ *       description: The minified metadata for a book in the database.
+ *       allOf:
+ *         - $ref : '#/components/schemas/bookMetadataBase'
+ *         - type: object
+ *           properties:
+ *             titleIgnorePrefix:
+ *               description: The title of the book with any prefix moved to the end.
+ *               type: string
+ *             authorName:
+ *               description: The name of the book's author(s).
+ *               type: string
+ *               example: Terry Goodkind
+ *             authorNameLF:
+ *               description: The name of the book's author(s) with last names first.
+ *               type: string
+ *               example: Goodkind, Terry
+ *             narratorName:
+ *               description: The name of the audiobook's narrator(s).
+ *               type: string
+ *               example: Sam Tsoutsouvas
+ *             seriesName:
+ *               description: The name of the book's series.
+ *               type: string
+ *               example: Sword of Truth
  *     bookMetadataExpanded:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Wizards First Rule
- *         titleIgnorePrefix:
- *           description: The title of the book with any prefix moved to the end.
- *           type: string
- *         subtitle:
- *           description: The subtitle of the book. Will be null if there is no subtitle.
- *           type: [string, 'null']
- *         authorName:
- *           description: The name of the book's author(s).
- *           type: string
- *           example: Terry Goodkind
- *         authorNameLF:
- *           description: The name of the book's author(s) with last names first.
- *           type: string
- *           example: Goodkind, Terry
- *         narratorName:
- *           description: The name of the audiobook's narrator(s).
- *           type: string
- *           example: Sam Tsoutsouvas
- *         seriesName:
- *           description: The name of the book's series.
- *           type: string
- *           example: Sword of Truth
- *         authors:
- *           description: The authors of the book.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/authorMinified'
- *         narrators:
- *           description: The narrators of the audiobook.
- *           type: array
- *           items:
- *             type: string
- *             example: Sam Tsoutsouvas
- *         series:
- *           description: The series the book belongs to.
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/seriesSequence'
- *         genres:
- *           description: The genres of the book.
- *           type: array
- *           items:
- *             type: string
- *             example: Fantasy
- *         publishedYear:
- *           description: The year the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2008'
- *         publishedDate:
- *           description: The date the book was published. Will be null if unknown.
- *           type: [string, 'null']
- *         publisher:
- *           description: The publisher of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Brilliance Audio
- *         description:
- *           description: A description for the book. Will be null if empty.
- *           type: [string, 'null']
- *           example: >-
- *               The masterpiece that started Terry Goodkind's New York Times bestselling
- *               epic Sword of Truth In the aftermath of the brutal murder of his father,
- *               a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest
- *               sanctuary seeking help...and more. His world, his very beliefs, are
- *               shattered when ancient debts come due with thundering violence. In a
- *               dark age it takes courage to live, and more than mere courage to
- *               challenge those who hold dominion, Richard and Kahlan must take up that
- *               challenge or become the next victims. Beyond awaits a bewitching land
- *               where even the best of their hearts could betray them. Yet, Richard
- *               fears nothing so much as what secrets his sword might reveal about his
- *               own soul. Falling in love would destroy them - for reasons Richard can't
- *               imagine and Kahlan dare not say. In their darkest hour, hunted
- *               relentlessly, tormented by treachery and loss, Kahlan calls upon Richard
- *               to reach beyond his sword - to invoke within himself something more
- *               noble. Neither knows that the rules of battle have just changed...or
- *               that their time has run out. Wizard's First Rule is the beginning. One
- *               book. One Rule. Witness the birth of a legend.
- *         isbn:
- *           description: The ISBN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         asin:
- *           description: The ASIN of the book. Will be null if unknown.
- *           type: [string, 'null']
- *           example: B002V0QK4C
- *         language:
- *           description: The language of the book. Will be null if unknown.
- *           type: [string, 'null']
- *         explicit:
- *           description: Whether the book has been marked as explicit.
- *           type: boolean
- *           example: false
+ *       description: The expanded metadata for a book in the database.
+ *       allOf:
+ *         - $ref : '#/components/schemas/bookMetadataBase'
+ *         - type: object
+ *           properties:
+ *             titleIgnorePrefix:
+ *               description: The title of the book with any prefix moved to the end.
+ *               type: string
+ *             authorName:
+ *               description: The name of the book's author(s).
+ *               type: string
+ *               example: Terry Goodkind
+ *             authorNameLF:
+ *               description: The name of the book's author(s) with last names first.
+ *               type: string
+ *               example: Goodkind, Terry
+ *             narratorName:
+ *               description: The name of the audiobook's narrator(s).
+ *               type: string
+ *               example: Sam Tsoutsouvas
+ *             seriesName:
+ *               description: The name of the book's series.
+ *               type: string
+ *               example: Sword of Truth
+ *             authors:
+ *               description: The authors of the book.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/authorMinified'
+ *             narrators:
+ *               description: The narrators of the audiobook.
+ *               type: array
+ *               items:
+ *                 type: string
+ *                 example: Sam Tsoutsouvas
+ *             series:
+ *               description: The series the book belongs to.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/seriesSequence'
  *     bookChapter:
  *       type: object
  *       properties:
@@ -280,7 +177,7 @@ const parseNameString = require('../../utils/parsers/parseNameString')
  *         title:
  *           description: The title of the chapter.
  *           type: string
- *           example: Wizards First Rule 01
+ *           example: Wizards First Rule 01 Chapter 1
  */
 class BookMetadata {
   constructor(metadata) {
