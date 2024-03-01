@@ -8,6 +8,35 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  * @openapi
  * components:
  *   schemas:
+ *     oldPodcastEpisodeId:
+ *       description: The ID of podcast episodes on server version 2.2.23 and before.
+ *       type: string
+ *       format: "ep_[a-z0-9]{18}"
+ *       example: ep_o78uaoeuh78h6aoeif
+ *     newPodcastEpisodeId:
+ *       type: string
+ *       description: The ID of podcast episodes after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     podcastEpisodeId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldPodcastEpisodeId'
+ *         - $ref: '#/components/schemas/newPodcastEpisodeId'
+ *     oldPodcastEpisodeDownloadId:
+ *       description: The ID of the podcast episode download on server version 2.2.23 and before.
+ *       type: string
+ *       example: epdl_pgv4d47j6dtqpk4r0v
+ *     newPodcastEpisodeDownloadId:
+ *       type: string
+ *       description: The ID of podcast episode downloads after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     podcastEpisodeDownloadId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldPodcastEpisodeDownloadId'
+ *         - $ref: '#/components/schemas/newPodcastEpisodeDownloadId'
  *     podcastBase:
  *       type: object
  *       properties:
@@ -96,9 +125,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *       type: object
  *       properties:
  *         libraryItemId:
- *           description: The ID of the library item that contains the podcast.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
+ *           $ref: '#/components/schemas/libraryItemId'
  *         metadata:
  *           $ref: '#/components/schemas/podcastMetadataExpanded'
  *         coverPath:
@@ -136,214 +163,102 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           description: The total size (in bytes) of the podcast.
  *           type: integer
  *           example: 23706728
+ *     podcastMetadataBase:
+ *       type: object
+ *       properties:
+ *         title:
+ *           description: The title of the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: Welcome to Night Vale
+ *         author:
+ *           description: The author of the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: Night Vale Presents
+ *         description:
+ *           description: The description for the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: |2-
+ * 
+ *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
+ *         releaseDate:
+ *           description: The release date of the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: '2022-10-20T19:00:00Z'
+ *           format: date-time
+ *         genres:
+ *           description: The podcast's genres.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: Science Fiction
+ *               - Podcasts
+ *               - Fiction
+ *         feedUrl:
+ *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: http://feeds.nightvalepresents.com/welcometonightvalepodcast
+ *           format: url
+ *         imageUrl:
+ *           description: A URL of a cover image for the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: >-
+ *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
+ *           format: url
+ *         itunesPageUrl:
+ *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *           example: >-
+ *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
+ *           format: url
+ *         itunesId:
+ *           description: The iTunes ID for the podcast. Will be null if unknown.
+ *           type: [integer, 'null']
+ *           example: 536258179
+ *         itunesArtistId:
+ *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
+ *           type: [integer, 'null']
+ *           example: 718704794
+ *         explicit:
+ *           description: Whether the podcast has been marked as explicit.
+ *           type: boolean
+ *           example: false
+ *         language:
+ *           description: The language of the podcast. Will be null if unknown.
+ *           type: [string, 'null']
+ *         type:
+ *           description: The type of the podcast.
+ *           type: [string, 'null']
+ *           example: episodic
  *     podcastMetadata:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Welcome to Night Vale
- *         author:
- *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Night Vale Presents
- *         description:
- *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: |2-
- * 
- *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
- *         releaseDate:
- *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2022-10-20T19:00:00Z'
- *           format: date-time
- *         genres:
- *           description: The podcast's genres.
- *           type: array
- *           items:
- *             type: string
- *             example: Science Fiction
- *               - Podcasts
- *               - Fiction
- *         feedUrl:
- *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: http://feeds.nightvalepresents.com/welcometonightvalepodcast
- *           format: url
- *         imageUrl:
- *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
- *           format: url
- *         itunesPageUrl:
- *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
- *           format: url
- *         itunesId:
- *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 536258179
- *         itunesArtistId:
- *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 718704794
- *         explicit:
- *           description: Whether the podcast has been marked as explicit.
- *           type: boolean
- *           example: false
- *         language:
- *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *         type:
- *           description: The type of the podcast.
- *           type: [string, 'null']
- *           example: episodic
+ *       description: The metadata for a podcast item.
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastMetadataBase'
  *     podcastMetadataMinified:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Welcome to Night Vale
- *         titleIgnorePrefix:
- *           description: The title of the podcast with any prefix moved to the end.
- *           type: string
- *           example: Welcome to Night Vale
- *         author:
- *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Night Vale Presents
- *         description:
- *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: |2-
- * 
- *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
- *         releaseDate:
- *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2022-10-20T19:00:00Z'
- *           format: date-time
- *         genres:
- *           description: The podcast's genres.
- *           type: array
- *           items:
- *             type: string
- *             example: Science Fiction
- *               - Podcasts
- *               - Fiction
- *         feedUrl:
- *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: http://feeds.nightvalepresents.com/welcometonightvalepodcast
- *           format: url
- *         imageUrl:
- *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
- *           format: url
- *         itunesPageUrl:
- *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
- *           format: url
- *         itunesId:
- *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 536258179
- *         itunesArtistId:
- *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 718704794
- *         explicit:
- *           description: Whether the podcast has been marked as explicit.
- *           type: boolean
- *           example: false
- *         language:
- *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *         type:
- *           description: The type of the podcast.
- *           type: [string, 'null']
- *           example: episodic
+ *       description: The minified metadata for a podcast item.
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastMetadataBase'
+ *         - type: object
+ *           properties:
+ *             titleIgnorePrefix:
+ *               description: The title of the podcast with any prefix moved to the end.
+ *               type: string
+ *               example: Welcome to Night Vale
  *     podcastMetadataExpanded:
  *       type: object
- *       properties:
- *         title:
- *           description: The title of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Welcome to Night Vale
- *         titleIgnorePrefix:
- *           description: The title of the podcast with any prefix moved to the end.
- *           type: string
- *           example: Welcome to Night Vale
- *         author:
- *           description: The author of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: Night Vale Presents
- *         description:
- *           description: The description for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: |2-
- * 
- *                     Twice-monthly community updates for the small desert town of Night Vale, where every conspiracy theory is true. Turn on your radio and hide. Never listened before? It's an ongoing radio show. Start with the current episode, and you'll catch on in no time. Or, go right to Episode 1 if you wanna binge-listen.
- *         releaseDate:
- *           description: The release date of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: '2022-10-20T19:00:00Z'
- *           format: date-time
- *         genres:
- *           description: The podcast's genres.
- *           type: array
- *           items:
- *             type: string
- *             example: Science Fiction
- *               - Podcasts
- *               - Fiction
- *         feedUrl:
- *           description: A URL of an RSS feed for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: http://feeds.nightvalepresents.com/welcometonightvalepodcast
- *           format: url
- *         imageUrl:
- *           description: A URL of a cover image for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://is4-ssl.mzstatic.com/image/thumb/Podcasts125/v4/4a/31/35/4a3135d0-1fe7-a2d7-fb43-d182ec175402/mza_8232698753950666850.jpg/600x600bb.jpg
- *           format: url
- *         itunesPageUrl:
- *           description: A URL of an iTunes page for the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *           example: >-
- *               https://podcasts.apple.com/us/podcast/welcome-to-night-vale/id536258179?uo=4
- *           format: url
- *         itunesId:
- *           description: The iTunes ID for the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 536258179
- *         itunesArtistId:
- *           description: The iTunes Artist ID for the author of the podcast. Will be null if unknown.
- *           type: [integer, 'null']
- *           example: 718704794
- *         explicit:
- *           description: Whether the podcast has been marked as explicit.
- *           type: boolean
- *           example: false
- *         language:
- *           description: The language of the podcast. Will be null if unknown.
- *           type: [string, 'null']
- *         type:
- *           description: The type of the podcast.
- *           type: [string, 'null']
- *           example: episodic
+ *       description: The expanded metadata for a podcast item.
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastMetadataBase'
+ *         - type: object
+ *           properties:
+ *             titleIgnorePrefix:
+ *               description: The title of the podcast with any prefix moved to the end.
+ *               type: string
+ *               example: Welcome to Night Vale
  *     podcastFeed:
  *       type: object
+ *       description: The podcast feed, includes the metadata and list of episodes.
  *       properties:
  *         metadata:
  *           $ref: '#/components/schemas/podcastMetadata'
@@ -353,6 +268,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *             $ref: '#/components/schemas/podcastEpisode'
  *     podcastFeedMinified:
  *       type: object
+ *       description: The podcast feed, includes the metadata and episode count.
  *       properties:
  *         metadata:
  *           $ref: '#/components/schemas/podcastMetadata'
@@ -418,8 +334,9 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           type: string
  *           example: http://welcometonightvale.com
  *           format: url
- *     podcastFeedEpisode:
+ *     podcastEpisodeBase:
  *       type: object
+ *       description: The base schema for a podcast episode.
  *       properties:
  *         title:
  *           description: The podcast episode's title.
@@ -455,29 +372,6 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *               target="_blank">@NightValeRadio</a> on Twitter or <a
  *               target="_blank">Facebook</a>.</p>
  *                     
- *         descriptionPlain:
- *           description: A plain text description of the podcast episode.
- *           type: string
- *           example: >2-
- * 
- *                       Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist, visits and discovers some interesting things. Seismic things. Plus, a helpful guide to surveillance helicopter-spotting.
- * 
- *               Weather: "These and More Than These" by Joseph Fink
- * 
- * 
- *               Music: Disparition, disparition.info
- * 
- * 
- *               Logo: Rob Wilson, silastom.com
- * 
- * 
- *               Produced by Night Vale Presents. Written by Joseph Fink and Jeffrey
- *               Cranor. Narrated by Cecil Baldwin. More Info: welcometonightvale.com,
- *               and follow @NightValeRadio on Twitter or Facebook.
- *         pubDate:
- *           description: The podcast episode's publication date.
- *           type: string
- *           example: Fri, 15 Jun 2012 12:00:00 -0000
  *         episodeType:
  *           description: The type of episode that the podcast episode is.
  *           type: string
@@ -490,186 +384,97 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *           description: The episode of the season of the podcast.
  *           type: string
  *           example: ''
- *         author:
- *           description: The author of the podcast episode.
- *           type: string
- *           example: ''
- *         duration:
- *           description: The duration of the podcast episode as reported by the RSS feed.
- *           type: string
- *           example: '21:02'
- *         explicit:
- *           description: Whether the podcast episode is explicit.
- *           type: string
- *           example: ''
  *         publishedAt:
  *           description: The time (in ms since POSIX epoch) when the podcast episode was published.
  *           type: integer
  *           example: 1339761600000
  *         enclosure:
  *           $ref: '#/components/schemas/podcastEpisodeEnclousure'
+ *         
+ *     podcastFeedEpisode:
+ *       type: object
+ *       description: Episode from podcast feed.
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastEpisodeBase'
+ *         - type: object
+ *           properties:
+ *             descriptionPlain:
+ *               description: A plain text description of the podcast episode.
+ *               type: string
+ *               example: >2-
+ * 
+ *                           Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist, visits and discovers some interesting things. Seismic things. Plus, a helpful guide to surveillance helicopter-spotting.
+ * 
+ *                   Weather: "These and More Than These" by Joseph Fink
+ * 
+ * 
+ *                   Music: Disparition, disparition.info
+ * 
+ * 
+ *                   Logo: Rob Wilson, silastom.com
+ * 
+ * 
+ *                   Produced by Night Vale Presents. Written by Joseph Fink and Jeffrey
+ *                   Cranor. Narrated by Cecil Baldwin. More Info: welcometonightvale.com,
+ *                   and follow @NightValeRadio on Twitter or Facebook.
+ *             author:
+ *               description: The author of the podcast episode.
+ *               type: string
+ *               example: ''
+ *             duration:
+ *               description: The duration of the podcast episode as reported by the RSS feed.
+ *               type: string
+ *               example: '21:02'
+ *             explicit:
+ *               description: Whether the podcast episode is explicit.
+ *               type: string
+ *               example: ''
  *     podcastEpisode:
  *       type: [object, 'null']
- *       properties:
- *         libraryItemId:
- *           description: The ID of the library item that contains the podcast.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
- *         id:
- *           description: The ID of the podcast episode.
- *           type: string
- *           example: ep_lh6ko39pumnrma3dhv
- *         index:
- *           description: The index of the podcast episode.
- *           type: integer
- *           example: 1
- *         season:
- *           description: The season of the podcast episode, if known.
- *           type: string
- *           example: ''
- *         episode:
- *           description: The episode of the season of the podcast, if known.
- *           type: string
- *           example: ''
- *         episodeType:
- *           description: The type of episode that the podcast episode is.
- *           type: string
- *           example: full
- *         title:
- *           description: The title of the podcast episode.
- *           type: string
- *           example: Pilot
- *         subtitle:
- *           description: The subtitle of the podcast episode.
- *           type: string
- *           example: >-
- *               Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist,
- *               visits and discovers some interesting things. Seismic things. Plus, a
- *               helpful guide to surveillance helicopter-spotting. Weather: "These and
- *               More Than These" by Joseph Fink Music:...
- *         description:
- *           description: A HTML encoded, description of the podcast episode.
- *           type: string
- *           example: >2-
- *               <p>Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist, visits and discovers some interesting things. Seismic things. Plus, a helpful guide to surveillance helicopter-spotting.</p>
- *               <p>Weather: "These and More Than These" by Joseph Fink</p>
- *               <p>Music: Disparition, <a target="_blank">disparition.info</a></p>
- *               <p>Logo: Rob Wilson, <a target="_blank">silastom.com</a></p>
- *               <p>Produced by Night Vale Presents. Written by Joseph Fink and Jeffrey
- *               Cranor. Narrated by Cecil Baldwin. More Info: <a
- *               target="_blank">welcometonightvale.com</a>, and follow <a
- *               target="_blank">@NightValeRadio</a> on Twitter or <a
- *               target="_blank">Facebook</a>.</p>
- *         enclosure:
- *           $ref: '#/components/schemas/podcastEpisodeEnclousure'
- *         pubDate:
- *           description: When the podcast episode was published.
- *           type: string
- *           example: Fri, 15 Jun 2012 12:00:00 -0000
- *         audioFile:
- *           $ref: '#/components/schemas/audioFile'
- *         publishedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was published.
- *           type: integer
- *           example: 1339761600000
- *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was added to the library.
- *           type: integer
- *           example: 1667326679503
- *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was last updated.
- *           type: integer
- *           example: 1667326679503
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastEpisodeBase'
+ *         - type: object
+ *           properties:
+ *             libraryItemId:
+ *               $ref: '#/components/schemas/libraryItemId'
+ *             id:
+ *               $ref: '#/components/schemas/podcastEpisodeId'
+ *             index:
+ *               description: The index of the podcast episode.
+ *               type: integer
+ *               example: 1
+ *             enclosure:
+ *               $ref: '#/components/schemas/podcastEpisodeEnclousure'
+ *             pubDate:
+ *               description: When the podcast episode was published.
+ *               type: string
+ *               example: Fri, 15 Jun 2012 12:00:00 -0000
+ *             audioFile:
+ *               $ref: '#/components/schemas/audioFile'
+ *             addedAt:
+ *               description: The time (in ms since POSIX epoch) when the podcast episode was added to the library.
+ *               type: integer
+ *               example: 1667326679503
+ *             updatedAt:
+ *               description: The time (in ms since POSIX epoch) when the podcast episode was last updated.
+ *               type: integer
+ *               example: 1667326679503
  *     podcastEpisodeExpanded:
  *       type: [object, 'null']
- *       properties:
- *         libraryItemId:
- *           description: The ID of the library item that contains the podcast.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
- *         id:
- *           description: The ID of the podcast episode.
- *           type: string
- *           example: ep_lh6ko39pumnrma3dhv
- *         index:
- *           description: The index of the podcast episode.
- *           type: integer
- *           example: 1
- *         season:
- *           description: The season of the podcast episode, if known.
- *           type: string
- *           example: ''
- *         episode:
- *           description: The episode of the season of the podcast, if known.
- *           type: string
- *           example: ''
- *         episodeType:
- *           description: The type of episode that the podcast episode is.
- *           type: string
- *           example: full
- *         title:
- *           description: The title of the podcast episode.
- *           type: string
- *           example: Pilot
- *         subtitle:
- *           description: The subtitle of the podcast episode.
- *           type: string
- *           example: >-
- *               Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist,
- *               visits and discovers some interesting things. Seismic things. Plus, a
- *               helpful guide to surveillance helicopter-spotting. Weather: "These and
- *               More Than These" by Joseph Fink Music:...
- *         description:
- *           description: A HTML encoded, description of the podcast episode.
- *           type: string
- *           example: >2-
- * 
- *                       <p>Pilot Episode. A new dog park opens in Night Vale. Carlos, a scientist, visits and discovers some interesting things. Seismic things. Plus, a helpful guide to surveillance helicopter-spotting.</p>
- * 
- *               <p>Weather: "These and More Than These" by Joseph Fink</p>
- * 
- * 
- *               <p>Music: Disparition, <a target="_blank">disparition.info</a></p>
- * 
- * 
- *               <p>Logo: Rob Wilson, <a target="_blank">silastom.com</a></p>
- * 
- * 
- *               <p>Produced by Night Vale Presents. Written by Joseph Fink and Jeffrey
- *               Cranor. Narrated by Cecil Baldwin. More Info: <a
- *               target="_blank">welcometonightvale.com</a>, and follow <a
- *               target="_blank">@NightValeRadio</a> on Twitter or <a
- *               target="_blank">Facebook</a>.</p>
- *         enclosure:
- *           $ref: '#/components/schemas/podcastEpisodeEnclousure'
- *         pubDate:
- *           description: When the podcast episode was published.
- *           type: string
- *           example: Fri, 15 Jun 2012 12:00:00 -0000
- *         audioFile:
- *           $ref: '#/components/schemas/audioFile'
- *         audioTrack:
- *           $ref: '#/components/schemas/audioTrack'
- *         publishedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was published.
- *           type: integer
- *           example: 1339761600000
- *         addedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was added to the library.
- *           type: integer
- *           example: 1667326679503
- *         updatedAt:
- *           description: The time (in ms since POSIX epoch) when the podcast episode was last updated.
- *           type: integer
- *           example: 1667326679503
- *         duration:
- *           description: The total length (in seconds) of the podcast episode.
- *           type: number
- *           example: 1454.18449
- *         size:
- *           description: The total size (in bytes) of the podcast episode.
- *           type: integer
- *           example: 23653735
+ *       allOf:
+ *         - $ref : '#/components/schemas/podcastEpisodeBase'
+ *         - type: object
+ *           properties:
+ *             audioTrack:
+ *               $ref: '#/components/schemas/audioTrack'
+ *             duration:
+ *               description: The total length (in seconds) of the podcast episode.
+ *               type: number
+ *               example: 1454.18449
+ *             size:
+ *               description: The total size (in bytes) of the podcast episode.
+ *               type: integer
+ *               example: 23653735
  *     podcastEpisodeEnclousure:
  *       type: [object, 'null']
  *       properties:
@@ -691,9 +496,7 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *       type: object
  *       properties:
  *         id:
- *           description: The ID of the podcast episode download.
- *           type: string
- *           example: epdl_pgv4d47j6dtqpk4r0v
+ *           $ref: '#/components/schemas/podcastEpisodeDownloadId'
  *         episodeDisplayTitle:
  *           description: The display title of the episode to be downloaded.
  *           type: string
@@ -705,13 +508,9 @@ const { filePathToPOSIX } = require('../../utils/fileUtils')
  *               https://www.podtrac.com/pts/redirect.mp3/dovetail.prxu.org/_/126/cb1dd91f-5d8d-42e9-ba22-14ff335d2cbb/2_Glow_Cloud.mp3
  *           format: url
  *         libraryItemId:
- *           description: The ID of the library item the episode belongs to.
- *           type: string
- *           example: li_bufnnmp4y5o2gbbxfm
+ *           $ref: '#/components/schemas/libraryItemId'
  *         libraryId:
- *           oneOf:
- *             - $ref: '#/components/schemas/oldLibraryId'
- *             - $ref: '#/components/schemas/newLibraryId'
+ *           $ref: '#/components/schemas/libraryId'
  *         isFinished:
  *           description: Whether the episode has finished downloading.
  *           type: boolean
