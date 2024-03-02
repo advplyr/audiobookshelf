@@ -18,7 +18,9 @@
           <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
         </template>
         <template v-else>
-          <controls-filter-select v-model="seasonKey" :items="seasonItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
+          <template v-if="podcastType === 'serial'">
+            <controls-filter-select v-model="seasonKey" :items="seasonItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
+          </template>
           <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
           <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="filterSortChanged" />
           <div class="flex-grow md:hidden" />
@@ -34,6 +36,9 @@
     </div>
 <!--    <div>-->
 <!--      <pre>{{ episodesList }}</pre>-->
+<!--    </div>-->
+<!--    <div>-->
+<!--      <pre>{{ libraryItem }}</pre>-->
 <!--    </div>-->
     <div class="relative min-h-[176px]">
       <template v-for="episode in totalEpisodes">
@@ -184,6 +189,9 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
+    podcastType() {
+      return this.mediaMetadata.type || 'episodic'
+    },
     episodes() {
       return this.media.episodes || []
     },
@@ -191,7 +199,7 @@ export default {
       return this.episodesCopy
         .filter((ep) => {
           // Filter by season
-          if (this.seasonKey !== 'allSeasons' && ep.season !== this.seasonKey) return false
+          if (this.podcastType === 'serial' && this.seasonKey !== 'allSeasons' && ep.season !== this.seasonKey) return false
 
           if (this.filterKey === 'all') return true
           const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
