@@ -18,6 +18,7 @@
           <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
         </template>
         <template v-else>
+          <controls-filter-select v-model="seasonKey" :items="seasonItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
           <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
           <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="filterSortChanged" />
           <div class="flex-grow md:hidden" />
@@ -31,6 +32,9 @@
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
       </form>
     </div>
+<!--    <div>-->
+<!--      <pre>{{ episodesList }}</pre>-->
+<!--    </div>-->
     <div class="relative min-h-[176px]">
       <template v-for="episode in totalEpisodes">
         <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
@@ -65,6 +69,7 @@ export default {
       episodesCopy: [],
       filterKey: 'incomplete',
       sortKey: 'publishedAt',
+      seasonKey: 'allSeasons',
       sortDesc: true,
       selectedEpisode: null,
       showPodcastRemoveModal: false,
@@ -145,6 +150,28 @@ export default {
         }
       ]
     },
+    seasonItems() {
+      const seasonsSet = this.episodesCopy.reduce((acc, episode) => {
+        if (episode.season) {
+          acc.add(episode.season);
+        }
+        return acc;
+      }, new Set());
+
+      const seasonsArray = Array.from(seasonsSet);
+
+      const seasonItems = seasonsArray.map(season => ({
+        value: season,
+        text: `Season ${season}`
+      }));
+
+      seasonItems.unshift({
+        value: 'allSeasons',
+        text: 'All Seasons'
+      });
+
+      return seasonItems;
+    },
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
     },
@@ -163,6 +190,9 @@ export default {
     episodesSorted() {
       return this.episodesCopy
         .filter((ep) => {
+          // Filter by season
+          if (this.seasonKey !== 'allSeasons' && ep.season !== this.seasonKey) return false
+
           if (this.filterKey === 'all') return true
           const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
           if (this.filterKey === 'incomplete') return !episodeProgress || !episodeProgress.isFinished
