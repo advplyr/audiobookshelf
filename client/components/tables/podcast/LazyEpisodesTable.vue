@@ -34,18 +34,31 @@
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
       </form>
     </div>
-<!--    <div>-->
-<!--      <pre>{{ episodesList }}</pre>-->
-<!--    </div>-->
-<!--    <div>-->
-<!--      <pre>{{ libraryItem }}</pre>-->
-<!--    </div>-->
     <div class="relative min-h-[176px]">
-      <template v-for="episode in totalEpisodes">
-        <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
-          <!-- episode is mounted here -->
-        </div>
+      <template v-if="podcastType === 'serial'">
+        <template v-for="group in groupedEpisodesBySeason">
+          <div class="w-full my-2">
+            <div class="w-full bg-primary px-6 py-2 flex items-center">
+              <p class="pr-4">{{ $strings.LabelSeason }} {{ group.season }}</p>
+              <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ group.episodes.length }}</span>
+              <div class="flex-grow" />
+            </div>
+          <template v-for="episode in group.episodes">
+            <div :key="episode" :id="`episode-${episode}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+              <!-- episode is mounted here -->
+            </div>
+          </template>
+          </div>
+        </template>
       </template>
+      <template v-else>
+          <template v-for="episode in totalEpisodes">
+            <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+              <!-- episode is mounted here -->
+            </div>
+          </template>
+      </template>
+
       <div v-if="isSearching" class="w-full h-full absolute inset-0 flex justify-center py-12" :class="{ 'bg-black/50': totalEpisodes }">
         <ui-loading-indicator />
       </div>
@@ -156,26 +169,22 @@ export default {
       ]
     },
     seasonItems() {
-      const seasonsSet = this.episodesCopy.reduce((acc, episode) => {
-        if (episode.season) {
-          acc.add(episode.season);
+      const seasonsMap = new Map();
+      seasonsMap.set('allSeasons', this.$strings.LabelAllSeasons);
+
+      this.episodesCopy.forEach((episode) => {
+        const season = episode.season || 'unknown';
+        if (!seasonsMap.has(season)) {
+          seasonsMap.set(season, `${this.$strings.LabelSeason} ${season}`);
         }
-        return acc;
-      }, new Set());
-
-      const seasonsArray = Array.from(seasonsSet);
-
-      const seasonItems = seasonsArray.map(season => ({
-        value: season,
-        text: `Season ${season}`
-      }));
-
-      seasonItems.unshift({
-        value: 'allSeasons',
-        text: 'All Seasons'
       });
 
-      return seasonItems;
+      if (seasonsMap.has('unknown')) {
+        seasonsMap.delete('unknown');
+        seasonsMap.set('unknown', this.$strings.LabelSeasonUnknown);
+      }
+
+      return Array.from(seasonsMap, ([value, text]) => ({ value, text }));
     },
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
@@ -199,9 +208,11 @@ export default {
       return this.episodesCopy
         .filter((ep) => {
           // Filter by season
-          if (this.podcastType === 'serial' && this.seasonKey !== 'allSeasons' && ep.season !== this.seasonKey) return false
+          const season = ep.season && ep.season.trim() !== '' ? ep.season : 'unknown';
+          if (this.podcastType === 'serial' && this.seasonKey === 'unknown' && season !== 'unknown') return false;
+          if (this.podcastType === 'serial' && this.seasonKey !== 'allSeasons' && season !== this.seasonKey) return false;
 
-          if (this.filterKey === 'all') return true
+          if (this.filterKey === 'all') return true;
           const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
           if (this.filterKey === 'incomplete') return !episodeProgress || !episodeProgress.isFinished
           if (this.filterKey === 'complete') return episodeProgress && episodeProgress.isFinished
@@ -247,6 +258,27 @@ export default {
     },
     timeFormat() {
       return this.$store.state.serverSettings.timeFormat
+    },
+    groupedEpisodesBySeason() {
+      if (this.podcastType !== 'serial') {
+        return [];
+      }
+
+      return this.episodesList.reduce((grouped, episode, index) => {
+        let season = episode.season || 'unknown';
+        const seasonGroup = grouped.find(group => group.season === season);
+
+        if (!seasonGroup) {
+          grouped.push({
+            season,
+            episodes: [index]
+          });
+        } else {
+          seasonGroup.episodes.push(index);
+        }
+
+        return grouped;
+      }, []).sort((a, b) => b.season - a.season);
     }
   },
   methods: {
