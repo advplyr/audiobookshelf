@@ -11,7 +11,7 @@
             </div>
             {{ item }}
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: fit-content" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -110,15 +110,6 @@ export default {
       this.typingTimeout = setTimeout(() => {
         this.currentSearch = this.textInput
       }, 100)
-      this.setInputWidth()
-    },
-    setInputWidth() {
-      setTimeout(() => {
-        var value = this.$refs.input.value
-        var len = value.length * 7 + 24
-        this.$refs.input.style.width = len + 'px'
-        this.recalcMenuPos()
-      }, 50)
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
