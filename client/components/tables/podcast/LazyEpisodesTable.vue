@@ -36,18 +36,25 @@
     </div>
     <div class="relative min-h-[176px]">
       <template v-if="podcastType === 'serial'">
-        <template v-for="group in groupedEpisodesBySeason">
+        <template v-for="group in seasonGroups">
           <div class="w-full my-2">
-            <div class="w-full bg-primary px-6 py-2 flex items-center">
+            <div class="w-full bg-primary px-4 md:px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar(group)">
               <p class="pr-4">{{ $strings.LabelSeason }} {{ group.season }}</p>
               <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ group.episodes.length }}</span>
               <div class="flex-grow" />
+              <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="group.showSeason ? 'transform rotate-180' : ''">
+                <span class="material-icons text-4xl">expand_more</span>
+              </div>
             </div>
-          <template v-for="episode in group.episodes">
-            <div :key="episode" :id="`episode-${episode}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
-              <!-- episode is mounted here -->
-            </div>
-          </template>
+            <transition name="slide">
+              <div class="w-full" v-if="group.showSeason">
+                <template v-for="episode in group.episodes">
+                  <div :key="episode" :id="`episode-${episode}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+                    <!-- episode is mounted here -->
+                  </div>
+                </template>
+              </div>
+            </transition>
           </div>
         </template>
       </template>
@@ -104,7 +111,8 @@ export default {
       episodeComponentRefs: {},
       windowHeight: 0,
       episodesTableOffsetTop: 0,
-      episodeRowHeight: 176
+      episodeRowHeight: 176,
+      seasonGroups: {}
     }
   },
   watch: {
@@ -112,6 +120,9 @@ export default {
       handler() {
         this.refresh()
       }
+    },
+    episodesList() {
+      this.updateSeasonGroups();
     }
   },
   computed: {
@@ -259,29 +270,41 @@ export default {
     timeFormat() {
       return this.$store.state.serverSettings.timeFormat
     },
-    groupedEpisodesBySeason() {
-      if (this.podcastType !== 'serial') {
-        return [];
+  },
+  methods: {
+    updateSeasonGroups() {
+      if (!this.episodesSorted.length) {
+        this.seasonGroups = {};
+        return;
       }
 
-      return this.episodesList.reduce((grouped, episode, index) => {
-        let season = episode.season || 'unknown';
-        const seasonGroup = grouped.find(group => group.season === season);
+      const grouped = this.episodesSorted.reduce((grouped, episode, index) => {
+        let season = Number(episode.season);
+        season = Number.isInteger(season) ? season : 'unknown';
+        const seasonGroup = grouped[season];
 
         if (!seasonGroup) {
-          grouped.push({
+          const newGroup = {
             season,
-            episodes: [index]
-          });
+            episodes: [index],
+            showSeason: false
+          };
+          grouped[season] = newGroup;
         } else {
           seasonGroup.episodes.push(index);
         }
 
         return grouped;
-      }, []).sort((a, b) => b.season - a.season);
-    }
-  },
-  methods: {
+      }, {});
+
+      const sortedGrouped = Object.values(grouped).sort((a, b) => b.season - a.season);
+
+      if (sortedGrouped.length > 0) {
+        sortedGrouped[0].showSeason = true;
+      }
+
+      this.seasonGroups = sortedGrouped;
+    },
     submit() {},
     inputUpdate() {
       clearTimeout(this.searchTimeout)
@@ -478,6 +501,9 @@ export default {
       }
       this.episodeComponentRefs = {}
       this.episodeIndexesMounted = []
+    },
+    clickBar(group) {
+      group.showSeason = !group.showSeason
     },
     mountEpisode(index) {
       const episodeEl = document.getElementById(`episode-${index}`)
