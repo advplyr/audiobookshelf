@@ -80,7 +80,7 @@ See [install docs](https://www.audiobookshelf.org/docs)
 
 ### NGINX Proxy Manager
 
-Toggle websockets support.
+Toggle websockets support. you can follow a setup [guide using Docker containers and Nginx Proxy Manager here](readme/guides/nginxproxymanager-docker.md).
 
 <img alt="NGINX Web socket" src="https://user-images.githubusercontent.com/67830747/153679106-b2a7f5b9-0702-48c6-9740-b26b401986e9.png" />
 
