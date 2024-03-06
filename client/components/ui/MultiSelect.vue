@@ -11,7 +11,7 @@
             </div>
             {{ item }}
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -208,7 +208,10 @@ export default {
         e.stopPropagation()
         e.preventDefault()
       }
-      if (this.$refs.input) this.$refs.input.focus()
+      if (this.$refs.input) { 
+        this.$refs.input.style.width = '24px'
+        this.$refs.input.focus()
+      }
 
       var newSelected = null
       if (this.selected.includes(itemValue)) {
@@ -261,6 +264,7 @@ export default {
       } else {
         this.insertNewItem(this.textInput)
       }
+      if (this.$refs.input) this.$refs.input.style.width = '24px'
     },
     scroll() {
       this.recalcMenuPos()
