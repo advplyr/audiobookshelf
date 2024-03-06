@@ -126,7 +126,16 @@ export default {
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
         this.search()
-      }, 250)
+      }, 250)      
+      this.setInputWidth()
+    },
+    setInputWidth() {
+      setTimeout(() => {
+        var value = this.$refs.input.value
+        var len = value.length * 7 + 24
+        this.$refs.input.style.width = len + 'px'
+        this.recalcMenuPos()
+      }, 50)
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
