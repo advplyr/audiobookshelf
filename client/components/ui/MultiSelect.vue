@@ -110,15 +110,6 @@ export default {
       this.typingTimeout = setTimeout(() => {
         this.currentSearch = this.textInput
       }, 100)
-      this.setInputWidth()
-    },
-    setInputWidth() {
-      setTimeout(() => {
-        var value = this.$refs.input.value
-        var len = value.length * 7 + 24
-        this.$refs.input.style.width = len + 'px'
-        this.recalcMenuPos()
-      }, 50)
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
