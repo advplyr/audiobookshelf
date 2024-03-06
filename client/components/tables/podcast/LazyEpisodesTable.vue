@@ -123,6 +123,9 @@ export default {
     },
     episodesList() {
       this.updateSeasonGroups();
+    },
+    episodesSorted() {
+      this.updateSeasonGroups();
     }
   },
   computed: {
