@@ -206,7 +206,7 @@ export default {
 
       function isValidRedirectURI(uri) {
         // Check for somestring://someother/string
-        const pattern = new RegExp('^\\w+://[\\w\\.-]+$', 'i')
+        const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
         return pattern.test(uri)
       }
 

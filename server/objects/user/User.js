@@ -117,7 +117,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      hasOpenIDLink: !!this.authOpenIDSub
     }
     if (minimal) {
       delete json.mediaProgress

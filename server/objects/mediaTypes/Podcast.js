@@ -42,7 +42,13 @@ class Podcast {
     this.autoDownloadSchedule = podcast.autoDownloadSchedule || '0 * * * *' // Added in 2.1.3 so default to hourly
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
     this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
-    this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload || 3
+
+    // Default is 3 but 0 is allowed
+    if (typeof podcast.maxNewEpisodesToDownload !== 'number') {
+      this.maxNewEpisodesToDownload = 3
+    } else {
+      this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload
+    }
   }
 
   toJSON() {

@@ -116,7 +116,6 @@ class SocketAuthority {
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
-      socket.on('fetch_daily_logs', () => this.Server.logManager.socketRequestDailyLogs(socket))
 
       // Sent automatically from socket.io clients
       socket.on('disconnect', (reason) => {
@@ -218,25 +217,6 @@ class SocketAuthority {
       initialPayload.usersOnline = this.getUsersOnline()
     }
     client.socket.emit('init', initialPayload)
-  }
-
-  logout(socketId) {
-    // Strip user and client from client and client socket
-    if (socketId && this.clients[socketId]) {
-      const client = this.clients[socketId]
-      const clientSocket = client.socket
-      Logger.debug(`[SocketAuthority] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
-
-      if (client.user) {
-        Logger.debug('[SocketAuthority] User Offline ' + client.user.username)
-        this.adminEmitter('user_offline', client.user.toJSONForPublic())
-      }
-
-      delete this.clients[socketId].user
-      if (clientSocket && clientSocket.sheepClient) delete this.clients[socketId].socket.sheepClient
-    } else if (socketId) {
-      Logger.warn(`[SocketAuthority] No client for socket ${socketId}`)
-    }
   }
 
   cancelScan(id) {

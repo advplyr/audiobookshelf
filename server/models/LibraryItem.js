@@ -225,6 +225,12 @@ class LibraryItem extends Model {
     return newLibraryItem
   }
 
+  /**
+   * Updates libraryItem, book, authors and series from old library item
+   * 
+   * @param {oldLibraryItem} oldLibraryItem 
+   * @returns {Promise<boolean>} true if updates were made
+   */
   static async fullUpdateFromOld(oldLibraryItem) {
     const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
       include: [
@@ -306,17 +312,18 @@ class LibraryItem extends Model {
         const existingAuthors = libraryItemExpanded.media.authors || []
         const existingSeriesAll = libraryItemExpanded.media.series || []
         const updatedAuthors = oldLibraryItem.media.metadata.authors || []
+        const uniqueUpdatedAuthors = updatedAuthors.filter((au, idx) => updatedAuthors.findIndex(a => a.id === au.id) === idx)
         const updatedSeriesAll = oldLibraryItem.media.metadata.series || []
 
         for (const existingAuthor of existingAuthors) {
           // Author was removed from Book
-          if (!updatedAuthors.some(au => au.id === existingAuthor.id)) {
+          if (!uniqueUpdatedAuthors.some(au => au.id === existingAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
             await this.sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
             hasUpdates = true
           }
         }
-        for (const updatedAuthor of updatedAuthors) {
+        for (const updatedAuthor of uniqueUpdatedAuthors) {
           // Author was added
           if (!existingAuthors.some(au => au.id === updatedAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
@@ -372,6 +379,9 @@ class LibraryItem extends Model {
       if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
         Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
         hasLibraryItemUpdates = true
+        if (key === 'updatedAt') {
+          libraryItemExpanded.changed('updatedAt', true)
+        }
       }
     }
     if (hasLibraryItemUpdates) {
@@ -399,6 +409,7 @@ class LibraryItem extends Model {
       isInvalid: !!oldLibraryItem.isInvalid,
       mtime: oldLibraryItem.mtimeMs,
       ctime: oldLibraryItem.ctimeMs,
+      updatedAt: oldLibraryItem.updatedAt,
       birthtime: oldLibraryItem.birthtimeMs,
       size: oldLibraryItem.size,
       lastScan: oldLibraryItem.lastScan,

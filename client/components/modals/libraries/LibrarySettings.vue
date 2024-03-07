@@ -49,6 +49,9 @@
         </ui-tooltip>
       </div>
     </div>
+    <div v-if="isPodcastLibrary" class="py-3">
+      <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="formUpdated" />
+    </div>
   </div>
 </template>
 
@@ -69,7 +72,8 @@ export default {
       skipMatchingMediaWithAsin: false,
       skipMatchingMediaWithIsbn: false,
       audiobooksOnly: false,
-      hideSingleBookSeries: false
+      hideSingleBookSeries: false,
+      podcastSearchRegion: 'us'
     }
   },
   computed: {
@@ -85,6 +89,9 @@ export default {
     isBookLibrary() {
       return this.mediaType === 'book'
     },
+    isPodcastLibrary() {
+      return this.mediaType === 'podcast'
+    },
     providers() {
       if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
@@ -99,7 +106,8 @@ export default {
           skipMatchingMediaWithAsin: !!this.skipMatchingMediaWithAsin,
           skipMatchingMediaWithIsbn: !!this.skipMatchingMediaWithIsbn,
           audiobooksOnly: !!this.audiobooksOnly,
-          hideSingleBookSeries: !!this.hideSingleBookSeries
+          hideSingleBookSeries: !!this.hideSingleBookSeries,
+          podcastSearchRegion: this.podcastSearchRegion
         }
       }
     },
@@ -113,6 +121,7 @@ export default {
       this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
       this.audiobooksOnly = !!this.librarySettings.audiobooksOnly
       this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries
+      this.podcastSearchRegion = this.librarySettings.podcastSearchRegion || 'us'
     }
   },
   mounted() {

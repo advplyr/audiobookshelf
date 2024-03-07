@@ -33,6 +33,14 @@ class LibraryController {
       return res.status(500).send('Invalid request')
     }
 
+    // Validate that the custom provider exists if given any
+    if (newLibraryPayload.provider?.startsWith('custom-')) {
+      if (!await Database.customMetadataProviderModel.checkExistsBySlug(newLibraryPayload.provider)) {
+        Logger.error(`[LibraryController] Custom metadata provider "${newLibraryPayload.provider}" does not exist`)
+        return res.status(400).send('Custom metadata provider does not exist')
+      }
+    }
+
     // Validate folder paths exist or can be created & resolve rel paths
     //   returns 400 if a folder fails to access
     newLibraryPayload.folders = newLibraryPayload.folders.map(f => {
@@ -86,19 +94,27 @@ class LibraryController {
     })
   }
 
+  /**
+   * GET: /api/libraries/:id
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
     if (includeArray.includes('filterdata')) {
       const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
+      const customMetadataProviders = await Database.customMetadataProviderModel.getForClientByMediaType(req.library.mediaType)
 
       return res.json({
         filterdata,
         issues: filterdata.numIssues,
         numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
+        customMetadataProviders,
         library: req.library
       })
     }
-    return res.json(req.library)
+    res.json(req.library)
   }
 
   /**
@@ -114,6 +130,14 @@ class LibraryController {
 
   async update(req, res) {
     const library = req.library
+
+    // Validate that the custom provider exists if given any
+    if (req.body.provider?.startsWith('custom-')) {
+      if (!await Database.customMetadataProviderModel.checkExistsBySlug(req.body.provider)) {
+        Logger.error(`[LibraryController] Custom metadata provider "${req.body.provider}" does not exist`)
+        return res.status(400).send('Custom metadata provider does not exist')
+      }
+    }
 
     // Validate new folder paths exist or can be created & resolve rel paths
     //   returns 400 if a new folder fails to access

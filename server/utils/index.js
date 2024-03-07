@@ -114,7 +114,9 @@ module.exports.reqSupportsWebp = (req) => {
 module.exports.areEquivalent = areEquivalent
 
 module.exports.copyValue = (val) => {
-  if (!val) return val === false ? false : null
+  if (val === undefined || val === '') return null
+  else if (!val) return val
+
   if (!this.isObject(val)) return val
 
   if (Array.isArray(val)) {

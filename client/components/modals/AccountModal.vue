@@ -111,7 +111,8 @@
           </div>
 
           <div class="flex pt-4 px-2">
-            <ui-btn v-if="isEditingRoot" to="/account">{{ $strings.ButtonChangeRootPassword }}</ui-btn>
+            <ui-btn v-if="hasOpenIDLink" small :loading="unlinkingFromOpenID" color="primary" type="button" class="mr-2" @click.stop="unlinkOpenID">Unlink OpenID</ui-btn>
+            <ui-btn v-if="isEditingRoot" small class="flex items-center" to="/account">{{ $strings.ButtonChangeRootPassword }}</ui-btn>
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
@@ -136,7 +137,8 @@ export default {
       newUser: {},
       isNew: true,
       tags: [],
-      loadingTags: false
+      loadingTags: false,
+      unlinkingFromOpenID: false
     }
   },
   watch: {
@@ -180,7 +182,7 @@ export default {
       return this.isNew ? this.$strings.HeaderNewAccount : this.$strings.HeaderUpdateAccount
     },
     isEditingRoot() {
-      return this.account && this.account.type === 'root'
+      return this.account?.type === 'root'
     },
     libraries() {
       return this.$store.state.libraries.libraries
@@ -198,12 +200,40 @@ export default {
     },
     tagsSelectionText() {
       return this.newUser.permissions.selectedTagsNotAccessible ? this.$strings.LabelTagsNotAccessibleToUser : this.$strings.LabelTagsAccessibleToUser
+    },
+    hasOpenIDLink() {
+      return !!this.account?.hasOpenIDLink
     }
   },
   methods: {
     close() {
       // Force close when navigating - used in UsersTable
       if (this.$refs.modal) this.$refs.modal.setHide()
+    },
+    unlinkOpenID() {
+      const payload = {
+        message: 'Are you sure you want to unlink this user from OpenID?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.unlinkingFromOpenID = true
+            this.$axios
+              .$patch(`/api/users/${this.account.id}/openid-unlink`)
+              .then(() => {
+                this.$toast.success('User unlinked from OpenID')
+                this.show = false
+              })
+              .catch((error) => {
+                console.error('Failed to unlink user from OpenID', error)
+                this.$toast.error('Failed to unlink user from OpenID')
+              })
+              .finally(() => {
+                this.unlinkingFromOpenID = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     accessAllTagsToggled(val) {
       if (val) {

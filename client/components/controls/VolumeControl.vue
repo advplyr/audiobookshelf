@@ -1,8 +1,8 @@
 <template>
   <div class="relative" v-click-outside="clickOutside" @mouseover="mouseover" @mouseleave="mouseleave">
-    <div class="cursor-pointer text-gray-300 hover:text-white" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
+    <button :aria-label="$strings.LabelVolume" class="text-gray-300 hover:text-white" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
       <span class="material-icons text-2xl sm:text-3xl">{{ volumeIcon }}</span>
-    </div>
+    </button>
     <transition name="menux">
       <div v-show="isOpen" class="volumeMenu h-6 absolute bottom-2 w-28 px-2 bg-bg shadow-sm rounded-lg" style="left: -116px">
         <div ref="volumeTrack" class="h-1 w-full bg-gray-500 my-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
@@ -38,8 +38,8 @@ export default {
       },
       set(val) {
         try {
-          localStorage.setItem("volume", val);
-        } catch(error) {
+          localStorage.setItem('volume', val)
+        } catch (error) {
           console.error('Failed to store volume', err)
         }
         this.$emit('input', val)
@@ -146,7 +146,7 @@ export default {
     if (this.value === 0) {
       this.isMute = true
     }
-    const storageVolume = localStorage.getItem("volume")
+    const storageVolume = localStorage.getItem('volume')
     if (storageVolume) {
       this.volume = parseFloat(storageVolume)
     }
