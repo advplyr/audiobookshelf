@@ -11,7 +11,7 @@
             </div>
             {{ item }}
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: fit-content" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -54,7 +54,7 @@ export default {
     menuDisabled: {
       type: Boolean,
       default: false
-    },
+    }
   },
   data() {
     return {
@@ -140,7 +140,7 @@ export default {
         }
         this.recalcScroll()
         return
-      }  else if (event.key === 'Enter') {
+      } else if (event.key === 'Enter') {
         if (this.selectedMenuItemIndex !== null) {
           this.clickedOption(event, items[this.selectedMenuItemIndex])
         } else {
@@ -154,6 +154,15 @@ export default {
       this.typingTimeout = setTimeout(() => {
         this.search()
       }, 100)
+      this.setInputWidth()
+    },
+    setInputWidth() {
+      setTimeout(() => {
+        var value = this.$refs.input.value
+        var len = value.length * 7 + 24
+        this.$refs.input.style.width = len + 'px'
+        this.recalcMenuPos()
+      }, 50)
     },
     recalcScroll() {
       if (!this.menu) return
@@ -261,7 +270,10 @@ export default {
         e.stopPropagation()
         e.preventDefault()
       }
-      if (this.$refs.input) this.$refs.input.focus()
+      if (this.$refs.input) {
+        this.$refs.input.style.width = '24px'
+        this.$refs.input.focus()
+      }
 
       var newSelected = null
       if (this.selected.includes(itemValue)) {
@@ -315,7 +327,8 @@ export default {
         this.clickedOption(null, matchesItem)
       } else {
         this.insertNewItem(this.textInput)
-      }      
+      }
+      if (this.$refs.input) this.$refs.input.style.width = '24px'
     },
     scroll() {
       this.recalcMenuPos()
