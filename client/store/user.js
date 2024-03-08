@@ -11,7 +11,9 @@ export const state = () => ({
     useChapterTrack: false,
     seriesSortBy: 'name',
     seriesSortDesc: false,
-    seriesFilterBy: 'all'
+    seriesFilterBy: 'all',
+    authorSortBy: 'name',
+    authorSortDesc: false
   }
 })
 
