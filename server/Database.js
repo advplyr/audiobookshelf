@@ -430,7 +430,7 @@ class Database {
     await oldLibraryItem.saveMetadata()
     const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
     // Clear library filter data cache
-    if (updated) {
+    if (updated) {      
       delete this.libraryFilterData[oldLibraryItem.libraryId]
     }
     return updated
@@ -688,6 +688,20 @@ class Database {
     }
     return this.libraryFilterData[libraryId].series.some(se => se.id === seriesId)
   }
+
+  async getAuthorByName(libraryId, authorName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return await this.authorModel.getOldByNameAndLibrary(authorName, libraryId)
+    }
+    return this.libraryFilterData[libraryId].authors.find(au => au.name === authorName)
+  }
+
+  async getSeriesByName(libraryId, seriesName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return await this.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
+    }
+    return this.libraryFilterData[libraryId].series.find(se => se.name === seriesName)
+  } 
 
   /**
    * Reset numIssues for library

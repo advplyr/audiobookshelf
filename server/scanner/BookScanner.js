@@ -186,7 +186,7 @@ class BookScanner {
         // Check for authors added
         for (const authorName of bookMetadata.authors) {
           if (!media.authors.some(au => au.name === authorName)) {
-            const existingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
+            const existingAuthor = await Database.getAuthorByName(libraryItemData.libraryId, authorName)
             if (existingAuthor) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,
@@ -221,7 +221,7 @@ class BookScanner {
         for (const seriesObj of bookMetadata.series) {
           const existingBookSeries = media.series.find(se => se.name === seriesObj.name)
           if (!existingBookSeries) {
-            const existingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
+            const existingSeries = await Database.getSeriesByName(libraryItemData.libraryId, seriesObj.name)
             if (existingSeries) {
               await Database.bookSeriesModel.create({
                 bookId: media.id,
@@ -443,7 +443,7 @@ class BookScanner {
     }
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
-        const matchingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
+        const matchingAuthor = await Database.getAuthorByName(libraryItemData.libraryId, authorName)
         if (matchingAuthor) {
           bookObject.bookAuthors.push({
             authorId: matchingAuthor.id
@@ -463,7 +463,7 @@ class BookScanner {
     if (bookMetadata.series.length) {
       for (const seriesObj of bookMetadata.series) {
         if (!seriesObj.name) continue
-        const matchingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
+        const matchingSeries = await Database.getSeriesByName(libraryItemData.libraryId, seriesObj.name)
         if (matchingSeries) {
           bookObject.bookSeries.push({
             seriesId: matchingSeries.id,
