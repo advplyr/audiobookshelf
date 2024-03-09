@@ -430,7 +430,7 @@ class Database {
     await oldLibraryItem.saveMetadata()
     const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
     // Clear library filter data cache
-    if (updated) {      
+    if (updated) {
       delete this.libraryFilterData[oldLibraryItem.libraryId]
     }
     return updated
