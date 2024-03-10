@@ -20,7 +20,7 @@
 
       <ul ref="menu" v-show="showMenu" class="absolute z-60 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
-          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-sky-400' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
               <span class="font-normal ml-3 block truncate">{{ item.name }}</span>
             </div>
@@ -143,7 +143,7 @@ export default {
         }
         this.recalcScroll()
         return
-      }  else if (event.key === 'Enter') {
+      } else if (event.key === 'Enter') {
         if (this.selectedMenuItemIndex !== null) {
           this.clickedOption(event, items[this.selectedMenuItemIndex])
         } else {
@@ -155,7 +155,7 @@ export default {
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
         this.search()
-      }, 250)      
+      }, 250)
       this.setInputWidth()
     },
     setInputWidth() {
