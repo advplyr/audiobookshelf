@@ -8,6 +8,7 @@ class Logger {
 
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
+		this.logLevel = process.env.LOG_LEVEL || this.logLevel
     this.socketListeners = []
   }
 
