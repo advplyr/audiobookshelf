@@ -6,7 +6,7 @@ on:
       - main # Only care about the main branch, don't care about any PRs or forks
       - master
     paths:
-      - strings/** # Should only check if any strings changed
+      - client/strings/** # Should only check if any strings changed
 
 jobs:
   update_translations:
@@ -33,7 +33,7 @@ jobs:
     - name: Run Update JSON Files action
       uses: audiobookshelf/audiobookshelf-i18n-updater@v1.0.0-beta
       with:
-        directory: 'strings/'  # Adjust the directory path as needed
+        directory: 'client/strings/'  # Adjust the directory path as needed
 
     # Does a git diff to see if any language files were changed from running
     # the script. This will be false if the local script was already ran
