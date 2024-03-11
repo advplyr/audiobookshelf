@@ -41,13 +41,11 @@ const passport = require('passport')
 const expressSession = require('express-session')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
     global.isWin = process.platform === 'win32'
-    global.Uid = isNaN(UID) ? undefined : Number(UID)
-    global.Gid = isNaN(GID) ? undefined : Number(GID)
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
