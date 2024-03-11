@@ -186,11 +186,11 @@ class BookScanner {
         // Check for authors added
         for (const authorName of bookMetadata.authors) {
           if (!media.authors.some(au => au.name === authorName)) {
-            const existingAuthor = await Database.getAuthorByName(libraryItemData.libraryId, authorName)
-            if (existingAuthor) {
+            const existingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
+            if (existingAuthorId) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,
-                authorId: existingAuthor.id
+                authorId: existingAuthorId
               })
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
               authorsUpdated = true
@@ -221,11 +221,11 @@ class BookScanner {
         for (const seriesObj of bookMetadata.series) {
           const existingBookSeries = media.series.find(se => se.name === seriesObj.name)
           if (!existingBookSeries) {
-            const existingSeries = await Database.getSeriesByName(libraryItemData.libraryId, seriesObj.name)
-            if (existingSeries) {
+            const existingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
+            if (existingSeriesId) {
               await Database.bookSeriesModel.create({
                 bookId: media.id,
-                seriesId: existingSeries.id,
+                seriesId: existingSeriesId,
                 sequence: seriesObj.sequence
               })
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
@@ -443,10 +443,10 @@ class BookScanner {
     }
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
-        const matchingAuthor = await Database.getAuthorByName(libraryItemData.libraryId, authorName)
-        if (matchingAuthor) {
+        const matchingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
+        if (matchingAuthorId) {
           bookObject.bookAuthors.push({
-            authorId: matchingAuthor.id
+            authorId: matchingAuthorId
           })
         } else {
           // New author
@@ -463,10 +463,10 @@ class BookScanner {
     if (bookMetadata.series.length) {
       for (const seriesObj of bookMetadata.series) {
         if (!seriesObj.name) continue
-        const matchingSeries = await Database.getSeriesByName(libraryItemData.libraryId, seriesObj.name)
-        if (matchingSeries) {
+        const matchingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
+        if (matchingSeriesId) {
           bookObject.bookSeries.push({
-            seriesId: matchingSeries.id,
+            seriesId: matchingSeriesId,
             sequence: seriesObj.sequence
           })
         } else {
