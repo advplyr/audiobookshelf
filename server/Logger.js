@@ -8,7 +8,7 @@ class Logger {
 
     this.isDev = process.env.NODE_ENV !== 'production'
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
-		this.logLevel = process.env.LOG_LEVEL || this.logLevel
+    this.logLevel = process.env.LOG_LEVEL || this.logLevel
     this.socketListeners = []
   }
 
@@ -136,8 +136,8 @@ class Logger {
   /**
    * Fatal errors are ones that exit the process
    * Fatal logs are saved to crash_logs.txt
-   * 
-   * @param  {...any} args 
+   *
+   * @param  {...any} args
    */
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
