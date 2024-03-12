@@ -9,11 +9,12 @@ class CustomProviderAdapter {
      * 
      * @param {string} title 
      * @param {string} author 
+     * @param {string} isbn 
      * @param {string} providerSlug 
      * @param {string} mediaType
      * @returns {Promise<Object[]>}
      */
-    async search(title, author, providerSlug, mediaType) {
+    async search(title, author, isbn, providerSlug, mediaType) {
         const providerId = providerSlug.split('custom-')[1]
         const provider = await Database.customMetadataProviderModel.findByPk(providerId)
 
@@ -28,6 +29,9 @@ class CustomProviderAdapter {
         }
         if (author) {
             queryObj.author = author
+        }
+        if (isbn) {
+            queryObj.isbn = isbn
         }
         const queryString = (new URLSearchParams(queryObj)).toString()
 
