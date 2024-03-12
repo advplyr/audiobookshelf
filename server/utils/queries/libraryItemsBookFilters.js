@@ -676,11 +676,14 @@ module.exports = {
       ],
       attributes: {
         include: [
-          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']
+          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
+          [Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'],
+          [Sequelize.literal('(SELECT json_extract(libraries.settings, "$.onlyShowLaterBooksInContinueSeries") FROM libraries WHERE id = :libraryId)'), 'onlyShowLaterBooksInContinueSeries']
         ]
       },
       replacements: {
         userId: user.id,
+        libraryId: libraryId,
         ...userPermissionBookWhere.replacements
       },
       include: {
@@ -731,13 +734,26 @@ module.exports = {
 
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
-      const libraryItem = s.bookSeries[0].book.libraryItem.toJSON()
-      const book = s.bookSeries[0].book.toJSON()
+
+      var bookIndex = 0
+      // if the library setting is toggled, only show later entries in series, otherwise skip
+      if (s.dataValues.onlyShowLaterBooksInContinueSeries === 1) {
+        bookIndex = s.bookSeries.findIndex(function (b) {
+          return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+        })
+        if (bookIndex === -1) {
+          // no later books than maxSequence
+          return null
+        }
+      }
+
+      const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
+      const book = s.bookSeries[bookIndex].book.toJSON()
       delete book.libraryItem
       libraryItem.series = {
         id: s.id,
         name: s.name,
-        sequence: s.bookSeries[0].sequence
+        sequence: s.bookSeries[bookIndex].sequence
       }
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
