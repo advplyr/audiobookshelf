@@ -30,9 +30,7 @@ class Audible {
     cleanSeriesSequence(seriesName, sequence) {
         if (!sequence) return ''
         let updatedSequence = sequence.replace(/Book /, '').trim()
-        if (updatedSequence.includes(' ')) {
-            updatedSequence = updatedSequence.split(' ').shift().replace(/,$/, '')
-        }
+        updatedSequence = updatedSequence.replace(/(\d+)(, .*)/, '$1').trim()
         if (sequence !== updatedSequence) {
             Logger.debug(`[Audible] Series "${seriesName}" sequence was cleaned from "${sequence}" to "${updatedSequence}"`)
         }
