@@ -29,8 +29,9 @@ class Audible {
      */
     cleanSeriesSequence(seriesName, sequence) {
         if (!sequence) return ''
-        let updatedSequence = sequence.replace(/Book /, '').trim()
-        updatedSequence = updatedSequence.replace(/(\d+)(, .*)/, '$1').trim()
+        // match any number with optional decimal (e.g, 1 or 1.5 or .5)
+        let numberFound = sequence.match(/\.\d+|\d+(?:\.\d+)?/)
+        let updatedSequence = numberFound ? numberFound[0] : sequence
         if (sequence !== updatedSequence) {
             Logger.debug(`[Audible] Series "${seriesName}" sequence was cleaned from "${sequence}" to "${updatedSequence}"`)
         }
