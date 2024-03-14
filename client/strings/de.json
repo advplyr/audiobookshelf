@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Serien, die nur ein einzelnes Buch enthalten, werden auf der Startseite und in der Serienansicht ausgeblendet.",
   "LabelSettingsHomePageBookshelfView": "Startseite verwendet die Bücherregalansicht",
   "LabelSettingsLibraryBookshelfView": "Bibliothek verwendet die Bücherregalansicht",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Analysiere Untertitel",
   "LabelSettingsParseSubtitlesHelp": "Extrahiere den Untertitel von Medium-Ordnernamen.<br>Untertitel müssen vom eigentlichem Titel durch ein \" - \" getrennt sein. <br>Beispiel: \"Titel - Untertitel\"",
   "LabelSettingsPreferMatchedMetadata": "Bevorzuge online abgestimmte Metadaten",

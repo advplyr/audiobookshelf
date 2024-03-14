@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Les séries qui ne comportent qu’un seul livre seront masquées sur la page de la série et sur les étagères de la page d’accueil.",
   "LabelSettingsHomePageBookshelfView": "La page d’accueil utilise la vue étagère",
   "LabelSettingsLibraryBookshelfView": "La bibliothèque utilise la vue étagère",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Analyser les sous-titres",
   "LabelSettingsParseSubtitlesHelp": "Extrait les sous-titres depuis le dossier du livre audio.<br>Les sous-titres doivent être séparés par «  -  »<br>c’est-à-dire : « Titre du livre - Ceci est un sous-titre » aura le sous-titre « Ceci est un sous-titre »",
   "LabelSettingsPreferMatchedMetadata": "Préférer les métadonnées par correspondance",

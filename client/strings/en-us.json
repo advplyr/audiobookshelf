@@ -467,7 +467,7 @@
   "LabelSettingsHomePageBookshelfView": "Home page use bookshelf view",
   "LabelSettingsLibraryBookshelfView": "Library use bookshelf view",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
-  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Avoids showing books that are earlier in a series than the ones you have already read.",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Parse subtitles",
   "LabelSettingsParseSubtitlesHelp": "Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by \" - \"<br>i.e. \"Book Title - A Subtitle Here\" has the subtitle \"A Subtitle Here\"",
   "LabelSettingsPreferMatchedMetadata": "Prefer matched metadata",

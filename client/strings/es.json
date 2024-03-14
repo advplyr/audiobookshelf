@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Las series con un solo libro no aparecerán en la página de series ni la repisa para series de la página principal.",
   "LabelSettingsHomePageBookshelfView": "Usar la vista de librero en la página principal",
   "LabelSettingsLibraryBookshelfView": "Usar la vista de librero en la biblioteca",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Extraer Subtítulos",
   "LabelSettingsParseSubtitlesHelp": "Extraer subtítulos de los nombres de las carpetas de los audiolibros.<br>Los subtítulos deben estar separados por \" - \"<br>Por ejemplo: \"Ejemplo de Título - Subtítulo Aquí\" tiene el subtítulo \"Subtítulo Aquí\"",
   "LabelSettingsPreferMatchedMetadata": "Preferir metadatos encontrados",

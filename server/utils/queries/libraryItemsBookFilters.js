@@ -659,7 +659,7 @@ module.exports = {
       [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
     ]
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
-      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
+      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({

@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "A csak egy könyvet tartalmazó sorozatok el lesznek rejtve a sorozatok oldalról és a kezdőlap polcairól.",
   "LabelSettingsHomePageBookshelfView": "Kezdőlap használja a könyvespolc nézetet",
   "LabelSettingsLibraryBookshelfView": "Könyvtár használja a könyvespolc nézetet",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Feliratok elemzése",
   "LabelSettingsParseSubtitlesHelp": "Feliratok kinyerése a hangoskönyv mappaneveiből.<br>A feliratnak el kell különülnie egy \" - \" jellel<br>például: \"Könyv címe - Egy felirat itt\" esetén a felirat \"Egy felirat itt\"",
   "LabelSettingsPreferMatchedMetadata": "Preferált egyeztetett metaadatok",
