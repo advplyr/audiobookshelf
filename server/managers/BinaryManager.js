@@ -24,7 +24,14 @@ class BinaryManager {
   }
 
   async init() {
+    // Optional skip binaries check
+    if (process.env.SKIP_BINARIES_CHECK === '1') {
+      Logger.info('[BinaryManager] Skipping check for binaries')
+      return
+    }
+
     if (this.initialized) return
+
     const missingBinaries = await this.findRequiredBinaries()
     if (missingBinaries.length == 0) return
     await this.removeOldBinaries(missingBinaries)
