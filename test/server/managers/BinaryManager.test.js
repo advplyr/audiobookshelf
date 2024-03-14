@@ -291,6 +291,7 @@ describe('isBinaryGood', () => {
 
   const binaryPath = '/path/to/binary'
   const execCommand = '"' + binaryPath + '"' + ' -version'
+  const goodVersions = ['5.1', '6']
 
   beforeEach(() => {
     binaryManager = new BinaryManager()
@@ -306,7 +307,7 @@ describe('isBinaryGood', () => {
   it('should return false if binaryPath is falsy', async () => {
     fsPathExistsStub.resolves(true)
 
-    const result = await binaryManager.isBinaryGood(null)
+    const result = await binaryManager.isBinaryGood(null, goodVersions)
 
     expect(result).to.be.false
     expect(fsPathExistsStub.called).to.be.false
@@ -316,7 +317,7 @@ describe('isBinaryGood', () => {
   it('should return false if binaryPath does not exist', async () => {
     fsPathExistsStub.resolves(false)
 
-    const result = await binaryManager.isBinaryGood(binaryPath)
+    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
 
     expect(result).to.be.false
     expect(fsPathExistsStub.calledOnce).to.be.true
@@ -328,7 +329,7 @@ describe('isBinaryGood', () => {
     fsPathExistsStub.resolves(true)
     execStub.rejects(new Error('Failed to execute command'))
 
-    const result = await binaryManager.isBinaryGood(binaryPath)
+    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
 
     expect(result).to.be.false
     expect(fsPathExistsStub.calledOnce).to.be.true
@@ -342,7 +343,7 @@ describe('isBinaryGood', () => {
     fsPathExistsStub.resolves(true)
     execStub.resolves({ stdout })
 
-    const result = await binaryManager.isBinaryGood(binaryPath)
+    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
 
     expect(result).to.be.false
     expect(fsPathExistsStub.calledOnce).to.be.true
@@ -356,7 +357,7 @@ describe('isBinaryGood', () => {
     fsPathExistsStub.resolves(true)
     execStub.resolves({ stdout })
 
-    const result = await binaryManager.isBinaryGood(binaryPath)
+    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
 
     expect(result).to.be.false
     expect(fsPathExistsStub.calledOnce).to.be.true
@@ -370,7 +371,7 @@ describe('isBinaryGood', () => {
     fsPathExistsStub.resolves(true)
     execStub.resolves({ stdout })
 
-    const result = await binaryManager.isBinaryGood(binaryPath)
+    const result = await binaryManager.isBinaryGood(binaryPath, goodVersions)
 
     expect(result).to.be.true
     expect(fsPathExistsStub.calledOnce).to.be.true
