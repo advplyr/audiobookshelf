@@ -75,7 +75,7 @@ module.exports = {
 
   /**
    * Get library items for most recently added shelf
-   * @param {oldLibrary} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
@@ -120,7 +120,7 @@ module.exports = {
 
   /**
    * Get library items for continue series shelf
-   * @param {string} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
@@ -145,7 +145,7 @@ module.exports = {
 
   /**
    * Get library items or podcast episodes for the "Listen Again" and "Read Again" shelf
-   * @param {oldLibrary} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 

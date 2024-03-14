@@ -633,12 +633,12 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {string} libraryId 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {string[]} include 
    * @param {number} limit 
    * @param {number} offset 
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @returns {{ libraryItems:import('../../models/LibraryItem')[], count:number }}
    */
   async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
     const libraryId = library.id
@@ -687,7 +687,6 @@ module.exports = {
       },
       replacements: {
         userId: user.id,
-        libraryId: libraryId,
         ...userPermissionBookWhere.replacements
       },
       include: {
