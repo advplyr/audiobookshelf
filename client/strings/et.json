@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Ühe raamatuga seeriaid peidetakse seeria lehelt ja avalehe riiulitelt.",
   "LabelSettingsHomePageBookshelfView": "Avaleht kasutage raamatukoguvaadet",
   "LabelSettingsLibraryBookshelfView": "Raamatukogu kasutamiseks kasutage raamatukoguvaadet",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Lugege subtiitreid",
   "LabelSettingsParseSubtitlesHelp": "Eraldage subtiitrid heliraamatu kaustade nimedest.<br>Subtiitrid peavad olema eraldatud \" - \".<br>Näiteks: \"Raamatu pealkiri - Siin on alapealkiri\" alapealkiri on \"Siin on alapealkiri\"",
   "LabelSettingsPreferMatchedMetadata": "Eelista sobitatud metaandmeid",

@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Series that have a single book will be hidden from the series page and home page shelves.",
   "LabelSettingsHomePageBookshelfView": "Widok półki z książkami na stronie głównej",
   "LabelSettingsLibraryBookshelfView": "Widok półki z książkami na stronie biblioteki",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Przetwarzaj podtytuły",
   "LabelSettingsParseSubtitlesHelp": "Opcja pozwala na pobranie podtytułu z nazwy folderu z audiobookiem. <br>Podtytuł musi być rozdzielony za pomocą separatora \" - \"<br>Przykład: \"Book Title - A Subtitle Here\" podtytuł \"A Subtitle Here\"",
   "LabelSettingsPreferMatchedMetadata": "Preferowanie dopasowanych metadanych",

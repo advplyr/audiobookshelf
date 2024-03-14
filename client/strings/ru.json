@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Серии, в которых всего одна книга, будут скрыты со страницы серий и полок домашней страницы.",
   "LabelSettingsHomePageBookshelfView": "Вид книжной полки на Домашней странице",
   "LabelSettingsLibraryBookshelfView": "Вид книжной полки в Библиотеке",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Разбор подзаголовков",
   "LabelSettingsParseSubtitlesHelp": "Извлечение подзаголовков из имен папок аудиокниг.<br>Подзаголовок должны быть отделен \" - \"<br>например \"Название Книги - Тут Подзаголовок\" подзаголовок будет \"Тут Подзаголовок\"",
   "LabelSettingsPreferMatchedMetadata": "Предпочитать метаданные поиска",

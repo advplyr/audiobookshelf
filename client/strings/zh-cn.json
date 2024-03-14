@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "只有一本书的系列将从系列页面和主页书架中隐藏.",
   "LabelSettingsHomePageBookshelfView": "首页使用书架视图",
   "LabelSettingsLibraryBookshelfView": "媒体库使用书架视图",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "解析副标题",
   "LabelSettingsParseSubtitlesHelp": "从有声读物文件夹中提取副标题.<br>副标题必须用 \" - \" 分隔.<br>例: \"书名 - 这里是副标题\" 则显示副标题 \"这里是副标题\"",
   "LabelSettingsPreferMatchedMetadata": "首选匹配的元数据",

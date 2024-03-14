@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Các loạt sách chỉ có một cuốn sách sẽ được ẩn khỏi trang loạt sách và kệ trang chủ.",
   "LabelSettingsHomePageBookshelfView": "Trang chủ sử dụng chế độ xem kệ sách",
   "LabelSettingsLibraryBookshelfView": "Thư viện sử dụng chế độ xem kệ sách",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Phân tích phụ đề",
   "LabelSettingsParseSubtitlesHelp": "Trích xuất phụ đề từ tên thư mục sách nói.<br>Phụ đề phải được tách bằng \" - \"<br>i.e. \"Book Title - A Subtitle Here\" có phụ đề \"A Subtitle Here\"",
   "LabelSettingsPreferMatchedMetadata": "Ưu tiên siêu dữ liệu phù hợp",

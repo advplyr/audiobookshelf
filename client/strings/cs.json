@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Série, které mají jedinou knihu, budou skryty na stránce série a na domovské stránce.",
   "LabelSettingsHomePageBookshelfView": "Domovská stránka používá zobrazení police s knihami",
   "LabelSettingsLibraryBookshelfView": "Knihovna používá zobrazení police s knihami",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Analzyovat podtitul",
   "LabelSettingsParseSubtitlesHelp": "Rozparsovat podtitul z názvů složek audioknih.<br>Podtiul musí být oddělen znakem \" - \"<br>tj. \"Název knihy - Zde Podtitul\"  má podtitul \"Zde podtitul\"",
   "LabelSettingsPreferMatchedMetadata": "Preferovat spárovaná metadata",

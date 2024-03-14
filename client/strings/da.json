@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Serier med en enkelt bog vil blive skjult fra serie-siden og hjemmesidehylder.",
   "LabelSettingsHomePageBookshelfView": "Brug bogreolvisning på startside",
   "LabelSettingsLibraryBookshelfView": "Brug bogreolvisning i biblioteket",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Fortolk undertekster",
   "LabelSettingsParseSubtitlesHelp": "Udtræk undertekster fra lydbogsmappenavne.<br>Undertitler skal adskilles af \" - \"<br>f.eks. \"Bogtitel - En undertitel her\" har undertitlen \"En undertitel her\"",
   "LabelSettingsPreferMatchedMetadata": "Foretræk matchede metadata",

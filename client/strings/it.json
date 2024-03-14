@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Le serie che hanno un solo libro saranno nascoste dalla pagina della serie e dagli scaffali della home page.",
   "LabelSettingsHomePageBookshelfView": "Home page con sfondo legno",
   "LabelSettingsLibraryBookshelfView": "Libreria con sfondo legno",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Analizza sottotitoli",
   "LabelSettingsParseSubtitlesHelp": "Estrai i sottotitoli dai nomi delle cartelle degli audiolibri. <br> I sottotitoli devono essere separati da \" - \"<br> Per esempio \"Il signore degli anelli - Le due Torri \" avrà il sottotitolo \"Le due Torri\"",
   "LabelSettingsPreferMatchedMetadata": "Preferisci i metadata trovati",

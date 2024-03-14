@@ -466,6 +466,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Series die slechts een enkel boek bevatten worden verborgen op de seriespagina en de homepagina-planken.",
   "LabelSettingsHomePageBookshelfView": "Boekenplank-view voor homepagina",
   "LabelSettingsLibraryBookshelfView": "Boekenplank-view voor bibliotheek",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
+  "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Parseer subtitel",
   "LabelSettingsParseSubtitlesHelp": "Haal subtitels uit mapnaam van audioboek.<br>Subtitel moet gescheiden zijn met \" - \"<br>b.v. \"Boektitel - Een Subtitel Hier\" heeft als subtitel \"Een Subtitel Hier\"",
   "LabelSettingsPreferMatchedMetadata": "Prefereer gematchte metadata",
