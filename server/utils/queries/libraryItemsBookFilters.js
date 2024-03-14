@@ -739,7 +739,7 @@ module.exports = {
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
 
-      var bookIndex = 0
+      let bookIndex = 0
       // if the library setting is toggled, only show later entries in series, otherwise skip
       if (library.settings.onlyShowLaterBooksInContinueSeries) {
         bookIndex = s.bookSeries.findIndex(function (b) {
