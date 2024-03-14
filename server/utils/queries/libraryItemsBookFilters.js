@@ -640,7 +640,8 @@ module.exports = {
    * @param {number} offset 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getContinueSeriesLibraryItems(libraryId, user, include, limit, offset) {
+  async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
+    const libraryId = library.id
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
@@ -653,6 +654,13 @@ module.exports = {
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
+
+    let includeAttributes = [
+      [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
+    ]
+    if (library.settings.onlyShowLaterBooksInContinueSeries) {
+      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
+    }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: [
@@ -675,11 +683,7 @@ module.exports = {
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0)
       ],
       attributes: {
-        include: [
-          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
-          [Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'],
-          [Sequelize.literal('(SELECT json_extract(libraries.settings, "$.onlyShowLaterBooksInContinueSeries") FROM libraries WHERE id = :libraryId)'), 'onlyShowLaterBooksInContinueSeries']
-        ]
+        include: includeAttributes
       },
       replacements: {
         userId: user.id,
@@ -737,7 +741,7 @@ module.exports = {
 
       var bookIndex = 0
       // if the library setting is toggled, only show later entries in series, otherwise skip
-      if (s.dataValues.onlyShowLaterBooksInContinueSeries === 1) {
+      if (library.settings.onlyShowLaterBooksInContinueSeries) {
         bookIndex = s.bookSeries.findIndex(function (b) {
           return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
         })

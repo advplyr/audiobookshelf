@@ -127,7 +127,7 @@ module.exports = {
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
   async getLibraryItemsContinueSeries(library, user, include, limit) {
-    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, user, include, limit, 0)
+    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library, user, include, limit, 0)
     return {
       libraryItems: libraryItems.map(li => {
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
