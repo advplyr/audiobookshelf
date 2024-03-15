@@ -429,7 +429,7 @@ class Auth {
           // Depending on the error, it can also have a body
           // We also log the request header the passport plugin sents for the URL
           const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
-          Logger.debug(header + '\n' + response.body?.toString())
+          Logger.debug(header + '\n' + response.body?.toString() + '\n' + JSON.stringify(response.body, null, 2))
         }
 
         if (isMobile) {
@@ -533,42 +533,45 @@ class Auth {
 
           res.clearCookie('auth_method')
 
+          let logoutUrl = null
+
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
             // If we are using openid, we need to redirect to the logout endpoint
             // node-openid-client does not support doing it over passport
             const oidcStrategy = passport._strategy('openid-client')
             const client = oidcStrategy._client
 
-            let postLogoutRedirectUri = null
+            if (client.issuer.end_session_endpoint && client.issuer.end_session_endpoint.length > 0) {
+              let postLogoutRedirectUri = null
 
-            if (authMethod === 'openid') {
-              const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
-              const host = req.get('host')
-              // TODO: ABS does currently not support subfolders for installation
-              // If we want to support it we need to include a config for the serverurl
-              postLogoutRedirectUri = `${protocol}://${host}/login`
+              if (authMethod === 'openid') {
+                const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+                const host = req.get('host')
+                // TODO: ABS does currently not support subfolders for installation
+                // If we want to support it we need to include a config for the serverurl
+                postLogoutRedirectUri = `${protocol}://${host}/login`
+              }
+              // else for openid-mobile we keep postLogoutRedirectUri on null
+              //  nice would be to redirect to the app here, but for example Authentik does not implement
+              //  the post_logout_redirect_uri parameter at all and for other providers
+              //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
+              //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
+              //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
+              //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
+              //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
+
+              logoutUrl = client.endSessionUrl({
+                id_token_hint: req.cookies.openid_id_token,
+                post_logout_redirect_uri: postLogoutRedirectUri
+              })
             }
-            // else for openid-mobile we keep postLogoutRedirectUri on null
-            //  nice would be to redirect to the app here, but for example Authentik does not implement
-            //  the post_logout_redirect_uri parameter at all and for other providers
-            //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
-            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
-            //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
-            //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
-            //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
-
-            const logoutUrl = client.endSessionUrl({
-              id_token_hint: req.cookies.openid_id_token,
-              post_logout_redirect_uri: postLogoutRedirectUri
-            })
 
             res.clearCookie('openid_id_token')
-
-            // Tell the user agent (browser) to redirect to the authentification provider's logout URL
-            res.send({ redirect_url: logoutUrl })
-          } else {
-            res.sendStatus(200)
           }
+
+          // Tell the user agent (browser) to redirect to the authentification provider's logout URL
+          // (or redirect_url: null if we don't have one)
+          res.send({ redirect_url: logoutUrl })
         }
       })
     })

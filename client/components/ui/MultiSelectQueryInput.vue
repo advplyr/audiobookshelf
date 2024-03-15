@@ -14,13 +14,13 @@
           <div v-if="showEdit && !disabled" class="rounded-full cursor-pointer w-6 h-6 mx-0.5 bg-bg flex items-center justify-center">
             <span class="material-icons text-white hover:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem">add</span>
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
       <ul ref="menu" v-show="showMenu" class="absolute z-60 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
-          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
               <span class="font-normal ml-3 block truncate">{{ item.name }}</span>
             </div>
@@ -63,7 +63,8 @@ export default {
       typingTimeout: null,
       isFocused: false,
       menu: null,
-      items: []
+      items: [],
+      selectedMenuItemIndex: null
     }
   },
   watch: {
@@ -122,7 +123,35 @@ export default {
 
       this.items = results || []
     },
-    keydownInput() {
+    keydownInput(event) {
+      let items = this.itemsToShow
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        if (!items.length) return
+        if (event.key === 'ArrowDown') {
+          if (this.selectedMenuItemIndex === null) {
+            this.selectedMenuItemIndex = 0
+          } else {
+            this.selectedMenuItemIndex = Math.min(this.selectedMenuItemIndex + 1, items.length - 1)
+          }
+        } else if (event.key === 'ArrowUp') {
+          if (this.selectedMenuItemIndex === null) {
+            this.selectedMenuItemIndex = items.length - 1
+          } else {
+            this.selectedMenuItemIndex = Math.max(this.selectedMenuItemIndex - 1, 0)
+          }
+        }
+        this.recalcScroll()
+        return
+      } else if (event.key === 'Enter') {
+        if (this.selectedMenuItemIndex !== null) {
+          this.clickedOption(event, items[this.selectedMenuItemIndex])
+        } else {
+          this.submitForm()
+        }
+        return
+      }
+      this.selectedMenuItemIndex = null
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
         this.search()
@@ -136,6 +165,24 @@ export default {
         this.$refs.input.style.width = len + 'px'
         this.recalcMenuPos()
       }, 50)
+    },
+    recalcScroll() {
+      if (!this.menu) return
+      var menuItems = this.menu.querySelectorAll('li')
+      if (!menuItems.length) return
+      var selectedItem = menuItems[this.selectedMenuItemIndex]
+      if (!selectedItem) return
+      var menuHeight = this.menu.offsetHeight
+      var itemHeight = selectedItem.offsetHeight
+      var itemTop = selectedItem.offsetTop
+      var itemBottom = itemTop + itemHeight
+      if (itemBottom > this.menu.scrollTop + menuHeight) {
+        let menuPaddingBottom = parseFloat(window.getComputedStyle(this.menu).paddingBottom)
+        this.menu.scrollTop = itemBottom - menuHeight + menuPaddingBottom
+      } else if (itemTop < this.menu.scrollTop) {
+        let menuPaddingTop = parseFloat(window.getComputedStyle(this.menu).paddingTop)
+        this.menu.scrollTop = itemTop - menuPaddingTop
+      }
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
@@ -228,7 +275,10 @@ export default {
         e.stopPropagation()
         e.preventDefault()
       }
-      if (this.$refs.input) this.$refs.input.focus()
+      if (this.$refs.input) {
+        this.$refs.input.style.width = '24px'
+        this.$refs.input.focus()
+      }
 
       let newSelected = null
       if (this.getIsSelected(item.id)) {
@@ -244,6 +294,7 @@ export default {
       }
       this.textInput = null
       this.currentSearch = null
+      this.selectedMenuItemIndex = null
 
       this.$emit('input', newSelected)
       this.$nextTick(() => {
@@ -271,6 +322,7 @@ export default {
       this.$emit('newItem', item)
       this.textInput = null
       this.currentSearch = null
+      this.selectedMenuItemIndex = null
       this.$nextTick(() => {
         this.blur()
       })
@@ -291,6 +343,7 @@ export default {
           name: this.textInput
         })
       }
+      if (this.$refs.input) this.$refs.input.style.width = '24px'
     },
     scroll() {
       this.recalcMenuPos()

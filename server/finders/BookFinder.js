@@ -152,11 +152,12 @@ class BookFinder {
   /**
    * 
    * @param {string} title 
-   * @param {string} author 
+   * @param {string} author
+   * @param {string} isbn 
    * @param {string} providerSlug 
    * @returns {Promise<Object[]>}
    */
-  async getCustomProviderResults(title, author, providerSlug) {
+  async getCustomProviderResults(title, author, isbn, providerSlug) {
     const books = await this.customProviderAdapter.search(title, author, providerSlug, 'book')
     if (this.verbose) Logger.debug(`Custom provider '${providerSlug}' Search Results: ${books.length || 0}`)
 
@@ -333,7 +334,7 @@ class BookFinder {
 
     // Custom providers are assumed to be correct
     if (provider.startsWith('custom-')) {
-      return this.getCustomProviderResults(title, author, provider)
+      return this.getCustomProviderResults(title, author, isbn, provider)
     }
 
     if (!title)

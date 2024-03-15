@@ -204,6 +204,10 @@ module.exports = {
         mediaWhere['ebookFile'] = {
           [Sequelize.Op.not]: null
         }
+      } else if (value == 'no-ebook') {
+        mediaWhere['ebookFile'] = {
+          [Sequelize.Op.eq]: null
+        }
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
@@ -421,6 +425,10 @@ module.exports = {
       libraryItemWhere['libraryFiles'] = {
         [Sequelize.Op.substring]: `"isSupplementary":true`
       }
+    } else if (filterGroup === 'ebooks' && filterValue === 'no-supplementary') {
+      libraryItemWhere['libraryFiles'] = {
+        [Sequelize.Op.notLike]: Sequelize.literal(`\'%"isSupplementary":true%\'`),
+      }
     } else if (filterGroup === 'missing' && filterValue === 'authors') {
       authorInclude = {
         model: Database.authorModel,
@@ -625,14 +633,15 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {string} libraryId 
-   * @param {oldUser} user 
+   * @param {import('../../objects/Library')} library 
+   * @param {import('../../objects/user/User')} user 
    * @param {string[]} include 
    * @param {number} limit 
    * @param {number} offset 
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @returns {{ libraryItems:import('../../models/LibraryItem')[], count:number }}
    */
-  async getContinueSeriesLibraryItems(libraryId, user, include, limit, offset) {
+  async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
+    const libraryId = library.id
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
@@ -645,6 +654,13 @@ module.exports = {
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
+
+    let includeAttributes = [
+      [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress'],
+    ]
+    if (library.settings.onlyShowLaterBooksInContinueSeries) {
+      includeAttributes.push([Sequelize.literal('(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)'), 'maxSequence'])
+    }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: [
@@ -667,9 +683,7 @@ module.exports = {
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0)
       ],
       attributes: {
-        include: [
-          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']
-        ]
+        include: includeAttributes
       },
       replacements: {
         userId: user.id,
@@ -723,13 +737,26 @@ module.exports = {
 
     const libraryItems = series.map(s => {
       if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
-      const libraryItem = s.bookSeries[0].book.libraryItem.toJSON()
-      const book = s.bookSeries[0].book.toJSON()
+
+      let bookIndex = 0
+      // if the library setting is toggled, only show later entries in series, otherwise skip
+      if (library.settings.onlyShowLaterBooksInContinueSeries) {
+        bookIndex = s.bookSeries.findIndex(function (b) {
+          return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+        })
+        if (bookIndex === -1) {
+          // no later books than maxSequence
+          return null
+        }
+      }
+
+      const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
+      const book = s.bookSeries[bookIndex].book.toJSON()
       delete book.libraryItem
       libraryItem.series = {
         id: s.id,
         name: s.name,
-        sequence: s.bookSeries[0].sequence
+        sequence: s.bookSeries[bookIndex].sequence
       }
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]

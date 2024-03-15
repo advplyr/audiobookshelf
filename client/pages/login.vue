@@ -35,10 +35,10 @@
 
         <form v-show="login_local" @submit.prevent="submitForm">
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
-          <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" />
+          <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
 
           <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
-          <ui-text-input v-model.trim="password" type="password" :disabled="processing" class="w-full mb-3" />
+          <ui-text-input v-model.trim="password" type="password" :disabled="processing" class="w-full mb-3" inputName="password" />
           <div class="w-full flex justify-end py-3">
             <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>

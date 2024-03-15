@@ -369,8 +369,16 @@ export default {
           name: this.$strings.LabelHasEbook
         },
         {
+          id: 'no-ebook',
+          name: this.$strings.LabelMissingEbook
+        },
+        {
           id: 'supplementary',
           name: this.$strings.LabelHasSupplementaryEbook
+        },
+        {
+          id: 'no-supplementary',
+          name: this.$strings.LabelMissingSupplementaryEbook
         }
       ]
     },
