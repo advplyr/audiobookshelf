@@ -36,7 +36,9 @@ export default {
   },
   watch: {
     value(newVal) {
-      this.$nextTick(this.scrollToChapter)
+      setTimeout(() => {
+        this.$nextTick(this.scrollToChapter)
+      },0);
     }
   },
   computed: {
