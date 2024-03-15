@@ -1,12 +1,7 @@
 name: Manual update i18n files
 
 on:
-  push:
-    branches:
-      - main # Only care about the main branch, don't care about any PRs or forks
-      - master
-    paths:
-      - client/strings/** # Should only check if any strings changed
+  workflow_dispatch:
 
 jobs:
   update_translations:
