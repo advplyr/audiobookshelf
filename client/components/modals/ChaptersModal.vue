@@ -34,11 +34,6 @@ export default {
   data() {
     return {}
   },
-  watch: {
-    value(newVal) {
-      this.$nextTick(this.scrollToChapter)
-    }
-  },
   computed: {
     show: {
       get() {
@@ -53,7 +48,7 @@ export default {
       return this.playbackRate
     },
     currentChapterId() {
-      return this.currentChapter ? this.currentChapter.id : null
+      return this.currentChapter?.id || null
     },
     currentChapterStart() {
       return (this.currentChapter?.start || 0) / this._playbackRate
@@ -73,6 +68,11 @@ export default {
           this.$refs.container.scrollTo({ top: currChapterEl.offsetTop - containerHeight / 2 })
         }
       }
+    }
+  },
+  updated() {
+    if (this.value) {
+      this.$nextTick(this.scrollToChapter)
     }
   }
 }
