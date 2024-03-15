@@ -1,22 +1,23 @@
-name: Unit Tests
+name: Run Unit Tests
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch name'
+      ref:
+        description: 'Branch/Tag/SHA to test'
         required: true
   pull_request:
+  push:
 
 jobs:
-  build:
+  run-unit-tests:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name != 'workflow_dispatch' &&  github.ref_name || inputs.branch}}
+          ref: ${{ github.event_name != 'workflow_dispatch' && github.ref_name || inputs.ref}}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
