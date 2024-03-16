@@ -1,13 +1,13 @@
 <template>
-  <div id="page-wrapper" class="w-full h-screen">
-    <div class="absolute inset-0 px-6 py-3">
+  <div id="page-wrapper" class="w-full h-screen overflow-y-auto">
+    <div class="absolute z-0 top-0 left-0 px-6 py-3">
       <div class="flex items-center">
         <img src="~static/icon.svg" alt="Audiobookshelf Logo" class="w-10 min-w-10 h-10" />
         <h1 class="text-xl ml-4 hidden lg:block hover:underline">audiobookshelf</h1>
       </div>
     </div>
 
-    <div class="w-full flex h-full items-center justify-center">
+    <div class="relative z-10 w-full flex h-full items-center justify-center">
       <div v-if="criticalError" class="w-full max-w-md rounded border border-error border-opacity-25 bg-error bg-opacity-10 p-4">
         <p class="text-center text-lg font-semibold">{{ $strings.MessageServerCouldNotBeReached }}</p>
       </div>
@@ -31,7 +31,7 @@
         </form>
       </div>
       <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 lg:-mt-40">
-        <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+        <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4">
           <p class="text-2xl font-semibold text-center text-white mb-4">{{ $strings.HeaderLogin }}</p>
 
           <div class="w-full h-px bg-white bg-opacity-10 my-4" />
