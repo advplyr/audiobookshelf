@@ -217,7 +217,6 @@ class Database {
   async disconnect() {
     Logger.info(`[Database] Disconnecting sqlite db`)
     await this.sequelize.close()
-    this.sequelize = null
   }
 
   /**
