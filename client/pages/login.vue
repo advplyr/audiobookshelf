@@ -1,5 +1,12 @@
 <template>
   <div id="page-wrapper" class="w-full h-screen">
+    <div class="absolute inset-0 px-6 py-3">
+      <div class="flex items-center">
+        <img src="~static/icon.svg" alt="Audiobookshelf Logo" class="w-10 min-w-10 h-10" />
+        <h1 class="text-xl ml-4 hidden lg:block hover:underline">audiobookshelf</h1>
+      </div>
+    </div>
+
     <div class="w-full flex h-full items-center justify-center">
       <div v-if="criticalError" class="w-full max-w-md rounded border border-error border-opacity-25 bg-error bg-opacity-10 p-4">
         <p class="text-center text-lg font-semibold">{{ $strings.MessageServerCouldNotBeReached }}</p>
@@ -23,34 +30,34 @@
           </div>
         </form>
       </div>
-      <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 -mt-40">
-        <div class="flex justify-center mb-4"><img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-32 min-w-32 h-32" /></div>
-        <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
-
+      <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 lg:-mt-40">
         <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+          <p class="text-2xl font-semibold text-center text-white mb-4">{{ $strings.HeaderLogin }}</p>
 
-        <p v-if="loginCustomMessage" class="py-2 default-style mb-2" v-html="loginCustomMessage"></p>
+          <div class="w-full h-px bg-white bg-opacity-10 my-4" />
 
-        <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
+          <p v-if="loginCustomMessage" class="py-2 default-style mb-2" v-html="loginCustomMessage"></p>
 
-        <form v-show="login_local" @submit.prevent="submitForm">
-          <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
-          <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
+          <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
 
-          <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
-          <ui-text-input v-model.trim="password" type="password" :disabled="processing" class="w-full mb-3" inputName="password" />
-          <div class="w-full flex justify-end py-3">
-            <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
+          <form v-show="login_local" @submit.prevent="submitForm">
+            <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
+            <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
+
+            <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
+            <ui-text-input v-model.trim="password" type="password" :disabled="processing" class="w-full mb-3" inputName="password" />
+            <div class="w-full flex justify-end py-3">
+              <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
+            </div>
+          </form>
+
+          <div v-if="login_local && login_openid" class="w-full h-px bg-white bg-opacity-10 my-4" />
+
+          <div class="w-full flex py-3">
+            <a v-if="login_openid" :href="openidAuthUri" class="w-full abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center bg-primary text-white px-8 py-2 leading-none">
+              {{ openIDButtonText }}
+            </a>
           </div>
-        </form>
-
-        <div v-if="login_local && login_openid" class="w-full h-px bg-white bg-opacity-10 my-4" />
-
-        <div class="w-full flex py-3">
-          <a v-if="login_openid" :href="openidAuthUri" class="w-full abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center bg-primary text-white px-8 py-2 leading-none">
-            {{ openIDButtonText }}
-          </a>
-        </div>
         </div>
       </div>
     </div>
