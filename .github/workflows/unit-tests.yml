@@ -22,7 +22,7 @@ jobs:
       - name: Checkout (workflow_dispatch)
         uses: actions/checkout@v4
         with:
-          ref: inputs.ref
+          ref: ${{ inputs.ref }}
         if: github.event_name == 'workflow_dispatch'
 
       - name: Set up Node.js
