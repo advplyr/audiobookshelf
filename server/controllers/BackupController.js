@@ -49,8 +49,13 @@ class BackupController {
     res.sendFile(req.backup.fullPath)
   }
 
+  /**
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   apply(req, res) {
-    this.backupManager.requestApplyBackup(req.backup, res)
+    this.backupManager.requestApplyBackup(this.apiCacheManager, req.backup, res)
   }
 
   middleware(req, res, next) {
