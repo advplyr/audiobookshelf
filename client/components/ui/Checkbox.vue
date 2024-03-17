@@ -26,7 +26,7 @@ export default {
     },
     checkColor: {
       type: String,
-      default: 'green-500'
+      default: 'text-green-500'
     },
     labelClass: {
       type: String,
@@ -64,7 +64,7 @@ export default {
       return classes.join(' ')
     },
     svgClass() {
-      var classes = [`text-${this.checkColor}`]
+      var classes = [this.checkColor]
       if (this.small) classes.push('w-3 h-3')
       else if (this.medium) classes.push('w-3.5 h-3.5')
       else classes.push('w-4 h-4')

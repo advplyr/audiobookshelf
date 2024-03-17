@@ -14,7 +14,7 @@
         <p class="text-xs font-semibold text-warning text-opacity-90">Note: This does not delete the audio file unless toggling "Hard delete file"</p>
       </div>
       <div class="flex justify-between items-center pt-4">
-        <ui-checkbox v-model="hardDeleteFile" :label="$strings.LabelHardDeleteFile" check-color="error" checkbox-bg="bg" small label-class="text-base text-gray-200 pl-3" />
+        <ui-checkbox v-model="hardDeleteFile" :label="$strings.LabelHardDeleteFile" check-color="text-error" checkbox-bg="bg" small label-class="text-base text-gray-200 pl-3" />
 
         <ui-btn @click="submit">{{ btnText }}</ui-btn>
       </div>
