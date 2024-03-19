@@ -193,7 +193,7 @@ class Auth {
    * Validates the presence and content of the group claim in userinfo.
    */
   validateGroupClaim(userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim;
+    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
     if (!groupClaimName) // Allow no group claim when configured like this
       return true
 
@@ -208,7 +208,7 @@ class Auth {
  * Sets the user group based on group claim in userinfo.
  */
 async setUserGroup(user, userinfo) {
-  const groupClaimName = Database.serverSettings.authOpenIDGroupClaim;
+  const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
   if (!groupClaimName) // No group claim configured, don't set anything
     return
 
@@ -223,7 +223,7 @@ async setUserGroup(user, userinfo) {
     Logger.debug(`[Auth] openid callback: Setting user ${user.username} type to ${userType}`)
 
     if (user.type !== userType) {
-      user.type = userType;
+      user.type = userType
       await Database.userModel.updateFromOld(user)
     }
   } else {
@@ -237,6 +237,9 @@ async setUserGroup(user, userinfo) {
 async updateUserPermissions(user, userinfo) {
   const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
   if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
+    return
+
+  if (user.type === 'admin')
     return
 
   const absPermissions = userinfo[absPermissionsClaim]
