@@ -4,6 +4,12 @@ const LibraryItem = require('../models/LibraryItem')
 const globals = require('../utils/globals')
 
 class LibraryItemScanData {
+  /**
+   * @typedef LibraryFileModifiedObject
+   * @property {LibraryItem.LibraryFileObject} old
+   * @property {LibraryItem.LibraryFileObject} new
+   */
+
   constructor(data) {
     /** @type {string} */
     this.libraryFolderId = data.libraryFolderId
@@ -39,7 +45,7 @@ class LibraryItemScanData {
     this.libraryFilesRemoved = []
     /** @type {LibraryItem.LibraryFileObject[]} */
     this.libraryFilesAdded = []
-    /** @type {LibraryItem.LibraryFileObject[]} */
+    /** @type {LibraryFileModifiedObject[]} */
     this.libraryFilesModified = []
   }
 
@@ -77,9 +83,9 @@ class LibraryItemScanData {
     return (this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified.length) > 0
   }
 
-  /** @type {LibraryItem.LibraryFileObject[]} */
+  /** @type {LibraryFileModifiedObject[]} */
   get audioLibraryFilesModified() {
-    return this.libraryFilesModified.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesModified.filter(lf => globals.SupportedAudioTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
@@ -97,12 +103,42 @@ class LibraryItemScanData {
     return this.libraryFiles.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
+  /** @type {LibraryFileModifiedObject[]} */
+  get imageLibraryFilesModified() {
+    return this.libraryFilesModified.filter(lf => globals.SupportedImageTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get imageLibraryFilesRemoved() {
+    return this.libraryFilesRemoved.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get imageLibraryFilesAdded() {
+    return this.libraryFilesAdded.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
   /** @type {LibraryItem.LibraryFileObject[]} */
   get imageLibraryFiles() {
     return this.libraryFiles.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
-  /** @type {import('../objects/files/LibraryFile')[]} */
+  /** @type {LibraryFileModifiedObject[]} */
+  get ebookLibraryFilesModified() {
+    return this.libraryFilesModified.filter(lf => globals.SupportedEbookTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get ebookLibraryFilesRemoved() {
+    return this.libraryFilesRemoved.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
+  get ebookLibraryFilesAdded() {
+    return this.libraryFilesAdded.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+  }
+
+  /** @type {LibraryItem.LibraryFileObject[]} */
   get ebookLibraryFiles() {
     return this.libraryFiles.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
@@ -153,7 +189,7 @@ class LibraryItemScanData {
         existingLibraryItem[key] = this[key]
         this.hasChanges = true
 
-        if (key === 'relPath') {
+        if (key === 'relPath' || key === 'path') {
           this.hasPathChange = true
         }
       }
@@ -202,8 +238,9 @@ class LibraryItemScanData {
         this.hasChanges = true
       } else {
         libraryFilesAdded = libraryFilesAdded.filter(lf => lf !== matchingLibraryFile)
+        let existingLibraryFileBefore = structuredClone(existingLibraryFile)
         if (this.compareUpdateLibraryFile(existingLibraryItem.path, existingLibraryFile, matchingLibraryFile, libraryScan)) {
-          this.libraryFilesModified.push(existingLibraryFile)
+          this.libraryFilesModified.push({old: existingLibraryFileBefore, new: existingLibraryFile})
           this.hasChanges = true
         }
       }

@@ -20,6 +20,7 @@ const LibraryScan = require("./LibraryScan")
 const OpfFileScanner = require('./OpfFileScanner')
 const NfoFileScanner = require('./NfoFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
+const EBookFile = require("../objects/files/EBookFile")
 
 /**
  * Metadata for books pulled from files
@@ -84,7 +85,7 @@ class BookScanner {
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
-        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified)
+        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified.map(lf => lf.new))
         media.audioFiles = media.audioFiles.map((audioFileObj) => {
           let matchedScannedAudioFile = scannedAudioFiles.find(saf => saf.metadata.path === audioFileObj.metadata.path)
           if (!matchedScannedAudioFile) {
@@ -138,9 +139,23 @@ class BookScanner {
     }
 
     // Check if cover was removed
-    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
+    if (media.coverPath && libraryItemData.imageLibraryFilesRemoved.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
       media.coverPath = null
       hasMediaChanges = true
+    }
+
+    // Update cover if it was modified
+    if (media.coverPath && libraryItemData.imageLibraryFilesModified.length) {
+      let coverMatch = libraryItemData.imageLibraryFilesModified.find(iFile => iFile.old.metadata.path === media.coverPath)
+      if (coverMatch) {
+        const coverPath = coverMatch.new.metadata.path
+        if (coverPath !== media.coverPath) {
+          libraryScan.addLog(LogLevel.DEBUG, `Updating book cover "${media.coverPath}" => "${coverPath}" for book "${media.title}"`)
+          media.coverPath = coverPath
+          media.changed('coverPath', true)
+          hasMediaChanges = true
+        }
+      }
     }
 
     // Check if cover is not set and image files were found
@@ -155,6 +170,19 @@ class BookScanner {
     if (media.ebookFile && (librarySettings.audiobooksOnly || libraryItemData.checkEbookFileRemoved(media.ebookFile))) {
       media.ebookFile = null
       hasMediaChanges = true
+    }
+
+    // Update ebook if it was modified
+    if (media.ebookFile && libraryItemData.ebookLibraryFilesModified.length) {
+      let ebookMatch = libraryItemData.ebookLibraryFilesModified.find(eFile => eFile.old.metadata.path === media.ebookFile.metadata.path)
+      if (ebookMatch) {
+        const ebookFile = new EBookFile(ebookMatch.new)
+        ebookFile.ebookFormat = ebookFile.metadata.ext.slice(1).toLowerCase()
+        libraryScan.addLog(LogLevel.DEBUG, `Updating book ebook file "${media.ebookFile.metadata.path}" => "${ebookFile.metadata.path}" for book "${media.title}"`)
+        media.ebookFile = ebookFile.toJSON()
+        media.changed('ebookFile', true)
+        hasMediaChanges = true
+      }
     }
 
     // Check if ebook is not set and ebooks were found
