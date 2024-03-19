@@ -98,11 +98,40 @@ class Auth {
         scope: 'openid profile email'
       }
     }, async (tokenset, userinfo, done) => {
-      Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
+      Logger.debug(`[Auth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
 
       let failureMessage = 'Unauthorized'
       if (!userinfo.sub) {
         Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
+        return done(null, null, failureMessage)
+      }
+
+      // Check if the claims itself are returned correctly
+      const groupClaimName = Database.serverSettings.authOpenIDGroupClaim;
+      if (groupClaimName) {
+        if (!userinfo[groupClaimName]) {
+          Logger.error(`[Auth] openid callback invalid: Group claim ${groupClaimName} configured, but not found or empty in userinfo`)
+          return done(null, null, failureMessage)
+        }
+
+        const groupsList = userinfo[groupClaimName]
+        const targetRoles = ['admin', 'user', 'guest']
+
+        // Convert the list to lowercase for case-insensitive comparison
+        const groupsListLowercase = groupsList.map(group => group.toLowerCase())
+
+        // Check if any of the target roles exist in the groups list
+        const containsTargetRole = targetRoles.some(role => groupsListLowercase.includes(role.toLowerCase()))
+
+        if (!containsTargetRole) {
+          Logger.info(`[Auth] openid callback: Denying access because neither admin nor user or guest is included is inside the group claim. Groups found: `, groupsList)
+          return done(null, null, failureMessage)
+        }
+      }
+
+      const advancedPermsClaimName = Database.serverSettings.authOpenIDAdvancedPermsClaim
+      if (advancedPermsClaimName && !userinfo[advancedPermsClaimName]) {
+        Logger.error(`[Auth] openid callback invalid: Advanced perms claim ${advancedPermsClaimName} configured, but not found or empty in userinfo`)
         return done(null, null, failureMessage)
       }
 
@@ -155,6 +184,43 @@ class Auth {
         // deny login
         done(null, null, failureMessage)
         return
+      }
+
+      // Set user group if name of groups claim is configured
+      if (groupClaimName) {
+        const groupsList = userinfo[groupClaimName] ? userinfo[groupClaimName].map(group => group.toLowerCase()) : []
+        const rolesInOrderOfPriority = ['admin', 'user', 'guest']
+
+        let userType = null
+
+        for (let role of rolesInOrderOfPriority) {
+          if (groupsList.includes(role)) {
+            userType = role // This will override with the highest priority role found
+            break // Stop searching once the highest priority role is found
+          }
+        }
+
+        // Actually already checked above, but just to be sure
+        if (!userType) {
+          Logger.error(`[Auth] openid callback: Denying access because neither admin nor user or guest is included is inside the group claim. Groups found: `, groupsList)
+          return done(null, null, failureMessage)
+        }
+
+        Logger.debug(`[Auth] openid callback: Setting user ${user.username} type to ${userType}`)
+        user.type = userType
+        await Database.userModel.updateFromOld(user)
+      }
+
+      if (advancedPermsClaimName) {
+        try {
+          Logger.debug(`[Auth] openid callback: Updating advanced perms for user ${user.username} to ${JSON.stringify(userinfo[advancedPermsClaimName])}`)
+
+          user.updatePermissionsFromExternalJSON(userinfo[advancedPermsClaimName])
+          await Database.userModel.updateFromOld(user)
+        } catch (error) {
+          Logger.error(`[Auth] openid callback: Error updating advanced perms for user, error: `, error)
+          return done(null, null, failureMessage)
+        }
       }
 
       // We also have to save the id_token for later (used for logout) because we cannot set cookies here
@@ -334,10 +400,19 @@ class Auth {
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
+        var scope = 'openid profile email'
+        if (global.ServerSettings.authOpenIDGroupClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDGroupClaim
+        }
+        if (global.ServerSettings.authOpenIDAdvancedPermsClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDAdvancedPermsClaim
+        }
+
         const authorizationUrl = client.authorizationUrl({
           ...oidcStrategy._params,
           state: state,
           response_type: 'code',
+          scope: scope,
           code_challenge,
           code_challenge_method
         })
@@ -424,12 +499,12 @@ class Auth {
       }
 
       function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
-        Logger.error(logMessage)
+        Logger.error(JSON.stringify(logMessage, null, 2))
         if (response) {
           // Depending on the error, it can also have a body
           // We also log the request header the passport plugin sents for the URL
           const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
-          Logger.debug(header + '\n' + response.body?.toString() + '\n' + JSON.stringify(response.body, null, 2))
+          Logger.debug(header + '\n' + JSON.stringify(response.body, null, 2))
         }
 
         if (isMobile) {
