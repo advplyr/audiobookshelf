@@ -82,15 +82,12 @@
               <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
             </div>
 
-            <div class="flex items-center pt-6 pb-1 px-1 w-full">Leave the following options empty to disable advanced group and permissions assignment, automatically assigning 'User' group then.</div>
+            <div class="flex items-center pt-6 pb-1 px-1 w-full">{{ $strings.LabelOpenIDClaims }}</div>
             <div class="flex items-center mb-2">
               <div class="w-96">
                 <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5">
-                Name of the OpenID claim that contains a list of the user's groups. Commonly referred to as <code>groups</code>. <b>If configured</b>, the application will automatically assign roles based on the user's group memberships, provided that these groups are named case-insensitively 'admin', 'user', or 'guest' in the claim. The claim should contain a list, and if a user belongs to
-                multiple groups, the application will assign the role corresponding to the highest level of access. If no group matches, access will be denied.
-              </p>
+              <p class="pl-4 text-sm text-gray-300 mt-5" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
             </div>
 
             <div class="flex mb-2">
@@ -98,9 +95,7 @@
                 <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
               </div>
               <div class="pl-4 text-sm text-gray-300 mt-5 flex-column">
-                <p class="">
-                  Name of the OpenID claim that contains advanced permissions for user actions within the application which will apply to non-admin roles (<b>if configured</b>). If the claim is missing from the response, access to ABS will be denied. If a single option is missing, it will be treated as <code>false</code>. Ensure the identity provider's claim matches the expected structure:
-                </p>
+                <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
                 <pre class="text-pre-wrap mt-2"
                   >{{ newAuthSettings.authOpenIDSamplePermissions }}
                 </pre>
