@@ -525,7 +525,7 @@ class LibraryScanner {
         path: potentialChildDirs
       })
 
-      let renamedPaths = {}
+      let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const dirIno = await fileUtils.getIno(fullPath)
         existingLibraryItem = await Database.libraryItemModel.findOneOld({
@@ -536,8 +536,9 @@ class LibraryScanner {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
           existingLibraryItem.relPath = itemDir
-          renamedPaths.path = fullPath
-          renamedPaths.relPath = itemDir
+          updatedLibraryItemDetails.path = fullPath
+          updatedLibraryItemDetails.relPath = itemDir
+          updatedLibraryItemDetails.libraryFolderId = folder.id
         }
       }
       if (existingLibraryItem) {
@@ -557,7 +558,7 @@ class LibraryScanner {
 
         // Scan library item for updates
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
-        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, renamedPaths)
+        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
