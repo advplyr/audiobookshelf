@@ -137,11 +137,11 @@
             <p v-for="audioFile in invalidAudioFiles" :key="audioFile.id" class="text-xs pl-2">- {{ audioFile.metadata.filename }} ({{ audioFile.error }})</p>
           </div>
 
+          <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
+
           <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :is-file="isFile" :media="media" />
 
           <tables-podcast-lazy-episodes-table v-if="isPodcast" :library-item="libraryItem" />
-
-          <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
 
