@@ -131,15 +131,9 @@
             </button>
           </div>
 
-          <div v-if="invalidAudioFiles.length" class="bg-error border-red-800 shadow-md p-4">
-            <p class="text-sm mb-2">Invalid audio files</p>
-
-            <p v-for="audioFile in invalidAudioFiles" :key="audioFile.id" class="text-xs pl-2">- {{ audioFile.metadata.filename }} ({{ audioFile.error }})</p>
-          </div>
-
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :is-file="isFile" :media="media" />
+          <tables-tracks-table v-if="tracks.length" :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
 
           <tables-podcast-lazy-episodes-table v-if="isPodcast" :library-item="libraryItem" />
 
@@ -239,10 +233,6 @@ export default {
     isAbridged() {
       return !!this.mediaMetadata.abridged
     },
-    invalidAudioFiles() {
-      if (!this.isBook) return []
-      return this.libraryItem.media.audioFiles.filter((af) => af.invalid)
-    },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
       if (this.isMusic) return !!this.audioFile
@@ -274,6 +264,12 @@ export default {
     },
     tracks() {
       return this.media.tracks || []
+    },
+    tracksWithAudioFile() {
+      return this.tracks.map((track) => {
+        track.audioFile = this.media.audioFiles?.find((af) => af.metadata.path === track.metadata.path)
+        return track
+      })
     },
     podcastEpisodes() {
       return this.media.episodes || []

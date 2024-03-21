@@ -32,7 +32,6 @@ class AudioFile {
     this.metaTags = null
 
     this.manuallyVerified = false
-    this.invalid = false
     this.exclude = false
     this.error = null
 
@@ -53,7 +52,6 @@ class AudioFile {
       trackNumFromFilename: this.trackNumFromFilename,
       discNumFromFilename: this.discNumFromFilename,
       manuallyVerified: !!this.manuallyVerified,
-      invalid: !!this.invalid,
       exclude: !!this.exclude,
       error: this.error || null,
       format: this.format,
@@ -78,7 +76,6 @@ class AudioFile {
     this.addedAt = data.addedAt
     this.updatedAt = data.updatedAt
     this.manuallyVerified = !!data.manuallyVerified
-    this.invalid = !!data.invalid
     this.exclude = !!data.exclude
     this.error = data.error || null
 
@@ -110,10 +107,6 @@ class AudioFile {
     } else {
       return AudioMimeType.MP3
     }
-  }
-
-  get isValidTrack() {
-    return !this.invalid && !this.exclude
   }
 
   // New scanner creates AudioFile from AudioFileScanner
