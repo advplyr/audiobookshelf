@@ -1,4 +1,4 @@
-name: Automatic update i18n files
+name: Manual update i18n files
 
 on:
   workflow_dispatch:
