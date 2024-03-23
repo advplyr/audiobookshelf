@@ -93,7 +93,7 @@ class Logger {
 
     // Save log to file
     if (level >= this.logLevel) {
-      await this.logManager.logToFile(logObj)
+      await this.logManager?.logToFile(logObj)
     }
   }
 

@@ -155,10 +155,10 @@ class LibraryScanner {
       if (!libraryItemData) {
         // Fallback to finding matching library item with matching inode value
         libraryItemData = libraryItemDataFound.find(lid =>
-          ItemToItemInoMatch(lid, existingLibraryItem) || 
-          ItemToFileInoMatch(lid, existingLibraryItem) || 
+          ItemToItemInoMatch(lid, existingLibraryItem) ||
+          ItemToFileInoMatch(lid, existingLibraryItem) ||
           ItemToFileInoMatch(existingLibraryItem, lid)
-          )
+        )
         if (libraryItemData) {
           libraryScan.addLog(LogLevel.INFO, `Library item with path "${existingLibraryItem.path}" was not found, but library item inode "${existingLibraryItem.ino}" was found at path "${libraryItemData.path}"`)
         }
@@ -533,8 +533,8 @@ class LibraryScanner {
       let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
-        existingLibraryItem = 
-          await findLibraryItemByItemToItemInoMatch(library.id, fullPath) || 
+        existingLibraryItem =
+          await findLibraryItemByItemToItemInoMatch(library.id, fullPath) ||
           await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia) ||
           await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir])
         if (existingLibraryItem) {
@@ -630,16 +630,20 @@ async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
   return existingLibraryItem
 }
 
-async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingleMedia) {  
+async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingleMedia) {
   if (!isSingleMedia) return null
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneOld({
-    libraryId: libraryId,
-    libraryFiles: {
-      [ sequelize.Op.substring ]: ino
-    }
+  const existingLibraryItem = await Database.libraryItemModel.findOneOld([
+    {
+      libraryId: libraryId
+    },
+    sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+      [sequelize.Op.gt]: 0
+    })
+  ], {
+    inode: ino
   })
   if (existingLibraryItem)
     Logger.debug(`[LibraryScanner] Found library item with a library file matching inode "${ino}" at path "${existingLibraryItem.path}"`)
@@ -658,7 +662,7 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
   const existingLibraryItem = await Database.libraryItemModel.findOneOld({
     libraryId: libraryId,
     ino: {
-      [ sequelize.Op.in ] : itemFileInos
+      [sequelize.Op.in]: itemFileInos
     }
   })
   if (existingLibraryItem)

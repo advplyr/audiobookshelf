@@ -1,4 +1,4 @@
-const { DataTypes, Model, WhereOptions } = require('sequelize')
+const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
@@ -116,7 +116,7 @@ class LibraryItem extends Model {
 
   /**
    * Currently unused because this is too slow and uses too much mem
-   * @param {[WhereOptions]} where
+   * @param {import('sequelize').WhereOptions} [where]
    * @returns {Array<objects.LibraryItem>} old library items
    */
   static async getAllOldLibraryItems(where = null) {
@@ -773,12 +773,14 @@ class LibraryItem extends Model {
 
   /**
    * 
-   * @param {WhereOptions} where 
+   * @param {import('sequelize').WhereOptions} where 
+   * @param {import('sequelize').BindOrReplacements} replacements
    * @returns {Object} oldLibraryItem
    */
-  static async findOneOld(where) {
+  static async findOneOld(where, replacements = {}) {
     const libraryItem = await this.findOne({
       where,
+      replacements,
       include: [
         {
           model: this.sequelize.models.book,
