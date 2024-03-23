@@ -56,7 +56,7 @@ class LibraryItemScanner {
 
     const libraryItemPath = updateLibraryItemDetails?.path || fileUtils.filePathToPOSIX(libraryItem.path)
     const folder = library.libraryFolders[0]
-    const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, false)
+    const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, updateLibraryItemDetails?.isFile || false)
 
     let libraryItemDataUpdated = await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)
 
