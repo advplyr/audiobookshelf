@@ -154,7 +154,11 @@ class LibraryScanner {
       let libraryItemData = libraryItemDataFound.find(lid => lid.path === existingLibraryItem.path)
       if (!libraryItemData) {
         // Fallback to finding matching library item with matching inode value
-        libraryItemData = libraryItemDataFound.find(lid => lid.ino === existingLibraryItem.ino)
+        libraryItemData = libraryItemDataFound.find(lid =>
+          ItemToItemInoMatch(lid, existingLibraryItem) ||
+          ItemToFileInoMatch(lid, existingLibraryItem) ||
+          ItemToFileInoMatch(existingLibraryItem, lid)
+        )
         if (libraryItemData) {
           libraryScan.addLog(LogLevel.INFO, `Library item with path "${existingLibraryItem.path}" was not found, but library item inode "${existingLibraryItem.ino}" was found at path "${libraryItemData.path}"`)
         }
@@ -522,22 +526,25 @@ class LibraryScanner {
 
       // Check if book dir group is already an item
       let existingLibraryItem = await Database.libraryItemModel.findOneOld({
+        libraryId: library.id,
         path: potentialChildDirs
       })
 
-      let renamedPaths = {}
+      let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
-        const dirIno = await fileUtils.getIno(fullPath)
-        existingLibraryItem = await Database.libraryItemModel.findOneOld({
-          ino: dirIno
-        })
+        const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
+        existingLibraryItem =
+          await findLibraryItemByItemToItemInoMatch(library.id, fullPath) ||
+          await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia) ||
+          await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir])
         if (existingLibraryItem) {
-          Logger.debug(`[LibraryScanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
           existingLibraryItem.relPath = itemDir
-          renamedPaths.path = fullPath
-          renamedPaths.relPath = itemDir
+          updatedLibraryItemDetails.path = fullPath
+          updatedLibraryItemDetails.relPath = itemDir
+          updatedLibraryItemDetails.libraryFolderId = folder.id
+          updatedLibraryItemDetails.isFile = isSingleMedia
         }
       }
       if (existingLibraryItem) {
@@ -554,10 +561,9 @@ class LibraryScanner {
             continue
           }
         }
-
         // Scan library item for updates
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
-        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, renamedPaths)
+        itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
@@ -594,6 +600,14 @@ class LibraryScanner {
 }
 module.exports = new LibraryScanner()
 
+function ItemToFileInoMatch(libraryItem1, libraryItem2) {
+  return libraryItem1.isFile && libraryItem2.libraryFiles.some(lf => lf.ino === libraryItem1.ino)
+}
+
+function ItemToItemInoMatch(libraryItem1, libraryItem2) {
+  return libraryItem1.ino === libraryItem2.ino
+}
+
 function hasAudioFiles(fileUpdateGroup, itemDir) {
   return isSingleMediaFile(fileUpdateGroup, itemDir) ?
     scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) :
@@ -602,4 +616,56 @@ function hasAudioFiles(fileUpdateGroup, itemDir) {
 
 function isSingleMediaFile(fileUpdateGroup, itemDir) {
   return itemDir === fileUpdateGroup[itemDir]
+}
+
+async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
+  const ino = await fileUtils.getIno(fullPath)
+  if (!ino) return null
+  const existingLibraryItem = await Database.libraryItemModel.findOneOld({
+    libraryId: libraryId,
+    ino: ino
+  })
+  if (existingLibraryItem)
+    Logger.debug(`[LibraryScanner] Found library item with matching inode "${ino}" at path "${existingLibraryItem.path}"`)
+  return existingLibraryItem
+}
+
+async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingleMedia) {
+  if (!isSingleMedia) return null
+  // check if it was moved from another folder by comparing the ino to the library files
+  const ino = await fileUtils.getIno(fullPath)
+  if (!ino) return null
+  const existingLibraryItem = await Database.libraryItemModel.findOneOld([
+    {
+      libraryId: libraryId
+    },
+    sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+      [sequelize.Op.gt]: 0
+    })
+  ], {
+    inode: ino
+  })
+  if (existingLibraryItem)
+    Logger.debug(`[LibraryScanner] Found library item with a library file matching inode "${ino}" at path "${existingLibraryItem.path}"`)
+  return existingLibraryItem
+}
+
+async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles) {
+  if (isSingleMedia) return null
+  // check if it was moved from the root folder by comparing the ino to the ino of the scanned files
+  let itemFileInos = []
+  for (const itemFile of itemFiles) {
+    const ino = await fileUtils.getIno(Path.posix.join(fullPath, itemFile))
+    if (ino) itemFileInos.push(ino)
+  }
+  if (!itemFileInos.length) return null
+  const existingLibraryItem = await Database.libraryItemModel.findOneOld({
+    libraryId: libraryId,
+    ino: {
+      [sequelize.Op.in]: itemFileInos
+    }
+  })
+  if (existingLibraryItem)
+    Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
+  return existingLibraryItem
 }
