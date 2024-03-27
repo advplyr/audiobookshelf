@@ -10,6 +10,125 @@ const Music = require('./mediaTypes/Music')
 const { areEquivalent, copyValue } = require('../utils/index')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     oldLibraryItemId:
+ *       description: The ID of library items on server version 2.2.23 and before.
+ *       type: string
+ *       format: "li_[a-z0-9]{18}"
+ *       example: li_o78uaoeuh78h6aoeif
+ *     newLibraryItemId:
+ *       type: string
+ *       description: The ID of library items after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     libraryItemId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldLibraryItemId'
+ *         - $ref: '#/components/schemas/newLibraryItemId'
+ *     libraryItemBase:
+ *       type: object
+ *       properties:
+ *         id:
+ *           $ref: '#/components/schemas/libraryItemId'
+ *         ino:
+ *           description: The inode of the library item.
+ *           type: string
+ *           format: "[0-9]*"
+ *         libraryId:
+ *           $ref: '#/components/schemas/libraryId'
+ *         folderId:
+ *           $ref: '#/components/schemas/folderId'
+ *         path:
+ *           description: The path of the library item on the server.
+ *           type: string
+ *         relPath:
+ *           description: The path, relative to the library folder, of the library item.
+ *           type: string
+ *         isFile:
+ *           description: Whether the library item is a single file in the root of the library folder.
+ *           type: boolean
+ *         mtimeMs:
+ *           description: The time (in ms since POSIX epoch) when the library item was last modified on disk.
+ *           type: integer
+ *         ctimeMs:
+ *           description: The time (in ms since POSIX epoch) when the library item status was changed on disk.
+ *           type: integer
+ *         birthtimeMs:
+ *           description: The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.
+ *           type: integer
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ *         isMissing:
+ *           description: Whether the library item was scanned and no longer exists.
+ *           type: boolean
+ *         isInvalid:
+ *           description: Whether the library item was scanned and no longer has media files.
+ *           type: boolean
+ *         mediaType:
+ *           - $ref: '#/components/schemas/mediaType'
+ *     libraryItem:
+ *       type: object
+ *       description: A single item on the server, like a book or podcast.
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - type: object
+ *           properties:
+ *             folderId:
+ *               $ref : '#/components/schemas/folderId'
+ *             lastScan:
+ *               description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
+ *               type: integer
+ *             scanVersion:
+ *               description: The version of the scanner when last scanned. Will be null if it has not been scanned.
+ *               type: string
+ *             media:
+ *               $ref: '#/components/schemas/media'
+ *             libraryFiles:
+ *               description: The files of the library item.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/libraryFile'
+ *     libraryItemMinified:
+ *       type: object
+ *       description: A single item on the server, like a book or podcast. Minified media format.
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - type: object
+ *           properties:
+ *             media:
+ *               $ref: '#/components/schemas/mediaMinified'
+ *     libraryItemExpanded:
+ *       type: object
+ *       allOf:
+ *         - $ref : '#/components/schemas/libraryItemBase'
+ *         - type: object
+ *           properties:
+ *             folderId:
+ *               $ref : '#/components/schemas/folderId'
+ *             lastScan:
+ *               description: The time (in ms since POSIX epoch) when the library item was last scanned. Will be null if the server has not yet scanned the library item.
+ *               type: integer
+ *             scanVersion:
+ *               description: The version of the scanner when last scanned. Will be null if it has not been scanned.
+ *               type: string
+ *             media:
+ *               $ref: '#/components/schemas/mediaExpanded'
+ *             libraryFiles:
+ *               description: The files of the library item.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/libraryFile'
+ *             size:
+ *               description: The total size (in bytes) of the library item.
+ *               type: integer
+ *               example: 268990279
+ */
 class LibraryItem {
   constructor(libraryItem = null) {
     this.id = null

@@ -6,6 +6,150 @@ const PodcastMetadata = require('./metadata/PodcastMetadata')
 const DeviceInfo = require('./DeviceInfo')
 const VideoMetadata = require('./metadata/VideoMetadata')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     oldPlaybackSessionId:
+ *       description: The ID of playback sessions on server version 2.2.23 and before.
+ *       type: string
+ *       format: "play_[a-z0-9]{18}"
+ *       example: play_o78uaoeuh78h6aoeif
+ *     newPlaybackSessionId:
+ *       type: string
+ *       description: The ID of playback sessions after 2.3.0.
+ *       format: uuid
+ *       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+ *     playbackSessionId:
+ *       type: string
+ *       anyOf:
+ *         - $ref: '#/components/schemas/oldPlaybackSessionId'
+ *         - $ref: '#/components/schemas/newPlaybackSessionId'
+ *     playMethod:
+ *       type: integer
+ *       oneOf:
+ *         - title: Direct Play
+ *           const: 0
+ *           description: Direct play media from server without transcoding
+ *         - title: Direct Stream
+ *           const: 1
+ *           description: Direct stream media from server without transcoding
+ *         - title: Transcode
+ *           const: 2
+ *           description: Server is transcoding media for client
+ *         - title: Local
+ *           const: 3
+ *           description: Client is playing from a local file
+ *     playbackSessionBase:
+ *       type: object
+ *       properties:
+ *         id:
+ *           $ref: '#/components/schemas/playbackSessionId'
+ *         userId:
+ *           description: The ID of the user the playback session is for.
+ *           type: string
+ *           example: root
+ *         libraryId:
+ *           $ref: '#/components/schemas/libraryId'
+ *         libraryItemId:
+ *           $ref: '#/components/schemas/libraryItemId'
+ *         episodeId:
+ *           description: The ID of the podcast episode. Will be null if this playback session was started without an episode ID.
+ *           type: string
+ *           example: ep_lh6ko39pumnrma3dhv
+ *         mediaType:
+ *           - $ref: '#/components/schemas/mediaType'
+ *         mediaMetadata:
+ *           description: The metadata of the library item's media.
+ *           type: object
+ *           additionalProperties:
+ *             oneOf:
+ *              - $ref: '#/components/schemas/bookMetadata'
+ *              - $ref: '#/components/schemas/podcastMetadata'
+ *         chapters:
+ *           description: If the library item is a book, the chapters it contains.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/bookChapter'
+ *         displayTitle:
+ *           description: The title of the playing item to show to the user.
+ *           type: string
+ *           example: Pilot
+ *         displayAuthor:
+ *           description: The author of the playing item to show to the user.
+ *           type: string
+ *           example: Night Vale Presents
+ *         coverPath:
+ *           description: The cover path of the library item's media.
+ *           type: string
+ *           example: /metadata/items/li_bufnnmp4y5o2gbbxfm/cover.jpg
+ *         duration:
+ *           description: The total duration (in seconds) of the playing item.
+ *           type: number
+ *           example: 1454.18449
+ *         playMethod:
+ *           description: What play method the playback session is using. See below for values.
+ *           $ref: '#/components/schemas/playMethod'
+ *         mediaPlayer:
+ *           description: The given media player when the playback session was requested.
+ *           type: string
+ *           example: unknown
+ *         deviceInfo:
+ *           $ref: '#/components/schemas/deviceInfo'
+ *         serverVersion:
+ *           description: The server version the playback session was started with.
+ *           type: string
+ *           example: 2.4.4
+ *         date:
+ *           description: The day (in the format YYYY-MM-DD) the playback session was started.
+ *           type: string
+ *           example: '2022-11-11'
+ *           format: date
+ *         dayOfWeek:
+ *           description: The day of the week the playback session was started.
+ *           type: string
+ *           example: Friday
+ *         timeListening:
+ *           description: The amount of time (in seconds) the user has spent listening using this playback session.
+ *           type: number
+ *           example: 0
+ *         startTime:
+ *           description: The time (in seconds) where the playback session started.
+ *           type: number
+ *           example: 0
+ *         currentTime:
+ *           description: The current time (in seconds) of the playback position.
+ *           type: number
+ *           example: 0
+ *         startedAt:
+ *           description: The time (in ms since POSIX epoch) when the playback session was started.
+ *           type: integer
+ *           example: 1668206493239
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ *     playbackSession:
+ *       type: object
+ *       description: A playback session for a user
+ *       allOf:
+ *         - $ref : '#/components/schemas/playbackSessionBase'
+ *     playbackSessionExpanded:
+ *       type: [object, 'null']
+ *       description: An expanded playback session for a user
+ *       allOf:
+ *         - $ref : '#/components/schemas/playbackSessionBase'
+ *         - type: object
+ *           properties:
+ *             audioTracks:
+ *               description: The audio tracks that are being played with the playback session.
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/audioFile'
+ *             videoTrack:
+ *               description: The video track that is being played with the playback session. Will be null if the playback session is for a book or podcast. (Video Track Object does not exist)
+ *               type: [string, 'null']
+ *             libraryItem:
+ *               $ref: '#/components/schemas/libraryItemExpanded'
+ */
 class PlaybackSession {
   constructor(session) {
     this.id = null

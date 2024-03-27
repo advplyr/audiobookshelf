@@ -1,3 +1,45 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     fileMetadata:
+ *       type: [object, 'null']
+ *       properties:
+ *         filename:
+ *           description: The filename of the file.
+ *           type: string
+ *           example: Wizards First Rule 01.mp3
+ *         ext:
+ *           description: The file extension of the file.
+ *           type: string
+ *           example: .mp3
+ *         path:
+ *           description: The absolute path on the server of the file.
+ *           type: string
+ *           example: >-
+ *               /audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/Terry
+ *               Goodkind - SOT Bk01 - Wizards First Rule 01.mp3
+ *         relPath:
+ *           description: The path of the file, relative to the book's or podcast's folder.
+ *           type: string
+ *           example: Wizards First Rule 01.mp3
+ *         size:
+ *           description: The size (in bytes) of the file.
+ *           type: integer
+ *           example: 48037888
+ *         mtimeMs:
+ *           description: The time (in ms since POSIX epoch) when the file was last modified on disk.
+ *           type: integer
+ *           example: 1632223180278
+ *         ctimeMs:
+ *           description: The time (in ms since POSIX epoch) when the file status was changed on disk.
+ *           type: integer
+ *           example: 1645978261001
+ *         birthtimeMs:
+ *           description: The time (in ms since POSIX epoch) when the file was created on disk. Will be 0 if unknown.
+ *           type: integer
+ *           example: 0
+ */
 class FileMetadata {
   constructor(metadata) {
     this.filename = null

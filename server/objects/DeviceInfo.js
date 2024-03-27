@@ -1,5 +1,71 @@
 const uuidv4 = require("uuid").v4
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     deviceInfo:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: Unique identifier.
+ *           type: string
+ *           example: 69b7e852-23a6-4587-bed3-6a5966062e38
+ *           format: uuid
+ *         userId:
+ *           description: User identifier.
+ *           type: string
+ *           example: 3c479fe6-6bf8-44e4-a4a6-680c768b501c
+ *           format: uuid
+ *         deviceId:
+ *           description: Device identifier, as provided in the request.
+ *           type: string
+ *           example: 4dd05e7fadca538b
+ *         ipAddress:
+ *           description: The IP address that the request came from.
+ *           type: [string, 'null']
+ *           example: 192.168.1.118
+ *           format: ipv4
+ *         browserName:
+ *           description: The browser name, taken from the user agent.
+ *           type: [string, 'null']
+ *           example: Firefox
+ *         browserVersion:
+ *           description: The browser version, taken from the user agent.
+ *           type: [string, 'null']
+ *           example: '106.0'
+ *         osName:
+ *           description: The name of OS, taken from the user agent.
+ *           type: [string, 'null']
+ *           example: Linux
+ *         osVersion:
+ *           description: The version of the OS, taken from the user agent.
+ *           type: [string, 'null']
+ *           example: x86_64
+ *         deviceName:
+ *           description: The device name, constructed automatically from other attributes.
+ *           type: [string, 'null']
+ *         deviceType:
+ *           description: The device name, constructed automatically from other attributes.
+ *           type: [string, 'null']
+ *         manufacturer:
+ *           description: The client device's manufacturer, as provided in the request.
+ *           type: [string, 'null']
+ *         model:
+ *           description: The client device's model, as provided in the request.
+ *           type: [string, 'null']
+ *         sdkVersion:
+ *           description: For an Android device, the Android SDK version of the client, as provided in the request.
+ *           type: [string, 'null']
+ *         clientName:
+ *           description: Name of the client, as provided in the request.
+ *           type: string
+ *           example: Abs Web
+ *         clientVersion:
+ *           description: Version of the client, as provided in the request.
+ *           type: string
+ *           example: 2.3.3
+ */
 class DeviceInfo {
   constructor(deviceInfo = null) {
     this.id = null

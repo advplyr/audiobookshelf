@@ -2,7 +2,6 @@ const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
 
-
 class Collection extends Model {
   constructor(values, options) {
     super(values, options)

@@ -2,6 +2,191 @@ const Logger = require('../../Logger')
 const AudioBookmark = require('./AudioBookmark')
 const MediaProgress = require('./MediaProgress')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     user:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the user. Only the root user has the root ID.
+ *           type: string
+ *           example: root
+ *         username:
+ *           description: The username of the user.
+ *           type: string
+ *           example: root
+ *         type:
+ *           description: The type of the user. Will be root, guest, user, or admin. There will be only one root user which is created when the server first starts.
+ *           type: string
+ *           example: root
+ *         token:
+ *           description: The authentication token of the user.
+ *           type: string
+ *           example: exJhbGciOiJI6IkpXVCJ9.eyJ1c2Vyi5NDEyODc4fQ.ZraBFohS4Tg39NszY
+ *         mediaProgress:
+ *           description: The user's media progress.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/mediaProgress'
+ *         seriesHideFromContinueListening:
+ *           description: The IDs of series to hide from the user's "Continue Series" shelf.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *         bookmarks:
+ *           description: The user's bookmarks.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/audioBookmark'
+ *         isActive:
+ *           description: Whether the user's account is active.
+ *           type: boolean
+ *           example: true
+ *         isLocked:
+ *           description: Whether the user is locked.
+ *           type: boolean
+ *           example: false
+ *         lastSeen:
+ *           description: The time (in ms since POSIX epoch) when the user was last seen by the server. Will be null if the user has never logged in.
+ *           type: integer
+ *           example: 1668296147437
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *         permissions:
+ *           $ref: '#/components/schemas/userPermissions'
+ *         librariesAccessible:
+ *           description: The IDs of libraries accessible to the user. An empty array means all libraries are accessible.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *         itemTagsAccessible:
+ *           description: The tags accessible to the user. An empty array means all tags are accessible.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *     userWithProgressDetails:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the user. Only the root user has the root ID.
+ *           type: string
+ *           example: root
+ *         username:
+ *           description: The username of the user.
+ *           type: string
+ *           example: root
+ *         type:
+ *           description: The type of the user. Will be root, guest, user, or admin. There will be only one root user which is created when the server first starts.
+ *           type: string
+ *           example: root
+ *         token:
+ *           description: The authentication token of the user.
+ *           type: string
+ *           example: exJhbGciOiJI6IkpXVCJ9.eyJ1c2Vyi5NDEyODc4fQ.ZraBFohS4Tg39NszY
+ *         mediaProgress:
+ *           description: The user's media progress.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/mediaProgressWithMedia'
+ *         seriesHideFromContinueListening:
+ *           description: The IDs of series to hide from the user's "Continue Series" shelf.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *         bookmarks:
+ *           description: The user's bookmarks.
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/audioBookmark'
+ *         isActive:
+ *           description: Whether the user's account is active.
+ *           type: boolean
+ *           example: true
+ *         isLocked:
+ *           description: Whether the user is locked.
+ *           type: boolean
+ *           example: false
+ *         lastSeen:
+ *           description: The time (in ms since POSIX epoch) when the user was last seen by the server. Will be null if the user has never logged in.
+ *           type: integer
+ *           example: 1668296147437
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *         permissions:
+ *           $ref: '#/components/schemas/userPermissions'
+ *         librariesAccessible:
+ *           description: The IDs of libraries accessible to the user. An empty array means all libraries are accessible.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *         itemTagsAccessible:
+ *           description: The tags accessible to the user. An empty array means all tags are accessible.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: ...
+ *     userWithSession:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the user. Only the root user has the root ID.
+ *           type: string
+ *           example: root
+ *         username:
+ *           description: The username of the user.
+ *           type: string
+ *           example: root
+ *         type:
+ *           description: The type of the user. Will be root, guest, user, or admin. There will be only one root user which is created when the server first starts.
+ *           type: string
+ *           example: root
+ *         session:
+ *           $ref: '#/components/schemas/playbackSessionExpanded'
+ *         lastSeen:
+ *           description: The time (in ms since POSIX epoch) when the user was last seen by the server. Will be null if the user has never logged in.
+ *           type: integer
+ *           example: 1668296147437
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ *     userPermissions:
+ *       type: object
+ *       properties:
+ *         download:
+ *           description: Whether the user can download items to the server.
+ *           type: boolean
+ *           example: true
+ *         update:
+ *           description: Whether the user can update library items.
+ *           type: boolean
+ *           example: true
+ *         delete:
+ *           description: Whether the user can delete library items.
+ *           type: boolean
+ *           example: true
+ *         upload:
+ *           description: Whether the user can upload items to the server.
+ *           type: boolean
+ *           example: true
+ *         accessAllLibraries:
+ *           description: Whether the user can access all libraries.
+ *           type: boolean
+ *           example: true
+ *         accessAllTags:
+ *           description: Whether the user can access all tags.
+ *           type: boolean
+ *           example: true
+ *         accessExplicitContent:
+ *           description: Whether the user can access explicit content.
+ *           type: boolean
+ *           example: true
+ */
 class User {
   constructor(user) {
     this.id = null

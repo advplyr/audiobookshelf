@@ -2,6 +2,141 @@ const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     serverSettings:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the server settings.
+ *           type: string
+ *           example: server-settings
+ *         scannerFindCovers:
+ *           description: Whether the scanner will attempt to find a cover if your audiobook does not have an embedded cover or a cover image inside the folder. Note that This will extend scan time.
+ *           type: boolean
+ *           example: false
+ *         scannerCoverProvider:
+ *           description: If scannerFindCovers is true, which metadata provider to use. See Metadata Providers for options.
+ *           type: string
+ *           example: google
+ *         scannerParseSubtitle:
+ *           description: Whether to extract subtitles from audiobook folder names. Subtitles must be separated by -, i.e. /audiobooks/Book Title - A Subtitle Here/ has the subtitle A Subtitle Here.
+ *           type: boolean
+ *           example: false
+ *         scannerPreferAudioMetadata:
+ *           description: Whether to use audio file ID3 meta tags instead of folder names for book details.
+ *           type: boolean
+ *           example: false
+ *         scannerPreferOpfMetadata:
+ *           description: Whether to use OPF file metadata instead of folder names for book details.
+ *           type: boolean
+ *           example: false
+ *         scannerPreferMatchedMetadata:
+ *           description: Whether matched data will override item details when using Quick Match. By default, Quick Match will only fill in missing details.
+ *           type: boolean
+ *           example: false
+ *         scannerDisableWatcher:
+ *           description: Whether to disable the automatic adding/updating of items when file changes are detected. Requires server restart for changes to take effect.
+ *           type: boolean
+ *           example: true
+ *         scannerPreferOverdriveMediaMarker:
+ *           description: Whether to use the custom metadata in MP3 files from Overdrive for chapter timings automatically.
+ *           type: boolean
+ *           example: false
+ *         scannerUseTone:
+ *           description: Should use tone to extract metadata
+ *           type: boolean
+ *           example: false
+ *         storeCoverWithItem:
+ *           description: Whether to store covers in the library item's folder. By default, covers are stored in /metadata/items. Only one file named cover will be kept.
+ *           type: boolean
+ *           example: false
+ *         storeMetadataWithItem:
+ *           description: Whether to store metadata files in the library item's folder. By default, metadata files are stored in /metadata/items. Uses the .abs file extension.
+ *           type: boolean
+ *           example: false
+ *         metadataFileFormat:
+ *           description: Must be either json or abs
+ *           type: string
+ *           example: json
+ *         rateLimitLoginRequests:
+ *           description: The maximum number of login requests per rateLimitLoginWindow.
+ *           type: integer
+ *           example: 10
+ *         rateLimitLoginWindow:
+ *           description: The length (in ms) of each login rate limit window.
+ *           type: integer
+ *           example: 600000
+ *         backupSchedule:
+ *           description: The cron expression for when to do automatic backups.
+ *           type: string
+ *           example: 30 1 * * *
+ *         backupsToKeep:
+ *           description: The number of backups to keep.
+ *           type: integer
+ *           example: 2
+ *         maxBackupSize:
+ *           description: The maximum backup size (in GB) before they fail, a safeguard against misconfiguration.
+ *           type: integer
+ *           example: 1
+ *         backupMetadataCovers:
+ *           description: Whether backups should include library item covers and author images located in metadata.
+ *           type: boolean
+ *           example: true
+ *         loggerDailyLogsToKeep:
+ *           description: The number of daily logs to keep.
+ *           type: integer
+ *           example: 7
+ *         loggerScannerLogsToKeep:
+ *           description: The number of scanner logs to keep.
+ *           type: integer
+ *           example: 2
+ *         homeBookshelfView:
+ *           description: Whether the home page should use a skeuomorphic design with wooden shelves.
+ *           type: integer
+ *           example: 1
+ *         bookshelfView:
+ *           description: Whether other bookshelf pages should use a skeuomorphic design with wooden shelves.
+ *           type: integer
+ *           example: 1
+ *         sortingIgnorePrefix:
+ *           description: Whether to ignore prefixes when sorting. For example, for the prefix the, the book title The Book Title would sort as Book Title, The.
+ *           type: boolean
+ *           example: false
+ *         sortingPrefixes:
+ *           description: If sortingIgnorePrefix is true, what prefixes to ignore.
+ *           type: array
+ *           items:
+ *             type: string
+ *             example: the
+ *               - a
+ *         chromecastEnabled:
+ *           description: Whether to enable streaming to Chromecast devices.
+ *           type: boolean
+ *           example: false
+ *         dateFormat:
+ *           description: What date format to use. Options are MM/dd/yyyy, dd/MM/yyyy, dd.MM.yyyy, yyyy-MM-dd, MMM do, yyyy, MMMM do, yyyy, dd MMM yyyy, or dd MMMM yyyy.
+ *           type: string
+ *           example: MM/dd/yyyy
+ *         timeFormat:
+ *           description: What time format to use. Options are HH:mm (24-hour) and h:mma (am/pm).
+ *           type: string
+ *           example: HH:mm
+ *         language:
+ *           description: The default server language.
+ *           type: string
+ *           example: en-us
+ *         logLevel:
+ *           description: What log level the server should use when logging. 1 for debug, 2 for info, or 3 for warnings.
+ *           type: integer
+ *           example: 2
+ *         version:
+ *           description: The server's version.
+ *           type: string
+ *           example: 2.2.5
+ */
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'

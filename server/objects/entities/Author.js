@@ -2,6 +2,74 @@ const Logger = require('../../Logger')
 const uuidv4 = require("uuid").v4
 const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/parseNameString')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     author:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the author.
+ *           type: string
+ *           example: aut_z3leimgybl7uf3y4ab
+ *         asin:
+ *           description: The ASIN of the author. Will be null if unknown.
+ *           type: [string, 'null']
+ *         name:
+ *           description: The name of the author.
+ *           type: string
+ *           example: Terry Goodkind
+ *         description:
+ *           description: A description of the author. Will be null if there is none.
+ *           type: [string, 'null']
+ *         imagePath:
+ *           description: The absolute path for the author image. Will be null if there is no image.
+ *           type: [string, 'null']
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ *     authorMinified:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the author.
+ *           type: string
+ *           example: aut_z3leimgybl7uf3y4ab
+ *         name:
+ *           description: The name of the author.
+ *           type: string
+ *           example: Terry Goodkind
+ *     authorExpanded:
+ *       type: object
+ *       properties:
+ *         id:
+ *           description: The ID of the author.
+ *           type: string
+ *           example: aut_z3leimgybl7uf3y4ab
+ *         asin:
+ *           description: The ASIN of the author. Will be null if unknown.
+ *           type: [string, 'null']
+ *         name:
+ *           description: The name of the author.
+ *           type: string
+ *           example: Terry Goodkind
+ *         description:
+ *           description: A description of the author. Will be null if there is none.
+ *           type: [string, 'null']
+ *         imagePath:
+ *           description: The absolute path for the author image. Will be null if there is no image.
+ *           type: [string, 'null']
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ *         numBooks:
+ *           description: The number of books associated with the author in the library.
+ *           type: integer
+ *           example: 1
+ */
 class Author {
   constructor(author) {
     this.id = null

@@ -3,6 +3,28 @@ const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileU
 const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     libraryFile:
+ *       type: object
+ *       properties:
+ *         ino:
+ *           description: The inode of the library file.
+ *           type: string
+ *           example: '649644248522215260'
+ *         metadata:
+ *           $ref: '#/components/schemas/fileMetadata'
+ *         addedAt:
+ *           $ref: '#/components/schemas/addedAt'
+ *         updatedAt:
+ *           $ref: '#/components/schemas/updatedAt'
+ *         fileType:
+ *           description: The type of file that the library file is (audio, image, etc.).
+ *           type: string
+ *           example: audio
+ */
 class LibraryFile {
   constructor(file) {
     this.ino = null

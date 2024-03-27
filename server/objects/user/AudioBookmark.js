@@ -1,3 +1,25 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     audioBookmark:
+ *       type: object
+ *       properties:
+ *         libraryItemId:
+ *           description: The ID of the library item the bookmark is for.
+ *           type: string
+ *           example: li_8gch9ve09orgn4fdz8
+ *         title:
+ *           description: The title of the bookmark.
+ *           type: string
+ *           example: the good part
+ *         time:
+ *           description: The time (in seconds) the bookmark is at in the book.
+ *           type: integer
+ *           example: 16
+ *         createdAt:
+ *           $ref: '#/components/schemas/createdAt'
+ */
 class AudioBookmark {
   constructor(bookmark) {
     this.libraryItemId = null

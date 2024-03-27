@@ -33,6 +33,70 @@ const MiscController = require('../controllers/MiscController')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
+/**
+ * @openapi
+ * /ping:
+ *   get:
+ *     operationId: pingServer
+ *     description: Endpoint to check if the server is alive and responding with JSON correctly.
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ * /login:
+ *   get:
+ *     operationId: loginGet
+ *     summary: This is only to prevent some linting errors, does not actually exist
+ *     deprecated: true
+ *   post:
+ *     operationId: login
+ *     summary: Login endpoint
+ *     description: Endpoint to authenticate a user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Successful login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/user'
+ *                 userDefaultLibraryId:
+ *                   type: string
+ *                 serverSettings:
+ *                   $ref: '#/components/schemas/serverSettings'
+ *                 source:
+ *                   type: string
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized access
+ */
 
 class ApiRouter {
   constructor(Server) {
@@ -137,11 +201,11 @@ class ApiRouter {
     //
     // Collection Routes
     //
-    this.router.post('/collections', CollectionController.middleware.bind(this), CollectionController.create.bind(this))
-    this.router.get('/collections', CollectionController.findAll.bind(this))
-    this.router.get('/collections/:id', CollectionController.middleware.bind(this), CollectionController.findOne.bind(this))
-    this.router.patch('/collections/:id', CollectionController.middleware.bind(this), CollectionController.update.bind(this))
-    this.router.delete('/collections/:id', CollectionController.middleware.bind(this), CollectionController.delete.bind(this))
+    this.router.post('/collections', CollectionController.middleware.bind(this), CollectionController.create.bind(this)) // done
+    this.router.get('/collections', CollectionController.findAll.bind(this)) // TO DEPRECATE, CAUSES CRASH
+    this.router.get('/collections/:id', CollectionController.middleware.bind(this), CollectionController.findOne.bind(this)) // done
+    this.router.patch('/collections/:id', CollectionController.middleware.bind(this), CollectionController.update.bind(this)) // done
+    this.router.delete('/collections/:id', CollectionController.middleware.bind(this), CollectionController.delete.bind(this)) // done
     this.router.post('/collections/:id/book', CollectionController.middleware.bind(this), CollectionController.addBook.bind(this))
     this.router.delete('/collections/:id/book/:bookId', CollectionController.middleware.bind(this), CollectionController.removeBook.bind(this))
     this.router.post('/collections/:id/batch/add', CollectionController.middleware.bind(this), CollectionController.addBatch.bind(this))
