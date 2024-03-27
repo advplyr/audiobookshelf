@@ -5,7 +5,7 @@
         >{{ label }}<em v-if="note" class="font-normal text-xs pl-2">{{ note }}</em></label
       >
     </slot>
-    <ui-text-input :placeholder="label" :inputId="identifier" ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" :class="inputClass" @blur="inputBlurred" />
+    <ui-text-input :placeholder="placeholder || label" :inputId="identifier" ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" :class="inputClass" @blur="inputBlurred" />
   </div>
 </template>
 
@@ -14,6 +14,7 @@ export default {
   props: {
     value: [String, Number],
     label: String,
+    placeholder: String,
     note: String,
     type: {
       type: String,

@@ -98,72 +98,158 @@ class Auth {
         scope: 'openid profile email'
       }
     }, async (tokenset, userinfo, done) => {
-      Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
+      try {
+        Logger.debug(`[Auth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
+    
+        if (!userinfo.sub) {
+          throw new Error('Invalid userinfo, no sub')
+        }
+    
+        if (!this.validateGroupClaim(userinfo)) {
+          throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
+        }
+    
+        let user = await this.findOrCreateUser(userinfo)
+    
+        if (!user || !user.isActive) {
+          throw new Error('User not active or not found')
+        }
+    
+        await this.setUserGroup(user, userinfo)
+        await this.updateUserPermissions(user, userinfo)
+    
+        // We also have to save the id_token for later (used for logout) because we cannot set cookies here
+        user.openid_id_token = tokenset.id_token
 
-      let failureMessage = 'Unauthorized'
-      if (!userinfo.sub) {
-        Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
-        return done(null, null, failureMessage)
+        return done(null, user)
+      } catch (error) {
+        Logger.error(`[Auth] openid callback error: ${error?.message}\n${error?.stack}`)
+
+        return done(null, null, 'Unauthorized')
       }
-
-      // First check for matching user by sub
-      let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
-      if (!user) {
-        // Optionally match existing by email or username based on server setting "authOpenIDMatchExistingBy"
-        if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
-          Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
-          user = await Database.userModel.getUserByEmail(userinfo.email)
-          // Check that user is not already matched
-          if (user?.authOpenIDSub) {
-            Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
-            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
-            user = null
-          }
-        } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
-          Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
-          user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
-          // Check that user is not already matched
-          if (user?.authOpenIDSub) {
-            Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
-            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
-            user = null
-          }
-        }
-
-        // If existing user was matched and isActive then save sub to user
-        if (user?.isActive) {
-          Logger.info(`[Auth] openid: New user found matching existing user "${user.username}"`)
-          user.authOpenIDSub = userinfo.sub
-          await Database.userModel.updateFromOld(user)
-        } else if (user && !user.isActive) {
-          Logger.warn(`[Auth] openid: New user found matching existing user "${user.username}" but that user is deactivated`)
-        }
-
-        // Optionally auto register the user 
-        if (!user && Database.serverSettings.authOpenIDAutoRegister) {
-          Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-          user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
-        }
-      }
-
-      if (!user?.isActive) {
-        if (user && !user.isActive) {
-          failureMessage = 'Unauthorized'
-        }
-        // deny login
-        done(null, null, failureMessage)
-        return
-      }
-
-      // We also have to save the id_token for later (used for logout) because we cannot set cookies here
-      user.openid_id_token = tokenset.id_token
-
-      // permit login
-      return done(null, user)
     }))
   }
+
+  /**
+   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
+   * or creates a new user if configured to do so.
+   */
+  async findOrCreateUser(userinfo) {
+    let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
+
+    // Matched by sub
+    if (user) {
+      Logger.debug(`[Auth] openid: User found by sub`)
+      return user
+    }
+
+    // Match existing user by email
+    if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
+      Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
+      user = await Database.userModel.getUserByEmail(userinfo.email)
+
+      if (user?.authOpenIDSub) {
+        Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
+        return null // User is linked to a different OpenID subject; do not proceed.
+      }
+    }
+    // Match existing user by username
+    else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
+      Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
+      user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
+
+      if (user?.authOpenIDSub) {
+        Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
+        return null // User is linked to a different OpenID subject; do not proceed.
+      }
+    }
+
+    // Found existing user via email or username
+    if (user) {
+      if (!user.isActive) {
+        Logger.warn(`[Auth] openid: User found but is not active`)
+        return null
+      }
+
+      user.authOpenIDSub = userinfo.sub
+      await Database.userModel.updateFromOld(user)
+
+      Logger.debug(`[Auth] openid: User found by email/username`)
+      return user
+    }
+
+    // If no existing user was matched, auto-register if configured
+    if (Database.serverSettings.authOpenIDAutoRegister) {
+      Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+      user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
+      return user
+    }
+
+    Logger.warn(`[Auth] openid: User not found and auto-register is disabled`)
+    return null
+  }
+
+  /**
+   * Validates the presence and content of the group claim in userinfo.
+   */
+  validateGroupClaim(userinfo) {
+    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    if (!groupClaimName) // Allow no group claim when configured like this
+      return true
+
+    // If configured it must exist in userinfo
+    if (!userinfo[groupClaimName]) {
+      return false
+    }
+    return true
+  }
+
+/**
+ * Sets the user group based on group claim in userinfo.
+ */
+async setUserGroup(user, userinfo) {
+  const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+  if (!groupClaimName) // No group claim configured, don't set anything
+    return
+
+  if (!userinfo[groupClaimName])
+    throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
+
+  const groupsList = userinfo[groupClaimName].map(group => group.toLowerCase())
+  const rolesInOrderOfPriority = ['admin', 'user', 'guest']
+
+  let userType = rolesInOrderOfPriority.find(role => groupsList.includes(role))
+  if (userType) {
+    Logger.debug(`[Auth] openid callback: Setting user ${user.username} type to ${userType}`)
+
+    if (user.type !== userType) {
+      user.type = userType
+      await Database.userModel.updateFromOld(user)
+    }
+  } else {
+    throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
+  }
+}
+
+/**
+ * Updates user permissions based on the advanced permissions claim.
+ */
+async updateUserPermissions(user, userinfo) {
+  const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
+  if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
+    return
+
+  if (user.type === 'admin')
+    return
+
+  const absPermissions = userinfo[absPermissionsClaim]
+  if (!absPermissions)
+    throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
+
+  Logger.debug(`[Auth] openid callback: Updating advanced perms for user ${user.username} to ${JSON.stringify(absPermissions)}`)
+  user.updatePermissionsFromExternalJSON(absPermissions)
+  await Database.userModel.updateFromOld(user)
+}
 
   /**
    * Unuse strategy
@@ -334,10 +420,19 @@ class Auth {
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
+        var scope = 'openid profile email'
+        if (global.ServerSettings.authOpenIDGroupClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDGroupClaim
+        }
+        if (global.ServerSettings.authOpenIDAdvancedPermsClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDAdvancedPermsClaim
+        }
+
         const authorizationUrl = client.authorizationUrl({
           ...oidcStrategy._params,
           state: state,
           response_type: 'code',
+          scope: scope,
           code_challenge,
           code_challenge_method
         })
@@ -346,7 +441,7 @@ class Auth {
 
         res.redirect(authorizationUrl)
       } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
+        Logger.error(`[Auth] Error in /auth/openid route: ${error}\n${error?.stack}`)
         res.status(500).send('Internal Server Error')
       }
 
@@ -402,7 +497,7 @@ class Auth {
         // Redirect to the overwrite URI saved in the map
         res.redirect(redirectUri)
       } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}`)
+        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
         res.status(500).send('Internal Server Error')
       }
     })
@@ -424,12 +519,12 @@ class Auth {
       }
 
       function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
-        Logger.error(logMessage)
+        Logger.error(JSON.stringify(logMessage, null, 2))
         if (response) {
           // Depending on the error, it can also have a body
           // We also log the request header the passport plugin sents for the URL
           const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
-          Logger.debug(header + '\n' + response.body?.toString() + '\n' + JSON.stringify(response.body, null, 2))
+          Logger.debug(header + '\n' + JSON.stringify(response.body, null, 2))
         }
 
         if (isMobile) {

@@ -268,6 +268,78 @@ class User {
     return hasUpdates
   }
 
+  // List of expected permission properties from the client
+  static permissionMapping = {
+    canDownload: 'download',
+    canUpload: 'upload',
+    canDelete: 'delete',
+    canUpdate: 'update',
+    canAccessExplicitContent: 'accessExplicitContent',
+    canAccessAllLibraries: 'accessAllLibraries',
+    canAccessAllTags: 'accessAllTags',
+    tagsAreBlacklist: 'selectedTagsNotAccessible',
+    // Direct mapping for array-based permissions
+    allowedLibraries: 'librariesAccessible',
+    allowedTags: 'itemTagsSelected',
+  }
+
+  /**
+   * Update user from external JSON
+   * 
+   * @param {object} absPermissions JSON containg user permissions
+   */
+  updatePermissionsFromExternalJSON(absPermissions) {
+    // Initialize all permissions to false first
+    Object.keys(User.permissionMapping).forEach(mappingKey => {
+      const userPermKey = User.permissionMapping[mappingKey];
+      if (typeof this.permissions[userPermKey] === 'boolean') {
+        this.permissions[userPermKey] = false; // Default to false for boolean permissions
+      } else {
+        this[userPermKey] = []; // Default to empty array for other properties
+      }
+    });
+
+    Object.keys(absPermissions).forEach(absKey => {
+      const userPermKey = User.permissionMapping[absKey]
+      if (!userPermKey) {
+        throw new Error(`Unexpected permission property: ${absKey}`)
+      }
+
+      // Update the user's permissions based on absPermissions
+      this.permissions[userPermKey] = absPermissions[absKey]
+    });
+
+    // Handle allowedLibraries and allowedTags separately if needed
+    if (absPermissions.allowedLibraries) {
+      this.librariesAccessible = absPermissions.allowedLibraries
+    }
+    if (absPermissions.allowedTags) {
+      this.itemTagsSelected = absPermissions.allowedTags
+    }
+  }
+
+  /**
+   * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like 
+   * 
+   * @returns JSON string
+   */
+  static getSampleAbsPermissions() {
+    // Start with a template object where all permissions are false for simplicity
+    const samplePermissions = Object.keys(User.permissionMapping).reduce((acc, key) => {
+      // For array-based permissions, provide a sample array
+      if (key === 'allowedLibraries') {
+        acc[key] = [`ExampleLibrary`, `AnotherLibrary`];
+      } else if (key === 'allowedTags') {
+        acc[key] = [`ExampleTag`, `AnotherTag`, `ThirdTag`];
+      } else {
+        acc[key] = false;
+      }
+      return acc;
+    }, {});
+
+    return JSON.stringify(samplePermissions, null, 2); // Pretty print the JSON
+  }
+
   /**
    * Get first available library id for user
    * 
