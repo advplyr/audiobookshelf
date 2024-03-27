@@ -4,6 +4,8 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+  pull_request:
+    types: [opened]
 
 jobs:
   abs-windows-dispatch:
