@@ -275,7 +275,7 @@ export default {
     updateSortingPrefixes() {
       const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
       if (!prefixes.length) {
-        this.$toast.error('Must have at least 1 prefix')
+        this.$toast.error(this.$strings.ToastMustHavePrefix)
         return
       }
 
@@ -283,7 +283,7 @@ export default {
       this.$axios
         .$patch(`/api/sorting-prefixes`, { sortingPrefixes: prefixes })
         .then((data) => {
-          this.$toast.success(`Sorting prefixes updated. ${data.rowsUpdated} rows`)
+          this.$toast.success(this.$getString('ToastUpdateSortingPrefixesSuccess',[data.rowsUpdated]))
           if (data.serverSettings) {
             this.$store.commit('setServerSettings', data.serverSettings)
           }
@@ -291,7 +291,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update prefixes', error)
-          this.$toast.error('Failed to update sorting prefixes')
+          this.$toast.error(this.$strings.ToastUpdateSortingPrefixesFailed)
         })
         .finally(() => {
           this.savingPrefixes = false
@@ -329,7 +329,7 @@ export default {
         .dispatch('updateServerSettings', payload)
         .then(() => {
           this.updatingServerSettings = false
-          this.$toast.success('Server settings updated')
+          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
 
           if (payload.language) {
             // Updating language after save allows for re-rendering
@@ -339,7 +339,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update server settings', error)
           this.updatingServerSettings = false
-          this.$toast.error('Failed to update server settings')
+          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
         })
     },
     initServerSettings() {
@@ -359,11 +359,11 @@ export default {
       await this.$axios
         .$post('/api/cache/purge')
         .then(() => {
-          this.$toast.success('Cache Purged!')
+          this.$toast.success(this.$strings.ToastCachePurgedSuccess)
         })
         .catch((error) => {
           console.error('Failed to purge cache', error)
-          this.$toast.error('Failed to purge cache')
+          this.$toast.error(this.$strings.ToastCachePurgedFailed)
         })
       this.isPurgingCache = false
     },
@@ -384,11 +384,11 @@ export default {
       await this.$axios
         .$post('/api/cache/items/purge')
         .then(() => {
-          this.$toast.success('Items Cache Purged!')
+          this.$toast.success(this.$strings.ToastItemsCachePurgedSuccess)
         })
         .catch((error) => {
           console.error('Failed to purge items cache', error)
-          this.$toast.error('Failed to purge items cache')
+          this.$toast.error(this.$strings.ToastItemsCachePurgedFailed)
         })
       this.isPurgingCache = false
     }
