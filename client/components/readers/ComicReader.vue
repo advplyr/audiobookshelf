@@ -334,7 +334,7 @@ export default {
       }
     },
     parseFilenames(filenames) {
-      const acceptableImages = ['.jpeg', '.jpg', '.png']
+      const acceptableImages = ['.jpeg', '.jpg', '.png', '.webp']
       var imageFiles = filenames.filter((f) => {
         return acceptableImages.includes((Path.extname(f) || '').toLowerCase())
       })
