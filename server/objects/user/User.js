@@ -277,7 +277,7 @@ class User {
     canAccessExplicitContent: 'accessExplicitContent',
     canAccessAllLibraries: 'accessAllLibraries',
     canAccessAllTags: 'accessAllTags',
-    tagsAreBlacklist: 'selectedTagsNotAccessible',
+    tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
     allowedTags: 'itemTagsSelected',
