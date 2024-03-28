@@ -21,7 +21,7 @@
           <td class="text-left">
             <p class="px-4">{{ chapter.id }}</p>
           </td>
-          <td>
+          <td dir="auto">
             {{ chapter.title }}
           </td>
           <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">

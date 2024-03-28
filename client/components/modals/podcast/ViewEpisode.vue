@@ -15,8 +15,8 @@
           <p class="text-xs text-gray-300">{{ podcastAuthor }}</p>
         </div>
       </div>
-      <p class="text-lg font-semibold mb-6">{{ title }}</p>
-      <div v-if="description" class="default-style" v-html="description" />
+      <p dir="auto" class="text-lg font-semibold mb-6">{{ title }}</p>
+      <div v-if="description" dir="auto" class="default-style" v-html="description" />
       <p v-else class="mb-2">{{ $strings.MessageNoDescription }}</p>
     </div>
   </modals-modal>

@@ -30,7 +30,7 @@
                   <widgets-podcast-type-indicator :type="downloadQueued.episodeType" />
                 </div>
               </td>
-              <td class="px-4">
+              <td dir="auto" class="px-4">
                 {{ downloadQueued.episodeDisplayTitle }}
               </td>
               <td class="text-xs">
