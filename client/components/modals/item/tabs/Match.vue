@@ -508,7 +508,10 @@ export default {
           } else if (key === 'author' && !this.isPodcast) {
             var authors = this.selectedMatch[key]
             if (!Array.isArray(authors)) {
-              authors = authors.split(',').map((au) => au.trim())
+              authors = authors
+                .split(',')
+                .map((au) => au.trim())
+                .filter((au) => !!au)
             }
             var authorPayload = []
             authors.forEach((authorName) =>
