@@ -125,7 +125,7 @@
           </div>
 
           <div class="my-4 w-full">
-            <p ref="description" id="item-description" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
+            <p ref="description" id="item-description" dir="auto" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
               {{ showFullDescription ? 'Read less' : 'Read more' }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
             </button>
