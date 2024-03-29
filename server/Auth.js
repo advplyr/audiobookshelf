@@ -220,6 +220,16 @@ async setUserGroup(user, userinfo) {
 
   let userType = rolesInOrderOfPriority.find(role => groupsList.includes(role))
   if (userType) {
+    if (user.type === 'root') {
+      // Check OpenID Group
+      if (userType !== 'admin') {
+        throw new Error(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`)
+      } else {
+        // If root user is logging in via OpenID, we will not change the type
+        return
+      }
+    }
+
     Logger.debug(`[Auth] openid callback: Setting user ${user.username} type to ${userType}`)
 
     if (user.type !== userType) {
@@ -239,7 +249,7 @@ async updateUserPermissions(user, userinfo) {
   if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
     return
 
-  if (user.type === 'admin')
+  if (user.type === 'admin' || user.type === 'root')
     return
 
   const absPermissions = userinfo[absPermissionsClaim]
