@@ -144,22 +144,47 @@ class Auth {
     }
 
     // Match existing user by email
-    if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
-      Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
-      user = await Database.userModel.getUserByEmail(userinfo.email)
+    if (Database.serverSettings.authOpenIDMatchExistingBy === 'email') {
+      if (userinfo.email) {
+        // Only disallow when email_verified explicitly set to false (allow both if not set or true)
+        if (userinfo.email_verified === false) {
+          Logger.warn(`[Auth] openid: User not found and email "${userinfo.email}" is not verified`)
+          return null
+        } else {
+          Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
+          user = await Database.userModel.getUserByEmail(userinfo.email)
 
-      if (user?.authOpenIDSub) {
-        Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-        return null // User is linked to a different OpenID subject; do not proceed.
+          if (user?.authOpenIDSub) {
+            Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
+            return null // User is linked to a different OpenID subject; do not proceed.
+          }
+        }
+      } else {
+        Logger.warn(`[Auth] openid: User not found and no email in userinfo`)
+        // We deny login, because if the admin whishes to match email, it makes sense to require it
+        return null
       }
     }
     // Match existing user by username
-    else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
-      Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
-      user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
+    else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username') {
+      let username
+
+      if (userinfo.preferred_username) {
+        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.preferred_username "${userinfo.preferred_username}"`)
+        username = userinfo.preferred_username
+      } else if (userinfo.username) {
+        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.username "${userinfo.username}"`)
+        username = userinfo.username
+      } else {
+        Logger.warn(`[Auth] openid: User not found and neither preferred_username nor username in userinfo`)
+        return null
+      }
+
+
+      user = await Database.userModel.getUserByUsername(username)
 
       if (user?.authOpenIDSub) {
-        Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
+        Logger.warn(`[Auth] openid: User found with username "${username}" but is already matched with sub "${user.authOpenIDSub}"`)
         return null // User is linked to a different OpenID subject; do not proceed.
       }
     }
