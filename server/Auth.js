@@ -100,24 +100,24 @@ class Auth {
     }, async (tokenset, userinfo, done) => {
       try {
         Logger.debug(`[Auth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
-    
+
         if (!userinfo.sub) {
           throw new Error('Invalid userinfo, no sub')
         }
-    
+
         if (!this.validateGroupClaim(userinfo)) {
           throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
         }
-    
+
         let user = await this.findOrCreateUser(userinfo)
-    
-        if (!user || !user.isActive) {
+
+        if (!user?.isActive) {
           throw new Error('User not active or not found')
         }
-    
+
         await this.setUserGroup(user, userinfo)
         await this.updateUserPermissions(user, userinfo)
-    
+
         // We also have to save the id_token for later (used for logout) because we cannot set cookies here
         user.openid_id_token = tokenset.id_token
 
@@ -229,62 +229,68 @@ class Auth {
     return true
   }
 
-/**
- * Sets the user group based on group claim in userinfo.
- */
-async setUserGroup(user, userinfo) {
-  const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
-  if (!groupClaimName) // No group claim configured, don't set anything
-    return
+  /**
+   * Sets the user group based on group claim in userinfo.
+   * 
+   * @param {import('./objects/user/User')} user
+   * @param {Object} userinfo
+   */
+  async setUserGroup(user, userinfo) {
+    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    if (!groupClaimName) // No group claim configured, don't set anything
+      return
 
-  if (!userinfo[groupClaimName])
-    throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
+    if (!userinfo[groupClaimName])
+      throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
 
-  const groupsList = userinfo[groupClaimName].map(group => group.toLowerCase())
-  const rolesInOrderOfPriority = ['admin', 'user', 'guest']
+    const groupsList = userinfo[groupClaimName].map(group => group.toLowerCase())
+    const rolesInOrderOfPriority = ['admin', 'user', 'guest']
 
-  let userType = rolesInOrderOfPriority.find(role => groupsList.includes(role))
-  if (userType) {
-    if (user.type === 'root') {
-      // Check OpenID Group
-      if (userType !== 'admin') {
-        throw new Error(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`)
-      } else {
-        // If root user is logging in via OpenID, we will not change the type
-        return
+    let userType = rolesInOrderOfPriority.find(role => groupsList.includes(role))
+    if (userType) {
+      if (user.type === 'root') {
+        // Check OpenID Group
+        if (userType !== 'admin') {
+          throw new Error(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`)
+        } else {
+          // If root user is logging in via OpenID, we will not change the type
+          return
+        }
       }
+
+      if (user.type !== userType) {
+        Logger.info(`[Auth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
+        user.type = userType
+        await Database.userModel.updateFromOld(user)
+      }
+    } else {
+      throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
     }
+  }
 
-    Logger.debug(`[Auth] openid callback: Setting user ${user.username} type to ${userType}`)
+  /**
+   * Updates user permissions based on the advanced permissions claim.
+   * 
+   * @param {import('./objects/user/User')} user
+   * @param {Object} userinfo
+   */
+  async updateUserPermissions(user, userinfo) {
+    const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
+    if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
+      return
 
-    if (user.type !== userType) {
-      user.type = userType
+    if (user.type === 'admin' || user.type === 'root')
+      return
+
+    const absPermissions = userinfo[absPermissionsClaim]
+    if (!absPermissions)
+      throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
+
+    if (user.updatePermissionsFromExternalJSON(absPermissions)) {
+      Logger.debug(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
       await Database.userModel.updateFromOld(user)
     }
-  } else {
-    throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
   }
-}
-
-/**
- * Updates user permissions based on the advanced permissions claim.
- */
-async updateUserPermissions(user, userinfo) {
-  const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
-  if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
-    return
-
-  if (user.type === 'admin' || user.type === 'root')
-    return
-
-  const absPermissions = userinfo[absPermissionsClaim]
-  if (!absPermissions)
-    throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
-
-  Logger.debug(`[Auth] openid callback: Updating advanced perms for user ${user.username} to ${JSON.stringify(absPermissions)}`)
-  user.updatePermissionsFromExternalJSON(absPermissions)
-  await Database.userModel.updateFromOld(user)
-}
 
   /**
    * Unuse strategy

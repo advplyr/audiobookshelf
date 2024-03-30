@@ -280,64 +280,97 @@ class User {
     tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
-    allowedTags: 'itemTagsSelected',
+    allowedTags: 'itemTagsSelected'
   }
 
   /**
-   * Update user from external JSON
+   * Update user permissions from external JSON
    * 
-   * @param {object} absPermissions JSON containg user permissions
+   * @param {Object} absPermissions JSON containing user permissions
+   * @returns {boolean} true if updates were made
    */
   updatePermissionsFromExternalJSON(absPermissions) {
+    let hasUpdates = false
+    let updatedUserPermissions = {}
+
     // Initialize all permissions to false first
     Object.keys(User.permissionMapping).forEach(mappingKey => {
-      const userPermKey = User.permissionMapping[mappingKey];
+      const userPermKey = User.permissionMapping[mappingKey]
       if (typeof this.permissions[userPermKey] === 'boolean') {
-        this.permissions[userPermKey] = false; // Default to false for boolean permissions
-      } else {
-        this[userPermKey] = []; // Default to empty array for other properties
+        updatedUserPermissions[userPermKey] = false // Default to false for boolean permissions
       }
-    });
+    })
 
+    // Map the boolean permissions from absPermissions
     Object.keys(absPermissions).forEach(absKey => {
       const userPermKey = User.permissionMapping[absKey]
       if (!userPermKey) {
         throw new Error(`Unexpected permission property: ${absKey}`)
       }
 
-      // Update the user's permissions based on absPermissions
-      this.permissions[userPermKey] = absPermissions[absKey]
-    });
+      if (updatedUserPermissions[userPermKey] !== undefined) {
+        updatedUserPermissions[userPermKey] = !!absPermissions[absKey]
+      }
+    })
 
-    // Handle allowedLibraries and allowedTags separately if needed
-    if (absPermissions.allowedLibraries) {
+    // Update user permissions if changes were made
+    if (JSON.stringify(this.permissions) !== JSON.stringify(updatedUserPermissions)) {
+      this.permissions = updatedUserPermissions
+      hasUpdates = true
+    }
+
+    // Handle allowedLibraries
+    if (this.permissions.accessAllLibraries) {
+      if (this.librariesAccessible.length) {
+        this.librariesAccessible = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedLibraries?.length && absPermissions.allowedLibraries.join(',') !== this.librariesAccessible.join(',')) {
+      if (absPermissions.allowedLibraries.some(lid => typeof lid !== 'string')) {
+        throw new Error('Invalid permission property "allowedLibraries", expecting array of strings')
+      }
       this.librariesAccessible = absPermissions.allowedLibraries
+      hasUpdates = true
     }
-    if (absPermissions.allowedTags) {
+
+    // Handle allowedTags
+    if (this.permissions.accessAllTags) {
+      if (this.itemTagsSelected.length) {
+        this.itemTagsSelected = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedTags?.length && absPermissions.allowedTags.join(',') !== this.itemTagsSelected.join(',')) {
+      if (absPermissions.allowedTags.some(tag => typeof tag !== 'string')) {
+        throw new Error('Invalid permission property "allowedTags", expecting array of strings')
+      }
       this.itemTagsSelected = absPermissions.allowedTags
+      hasUpdates = true
     }
+
+    return hasUpdates
   }
+
 
   /**
    * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like 
    * 
-   * @returns JSON string
+   * @returns {string} JSON string
    */
   static getSampleAbsPermissions() {
     // Start with a template object where all permissions are false for simplicity
     const samplePermissions = Object.keys(User.permissionMapping).reduce((acc, key) => {
       // For array-based permissions, provide a sample array
       if (key === 'allowedLibraries') {
-        acc[key] = [`ExampleLibrary`, `AnotherLibrary`];
+        acc[key] = [`5406ba8a-16e1-451d-96d7-4931b0a0d966`, `918fd848-7c1d-4a02-818a-847435a879ca`]
       } else if (key === 'allowedTags') {
-        acc[key] = [`ExampleTag`, `AnotherTag`, `ThirdTag`];
+        acc[key] = [`ExampleTag`, `AnotherTag`, `ThirdTag`]
       } else {
-        acc[key] = false;
+        acc[key] = false
       }
-      return acc;
-    }, {});
+      return acc
+    }, {})
 
-    return JSON.stringify(samplePermissions, null, 2); // Pretty print the JSON
+    return JSON.stringify(samplePermissions, null, 2) // Pretty print the JSON
   }
 
   /**
