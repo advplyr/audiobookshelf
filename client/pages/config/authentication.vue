@@ -59,27 +59,48 @@
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
-            <p class="pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
 
             <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
-            <div class="flex items-center pt-1 mb-2">
+            <div class="flex sm:items-center flex-col sm:flex-row pt-1 mb-2">
               <div class="w-44">
                 <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" :label="$strings.LabelMatchExistingUsersBy" :disabled="savingSettings" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
+              <p class="sm:pl-4 text-sm text-gray-300 mt-2 sm:mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
             </div>
 
-            <div class="flex items-center py-4 px-1">
+            <div class="flex items-center py-4 px-1 w-full">
               <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
               <p id="auto-redirect-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoLaunch }}</p>
               <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelAutoLaunchDescription" />
             </div>
 
-            <div class="flex items-center py-4 px-1">
+            <div class="flex items-center py-4 px-1 w-full">
               <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
               <p id="auto-register-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoRegister }}</p>
               <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
+            </div>
+
+            <p class="pt-6 mb-4 px-1">{{ $strings.LabelOpenIDClaims }}</p>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
+              </div>
+              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
+              </div>
+              <div class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
+                <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
+                <pre class="text-pre-wrap mt-2"
+                  >{{ newAuthSettings.authOpenIDSamplePermissions }}
+                </pre>
+              </div>
             </div>
           </div>
         </transition>
@@ -222,6 +243,22 @@ export default {
           }
         })
       }
+
+      function isValidClaim(claim) {
+        if (claim === '') return true
+
+        const pattern = new RegExp('^[a-zA-Z][a-zA-Z0-9_-]*$', 'i')
+        return pattern.test(claim)
+      }
+      if (!isValidClaim(this.newAuthSettings.authOpenIDGroupClaim)) {
+        this.$toast.error('Group Claim: Invalid claim name')
+        isValid = false
+      }
+      if (!isValidClaim(this.newAuthSettings.authOpenIDAdvancedPermsClaim)) {
+        this.$toast.error('Advanced Permission Claim: Invalid claim name')
+        isValid = false
+      }
+
       return isValid
     },
     async saveSettings() {

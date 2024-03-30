@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-2 sm:p-4 mb-8">
     <div class="flex items-center mb-2">
       <slot name="header-prefix"></slot>
       <h1 class="text-xl">{{ headerText }}</h1>
