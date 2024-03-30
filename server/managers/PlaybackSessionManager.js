@@ -144,8 +144,13 @@ class PlaybackSessionManager {
       session.currentTime = sessionJson.currentTime
       session.timeListening = sessionJson.timeListening
       session.updatedAt = sessionJson.updatedAt
-      session.date = date.format(new Date(), 'YYYY-MM-DD')
-      session.dayOfWeek = date.format(new Date(), 'dddd')
+
+      let jsDate = new Date(sessionJson.updatedAt)
+      if (isNaN(jsDate)) {
+        jsDate = new Date()
+      }
+      session.date = date.format(jsDate, 'YYYY-MM-DD')
+      session.dayOfWeek = date.format(jsDate, 'dddd')
 
       Logger.debug(`[PlaybackSessionManager] Updated session for "${session.displayTitle}" (${session.id})`)
       await Database.updatePlaybackSession(session)
