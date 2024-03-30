@@ -82,19 +82,20 @@
               <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
             </div>
 
-            <div class="flex items-center pt-6 pb-1 px-1 w-full">{{ $strings.LabelOpenIDClaims }}</div>
-            <div class="flex items-center mb-2">
-              <div class="w-96">
+            <p class="pt-6 mb-4 px-1">{{ $strings.LabelOpenIDClaims }}</p>
+
+            <div class="flex mb-4">
+              <div class="w-44 min-w-44">
                 <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
+              <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
             </div>
 
-            <div class="flex mb-2">
-              <div class="w-96 pt-6">
+            <div class="flex mb-4">
+              <div class="w-44 min-w-44">
                 <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
               </div>
-              <div class="pl-4 text-sm text-gray-300 mt-5 flex-column">
+              <div class="pl-4 text-sm text-gray-300 flex-column">
                 <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
                 <pre class="text-pre-wrap mt-2"
                   >{{ newAuthSettings.authOpenIDSamplePermissions }}

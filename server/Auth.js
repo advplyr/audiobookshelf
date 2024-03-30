@@ -287,7 +287,7 @@ class Auth {
       throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
 
     if (user.updatePermissionsFromExternalJSON(absPermissions)) {
-      Logger.debug(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
+      Logger.info(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
       await Database.userModel.updateFromOld(user)
     }
   }
