@@ -59,15 +59,15 @@
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
-            <p class="pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
 
             <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
-            <div class="flex items-center pt-1 mb-2">
+            <div class="flex sm:items-center flex-col sm:flex-row pt-1 mb-2">
               <div class="w-44">
                 <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" :label="$strings.LabelMatchExistingUsersBy" :disabled="savingSettings" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
+              <p class="sm:pl-4 text-sm text-gray-300 mt-2 sm:mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
             </div>
 
             <div class="flex items-center py-4 px-1 w-full">
@@ -84,18 +84,18 @@
 
             <p class="pt-6 mb-4 px-1">{{ $strings.LabelOpenIDClaims }}</p>
 
-            <div class="flex mb-4">
+            <div class="flex flex-col sm:flex-row mb-4">
               <div class="w-44 min-w-44">
                 <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
               </div>
-              <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
+              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
             </div>
 
-            <div class="flex mb-4">
+            <div class="flex flex-col sm:flex-row mb-4">
               <div class="w-44 min-w-44">
                 <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
               </div>
-              <div class="pl-4 text-sm text-gray-300 flex-column">
+              <div class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
                 <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
                 <pre class="text-pre-wrap mt-2"
                   >{{ newAuthSettings.authOpenIDSamplePermissions }}
