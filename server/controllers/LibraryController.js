@@ -128,7 +128,14 @@ class LibraryController {
     res.json(libraryDownloadQueueDetails)
   }
 
+  /**
+   * PATCH: /api/libraries/:id
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async update(req, res) {
+    /** @type {import('../objects/Library')} */
     const library = req.library
 
     // Validate that the custom provider exists if given any
