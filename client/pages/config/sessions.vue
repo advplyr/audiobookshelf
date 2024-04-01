@@ -396,6 +396,7 @@ export default {
       var lines = []
       if (deviceInfo.osName) lines.push(`${deviceInfo.osName} ${deviceInfo.osVersion}`)
       if (deviceInfo.browserName) lines.push(deviceInfo.browserName)
+      if (deviceInfo.clientName) lines.push(`${deviceInfo.clientName} ${deviceInfo.clientVersion}`)
 
       if (deviceInfo.manufacturer && deviceInfo.model) lines.push(`${deviceInfo.manufacturer} ${deviceInfo.model}`)
       if (deviceInfo.sdkVersion) lines.push(`SDK Version: ${deviceInfo.sdkVersion}`)
