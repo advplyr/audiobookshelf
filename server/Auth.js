@@ -85,12 +85,12 @@ class Auth {
       token_endpoint: global.ServerSettings.authOpenIDTokenURL,
       userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
       jwks_uri: global.ServerSettings.authOpenIDJwksURL,
-      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL,
-      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
+      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
-      client_secret: global.ServerSettings.authOpenIDClientSecret
+      client_secret: global.ServerSettings.authOpenIDClientSecret,
+      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
     })
     passport.use('openid-client', new OpenIDClient.Strategy({
       client: openIdClient,
