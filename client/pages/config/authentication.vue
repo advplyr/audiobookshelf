@@ -58,6 +58,8 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
+            <ui-text-input-with-label ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
+
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
             <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
 
@@ -187,6 +189,7 @@ export default {
           if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
           if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
           if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
+          if (data.id_token_signing_algorithm) this.newAuthSettings.authOpenIDTokenSigningAlgorithm = data.id_token_signing_algorithm
         })
         .catch((error) => {
           console.error('Failed to receive data', error)
@@ -222,6 +225,11 @@ export default {
       }
       if (!this.newAuthSettings.authOpenIDClientSecret) {
         this.$toast.error('Client Secret required')
+        isValid = false
+      }
+
+      if (!this.newAuthSettings.authOpenIDTokenSigningAlgorithm) {
+        this.$toast.error('Signing Algorithm required')
         isValid = false
       }
 

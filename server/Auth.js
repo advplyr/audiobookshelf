@@ -85,7 +85,8 @@ class Auth {
       token_endpoint: global.ServerSettings.authOpenIDTokenURL,
       userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
       jwks_uri: global.ServerSettings.authOpenIDJwksURL,
-      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
+      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL,
+      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
@@ -650,7 +651,8 @@ class Auth {
           token_endpoint: data.token_endpoint,
           userinfo_endpoint: data.userinfo_endpoint,
           end_session_endpoint: data.end_session_endpoint,
-          jwks_uri: data.jwks_uri
+          jwks_uri: data.jwks_uri,
+          id_token_signing_algorithm: data.id_token_signing_alg_values_supported?.[0]
         })
       }).catch((error) => {
         Logger.error(`[Auth] Failed to get openid configuration at "${configUrl}"`, error)
