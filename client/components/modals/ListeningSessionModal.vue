@@ -88,10 +88,11 @@
           <p class="mb-1">{{ _session.mediaPlayer }}</p>
 
           <p v-if="hasDeviceInfo" class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">{{ $strings.LabelDevice }}</p>
+          <p v-if="clientDisplayName" class="mb-1">{{ clientDisplayName }}</p>
           <p v-if="deviceInfo.ipAddress" class="mb-1">{{ deviceInfo.ipAddress }}</p>
           <p v-if="osDisplayName" class="mb-1">{{ osDisplayName }}</p>
           <p v-if="deviceInfo.browserName" class="mb-1">{{ deviceInfo.browserName }}</p>
-          <p v-if="clientDisplayName" class="mb-1">{{ clientDisplayName }}</p>
+          <p v-if="deviceDisplayName" class="mb-1">{{ deviceDisplayName }}</p>
           <p v-if="deviceInfo.sdkVersion" class="mb-1">SDK {{ $strings.LabelVersion }}: {{ deviceInfo.sdkVersion }}</p>
           <p v-if="deviceInfo.deviceType" class="mb-1">{{ $strings.LabelType }}: {{ deviceInfo.deviceType }}</p>
         </div>
@@ -141,9 +142,13 @@ export default {
       if (!this.deviceInfo.osName) return null
       return `${this.deviceInfo.osName} ${this.deviceInfo.osVersion}`
     },
-    clientDisplayName() {
+    deviceDisplayName() {
       if (!this.deviceInfo.manufacturer || !this.deviceInfo.model) return null
       return `${this.deviceInfo.manufacturer} ${this.deviceInfo.model}`
+    },
+    clientDisplayName() {
+      if (!this.deviceInfo.clientName) return null
+      return `${this.deviceInfo.clientName} ${this.deviceInfo.clientVersion || ''}`
     },
     playMethodName() {
       const playMethod = this._session.playMethod
