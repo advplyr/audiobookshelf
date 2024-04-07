@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
-    <div class="flex flex-wrap mb-4">
-      <div class="relative">
+    <div class="flex flex-col sm:flex-row mb-4">
+      <div class="relative self-center">
         <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, libraryItemUpdatedAt, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
         <!-- book cover overlay -->
@@ -14,7 +14,7 @@
           </div>
         </div>
       </div>
-      <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
+      <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
@@ -49,20 +49,20 @@
       </div>
     </div>
     <form @submit.prevent="submitSearchForm">
-      <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-48 px-1">
+      <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
+        <div class="w-48 flex-grow p-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
-        <div class="w-72 px-1">
+        <div class="w-72 flex-grow p-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
-        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 px-1">
+        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 flex-grow p-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
-    <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
+    <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
       <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
