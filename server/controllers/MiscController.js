@@ -284,7 +284,7 @@ class MiscController {
     }
 
     res.json({
-      tags: tags
+      tags: tags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
     })
   }
 
