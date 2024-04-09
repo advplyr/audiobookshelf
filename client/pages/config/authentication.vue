@@ -58,7 +58,8 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
-            <ui-text-input-with-label ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
+            <ui-dropdown v-if="hasSupportedSigningAlgorithms" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
+            <ui-text-input-with-label v-else ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
 
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
             <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
@@ -140,6 +141,7 @@ export default {
       enableOpenIDAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      openIdSigningAlgorithmsSupportedByIssuer: [],
       newAuthSettings: {}
     }
   },
@@ -162,6 +164,9 @@ export default {
           value: 'username'
         }
       ]
+    },
+    hasSupportedSigningAlgorithms() {
+      return this.openIdSigningAlgorithmsSupportedByIssuer.length > 0
     }
   },
   methods: {
@@ -180,6 +185,19 @@ export default {
         this.newAuthSettings.authOpenIDIssuerURL = this.newAuthSettings.authOpenIDIssuerURL.replace('/.well-known/openid-configuration', '')
       }
 
+      const setSupportedSigningAlgorithms = (algorithms) => {
+        this.openIdSigningAlgorithmsSupportedByIssuer = algorithms
+
+        if(!algorithms || algorithms.length === 0) return
+        
+        // If a signing algorithm is already selected, then keep it, when it is still supported.
+        // But if it is not supported, then select one of the supported ones.
+        let currentAlgorithm = this.newAuthSettings.authOpenIDTokenSigningAlgorithm
+        if(!algorithms.includes(currentAlgorithm)) {
+          this.newAuthSettings.authOpenIDTokenSigningAlgorithm = algorithms[0]
+        }
+      }
+
       this.$axios
         .$get(`/auth/openid/config?issuer=${issuerUrl}`)
         .then((data) => {
@@ -189,7 +207,7 @@ export default {
           if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
           if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
           if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
-          if (data.id_token_signing_algorithm) this.newAuthSettings.authOpenIDTokenSigningAlgorithm = data.id_token_signing_algorithm
+          if (data.id_token_signing_alg_values_supported) setSupportedSigningAlgorithms(data.id_token_signing_alg_values_supported)
         })
         .catch((error) => {
           console.error('Failed to receive data', error)
