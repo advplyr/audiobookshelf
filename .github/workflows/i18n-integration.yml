@@ -1,6 +1,9 @@
 name: Verify all i18n files are alphabetized
 
 on:
+  pull_request:
+    paths:
+      - client/strings/** # Should only check if any strings changed
   push:
     paths:
       - client/strings/** # Should only check if any strings changed
