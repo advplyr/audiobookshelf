@@ -8,7 +8,6 @@
   "ButtonAddYourFirstLibrary": "Crea tu Primera Biblioteca",
   "ButtonApply": "Aplicar",
   "ButtonApplyChapters": "Aplicar Capítulos",
-  "Button ApplyChapters": "Aplicar Capítulos",
   "ButtonAuthors": "Autores",
   "ButtonBrowseForFolder": "Buscar por Carpeta",
   "ButtonCancel": "Cancelar",
@@ -779,5 +778,6 @@
   "ToastSocketDisconnected": "Socket desconectado",
   "ToastSocketFailedToConnect": "Error al conectar al Socket",
   "ToastUserDeleteFailed": "Error al eliminar el usuario",
-  "ToastUserDeleteSuccess": "Usuario eliminado"
+  "ToastUserDeleteSuccess": "Usuario eliminado",
+  "ZZZZ": "example"
 }
