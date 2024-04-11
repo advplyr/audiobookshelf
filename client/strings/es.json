@@ -778,6 +778,5 @@
   "ToastSocketDisconnected": "Socket desconectado",
   "ToastSocketFailedToConnect": "Error al conectar al Socket",
   "ToastUserDeleteFailed": "Error al eliminar el usuario",
-  "ToastUserDeleteSuccess": "Usuario eliminado",
-  "ZZZZ": "example"
+  "ToastUserDeleteSuccess": "Usuario eliminado"
 }
