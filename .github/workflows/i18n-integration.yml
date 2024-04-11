@@ -1,6 +1,9 @@
 name: Verify all i18n files are alphabetized
 
 on:
+  pull_request:
+    paths:
+      - client/strings/** # Should only check if any strings changed
   push:
     paths:
       - client/strings/** # Should only check if any strings changed
@@ -22,6 +25,6 @@ jobs:
       # The only argument is the `directory`, which is where the i18n files are
       # stored.
       - name: Run Update JSON Files action
-        uses: audiobookshelf/audiobookshelf-i18n-updater@v1.1.1
+        uses: audiobookshelf/audiobookshelf-i18n-updater@v1.2.0
         with:
           directory: "client/strings/" # Adjust the directory path as needed
