@@ -378,7 +378,7 @@ class AudioFileScanner {
     const MetadataMapArray = [
       {
         tag: 'tagComment',
-        altTag: 'tagSubtitle',
+        altTag: 'tagDescription',
         key: 'description'
       },
       {
