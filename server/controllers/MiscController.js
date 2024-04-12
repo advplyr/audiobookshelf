@@ -329,6 +329,7 @@ class MiscController {
         await libraryItem.media.update({
           tags: libraryItem.media.tags
         })
+        await libraryItem.saveMetadataFile()
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
@@ -370,6 +371,7 @@ class MiscController {
       await libraryItem.media.update({
         tags: libraryItem.media.tags
       })
+      await libraryItem.saveMetadataFile()
       const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
@@ -462,6 +464,7 @@ class MiscController {
         await libraryItem.media.update({
           genres: libraryItem.media.genres
         })
+        await libraryItem.saveMetadataFile()
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
         numItemsUpdated++
@@ -503,6 +506,7 @@ class MiscController {
       await libraryItem.media.update({
         genres: libraryItem.media.genres
       })
+      await libraryItem.saveMetadataFile()
       const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
       numItemsUpdated++
