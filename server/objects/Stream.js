@@ -195,7 +195,7 @@ class Stream extends EventEmitter {
       var current_chunk = []
       var last_seg_in_chunk = -1
 
-      var segments = Array.from(this.segmentsCreated).sort((a, b) => a - b);
+      var segments = Array.from(this.segmentsCreated).sort((a, b) => a - b)
       var lastSegment = segments[segments.length - 1]
       if (lastSegment > this.furthestSegmentCreated) {
         this.furthestSegmentCreated = lastSegment
@@ -342,7 +342,7 @@ class Stream extends EventEmitter {
         Logger.error('Ffmpeg Err', '"' + err.message + '"')
 
         // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172 and https://github.com/advplyr/audiobookshelf/issues/2157
-        const aacErrorMsg = 'ffmpeg exited with code 1:'
+        const aacErrorMsg = 'ffmpeg exited with code 1'
         if (audioCodec === 'copy' && this.isAACEncodable && err.message?.startsWith(aacErrorMsg)) {
           Logger.info(`[Stream] Re-attempting stream with AAC encode`)
           this.transcodeOptions.forceAAC = true
