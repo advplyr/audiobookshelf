@@ -59,7 +59,7 @@ async function getFileTimestampsWithIno(path) {
       ino: String(stat.ino)
     }
   } catch (err) {
-    Logger.error('[fileUtils] Failed to getFileTimestampsWithIno', err)
+    Logger.error(`[fileUtils] Failed to getFileTimestampsWithIno for path "${path}"`, err)
     return false
   }
 }
