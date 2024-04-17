@@ -16,13 +16,23 @@ import '../../assets/app.css'
 import './tailwind.compiled.css'
 // Import commands.js using ES2015 syntax:
 import './commands'
+import Vue from 'vue'
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+import { Constants } from '../../plugins/constants'
+import Strings from '../../strings/en-us.json'
+import '../../plugins/utils'
+import '../../plugins/init.client'
 
 import { mount } from 'cypress/vue2'
 
-Cypress.Commands.add('mount', mount)
+//Cypress.Commands.add('mount', mount)
+Cypress.Commands.add('mount', (component, options = {}) => {
+
+  Vue.prototype.$constants = Constants
+  Vue.prototype.$strings = Strings
+
+  return mount(component, options)
+})
 
 // Example use:
 // cy.mount(MyComponent)
