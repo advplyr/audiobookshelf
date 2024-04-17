@@ -153,7 +153,7 @@ describe('AuthorCard', () => {
         $post: cy.stub().resolves({ updated: true, author: { name: 'John Doe' } })
       },
       $toast: {
-        success: cy.stub().withArgs('Author John Doe was updated (no image found)').as('success'),
+        success: cy.stub().as('success'),
         error: cy.spy().as('error'),
         info: cy.spy().as('info')
       }  
@@ -163,7 +163,7 @@ describe('AuthorCard', () => {
     cy.get('#match').click()
 
     cy.get("#spinner").should('be.hidden')
-    cy.get('@success').should('have.been.called')
+    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated (no image found)')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
   })
@@ -175,7 +175,7 @@ describe('AuthorCard', () => {
         $post: cy.stub().resolves({ updated: true, author: { name: 'John Doe', imagePath: "path/to/image" } })
       },
       $toast: {
-        success: cy.stub().withArgs('Author John Doe was updated').as('success'),
+        success: cy.stub().as('success'),
         error: cy.spy().as('error'),
         info: cy.spy().as('info')
       }  
@@ -185,7 +185,7 @@ describe('AuthorCard', () => {
     cy.get('#match').click()
 
     cy.get("#spinner").should('be.hidden')
-    cy.get('@success').should('have.been.called')
+    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
   })
