@@ -86,7 +86,8 @@ module.exports = {
       fontSize: {
         xxs: '0.625rem',
         '1.5xl': '1.375rem',
-        '2.5xl': '1.6875rem'
+        '2.5xl': '1.6875rem',
+        '4.5xl': '2.625rem'
       },
       zIndex: {
         '50': 50,

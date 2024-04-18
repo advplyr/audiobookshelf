@@ -74,6 +74,10 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
+Vue.prototype.$formatNumber = (num) => {
+  return Intl.NumberFormat(Vue.prototype.$languageCodes.current).format(num)
+}
+
 const translations = {
   [defaultCode]: enUsStrings
 }
