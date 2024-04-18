@@ -50,14 +50,22 @@ Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).
 })
 
 Vue.prototype.$languageCodes = {
-  default: defaultCode,
-  current: defaultCode,
-  local: null,
-  server: null
+  default: defaultCode, // en-us
+  current: defaultCode, // Current language code in use
+  local: null, // Language code set at user level
+  server: null // Language code set at server level
 }
 
+// Currently loaded strings (default enUS)
 Vue.prototype.$strings = { ...enUsStrings }
 
+/**
+ * Get string and substitute
+ * 
+ * @param {string} key 
+ * @param {string[]} subs 
+ * @returns {string}
+ */
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
@@ -66,7 +74,7 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
-var translations = {
+const translations = {
   [defaultCode]: enUsStrings
 }
 
