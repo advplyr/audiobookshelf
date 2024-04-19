@@ -39,7 +39,7 @@ describe("LazySeriesCard", () => {
         "user/getUserCanUpdate": true,
         "user/getUserMediaProgress": (id) => null,
         "libraries/getLibraryProvider": () => "audible.us",
-        "globals/getLibraryItemCoverSrc": () => "http://localhost:3333//book_placeholder.jpg"
+        "globals/getLibraryItemCoverSrc": () => "/book_placeholder.jpg"
       },
       state: {
         libraries: {
@@ -51,6 +51,10 @@ describe("LazySeriesCard", () => {
       }
     }
   }
+
+  before(() => {
+    cy.intercept("GET", "/book_placeholder.jpg", { fixture: "images/book_placeholder.jpg" })
+  })
 
   it("renders the component", () => {
     cy.mount(LazySeriesCard, { propsData, stubs, mocks })
