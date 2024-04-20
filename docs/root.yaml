@@ -7,9 +7,15 @@ servers:
   - url: http://localhost:3000
     description: Development server
 components:
-  responses: 
-    ok200:
-      description: OK
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+    responses:
+        ok200:
+            description: OK
+security:
+    - BearerAuth: []
 paths:
   /api/authors/{id}:
     get:
