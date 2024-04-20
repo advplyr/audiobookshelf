@@ -1,0 +1,103 @@
+components:
+  schemas:
+    audioMetaTags:
+      description: ID3 metadata tags pulled from the audio file on import. Only non-null tags will be returned in requests.
+      type: object
+      properties:
+        tagAlbum:
+          type: string
+          nullable: true
+          example: SOT Bk01
+        tagArtist:
+          type: string
+          nullable: true
+          example: Terry Goodkind
+        tagGenre:
+          type: string
+          nullable: true
+          example: Audiobook Fantasy
+        tagTitle:
+          type: string
+          nullable: true
+          example: Wizards First Rule 01
+        tagSeries:
+          type: string
+          nullable: true
+        tagSeriesPart:
+          type: string
+          nullable: true
+        tagTrack:
+          type: string
+          nullable: true
+          example: 01/20
+        tagDisc:
+          type: string
+          nullable: true
+        tagSubtitle:
+          type: string
+          nullable: true
+        tagAlbumArtist:
+          type: string
+          nullable: true
+          example: Terry Goodkind
+        tagDate:
+          type: string
+          nullable: true
+        tagComposer:
+          type: string
+          nullable: true
+          example: Terry Goodkind
+        tagPublisher:
+          type: string
+          nullable: true
+        tagComment:
+          type: string
+          nullable: true
+        tagDescription:
+          type: string
+          nullable: true
+        tagEncoder:
+          type: string
+          nullable: true
+        tagEncodedBy:
+          type: string
+          nullable: true
+        tagIsbn:
+          type: string
+          nullable: true
+        tagLanguage:
+          type: string
+          nullable: true
+        tagASIN:
+          type: string
+          nullable: true
+        tagOverdriveMediaMarker:
+          type: string
+          nullable: true
+        tagOriginalYear:
+          type: string
+          nullable: true
+        tagReleaseCountry:
+          type: string
+          nullable: true
+        tagReleaseType:
+          type: string
+          nullable: true
+        tagReleaseStatus:
+          type: string
+          nullable: true
+        tagISRC:
+          type: string
+          nullable: true
+        tagMusicBrainzTrackId:
+          type: string
+          nullable: true
+        tagMusicBrainzAlbumId:
+          type: string
+          nullable: true
+        tagMusicBrainzAlbumArtistId:
+          type: string
+          nullable: true
+        tagMusicBrainzArtistId:
+          type: string
+          nullable: true
