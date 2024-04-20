@@ -13,17 +13,17 @@ components:
 paths:
   /api/authors/{id}:
     get:
-      operationId: getAuthorByID
+      operationId: getAuthorById
       summary: Get a single author by ID on server
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorInclude'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorLibraryId'
       responses:
         200:
-          description: getAuthorByID OK
+          description: getAuthorById OK
           content:
             application/json:
               schema:
@@ -34,19 +34,19 @@ paths:
         404:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     patch:
-      operationId: updateAuthorByID
+      operationId: updateAuthorById
       summary: Update a single author by ID on server. This endpoint will merge two authors if the new author name matches another author in the database.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/asin'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorName'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorDescription'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorImagePath'
       responses:
         200:
-          description: updateAuthorByID OK
+          description: updateAuthorById OK
           content:
             application/json:
               schema:
@@ -62,12 +62,12 @@ paths:
         404:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     delete:
-      operationId: deleteAuthorByID
+      operationId: deleteAuthorById
       summary: Delete a single author by ID on server and remove author from all books.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
       responses:
         200:
           $ref: '#/components/responses/ok200'
@@ -75,16 +75,16 @@ paths:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
   /api/authors/{id}/image:
     post:
-      operationId: setAuthorImageByID
+      operationId: setAuthorImageById
       summary: Set an author image using a provided URL.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/imageURL'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/imageUrl'
       responses:
         200:
-          description: setAuthorImageByID OK
+          description: setAuthorImageById OK
           content:
             application/json:
               schema:
@@ -93,31 +93,31 @@ paths:
         404:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     delete:
-      operationId: deleteAuthorImageByID
+      operationId: deleteAuthorImageById
       summary: Delete an author image from the server and remove the image from the database.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
       responses:
         200:
           $ref: '#/components/responses/ok200'
         404:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     patch:
-      operationId: getAuthorImageByID
+      operationId: getAuthorImageById
       summary: Return the author image by author ID.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/imageWidth'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/imageHeight'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/imageFormat'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/imageRaw'
       responses:
         200:
-          description: getAuthorImageByID OK
+          description: getAuthorImageById OK
           content:
             image/*:
               schema:
@@ -127,17 +127,17 @@ paths:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
   /api/authors/{id}/match:
     post:
-      operationId: matchAuthorByID
+      operationId: matchAuthorById
       summary: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
       tags:
         - Authors
       parameters:
-        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorID'
+        - $ref: './controllers/AuthorController.yaml#/components/parameters/authorId'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/asin'
         - $ref: './controllers/AuthorController.yaml#/components/parameters/authorSearchName'
       responses:
         200:
-          description: matchAuthorByID OK
+          description: matchAuthorById OK
           content:
             application/json:
               schema:

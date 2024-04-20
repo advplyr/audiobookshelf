@@ -5,7 +5,7 @@ components:
       type: boolean
       nullable: true
   parameters:
-    authorID:
+    authorId:
       name: id
       in: path
       description: Author ID
@@ -43,7 +43,7 @@ components:
       description: The Audible Identifier (ASIN).
       required: false
       schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorASIN'
+        $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
     authorSearchName:
       name: q
       in: query
@@ -77,7 +77,7 @@ components:
         type: string
         nullable: true
         example: /metadata/authors/aut_z3leimgybl7uf3y4ab.jpg
-    imageURL:
+    imageUrl:
       name: url
       in: query
       description: The URL of the image to add to the server

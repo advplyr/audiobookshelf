@@ -5,7 +5,7 @@ components:
       description: The ID of the author.
       format: uuid
       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
-    authorASIN:
+    authorAsin:
       type: string
       description: The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.
       nullable: true
@@ -34,7 +34,7 @@ components:
         id:
           $ref: '#/components/schemas/authorId'
         asin:
-          $ref: '#/components/schemas/authorASIN'
+          $ref: '#/components/schemas/authorAsin'
         name:
           $ref: '#/components/schemas/authorName'
         description:
