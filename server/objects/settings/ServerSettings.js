@@ -68,13 +68,14 @@ class ServerSettings {
     this.authOpenIDLogoutURL = null
     this.authOpenIDClientID = null
     this.authOpenIDClientSecret = null
+    this.authOpenIDTokenSigningAlgorithm = 'RS256'
     this.authOpenIDButtonText = 'Login with OpenId'
     this.authOpenIDAutoLaunch = false
     this.authOpenIDAutoRegister = false
     this.authOpenIDMatchExistingBy = null
     this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
     this.authOpenIDGroupClaim = ''
-    this.authOpenIDAdvancedPermsClaim = '' 
+    this.authOpenIDAdvancedPermsClaim = ''
 
     if (settings) {
       this.construct(settings)
@@ -127,6 +128,7 @@ class ServerSettings {
     this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || null
     this.authOpenIDClientID = settings.authOpenIDClientID || null
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || null
+    this.authOpenIDTokenSigningAlgorithm = settings.authOpenIDTokenSigningAlgorithm || 'RS256'
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
     this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
@@ -217,6 +219,7 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
@@ -252,7 +255,8 @@ class ServerSettings {
       this.authOpenIDUserInfoURL &&
       this.authOpenIDJwksURL &&
       this.authOpenIDClientID &&
-      this.authOpenIDClientSecret
+      this.authOpenIDClientSecret &&
+      this.authOpenIDTokenSigningAlgorithm
   }
 
   get authenticationSettings() {
@@ -267,6 +271,7 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,

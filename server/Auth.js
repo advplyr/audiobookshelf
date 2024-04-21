@@ -89,7 +89,8 @@ class Auth {
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
-      client_secret: global.ServerSettings.authOpenIDClientSecret
+      client_secret: global.ServerSettings.authOpenIDClientSecret,
+      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
     })
     passport.use('openid-client', new OpenIDClient.Strategy({
       client: openIdClient,
@@ -650,7 +651,8 @@ class Auth {
           token_endpoint: data.token_endpoint,
           userinfo_endpoint: data.userinfo_endpoint,
           end_session_endpoint: data.end_session_endpoint,
-          jwks_uri: data.jwks_uri
+          jwks_uri: data.jwks_uri,
+          id_token_signing_alg_values_supported: data.id_token_signing_alg_values_supported
         })
       }).catch((error) => {
         Logger.error(`[Auth] Failed to get openid configuration at "${configUrl}"`, error)
