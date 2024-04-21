@@ -30,8 +30,7 @@
 }
 
 .bookshelf-row {
-  /* Sidebar width + scrollbar width */
-  width: calc(100vw - 88px);
+  width: calc(100vw - (100vw - 100%));
 }
 
 @media (max-width: 768px) {
