@@ -43,7 +43,7 @@ class CustomProviderAdapter {
             }
         }
 
-        const matches = await axios.get(`${provider.url}/search?${queryString}}`, axiosOptions).then((res) => {
+        const matches = await axios.get(`${provider.url}/search?${queryString}`, axiosOptions).then((res) => {
             if (!res?.data || !Array.isArray(res.data.matches)) return null
             return res.data.matches
         }).catch(error => {

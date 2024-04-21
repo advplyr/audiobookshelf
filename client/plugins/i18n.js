@@ -5,6 +5,7 @@ import { supplant } from './utils'
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
+  'bn': { label: 'বাংলা', dateFnsLocale: 'bn' },
   'cs': { label: 'Čeština', dateFnsLocale: 'cs' },
   'da': { label: 'Dansk', dateFnsLocale: 'da' },
   'de': { label: 'Deutsch', dateFnsLocale: 'de' },
@@ -49,14 +50,22 @@ Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).
 })
 
 Vue.prototype.$languageCodes = {
-  default: defaultCode,
-  current: defaultCode,
-  local: null,
-  server: null
+  default: defaultCode, // en-us
+  current: defaultCode, // Current language code in use
+  local: null, // Language code set at user level
+  server: null // Language code set at server level
 }
 
+// Currently loaded strings (default enUS)
 Vue.prototype.$strings = { ...enUsStrings }
 
+/**
+ * Get string and substitute
+ * 
+ * @param {string} key 
+ * @param {string[]} subs 
+ * @returns {string}
+ */
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
@@ -65,7 +74,11 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
-var translations = {
+Vue.prototype.$formatNumber = (num) => {
+  return Intl.NumberFormat(Vue.prototype.$languageCodes.current).format(num)
+}
+
+const translations = {
   [defaultCode]: enUsStrings
 }
 

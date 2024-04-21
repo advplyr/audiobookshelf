@@ -1,0 +1,139 @@
+components:
+  schemas:
+    authorUpdated:
+      description: Whether the author was updated without errors. Will not exist if author was merged.
+      type: boolean
+      nullable: true
+  parameters:
+    authorId:
+      name: id
+      in: path
+      description: Author ID
+      required: true
+      schema:
+        $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    authorInclude:
+      name: include
+      in: query
+      description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included.
+      required: false
+      schema:
+        type: string
+        example: "items"
+      examples:
+        empty:
+          summary: Do not return library items
+          value: ""
+        itemOnly:
+          summary: Only return library items
+          value: "items"
+        itemsAndSeries:
+          summary: Return library items and series
+          value: "items,series"
+    authorLibraryId:
+      name: library
+      in: query
+      description: The ID of the library to to include filter included items from.
+      required: false
+      schema:
+        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    asin:
+      name: asin
+      in: query
+      description: The Audible Identifier (ASIN).
+      required: false
+      schema:
+        $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+    authorSearchName:
+      name: q
+      in: query
+      description: The name of the author to use for searching.
+      required: false
+      schema:
+        type: string
+        example: Terry Goodkind
+    authorName:
+      name: name
+      in: query
+      description: The new name of the author.
+      required: false
+      schema:
+        $ref: '../objects/entities/Author.yaml#/components/schemas/authorName'
+    authorDescription:
+      name: description
+      in: query
+      description: The new description of the author.
+      required: false
+      schema:
+        type: string
+        nullable: true
+        example: Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork, ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20 languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing.
+    authorImagePath:
+      name: imagePath
+      in: query
+      description: The new absolute path for the author image.
+      required: false
+      schema:
+        type: string
+        nullable: true
+        example: /metadata/authors/aut_z3leimgybl7uf3y4ab.jpg
+    imageUrl:
+      name: url
+      in: query
+      description: The URL of the image to add to the server
+      required: true
+      schema:
+        type: string
+        format: uri
+        example: https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg
+    imageWidth:
+      name: width
+      in: query
+      description: The requested width of image in pixels.
+      schema:
+        type: integer
+        default: 400
+        example: 400
+      example: 400
+    imageHeight:
+      name: height
+      in: query
+      description: The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.
+      schema:
+        type: integer
+        nullable: true
+        default: null
+        example: 600
+      examples:
+        scaleHeight:
+          summary: Scale height with width
+          value: null
+        fixedHeight:
+          summary: Force height of image
+          value: 600
+    imageFormat:
+      name: format
+      in: query
+      description: The requested output format.
+      schema:
+        type: string
+        default: jpeg
+        example: webp
+    imageRaw:
+      name: raw
+      in: query
+      description: Return the raw image without scaling if true.
+      schema:
+        type: boolean
+        default: false
+  responses: 
+    author404:
+      description: Author not found.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Not found
+tags:
+  - name: Authors
+    description: Author endpoints

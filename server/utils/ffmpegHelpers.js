@@ -104,7 +104,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions(
-      '-c', 'copy',
+      '-c:a', 'copy',
+      '-map', '0:a',
       '-metadata', 'podcast=1'
     )
 
