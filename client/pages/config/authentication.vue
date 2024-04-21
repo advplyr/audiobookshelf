@@ -58,7 +58,7 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
-            <ui-dropdown v-if="hasSupportedSigningAlgorithms" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
+            <ui-dropdown v-if="openIdSigningAlgorithmsSupportedByIssuer.length" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
             <ui-text-input-with-label v-else ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
 
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
@@ -164,9 +164,6 @@ export default {
           value: 'username'
         }
       ]
-    },
-    hasSupportedSigningAlgorithms() {
-      return this.openIdSigningAlgorithmsSupportedByIssuer.length > 0
     }
   },
   methods: {
@@ -186,14 +183,17 @@ export default {
       }
 
       const setSupportedSigningAlgorithms = (algorithms) => {
+        if (!algorithms?.length || !Array.isArray(algorithms)) {
+          console.warn('Invalid id_token_signing_alg_values_supported from openid-configuration', algorithms)
+          this.openIdSigningAlgorithmsSupportedByIssuer = []
+          return
+        }
         this.openIdSigningAlgorithmsSupportedByIssuer = algorithms
 
-        if(!algorithms || algorithms.length === 0) return
-        
         // If a signing algorithm is already selected, then keep it, when it is still supported.
         // But if it is not supported, then select one of the supported ones.
         let currentAlgorithm = this.newAuthSettings.authOpenIDTokenSigningAlgorithm
-        if(!algorithms.includes(currentAlgorithm)) {
+        if (!algorithms.includes(currentAlgorithm)) {
           this.newAuthSettings.authOpenIDTokenSigningAlgorithm = algorithms[0]
         }
       }
@@ -245,7 +245,6 @@ export default {
         this.$toast.error('Client Secret required')
         isValid = false
       }
-
       if (!this.newAuthSettings.authOpenIDTokenSigningAlgorithm) {
         this.$toast.error('Signing Algorithm required')
         isValid = false
