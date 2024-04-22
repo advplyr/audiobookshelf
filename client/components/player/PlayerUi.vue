@@ -5,7 +5,7 @@
         <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
-          <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
+          <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelSleepTimer">
