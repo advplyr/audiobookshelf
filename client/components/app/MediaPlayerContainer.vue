@@ -82,13 +82,11 @@ export default {
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
-      syncFailedToast: null
+      syncFailedToast: null,
+      coverAspectRatio: 1
     }
   },
   computed: {
-    coverAspectRatio() {
-      return this.$store.getters['libraries/getBookCoverAspectRatio']
-    },
     isSquareCover() {
       return this.coverAspectRatio === 1
     },
@@ -457,6 +455,9 @@ export default {
         episodeId,
         queueItems: payload.queueItems || []
       })
+      // Set cover aspect ratio for this item's library since the library may change
+      this.coverAspectRatio = this.$store.getters['libraries/getBookCoverAspectRatio']
+
       this.$nextTick(() => {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })
