@@ -61,7 +61,7 @@
       </div>
     </div>
     <div v-if="isPodcastLibrary" class="py-3">
-      <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="formUpdated" />
+      <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-72" menu-max-height="200px" @input="formUpdated" />
     </div>
   </div>
 </template>
