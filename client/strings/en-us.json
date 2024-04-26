@@ -89,6 +89,7 @@
   "ButtonSubmit": "Submit",
   "ButtonTest": "Test",
   "ButtonUpload": "Upload",
+  "LabelUploadChunked": "Upload Chunked",
   "ButtonUploadBackup": "Upload Backup",
   "ButtonUploadCover": "Upload Cover",
   "ButtonUploadOPMLFile": "Upload OPML File",

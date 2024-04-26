@@ -78,7 +78,11 @@
       <cards-item-upload-card v-for="item in items" :key="item.index" :ref="`itemCard-${item.index}`" :media-type="selectedLibraryMediaType" :item="item" :provider="fetchMetadata.provider" :processing="processing" @remove="removeItem(item)" />
 
       <!-- Upload/Reset btns -->
-      <div v-show="items.length" class="flex justify-end pb-8 pt-4">
+      <div v-show="items.length" class="flex justify-end items-center pb-8 pt-4">
+        <label class="flex cursor-pointer pr-3">
+          <ui-toggle-switch v-model="uploadChunked" class="inline-flex" :enabled="!uploadFinished" />
+          <span class="pl-2 text-base">{{ $strings.LabelUploadChunked }}</span>
+        </label>
         <ui-btn v-if="!uploadFinished" color="success" :loading="processing" @click="submit">{{ $strings.ButtonUpload }}</ui-btn>
         <ui-btn v-else @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
@@ -105,6 +109,7 @@ export default {
       selectedFolderId: null,
       processing: false,
       uploadFinished: false,
+      uploadChunked: false,
       fetchMetadata: {
         enabled: false,
         provider: null
@@ -319,6 +324,39 @@ export default {
           return false
         })
     },
+    async uploadItemChunked(item) {
+      // upload files
+      const form = new FormData()
+      form.set('title', item.title)
+      form.set('library', this.selectedLibraryId)
+      form.set('folder', this.selectedFolderId)
+      if (!this.selectedLibraryIsPodcast) {
+        form.set('author', item.author || '')
+        form.set('series', item.series || '')
+      }
+
+      for (let i = 0; i < item.files.length; i++) {
+        const file = item.files[i]
+
+        form.set('file', file)
+
+        const success = await this.$axios
+            .$post(`/api/upload`, form)
+            .then(() => true)
+            .catch((error) => {
+              console.error('Failed', error)
+              var errorMessage = error.response && error.response.data ? error.response.data : 'Oops, something went wrong...'
+              this.$toast.error(errorMessage)
+              return false
+            })
+
+        if (!success) {
+          return false
+        }
+      }
+
+      return true
+    },
     validateItems() {
       var itemData = []
       for (var item of this.items) {
@@ -379,7 +417,9 @@ export default {
       let itemsFailed = 0
       for (const item of itemsToUpload) {
         this.updateItemCardStatus(item.index, 'uploading')
-        const result = await this.uploadItem(item)
+        const result = this.uploadChunked
+            ? await this.uploadItemChunked(item)
+            : await this.uploadItem(item)
         if (result) itemsUploaded++
         else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')
