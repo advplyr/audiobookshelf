@@ -35,9 +35,14 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
     return line
   })
   var inputstr = trackPaths.join('\n\n')
-  await fs.writeFile(outputPath, inputstr)
 
-  return firstTrackStartTime
+  try {
+    await fs.writeFile(outputPath, inputstr)
+    return firstTrackStartTime
+  } catch (error) {
+    Logger.error(`[ffmpegHelpers] Failed to write stream concat file at "${outputPath}"`, error)
+    return null
+  }
 }
 module.exports.writeConcatFile = writeConcatFile
 

@@ -254,8 +254,14 @@ class Stream extends EventEmitter {
     this.ffmpeg = Ffmpeg()
     this.furthestSegmentCreated = 0
 
-    var adjustedStartTime = Math.max(this.startTime - this.maxSeekBackTime, 0)
-    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, adjustedStartTime)
+    const adjustedStartTime = Math.max(this.startTime - this.maxSeekBackTime, 0)
+    const trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, adjustedStartTime)
+    if (trackStartTime == null) {
+      // Close stream show error
+      this.ffmpeg = null
+      this.close('Failed to write stream concat file')
+      return
+    }
 
     this.ffmpeg.addInput(this.concatFilesPath)
     // seek_timestamp : https://ffmpeg.org/ffmpeg.html
@@ -343,7 +349,8 @@ class Stream extends EventEmitter {
 
         // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172 and https://github.com/advplyr/audiobookshelf/issues/2157
         const aacErrorMsg = 'ffmpeg exited with code 1'
-        if (audioCodec === 'copy' && this.isAACEncodable && err.message?.startsWith(aacErrorMsg)) {
+        const errorMessageSuggestsReEncode = err.message?.startsWith(aacErrorMsg) && !err.message?.includes('No such file or directory')
+        if (audioCodec === 'copy' && this.isAACEncodable && errorMessageSuggestsReEncode) {
           Logger.info(`[Stream] Re-attempting stream with AAC encode`)
           this.transcodeOptions.forceAAC = true
           this.reset(this.startTime)
