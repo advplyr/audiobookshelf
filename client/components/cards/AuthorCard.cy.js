@@ -24,10 +24,10 @@ describe('AuthorCard', () => {
       LabelBooks: 'Books',
       ButtonQuickMatch: 'Quick Match'
     },
-    $store : {
+    $store: {
       getters: {
         'user/getUserCanUpdate': true,
-        'libraries/getLibraryProvider': () => 'audible.us'        
+        'libraries/getLibraryProvider': () => 'audible.us'
       },
       state: {
         libraries: {
@@ -36,8 +36,8 @@ describe('AuthorCard', () => {
       }
     },
     $eventBus: {
-      $on: () => {},
-      $off: () => {},
+      $on: () => { },
+      $off: () => { },
     },
   }
 
@@ -51,7 +51,7 @@ describe('AuthorCard', () => {
 
   it('renders the component', () => {
     cy.mount(AuthorCard, mountOptions)
-    
+
     cy.get('&textInline').should('be.visible')
     cy.get('&match').should('be.hidden')
     cy.get('&edit').should('be.hidden')
@@ -66,26 +66,26 @@ describe('AuthorCard', () => {
 
   it('renders the component with the author name below', () => {
     const updatedPropsData = { ...propsData, nameBelow: true }
-    cy.mount(AuthorCard, { ...mountOptions, propsData: updatedPropsData } )
+    cy.mount(AuthorCard, { ...mountOptions, propsData: updatedPropsData })
 
     cy.get('&textInline').should('be.hidden')
     cy.get('&match').should('be.hidden')
     cy.get('&edit').should('be.hidden')
     let nameBelowHeight
     cy.get('&nameBelow')
-        .should('be.visible')
-        .and('have.text', 'John Doe')
-        .and(($el) => {
-          const height = $el.height()
-          const width = $el.width()
-          const sizeMultiplier = propsData.sizeMultiplier
-          const defaultFontSize = 16
-          const defaultLineHeight = 1.5
-          const fontSizeMultiplier = 0.75
-          const px2 = 16
-          expect(height).to.be.closeTo(defaultFontSize * fontSizeMultiplier * sizeMultiplier * defaultLineHeight, 0.01)
-          nameBelowHeight = height 
-          expect(width).to.be.closeTo(propsData.width - px2, 0.01)         
+      .should('be.visible')
+      .and('have.text', 'John Doe')
+      .and(($el) => {
+        const height = $el.height()
+        const width = $el.width()
+        const sizeMultiplier = propsData.sizeMultiplier
+        const defaultFontSize = 16
+        const defaultLineHeight = 1.5
+        const fontSizeMultiplier = 0.75
+        const px2 = 16
+        expect(height).to.be.closeTo(defaultFontSize * fontSizeMultiplier * sizeMultiplier * defaultLineHeight, 0.01)
+        nameBelowHeight = height
+        expect(width).to.be.closeTo(propsData.width - px2, 0.01)
       })
     cy.get('&card').should(($el) => {
       const width = $el.width()
@@ -94,11 +94,10 @@ describe('AuthorCard', () => {
       expect(width).to.be.closeTo(propsData.width, 0.01)
       expect(height).to.be.closeTo(propsData.height + nameBelowHeight + py1, 0.01)
     })
-
   })
 
   it('renders quick-match and edit buttons on mouse hover', () => {
-    cy.mount(AuthorCard, mountOptions )
+    cy.mount(AuthorCard, mountOptions)
 
     // before mouseover
     cy.get('&match').should('be.hidden')
@@ -116,7 +115,7 @@ describe('AuthorCard', () => {
 
   it('renders the component with spinner while searching', () => {
     const data = () => { return { searching: true, isHovering: false } }
-    cy.mount(AuthorCard, { ...mountOptions, data } )
+    cy.mount(AuthorCard, { ...mountOptions, data })
 
     cy.get('&textInline').should('be.hidden')
     cy.get('&match').should('be.hidden')
@@ -124,7 +123,7 @@ describe('AuthorCard', () => {
     cy.get('&spinner').should('be.visible')
   })
 
-  it ('toasts after quick match with no updates', () => {
+  it('toasts after quick match with no updates', () => {
     const updatedMocks = {
       ...mocks,
       $axios: {
@@ -134,9 +133,9 @@ describe('AuthorCard', () => {
         success: cy.spy().as('success'),
         error: cy.spy().as('error'),
         info: cy.spy().as('info')
-      }  
+      }
     }
-    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
+    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks })
     cy.get('&card').trigger('mouseover')
     cy.get('&match').click()
 
@@ -146,7 +145,7 @@ describe('AuthorCard', () => {
     cy.get('@info').should('have.been.called')
   })
 
-  it ('toasts after quick match with updates and no image', () => {
+  it('toasts after quick match with updates and no image', () => {
     const updatedMocks = {
       ...mocks,
       $axios: {
@@ -156,9 +155,9 @@ describe('AuthorCard', () => {
         success: cy.stub().as('success'),
         error: cy.spy().as('error'),
         info: cy.spy().as('info')
-      }  
+      }
     }
-    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
+    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks })
     cy.get('&card').trigger('mouseover')
     cy.get('&match').click()
 
@@ -168,7 +167,7 @@ describe('AuthorCard', () => {
     cy.get('@info').should('not.have.been.called')
   })
 
-  it ('toasts after quick match with updates including image', () => {
+  it('toasts after quick match with updates including image', () => {
     const updatedMocks = {
       ...mocks,
       $axios: {
@@ -178,9 +177,9 @@ describe('AuthorCard', () => {
         success: cy.stub().as('success'),
         error: cy.spy().as('error'),
         info: cy.spy().as('info')
-      }  
+      }
     }
-    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
+    cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks })
     cy.get('&card').trigger('mouseover')
     cy.get('&match').click()
 

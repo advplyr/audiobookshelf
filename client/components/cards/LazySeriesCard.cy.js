@@ -93,7 +93,7 @@ describe('LazySeriesCard', () => {
         push: cy.stub().as('routerPush')
       }
     }
-    cy.mount(LazySeriesCard, { propsData, stubs, mocks: updatedMocks})
+    cy.mount(LazySeriesCard, { propsData, stubs, mocks: updatedMocks })
     cy.get('&card').click()
 
     cy.get('@routerPush').should('have.been.calledOnceWithExactly', '/library/library-123/series/1')
@@ -126,8 +126,8 @@ describe('LazySeriesCard', () => {
       .and('have.class', 'bg-yellow-400')
       .and(($el) => {
         const width = $el.width()
-        expect(width).to.be.closeTo((2/3) * propsData.width, 0.01)
-    })
+        expect(width).to.be.closeTo((2 / 3) * propsData.width, 0.01)
+      })
   })
 
   it('shows full green progress bar when all books are finished', () => {
@@ -149,7 +149,7 @@ describe('LazySeriesCard', () => {
       .and(($el) => {
         const width = $el.width()
         expect(width).to.equal(propsData.width)
-    })
+      })
   })
 
   it('hides the rss feed marker when there is no rss feed', () => {
@@ -200,7 +200,7 @@ describe('LazySeriesCard', () => {
     }
     cy.mount(LazySeriesCard, { propsData: updatedPropsData, stubs, mocks })
 
-    cy.get('&detailBottomSortLine').should('have.text', 'Last Book Added 04/16/2024')    
+    cy.get('&detailBottomSortLine').should('have.text', 'Last Book Added 04/16/2024')
   })
 
   it('shows nameIgnorePrefix when sortingIgnorePrefix is true', () => {

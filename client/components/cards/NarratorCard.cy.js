@@ -51,7 +51,6 @@ describe('<NarratorCard />', () => {
     cy.mount(NarratorCard, mountOptions)
 
     cy.get('&numBooks').should('have.text', '1 Book')
-
   })
 
   it('renders the default name and num-books when narrator is not provided', () => {
@@ -77,7 +76,7 @@ describe('<NarratorCard />', () => {
     cy.get('&card').should('have.css', 'height', '100px')
   })
 
-  it ('has the correct font sizes', () => {
+  it('has the correct font sizes', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
     cy.get('&name').should('have.css', 'font-size', '14.4px') // 0.75 * 1.2 * 16
