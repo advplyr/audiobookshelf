@@ -67,7 +67,7 @@ describe("LazySeriesCard", () => {
     })
     cy.get("#seriesLengthMarker").should("be.visible").and("have.text", propsData.seriesMount.books.length)
     cy.get("#seriesProgressBar").should("not.exist")
-    cy.get("#HoveringDisplayTitle").should("be.hidden")
+    cy.get("#hoveringDisplayTitle").should("be.hidden")
     cy.get("#rssFeedMarker").should("be.visible")
     cy.get("#standardBottomDisplayTitle").should("not.exist")
     cy.get("#detailBottomDisplayTitle").should("be.visible")
@@ -79,7 +79,7 @@ describe("LazySeriesCard", () => {
     cy.mount(LazySeriesCard, { propsData, stubs, mocks })
     cy.get("#series-card-0").trigger("mouseover")
 
-    cy.get("#HoveringDisplayTitle").should("be.visible").should("have.text", "The Lord of the Rings")
+    cy.get("#hoveringDisplayTitle").should("be.visible").should("have.text", "The Lord of the Rings")
     cy.get("#rssFeedMarker").should("not.exist")
   })
 
