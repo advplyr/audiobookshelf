@@ -23,3 +23,9 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+Cypress.Commands.overwriteQuery('get', function (originalFn, ...args) {
+  if (args.length > 0 && typeof args[0] === 'string' && args[0].startsWith('&')) {
+    args[0] = `[cy-id="${args[0].substring(1)}"]`
+  }
+  return originalFn.apply(this, args)
+})
