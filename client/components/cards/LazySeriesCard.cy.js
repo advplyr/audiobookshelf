@@ -39,7 +39,7 @@ describe('LazySeriesCard', () => {
         'user/getUserCanUpdate': true,
         'user/getUserMediaProgress': (id) => null,
         'libraries/getLibraryProvider': () => 'audible.us',
-        'globals/getLibraryItemCoverSrc': () => '/book_placeholder.jpg'
+        'globals/getLibraryItemCoverSrc': () => 'https://my.server.com/book_placeholder.jpg'
       },
       state: {
         libraries: {
@@ -53,7 +53,10 @@ describe('LazySeriesCard', () => {
   }
 
   before(() => {
-    cy.intercept('GET', '/book_placeholder.jpg', { fixture: 'images/book_placeholder.jpg' })
+    cy.intercept('GET', 'https://my.server.com/book_placeholder.jpg', { fixture: 'images/book_placeholder.jpg' }).as('bookCover')
+    cy.mount(LazySeriesCard, { propsData, stubs, mocks })
+    cy.wait('@bookCover')
+    // Now the placeholder image is in the browser cache
   })
 
   it('renders the component', () => {
