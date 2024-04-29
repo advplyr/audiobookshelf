@@ -35,14 +35,14 @@ describe('<NarratorCard />', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
 
-    cy.get('#name').should('have.text', 'John Doe')
+    cy.get('&name').should('have.text', 'John Doe')
   })
 
   it('renders the number of books correctly', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
 
-    cy.get('#numBooks').should('have.text', '5 Books')
+    cy.get('&numBooks').should('have.text', '5 Books')
   })
 
   it('renders 1 book correctly', () => {
@@ -50,7 +50,7 @@ describe('<NarratorCard />', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
 
-    cy.get('#numBooks').should('have.text', '1 Book')
+    cy.get('&numBooks').should('have.text', '1 Book')
 
   })
 
@@ -58,29 +58,29 @@ describe('<NarratorCard />', () => {
     let propsData = { width: 200, height: 150, sizeMultiplier: 1.2 }
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
-    cy.get('#name').should('have.text', '')
-    cy.get('#numBooks').should('have.text', '0 Books')
+    cy.get('&name').should('have.text', '')
+    cy.get('&numBooks').should('have.text', '0 Books')
   })
 
   it('has the correct width and height', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
-    cy.get('#card').should('have.css', 'width', '200px')
-    cy.get('#card').should('have.css', 'height', '150px')
+    cy.get('&card').should('have.css', 'width', '200px')
+    cy.get('&card').should('have.css', 'height', '150px')
   })
 
   it('has the correct width and height when not provided', () => {
     let propsData = { narrator, sizeMultiplier: 1.2 }
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
-    cy.get('#card').should('have.css', 'width', '150px')
-    cy.get('#card').should('have.css', 'height', '100px')
+    cy.get('&card').should('have.css', 'width', '150px')
+    cy.get('&card').should('have.css', 'height', '100px')
   })
 
   it ('has the correct font sizes', () => {
     let mountOptions = { propsData, mocks }
     cy.mount(NarratorCard, mountOptions)
-    cy.get('#name').should('have.css', 'font-size', '14.4px') // 0.75 * 1.2 * 16
-    cy.get('#numBooks').should('have.css', 'font-size', '12.48px') // 0.65 * 1.2 * 16
+    cy.get('&name').should('have.css', 'font-size', '14.4px') // 0.75 * 1.2 * 16
+    cy.get('&numBooks').should('have.css', 'font-size', '12.48px') // 0.65 * 1.2 * 16
   })
 })

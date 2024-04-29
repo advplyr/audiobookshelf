@@ -52,11 +52,11 @@ describe('AuthorCard', () => {
   it('renders the component', () => {
     cy.mount(AuthorCard, mountOptions)
     
-    cy.get('#textInline').should('be.visible')
-    cy.get('#match').should('be.hidden')
-    cy.get('#edit').should('be.hidden')
-    cy.get('#nameBelow').should('be.hidden')
-    cy.get('#card').should(($el) => {
+    cy.get('&textInline').should('be.visible')
+    cy.get('&match').should('be.hidden')
+    cy.get('&edit').should('be.hidden')
+    cy.get('&nameBelow').should('be.hidden')
+    cy.get('&card').should(($el) => {
       const width = $el.width()
       const height = $el.height()
       expect(width).to.be.closeTo(propsData.width, 0.01)
@@ -68,11 +68,11 @@ describe('AuthorCard', () => {
     const updatedPropsData = { ...propsData, nameBelow: true }
     cy.mount(AuthorCard, { ...mountOptions, propsData: updatedPropsData } )
 
-    cy.get('#textInline').should('be.hidden')
-    cy.get('#match').should('be.hidden')
-    cy.get('#edit').should('be.hidden')
+    cy.get('&textInline').should('be.hidden')
+    cy.get('&match').should('be.hidden')
+    cy.get('&edit').should('be.hidden')
     let nameBelowHeight
-    cy.get('#nameBelow')
+    cy.get('&nameBelow')
         .should('be.visible')
         .and('have.text', 'John Doe')
         .and(($el) => {
@@ -87,7 +87,7 @@ describe('AuthorCard', () => {
           nameBelowHeight = height 
           expect(width).to.be.closeTo(propsData.width - px2, 0.01)         
       })
-    cy.get('#card').should(($el) => {
+    cy.get('&card').should(($el) => {
       const width = $el.width()
       const height = $el.height()
       const py1 = 8
@@ -101,16 +101,16 @@ describe('AuthorCard', () => {
     cy.mount(AuthorCard, mountOptions )
 
     // before mouseover
-    cy.get('#match').should('be.hidden')
-    cy.get('#edit').should('be.hidden')
+    cy.get('&match').should('be.hidden')
+    cy.get('&edit').should('be.hidden')
     // after mouseover
-    cy.get('#card').trigger('mouseover')
-    cy.get('#match').should('be.visible')
-    cy.get('#edit').should('be.visible')
+    cy.get('&card').trigger('mouseover')
+    cy.get('&match').should('be.visible')
+    cy.get('&edit').should('be.visible')
     // after mouseleave
-    cy.get('#card').trigger('mouseleave')
-    cy.get('#match').should('be.hidden')
-    cy.get('#edit').should('be.hidden')
+    cy.get('&card').trigger('mouseleave')
+    cy.get('&match').should('be.hidden')
+    cy.get('&edit').should('be.hidden')
 
   })
 
@@ -118,10 +118,10 @@ describe('AuthorCard', () => {
     const data = () => { return { searching: true, isHovering: false } }
     cy.mount(AuthorCard, { ...mountOptions, data } )
 
-    cy.get('#textInline').should('be.hidden')
-    cy.get('#match').should('be.hidden')
-    cy.get('#edit').should('be.hidden')
-    cy.get('#spinner').should('be.visible')
+    cy.get('&textInline').should('be.hidden')
+    cy.get('&match').should('be.hidden')
+    cy.get('&edit').should('be.hidden')
+    cy.get('&spinner').should('be.visible')
   })
 
   it ('toasts after quick match with no updates', () => {
@@ -137,10 +137,10 @@ describe('AuthorCard', () => {
       }  
     }
     cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
-    cy.get('#card').trigger('mouseover')
-    cy.get('#match').click()
+    cy.get('&card').trigger('mouseover')
+    cy.get('&match').click()
 
-    cy.get("#spinner").should('be.hidden')
+    cy.get('&spinner').should('be.hidden')
     cy.get('@success').should('not.have.been.called')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('have.been.called')
@@ -159,10 +159,10 @@ describe('AuthorCard', () => {
       }  
     }
     cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
-    cy.get('#card').trigger('mouseover')
-    cy.get('#match').click()
+    cy.get('&card').trigger('mouseover')
+    cy.get('&match').click()
 
-    cy.get("#spinner").should('be.hidden')
+    cy.get('&spinner').should('be.hidden')
     cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated (no image found)')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
@@ -181,10 +181,10 @@ describe('AuthorCard', () => {
       }  
     }
     cy.mount(AuthorCard, { ...mountOptions, mocks: updatedMocks } )
-    cy.get('#card').trigger('mouseover')
-    cy.get('#match').click()
+    cy.get('&card').trigger('mouseover')
+    cy.get('&match').click()
 
-    cy.get("#spinner").should('be.hidden')
+    cy.get('&spinner').should('be.hidden')
     cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
