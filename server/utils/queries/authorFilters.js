@@ -3,34 +3,47 @@ const Database = require('../../Database')
 
 module.exports = {
   /**
+   * Get authors total count
+   * @param {string} libraryId
+   * @returns {{id:string, name:string, count:number}}
+   */
+  async getAuthorsTotalCount(libraryId) {
+    const authorsCount = await Database.authorModel.count({
+      where: {
+        libraryId: libraryId
+      }
+    });
+    return authorsCount;
+  },
+
+  /**
    * Get authors with count of num books
    * @param {string} libraryId 
    * @returns {{id:string, name:string, count:number}}
    */
   async getAuthorsWithCount(libraryId) {
-    const authors = await Database.authorModel.findAll({
-      where: [
-        {
-          libraryId
-        },
-        Sequelize.where(Sequelize.literal('count'), {
-          [Sequelize.Op.gt]: 0
-        })
-      ],
+    const authors = await Database.bookAuthorModel.findAll({
+      include: [{
+        model: Database.authorModel,
+        as: 'author', // Use the correct alias as defined in your associations
+        attributes: ['name'],
+        where: {
+          libraryId: libraryId
+        }
+      }],
       attributes: [
-        'id',
-        'name',
-        [Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'count']
+        'authorId',
+        [Sequelize.fn('COUNT', Sequelize.col('authorId')), 'count']
       ],
-      order: [
-        ['count', 'DESC']
-      ]
+      group: ['authorId', 'author.id'], // Include 'author.id' to satisfy GROUP BY with JOIN
+      order: [[Sequelize.literal('count'), 'DESC']],
+      limit: 10
     })
     return authors.map(au => {
       return {
-        id: au.id,
-        name: au.name,
-        count: au.dataValues.count
+        id: au.authorId,
+        name: au.author.name,
+        count: au.get('count') // Use get method to access aliased attributes
       }
     })
   },
