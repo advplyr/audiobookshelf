@@ -153,4 +153,6 @@ module.exports = {
  * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
  */
   devServerHandlers: [],
+
+  ignore: ["**/*.test.*", "**/*.cy.*"]
 }

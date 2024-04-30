@@ -9,7 +9,10 @@
     "dev2": "nuxt --hostname localhost --port 1337",
     "build": "nuxt build",
     "start": "nuxt start",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "test": "npm run compile-tailwind && cypress run --component --browser chrome",
+    "test-visually": "npm run compile-tailwind && cypress open --component --browser chrome",
+    "compile-tailwind": "tailwindcss -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -33,6 +36,7 @@
   "devDependencies": {
     "@nuxtjs/pwa": "^3.3.5",
     "autoprefixer": "^10.4.7",
+    "cypress": "^13.7.3",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.4.1"
   }
