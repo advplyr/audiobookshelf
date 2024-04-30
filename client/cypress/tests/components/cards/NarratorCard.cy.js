@@ -1,4 +1,4 @@
-import NarratorCard from './NarratorCard.vue'
+import NarratorCard from '@/components/cards/NarratorCard.vue'
 
 describe('<NarratorCard />', () => {
   const narrator = {

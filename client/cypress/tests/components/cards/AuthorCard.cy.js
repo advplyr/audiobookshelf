@@ -1,8 +1,8 @@
 // Import the necessary dependencies
-import AuthorCard from './AuthorCard.vue'
-import AuthorImage from '../covers/AuthorImage.vue'
-import Tooltip from '../ui/Tooltip.vue'
-import LoadingSpinner from '../widgets/LoadingSpinner.vue'
+import AuthorCard from '@/components/cards/AuthorCard.vue'
+import AuthorImage from '@/components/covers/AuthorImage.vue'
+import Tooltip from '@/components/ui/Tooltip.vue'
+import LoadingSpinner from '@/components/widgets/LoadingSpinner.vue'
 
 describe('AuthorCard', () => {
   const author = {

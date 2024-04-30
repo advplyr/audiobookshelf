@@ -1,5 +1,5 @@
-import LazySeriesCard from './LazySeriesCard.vue'
-import GroupCover from '../covers/GroupCover.vue'
+import LazySeriesCard from '@/components/cards/LazySeriesCard.vue'
+import GroupCover from '@/components/covers/GroupCover.vue'
 
 describe('LazySeriesCard', () => {
   const series = {

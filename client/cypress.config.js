@@ -5,6 +5,7 @@ module.exports = defineConfig({
     devServer: {
       framework: "nuxt",
       bundler: "webpack"
-    }
+    },
+    specPattern: "cypress/tests/**/*.cy.js"
   }
 })
