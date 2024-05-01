@@ -5,7 +5,7 @@ module.exports = {
   /**
    * Get authors total count
    * @param {string} libraryId
-   * @returns {{id:string, name:string, count:number}}
+   * @returns {number} count
    */
   async getAuthorsTotalCount(libraryId) {
     const authorsCount = await Database.authorModel.count({
@@ -19,9 +19,10 @@ module.exports = {
   /**
    * Get authors with count of num books
    * @param {string} libraryId 
+   * @param {number} limit 
    * @returns {{id:string, name:string, count:number}}
    */
-  async getAuthorsWithCount(libraryId) {
+  async getAuthorsWithCount(libraryId, limit) {
     const authors = await Database.bookAuthorModel.findAll({
       include: [{
         model: Database.authorModel,
@@ -37,7 +38,7 @@ module.exports = {
       ],
       group: ['authorId', 'author.id'], // Include 'author.id' to satisfy GROUP BY with JOIN
       order: [[Sequelize.literal('count'), 'DESC']],
-      limit: 10
+      limit: limit
     })
     return authors.map(au => {
       return {
