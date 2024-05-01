@@ -605,7 +605,7 @@ class LibraryController {
     }
 
     if (req.library.isBook) {
-      const authors = await authorFilters.getAuthorsWithCount(req.library.id)
+      const authors = await authorFilters.getAuthorsWithCount(req.library.id, 10)
       const genres = await libraryItemsBookFilters.getGenresWithCount(req.library.id)
       const bookStats = await libraryItemsBookFilters.getBookLibraryStats(req.library.id)
       const longestBooks = await libraryItemsBookFilters.getLongestBooks(req.library.id, 10)
