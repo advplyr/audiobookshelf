@@ -61,6 +61,8 @@
   "ButtonQueueRemoveItem": "Вилучити з черги",
   "ButtonQuickMatch": "Швидкий пошук",
   "ButtonRead": "Читати",
+  "ButtonReadLess": "Read less",
+  "ButtonReadMore": "Read more",
   "ButtonRefresh": "Оновити",
   "ButtonRemove": "Видалити",
   "ButtonRemoveAll": "Видалити все",

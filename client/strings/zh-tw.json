@@ -61,6 +61,8 @@
   "ButtonQueueRemoveItem": "從佇列中移除",
   "ButtonQuickMatch": "快速匹配",
   "ButtonRead": "讀取",
+  "ButtonReadLess": "Read less",
+  "ButtonReadMore": "Read more",
   "ButtonRefresh": "重整",
   "ButtonRemove": "移除",
   "ButtonRemoveAll": "移除所有",

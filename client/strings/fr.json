@@ -61,6 +61,8 @@
   "ButtonQueueRemoveItem": "Supprimer de la liste de lecture",
   "ButtonQuickMatch": "Recherche rapide",
   "ButtonRead": "Lire",
+  "ButtonReadLess": "Read less",
+  "ButtonReadMore": "Read more",
   "ButtonRefresh": "Rafraîchir",
   "ButtonRemove": "Supprimer",
   "ButtonRemoveAll": "Supprimer tout",

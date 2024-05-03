@@ -61,6 +61,8 @@
   "ButtonQueueRemoveItem": "Eemalda järjekorrast",
   "ButtonQuickMatch": "Kiire sobitamine",
   "ButtonRead": "Loe",
+  "ButtonReadLess": "Read less",
+  "ButtonReadMore": "Read more",
   "ButtonRefresh": "Refresh",
   "ButtonRemove": "Eemalda",
   "ButtonRemoveAll": "Eemalda kõik",
