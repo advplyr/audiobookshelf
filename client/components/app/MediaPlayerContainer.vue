@@ -56,7 +56,10 @@
       @showTranscription="showTranscriptionUi = !showTranscriptionUi"
     />
 
-    <transcription-ui v-if="showTranscriptionUi"></transcription-ui>
+    <transcription-ui
+      v-if="showTranscriptionUi"
+      @seek="seek"
+    />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
 
@@ -95,8 +98,8 @@ export default {
     }
   },
   watch: {
-    'playerHandler.playerState': function (newVal, oldVal) {
-      // Refresh the transcription UI when the player is changed
+    'playerHandler.playerState': function (newVal) {
+      // Refresh the transcription UI when the audio track is changed
       if (newVal === 'LOADED') {
         this.showTranscriptionUi = false;
         this.$nextTick(() => {

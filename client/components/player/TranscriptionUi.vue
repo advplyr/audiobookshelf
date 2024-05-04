@@ -5,6 +5,7 @@
       :key="index"
       :cue="cue"
       ref="transcriptionLine + index"
+      @seek="seek"
     ></transcription-line>
   </div>
 </template>
@@ -28,6 +29,9 @@ export default {
     init() {
       const trackElement = document.getElementById("transcription-track");
       this.cues = trackElement.track.cues;
+    },
+    seek(time) {
+      this.$emit('seek', time)
     },
   },
 };
