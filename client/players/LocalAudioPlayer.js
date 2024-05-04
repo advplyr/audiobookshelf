@@ -220,6 +220,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     if (document.getElementById('transcription-track')) {
       document.getElementById('transcription-track').remove()
     }
+
     const trackElement = document.createElement("track")
 
     trackElement.id = "transcription-track"
@@ -227,6 +228,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     trackElement.label = "Transcription"
     trackElement.default = true
     trackElement.src = this.currentTrack.relativeTranscriptionUrl
+
     this.player.appendChild(trackElement)
   }
 
