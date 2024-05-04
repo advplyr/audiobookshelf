@@ -4,7 +4,8 @@ const globals = {
   SupportedEbookTypes: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   SupportedVideoTypes: ['mp4'],
   TextFileTypes: ['txt', 'nfo'],
-  MetadataFileTypes: ['opf', 'abs', 'xml', 'json']
+  MetadataFileTypes: ['opf', 'abs', 'xml', 'json'],
+  SubtitleFileTypes: ['srt', 'vtt']
 }
 
 module.exports = globals
