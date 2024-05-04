@@ -116,6 +116,7 @@ class ApiRouter {
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.get('/items/:id/ffprobe/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getFFprobeData.bind(this))
     this.router.get('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getLibraryFile.bind(this))
+    this.router.get('/items/:id/file/:fileid/transcript', LibraryItemController.middleware.bind(this), LibraryItemController.getTranscriptionFile.bind(this))
     this.router.delete('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
     this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))
     this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
@@ -425,9 +426,9 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   * 
+   *
    * @param {string} bookId
-   * @param {string[]} seriesIds 
+   * @param {string[]} seriesIds
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
@@ -455,7 +456,7 @@ class ApiRouter {
 
   /**
    * Remove an empty series & close an open RSS feed
-   * @param {import('../models/Series')} series 
+   * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)

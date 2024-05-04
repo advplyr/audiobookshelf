@@ -36,6 +36,13 @@
           </button>
         </ui-tooltip>
 
+        <ui-tooltip direction="top" :text="$strings.LabelViewTranscription">
+          <button :aria-label="$strings.LabelViewTranscription" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showTranscription')">
+            <span v-if="!transcriptionEnabled" class="material-icons text-2xl">subtitles</span>
+            <span v-else  class="material-icons text-2xl text-warning">subtitles</span>
+          </button>
+        </ui-tooltip>
+
         <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
           <button :aria-label="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack" class="text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
             <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
@@ -78,7 +85,8 @@ export default {
     },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
-    isPodcast: Boolean
+    isPodcast: Boolean,
+    transcriptionEnabled: Boolean
   },
   data() {
     return {

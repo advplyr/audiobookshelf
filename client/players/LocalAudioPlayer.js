@@ -35,6 +35,8 @@ export default class LocalAudioPlayer extends EventEmitter {
     var audioEl = document.createElement('audio')
     audioEl.id = 'audio-player'
     audioEl.style.display = 'none'
+    audioEl.crossOrigin = 'anonymous'
+
     document.body.appendChild(audioEl)
     this.player = audioEl
 
@@ -135,6 +137,18 @@ export default class LocalAudioPlayer extends EventEmitter {
       this.usingNativeplayer = true
       this.player.src = this.currentTrack.relativeContentUrl
       this.player.currentTime = this.startTime
+
+      if (document.getElementById('transcription-track')) {
+        document.getElementById('transcription-track').remove()
+      }
+      const trackElement = document.createElement("track");
+
+      trackElement.id = "transcription-track";
+      trackElement.kind = "subtitles";
+      trackElement.label = "Transcription";
+      trackElement.default = true;
+      trackElement.src = this.currentTrack.relativeTranscriptionUrl;
+      this.player.appendChild(trackElement);
       return
     }
 
@@ -168,7 +182,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-      this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
+     this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')
@@ -206,6 +220,19 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.trackStartTime = Math.max(0, this.startTime - (this.currentTrack.startOffset || 0))
     this.player.src = this.currentTrack.relativeContentUrl
     console.log(`[LocalPlayer] Loading track src ${this.currentTrack.relativeContentUrl}`)
+
+    if (document.getElementById('transcription-track')) {
+      document.getElementById('transcription-track').remove()
+    }
+    const trackElement = document.createElement("track");
+
+    trackElement.id = "transcription-track";
+    trackElement.kind = "subtitles";
+    trackElement.label = "Transcription";
+    trackElement.default = true;
+    trackElement.src = this.currentTrack.relativeTranscriptionUrl;
+    this.player.appendChild(trackElement);
+
     this.player.load()
   }
 
