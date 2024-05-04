@@ -101,9 +101,9 @@ export default {
     'playerHandler.playerState': function (newVal) {
       // Refresh the transcription UI when the audio track is changed
       if (newVal === 'LOADED') {
-        this.showTranscriptionUi = false;
+        this.showTranscriptionUi = false
         this.$nextTick(() => {
-          this.showTranscriptionUi = true;
+          this.showTranscriptionUi = true
         });
       }
     },
@@ -507,6 +507,7 @@ export default {
     this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
+    this.showTranscriptionUi = false
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)

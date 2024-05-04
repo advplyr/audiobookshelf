@@ -17,9 +17,15 @@ export default {
   components: {
     TranscriptionLine
   },
+  watch: {
+    trackElement() {
+      this.setCues();
+    }
+  },
   data() {
     return {
       cues: [],
+      trackElement: null
     };
   },
   mounted() {
@@ -27,12 +33,17 @@ export default {
   },
   methods: {
     init() {
-      const trackElement = document.getElementById("transcription-track");
-      this.cues = trackElement.track.cues;
+      this.trackElement = document.getElementById("transcription-track")
+      if (this.trackElement && this.trackElement.track) {
+        this.setCues()
+      }
     },
     seek(time) {
       this.$emit('seek', time)
     },
+    setCues() {
+      this.cues = this.trackElement.track.cues
+    }
   },
 };
 </script>
