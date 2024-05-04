@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import TranscriptionLine from "./TranscriptionLine.vue";
+import TranscriptionLine from "./TranscriptionLine.vue"
 
 export default {
   components: {
@@ -19,14 +19,14 @@ export default {
   },
   watch: {
     trackElement() {
-      this.setCues();
+      this.setCues()
     }
   },
   data() {
     return {
       cues: [],
       trackElement: null
-    };
+    }
   },
   mounted() {
     this.init()
@@ -45,7 +45,7 @@ export default {
       this.cues = this.trackElement.track.cues
     }
   },
-};
+}
 </script>
 <style>
 #transcription-panel {

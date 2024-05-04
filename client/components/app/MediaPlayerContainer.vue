@@ -71,7 +71,7 @@
 
 <script>
 import PlayerHandler from '@/players/PlayerHandler'
-import TranscriptionUi from "@/components/player/TranscriptionUi.vue";
+import TranscriptionUi from "@/components/player/TranscriptionUi.vue"
 
 export default {
   components: {TranscriptionUi},

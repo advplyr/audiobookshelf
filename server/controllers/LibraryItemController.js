@@ -649,9 +649,9 @@ class LibraryItemController {
   async getTranscriptionFile(req, res) {
     const libraryFile = req.libraryFile
 
-    const baseName = Path.basename(libraryFile.metadata.path, Path.extname(libraryFile.metadata.path));
+    const baseName = Path.basename(libraryFile.metadata.path, Path.extname(libraryFile.metadata.path))
 
-    const vttFilePath = Path.join(Path.dirname(libraryFile.metadata.path), `${baseName}.vtt`);
+    const vttFilePath = Path.join(Path.dirname(libraryFile.metadata.path), `${baseName}.vtt`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + vttFilePath)
@@ -660,9 +660,9 @@ class LibraryItemController {
     }
 
     // Set the correct mimetype for .vtt files
-    res.setHeader('Content-Type', 'text/vtt');
+    res.setHeader('Content-Type', 'text/vtt')
 
-    res.sendFile(vttFilePath);
+    res.sendFile(vttFilePath)
   }
 
   /**
