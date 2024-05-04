@@ -138,17 +138,7 @@ export default class LocalAudioPlayer extends EventEmitter {
       this.player.src = this.currentTrack.relativeContentUrl
       this.player.currentTime = this.startTime
 
-      if (document.getElementById('transcription-track')) {
-        document.getElementById('transcription-track').remove()
-      }
-      const trackElement = document.createElement("track");
-
-      trackElement.id = "transcription-track";
-      trackElement.kind = "subtitles";
-      trackElement.label = "Transcription";
-      trackElement.default = true;
-      trackElement.src = this.currentTrack.relativeTranscriptionUrl;
-      this.player.appendChild(trackElement);
+      this.createTranscriptionTrack();
       return
     }
 
@@ -221,8 +211,14 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.player.src = this.currentTrack.relativeContentUrl
     console.log(`[LocalPlayer] Loading track src ${this.currentTrack.relativeContentUrl}`)
 
+    this.createTranscriptionTrack();
+
+    this.player.load()
+  }
+
+  createTranscriptionTrack() {
     if (document.getElementById('transcription-track')) {
-      document.getElementById('transcription-track').remove()
+      document.getElementById('transcription-track').remove();
     }
     const trackElement = document.createElement("track");
 
@@ -232,8 +228,6 @@ export default class LocalAudioPlayer extends EventEmitter {
     trackElement.default = true;
     trackElement.src = this.currentTrack.relativeTranscriptionUrl;
     this.player.appendChild(trackElement);
-
-    this.player.load()
   }
 
   destroyHlsInstance() {
