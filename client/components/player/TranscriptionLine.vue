@@ -16,18 +16,26 @@ export default {
   },
   methods: {
     clickSeek() {
-      const time = this.cue.startTime;
-      this.$emit('seek', time);
+      const time = this.cue.startTime
+      this.$emit('seek', time)
+    },
+    scrollIntoView() {
+      this.$el.scrollIntoView({behavior: 'smooth'})
+    }
+  },
+  mounted() {
+    if (this.isActive) {
+      this.scrollIntoView()
     }
   },
   created() {
-    this.cue.onenter = () => (this.isActive = true);
-    this.cue.onexit = () => (this.isActive = false);
+    this.cue.onenter = () => (this.isActive = true)
+    this.cue.onexit = () => (this.isActive = false)
   },
   watch: {
     isActive(newVal) {
       if (newVal) {
-        this.$el.scrollIntoView({behavior: 'smooth'});
+        this.scrollIntoView()
       }
     }
   }
