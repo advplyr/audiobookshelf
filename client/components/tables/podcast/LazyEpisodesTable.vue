@@ -18,6 +18,9 @@
           <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
         </template>
         <template v-else>
+          <template v-if="podcastType === 'serial'">
+            <controls-filter-select v-model="seasonKey" :items="seasonItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
+          </template>
           <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
           <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="filterSortChanged" />
           <div class="flex-grow md:hidden" />
@@ -32,11 +35,37 @@
       </form>
     </div>
     <div class="relative min-h-[176px]">
-      <template v-for="episode in totalEpisodes">
-        <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
-          <!-- episode is mounted here -->
-        </div>
+      <template v-if="podcastType === 'serial'">
+        <template v-for="group in seasonGroups">
+          <div class="w-full my-2">
+            <div class="w-full bg-primary px-4 md:px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar(group)">
+              <p class="pr-4">{{ $strings.LabelSeason }} {{ group.season }}</p>
+              <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ group.episodes.length }}</span>
+              <div class="flex-grow" />
+              <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="group.showSeason ? 'transform rotate-180' : ''">
+                <span class="material-icons text-4xl">expand_more</span>
+              </div>
+            </div>
+            <transition name="slide">
+              <div class="w-full" v-if="group.showSeason">
+                <template v-for="episode in group.episodes">
+                  <div :key="episode" :id="`episode-${episode}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+                    <!-- episode is mounted here -->
+                  </div>
+                </template>
+              </div>
+            </transition>
+          </div>
+        </template>
       </template>
+      <template v-else>
+          <template v-for="episode in totalEpisodes">
+            <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
+              <!-- episode is mounted here -->
+            </div>
+          </template>
+      </template>
+
       <div v-if="isSearching" class="w-full h-full absolute inset-0 flex justify-center py-12" :class="{ 'bg-black/50': totalEpisodes }">
         <ui-loading-indicator />
       </div>
@@ -65,6 +94,7 @@ export default {
       episodesCopy: [],
       filterKey: 'incomplete',
       sortKey: 'publishedAt',
+      seasonKey: 'allSeasons',
       sortDesc: true,
       selectedEpisode: null,
       showPodcastRemoveModal: false,
@@ -81,7 +111,8 @@ export default {
       episodeComponentRefs: {},
       windowHeight: 0,
       episodesTableOffsetTop: 0,
-      episodeRowHeight: 176
+      episodeRowHeight: 176,
+      seasonGroups: {}
     }
   },
   watch: {
@@ -89,6 +120,12 @@ export default {
       handler() {
         this.refresh()
       }
+    },
+    episodesList() {
+      this.updateSeasonGroups();
+    },
+    episodesSorted() {
+      this.updateSeasonGroups();
     }
   },
   computed: {
@@ -145,6 +182,24 @@ export default {
         }
       ]
     },
+    seasonItems() {
+      const seasonsMap = new Map();
+      seasonsMap.set('allSeasons', this.$strings.LabelAllSeasons);
+
+      this.episodesCopy.forEach((episode) => {
+        const season = episode.season || 'unknown';
+        if (!seasonsMap.has(season)) {
+          seasonsMap.set(season, `${this.$strings.LabelSeason} ${season}`);
+        }
+      });
+
+      if (seasonsMap.has('unknown')) {
+        seasonsMap.delete('unknown');
+        seasonsMap.set('unknown', this.$strings.LabelSeasonUnknown);
+      }
+
+      return Array.from(seasonsMap, ([value, text]) => ({ value, text }));
+    },
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
     },
@@ -157,13 +212,21 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
+    podcastType() {
+      return this.mediaMetadata.type || 'episodic'
+    },
     episodes() {
       return this.media.episodes || []
     },
     episodesSorted() {
       return this.episodesCopy
         .filter((ep) => {
-          if (this.filterKey === 'all') return true
+          // Filter by season
+          const season = ep.season && ep.season.trim() !== '' ? ep.season : 'unknown';
+          if (this.podcastType === 'serial' && this.seasonKey === 'unknown' && season !== 'unknown') return false;
+          if (this.podcastType === 'serial' && this.seasonKey !== 'allSeasons' && season !== this.seasonKey) return false;
+
+          if (this.filterKey === 'all') return true;
           const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
           if (this.filterKey === 'incomplete') return !episodeProgress || !episodeProgress.isFinished
           if (this.filterKey === 'complete') return episodeProgress && episodeProgress.isFinished
@@ -209,9 +272,42 @@ export default {
     },
     timeFormat() {
       return this.$store.state.serverSettings.timeFormat
-    }
+    },
   },
   methods: {
+    updateSeasonGroups() {
+      if (!this.episodesSorted.length) {
+        this.seasonGroups = {};
+        return;
+      }
+
+      const grouped = this.episodesSorted.reduce((grouped, episode, index) => {
+        let season = Number(episode.season);
+        season = Number.isInteger(season) ? season : 'unknown';
+        const seasonGroup = grouped[season];
+
+        if (!seasonGroup) {
+          const newGroup = {
+            season,
+            episodes: [index],
+            showSeason: false
+          };
+          grouped[season] = newGroup;
+        } else {
+          seasonGroup.episodes.push(index);
+        }
+
+        return grouped;
+      }, {});
+
+      const sortedGrouped = Object.values(grouped).sort((a, b) => b.season - a.season);
+
+      if (sortedGrouped.length > 0) {
+        sortedGrouped[0].showSeason = true;
+      }
+
+      this.seasonGroups = sortedGrouped;
+    },
     submit() {},
     inputUpdate() {
       clearTimeout(this.searchTimeout)
@@ -408,6 +504,9 @@ export default {
       }
       this.episodeComponentRefs = {}
       this.episodeIndexesMounted = []
+    },
+    clickBar(group) {
+      group.showSeason = !group.showSeason
     },
     mountEpisode(index) {
       const episodeEl = document.getElementById(`episode-${index}`)
