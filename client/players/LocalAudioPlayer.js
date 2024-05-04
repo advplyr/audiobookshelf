@@ -172,7 +172,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-     this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
+    this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')
