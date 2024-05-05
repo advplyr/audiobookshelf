@@ -79,6 +79,9 @@ body:
         - Firefox
         - Safari
         - Edge
+        - Firefox for Android
+        - Chrome for Android
+        - Safari on iOS
         - Other (list in "Additional Notes" box)
   - type: textarea
     id: logs
