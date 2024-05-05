@@ -33,6 +33,39 @@ class MeController {
     res.json(payload)
   }
 
+  // GET: api/me/item/listening-sessions/:libraryItemId/:episodeId
+  async getListeningSessions(req, res) {
+    const libraryItem = await Database.libraryItemModel.getOldById(req.params.libraryItemId)
+    const episode = (req.params.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(req.params.episodeId) : null
+
+    if (!libraryItem || (libraryItem.isPodcast && !episode)) {
+      Logger.error(`[PlaybackSessionManager] listening-sessions: Media item not found for library item id "${req.params.id}"`)
+      return {
+        success: false,
+        error: 'Media item not found'
+      }
+    }
+
+    const mediaItemId = episode ? episode.id : libraryItem.media.id
+    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
+
+    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
+    const page = toNumber(req.query.page, 0)
+
+    const start = page * itemsPerPage
+    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+
+    const payload = {
+      total: listeningSessions.length,
+      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+
+    res.json(payload)
+  }
+
   // GET: api/me/listening-stats
   async getListeningStats(req, res) {
     const listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
@@ -337,9 +370,9 @@ class MeController {
 
   /**
    * GET: /api/me/stats/year/:year
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getStatsForYear(req, res) {
     const year = Number(req.params.year)
