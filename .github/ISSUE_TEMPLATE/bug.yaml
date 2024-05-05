@@ -83,27 +83,6 @@ body:
         - Safari
         - Edge
         - Other (list in "Additional Notes" box)
-  - type: markdown
-    attributes:
-      value: '## Mobile Environment'
-  - type: dropdown
-    id: mobile-os
-    attributes:
-      label: If the issue is being seen on Mobile, what OS are you running where you see the issue?
-      options:
-        - Android
-        - iOS
-        - Other (list in "Additional Notes" box)
-  - type: dropdown
-    id: mobile-browsers
-    attributes:
-      label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
-      options:
-        - Chrome
-        - Firefox
-        - Safari
-        - Edge
-        - Other (list in "Additional Notes" box)
   - type: textarea
     id: logs
     attributes:
