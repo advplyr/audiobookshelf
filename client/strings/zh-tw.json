@@ -439,6 +439,7 @@
   "LabelSearchTitle": "搜尋標題",
   "LabelSearchTitleOrASIN": "搜尋標題或 ASIN",
   "LabelSeason": "季",
+  "LabelSelectAll": "Select all",
   "LabelSelectAllEpisodes": "選擇所有劇集",
   "LabelSelectEpisodesShowing": "選擇正在播放的 {0} 劇集",
   "LabelSelectUsers": "Select users",

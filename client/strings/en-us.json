@@ -439,6 +439,7 @@
   "LabelSearchTitle": "Search Title",
   "LabelSearchTitleOrASIN": "Search Title or ASIN",
   "LabelSeason": "Season",
+  "LabelSelectAll": "Select all",
   "LabelSelectAllEpisodes": "Select all episodes",
   "LabelSelectEpisodesShowing": "Select {0} episodes showing",
   "LabelSelectUsers": "Select users",
