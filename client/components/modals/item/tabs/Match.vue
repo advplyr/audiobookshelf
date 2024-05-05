@@ -40,14 +40,14 @@
             <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
           </div>
 
-          <div class="flex py-2">
+          <div class="flex py-2" style="margin-right: 2px">
             <div>
               <p class="text-center text-gray-200">New</p>
               <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
-            <div v-if="media.coverPath">
+            <div v-if="media.coverPath" style="margin-left: 2px">
               <p class="text-center text-gray-200">Current</p>
               <a :href="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
