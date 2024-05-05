@@ -11,7 +11,7 @@ body:
       value: 'Please first search for your issue and check the [docs](https://audiobookshelf.org/docs).'
   - type: markdown
     attributes:
-      value: 'Mobile app issues report [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose).'
+      value: 'Report issues with the mobile app [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose).'
   - type: markdown
     attributes:
       value: 'Join the [discord server](https://discord.gg/HQgCbd6E75) for questions or if you are not sure about a bug.'
@@ -19,7 +19,6 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: Don't forget to tell us what steps you took so we can try to reproduce.
       placeholder: Tell us what you see!
     validations:
       required: true
@@ -39,7 +38,7 @@ body:
       required: true
   - type: markdown
     attributes:
-      value: '### Install Environment'
+      value: '## Install Environment'
   - type: input
     id: version
     attributes:
@@ -62,7 +61,7 @@ body:
       required: true
   - type: markdown
     attributes:
-      value: '### Desktop Environment'
+      value: '## Desktop Environment'
   - type: dropdown
     id: desktop-os
     attributes:
@@ -86,7 +85,7 @@ body:
         - Other (list in "Additional Notes" box)
   - type: markdown
     attributes:
-      value: '### Mobile Environment'
+      value: '## Mobile Environment'
   - type: dropdown
     id: mobile-os
     attributes:
