@@ -32,7 +32,7 @@
         </div>
         <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>
-      <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
+      <ui-checkbox v-model="selectAll" :label="$strings.LabelSelectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
           <div class="flex flex-grow items-center py-2">
