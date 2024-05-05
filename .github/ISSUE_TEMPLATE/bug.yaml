@@ -90,7 +90,7 @@ body:
   - type: dropdown
     id: mobile-os
     attributes:
-    label: If the issue is being seen on Mobile, what OS are you running where you see the issue?
+      label: If the issue is being seen on Mobile, what OS are you running where you see the issue?
       options:
         - Android
         - iOS
