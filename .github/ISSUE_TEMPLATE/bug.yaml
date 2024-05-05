@@ -59,13 +59,10 @@ body:
         - Other (list in "Additional Notes" box)
     validations:
       required: true
-  - type: markdown
-    attributes:
-      value: '## Desktop Environment'
   - type: dropdown
-    id: desktop-os
+    id: server-os
     attributes:
-      label: If the issue is being seen on Desktop, what OS are you running where you see the issue?
+      label: What OS is your Audiobookshelf server hosted from?
       options:
         - Windows
         - macOS
