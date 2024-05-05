@@ -65,9 +65,8 @@ body:
       value: '### Desktop Environment'
   - type: dropdown
     id: desktop-os
-    label: If the issue is being seen on Desktop, what OS are you running where you see the issue?
     attributes:
-      label: Operating System
+      label: If the issue is being seen on Desktop, what OS are you running where you see the issue?
       options:
         - Windows
         - macOS
@@ -77,9 +76,8 @@ body:
       required: true
   - type: dropdown
     id: desktop-browsers
-    label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
     attributes:
-      label: Desktop Browser
+      label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
       options:
         - Chrome
         - Firefox
@@ -91,18 +89,16 @@ body:
       value: '### Mobile Environment'
   - type: dropdown
     id: mobile-os
-    label: If the issue is being seen on Mobile, what OS are you running where you see the issue?
     attributes:
-      label: Operating System
+    label: If the issue is being seen on Mobile, what OS are you running where you see the issue?
       options:
         - Android
         - iOS
         - Other (list in "Additional Notes" box)
   - type: dropdown
     id: mobile-browsers
-    label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
     attributes:
-      label: Mobile Browser
+      label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
       options:
         - Chrome
         - Firefox
