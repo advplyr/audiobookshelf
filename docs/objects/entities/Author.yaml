@@ -67,7 +67,6 @@ components:
           properties:
             libraryItems:
               description: The items associated with the author
-              type: string
               type: array
               items:
                 $ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
