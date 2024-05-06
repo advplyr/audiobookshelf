@@ -439,6 +439,7 @@
   "LabelSearchTitle": "Поиск по названию",
   "LabelSearchTitleOrASIN": "Поиск по названию или ASIN",
   "LabelSeason": "Сезон",
+  "LabelSelectAll": "Select all",
   "LabelSelectAllEpisodes": "Выбрать все эпизоды",
   "LabelSelectEpisodesShowing": "Выберите {0} эпизодов для показа",
   "LabelSelectUsers": "Select users",

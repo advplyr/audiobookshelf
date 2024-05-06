@@ -439,6 +439,7 @@
   "LabelSearchTitle": "Otsi pealkirja",
   "LabelSearchTitleOrASIN": "Otsi pealkirja või ASIN-i",
   "LabelSeason": "Hooaeg",
+  "LabelSelectAll": "Select all",
   "LabelSelectAllEpisodes": "Vali kõik episoodid",
   "LabelSelectEpisodesShowing": "Valige {0} näidatavat episoodi",
   "LabelSelectUsers": "Valige kasutajad",
