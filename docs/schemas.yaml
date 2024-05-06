@@ -25,9 +25,9 @@ components:
       type: array
       items:
         type: string
-      example: ["To Be Read", "Genre: Nonfiction"]
+      example: ['To Be Read', 'Genre: Nonfiction']
     inode:
       description: The inode of the item in the file system.
       type: string
-      format: "[0-9]*"
+      format: '[0-9]*'
       example: '649644248522215260'
