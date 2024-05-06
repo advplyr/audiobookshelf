@@ -7,15 +7,16 @@ servers:
   - url: http://localhost:3000
     description: Development server
 components:
-    securitySchemes:
-        BearerAuth:
-            type: http
-            scheme: bearer
-    responses:
-        ok200:
-            description: OK
+  securitySchemes:
+    BearerAuth:
+      description: Bearer authentication
+      type: http
+      scheme: bearer
+  responses:
+    ok200:
+      description: OK
 security:
-    - BearerAuth: []
+  - BearerAuth: []
 paths:
   /api/authors/{id}:
     get:
@@ -152,6 +153,23 @@ paths:
                   - $ref: './controllers/AuthorController.yaml#/components/schemas/authorUpdated'
         404:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
+  /api/libraries:
+    get:
+      operationId: getLibraries
+      summary: Get all libraries on server
+      tags:
+        - Libraries
+      responses:
+        200:
+          description: getLibraries OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './objects/Library.yaml#/components/schemas/library'
 tags:
   - name: Authors
     description: Author endpoints
+  - name: Libraries
+    description: Library endpoints
