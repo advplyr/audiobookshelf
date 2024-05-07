@@ -314,7 +314,8 @@ module.exports = {
           booksToInclude.push(book.id)
           bookSeriesToInclude.push({
             id: book.bookSeries.id,
-            numBooks: s.dataValues.numBooks
+            numBooks: s.dataValues.numBooks,
+            libraryItemIds: s.books?.map((b) => b.libraryItem.id) || []
           })
           booksToExclude = booksToExclude.filter((bid) => bid !== book.id)
           found = true
@@ -594,7 +595,8 @@ module.exports = {
             name: collapsedSeries.series.name,
             nameIgnorePrefix: collapsedSeries.series.nameIgnorePrefix,
             sequence: collapsedSeries.sequence,
-            numBooks: collapseSeriesObj?.numBooks || 0
+            numBooks: collapseSeriesObj?.numBooks || 0,
+            libraryItemIds: collapseSeriesObj?.libraryItemIds || []
           }
         }
       }
