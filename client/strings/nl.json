@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} luistersessies in het laatste jaar",
   "MessageLoading": "Aan het laden...",
   "MessageLoadingFolders": "Mappen aan het laden...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B mislukt!",
   "MessageM4BFinished": "M4B voltooid!",
   "MessageMapChapterTitles": "Map hoofdstuktitels naar je bestaande audioboekhoofdstukken zonder aanpassing van tijden",

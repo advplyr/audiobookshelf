@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "Kuulamissessioone viimase aasta jooksul: {0}",
   "MessageLoading": "Laadimine...",
   "MessageLoadingFolders": "Kaustade laadimine...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B ebaõnnestus!",
   "MessageM4BFinished": "M4B lõpetatud!",
   "MessageMapChapterTitles": "Kaarda peatükkide pealkirjad olemasolevatele heliraamatu peatükkidele, ajatempe ei muudeta",

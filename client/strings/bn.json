@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "গত বছরে {0}টি শোনার সেশন",
   "MessageLoading": "লোড হচ্ছে...",
   "MessageLoadingFolders": "ফোল্ডার লোড হচ্ছে...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B ব্যর্থ!",
   "MessageM4BFinished": "M4B সমাপ্ত!",
   "MessageMapChapterTitles": "টাইমস্ট্যাম্প সামঞ্জস্য না করে আপনার বিদ্যমান অডিওবুক অধ্যায়গুলিতে অধ্যায়ের শিরোনাম ম্যাপ করুন",

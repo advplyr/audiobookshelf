@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} сеансов прослушивания в прошлом году",
   "MessageLoading": "Загрузка...",
   "MessageLoadingFolders": "Загрузка каталогов...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B Ошибка!",
   "MessageM4BFinished": "M4B Завершено!",
   "MessageMapChapterTitles": "Сопоставление названий глав с существующими главами аудиокниги без корректировки временных меток",

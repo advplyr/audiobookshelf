@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} slušanja u prošloj godini",
   "MessageLoading": "Učitavam...",
   "MessageLoadingFolders": "Učitavam foldere...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B neuspješan!",
   "MessageM4BFinished": "M4B završio!",
   "MessageMapChapterTitles": "Mapiraj imena poglavlja u postoječa poglavlja bez izmijene timestampova.",
