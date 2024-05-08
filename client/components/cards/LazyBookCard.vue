@@ -45,10 +45,8 @@
       </div>
     </div>
 
-    <!-- No progress shown for collapsed series in library and podcasts (unless showing podcast episode) -->
-    <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
-    <!-- Finished progress bar for collapsed series -->
-    <div v-else-if="booksInSeries && seriesIsFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <!-- No progress shown for podcasts (unless showing podcast episode) -->
+    <div v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -343,11 +341,22 @@ export default {
       if (!this.userProgress || this.userProgress.progress) return false
       return this.userProgress.ebookProgress > 0
     },
+    seriesProgressPercent() {
+      if (!this.libraryItemIdsInSeries.length) return 0
+      let progressPercent = 0
+      const useEBookProgress = this.useEBookProgress
+      this.libraryItemIdsInSeries.forEach((lid) => {
+        const progress = this.store.getters['user/getUserMediaProgress'](lid)
+        if (progress && progress.progress) progressPercent += useEBookProgress ? progress.ebookProgress || 0 : progress.progress || 0
+      })
+      return progressPercent / this.libraryItemIdsInSeries.length
+    },
     userProgressPercent() {
-      if (this.useEBookProgress) return Math.max(Math.min(1, this.userProgress.ebookProgress), 0)
-      return this.userProgress ? Math.max(Math.min(1, this.userProgress.progress), 0) || 0 : 0
+      let progressPercent = this.booksInSeries ? this.seriesProgressPercent : this.useEBookProgress ? this.userProgress?.ebookProgress || 0 : this.userProgress?.progress || 0
+      return Math.max(Math.min(1, progressPercent), 0)
     },
     itemIsFinished() {
+      if (this.booksInSeries) return this.seriesIsFinished
       return this.userProgress ? !!this.userProgress.isFinished : false
     },
     seriesIsFinished() {
