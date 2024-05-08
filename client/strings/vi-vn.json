@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} phiên nghe trong năm qua",
   "MessageLoading": "Đang tải...",
   "MessageLoadingFolders": "Đang tải các thư mục...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B thất bại!",
   "MessageM4BFinished": "M4B Hoàn thành!",
   "MessageMapChapterTitles": "Ánh xạ tiêu đề chương với các chương hiện có của sách audio của bạn mà không điều chỉnh thời gian",

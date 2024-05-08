@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} sesje odsłuchowe w ostatnim roku",
   "MessageLoading": "Ładowanie...",
   "MessageLoadingFolders": "Ładowanie folderów...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "Tworzenie pliku M4B nie powiodło się",
   "MessageM4BFinished": "Tworzenie pliku M4B zakończyło się!",
   "MessageMapChapterTitles": "Mapowanie tytułów rozdziałów do istniejących rozdziałów audiobooka bez dostosowywania znaczników czasu",

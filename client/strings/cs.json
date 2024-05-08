@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} poslechových relací za poslední rok",
   "MessageLoading": "Načítá se...",
   "MessageLoadingFolders": "Načítám složky...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B se nezdařil!",
   "MessageM4BFinished": "M4B dokončen!",
   "MessageMapChapterTitles": "Mapování názvů kapitol ke stávajícím kapitolám audioknihy bez úpravy časových razítek",

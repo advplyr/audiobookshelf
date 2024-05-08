@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "去年收聽 {0} 個會話",
   "MessageLoading": "讀取...",
   "MessageLoadingFolders": "讀取資料夾...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B 失敗!",
   "MessageM4BFinished": "M4B 完成!",
   "MessageMapChapterTitles": "將章節標題映射到現有的有聲書章節, 無需調整時間戳",

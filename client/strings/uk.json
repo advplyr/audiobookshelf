@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "Сесій прослуховування минулого року: {0}",
   "MessageLoading": "Завантаження...",
   "MessageLoadingFolders": "Завантаження тек...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "Помилка M4B!",
   "MessageM4BFinished": "M4B створено!",
   "MessageMapChapterTitles": "Встановіть назви глав вашої аудіокниги без визначення налаштувань тривалості",

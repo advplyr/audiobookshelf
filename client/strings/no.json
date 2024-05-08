@@ -631,6 +631,7 @@
   "MessageListeningSessionsInTheLastYear": "{0} Lyttesesjoner iløpet av siste året",
   "MessageLoading": "Laster...",
   "MessageLoadingFolders": "Laster mapper...",
+  "MessageLogsDescription": "Logs are stored in <code>/metadata/logs</code> as JSON files. Crash logs are stored in <code>/metadata/logs/crash_logs.txt</code>.",
   "MessageM4BFailed": "M4B mislykkes!",
   "MessageM4BFinished": "M4B fullført!",
   "MessageMapChapterTitles": "Bruk kapittel titler fra din eksisterende lydbok kapitler uten å justere tidsstempel",
