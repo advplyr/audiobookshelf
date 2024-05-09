@@ -168,6 +168,25 @@ paths:
                 type: array
                 items:
                   $ref: './objects/Library.yaml#/components/schemas/library'
+    post:
+      operationId: createLibrary
+      summary: Create a new library on server
+      tags:
+        - Libraries
+      parameters:
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryName'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryFolders'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryIcon'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryMediaType'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryProvider'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
+      responses:
+        200:
+          description: createLibrary OK
+          content:
+            application/json:
+              schema:
+                $ref: './objects/Library.yaml#/components/schemas/library'
 tags:
   - name: Authors
     description: Author endpoints

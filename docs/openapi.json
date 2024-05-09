@@ -877,6 +877,191 @@
             }
           }
         }
+      },
+      "post": {
+        "operationId": "createLibrary",
+        "summary": "Create a new library on server",
+        "tags": [
+          "Libraries"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The name of the library.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "My Audiobooks"
+            }
+          },
+          {
+            "name": "folders",
+            "in": "query",
+            "description": "The folders of the library. Only specify the fullPath.",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "Folder used in library",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "The ID of the folder.",
+                    "format": "uuid",
+                    "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+                  },
+                  "fullPath": {
+                    "description": "The path on the server for the folder. (Read Only)",
+                    "type": "string",
+                    "example": "/podcasts"
+                  },
+                  "libraryId": {
+                    "type": "string",
+                    "description": "The ID of the library.",
+                    "format": "uuid",
+                    "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+                  },
+                  "addedAt": {
+                    "type": "integer",
+                    "description": "The time (in ms since POSIX epoch) when added to the server.",
+                    "example": 1633522963509
+                  }
+                }
+              }
+            }
+          },
+          {
+            "name": "icon",
+            "in": "query",
+            "description": "The icon of the library. See Library Icons for a list of possible icons.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "audiobookshelf"
+            }
+          },
+          {
+            "name": "mediaType",
+            "in": "query",
+            "description": "The type of media that the library contains. Must be `book` or `podcast`.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "book"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "audible"
+            }
+          },
+          {
+            "name": "settings",
+            "in": "query",
+            "description": "The settings for the library.",
+            "required": false,
+            "schema": {
+              "description": "The settings for the library.",
+              "allOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "coverAspectRatio": {
+                      "description": "Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).",
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "disableWatcher": {
+                      "description": "Whether to disable the folder watcher for the library.",
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "skipMatchingMediaWithAsin": {
+                      "description": "Whether to skip matching books that already have an ASIN.",
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "skipMatchingMediaWithIsbn": {
+                      "description": "Whether to skip matching books that already have an ISBN.",
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "autoScanCronExpression": {
+                      "description": "The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.",
+                      "type": "string",
+                      "nullable": true,
+                      "example": "0 0 0 * * *"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "createLibrary OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "A library object which includes either books or podcasts.",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "$ref": "#/components/schemas/libraryId"
+                    },
+                    "name": {
+                      "$ref": "#/components/schemas/libraryName"
+                    },
+                    "folders": {
+                      "description": "The folders that belong to the library.",
+                      "type": "array",
+                      "items": {
+                        "$ref": "./Folder.yaml#/components/schemas/folder"
+                      }
+                    },
+                    "displayOrder": {
+                      "description": "Display position of the library in the list of libraries. Must be >= 1.",
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "icon": {
+                      "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
+                      "type": "string",
+                      "example": "audiobookshelf"
+                    },
+                    "mediaType": {
+                      "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
+                      "type": "string",
+                      "example": "book"
+                    },
+                    "provider": {
+                      "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
+                      "type": "string",
+                      "example": "audible"
+                    },
+                    "settings": {
+                      "$ref": "#/components/schemas/librarySettings"
+                    },
+                    "createdAt": {
+                      "$ref": "../schemas.yaml#/components/schemas/createdAt"
+                    },
+                    "lastUpdate": {
+                      "$ref": "../schemas.yaml#/components/schemas/updatedAt"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

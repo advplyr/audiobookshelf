@@ -1,0 +1,50 @@
+components:
+  parameters:
+    libraryName:
+      name: name
+      in: query
+      description: The name of the library.
+      required: true
+      schema:
+        type: string
+        example: My Audiobooks
+    libraryFolders:
+      name: folders
+      in: query
+      description: The folders of the library. Only specify the fullPath.
+      required: true
+      schema:
+        type: array
+        items:
+          $ref: '../objects/Folder.yaml#/components/schemas/folder'
+    libraryIcon:
+      name: icon
+      in: query
+      description: The icon of the library. See Library Icons for a list of possible icons.
+      required: false
+      schema:
+        type: string
+        example: 'audiobookshelf'
+    libraryMediaType:
+      name: mediaType
+      in: query
+      description: The type of media that the library contains. Must be `book` or `podcast`.
+      required: false
+      schema:
+        type: string
+        example: 'book'
+    libraryProvider:
+      name: provider
+      in: query
+      description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
+      required: false
+      schema:
+        type: string
+        example: 'audible'
+    librarySettings:
+      name: settings
+      in: query
+      description: The settings for the library.
+      required: false
+      schema:
+        $ref: '../objects/Library.yaml#/components/schemas/librarySettings'

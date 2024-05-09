@@ -72,6 +72,6 @@ components:
         settings:
           $ref: '#/components/schemas/librarySettings'
         createdAt:
-          $ref: './../schemas.yaml#/components/schemas/createdAt'
+          $ref: '../schemas.yaml#/components/schemas/createdAt'
         lastUpdate:
-          $ref: './../schemas.yaml#/components/schemas/updatedAt'
+          $ref: '../schemas.yaml#/components/schemas/updatedAt'
