@@ -352,7 +352,7 @@ export default {
       return progressPercent / this.libraryItemIdsInSeries.length
     },
     userProgressPercent() {
-      let progressPercent = this.booksInSeries ? this.seriesProgressPercent : this.useEBookProgress ? this.userProgress?.ebookProgress || 0 : this.userProgress?.progress || 0
+      let progressPercent = this.itemIsFinished ? 1 : this.booksInSeries ? this.seriesProgressPercent : this.useEBookProgress ? this.userProgress?.ebookProgress || 0 : this.userProgress?.progress || 0
       return Math.max(Math.min(1, progressPercent), 0)
     },
     itemIsFinished() {
