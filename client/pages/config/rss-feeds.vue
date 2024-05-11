@@ -15,7 +15,7 @@
               class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer"
               :class="!showIncomingFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
               @click="showIncomingFeedsView = false">
-            <p class="text-sm">{{$strings.HeaderOpenedRSSFeeds}}</p>
+            <p class="text-sm">{{$strings.HeaderRSSFeeds}}</p>
           </div>
           <div
               class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer"
@@ -45,7 +45,7 @@
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedLastChecked }}</th>
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedLastSuccessfulCheck }}</th>
                   <th class="w-16 min-w-16 text-left">{{ $strings.LabelFeedHealthy }}</th>
-                  <th class="w-16 min-w-16 text-left">{{ $strings.LabelFeedAutoDownloadEnabled}}</th>
+                  <th class="w-16 min-w-16 text-left">{{ $strings.LabelAutoDownloadEpisodes}}</th>
                   <th class="w-24 min-w-16 text-left">{{ $strings.LabelFeedNextAutomaticCheck }}</th>
                   <th class="w-16 text-center"></th>
                 </tr>
@@ -53,8 +53,8 @@
                 <tr v-for="incomingFeed in incomingFeedsList" :key="incomingFeed.id" class="cursor-pointer h-12">
                   <!--  -->
                   <td>
-                    <covers-preview-cover v-if="incomingFeed.coverPath" :width="50"
-                                          :src="$store.getters['globals/getLibraryItemCoverSrcById'](incomingFeed.id)"
+                    <covers-preview-cover v-if="incomingFeed?.metadata?.imageUrl" :width="50"
+                                          :src="incomingFeed.metadata.imageUrl"
                                           :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false"/>
                     <img v-else :src="noCoverUrl" class="h-full w-full"/>
                   </td>
@@ -86,8 +86,14 @@
                   </td>
                   <!--  -->
                   <td class="text-center leading-none lg:table-cell">
-                      <span class="material-icons text-2xl" v-if="incomingFeed.autoDownloadEpisodes">check</span>
-                      <span class="material-icons text-2xl" v-else>close</span>
+                    <ui-tooltip v-if="incomingFeed.autoDownloadEpisodes" direction="top"
+                                :text="$strings.LabelEnabled">
+                      <span class="material-icons text-2xl">check</span>
+                    </ui-tooltip>
+                    <ui-tooltip  v-else direction="top"
+                                :text="$strings.LabelDisabled">
+                      <span class="material-icons text-2xl">close</span>
+                    </ui-tooltip>
                   </td>
                   <!--  -->
                   <td class="text-left">
@@ -119,21 +125,13 @@
                   </td>
                 </tr>
               </table>
-
-              <div>
-                <pre>{{incomingFeedsList}}</pre>
-              </div>
             </div>
           </template>
           <template v-else>
-            <div v-if="feeds.length" class="block max-w-full">
+            <div v-if="feeds.length" class="block max-w-full pt-2">
               <form @submit.prevent="feedsSubmit" class="flex flex-grow">
                 <ui-text-input v-model="feedsSearch" @input="feedsInputUpdate" type="search" :placeholder="$strings.PlaceholderSearchTitle" class="flex-grow mb-3 text-sm md:text-base" />
               </form>
-
-              <div>
-                <pre>{{feedsList}}</pre>
-              </div>
 
               <table class="rssFeedsTable text-xs">
                 <tr class="bg-primary bg-opacity-40 h-12">
@@ -142,10 +140,7 @@
                   <th class="w-48 min-w-24 text-left hidden xl:table-cell">{{ $strings.LabelSlug }}</th>
                   <th class="w-24 min-w-16 text-left hidden md:table-cell">{{ $strings.LabelType }}</th>
                   <th class="w-16 min-w-16 text-center">{{ $strings.HeaderEpisodes }}</th>
-                  <th class="w-16 min-w-16 text-center hidden lg:table-cell">{{
-                      $strings.LabelRSSFeedPreventIndexing
-                    }}
-                  </th>
+                  <th class="w-16 min-w-16 text-center hidden lg:table-cell">{{ $strings.LabelRSSFeedPreventIndexing }}</th>
                   <th class="w-48 min-w-24 flex-grow hidden md:table-cell">{{ $strings.LabelLastUpdate }}</th>
                   <th class="w-16 text-left"></th>
                 </tr>
@@ -153,7 +148,7 @@
                 <tr v-for="feed in feedsList" :key="feed.id" class="cursor-pointer h-12" @click="showFeed(feed)">
                   <!--  -->
                   <td>
-                    <img :src="coverUrl(feed)" class="h-full w-full"/>
+                    <img :src="coverUrl(feed)" class="h-full w-full" />
                   </td>
                   <!--  -->
                   <td class="w-48 max-w-64 min-w-24 text-left truncate">
@@ -179,15 +174,13 @@
                   </td>
                   <!--  -->
                   <td class="text-center hidden md:table-cell">
-                    <ui-tooltip v-if="feed.updatedAt" direction="top"
-                                :text="$formatDatetime(feed.updatedAt, dateFormat, timeFormat)">
+                    <ui-tooltip v-if="feed.updatedAt" direction="top" :text="$formatDatetime(feed.updatedAt, dateFormat, timeFormat)">
                       <p class="text-gray-200">{{ $dateDistanceFromNow(feed.updatedAt) }}</p>
                     </ui-tooltip>
                   </td>
                   <!--  -->
                   <td class="text-center">
-                    <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="error" outlined
-                                 @click.stop="deleteFeedClick(feed)"/>
+                    <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="error" outlined @click.stop="deleteFeedClick(feed)" />
                   </td>
                 </tr>
               </table>
