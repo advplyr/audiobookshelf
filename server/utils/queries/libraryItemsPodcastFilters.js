@@ -512,7 +512,7 @@ module.exports = {
   },
 
   /**
-   * Get longest podcasts in library
+   * Get the longest podcasts in library
    * @param {string} libraryId
    * @param {number} limit
    * @returns {Promise<{ id:string, title:string, duration:number }[]>}

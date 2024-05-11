@@ -235,7 +235,7 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.get('/podcasts/incomingFeeds', PodcastController.getPodcastsWithIncomingFeeds.bind(this))
+    this.router.get('/podcasts/external-podcast-feeds-status', PodcastController.getPodcastsWithExternalFeedsSubscriptions.bind(this))
     this.router.get('/podcasts/:id/feed', PodcastController.middleware.bind(this), PodcastController.checkPodcastFeed.bind(this))
     this.router.get('/podcasts/:id/check-feed-url', PodcastController.checkPodcastFeedUrl.bind(this))
     this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
@@ -428,9 +428,9 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   * 
+   *
    * @param {string} bookId
-   * @param {string[]} seriesIds 
+   * @param {string[]} seriesIds
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
@@ -458,7 +458,7 @@ class ApiRouter {
 
   /**
    * Remove an empty series & close an open RSS feed
-   * @param {import('../models/Series')} series 
+   * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)

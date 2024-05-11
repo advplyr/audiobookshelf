@@ -105,12 +105,12 @@ class PodcastController {
 
   /**
    * POST: /api/podcasts/feed
-   * 
+   *
    * @typedef getPodcastFeedReqBody
    * @property {string} rssFeed
-   * 
-   * @param {import('express').Request<{}, {}, getPodcastFeedReqBody, {}} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request<{}, {}, getPodcastFeedReqBody, {}} req
+   * @param {import('express').Response} res
    */
   async getPodcastFeed(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -130,8 +130,8 @@ class PodcastController {
     res.json({ podcast })
   }
 
-  async getPodcastsWithIncomingFeeds(req, res) {
-    const podcasts = await Database.podcastModel.getAllIncomingFeeds()
+  async getPodcastsWithExternalFeedsSubscriptions(req, res) {
+    const podcasts = await Database.podcastModel.getAllIWithFeedSubscriptions()
     res.json({
       podcasts
     })

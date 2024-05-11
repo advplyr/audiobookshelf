@@ -335,7 +335,7 @@ class PodcastManager {
     }
     podcast.lastEpisodeCheck = Date.now()
     podcast.updatedAt = Date.now()
-    await Database.podcastModel.update(podcast, {where: { id: podcastId }})
+    await podcast.save()
 
     return {lastEpisodeCheck: podcast.lastEpisodeCheck, lastSuccessfulFetchAt: podcast.lastSuccessfulFetchAt, feedHealthy: podcast.feedHealthy}
   }
@@ -397,7 +397,7 @@ class PodcastManager {
 
   /**
    * OPML file string for podcasts in a library
-   * @param {import('../models/Podcast')[]} podcasts 
+   * @param {import('../models/Podcast')[]} podcasts
    * @returns {string} XML string
    */
   generateOPMLFileText(podcasts) {

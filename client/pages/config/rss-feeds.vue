@@ -85,15 +85,15 @@
             </div>
           </template>
           <template v-else>
-            <div v-if="incomingFeeds.length" class="block max-w-full">
+            <div v-if="feedSubscriptions.length" class="block max-w-full">
               <div class="flex -mx-1 items-center mb-3">
                 <div class="w-3/4 px-1">
-                  <form @submit.prevent="incomingFeedsSubmit" class="flex flex-grow">
-                    <ui-text-input v-model="incomingFeedsSearch" @input="incomingFeedsInputUpdate" type="search" :placeholder="$strings.PlaceholderSearchTitle" class="flex-grow text-sm md:text-base" />
+                  <form @submit.prevent="feedSubscriptionsSubmit" class="flex flex-grow">
+                    <ui-text-input v-model="feedSubscriptionsSearch" @input="feedSubscriptionsInputUpdate" type="search" :placeholder="$strings.PlaceholderSearchTitle" class="flex-grow text-sm md:text-base" />
                   </form>
                 </div>
                 <div class="flex-grow px-1">
-                  <ui-checkbox v-model="incomingFeedShowOnlyUnhealthy" :label="$strings.LabelFeedShowOnlyUnhealthy" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+                  <ui-checkbox v-model="feedSubscriptionsShowOnlyUnhealthy" :label="$strings.LabelFeedShowOnlyUnhealthy" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
                 </div>
               </div>
 
@@ -109,43 +109,43 @@
                   <th class="w-16 text-center"></th>
                 </tr>
 
-                <tr v-for="incomingFeed in incomingFeedsList" :key="incomingFeed.id" class="cursor-pointer h-12">
+                <tr v-for="feedSubscription in feedSubscriptionsList" :key="feedSubscription.id" class="cursor-pointer h-12">
                   <!--  -->
                   <td>
-                    <covers-preview-cover v-if="incomingFeed?.metadata?.imageUrl" :width="50"
-                                          :src="incomingFeed.metadata.imageUrl"
+                    <covers-preview-cover v-if="feedSubscription?.metadata?.imageUrl" :width="50"
+                                          :src="feedSubscription.metadata.imageUrl"
                                           :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false"/>
                     <img v-else :src="noCoverUrl" class="h-full w-full"/>
                   </td>
                   <!--  -->
                   <td class="w-48 max-w-64 min-w-24 text-left truncate">
-                    <p class="truncate">{{ incomingFeed.metadata.title }}</p>
-                    <p class="truncate text-xs text-gray-300">{{ incomingFeed.metadata.feedUrl }}</p>
+                    <p class="truncate">{{ feedSubscription.metadata.title }}</p>
+                    <p class="truncate text-xs text-gray-300">{{ feedSubscription.metadata.feedUrl }}</p>
                   </td>
                   <!--  -->
                   <td class="text-left">
-                    <ui-tooltip v-if="incomingFeed.lastEpisodeCheck" direction="top"
-                                :text="$formatDatetime(incomingFeed.lastEpisodeCheck, dateFormat, timeFormat)">
-                      <p class="text-gray-200">{{ $dateDistanceFromNow(incomingFeed.lastEpisodeCheck) }}</p>
+                    <ui-tooltip v-if="feedSubscription.lastEpisodeCheck" direction="top"
+                                :text="$formatDatetime(feedSubscription.lastEpisodeCheck, dateFormat, timeFormat)">
+                      <p class="text-gray-200">{{ $dateDistanceFromNow(feedSubscription.lastEpisodeCheck) }}</p>
                     </ui-tooltip>
                   </td>
                   <!--  -->
                   <td class="text-left">
-                    <ui-tooltip v-if="incomingFeed.metadata.lastSuccessfulFetchAt" direction="top"
-                                :text="$formatDatetime(incomingFeed.metadata.lastSuccessfulFetchAt, dateFormat, timeFormat)">
+                    <ui-tooltip v-if="feedSubscription.metadata.lastSuccessfulFetchAt" direction="top"
+                                :text="$formatDatetime(feedSubscription.metadata.lastSuccessfulFetchAt, dateFormat, timeFormat)">
                       <p class="text-gray-200">{{
-                          $dateDistanceFromNow(incomingFeed.metadata.lastSuccessfulFetchAt)
+                          $dateDistanceFromNow(feedSubscription.metadata.lastSuccessfulFetchAt)
                         }}</p>
                     </ui-tooltip>
                     <p class="text-gray-200" v-else>{{ $strings.MessageNoAvailable }}</p>
                   </td>
                   <!--  -->
                   <td class="text-center leading-none lg:table-cell">
-                    <widgets-feed-healthy-indicator :value="!!incomingFeed.metadata.feedHealthy" />
+                    <widgets-feed-healthy-indicator :value="!!feedSubscription.metadata.feedHealthy" />
                   </td>
                   <!--  -->
                   <td class="text-center leading-none lg:table-cell">
-                    <ui-tooltip v-if="incomingFeed.autoDownloadEpisodes" direction="top"
+                    <ui-tooltip v-if="feedSubscription.autoDownloadEpisodes" direction="top"
                                 :text="$strings.LabelEnabled">
                       <span class="material-icons text-2xl">check</span>
                     </ui-tooltip>
@@ -156,10 +156,10 @@
                   </td>
                   <!--  -->
                   <td class="text-left">
-                    <ui-tooltip v-if="incomingFeed.autoDownloadEpisodes" direction="top"
-                                :text="`${$strings.LabelCronExpression}: ${incomingFeed.autoDownloadSchedule}`">
+                    <ui-tooltip v-if="feedSubscription.autoDownloadEpisodes" direction="top"
+                                :text="`${$strings.LabelCronExpression}: ${feedSubscription.autoDownloadSchedule}`">
                       <p class="text-gray-200">
-                        {{ nextRun(incomingFeed.autoDownloadSchedule) }}
+                        {{ nextRun(feedSubscription.autoDownloadSchedule) }}
                       </p>
                     </ui-tooltip>
                   </td>
@@ -169,14 +169,14 @@
                       <ui-tooltip direction="top"
                                   :text="$strings.ButtonCopyFeedURL">
                         <button class="inline-flex material-icons text-xl mx-1 mt-1 text-white/70 hover:text-white/100"
-                                @click.stop="copyToClipboard(incomingFeed.metadata.feedUrl)">content_copy
+                                @click.stop="copyToClipboard(feedSubscription.metadata.feedUrl)">content_copy
                         </button>
                       </ui-tooltip>
                       <ui-tooltip direction="top" :text="$strings.ButtonForceReCheckFeed">
                         <button class="inline-flex material-icons text-xl mx-1 mt-1 text-white/70 hover:text-white/100"
-                                @click.stop="forceRecheckFeed(incomingFeed)"
-                                :disabled="incomingFeed.isLoading">
-                          <span v-if="incomingFeed.isLoading" class="material-icons">hourglass_empty</span>
+                                @click.stop="forceRecheckFeed(feedSubscription)"
+                                :disabled="feedSubscription.isLoading">
+                          <span v-if="feedSubscription.isLoading" class="material-icons">hourglass_empty</span>
                           <span v-else class="material-icons">autorenew</span>
                         </button>
                       </ui-tooltip>
@@ -201,14 +201,14 @@ export default {
       showFeedModal: false,
       selectedFeed: null,
       feeds: [],
-      incomingFeeds: [],
+      feedSubscriptions: [],
       feedsSearch: null,
       feedsSearchTimeout: null,
       feedsSearchText: null,
-      incomingFeedsSearch: null,
-      incomingFeedsSearchTimeout: null,
-      incomingFeedsSearchText: null,
-      incomingFeedShowOnlyUnhealthy: false,
+      feedSubscriptionsSearch: null,
+      feedSubscriptionsSearchTimeout: null,
+      feedSubscriptionsSearchText: null,
+      feedSubscriptionsShowOnlyUnhealthy: false,
     }
   },
   computed: {
@@ -230,17 +230,17 @@ export default {
         return feed?.meta?.title?.toLowerCase().includes(this.feedsSearchText) || feed?.slug?.toLowerCase().includes(this.feedsSearchText)
       })
     },
-    incomingFeedsSorted() {
-      return this.incomingFeedShowOnlyUnhealthy
-          ? this.incomingFeeds.filter(incomingFeed => !incomingFeed.metadata.feedHealthy)
-          : this.incomingFeeds;
+    feedSubscriptionsSorted() {
+      return this.feedSubscriptionsShowOnlyUnhealthy
+          ? this.feedSubscriptions.filter(feedSubscription => !feedSubscription.metadata.feedHealthy)
+          : this.feedSubscriptions;
     },
-    incomingFeedsList() {
-      return this.incomingFeedsSorted.filter((incomingFeed) => {
-        if (!this.incomingFeedsSearchText) return true
-        if (this.incomingFeedShowOnlyUnhealthy && incomingFeed?.metadata?.feedHealthy) return false
-        return incomingFeed?.metadata?.title?.toLowerCase().includes(this.incomingFeedsSearchText) ||
-            incomingFeed?.metadata?.feedUrl?.toLowerCase().includes(this.incomingFeedsSearchText)
+    feedSubscriptionsList() {
+      return this.feedSubscriptionsSorted.filter((feedSubscription) => {
+        if (!this.feedSubscriptionsSearchText) return true
+        if (this.feedSubscriptionsShowOnlyUnhealthy && feedSubscription?.metadata?.feedHealthy) return false
+        return feedSubscription?.metadata?.title?.toLowerCase().includes(this.feedSubscriptionsSearchText) ||
+          feedSubscription?.metadata?.feedUrl?.toLowerCase().includes(this.feedSubscriptionsSearchText)
       })
     },
   },
@@ -256,15 +256,15 @@ export default {
         this.feedsSearchText = this.feedsSearch.toLowerCase().trim()
       }, 500)
     },
-    incomingFeedsSubmit() {},
-    incomingFeedsInputUpdate() {
-      clearTimeout(this.incomingFeedsSearchTimeout)
-      this.incomingFeedsSearchTimeout = setTimeout(() => {
-        if (!this.incomingFeedsSearch || !this.incomingFeedsSearch.trim()) {
-          this.incomingFeedsSearchText = ''
+    feedSubscriptionsSubmit() {},
+    feedSubscriptionsInputUpdate() {
+      clearTimeout(this.feedSubscriptionsSearchTimeout)
+      this.feedSubscriptionsSearchTimeout = setTimeout(() => {
+        if (!this.feedSubscriptionsSearch || !this.feedSubscriptionsSearch.trim()) {
+          this.feedSubscriptionsSearchText = ''
           return
         }
-        this.incomingFeedsSearchText = this.incomingFeedsSearch.toLowerCase().trim()
+        this.feedSubscriptionsSearchText = this.feedSubscriptionsSearch.toLowerCase().trim()
       }, 500)
     },
     showFeed(feed) {
@@ -355,21 +355,21 @@ export default {
       }
       this.feeds = data.feeds
     },
-    async loadIncomingFeeds() {
-      const data = await this.$axios.$get(`/api/podcasts/incomingFeeds`).catch((err) => {
-        console.error('Failed to load incoming RSS feeds', err)
+    async loadPodcastsWithExternalFeedSubscriptions() {
+      const data = await this.$axios.$get(`/api/podcasts/external-podcast-feeds-status`).catch((err) => {
+        console.error('Failed to load podcasts with external feed subscriptions', err)
         return null
       })
       if (!data) {
-        this.$toast.error('Failed to load incoming RSS feeds')
+        this.$toast.error('Failed to load podcasts with external feed subscriptions')
         return
       }
 
-      this.incomingFeeds = data.podcasts.map(podcast => ({...podcast, isLoading: false}));
+      this.feedSubscriptions = data.podcasts.map(podcast => ({...podcast, isLoading: false}));
     },
     init() {
       this.loadFeeds()
-      this.loadIncomingFeeds()
+      this.loadPodcastsWithExternalFeedSubscriptions()
     }
   },
   mounted() {

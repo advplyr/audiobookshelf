@@ -3,7 +3,7 @@ const { DataTypes, Model } = require('sequelize')
 /**
  * @typedef PodcastExpandedProperties
  * @property {import('./PodcastEpisode')[]} podcastEpisodes
- * 
+ *
  * @typedef {Podcast & PodcastExpandedProperties} PodcastExpanded
  */
 
@@ -127,7 +127,7 @@ class Podcast extends Model {
     }
   }
 
-  static async getAllIncomingFeeds() {
+  static async getAllIWithFeedSubscriptions() {
     const podcasts = await this.findAll()
     const podcastsFiltered = podcasts.filter(p => p.dataValues.feedURL !== null);
     return podcastsFiltered.map(p => this.getOldPodcast({media: p.dataValues}))
@@ -154,7 +154,7 @@ class Podcast extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
     super.init({
