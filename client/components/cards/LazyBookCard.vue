@@ -6,7 +6,7 @@
     </div>
 
     <!-- Alternative bookshelf title/author/sort -->
-    <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
+    <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
           <p ref="displayTitle" class="truncate">{{ displayTitle }}</p>
@@ -358,7 +358,7 @@ export default {
     },
     showError() {
       if (this.recentEpisode) return false // Dont show podcast error on episode card
-      return this.numInvalidAudioFiles || this.numMissingParts || this.isMissing || this.isInvalid
+      return this.isMissing || this.isInvalid
     },
     libraryItemIdStreaming() {
       return this.store.getters['getLibraryItemIdStreaming']
@@ -388,29 +388,13 @@ export default {
     isInvalid() {
       return this._libraryItem.isInvalid
     },
-    numMissingParts() {
-      if (this.isPodcast) return 0
-      return this.media.numMissingParts
-    },
-    numInvalidAudioFiles() {
-      if (this.isPodcast) return 0
-      return this.media.numInvalidAudioFiles
-    },
     errorText() {
       if (this.isMissing) return 'Item directory is missing!'
       else if (this.isInvalid) {
         if (this.isPodcast) return 'Podcast has no episodes'
         return 'Item has no audio tracks & ebook'
       }
-      let txt = ''
-      if (this.numMissingParts) {
-        txt += `${this.numMissingParts} missing parts.`
-      }
-      if (this.numInvalidAudioFiles) {
-        if (txt) txt += ' '
-        txt += `${this.numInvalidAudioFiles} invalid audio files.`
-      }
-      return txt || 'Unknown Error'
+      return 'Unknown Error'
     },
     overlayWrapperClasslist() {
       const classes = []

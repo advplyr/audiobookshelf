@@ -24,6 +24,7 @@
   word-wrap: normal;
   direction: ltr;
   -webkit-font-smoothing: antialiased;
+  vertical-align: top;
 }
 
 .material-icons:not([class*="text-"]) {

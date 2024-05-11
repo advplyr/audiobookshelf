@@ -35,9 +35,14 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
     return line
   })
   var inputstr = trackPaths.join('\n\n')
-  await fs.writeFile(outputPath, inputstr)
 
-  return firstTrackStartTime
+  try {
+    await fs.writeFile(outputPath, inputstr)
+    return firstTrackStartTime
+  } catch (error) {
+    Logger.error(`[ffmpegHelpers] Failed to write stream concat file at "${outputPath}"`, error)
+    return null
+  }
 }
 module.exports.writeConcatFile = writeConcatFile
 
@@ -104,7 +109,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions(
-      '-c', 'copy',
+      '-c:a', 'copy',
+      '-map', '0:a',
       '-metadata', 'podcast=1'
     )
 

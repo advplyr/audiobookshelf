@@ -3,7 +3,7 @@
     <app-book-shelf-toolbar page="authors" is-home :authors="authors" />
     <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
       <div class="flex flex-wrap justify-center">
-        <template v-for="author in authors">
+        <template v-for="author in authorsSorted">
           <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
         </template>
       </div>
@@ -44,6 +44,22 @@ export default {
     },
     selectedAuthor() {
       return this.$store.state.globals.selectedAuthor
+    },
+    authorSortBy() {
+      return this.$store.getters['user/getUserSetting']('authorSortBy') || 'name'
+    },
+    authorSortDesc() {
+      return !!this.$store.getters['user/getUserSetting']('authorSortDesc')
+    },
+    authorsSorted() {
+      const sortProp = this.authorSortBy
+      const bDesc = this.authorSortDesc ? -1 : 1
+      return this.authors.sort((a, b) => {
+        if (typeof a[sortProp] === 'number' && typeof b[sortProp] === 'number') {
+          return a[sortProp] > b[sortProp] ? bDesc : -bDesc
+        }
+        return a[sortProp].localeCompare(b[sortProp], undefined, { sensitivity: 'base' }) * bDesc
+      })
     }
   },
   methods: {

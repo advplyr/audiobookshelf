@@ -76,6 +76,9 @@ class Auth {
       return
     }
 
+    // Custom req timeout see: https://github.com/panva/node-openid-client/blob/main/docs/README.md#customizing
+    OpenIDClient.custom.setHttpOptionsDefaults({ timeout: 10000 })
+
     const openIdIssuerClient = new OpenIDClient.Issuer({
       issuer: global.ServerSettings.authOpenIDIssuerURL,
       authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
@@ -86,7 +89,8 @@ class Auth {
     }).Client
     const openIdClient = new openIdIssuerClient({
       client_id: global.ServerSettings.authOpenIDClientID,
-      client_secret: global.ServerSettings.authOpenIDClientSecret
+      client_secret: global.ServerSettings.authOpenIDClientSecret,
+      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
     })
     passport.use('openid-client', new OpenIDClient.Strategy({
       client: openIdClient,
@@ -95,71 +99,198 @@ class Auth {
         scope: 'openid profile email'
       }
     }, async (tokenset, userinfo, done) => {
-      Logger.debug(`[Auth] openid callback userinfo=`, userinfo)
+      try {
+        Logger.debug(`[Auth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
 
-      let failureMessage = 'Unauthorized'
-      if (!userinfo.sub) {
-        Logger.error(`[Auth] openid callback invalid userinfo, no sub`)
-        return done(null, null, failureMessage)
+        if (!userinfo.sub) {
+          throw new Error('Invalid userinfo, no sub')
+        }
+
+        if (!this.validateGroupClaim(userinfo)) {
+          throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
+        }
+
+        let user = await this.findOrCreateUser(userinfo)
+
+        if (!user?.isActive) {
+          throw new Error('User not active or not found')
+        }
+
+        await this.setUserGroup(user, userinfo)
+        await this.updateUserPermissions(user, userinfo)
+
+        // We also have to save the id_token for later (used for logout) because we cannot set cookies here
+        user.openid_id_token = tokenset.id_token
+
+        return done(null, user)
+      } catch (error) {
+        Logger.error(`[Auth] openid callback error: ${error?.message}\n${error?.stack}`)
+
+        return done(null, null, 'Unauthorized')
       }
+    }))
+  }
 
-      // First check for matching user by sub
-      let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
-      if (!user) {
-        // Optionally match existing by email or username based on server setting "authOpenIDMatchExistingBy"
-        if (Database.serverSettings.authOpenIDMatchExistingBy === 'email' && userinfo.email && userinfo.email_verified) {
+  /**
+   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
+   * or creates a new user if configured to do so.
+   */
+  async findOrCreateUser(userinfo) {
+    let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
+
+    // Matched by sub
+    if (user) {
+      Logger.debug(`[Auth] openid: User found by sub`)
+      return user
+    }
+
+    // Match existing user by email
+    if (Database.serverSettings.authOpenIDMatchExistingBy === 'email') {
+      if (userinfo.email) {
+        // Only disallow when email_verified explicitly set to false (allow both if not set or true)
+        if (userinfo.email_verified === false) {
+          Logger.warn(`[Auth] openid: User not found and email "${userinfo.email}" is not verified`)
+          return null
+        } else {
           Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
           user = await Database.userModel.getUserByEmail(userinfo.email)
-          // Check that user is not already matched
+
           if (user?.authOpenIDSub) {
             Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
-            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
-            user = null
-          }
-        } else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username' && userinfo.preferred_username) {
-          Logger.info(`[Auth] openid: User not found, checking existing with username "${userinfo.preferred_username}"`)
-          user = await Database.userModel.getUserByUsername(userinfo.preferred_username)
-          // Check that user is not already matched
-          if (user?.authOpenIDSub) {
-            Logger.warn(`[Auth] openid: User found with username "${userinfo.preferred_username}" but is already matched with sub "${user.authOpenIDSub}"`)
-            // TODO: Message isn't actually returned to the user yet. Need to override the passport authenticated callback
-            failureMessage = 'A matching user was found but is already matched with another user from your auth provider'
-            user = null
+            return null // User is linked to a different OpenID subject; do not proceed.
           }
         }
+      } else {
+        Logger.warn(`[Auth] openid: User not found and no email in userinfo`)
+        // We deny login, because if the admin whishes to match email, it makes sense to require it
+        return null
+      }
+    }
+    // Match existing user by username
+    else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username') {
+      let username
 
-        // If existing user was matched and isActive then save sub to user
-        if (user?.isActive) {
-          Logger.info(`[Auth] openid: New user found matching existing user "${user.username}"`)
-          user.authOpenIDSub = userinfo.sub
-          await Database.userModel.updateFromOld(user)
-        } else if (user && !user.isActive) {
-          Logger.warn(`[Auth] openid: New user found matching existing user "${user.username}" but that user is deactivated`)
-        }
+      if (userinfo.preferred_username) {
+        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.preferred_username "${userinfo.preferred_username}"`)
+        username = userinfo.preferred_username
+      } else if (userinfo.username) {
+        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.username "${userinfo.username}"`)
+        username = userinfo.username
+      } else {
+        Logger.warn(`[Auth] openid: User not found and neither preferred_username nor username in userinfo`)
+        return null
+      }
 
-        // Optionally auto register the user 
-        if (!user && Database.serverSettings.authOpenIDAutoRegister) {
-          Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-          user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
+
+      user = await Database.userModel.getUserByUsername(username)
+
+      if (user?.authOpenIDSub) {
+        Logger.warn(`[Auth] openid: User found with username "${username}" but is already matched with sub "${user.authOpenIDSub}"`)
+        return null // User is linked to a different OpenID subject; do not proceed.
+      }
+    }
+
+    // Found existing user via email or username
+    if (user) {
+      if (!user.isActive) {
+        Logger.warn(`[Auth] openid: User found but is not active`)
+        return null
+      }
+
+      user.authOpenIDSub = userinfo.sub
+      await Database.userModel.updateFromOld(user)
+
+      Logger.debug(`[Auth] openid: User found by email/username`)
+      return user
+    }
+
+    // If no existing user was matched, auto-register if configured
+    if (Database.serverSettings.authOpenIDAutoRegister) {
+      Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+      user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
+      return user
+    }
+
+    Logger.warn(`[Auth] openid: User not found and auto-register is disabled`)
+    return null
+  }
+
+  /**
+   * Validates the presence and content of the group claim in userinfo.
+   */
+  validateGroupClaim(userinfo) {
+    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    if (!groupClaimName) // Allow no group claim when configured like this
+      return true
+
+    // If configured it must exist in userinfo
+    if (!userinfo[groupClaimName]) {
+      return false
+    }
+    return true
+  }
+
+  /**
+   * Sets the user group based on group claim in userinfo.
+   * 
+   * @param {import('./objects/user/User')} user
+   * @param {Object} userinfo
+   */
+  async setUserGroup(user, userinfo) {
+    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    if (!groupClaimName) // No group claim configured, don't set anything
+      return
+
+    if (!userinfo[groupClaimName])
+      throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
+
+    const groupsList = userinfo[groupClaimName].map(group => group.toLowerCase())
+    const rolesInOrderOfPriority = ['admin', 'user', 'guest']
+
+    let userType = rolesInOrderOfPriority.find(role => groupsList.includes(role))
+    if (userType) {
+      if (user.type === 'root') {
+        // Check OpenID Group
+        if (userType !== 'admin') {
+          throw new Error(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`)
+        } else {
+          // If root user is logging in via OpenID, we will not change the type
+          return
         }
       }
 
-      if (!user?.isActive) {
-        if (user && !user.isActive) {
-          failureMessage = 'Unauthorized'
-        }
-        // deny login
-        done(null, null, failureMessage)
-        return
+      if (user.type !== userType) {
+        Logger.info(`[Auth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
+        user.type = userType
+        await Database.userModel.updateFromOld(user)
       }
+    } else {
+      throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
+    }
+  }
 
-      // We also have to save the id_token for later (used for logout) because we cannot set cookies here
-      user.openid_id_token = tokenset.id_token
+  /**
+   * Updates user permissions based on the advanced permissions claim.
+   * 
+   * @param {import('./objects/user/User')} user
+   * @param {Object} userinfo
+   */
+  async updateUserPermissions(user, userinfo) {
+    const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
+    if (!absPermissionsClaim) // No advanced permissions claim configured, don't set anything
+      return
 
-      // permit login
-      return done(null, user)
-    }))
+    if (user.type === 'admin' || user.type === 'root')
+      return
+
+    const absPermissions = userinfo[absPermissionsClaim]
+    if (!absPermissions)
+      throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
+
+    if (user.updatePermissionsFromExternalJSON(absPermissions)) {
+      Logger.info(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
+      await Database.userModel.updateFromOld(user)
+    }
   }
 
   /**
@@ -331,10 +462,19 @@ class Auth {
           sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
         }
 
+        var scope = 'openid profile email'
+        if (global.ServerSettings.authOpenIDGroupClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDGroupClaim
+        }
+        if (global.ServerSettings.authOpenIDAdvancedPermsClaim) {
+          scope += ' ' + global.ServerSettings.authOpenIDAdvancedPermsClaim
+        }
+
         const authorizationUrl = client.authorizationUrl({
           ...oidcStrategy._params,
           state: state,
           response_type: 'code',
+          scope: scope,
           code_challenge,
           code_challenge_method
         })
@@ -343,7 +483,7 @@ class Auth {
 
         res.redirect(authorizationUrl)
       } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid route: ${error}`)
+        Logger.error(`[Auth] Error in /auth/openid route: ${error}\n${error?.stack}`)
         res.status(500).send('Internal Server Error')
       }
 
@@ -399,7 +539,7 @@ class Auth {
         // Redirect to the overwrite URI saved in the map
         res.redirect(redirectUri)
       } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}`)
+        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
         res.status(500).send('Internal Server Error')
       }
     })
@@ -421,12 +561,12 @@ class Auth {
       }
 
       function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
-        Logger.error(logMessage)
+        Logger.error(JSON.stringify(logMessage, null, 2))
         if (response) {
           // Depending on the error, it can also have a body
           // We also log the request header the passport plugin sents for the URL
           const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
-          Logger.debug(header + '\n' + response.body?.toString())
+          Logger.debug(header + '\n' + JSON.stringify(response.body, null, 2))
         }
 
         if (isMobile) {
@@ -511,7 +651,8 @@ class Auth {
           token_endpoint: data.token_endpoint,
           userinfo_endpoint: data.userinfo_endpoint,
           end_session_endpoint: data.end_session_endpoint,
-          jwks_uri: data.jwks_uri
+          jwks_uri: data.jwks_uri,
+          id_token_signing_alg_values_supported: data.id_token_signing_alg_values_supported
         })
       }).catch((error) => {
         Logger.error(`[Auth] Failed to get openid configuration at "${configUrl}"`, error)
@@ -530,42 +671,45 @@ class Auth {
 
           res.clearCookie('auth_method')
 
+          let logoutUrl = null
+
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
             // If we are using openid, we need to redirect to the logout endpoint
             // node-openid-client does not support doing it over passport
             const oidcStrategy = passport._strategy('openid-client')
             const client = oidcStrategy._client
 
-            let postLogoutRedirectUri = null
+            if (client.issuer.end_session_endpoint && client.issuer.end_session_endpoint.length > 0) {
+              let postLogoutRedirectUri = null
 
-            if (authMethod === 'openid') {
-              const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
-              const host = req.get('host')
-              // TODO: ABS does currently not support subfolders for installation
-              // If we want to support it we need to include a config for the serverurl
-              postLogoutRedirectUri = `${protocol}://${host}/login`
+              if (authMethod === 'openid') {
+                const protocol = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http'
+                const host = req.get('host')
+                // TODO: ABS does currently not support subfolders for installation
+                // If we want to support it we need to include a config for the serverurl
+                postLogoutRedirectUri = `${protocol}://${host}/login`
+              }
+              // else for openid-mobile we keep postLogoutRedirectUri on null
+              //  nice would be to redirect to the app here, but for example Authentik does not implement
+              //  the post_logout_redirect_uri parameter at all and for other providers
+              //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
+              //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
+              //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
+              //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
+              //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
+
+              logoutUrl = client.endSessionUrl({
+                id_token_hint: req.cookies.openid_id_token,
+                post_logout_redirect_uri: postLogoutRedirectUri
+              })
             }
-            // else for openid-mobile we keep postLogoutRedirectUri on null
-            //  nice would be to redirect to the app here, but for example Authentik does not implement
-            //  the post_logout_redirect_uri parameter at all and for other providers
-            //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
-            //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
-            //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
-            //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
-            //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
-
-            const logoutUrl = client.endSessionUrl({
-              id_token_hint: req.cookies.openid_id_token,
-              post_logout_redirect_uri: postLogoutRedirectUri
-            })
 
             res.clearCookie('openid_id_token')
-
-            // Tell the user agent (browser) to redirect to the authentification provider's logout URL
-            res.send({ redirect_url: logoutUrl })
-          } else {
-            res.sendStatus(200)
           }
+
+          // Tell the user agent (browser) to redirect to the authentification provider's logout URL
+          // (or redirect_url: null if we don't have one)
+          res.send({ redirect_url: logoutUrl })
         }
       })
     })

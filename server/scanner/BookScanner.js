@@ -20,6 +20,7 @@ const LibraryScan = require("./LibraryScan")
 const OpfFileScanner = require('./OpfFileScanner')
 const NfoFileScanner = require('./NfoFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
+const EBookFile = require("../objects/files/EBookFile")
 
 /**
  * Metadata for books pulled from files
@@ -84,7 +85,7 @@ class BookScanner {
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
-        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified)
+        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified.map(lf => lf.new))
         media.audioFiles = media.audioFiles.map((audioFileObj) => {
           let matchedScannedAudioFile = scannedAudioFiles.find(saf => saf.metadata.path === audioFileObj.metadata.path)
           if (!matchedScannedAudioFile) {
@@ -138,9 +139,23 @@ class BookScanner {
     }
 
     // Check if cover was removed
-    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
+    if (media.coverPath && libraryItemData.imageLibraryFilesRemoved.some(lf => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
       media.coverPath = null
       hasMediaChanges = true
+    }
+
+    // Update cover if it was modified
+    if (media.coverPath && libraryItemData.imageLibraryFilesModified.length) {
+      let coverMatch = libraryItemData.imageLibraryFilesModified.find(iFile => iFile.old.metadata.path === media.coverPath)
+      if (coverMatch) {
+        const coverPath = coverMatch.new.metadata.path
+        if (coverPath !== media.coverPath) {
+          libraryScan.addLog(LogLevel.DEBUG, `Updating book cover "${media.coverPath}" => "${coverPath}" for book "${media.title}"`)
+          media.coverPath = coverPath
+          media.changed('coverPath', true)
+          hasMediaChanges = true
+        }
+      }
     }
 
     // Check if cover is not set and image files were found
@@ -155,6 +170,19 @@ class BookScanner {
     if (media.ebookFile && (librarySettings.audiobooksOnly || libraryItemData.checkEbookFileRemoved(media.ebookFile))) {
       media.ebookFile = null
       hasMediaChanges = true
+    }
+
+    // Update ebook if it was modified
+    if (media.ebookFile && libraryItemData.ebookLibraryFilesModified.length) {
+      let ebookMatch = libraryItemData.ebookLibraryFilesModified.find(eFile => eFile.old.metadata.path === media.ebookFile.metadata.path)
+      if (ebookMatch) {
+        const ebookFile = new EBookFile(ebookMatch.new)
+        ebookFile.ebookFormat = ebookFile.metadata.ext.slice(1).toLowerCase()
+        libraryScan.addLog(LogLevel.DEBUG, `Updating book ebook file "${media.ebookFile.metadata.path}" => "${ebookFile.metadata.path}" for book "${media.title}"`)
+        media.ebookFile = ebookFile.toJSON()
+        media.changed('ebookFile', true)
+        hasMediaChanges = true
+      }
     }
 
     // Check if ebook is not set and ebooks were found
@@ -186,11 +214,11 @@ class BookScanner {
         // Check for authors added
         for (const authorName of bookMetadata.authors) {
           if (!media.authors.some(au => au.name === authorName)) {
-            const existingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
-            if (existingAuthor) {
+            const existingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
+            if (existingAuthorId) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,
-                authorId: existingAuthor.id
+                authorId: existingAuthorId
               })
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
               authorsUpdated = true
@@ -221,11 +249,11 @@ class BookScanner {
         for (const seriesObj of bookMetadata.series) {
           const existingBookSeries = media.series.find(se => se.name === seriesObj.name)
           if (!existingBookSeries) {
-            const existingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
-            if (existingSeries) {
+            const existingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
+            if (existingSeriesId) {
               await Database.bookSeriesModel.create({
                 bookId: media.id,
-                seriesId: existingSeries.id,
+                seriesId: existingSeriesId,
                 sequence: seriesObj.sequence
               })
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
@@ -443,10 +471,10 @@ class BookScanner {
     }
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
-        const matchingAuthor = Database.libraryFilterData[libraryItemData.libraryId].authors.find(au => au.name === authorName)
-        if (matchingAuthor) {
+        const matchingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
+        if (matchingAuthorId) {
           bookObject.bookAuthors.push({
-            authorId: matchingAuthor.id
+            authorId: matchingAuthorId
           })
         } else {
           // New author
@@ -463,10 +491,10 @@ class BookScanner {
     if (bookMetadata.series.length) {
       for (const seriesObj of bookMetadata.series) {
         if (!seriesObj.name) continue
-        const matchingSeries = Database.libraryFilterData[libraryItemData.libraryId].series.find(se => se.name === seriesObj.name)
-        if (matchingSeries) {
+        const matchingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
+        if (matchingSeriesId) {
           bookObject.bookSeries.push({
-            seriesId: matchingSeries.id,
+            seriesId: matchingSeriesId,
             sequence: seriesObj.sequence
           })
         } else {

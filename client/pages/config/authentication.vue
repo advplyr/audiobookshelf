@@ -58,28 +58,52 @@
 
             <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
 
+            <ui-dropdown v-if="openIdSigningAlgorithmsSupportedByIssuer.length" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
+            <ui-text-input-with-label v-else ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
+
             <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
-            <p class="pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
 
             <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
 
-            <div class="flex items-center pt-1 mb-2">
+            <div class="flex sm:items-center flex-col sm:flex-row pt-1 mb-2">
               <div class="w-44">
                 <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" :label="$strings.LabelMatchExistingUsersBy" :disabled="savingSettings" />
               </div>
-              <p class="pl-4 text-sm text-gray-300 mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
+              <p class="sm:pl-4 text-sm text-gray-300 mt-2 sm:mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
             </div>
 
-            <div class="flex items-center py-4 px-1">
+            <div class="flex items-center py-4 px-1 w-full">
               <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
               <p id="auto-redirect-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoLaunch }}</p>
               <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelAutoLaunchDescription" />
             </div>
 
-            <div class="flex items-center py-4 px-1">
+            <div class="flex items-center py-4 px-1 w-full">
               <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
               <p id="auto-register-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoRegister }}</p>
               <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
+            </div>
+
+            <p class="pt-6 mb-4 px-1">{{ $strings.LabelOpenIDClaims }}</p>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
+              </div>
+              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
+              </div>
+              <div class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
+                <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
+                <pre class="text-pre-wrap mt-2"
+                  >{{ newAuthSettings.authOpenIDSamplePermissions }}
+                </pre>
+              </div>
             </div>
           </div>
         </transition>
@@ -117,6 +141,7 @@ export default {
       enableOpenIDAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      openIdSigningAlgorithmsSupportedByIssuer: [],
       newAuthSettings: {}
     }
   },
@@ -157,6 +182,22 @@ export default {
         this.newAuthSettings.authOpenIDIssuerURL = this.newAuthSettings.authOpenIDIssuerURL.replace('/.well-known/openid-configuration', '')
       }
 
+      const setSupportedSigningAlgorithms = (algorithms) => {
+        if (!algorithms?.length || !Array.isArray(algorithms)) {
+          console.warn('Invalid id_token_signing_alg_values_supported from openid-configuration', algorithms)
+          this.openIdSigningAlgorithmsSupportedByIssuer = []
+          return
+        }
+        this.openIdSigningAlgorithmsSupportedByIssuer = algorithms
+
+        // If a signing algorithm is already selected, then keep it, when it is still supported.
+        // But if it is not supported, then select one of the supported ones.
+        let currentAlgorithm = this.newAuthSettings.authOpenIDTokenSigningAlgorithm
+        if (!algorithms.includes(currentAlgorithm)) {
+          this.newAuthSettings.authOpenIDTokenSigningAlgorithm = algorithms[0]
+        }
+      }
+
       this.$axios
         .$get(`/auth/openid/config?issuer=${issuerUrl}`)
         .then((data) => {
@@ -166,6 +207,7 @@ export default {
           if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
           if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
           if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
+          if (data.id_token_signing_alg_values_supported) setSupportedSigningAlgorithms(data.id_token_signing_alg_values_supported)
         })
         .catch((error) => {
           console.error('Failed to receive data', error)
@@ -203,6 +245,10 @@ export default {
         this.$toast.error('Client Secret required')
         isValid = false
       }
+      if (!this.newAuthSettings.authOpenIDTokenSigningAlgorithm) {
+        this.$toast.error('Signing Algorithm required')
+        isValid = false
+      }
 
       function isValidRedirectURI(uri) {
         // Check for somestring://someother/string
@@ -222,6 +268,22 @@ export default {
           }
         })
       }
+
+      function isValidClaim(claim) {
+        if (claim === '') return true
+
+        const pattern = new RegExp('^[a-zA-Z][a-zA-Z0-9_-]*$', 'i')
+        return pattern.test(claim)
+      }
+      if (!isValidClaim(this.newAuthSettings.authOpenIDGroupClaim)) {
+        this.$toast.error('Group Claim: Invalid claim name')
+        isValid = false
+      }
+      if (!isValidClaim(this.newAuthSettings.authOpenIDAdvancedPermsClaim)) {
+        this.$toast.error('Advanced Permission Claim: Invalid claim name')
+        isValid = false
+      }
+
       return isValid
     },
     async saveSettings() {

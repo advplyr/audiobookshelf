@@ -75,7 +75,7 @@ module.exports = {
 
   /**
    * Get library items for most recently added shelf
-   * @param {oldLibrary} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
@@ -120,14 +120,14 @@ module.exports = {
 
   /**
    * Get library items for continue series shelf
-   * @param {string} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
   async getLibraryItemsContinueSeries(library, user, include, limit) {
-    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, user, include, limit, 0)
+    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library, user, include, limit, 0)
     return {
       libraryItems: libraryItems.map(li => {
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
@@ -145,7 +145,7 @@ module.exports = {
 
   /**
    * Get library items or podcast episodes for the "Listen Again" and "Read Again" shelf
-   * @param {oldLibrary} library 
+   * @param {import('../../objects/Library')} library 
    * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
@@ -451,7 +451,7 @@ module.exports = {
             libraryId: libraryId
           }
         },
-        attributes: ['tags', 'genres']
+        attributes: ['tags', 'genres', 'language']
       })
       for (const podcast of podcasts) {
         if (podcast.tags?.length) {
@@ -459,6 +459,9 @@ module.exports = {
         }
         if (podcast.genres?.length) {
           podcast.genres.forEach((genre) => data.genres.add(genre))
+        }
+        if (podcast.language) {
+          data.languages.add(podcast.language)
         }
       }
     } else {

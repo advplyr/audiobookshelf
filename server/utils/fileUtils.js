@@ -59,7 +59,7 @@ async function getFileTimestampsWithIno(path) {
       ino: String(stat.ino)
     }
   } catch (err) {
-    Logger.error('[fileUtils] Failed to getFileTimestampsWithIno', err)
+    Logger.error(`[fileUtils] Failed to getFileTimestampsWithIno for path "${path}"`, err)
     return false
   }
 }
@@ -357,7 +357,10 @@ module.exports.removeFile = (path) => {
 }
 
 module.exports.encodeUriPath = (path) => {
-  const uri = new URL(path, "file://")
+  const uri = new URL('/', "file://")
+  // we assign the path here to assure that URL control characters like # are
+  // actually interpreted as part of the URL path
+  uri.pathname = path
   return uri.pathname
 }
 

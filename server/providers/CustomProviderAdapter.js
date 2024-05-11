@@ -9,11 +9,12 @@ class CustomProviderAdapter {
      * 
      * @param {string} title 
      * @param {string} author 
+     * @param {string} isbn 
      * @param {string} providerSlug 
      * @param {string} mediaType
      * @returns {Promise<Object[]>}
      */
-    async search(title, author, providerSlug, mediaType) {
+    async search(title, author, isbn, providerSlug, mediaType) {
         const providerId = providerSlug.split('custom-')[1]
         const provider = await Database.customMetadataProviderModel.findByPk(providerId)
 
@@ -29,6 +30,9 @@ class CustomProviderAdapter {
         if (author) {
             queryObj.author = author
         }
+        if (isbn) {
+            queryObj.isbn = isbn
+        }
         const queryString = (new URLSearchParams(queryObj)).toString()
 
         // Setup headers
@@ -39,7 +43,7 @@ class CustomProviderAdapter {
             }
         }
 
-        const matches = await axios.get(`${provider.url}/search?${queryString}}`, axiosOptions).then((res) => {
+        const matches = await axios.get(`${provider.url}/search?${queryString}`, axiosOptions).then((res) => {
             if (!res?.data || !Array.isArray(res.data.matches)) return null
             return res.data.matches
         }).catch(error => {

@@ -25,7 +25,8 @@ module.exports = {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: '' }
+      { hid: 'description', name: 'description', content: '' },
+      { hid: 'robots', name: 'robots', content: 'noindex' }
     ],
     script: [],
     link: [
@@ -152,4 +153,6 @@ module.exports = {
  * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
  */
   devServerHandlers: [],
+
+  ignore: ["**/*.test.*", "**/*.cy.*"]
 }

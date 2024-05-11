@@ -2,7 +2,7 @@
   <div :id="`lazy-episode-${index}`" class="w-full h-full cursor-pointer" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="flex" @click="clickedEpisode">
       <div class="flex-grow">
-        <div class="flex items-center">
+        <div dir="auto" class="flex items-center">
           <span class="text-sm font-semibold">{{ episodeTitle }}</span>
           <widgets-podcast-type-indicator :type="episodeType" />
         </div>

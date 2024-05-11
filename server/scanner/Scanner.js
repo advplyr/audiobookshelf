@@ -359,7 +359,7 @@ class Scanner {
       }
 
       offset += limit
-      hasMoreChunks = libraryItems.length < limit
+      hasMoreChunks = libraryItems.length === limit
       let oldLibraryItems = libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
 
       const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)

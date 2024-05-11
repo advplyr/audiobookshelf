@@ -7,7 +7,7 @@ const Logger = require('../Logger')
  * @property {string} ebookFormat
  * @property {number} addedAt
  * @property {number} updatedAt
- * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
+ * @property {{filename:string, ext:string, path:string, relPath:strFing, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
  */
 
 /**

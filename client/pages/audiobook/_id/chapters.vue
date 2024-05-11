@@ -281,7 +281,7 @@ export default {
       return this.media.audioFiles || []
     },
     audioTracks() {
-      return this.audioFiles.filter((af) => !af.exclude && !af.invalid)
+      return this.audioFiles.filter((af) => !af.exclude)
     },
     selectedChapterId() {
       return this.selectedChapter ? this.selectedChapter.id : null

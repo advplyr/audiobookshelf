@@ -65,7 +65,7 @@ export default {
       return 0.8 * this.sizeMultiplier
     },
     resolution() {
-      return `${this.naturalWidth}x${this.naturalHeight}px`
+      return `${this.naturalWidth}×${this.naturalHeight}px`
     },
     placeholderUrl() {
       const config = this.$config || this.$nuxt.$config

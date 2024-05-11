@@ -534,6 +534,7 @@ class ApiRouter {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
           if (!authorName) {
             Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
+            mediaMetadata.authors[i].id = null
             continue
           }
 
@@ -562,6 +563,8 @@ class ApiRouter {
             mediaMetadata.authors[i].id = author.id
           }
         }
+        // Remove authors without an id
+        mediaMetadata.authors = mediaMetadata.authors.filter(au => !!au.id)
         if (newAuthors.length) {
           await Database.createBulkAuthors(newAuthors)
           SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
@@ -575,6 +578,7 @@ class ApiRouter {
           const seriesName = (mediaMetadata.series[i].name || '').trim()
           if (!seriesName) {
             Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
+            mediaMetadata.series[i].id = null
             continue
           }
 
@@ -603,6 +607,8 @@ class ApiRouter {
             mediaMetadata.series[i].id = seriesItem.id
           }
         }
+        // Remove series without an id
+        mediaMetadata.series = mediaMetadata.series.filter(se => se.id)
         if (newSeries.length) {
           await Database.createBulkSeries(newSeries)
           SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))

@@ -29,10 +29,9 @@ class Audible {
      */
     cleanSeriesSequence(seriesName, sequence) {
         if (!sequence) return ''
-        let updatedSequence = sequence.replace(/Book /, '').trim()
-        if (updatedSequence.includes(' ')) {
-            updatedSequence = updatedSequence.split(' ').shift().replace(/,$/, '')
-        }
+        // match any number with optional decimal (e.g, 1 or 1.5 or .5)
+        let numberFound = sequence.match(/\.\d+|\d+(?:\.\d+)?/)
+        let updatedSequence = numberFound ? numberFound[0] : sequence
         if (sequence !== updatedSequence) {
             Logger.debug(`[Audible] Series "${seriesName}" sequence was cleaned from "${sequence}" to "${updatedSequence}"`)
         }
@@ -80,12 +79,19 @@ class Audible {
         }
     }
 
+    /**
+     * Test if a search title matches an ASIN. Supports lowercase letters
+     * 
+     * @param {string} title 
+     * @returns {boolean}
+     */
     isProbablyAsin(title) {
-        return /^[0-9A-Z]{10}$/.test(title)
+        return /^[0-9A-Za-z]{10}$/.test(title)
     }
 
     asinSearch(asin, region) {
-        asin = encodeURIComponent(asin)
+        if (!asin) return []
+        asin = encodeURIComponent(asin.toUpperCase())
         var regionQuery = region ? `?region=${region}` : ''
         var url = `https://api.audnex.us/books/${asin}${regionQuery}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
@@ -125,7 +131,7 @@ class Audible {
             const url = `https://api.audible${tld}/1.0/catalog/products?${queryString}`
             Logger.debug(`[Audible] Search url: ${url}`)
             items = await axios.get(url).then((res) => {
-                if (!res || !res.data || !res.data.products) return null
+                if (!res?.data?.products) return null
                 return Promise.all(res.data.products.map(result => this.asinSearch(result.asin, region)))
             }).catch(error => {
                 Logger.error('[Audible] query search error', error)

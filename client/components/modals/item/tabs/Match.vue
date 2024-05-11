@@ -32,7 +32,7 @@
         </div>
         <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>
-      <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
+      <ui-checkbox v-model="selectAll" :label="$strings.LabelSelectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
           <div class="flex flex-grow items-center py-2">
@@ -47,10 +47,10 @@
                 <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
-            <div v-if="media.coverPath">
+            <div v-if="media.coverPath" class="ml-0.5">
               <p class="text-center text-gray-200">Current</p>
-              <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
-                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              <a :href="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
           </div>
@@ -508,7 +508,10 @@ export default {
           } else if (key === 'author' && !this.isPodcast) {
             var authors = this.selectedMatch[key]
             if (!Array.isArray(authors)) {
-              authors = authors.split(',').map((au) => au.trim())
+              authors = authors
+                .split(',')
+                .map((au) => au.trim())
+                .filter((au) => !!au)
             }
             var authorPayload = []
             authors.forEach((authorName) =>
@@ -546,24 +549,11 @@ export default {
       // Persist in local storage
       localStorage.setItem('selectedMatchUsage', JSON.stringify(this.selectedMatchUsage))
 
-      if (updatePayload.metadata.cover) {
-        const coverPayload = {
-          url: updatePayload.metadata.cover
-        }
-        const success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
-          console.error('Failed to update', error)
-          return false
-        })
-        if (success) {
-          this.$toast.success(this.$strings.ToastItemCoverUpdateSuccess)
-        } else {
-          this.$toast.error(this.$strings.ToastItemCoverUpdateFailed)
-        }
-        console.log('Updated cover')
-        delete updatePayload.metadata.cover
-      }
-
       if (Object.keys(updatePayload).length) {
+        if (updatePayload.metadata.cover) {
+          updatePayload.url = updatePayload.metadata.cover
+          delete updatePayload.metadata.cover
+        }
         const mediaUpdatePayload = updatePayload
         const updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)

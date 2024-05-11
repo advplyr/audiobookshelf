@@ -1,8 +1,12 @@
-const { DataTypes, Model, WhereOptions } = require('sequelize')
+const Path = require('path')
+const { DataTypes, Model } = require('sequelize')
+const fsExtra = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const { areEquivalent } = require('../utils/index')
+const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
+const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
 
@@ -116,7 +120,7 @@ class LibraryItem extends Model {
 
   /**
    * Currently unused because this is too slow and uses too much mem
-   * @param {[WhereOptions]} where
+   * @param {import('sequelize').WhereOptions} [where]
    * @returns {Array<objects.LibraryItem>} old library items
    */
   static async getAllOldLibraryItems(where = null) {
@@ -312,17 +316,18 @@ class LibraryItem extends Model {
         const existingAuthors = libraryItemExpanded.media.authors || []
         const existingSeriesAll = libraryItemExpanded.media.series || []
         const updatedAuthors = oldLibraryItem.media.metadata.authors || []
+        const uniqueUpdatedAuthors = updatedAuthors.filter((au, idx) => updatedAuthors.findIndex(a => a.id === au.id) === idx)
         const updatedSeriesAll = oldLibraryItem.media.metadata.series || []
 
         for (const existingAuthor of existingAuthors) {
           // Author was removed from Book
-          if (!updatedAuthors.some(au => au.id === existingAuthor.id)) {
+          if (!uniqueUpdatedAuthors.some(au => au.id === existingAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
             await this.sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
             hasUpdates = true
           }
         }
-        for (const updatedAuthor of updatedAuthors) {
+        for (const updatedAuthor of uniqueUpdatedAuthors) {
           // Author was added
           if (!existingAuthors.some(au => au.id === updatedAuthor.id)) {
             Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
@@ -378,6 +383,9 @@ class LibraryItem extends Model {
       if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
         Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
         hasLibraryItemUpdates = true
+        if (key === 'updatedAt') {
+          libraryItemExpanded.changed('updatedAt', true)
+        }
       }
     }
     if (hasLibraryItemUpdates) {
@@ -405,6 +413,7 @@ class LibraryItem extends Model {
       isInvalid: !!oldLibraryItem.isInvalid,
       mtime: oldLibraryItem.mtimeMs,
       ctime: oldLibraryItem.ctimeMs,
+      updatedAt: oldLibraryItem.updatedAt,
       birthtime: oldLibraryItem.birthtimeMs,
       size: oldLibraryItem.size,
       lastScan: oldLibraryItem.lastScan,
@@ -768,12 +777,14 @@ class LibraryItem extends Model {
 
   /**
    * 
-   * @param {WhereOptions} where 
+   * @param {import('sequelize').WhereOptions} where 
+   * @param {import('sequelize').BindOrReplacements} replacements
    * @returns {Object} oldLibraryItem
    */
-  static async findOneOld(where) {
+  static async findOneOld(where, replacements = {}) {
     const libraryItem = await this.findOne({
       where,
+      replacements,
       include: [
         {
           model: this.sequelize.models.book,
@@ -819,6 +830,147 @@ class LibraryItem extends Model {
     if (!this.mediaType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`
     return this[mixinMethodName](options)
+  }
+
+  /**
+   * 
+   * @returns {Promise<Book|Podcast>}
+   */
+  getMediaExpanded() {
+    if (this.mediaType === 'podcast') {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+  }
+
+  /**
+   * 
+   * @returns {Promise}
+   */
+  async saveMetadataFile() {
+    let metadataPath = Path.join(global.MetadataPath, 'items', this.id)
+    let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
+    if (storeMetadataWithItem && !this.isFile) {
+      metadataPath = this.path
+    } else {
+      // Make sure metadata book dir exists
+      storeMetadataWithItem = false
+      await fsExtra.ensureDir(metadataPath)
+    }
+
+    const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
+
+    // Expanded with series, authors, podcastEpisodes
+    const mediaExpanded = this.media || await this.getMediaExpanded()
+
+    let jsonObject = {}
+    if (this.mediaType === 'book') {
+      jsonObject = {
+        tags: mediaExpanded.tags || [],
+        chapters: mediaExpanded.chapters?.map(c => ({ ...c })) || [],
+        title: mediaExpanded.title,
+        subtitle: mediaExpanded.subtitle,
+        authors: mediaExpanded.authors.map(a => a.name),
+        narrators: mediaExpanded.narrators,
+        series: mediaExpanded.series.map(se => {
+          const sequence = se.bookSeries?.sequence || ''
+          if (!sequence) return se.name
+          return `${se.name} #${sequence}`
+        }),
+        genres: mediaExpanded.genres || [],
+        publishedYear: mediaExpanded.publishedYear,
+        publishedDate: mediaExpanded.publishedDate,
+        publisher: mediaExpanded.publisher,
+        description: mediaExpanded.description,
+        isbn: mediaExpanded.isbn,
+        asin: mediaExpanded.asin,
+        language: mediaExpanded.language,
+        explicit: !!mediaExpanded.explicit,
+        abridged: !!mediaExpanded.abridged
+      }
+    } else {
+      jsonObject = {
+        tags: mediaExpanded.tags || [],
+        title: mediaExpanded.title,
+        author: mediaExpanded.author,
+        description: mediaExpanded.description,
+        releaseDate: mediaExpanded.releaseDate,
+        genres: mediaExpanded.genres || [],
+        feedURL: mediaExpanded.feedURL,
+        imageURL: mediaExpanded.imageURL,
+        itunesPageURL: mediaExpanded.itunesPageURL,
+        itunesId: mediaExpanded.itunesId,
+        itunesArtistId: mediaExpanded.itunesArtistId,
+        asin: mediaExpanded.asin,
+        language: mediaExpanded.language,
+        explicit: !!mediaExpanded.explicit,
+        podcastType: mediaExpanded.podcastType
+      }
+    }
+
+
+    return fsExtra.writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2)).then(async () => {
+      // Add metadata.json to libraryFiles array if it is new
+      let metadataLibraryFile = this.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+      if (storeMetadataWithItem) {
+        if (!metadataLibraryFile) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+          metadataLibraryFile = newLibraryFile.toJSON()
+          this.libraryFiles.push(metadataLibraryFile)
+        } else {
+          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+          if (fileTimestamps) {
+            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+            metadataLibraryFile.metadata.size = fileTimestamps.size
+            metadataLibraryFile.ino = fileTimestamps.ino
+          }
+        }
+        const libraryItemDirTimestamps = await getFileTimestampsWithIno(this.path)
+        if (libraryItemDirTimestamps) {
+          this.mtime = libraryItemDirTimestamps.mtimeMs
+          this.ctime = libraryItemDirTimestamps.ctimeMs
+          let size = 0
+          this.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+          this.size = size
+          await this.save()
+        }
+      }
+
+      Logger.debug(`Success saving abmetadata to "${metadataFilePath}"`)
+
+      return metadataLibraryFile
+    }).catch((error) => {
+      Logger.error(`Failed to save json file at "${metadataFilePath}"`, error)
+      return null
+    })
   }
 
   /**

@@ -20,11 +20,8 @@ export default {
         this.$store.commit('globals/setShowRawCoverPreviewModal', val)
       }
     },
-    selectedLibraryItemId() {
-      return this.$store.state.globals.selectedLibraryItemId
-    },
     rawCoverUrl() {
-      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.selectedLibraryItemId, null, true)
+      return this.$store.state.globals.selectedRawCoverUrl
     }
   },
   methods: {},
