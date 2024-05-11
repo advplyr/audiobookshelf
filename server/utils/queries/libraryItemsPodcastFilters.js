@@ -7,7 +7,7 @@ const { asciiOnlyToLowerCase } = require('../index')
 module.exports = {
   /**
    * User permissions to restrict podcasts for explicit content & tags
-   * @param {import('../../objects/user/User')} user 
+   * @param {import('../../objects/user/User')} user
    * @returns {{ podcastWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionPodcastWhereQuery(user) {
@@ -36,8 +36,8 @@ module.exports = {
 
   /**
    * Get where options for Podcast model
-   * @param {string} group 
-   * @param {[string]} value 
+   * @param {string} group
+   * @param {[string]} value
    * @returns {object} { Sequelize.WhereOptions, string[] }
    */
   getMediaGroupQuery(group, value) {
@@ -63,8 +63,8 @@ module.exports = {
 
   /**
    * Get sequelize order
-   * @param {string} sortBy 
-   * @param {boolean} sortDesc 
+   * @param {string} sortBy
+   * @param {boolean} sortDesc
    * @returns {Sequelize.order}
    */
   getOrder(sortBy, sortDesc) {
@@ -94,15 +94,15 @@ module.exports = {
 
   /**
    * Get library items for podcast media type using filter and sort
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @param {oldUser} user
-   * @param {[string]} filterGroup 
-   * @param {[string]} filterValue 
-   * @param {string} sortBy 
-   * @param {string} sortDesc 
+   * @param {[string]} filterGroup
+   * @param {[string]} filterValue
+   * @param {string} sortBy
+   * @param {string} sortDesc
    * @param {string[]} include
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {number} limit
+   * @param {number} offset
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
   async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset) {
@@ -199,14 +199,14 @@ module.exports = {
 
   /**
    * Get podcast episodes filtered and sorted
-   * @param {string} libraryId 
-   * @param {oldUser} user 
-   * @param {[string]} filterGroup 
-   * @param {[string]} filterValue 
-   * @param {string} sortBy 
-   * @param {string} sortDesc 
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {string} libraryId
+   * @param {oldUser} user
+   * @param {[string]} filterGroup
+   * @param {[string]} filterValue
+   * @param {string} sortBy
+   * @param {string} sortDesc
+   * @param {number} limit
+   * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
    * @returns {object} {libraryItems:LibraryItem[], count:number}
    */
@@ -305,10 +305,10 @@ module.exports = {
   /**
    * Search podcasts
    * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary 
-   * @param {string} query 
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {import('../../objects/Library')} oldLibrary
+   * @param {string} query
+   * @param {number} limit
+   * @param {number} offset
    * @returns {{podcast:object[], tags:object[]}}
    */
   async search(oldUser, oldLibrary, query, limit, offset) {
@@ -410,10 +410,10 @@ module.exports = {
 
   /**
    * Most recent podcast episodes not finished
-   * @param {import('../../objects/user/User')} oldUser 
-   * @param {import('../../objects/Library')} oldLibrary 
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {import('../../objects/user/User')} oldUser
+   * @param {import('../../objects/Library')} oldLibrary
+   * @param {number} limit
+   * @param {number} offset
    * @returns {Promise<object[]>}
    */
   async getRecentEpisodes(oldUser, oldLibrary, limit, offset) {
@@ -469,7 +469,7 @@ module.exports = {
 
   /**
    * Get stats for podcast library
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
   async getPodcastLibraryStats(libraryId) {
@@ -491,7 +491,7 @@ module.exports = {
 
   /**
    * Genres with num podcasts
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {{genre:string, count:number}[]}
    */
   async getGenresWithCount(libraryId) {
@@ -513,8 +513,8 @@ module.exports = {
 
   /**
    * Get longest podcasts in library
-   * @param {string} libraryId 
-   * @param {number} limit 
+   * @param {string} libraryId
+   * @param {number} limit
    * @returns {Promise<{ id:string, title:string, duration:number }[]>}
    */
   async getLongestPodcasts(libraryId, limit) {
@@ -544,26 +544,4 @@ module.exports = {
       }
     })
   }
-
-  /** Get podcasts with feed url */
-  // async getPodcastsWithFeedUrl() {
-  //   const podcasts = await Database.podcastModel.findAll({
-  //     where: {
-  //       feedURL: {
-  //         [Sequelize.Op.ne]: null
-  //       }
-  //     },
-  //     include: {
-  //       model: Database.libraryItemModel,
-  //       attributes: ['id', 'libraryId']
-  //     }
-  //   })
-  //   return podcasts.map(podcast => {
-  //     return {
-  //       id: podcast.libraryItem.id,
-  //       title: podcast.title,
-  //       feedURL: podcast.feedURL
-  //     }
-  //   })
-  // }
 }
