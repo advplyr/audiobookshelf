@@ -13,13 +13,13 @@
         <div class="flex -mb-px">
           <div
               class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer"
-              :class="!showOpenedFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
+              :class="showOpenedFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
               @click="showOpenedFeedsView = true">
             <p class="text-sm">{{$strings.HeaderRSSFeeds}}</p>
           </div>
           <div
               class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer"
-              :class="showOpenedFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
+              :class="!showOpenedFeedsView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'"
               @click="showOpenedFeedsView = false">
             <p class="text-sm">{{$strings.HeaderExternalFeedURLHealthChecker}}</p>
           </div>
