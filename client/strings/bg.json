@@ -701,7 +701,6 @@
   "ToastAuthorUpdateMerged": "Обновяване на автора сливано",
   "ToastAuthorUpdateSuccess": "Автора обновен",
   "ToastAuthorUpdateSuccessNoImageFound": "Автор обновен (не е намерена снимка)",
-  "ToastAuthorUpdateSuccessNoImageFound": "Author updated (no image found)",
   "ToastBackupCreateFailed": "Неуспешно създаване на архив",
   "ToastBackupCreateSuccess": "Архивът е създаден",
   "ToastBackupDeleteFailed": "Неуспешно изтриване на архив",
@@ -764,5 +763,5 @@
   "ToastSocketDisconnected": "Сокетът е прекъснат",
   "ToastSocketFailedToConnect": "Неуспешно свързване на сокет",
   "ToastUserDeleteFailed": "Неуспешно изтриване на потребител",
-  "ToastUserDeleteSuccess": "Потребителят е изтрит",
+  "ToastUserDeleteSuccess": "Потребителят е изтрит"
 }
