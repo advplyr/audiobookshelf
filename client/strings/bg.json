@@ -248,7 +248,7 @@
   "LabelDatetime": "Дата и Време",
   "LabelDeleteFromFileSystemCheckbox": "Изтрий от файловата система (отмени за да бъдат премахни само от базата данни)",
   "LabelDescription": "Описание",
-  "LabelDeselectAll": "Премахни всички",//TODO: check
+  "LabelDeselectAll": "Премахни всички",
   "LabelDevice": "Устройство",
   "LabelDeviceInfo": "Информация за Устройство",
   "LabelDeviceIsAvailableTo": "Устройството е достъпно за ...",
