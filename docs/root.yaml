@@ -161,85 +161,9 @@ paths:
         '404':
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
   /api/libraries:
-    get:
-      operationId: getLibraries
-      summary: Get all libraries on server
-      description: Get all libraries on server.
-      tags:
-        - Libraries
-      responses:
-        '200':
-          description: getLibraries OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: './objects/Library.yaml#/components/schemas/library'
-    post:
-      operationId: createLibrary
-      summary: Create a new library on server
-      description: Create a new library on server.
-      tags:
-        - Libraries
-      parameters:
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryName'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryFolders'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryIcon'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryMediaType'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryProvider'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
-      responses:
-        '200':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
-        '400':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
+    $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries'
   /api/libraries/{id}:
-    get:
-      operationId: getLibraryById
-      summary: Get a single library by ID on server
-      description: Get a single library by ID on server.
-      tags:
-        - Libraries
-      parameters:
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
-      responses:
-        '200':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
-        '404':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
-    patch:
-      operationId: updateLibraryById
-      summary: Update a single library by ID on server
-      description: Update a single library by ID on server.
-      tags:
-        - Libraries
-      parameters:
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryName'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryFolders'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryDisplayOrder'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryIcon'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryProvider'
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
-      responses:
-        '200':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
-        '404':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
-    delete:
-      operationId: deleteLibraryById
-      summary: Delete a single library by ID on server
-      description: Delete a single library by ID on server and return the deleted object.
-      tags:
-        - Libraries
-      parameters:
-        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
-      responses:
-        '200':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
-        '404':
-          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
+    $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}'
 tags:
   - name: Authors
     description: Author endpoints

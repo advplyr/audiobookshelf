@@ -1,27 +1,29 @@
 components:
-  parameters:
+  requestBody:
     libraryName:
       name: name
       in: requestBody
       description: The name of the library.
-      required: true
-      schema:
-        type: string
-        example: My Audiobooks
+      content:
+        application/json:
+          schema:
+            type: string
+            example: My Audiobooks
     libraryFolders:
       name: folders
       in: requestBody
+      summary: The folders of the library.
       description: The folders of the library. Only specify the fullPath.
-      required: true
-      schema:
-        type: array
-        items:
-          $ref: '../objects/Folder.yaml#/components/schemas/folder'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '../objects/Folder.yaml#/components/schemas/folder'
     libraryDisplayOrder:
       name: displayOrder
       in: requestBody
       description: The display order of the library. Must be >= 1.
-      required: false
       schema:
         type: integer
         minimum: 1
@@ -29,34 +31,35 @@ components:
     libraryIcon:
       name: icon
       in: requestBody
+      summary: The icon of library.
       description: The icon of the library. See Library Icons for a list of possible icons.
-      required: false
       schema:
         type: string
         example: 'audiobookshelf'
     libraryMediaType:
       name: mediaType
       in: requestBody
+      summary: The type of media the library contains.
       description: The type of media that the library contains. Must be `book` or `podcast`.
-      required: false
       schema:
         type: string
         example: 'book'
     libraryProvider:
       name: provider
       in: requestBody
+      summary: Preferred metadata provider for the library.
       description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
-      required: false
       schema:
         type: string
         example: 'audible'
     librarySettings:
       name: settings
       in: requestBody
+      summary: The settings for the library.
       description: The settings for the library.
-      required: false
       schema:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+  parameters:
     libraryId:
       name: id
       in: path
@@ -66,13 +69,6 @@ components:
         type: string
         format: uuid
         example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
-    librarySettings:
-      name: settings
-      in: requestBody
-      description: The settings for the library.
-      required: false
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
   responses:
     library200:
       description: Library found.
@@ -87,3 +83,88 @@ components:
           schema:
             type: string
             example: Library not found.
+paths:
+  /api/libraries:
+    get:
+      operationId: getLibraries
+      summary: Get all libraries on server
+      description: Get all libraries on server.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          description: getLibraries OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../objects/Library.yaml#/components/schemas/library'
+    post:
+      operationId: createLibrary
+      summary: Create a new library on server
+      description: Create a new library on server.
+      tags:
+        - Libraries
+      requestBody:
+        $ref: '#/components/requestBody/libraryName'
+        $ref: '#/components/requestBody/libraryFolders'
+        $ref: '#/components/requestBody/libraryDisplayOrder'
+        $ref: '#/components/requestBody/libraryIcon'
+        $ref: '#/components/requestBody/libraryMediaType'
+        $ref: '#/components/requestBody/libraryProvider'
+        $ref: '#/components/requestBody/librarySettings'
+        required: [name, folders]
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}:
+    get:
+      operationId: getLibraryById
+      summary: Get a single library by ID on server
+      description: Get a single library by ID on server.
+      tags:
+        - Libraries
+      parameters:
+        $ref: '#/components/parameters/libraryId'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+    patch:
+      operationId: updateLibraryById
+      summary: Update a single library by ID on server
+      description: Update a single library by ID on server.
+      tags:
+        - Libraries
+      parameters:
+        $ref: '#/components/parameters/libraryId'
+      requestBody:
+        $ref: '#/components/requestBody/libraryName'
+        $ref: '#/components/requestBody/libraryFolders'
+        $ref: '#/components/requestBody/libraryDisplayOrder'
+        $ref: '#/components/requestBody/libraryIcon'
+        $ref: '#/components/requestBody/libraryMediaType'
+        $ref: '#/components/requestBody/libraryProvider'
+        $ref: '#/components/requestBody/librarySettings'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+    delete:
+      operationId: deleteLibraryById
+      summary: Delete a single library by ID on server
+      description: Delete a single library by ID on server and return the deleted object.
+      tags:
+        - Libraries
+      parameters:
+        $ref: '#/components/parameters/libraryId'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
