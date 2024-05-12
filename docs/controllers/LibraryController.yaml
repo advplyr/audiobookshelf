@@ -2,7 +2,7 @@ components:
   parameters:
     libraryName:
       name: name
-      in: body
+      in: requestBody
       description: The name of the library.
       required: true
       schema:
@@ -10,7 +10,7 @@ components:
         example: My Audiobooks
     libraryFolders:
       name: folders
-      in: body
+      in: requestBody
       description: The folders of the library. Only specify the fullPath.
       required: true
       schema:
@@ -19,7 +19,7 @@ components:
           $ref: '../objects/Folder.yaml#/components/schemas/folder'
     libraryDisplayOrder:
       name: displayOrder
-      in: body
+      in: requestBody
       description: The display order of the library. Must be >= 1.
       required: false
       schema:
@@ -28,7 +28,7 @@ components:
         example: 1
     libraryIcon:
       name: icon
-      in: body
+      in: requestBody
       description: The icon of the library. See Library Icons for a list of possible icons.
       required: false
       schema:
@@ -36,7 +36,7 @@ components:
         example: 'audiobookshelf'
     libraryMediaType:
       name: mediaType
-      in: body
+      in: requestBody
       description: The type of media that the library contains. Must be `book` or `podcast`.
       required: false
       schema:
@@ -44,7 +44,7 @@ components:
         example: 'book'
     libraryProvider:
       name: provider
-      in: body
+      in: requestBody
       description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
       required: false
       schema:
@@ -52,7 +52,7 @@ components:
         example: 'audible'
     librarySettings:
       name: settings
-      in: body
+      in: requestBody
       description: The settings for the library.
       required: false
       schema:
@@ -68,7 +68,7 @@ components:
         example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
     librarySettings:
       name: settings
-      in: body
+      in: requestBody
       description: The settings for the library.
       required: false
       schema:
@@ -87,4 +87,3 @@ components:
           schema:
             type: string
             example: Library not found.
-
