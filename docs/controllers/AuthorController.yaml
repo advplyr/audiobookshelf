@@ -19,17 +19,17 @@ components:
       required: false
       schema:
         type: string
-        example: "items"
+        example: 'items'
       examples:
         empty:
           summary: Do not return library items
-          value: ""
+          value: ''
         itemOnly:
           summary: Only return library items
-          value: "items"
+          value: 'items'
         itemsAndSeries:
           summary: Return library items and series
-          value: "items,series"
+          value: 'items,series'
     authorLibraryId:
       name: library
       in: query
@@ -126,14 +126,14 @@ components:
       schema:
         type: boolean
         default: false
-  responses: 
+  responses:
     author404:
       description: Author not found.
       content:
         text/html:
           schema:
             type: string
-            example: Not found
+            example: Author not found.
 tags:
   - name: Authors
     description: Author endpoints
