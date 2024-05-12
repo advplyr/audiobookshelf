@@ -29,7 +29,7 @@ components:
           items:
             type: integer
         ebookFile:
-          $ref: '#/components/schemas/ebookFile'
+          $ref: '../files/EBookFile.yaml#/components/schemas/ebookFile'
     bookMinified:
       type: object
       description: Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.
