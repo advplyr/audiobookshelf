@@ -182,11 +182,9 @@ paths:
         - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
       responses:
         '200':
-          description: createLibrary OK
-          content:
-            application/json:
-              schema:
-                $ref: './objects/Library.yaml#/components/schemas/library'
+          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
+        '400':
+          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
   /api/libraries/{id}:
     get:
       operationId: getLibraryById
@@ -197,11 +195,7 @@ paths:
         - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
       responses:
         '200':
-          description: getLibraryById OK
-          content:
-            application/json:
-              schema:
-                $ref: './objects/Library.yaml#/components/schemas/library'
+          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
         '404':
           $ref: './controllers/LibraryController.yaml#/components/responses/library404'
     patch:
@@ -210,6 +204,7 @@ paths:
       tags:
         - Libraries
       parameters:
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
         - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryName'
         - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryFolders'
         - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryDisplayOrder'
@@ -218,11 +213,7 @@ paths:
         - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
       responses:
         '200':
-          description: updateLibraryById OK
-          content:
-            application/json:
-              schema:
-                $ref: './objects/Library.yaml#/components/schemas/library'
+          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
         '404':
           $ref: './controllers/LibraryController.yaml#/components/responses/library404'
     delete:
@@ -234,7 +225,7 @@ paths:
         - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
       responses:
         '200':
-          $ref: '#/components/responses/ok200'
+          $ref: './controllers/LibraryController.yaml#/components/responses/library200'
         '404':
           $ref: './controllers/LibraryController.yaml#/components/responses/library404'
 tags:

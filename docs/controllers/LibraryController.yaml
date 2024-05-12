@@ -59,7 +59,7 @@ components:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
     libraryId:
       name: id
-      in: query
+      in: path
       description: The ID of the library.
       required: true
       schema:
@@ -74,6 +74,12 @@ components:
       schema:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
   responses:
+    library200:
+      description: Library found.
+      content:
+        application/json:
+          schema:
+            $ref: '../objects/Library.yaml#/components/schemas/library'
     library404:
       description: Library not found.
       content:
