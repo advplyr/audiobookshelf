@@ -52,7 +52,7 @@ components:
           description: The folders that belong to the library.
           type: array
           items:
-            $ref: './Folder.yaml#/components/schemas/folder'
+            $ref: 'Folder.yaml#/components/schemas/folder'
         displayOrder:
           description: Display position of the library in the list of libraries. Must be >= 1.
           type: integer

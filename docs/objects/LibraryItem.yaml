@@ -4,7 +4,7 @@ components:
       description: The ID of library items on server version 2.2.23 and before.
       type: string
       nullable: true
-      format: "li_[a-z0-9]{18}"
+      format: 'li_[a-z0-9]{18}'
       example: li_o78uaoeuh78h6aoeif
     libraryItemId:
       type: string
@@ -22,9 +22,9 @@ components:
         ino:
           $ref: '../schemas.yaml#/components/schemas/inode'
         libraryId:
-          $ref: './Library.yaml#/components/schemas/libraryId'
+          $ref: 'Library.yaml#/components/schemas/libraryId'
         folderId:
-          $ref: './Folder.yaml#/components/schemas/folderId'
+          $ref: 'Folder.yaml#/components/schemas/folderId'
         path:
           description: The path of the library item on the server.
           type: string
@@ -59,7 +59,7 @@ components:
       type: object
       description: A single item on the server, like a book or podcast. Minified media format.
       allOf:
-        - $ref : '#/components/schemas/libraryItemBase'
+        - $ref: '#/components/schemas/libraryItemBase'
         - type: object
           properties:
             media:
