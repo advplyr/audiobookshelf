@@ -22,6 +22,7 @@ paths:
     get:
       operationId: getAuthorById
       summary: Get a single author by ID on server
+      description: Get a single author by ID on server. The author's books and series can be included in the response.
       tags:
         - Authors
       parameters:
@@ -42,7 +43,8 @@ paths:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     patch:
       operationId: updateAuthorById
-      summary: Update a single author by ID on server. This endpoint will merge two authors if the new author name matches another author in the database.
+      summary: Update a single author by ID on server.
+      description: Update a single author by ID on server. This endpoint will merge two authors if the new author name matches another author in the database.
       tags:
         - Authors
       parameters:
@@ -70,7 +72,8 @@ paths:
           $ref: './controllers/AuthorController.yaml#/components/responses/author404'
     delete:
       operationId: deleteAuthorById
-      summary: Delete a single author by ID on server and remove author from all books.
+      summary: Delete a single author by ID.
+      description: Delete a single author by ID on server and remove author from all books.
       tags:
         - Authors
       parameters:
@@ -84,6 +87,7 @@ paths:
     post:
       operationId: setAuthorImageById
       summary: Set an author image using a provided URL.
+      description: Set an author image using a provided URL. The image will be downloaded and stored on the server.
       tags:
         - Authors
       parameters:
@@ -102,6 +106,7 @@ paths:
     delete:
       operationId: deleteAuthorImageById
       summary: Delete an author image from the server and remove the image from the database.
+      description: Delete an author image from the server.
       tags:
         - Authors
       parameters:
@@ -114,6 +119,7 @@ paths:
     patch:
       operationId: getAuthorImageById
       summary: Return the author image by author ID.
+      description: Return the author image by author ID. The image will be resized if the width, height, or format is provided.
       tags:
         - Authors
       parameters:
@@ -135,7 +141,8 @@ paths:
   /api/authors/{id}/match:
     post:
       operationId: matchAuthorById
-      summary: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
+      summary: Match the author against Audible using quick match.
+      description: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
       tags:
         - Authors
       parameters:
@@ -157,6 +164,7 @@ paths:
     get:
       operationId: getLibraries
       summary: Get all libraries on server
+      description: Get all libraries on server.
       tags:
         - Libraries
       responses:
@@ -171,6 +179,7 @@ paths:
     post:
       operationId: createLibrary
       summary: Create a new library on server
+      description: Create a new library on server.
       tags:
         - Libraries
       parameters:
@@ -189,6 +198,7 @@ paths:
     get:
       operationId: getLibraryById
       summary: Get a single library by ID on server
+      description: Get a single library by ID on server.
       tags:
         - Libraries
       parameters:
@@ -201,6 +211,7 @@ paths:
     patch:
       operationId: updateLibraryById
       summary: Update a single library by ID on server
+      description: Update a single library by ID on server.
       tags:
         - Libraries
       parameters:
@@ -219,6 +230,7 @@ paths:
     delete:
       operationId: deleteLibraryById
       summary: Delete a single library by ID on server
+      description: Delete a single library by ID on server and return the deleted object.
       tags:
         - Libraries
       parameters:
