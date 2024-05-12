@@ -18,7 +18,7 @@
                     <div class="flex" @click.stop>
                       <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                     </div>
-                    <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                    <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                   </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
@@ -29,7 +29,7 @@
                   <div class="flex" @click.stop>
                     <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                   </div>
-                  <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                  <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                 </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>

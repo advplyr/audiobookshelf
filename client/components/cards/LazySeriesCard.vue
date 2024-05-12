@@ -119,9 +119,13 @@ export default {
       return this.seriesBookProgress.some((p) => !p.isFinished && p.progress > 0)
     },
     seriesPercentInProgress() {
-      let totalFinishedAndInProgress = this.seriesBooksFinished.length
-      if (this.hasSeriesBookInProgress) totalFinishedAndInProgress += 1
-      return Math.min(1, Math.max(0, totalFinishedAndInProgress / this.books.length))
+      if (!this.books.length) return 0
+      let progressPercent = 0
+      this.seriesBookProgress.forEach((progress) => {
+        progressPercent += progress.isFinished ? 1 : progress.progress || 0
+      })
+      progressPercent /= this.books.length
+      return Math.min(1, Math.max(0, progressPercent))
     },
     isSeriesFinished() {
       return this.books.length === this.seriesBooksFinished.length

@@ -26,7 +26,7 @@ describe('LazySeriesCard', () => {
     isCategorized: false,
     seriesMount: series,
     sortingIgnorePrefix: false,
-    orderBy: 'addedAt',
+    orderBy: 'addedAt'
   }
 
   const stubs = {
@@ -126,7 +126,7 @@ describe('LazySeriesCard', () => {
       .and('have.class', 'bg-yellow-400')
       .and(($el) => {
         const width = $el.width()
-        expect(width).to.be.closeTo((2 / 3) * propsData.width, 0.01)
+        expect(width).to.be.closeTo(((1 + 0.5) / 3) * propsData.width, 0.01)
       })
   })
 
@@ -137,7 +137,9 @@ describe('LazySeriesCard', () => {
         ...mocks.$store,
         getters: {
           ...mocks.$store.getters,
-          'user/getUserMediaProgress': (id) => { return { isFinished: true } }
+          'user/getUserMediaProgress': (id) => {
+            return { isFinished: true }
+          }
         }
       }
     }
@@ -212,5 +214,4 @@ describe('LazySeriesCard', () => {
 
     cy.get('&detailBottomDisplayTitle').should('have.text', 'Lord of the Rings')
   })
-
 })

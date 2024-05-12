@@ -27,7 +27,7 @@
               <h1 class="text-2xl md:text-3xl font-semibold">
                 <div class="flex items-center">
                   {{ title }}
-                  <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-explicit-indicator v-if="isExplicit" />
                   <widgets-abridged-indicator v-if="isAbridged" />
                 </div>
               </h1>
