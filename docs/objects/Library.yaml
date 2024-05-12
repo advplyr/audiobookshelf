@@ -37,8 +37,10 @@ components:
               example: false
             autoScanCronExpression:
               description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
-              type: string
-              nullable: true
+              oneOf:
+                - type: string
+                - type: boolean
+                - type: null
               example: '0 0 0 * * *'
             audiobooksOnly:
               description: Whether the library should ignore ebook files and only allow ebook files to be supplementary.
