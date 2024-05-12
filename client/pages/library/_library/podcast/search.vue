@@ -21,7 +21,7 @@
             <div class="flex-grow pl-4 max-w-2xl">
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
-                <widgets-explicit-indicator :explicit="podcast.explicit" />
+                <widgets-explicit-indicator v-if="podcast.explicit" />
                 <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
               </div>
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>

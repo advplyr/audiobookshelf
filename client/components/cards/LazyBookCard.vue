@@ -10,7 +10,7 @@
       <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
           <p cy-id="title" ref="displayTitle" class="truncate">{{ displayTitle }}</p>
-          <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" :explicit="isExplicit" />
+          <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
       <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
