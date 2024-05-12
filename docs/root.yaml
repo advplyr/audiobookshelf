@@ -187,6 +187,56 @@ paths:
             application/json:
               schema:
                 $ref: './objects/Library.yaml#/components/schemas/library'
+  /api/libraries/{id}:
+    get:
+      operationId: getLibraryById
+      summary: Get a single library by ID on server
+      tags:
+        - Libraries
+      parameters:
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
+      responses:
+        '200':
+          description: getLibraryById OK
+          content:
+            application/json:
+              schema:
+                $ref: './objects/Library.yaml#/components/schemas/library'
+        '404':
+          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
+    patch:
+      operationId: updateLibraryById
+      summary: Update a single library by ID on server
+      tags:
+        - Libraries
+      parameters:
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryName'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryFolders'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryDisplayOrder'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryIcon'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryProvider'
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/librarySettings'
+      responses:
+        '200':
+          description: updateLibraryById OK
+          content:
+            application/json:
+              schema:
+                $ref: './objects/Library.yaml#/components/schemas/library'
+        '404':
+          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
+    delete:
+      operationId: deleteLibraryById
+      summary: Delete a single library by ID on server
+      tags:
+        - Libraries
+      parameters:
+        - $ref: './controllers/LibraryController.yaml#/components/parameters/libraryId'
+      responses:
+        '200':
+          $ref: '#/components/responses/ok200'
+        '404':
+          $ref: './controllers/LibraryController.yaml#/components/responses/library404'
 tags:
   - name: Authors
     description: Author endpoints

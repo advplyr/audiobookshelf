@@ -17,6 +17,15 @@ components:
         type: array
         items:
           $ref: '../objects/Folder.yaml#/components/schemas/folder'
+    libraryDisplayOrder:
+      name: displayOrder
+      in: query
+      description: The display order of the library. Must be >= 1.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
     libraryIcon:
       name: icon
       in: query
@@ -48,3 +57,28 @@ components:
       required: false
       schema:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+    libraryId:
+      name: id
+      in: query
+      description: The ID of the library.
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    librarySettings:
+      name: settings
+      in: query
+      description: The settings for the library.
+      required: false
+      schema:
+        $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+  responses:
+    library404:
+      description: Library not found.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Library not found.
+
