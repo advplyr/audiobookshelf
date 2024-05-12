@@ -40,6 +40,28 @@ components:
               type: string
               nullable: true
               example: '0 0 0 * * *'
+            audiobooksOnly:
+              description: Whether the library should ignore ebook files and only allow ebook files to be supplementary.
+              type: boolean
+              example: false
+            hideSingleBookSeries:
+              description: Whether to hide series with only one book.
+              type: boolean
+              example: false
+            onlyShowLaterBooksInContinueSeries:
+              description: Whether to only show books in a series after the highest series sequence.
+              type: boolean
+              example: false
+            metadataPrecedence:
+              description: The precedence of metadata sources. See Metadata Providers for a list of possible providers.
+              type: array
+              items:
+                type: string
+              example: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+            podcastSearchRegion:
+              description: The region to use when searching for podcasts.
+              type: string
+              example: 'us'
     library:
       description: A library object which includes either books or podcasts.
       type: object
