@@ -24,7 +24,7 @@
                 <widgets-explicit-indicator v-if="podcast.explicit" />
                 <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
               </div>
-              <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
+              <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">{{ $getString('LabelByAuthor', [podcast.artistName]) }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} {{ $strings.HeaderEpisodes }}</p>
             </div>
