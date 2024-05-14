@@ -208,14 +208,43 @@ paths:
         '404':
           $ref: '#/components/responses/author404'
   /api/authors/{id}/image:
+    get:
+      operationId: getAuthorImageById
+      summary: Get an author image by author ID
+      description: Get an author image by author ID. The image will be returned in the requested format and size.
+      tags:
+        - Authors
+      parameters:
+        $ref: '#/components/parameters/authorId'
+      requestBody:
+        $ref: '#/components/requestBody/imageWidth'
+        $ref: '#/components/requestBody/imageHeight'
+        $ref: '#/components/requestBody/imageFormat'
+        $ref: '#/components/requestBody/imageRaw'
+      responses:
+        '200':
+          description: getAuthorImageById OK
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/author404'
     post:
       operationId: addAuthorImageById
       summary: Add an author image to the server
       description: Add an author image to the server. The image will be downloaded from the provided URL and stored on the server.
       tags:
         - Authors
-      parameters:
-        $ref: '#/components/parameters/authorId'
       requestBody:
         $ref: '#/components/requestBody/imageUrl'
       requestBody:
