@@ -12,9 +12,6 @@ components:
       description: Bearer authentication
       type: http
       scheme: bearer
-  responses:
-    ok200:
-      description: OK
 security:
   - BearerAuth: []
 paths:
