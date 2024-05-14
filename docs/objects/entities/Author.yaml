@@ -28,7 +28,8 @@ components:
           items:
             ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
     author:
-      description: An author object which includes a description and image path.
+      summary: An author object which includes a description and image path.
+      description: An author object which includes a description and image path. The library items and series associated with the author are optionally included.
       type: object
       properties:
         id:
@@ -58,30 +59,16 @@ components:
           $ref: '../../schemas.yaml#/components/schemas/addedAt'
         updatedAt:
           $ref: '../../schemas.yaml#/components/schemas/updatedAt'
-    authorWithItems:
-      type: object
-      description: The author schema with an array of items they are associated with.
-      allOf:
-        - $ref: '#/components/schemas/author'
-        - type: object
-          properties:
-            libraryItems:
-              description: The items associated with the author
-              type: array
-              items:
-                $ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
-    authorWithSeries:
-      type: object
-      description: The author schema with an array of items and series they are associated with.
-      allOf:
-        - $ref: '#/components/schemas/authorWithItems'
-        - type: object
-          properties:
-            series:
-              description: The series associated with the author
-              type: array
-              items:
-                $ref: '#/components/schemas/authorSeries'
+        libraryItems:
+          description: The items associated with the author
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
+        series:
+          description: The series associated with the author
+          type: array
+          items:
+            $ref: '#/components/schemas/authorSeries'
     authorMinified:
       type: object
       description: Minified author object which only contains the author name and ID.

@@ -158,10 +158,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '../objects/entities/Author.yaml#/components/schemas/author'
-                  - $ref: '../objects/entities/Author.yaml#/components/schemas/authorWithItems'
-                  - $ref: '../objects/entities/Author.yaml#/components/schemas/authorWithSeries'
+                $ref: '../objects/entities/Author.yaml#/components/schemas/author'
         '404':
           $ref: '#/components/responses/author404'
     patch:
