@@ -34,11 +34,11 @@ class MeController {
   }
 
   // GET: api/me/item/listening-sessions/:libraryItemId/:episodeId
-  async getListeningSessions(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.params.libraryItemId)
-    const episode = (req.params.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(req.params.episodeId) : null
+  async getItemListeningSessions(req, res) {
+    const libraryItem = await Database.libraryItemModel.findByPk(req.params.libraryItemId)
+    const episode = await Database.podcastEpisodeModel.findByPk(req.params.episodeId)
 
-    if (!libraryItem || (libraryItem.isPodcast && !episode)) {
+    if (!libraryItem || (libraryItem.mediaType === "podcast" && !episode)) {
       Logger.error(`[PlaybackSessionManager] listening-sessions: Media item not found for library item id "${req.params.id}"`)
       return {
         success: false,
