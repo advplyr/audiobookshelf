@@ -199,16 +199,15 @@
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
+    <!-- confirm cache purge dialog -->
     <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p class="text-error font-semibold">Important Notice!</p>
-        <p class="my-2 text-center">Purge cache will delete the entire directory at <span class="font-mono">/metadata/cache</span>.</p>
-
-        <p class="text-center mb-8">Are you sure you want to remove the cache directory?</p>
+        <p class="text-error font-semibold">{{ $strings.MessageImportantNotice }}</p>
+        <p class="my-8 text-center" v-html="$strings.MessageConfirmPurgeCache" />
         <div class="flex px-1 items-center">
-          <ui-btn color="primary" @click="showConfirmPurgeCache = false">Nevermind</ui-btn>
+          <ui-btn color="primary" @click="showConfirmPurgeCache = false">{{ $strings.ButtonNevermind }}</ui-btn>
           <div class="flex-grow" />
-          <ui-btn color="success" @click="confirmPurge">Yes, Purge!</ui-btn>
+          <ui-btn color="success" @click="confirmPurge">{{ $strings.ButtonYes }}</ui-btn>
         </div>
       </div>
     </prompt-dialog>
@@ -275,7 +274,7 @@ export default {
     updateSortingPrefixes() {
       const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
       if (!prefixes.length) {
-        this.$toast.error('Must have at least 1 prefix')
+        this.$toast.error(this.$strings.ToastSortingPrefixesEmptyError)
         return
       }
 
@@ -283,7 +282,7 @@ export default {
       this.$axios
         .$patch(`/api/sorting-prefixes`, { sortingPrefixes: prefixes })
         .then((data) => {
-          this.$toast.success(`Sorting prefixes updated. ${data.rowsUpdated} rows`)
+          this.$toast.success(this.$getString('ToastSortingPrefixesUpdateSuccess', [data.rowsUpdated]))
           if (data.serverSettings) {
             this.$store.commit('setServerSettings', data.serverSettings)
           }
@@ -291,7 +290,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update prefixes', error)
-          this.$toast.error('Failed to update sorting prefixes')
+          this.$toast.error(this.$strings.ToastSortingPrefixesUpdateFailed)
         })
         .finally(() => {
           this.savingPrefixes = false
@@ -329,7 +328,7 @@ export default {
         .dispatch('updateServerSettings', payload)
         .then(() => {
           this.updatingServerSettings = false
-          this.$toast.success('Server settings updated')
+          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
 
           if (payload.language) {
             // Updating language after save allows for re-rendering
@@ -339,7 +338,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update server settings', error)
           this.updatingServerSettings = false
-          this.$toast.error('Failed to update server settings')
+          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
         })
     },
     initServerSettings() {
@@ -359,11 +358,11 @@ export default {
       await this.$axios
         .$post('/api/cache/purge')
         .then(() => {
-          this.$toast.success('Cache Purged!')
+          this.$toast.success(this.$strings.ToastCachePurgeSuccess)
         })
         .catch((error) => {
           console.error('Failed to purge cache', error)
-          this.$toast.error('Failed to purge cache')
+          this.$toast.error(this.$strings.ToastCachePurgeFailed)
         })
       this.isPurgingCache = false
     },
@@ -384,11 +383,11 @@ export default {
       await this.$axios
         .$post('/api/cache/items/purge')
         .then(() => {
-          this.$toast.success('Items Cache Purged!')
+          this.$toast.success(this.$strings.ToastCachePurgeSuccess)
         })
         .catch((error) => {
           console.error('Failed to purge items cache', error)
-          this.$toast.error('Failed to purge items cache')
+          this.$toast.error(this.$strings.ToastCachePurgeFailed)
         })
       this.isPurgingCache = false
     }

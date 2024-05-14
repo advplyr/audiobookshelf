@@ -15,7 +15,7 @@ const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 class AuthorController {
-  constructor() { }
+  constructor() {}
 
   async findOne(req, res) {
     const include = (req.query.include || '').split(',')
@@ -32,7 +32,6 @@ class AuthorController {
         authorJson.libraryItems.forEach((li) => {
           if (li.media.metadata.series) {
             li.media.metadata.series.forEach((series) => {
-
               const itemWithSeries = li.toJSONMinified()
               itemWithSeries.media.metadata.series = series
 
@@ -50,14 +49,14 @@ class AuthorController {
         })
         // Sort series items
         for (const key in seriesMap) {
-          seriesMap[key].items = naturalSort(seriesMap[key].items).asc(li => li.media.metadata.series.sequence)
+          seriesMap[key].items = naturalSort(seriesMap[key].items).asc((li) => li.media.metadata.series.sequence)
         }
 
         authorJson.series = Object.values(seriesMap)
       }
 
       // Minify library items
-      authorJson.libraryItems = authorJson.libraryItems.map(li => li.toJSONMinified())
+      authorJson.libraryItems = authorJson.libraryItems.map((li) => li.toJSONMinified())
     }
 
     return res.json(authorJson)
@@ -91,7 +90,8 @@ class AuthorController {
     if (existingAuthor) {
       const bookAuthorsToCreate = []
       const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
-      itemsWithAuthor.forEach(libraryItem => { // Replace old author with merging author for each book
+      itemsWithAuthor.forEach((libraryItem) => {
+        // Replace old author with merging author for each book
         libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
         bookAuthorsToCreate.push({
           bookId: libraryItem.media.id,
@@ -101,7 +101,10 @@ class AuthorController {
       if (itemsWithAuthor.length) {
         await Database.removeBulkBookAuthors(req.author.id) // Remove all old BookAuthor
         await Database.createBulkBookAuthors(bookAuthorsToCreate) // Create all new BookAuthor
-        SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+        SocketAuthority.emitter(
+          'items_updated',
+          itemsWithAuthor.map((li) => li.toJSONExpanded())
+        )
       }
 
       // Remove old author
@@ -118,7 +121,8 @@ class AuthorController {
         author: existingAuthor.toJSON(),
         merged: true
       })
-    } else { // Regular author update
+    } else {
+      // Regular author update
       if (req.author.update(payload)) {
         hasUpdated = true
       }
@@ -127,12 +131,16 @@ class AuthorController {
         req.author.updatedAt = Date.now()
 
         const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
-        if (authorNameUpdate) { // Update author name on all books
-          itemsWithAuthor.forEach(libraryItem => {
+        if (authorNameUpdate) {
+          // Update author name on all books
+          itemsWithAuthor.forEach((libraryItem) => {
             libraryItem.media.metadata.updateAuthor(req.author)
           })
           if (itemsWithAuthor.length) {
-            SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+            SocketAuthority.emitter(
+              'items_updated',
+              itemsWithAuthor.map((li) => li.toJSONExpanded())
+            )
           }
         }
 
@@ -150,9 +158,9 @@ class AuthorController {
   /**
    * DELETE: /api/authors/:id
    * Remove author from all books and delete
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async delete(req, res) {
     Logger.info(`[AuthorController] Removing author "${req.author.name}"`)
@@ -174,9 +182,9 @@ class AuthorController {
   /**
    * POST: /api/authors/:id/image
    * Upload author image from web URL
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async uploadImage(req, res) {
     if (!req.user.canUpload) {
@@ -206,6 +214,7 @@ class AuthorController {
     }
 
     req.author.imagePath = result.path
+    req.author.updatedAt = Date.now()
     await Database.authorModel.updateFromOld(req.author)
 
     const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
@@ -218,9 +227,9 @@ class AuthorController {
   /**
    * DELETE: /api/authors/:id/image
    * Remove author image & delete image file
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async deleteImage(req, res) {
     if (!req.author.imagePath) {
@@ -292,10 +301,14 @@ class AuthorController {
 
   // GET api/authors/:id/image
   async getImage(req, res) {
-    const { query: { width, height, format, raw }, author } = req
+    const {
+      query: { width, height, format, raw },
+      author
+    } = req
 
-    if (raw) { // any value
-      if (!author.imagePath || !await fs.pathExists(author.imagePath)) {
+    if (raw) {
+      // any value
+      if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
         return res.sendStatus(404)
       }
 

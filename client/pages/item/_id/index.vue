@@ -27,7 +27,7 @@
               <h1 class="text-2xl md:text-3xl font-semibold">
                 <div class="flex items-center">
                   {{ title }}
-                  <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-explicit-indicator v-if="isExplicit" />
                   <widgets-abridged-indicator v-if="isAbridged" />
                 </div>
               </h1>
@@ -40,7 +40,7 @@
               </template>
 
               <template v-if="!isVideo">
-                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
+                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
                 <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
                   <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
@@ -285,7 +285,7 @@ export default {
       return this.mediaMetadata.subtitle
     },
     podcastAuthor() {
-      return this.mediaMetadata.author || ''
+      return this.mediaMetadata.author || 'Unknown'
     },
     authors() {
       return this.mediaMetadata.authors || []

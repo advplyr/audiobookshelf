@@ -8,7 +8,7 @@
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center">
         <p class="text-base text-gray-200">{{ _session.displayTitle }}</p>
-        <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">by {{ _session.displayAuthor }}</p>
+        <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">{{ $getString('LabelByAuthor', [_session.displayAuthor]) }}</p>
       </div>
 
       <div class="w-full h-px bg-white bg-opacity-10 my-4" />

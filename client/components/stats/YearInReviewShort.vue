@@ -180,7 +180,7 @@ export default {
       this.$emit('update:processing', true)
       this.yearStats = await this.$axios.$get(`/api/me/stats/year/${this.year}`).catch((err) => {
         console.error('Failed to load stats for year', err)
-        this.$toast.error('Failed to load year stats')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       await this.initCanvas()

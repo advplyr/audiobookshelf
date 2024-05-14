@@ -32,7 +32,7 @@
         </div>
         <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>
-      <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
+      <ui-checkbox v-model="selectAll" :label="$strings.LabelSelectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
           <div class="flex flex-grow items-center py-2">
@@ -42,13 +42,13 @@
 
           <div class="flex py-2">
             <div>
-              <p class="text-center text-gray-200">New</p>
+              <p class="text-center text-gray-200">{{ $strings.LabelNew }}</p>
               <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
-            <div v-if="media.coverPath">
-              <p class="text-center text-gray-200">Current</p>
+            <div v-if="media.coverPath" class="ml-0.5">
+              <p class="text-center text-gray-200">{{ $strings.LabelCurrent }}</p>
               <a :href="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
@@ -180,14 +180,14 @@
           <ui-checkbox v-model="selectedMatchUsage.explicit" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.explicit != null }">
             <ui-checkbox v-model="selectedMatch.explicit" :label="$strings.LabelExplicit" :disabled="!selectedMatchUsage.explicit" :checkbox-bg="!selectedMatchUsage.explicit ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
-            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? 'Explicit (checked)' : 'Not Explicit (unchecked)' }}</p>
+            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? $strings.LabelExplicitChecked : $strings.LabelExplicitUnchecked }}</p>
           </div>
         </div>
         <div v-if="selectedMatchOrig.abridged != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.abridged == null }">
           <ui-checkbox v-model="selectedMatchUsage.abridged" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.abridged != null }">
             <ui-checkbox v-model="selectedMatch.abridged" :label="$strings.LabelAbridged" :disabled="!selectedMatchUsage.abridged" :checkbox-bg="!selectedMatchUsage.abridged ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
-            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? 'Abridged (checked)' : 'Unabridged (unchecked)' }}</p>
+            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? $strings.LabelAbridgedChecked : $strings.LabelAbridgedUnchecked }}</p>
           </div>
         </div>
 

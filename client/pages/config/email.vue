@@ -1,6 +1,14 @@
 <template>
   <div>
     <app-settings-content :header-text="$strings.HeaderEmailSettings" :description="''">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/send_to_ereader" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
       <form @submit.prevent="submitForm">
         <div class="flex items-center -mx-1 mb-2">
           <div class="w-full md:w-3/4 px-1">
@@ -251,7 +259,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get email settings', error)
-          this.$toast.error('Failed to load email settings')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.loading = false

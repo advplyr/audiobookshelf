@@ -1,6 +1,14 @@
 <template>
   <div>
-    <app-settings-content :header-text="$strings.HeaderLogs">
+    <app-settings-content :header-text="$strings.HeaderLogs" :description="$strings.MessageLogsDescription">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/server_logs" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
       <div class="flex justify-between mb-2 place-items-end">
         <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
@@ -139,7 +147,7 @@ export default {
     async loadLoggerData() {
       const loggerData = await this.$axios.$get('/api/logger-data').catch((error) => {
         console.error('Failed to load logger data', error)
-        this.$toast.error('Failed to load logger data')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
       })
 
       this.loadedLogs = loggerData?.currentDailyLogs || []

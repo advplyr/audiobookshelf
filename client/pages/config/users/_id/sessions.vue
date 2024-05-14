@@ -214,7 +214,7 @@ export default {
         return null
       })
       if (!data) {
-        this.$toast.error('Failed to load listening sessions')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return
       }
 
