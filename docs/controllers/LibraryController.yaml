@@ -140,8 +140,6 @@ paths:
       description: Update a single library by ID on server.
       tags:
         - Libraries
-      parameters:
-        $ref: '#/components/parameters/libraryId'
       requestBody:
         $ref: '#/components/requestBody/libraryName'
         $ref: '#/components/requestBody/libraryFolders'
@@ -161,8 +159,6 @@ paths:
       description: Delete a single library by ID on server and return the deleted object.
       tags:
         - Libraries
-      parameters:
-        $ref: '#/components/parameters/libraryId'
       responses:
         '200':
           $ref: '#/components/responses/library200'
