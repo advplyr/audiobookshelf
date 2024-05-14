@@ -4,12 +4,12 @@ components:
       type: string
       description: The ID of the libraries created on server version 2.2.23 and before.
       format: 'lib_[a-z0-9]{18}'
-      example: lib_o78uaoeuh78h6aoeif
+      example: 'lib_o78uaoeuh78h6aoeif'
     libraryId:
       type: string
       description: The ID of the library.
       format: uuid
-      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+      example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
     libraryName:
       description: The name of the library.
       type: string
@@ -76,7 +76,7 @@ components:
           description: The folders that belong to the library.
           type: array
           items:
-            $ref: 'Folder.yaml#/components/schemas/folder'
+            $ref: './Folder.yaml#/components/schemas/folder'
         displayOrder:
           description: Display position of the library in the list of libraries. Must be >= 1.
           type: integer

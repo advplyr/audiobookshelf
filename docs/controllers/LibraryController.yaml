@@ -66,9 +66,7 @@ components:
       description: The ID of the library.
       required: true
       schema:
-        type: string
-        format: uuid
-        example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
   responses:
     library200:
       description: Library found.
@@ -104,6 +102,7 @@ paths:
       operationId: createLibrary
       summary: Create a new library on server
       description: Create a new library on server.
+      required: [name, folders]
       tags:
         - Libraries
       requestBody:
@@ -114,7 +113,6 @@ paths:
         $ref: '#/components/requestBody/libraryMediaType'
         $ref: '#/components/requestBody/libraryProvider'
         $ref: '#/components/requestBody/librarySettings'
-        required: [name, folders]
       responses:
         '200':
           $ref: '#/components/responses/library200'
