@@ -1,4 +1,12 @@
 components:
+  parameters:
+    libraryId:
+      name: id
+      in: path
+      description: The ID of the library.
+      required: true
+      schema:
+        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
   requestBody:
     libraryName:
       name: name
@@ -59,14 +67,6 @@ components:
       description: The settings for the library.
       schema:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
-  parameters:
-    libraryId:
-      name: id
-      in: path
-      description: The ID of the library.
-      required: true
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
   responses:
     library200:
       description: Library found.
@@ -106,27 +106,40 @@ paths:
       tags:
         - Libraries
       requestBody:
-        $ref: '#/components/requestBody/libraryName'
-        $ref: '#/components/requestBody/libraryFolders'
-        $ref: '#/components/requestBody/libraryDisplayOrder'
-        $ref: '#/components/requestBody/libraryIcon'
-        $ref: '#/components/requestBody/libraryMediaType'
-        $ref: '#/components/requestBody/libraryProvider'
-        $ref: '#/components/requestBody/librarySettings'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/requestBody/libraryName'
+                folders:
+                  $ref: '#/components/requestBody/libraryFolders'
+                displayOrder:
+                  $ref: '#/components/requestBody/libraryDisplayOrder'
+                icon:
+                  $ref: '#/components/requestBody/libraryIcon'
+                mediaType:
+                  $ref: '#/components/requestBody/libraryMediaType'
+                provider:
+                  $ref: '#/components/requestBody/libraryProvider'
+                settings:
+                  $ref: '#/components/requestBody/librarySettings'
       responses:
         '200':
           $ref: '#/components/responses/library200'
         '404':
           $ref: '#/components/responses/library404'
   /api/libraries/{id}:
+    parameters:
+      $ref: '#/components/parameters/libraryId'
     get:
       operationId: getLibraryById
       summary: Get a single library by ID on server
       description: Get a single library by ID on server.
       tags:
         - Libraries
-      parameters:
-        $ref: '#/components/parameters/libraryId'
       responses:
         '200':
           $ref: '#/components/responses/library200'
@@ -139,13 +152,26 @@ paths:
       tags:
         - Libraries
       requestBody:
-        $ref: '#/components/requestBody/libraryName'
-        $ref: '#/components/requestBody/libraryFolders'
-        $ref: '#/components/requestBody/libraryDisplayOrder'
-        $ref: '#/components/requestBody/libraryIcon'
-        $ref: '#/components/requestBody/libraryMediaType'
-        $ref: '#/components/requestBody/libraryProvider'
-        $ref: '#/components/requestBody/librarySettings'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/requestBody/libraryName'
+                folders:
+                  $ref: '#/components/requestBody/libraryFolders'
+                displayOrder:
+                  $ref: '#/components/requestBody/libraryDisplayOrder'
+                icon:
+                  $ref: '#/components/requestBody/libraryIcon'
+                mediaType:
+                  $ref: '#/components/requestBody/libraryMediaType'
+                provider:
+                  $ref: '#/components/requestBody/libraryProvider'
+                settings:
+                  $ref: '#/components/requestBody/librarySettings'
       responses:
         '200':
           $ref: '#/components/responses/library200'
