@@ -99,6 +99,7 @@ paths:
         - Libraries
       requestBody:
         required: true
+        description: The library object to create.
         content:
           application/json:
             schema:
@@ -150,6 +151,7 @@ paths:
         - Libraries
       requestBody:
         required: true
+        description: The library object to update.
         content:
           application/json:
             schema:

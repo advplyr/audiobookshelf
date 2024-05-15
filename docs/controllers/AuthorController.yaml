@@ -147,8 +147,16 @@ paths:
       tags:
         - Authors
       requestBody:
-        $ref: '#/components/requestBody/authorInclude'
-        $ref: '#/components/requestBody/authorLibraryId'
+        required: false
+        description: The author object to create.
+        content:
+          application/json:
+            schema:
+              properties:
+                include:
+                  $ref: '#/components/requestBody/authorInclude'
+                library:
+                  $ref: '#/components/requestBody/authorLibraryId'
       responses:
         '200':
           description: getAuthorById OK
@@ -166,13 +174,19 @@ paths:
         - Authors
       requestBody:
         required: true
+        description: The author object to update.
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBody/authorName'
-              $ref: '#/components/requestBody/authorDescription'
-              $ref: '#/components/requestBody/authorImagePath'
-              $ref: '#/components/requestBody/asin'
+              properties:
+                name:
+                  $ref: '#/components/requestBody/authorName'
+                description:
+                  $ref: '#/components/requestBody/authorDescription'
+                imagePath:
+                  $ref: '#/components/requestBody/authorImagePath'
+                asin:
+                  $ref: '#/components/requestBody/asin'
       responses:
         '200':
           description: updateAuthorById OK
@@ -216,10 +230,20 @@ paths:
       tags:
         - Authors
       requestBody:
-        $ref: '#/components/requestBody/imageWidth'
-        $ref: '#/components/requestBody/imageHeight'
-        $ref: '#/components/requestBody/imageFormat'
-        $ref: '#/components/requestBody/imageRaw'
+        required: false
+        description: The author image to get.
+        content:
+          application/json:
+            schema:
+              properties:
+                width:
+                  $ref: '#/components/requestBody/imageWidth'
+                height:
+                  $ref: '#/components/requestBody/imageHeight'
+                format:
+                  $ref: '#/components/requestBody/imageFormat'
+                raw:
+                  $ref: '#/components/requestBody/imageRaw'
       responses:
         '200':
           description: getAuthorImageById OK
@@ -248,6 +272,7 @@ paths:
         $ref: '#/components/requestBody/imageUrl'
       requestBody:
         required: true
+        description: The author image to add by URL.
         content:
           application/json:
             schema:
@@ -269,10 +294,20 @@ paths:
       tags:
         - Authors
       requestBody:
-        $ref: '#/components/requestBody/imageWidth'
-        $ref: '#/components/requestBody/imageHeight'
-        $ref: '#/components/requestBody/imageFormat'
-        $ref: '#/components/requestBody/imageRaw'
+        required: true
+        description: The author image to update.
+        content:
+          application/json:
+            schema:
+              properties:
+                width:
+                  $ref: '#/components/requestBody/imageWidth'
+                height:
+                  $ref: '#/components/requestBody/imageHeight'
+                format:
+                  $ref: '#/components/requestBody/imageFormat'
+                raw:
+                  $ref: '#/components/requestBody/imageRaw'
       responses:
         '200':
           description: updateAuthorImageById OK
@@ -309,8 +344,14 @@ paths:
       tags:
         - Authors
       requestBody:
-        $ref: '#/components/requestBody/asin'
-        $ref: '#/components/requestBody/authorSearchName'
+        required: true
+        description: The author object to match against an online provider.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/requestBody/asin'
+                - $ref: '#/components/requestBody/authorSearchName'
       responses:
         '200':
           description: matchAuthorById OK
