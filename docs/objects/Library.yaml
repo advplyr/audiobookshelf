@@ -16,54 +16,53 @@ components:
       example: My Audiobooks
     librarySettings:
       description: The settings for the library.
-      allOf:
-        - type: object
-          properties:
-            coverAspectRatio:
-              description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
-              type: integer
-              example: 1
-            disableWatcher:
-              description: Whether to disable the folder watcher for the library.
-              type: boolean
-              example: false
-            skipMatchingMediaWithAsin:
-              description: Whether to skip matching books that already have an ASIN.
-              type: boolean
-              example: false
-            skipMatchingMediaWithIsbn:
-              description: Whether to skip matching books that already have an ISBN.
-              type: boolean
-              example: false
-            autoScanCronExpression:
-              description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
-              oneOf:
-                - type: string
-                - type: boolean
-                - type: null
-              example: '0 0 0 * * *'
-            audiobooksOnly:
-              description: Whether the library should ignore ebook files and only allow ebook files to be supplementary.
-              type: boolean
-              example: false
-            hideSingleBookSeries:
-              description: Whether to hide series with only one book.
-              type: boolean
-              example: false
-            onlyShowLaterBooksInContinueSeries:
-              description: Whether to only show books in a series after the highest series sequence.
-              type: boolean
-              example: false
-            metadataPrecedence:
-              description: The precedence of metadata sources. See Metadata Providers for a list of possible providers.
-              type: array
-              items:
-                type: string
-              example: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
-            podcastSearchRegion:
-              description: The region to use when searching for podcasts.
-              type: string
-              example: 'us'
+      type: object
+      properties:
+        coverAspectRatio:
+          description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
+          type: integer
+          example: 1
+        disableWatcher:
+          description: Whether to disable the folder watcher for the library.
+          type: boolean
+          example: false
+        skipMatchingMediaWithAsin:
+          description: Whether to skip matching books that already have an ASIN.
+          type: boolean
+          example: false
+        skipMatchingMediaWithIsbn:
+          description: Whether to skip matching books that already have an ISBN.
+          type: boolean
+          example: false
+        autoScanCronExpression:
+          description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
+          oneOf:
+            - type: string
+            - type: boolean
+            - type: null
+          example: '0 0 0 * * *'
+        audiobooksOnly:
+          description: Whether the library should ignore ebook files and only allow ebook files to be supplementary.
+          type: boolean
+          example: false
+        hideSingleBookSeries:
+          description: Whether to hide series with only one book.
+          type: boolean
+          example: false
+        onlyShowLaterBooksInContinueSeries:
+          description: Whether to only show books in a series after the highest series sequence.
+          type: boolean
+          example: false
+        metadataPrecedence:
+          description: The precedence of metadata sources. See Metadata Providers for a list of possible providers.
+          type: array
+          items:
+            type: string
+          example: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+        podcastSearchRegion:
+          description: The region to use when searching for podcasts.
+          type: string
+          example: 'us'
     library:
       description: A library object which includes either books or podcasts.
       type: object
