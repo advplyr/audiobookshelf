@@ -1,12 +1,4 @@
 components:
-  parameters:
-    libraryId:
-      name: id
-      in: path
-      description: The ID of the library.
-      required: true
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
   requestBody:
     libraryName:
       name: name
@@ -133,7 +125,12 @@ paths:
           $ref: '#/components/responses/library404'
   /api/libraries/{id}:
     parameters:
-      $ref: '#/components/parameters/libraryId'
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
     get:
       operationId: getLibraryById
       summary: Get a single library by ID on server

@@ -117,14 +117,6 @@ components:
       schema:
         type: boolean
         default: false
-  parameters:
-    authorId:
-      name: id
-      in: path
-      description: Author ID
-      required: true
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
   responses:
     author200:
       description: Author found.
@@ -141,14 +133,19 @@ components:
             example: Author not found.
 paths:
   /api/authors/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
     get:
       operationId: getAuthorById
       summary: Get an author by ID
       description: Get an author by ID. The author's books and series can be included in the response.
       tags:
         - Authors
-      parameters:
-        $ref: '#/components/parameters/authorId'
       requestBody:
         $ref: '#/components/requestBody/authorInclude'
         $ref: '#/components/requestBody/authorLibraryId'
@@ -205,14 +202,19 @@ paths:
         '404':
           $ref: '#/components/responses/author404'
   /api/authors/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
     get:
       operationId: getAuthorImageById
       summary: Get an author image by author ID
       description: Get an author image by author ID. The image will be returned in the requested format and size.
       tags:
         - Authors
-      parameters:
-        $ref: '#/components/parameters/authorId'
       requestBody:
         $ref: '#/components/requestBody/imageWidth'
         $ref: '#/components/requestBody/imageHeight'
@@ -287,22 +289,25 @@ paths:
       description: Delete an author image by author ID. This will remove the image from the server and the database.
       tags:
         - Authors
-      parameters:
-        $ref: '#/components/parameters/authorId'
       responses:
         '200':
           description: deleteAuthorImageById OK
         '404':
           $ref: '#/components/responses/author404'
   /api/authors/{id}/match:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
     post:
       operationId: matchAuthorById
       summary: Match the author against Audible using quick match
       description: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
       tags:
         - Authors
-      parameters:
-        $ref: '#/components/parameters/authorId'
       requestBody:
         $ref: '#/components/requestBody/asin'
         $ref: '#/components/requestBody/authorSearchName'
