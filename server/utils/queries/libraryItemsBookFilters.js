@@ -360,11 +360,11 @@ module.exports = {
     let bookAttributes = null
     if (sortBy === 'media.metadata.authorNameLF') {
       bookAttributes = {
-        include: [[Sequelize.literal(`(SELECT group_concat(a.lastFirst, ", ") FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id)`), 'author_name']]
+        include: [[Sequelize.literal(`(SELECT group_concat(lastFirst, ", ") FROM (SELECT a.lastFirst FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
       }
     } else if (sortBy === 'media.metadata.authorName') {
       bookAttributes = {
-        include: [[Sequelize.literal(`(SELECT group_concat(a.name, ", ") FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id)`), 'author_name']]
+        include: [[Sequelize.literal(`(SELECT group_concat(name, ", ") FROM (SELECT a.name FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
       }
     }
 
