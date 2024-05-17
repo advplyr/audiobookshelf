@@ -350,15 +350,17 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/requestBody/asin'
-                - $ref: '#/components/requestBody/authorSearchName'
+                asin:
+                  $ref: '#/components/requestBody/asin'
+                q:
+                  $ref: '#/components/requestBody/authorSearchName'
       responses:
         '200':
           description: matchAuthorById OK
           content:
             application/json:
               schema:
-                allOf:
+                oneOf:
                   - $ref: '../objects/entities/Author.yaml#/components/schemas/author'
                   - $ref: '#/components/schemas/authorUpdated'
         '404':
