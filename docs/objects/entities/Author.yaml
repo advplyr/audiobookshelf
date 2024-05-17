@@ -6,8 +6,10 @@ components:
       format: uuid
       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
     authorAsin:
-      type: string
       description: The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.
+      oneOf:
+        - type: string
+        - type: null
       nullable: true
       example: B000APZOQA
     authorName:
@@ -40,7 +42,9 @@ components:
           $ref: '#/components/schemas/authorName'
         description:
           description: A description of the author. Will be null if there is none.
-          type: string
+          oneOf:
+            - type: string
+            - type: null
           nullable: true
           example: |
             Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,
@@ -52,7 +56,9 @@ components:
             situations.
         imagePath:
           description: The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.
-          type: string
+          oneOf:
+            - type: string
+            - type: null
           nullable: true
           example: /metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg
         addedAt:
