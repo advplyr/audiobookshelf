@@ -31,3 +31,56 @@ components:
       type: string
       format: '[0-9]*'
       example: '649644248522215260'
+    limit:
+      description: The number of items to return from the request.
+      type: integer
+      example: 10
+    total:
+      description: The total number of items in the response.
+      type: integer
+      example: 100
+    page:
+      description: The page number (zero indexed) to return from the request.
+      type: integer
+      example: 0
+    minified:
+      description: Whether minified was set in the request.
+      type: boolean
+      example: true
+  requestBody:
+    limit:
+      name: limit
+      in: requestBody
+      summary: The number of items to return.
+      description: The number of items to return. If 0, no items are returned.
+      schema:
+        type: integer
+        example: 10
+        default: 0
+    page:
+      name: page
+      in: requestBody
+      summary: The page number (zero indexed) to return.
+      description: The page number (zero indexed) to return. If no limit is specified, then page will have no effect.
+      schema:
+        type: integer
+        example: 1
+        default: 0
+    sortDesc:
+      name: desc
+      in: requestBody
+      summary: Sort in reverse order.
+      description: Return items in reversed order if true.
+      schema:
+        type: boolean
+        example: true
+        default: false
+    minified:
+      name: minified
+      in: requestBody
+      summary: Return minified items.
+      description: Return minified items if true.
+      schema:
+        type: boolean
+        example: true
+        default: false

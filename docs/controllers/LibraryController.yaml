@@ -1,4 +1,26 @@
 components:
+  schemas:
+    sortBy:
+      type: string
+      description: The field to sort by from the request.
+      example: 'media.metadata.title'
+    sortDesc:
+      name: sortDesc
+      description: Whether to sort in descending order.
+      type: boolean
+      example: true
+    filterBy:
+      type: string
+      description: The field to filter by from the request. TODO
+      example: 'media.metadata.title'
+    collapseSeries:
+      type: boolean
+      description: Whether collapse series was set in the request.
+      example: true
+    libraryInclude:
+      type: string
+      description: The fields from the response.
+      example: 'rssfeed'
   requestBody:
     libraryName:
       name: name
@@ -59,6 +81,37 @@ components:
       description: The settings for the library.
       schema:
         $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+    librarySort:
+      name: sort
+      in: requestBody
+      summary: The sort order of the library.
+      description: The sort order of the library. For example, to sort by title use 'sort=media.metadata.title'.
+      schema:
+        type: string
+        example: 'media.metadata.title'
+    libraryFilter:
+      name: filter
+      in: requestBody
+      summary: The filter for the library. TODO
+      description: The filter for the library.
+      schema:
+        type: string
+        example: 'media.metadata.title'
+    libraryCollapseSeries:
+      name: collapseSeries
+      in: requestBody
+      description: Whether to collapse series.
+      schema:
+        type: boolean
+        example: true
+        default: false
+    libraryInclude:
+      name: include
+      in: requestBody
+      description: The fields to include in the response. The only current option is `rssfeed`.
+      schema:
+        type: string
+        example: 'rssfeed'
   responses:
     library200:
       description: Library found.
@@ -185,5 +238,65 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/items:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryItems
+      summary: Get all items in a library by ID on server
+      description: Get all items in a library by ID on server.
+      tags:
+        - Libraries
+      requestBody:
+        required: false
+        description: The filters to apply to the requested library items.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  $ref: '../schemas.yaml#/components/requestBody/limit'
+                page:
+                  $ref: '../schemas.yaml#/components/requestBody/page'
+                sort:
+                  $ref: '#/components/requestBody/librarySort'
+                desc:
+                  $ref: '../schemas.yaml#/components/requestBody/sortDesc'
+                filter:
+                  $ref: '#/components/requestBody/libraryFilter'
+                minified:
+                  $ref: '../schemas.yaml#/components/requestBody/minified'
+                collapseSeries:
+                  $ref: '#/components/requestBody/libraryCollapseSeries'
+                include:
+                  $ref: '#/components/requestBody/libraryInclude'
+      responses:
+        '200':
+          description: getLibraryItems OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+                  - $ref: '../schemas.yaml#/components/schemas/total'
+                  - $ref: '../schemas.yaml#/components/schemas/limit'
+                  - $ref: '../schemas.yaml#/components/schemas/page'
+                  - $ref: '#/components/schemas/sortBy'
+                  - $ref: '#/components/schemas/sortDesc'
+                  - $ref: '#/components/schemas/filterBy'
+                  - $ref: '../objects/mediaTypes/media.yaml#/components/schemas/mediaType'
+                  - $ref: '../schemas.yaml#/components/schemas/minified'
+                  - $ref: '#/components/schemas/collapseSeries'
+                  - $ref: '#/components/schemas/libraryInclude'
         '404':
           $ref: '#/components/responses/library404'
