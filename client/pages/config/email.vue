@@ -259,7 +259,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get email settings', error)
-          this.$toast.error('Failed to load email settings')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.loading = false

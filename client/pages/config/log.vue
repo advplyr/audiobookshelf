@@ -147,7 +147,7 @@ export default {
     async loadLoggerData() {
       const loggerData = await this.$axios.$get('/api/logger-data').catch((error) => {
         console.error('Failed to load logger data', error)
-        this.$toast.error('Failed to load logger data')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
       })
 
       this.loadedLogs = loggerData?.currentDailyLogs || []

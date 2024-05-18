@@ -310,14 +310,14 @@ export default {
         .then((data) => {
           this.$store.commit('setServerSettings', data.serverSettings)
           if (data.updated) {
-            this.$toast.success('Server settings updated')
+            this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
-          this.$toast.error('Failed to update server settings')
+          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
         })
         .finally(() => {
           this.savingSettings = false

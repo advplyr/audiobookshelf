@@ -7,7 +7,7 @@
 
       <p v-if="matchKey === 'subtitle'" class="truncate text-xs text-gray-300" v-html="matchHtml" />
 
-      <p v-if="matchKey !== 'authors'" class="text-xs text-gray-200 truncate">by {{ authorName }}</p>
+      <p v-if="matchKey !== 'authors'" class="text-xs text-gray-200 truncate">{{ $getString('LabelByAuthor', [authorName]) }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
 
       <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn' || matchKey === 'asin' || matchKey === 'episode' || matchKey === 'narrators'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
@@ -69,7 +69,7 @@ export default {
       if (this.matchKey === 'episode') return `<p class="truncate">${this.$strings.LabelEpisode}: ${html}</p>`
       if (this.matchKey === 'tags') return `<p class="truncate">${this.$strings.LabelTags}: ${html}</p>`
       if (this.matchKey === 'subtitle') return `<p class="truncate">${html}</p>`
-      if (this.matchKey === 'authors') return `by ${html}`
+      if (this.matchKey === 'authors') this.$getString('LabelByAuthor', [html])
       if (this.matchKey === 'isbn') return `<p class="truncate">ISBN: ${html}</p>`
       if (this.matchKey === 'asin') return `<p class="truncate">ASIN: ${html}</p>`
       if (this.matchKey === 'series') return `<p class="truncate">${this.$strings.LabelSeries}: ${html}</p>`

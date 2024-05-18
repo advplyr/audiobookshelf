@@ -176,7 +176,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to load backups', error)
-          this.$toast.error('Failed to load backups')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.processing = false

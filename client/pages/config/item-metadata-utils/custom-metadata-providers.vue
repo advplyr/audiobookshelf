@@ -58,7 +58,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Failed to load custom metadata providers')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.processing = false
