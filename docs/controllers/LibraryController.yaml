@@ -185,66 +185,6 @@ paths:
           $ref: '#/components/responses/library200'
         '404':
           $ref: '#/components/responses/library404'
-  /api/libraries/{id}/items:
-    parameters:
-      - name: id
-        in: path
-        description: The ID of the library.
-        required: true
-        schema:
-          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
-    get:
-      operationId: getLibraryItems
-      summary: Get all items in a library by ID on server
-      description: Get all items in a library by ID on server.
-      tags:
-        - Libraries
-      requestBody:
-        required: false
-        description: The filters to apply to the requested library items.
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                limit:
-                  $ref: '../schemas.yaml#/components/schemas/limit'
-                page:
-                  $ref: '../schemas.yaml#/components/schemas/page'
-                sort:
-                  $ref: '#/components/schemas/librarySort'
-                desc:
-                  $ref: '../schemas.yaml#/components/schemas/sortDesc'
-                filter:
-                  $ref: '#/components/schemas/libraryFilter'
-                minified:
-                  $ref: '../schemas.yaml#/components/schemas/minified'
-                collapseSeries:
-                  $ref: '#/components/schemas/libraryCollapseSeries'
-                include:
-                  $ref: '#/components/schemas/libraryInclude'
-      responses:
-        '200':
-          description: getLibraryItems OK
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items:
-                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
-                  - $ref: '../schemas.yaml#/components/schemas/total'
-                  - $ref: '../schemas.yaml#/components/schemas/limit'
-                  - $ref: '../schemas.yaml#/components/schemas/page'
-                  - $ref: '#/components/schemas/sortBy'
-                  - $ref: '#/components/schemas/sortDesc'
-                  - $ref: '#/components/schemas/filterBy'
-                  - $ref: '../objects/mediaTypes/media.yaml#/components/schemas/mediaType'
-                  - $ref: '../schemas.yaml#/components/schemas/minified'
-                  - $ref: '#/components/schemas/collapseSeries'
-                  - $ref: '#/components/schemas/libraryInclude'
-        '404':
-          $ref: '#/components/responses/library404'
   /api/libraries/{id}/issues:
     parameters:
       - name: id
@@ -318,7 +258,7 @@ paths:
                   results:
                     type: array
                     items:
-                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'
                   total:
                     $ref: '../schemas.yaml#/components/schemas/total'
                   limit:

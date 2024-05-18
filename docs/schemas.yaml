@@ -36,28 +36,24 @@ components:
       type: integer
       example: 100
     limit:
-      name: limit
       description: The number of items to return. If 0, no items are returned.
       schema:
         type: integer
         example: 10
         default: 0
     page:
-      name: page
       description: The page number (zero indexed) to return. If no limit is specified, then page will have no effect.
       schema:
         type: integer
         example: 1
         default: 0
     sortDesc:
-      name: desc
       description: Return items in reversed order if true.
       schema:
         type: boolean
         example: true
         default: false
     minified:
-      name: minified
       description: Return minified items if true.
       schema:
         type: boolean
