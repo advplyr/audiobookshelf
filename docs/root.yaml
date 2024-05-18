@@ -25,6 +25,8 @@ paths:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries'
   /api/libraries/{id}:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}'
+  /api/libraries/{id}/issues:
+    $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1issues'
 tags:
   - name: Authors
     description: Author endpoints

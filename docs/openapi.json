@@ -565,6 +565,43 @@
           }
         }
       }
+    },
+    "/api/libraries/{id}/issues": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteLibraryIssues",
+        "summary": "Delete items with issues in a library.",
+        "description": "Delete all items with issues in a library by library ID on the server. This only removes the items from the ABS database and does not delete media files.",
+        "tags": [
+          "Libraries"
+        ],
+        "responses": {
+          "200": {
+            "description": "deleteLibraryIssues OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Issues deleted."
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
     }
   },
   "components": {
