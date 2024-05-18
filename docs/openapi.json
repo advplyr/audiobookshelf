@@ -11,451 +11,35 @@
       "description": "Development server"
     }
   ],
-  "components": {
-    "securitySchemes": {
-      "BearerAuth": {
-        "description": "Bearer authentication",
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
-  },
   "security": [
     {
       "BearerAuth": []
     }
   ],
-  "paths": {
-    "/api/libraries": {
-      "get": {
-        "operationId": "getLibraries",
-        "summary": "Get all libraries on server",
-        "description": "Get all libraries on server.",
-        "tags": [
-          "Libraries"
-        ],
-        "responses": {
-          "200": {
-            "description": "getLibraries OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createLibrary",
-        "summary": "Create a new library on server",
-        "description": "Create a new library on server.",
-        "tags": [
-          "Libraries"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "description": "The name of the library."
-                  },
-                  "folders": {
-                    "description": "The folders of the library. Only specify the fullPath."
-                  },
-                  "displayOrder": {
-                    "description": "The display order of the library. Must be >= 1."
-                  },
-                  "icon": {
-                    "description": "The icon of the library. See Library Icons for a list of possible icons."
-                  },
-                  "mediaType": {
-                    "description": "The type of media that the library contains. Must be `book` or `podcast`."
-                  },
-                  "provider": {
-                    "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers."
-                  },
-                  "settings": {
-                    "description": "The settings for the library."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Library found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "A library object which includes either books or podcasts.",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "$ref": "#/components/schemas/libraryId"
-                    },
-                    "name": {
-                      "$ref": "#/components/schemas/libraryName"
-                    },
-                    "folders": {
-                      "description": "The folders that belong to the library.",
-                      "type": "array",
-                      "items": {
-                        "$ref": "./Folder.yaml#/components/schemas/folder"
-                      }
-                    },
-                    "displayOrder": {
-                      "description": "Display position of the library in the list of libraries. Must be >= 1.",
-                      "type": "integer",
-                      "example": 1
-                    },
-                    "icon": {
-                      "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
-                      "type": "string",
-                      "example": "audiobookshelf"
-                    },
-                    "mediaType": {
-                      "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
-                      "type": "string",
-                      "example": "book"
-                    },
-                    "provider": {
-                      "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
-                      "type": "string",
-                      "example": "audible"
-                    },
-                    "settings": {
-                      "$ref": "#/components/schemas/librarySettings"
-                    },
-                    "createdAt": {
-                      "$ref": "../schemas.yaml#/components/schemas/createdAt"
-                    },
-                    "lastUpdate": {
-                      "$ref": "../schemas.yaml#/components/schemas/updatedAt"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Library not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Library not found."
-                }
-              }
-            }
-          }
-        }
-      }
+  "tags": [
+    {
+      "name": "Authors",
+      "description": "Author endpoints"
     },
-    "/api/libraries/{id}": {
+    {
+      "name": "Libraries",
+      "description": "Library endpoints"
+    }
+  ],
+  "paths": {
+    "/api/authors/{id}": {
       "parameters": [
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
         {
-          "type": "string",
-          "description": "The ID of the library.",
-          "format": "uuid",
-          "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+          "name": "id",
+          "in": "path",
+          "description": "Author ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/authorId"
+          }
         }
       ],
       "get": {
-        "operationId": "getLibraryById",
-        "summary": "Get a single library by ID on server",
-        "description": "Get a single library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
-        "responses": {
-          "200": {
-            "description": "Library found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "A library object which includes either books or podcasts.",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "$ref": "#/components/schemas/libraryId"
-                    },
-                    "name": {
-                      "$ref": "#/components/schemas/libraryName"
-                    },
-                    "folders": {
-                      "description": "The folders that belong to the library.",
-                      "type": "array",
-                      "items": {
-                        "$ref": "./Folder.yaml#/components/schemas/folder"
-                      }
-                    },
-                    "displayOrder": {
-                      "description": "Display position of the library in the list of libraries. Must be >= 1.",
-                      "type": "integer",
-                      "example": 1
-                    },
-                    "icon": {
-                      "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
-                      "type": "string",
-                      "example": "audiobookshelf"
-                    },
-                    "mediaType": {
-                      "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
-                      "type": "string",
-                      "example": "book"
-                    },
-                    "provider": {
-                      "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
-                      "type": "string",
-                      "example": "audible"
-                    },
-                    "settings": {
-                      "$ref": "#/components/schemas/librarySettings"
-                    },
-                    "createdAt": {
-                      "$ref": "../schemas.yaml#/components/schemas/createdAt"
-                    },
-                    "lastUpdate": {
-                      "$ref": "../schemas.yaml#/components/schemas/updatedAt"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Library not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Library not found."
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "operationId": "updateLibraryById",
-        "summary": "Update a single library by ID on server",
-        "description": "Update a single library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "description": "The name of the library."
-                  },
-                  "folders": {
-                    "description": "The folders of the library. Only specify the fullPath."
-                  },
-                  "displayOrder": {
-                    "description": "The display order of the library. Must be >= 1."
-                  },
-                  "icon": {
-                    "description": "The icon of the library. See Library Icons for a list of possible icons."
-                  },
-                  "mediaType": {
-                    "description": "The type of media that the library contains. Must be `book` or `podcast`."
-                  },
-                  "provider": {
-                    "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers."
-                  },
-                  "settings": {
-                    "description": "The settings for the library."
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Library found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "A library object which includes either books or podcasts.",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "$ref": "#/components/schemas/libraryId"
-                    },
-                    "name": {
-                      "$ref": "#/components/schemas/libraryName"
-                    },
-                    "folders": {
-                      "description": "The folders that belong to the library.",
-                      "type": "array",
-                      "items": {
-                        "$ref": "./Folder.yaml#/components/schemas/folder"
-                      }
-                    },
-                    "displayOrder": {
-                      "description": "Display position of the library in the list of libraries. Must be >= 1.",
-                      "type": "integer",
-                      "example": 1
-                    },
-                    "icon": {
-                      "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
-                      "type": "string",
-                      "example": "audiobookshelf"
-                    },
-                    "mediaType": {
-                      "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
-                      "type": "string",
-                      "example": "book"
-                    },
-                    "provider": {
-                      "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
-                      "type": "string",
-                      "example": "audible"
-                    },
-                    "settings": {
-                      "$ref": "#/components/schemas/librarySettings"
-                    },
-                    "createdAt": {
-                      "$ref": "../schemas.yaml#/components/schemas/createdAt"
-                    },
-                    "lastUpdate": {
-                      "$ref": "../schemas.yaml#/components/schemas/updatedAt"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Library not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Library not found."
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteLibraryById",
-        "summary": "Delete a single library by ID on server",
-        "description": "Delete a single library by ID on server and return the deleted object.",
-        "tags": [
-          "Libraries"
-        ],
-        "responses": {
-          "200": {
-            "description": "Library found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "description": "A library object which includes either books or podcasts.",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "$ref": "#/components/schemas/libraryId"
-                    },
-                    "name": {
-                      "$ref": "#/components/schemas/libraryName"
-                    },
-                    "folders": {
-                      "description": "The folders that belong to the library.",
-                      "type": "array",
-                      "items": {
-                        "$ref": "./Folder.yaml#/components/schemas/folder"
-                      }
-                    },
-                    "displayOrder": {
-                      "description": "Display position of the library in the list of libraries. Must be >= 1.",
-                      "type": "integer",
-                      "example": 1
-                    },
-                    "icon": {
-                      "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
-                      "type": "string",
-                      "example": "audiobookshelf"
-                    },
-                    "mediaType": {
-                      "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
-                      "type": "string",
-                      "example": "book"
-                    },
-                    "provider": {
-                      "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
-                      "type": "string",
-                      "example": "audible"
-                    },
-                    "settings": {
-                      "$ref": "#/components/schemas/librarySettings"
-                    },
-                    "createdAt": {
-                      "$ref": "../schemas.yaml#/components/schemas/createdAt"
-                    },
-                    "lastUpdate": {
-                      "$ref": "../schemas.yaml#/components/schemas/updatedAt"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Library not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Library not found."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/authors/{id}": {
-      "get": {
-        "parameters": [
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            "type": "string",
-            "description": "The ID of the author.",
-            "format": "uuid",
-            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-          }
-        ],
         "operationId": "getAuthorById",
         "summary": "Get an author by ID",
         "description": "Get an author by ID. The author's books and series can be included in the response.",
@@ -463,14 +47,21 @@
           "Authors"
         ],
         "requestBody": {
-          "name": "library",
-          "in": "requestBody",
-          "description": "The ID of the library to to include filter included items from.",
-          "schema": {
-            "type": "string",
-            "description": "The ID of the library.",
-            "format": "uuid",
-            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+          "required": false,
+          "description": "The author object to create.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "include": {
+                    "$ref": "#/components/schemas/authorInclude"
+                  },
+                  "library": {
+                    "$ref": "#/components/schemas/libraryId"
+                  }
+                }
+              }
+            }
           }
         },
         "responses": {
@@ -479,113 +70,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "summary": "An author object which includes a description and image path.",
-                  "description": "An author object which includes a description and image path. The library items and series associated with the author are optionally included.",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "The ID of the author.",
-                      "format": "uuid",
-                      "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                    },
-                    "asin": {
-                      "type": "string",
-                      "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
-                      "nullable": true,
-                      "example": "B000APZOQA"
-                    },
-                    "name": {
-                      "description": "The name of the author.",
-                      "type": "string",
-                      "example": "Terry Goodkind"
-                    },
-                    "description": {
-                      "description": "A description of the author. Will be null if there is none.",
-                      "type": "string",
-                      "nullable": true,
-                      "example": "Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,\n‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20\nlanguages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary\ntour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's\nbrilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind\nhas an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying\nsituations.\n"
-                    },
-                    "imagePath": {
-                      "description": "The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.",
-                      "type": "string",
-                      "nullable": true,
-                      "example": "/metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg"
-                    },
-                    "addedAt": {
-                      "type": "integer",
-                      "description": "The time (in ms since POSIX epoch) when added to the server.",
-                      "example": 1633522963509
-                    },
-                    "updatedAt": {
-                      "type": "integer",
-                      "description": "The time (in ms since POSIX epoch) when last updated.",
-                      "example": 1633522963509
-                    },
-                    "libraryItems": {
-                      "description": "The items associated with the author",
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "description": "A single item on the server, like a book or podcast. Minified media format.",
-                        "allOf": [
-                          {
-                            "$ref": "#/components/schemas/libraryItemBase"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "media": {
-                                "$ref": "./mediaTypes/media.yaml#/components/schemas/mediaMinified"
-                              }
-                            }
-                          }
-                        ]
-                      }
-                    },
-                    "series": {
-                      "description": "The series associated with the author",
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "description": "Series and the included library items that an author has written.",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "description": "The ID of the series.",
-                            "format": "uuid",
-                            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                          },
-                          "name": {
-                            "description": "The name of the series.",
-                            "type": "string",
-                            "example": "Sword of Truth"
-                          },
-                          "items": {
-                            "description": "The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.",
-                            "type": "array",
-                            "items": {
-                              "ref": "../LibraryItem.yaml#/components/schemas/libraryItemMinified"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/author"
                 }
               }
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       },
@@ -597,18 +88,23 @@
           "Authors"
         ],
         "requestBody": {
-          "required": true,
+          "description": "The author object to update.",
           "content": {
             "application/json": {
               "schema": {
-                "name": "asin",
-                "in": "requestBody",
-                "description": "The Audible Identifier (ASIN).",
-                "schema": {
-                  "type": "string",
-                  "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
-                  "nullable": true,
-                  "example": "B000APZOQA"
+                "properties": {
+                  "name": {
+                    "$ref": "#/components/schemas/authorName"
+                  },
+                  "description": {
+                    "$ref": "#/components/schemas/authorDescription"
+                  },
+                  "imagePath": {
+                    "$ref": "#/components/schemas/authorImagePath"
+                  },
+                  "asin": {
+                    "$ref": "#/components/schemas/authorAsin"
+                  }
                 }
               }
             }
@@ -622,89 +118,13 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "description": "An author object which includes a description and image path. The library items and series associated with the author are optionally included.",
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "The ID of the author.",
-                          "format": "uuid",
-                          "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                        },
-                        "asin": {
-                          "type": "string",
-                          "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
-                          "nullable": true,
-                          "example": "B000APZOQA"
-                        },
-                        "name": {
-                          "description": "The name of the author.",
-                          "type": "string",
-                          "example": "Terry Goodkind"
-                        },
-                        "description": {
-                          "description": "A description of the author. Will be null if there is none.",
-                          "type": "string",
-                          "nullable": true,
-                          "example": "Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,\n‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20\nlanguages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary\ntour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's\nbrilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind\nhas an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying\nsituations.\n"
-                        },
-                        "imagePath": {
-                          "description": "The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.",
-                          "type": "string",
-                          "nullable": true,
-                          "example": "/metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg"
-                        },
-                        "addedAt": {
-                          "type": "integer",
-                          "description": "The time (in ms since POSIX epoch) when added to the server.",
-                          "example": 1633522963509
-                        },
-                        "updatedAt": {
-                          "type": "integer",
-                          "description": "The time (in ms since POSIX epoch) when last updated.",
-                          "example": 1633522963509
-                        },
-                        "libraryItems": {
-                          "description": "The items associated with the author",
-                          "type": "array"
-                        },
-                        "series": {
-                          "description": "The series associated with the author",
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "description": "Series and the included library items that an author has written.",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "The ID of the series.",
-                                "format": "uuid",
-                                "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                              },
-                              "name": {
-                                "description": "The name of the series.",
-                                "type": "string",
-                                "example": "Sword of Truth"
-                              },
-                              "items": {
-                                "description": "The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.",
-                                "type": "array",
-                                "items": {}
-                              }
-                            }
-                          }
-                        }
-                      }
+                      "$ref": "#/components/schemas/author"
                     },
                     {
-                      "description": "Whether the author was updated without errors. Will not exist if author was merged.",
-                      "type": "boolean",
-                      "nullable": true
+                      "$ref": "#/components/schemas/authorUpdated"
                     },
                     {
-                      "description": "Whether the author was merged with another author. Will not exist if author was updated.",
-                      "type": "boolean",
-                      "nullable": true
+                      "$ref": "#/components/schemas/authorMerged"
                     }
                   ]
                 }
@@ -712,15 +132,7 @@
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       },
@@ -744,38 +156,24 @@
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       }
     },
     "/api/authors/{id}/image": {
-      "get": {
-        "parameters": [
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            "type": "string",
-            "description": "The ID of the author.",
-            "format": "uuid",
-            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Author ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/authorId"
           }
-        ],
+        }
+      ],
+      "get": {
         "operationId": "getAuthorImageById",
         "summary": "Get an author image by author ID",
         "description": "Get an author image by author ID. The image will be returned in the requested format and size.",
@@ -783,12 +181,27 @@
           "Authors"
         ],
         "requestBody": {
-          "name": "raw",
-          "in": "requestBody",
-          "description": "Return the raw image without scaling if true.",
-          "schema": {
-            "type": "boolean",
-            "default": false
+          "required": false,
+          "description": "The author image to get.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "width": {
+                    "$ref": "#/components/schemas/imageWidth"
+                  },
+                  "height": {
+                    "$ref": "#/components/schemas/imageHeight"
+                  },
+                  "format": {
+                    "$ref": "#/components/schemas/imageFormat"
+                  },
+                  "raw": {
+                    "$ref": "#/components/schemas/imageRaw"
+                  }
+                }
+              }
+            }
           }
         },
         "responses": {
@@ -816,15 +229,7 @@
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       },
@@ -836,14 +241,14 @@
           "Authors"
         ],
         "requestBody": {
-          "name": "url",
-          "in": "requestBody",
-          "description": "The URL of the image to add to the server",
           "required": true,
-          "schema": {
-            "type": "string",
-            "format": "uri",
-            "example": "https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg"
+          "description": "The author image to add by URL.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/imageUrl"
+              }
+            }
           }
         },
         "responses": {
@@ -859,15 +264,7 @@
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       },
@@ -879,12 +276,26 @@
           "Authors"
         ],
         "requestBody": {
-          "name": "raw",
-          "in": "requestBody",
-          "description": "Return the raw image without scaling if true.",
-          "schema": {
-            "type": "boolean",
-            "default": false
+          "description": "The author image to update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "width": {
+                    "$ref": "#/components/schemas/imageWidth"
+                  },
+                  "height": {
+                    "$ref": "#/components/schemas/imageHeight"
+                  },
+                  "format": {
+                    "$ref": "#/components/schemas/imageFormat"
+                  },
+                  "raw": {
+                    "$ref": "#/components/schemas/imageRaw"
+                  }
+                }
+              }
+            }
           }
         },
         "responses": {
@@ -900,36 +311,11 @@
             }
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       },
       "delete": {
-        "parameters": [
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            "type": "string",
-            "description": "The ID of the author.",
-            "format": "uuid",
-            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-          }
-        ],
         "operationId": "deleteAuthorImageById",
         "summary": "Delete an author image by author ID",
         "description": "Delete an author image by author ID. This will remove the image from the server and the database.",
@@ -941,38 +327,24 @@
             "description": "deleteAuthorImageById OK"
           },
           "404": {
-            "description": "Author not found.",
-            "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string",
-                  "example": "Author not found."
-                }
-              }
-            }
+            "$ref": "#/components/responses/author404"
           }
         }
       }
     },
     "/api/authors/{id}/match": {
-      "post": {
-        "parameters": [
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            "type": "string",
-            "description": "The ID of the author.",
-            "format": "uuid",
-            "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Author ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/authorId"
           }
-        ],
+        }
+      ],
+      "post": {
         "operationId": "matchAuthorById",
         "summary": "Match the author against Audible using quick match",
         "description": "Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.",
@@ -980,12 +352,21 @@
           "Authors"
         ],
         "requestBody": {
-          "name": "q",
-          "in": "requestBody",
-          "description": "The name of the author to use for searching.",
-          "schema": {
-            "type": "string",
-            "example": "Terry Goodkind"
+          "required": true,
+          "description": "The author object to match against an online provider.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/authorAsin"
+                  },
+                  {
+                    "$ref": "#/components/schemas/authorSearchName"
+                  }
+                ]
+              }
+            }
           }
         },
         "responses": {
@@ -994,86 +375,12 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
+                  "oneOf": [
                     {
-                      "description": "An author object which includes a description and image path. The library items and series associated with the author are optionally included.",
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "The ID of the author.",
-                          "format": "uuid",
-                          "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                        },
-                        "asin": {
-                          "type": "string",
-                          "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
-                          "nullable": true,
-                          "example": "B000APZOQA"
-                        },
-                        "name": {
-                          "description": "The name of the author.",
-                          "type": "string",
-                          "example": "Terry Goodkind"
-                        },
-                        "description": {
-                          "description": "A description of the author. Will be null if there is none.",
-                          "type": "string",
-                          "nullable": true,
-                          "example": "Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,\n‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20\nlanguages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary\ntour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's\nbrilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind\nhas an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying\nsituations.\n"
-                        },
-                        "imagePath": {
-                          "description": "The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.",
-                          "type": "string",
-                          "nullable": true,
-                          "example": "/metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg"
-                        },
-                        "addedAt": {
-                          "type": "integer",
-                          "description": "The time (in ms since POSIX epoch) when added to the server.",
-                          "example": 1633522963509
-                        },
-                        "updatedAt": {
-                          "type": "integer",
-                          "description": "The time (in ms since POSIX epoch) when last updated.",
-                          "example": 1633522963509
-                        },
-                        "libraryItems": {
-                          "description": "The items associated with the author",
-                          "type": "array"
-                        },
-                        "series": {
-                          "description": "The series associated with the author",
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "description": "Series and the included library items that an author has written.",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "description": "The ID of the series.",
-                                "format": "uuid",
-                                "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-                              },
-                              "name": {
-                                "description": "The name of the series.",
-                                "type": "string",
-                                "example": "Sword of Truth"
-                              },
-                              "items": {
-                                "description": "The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.",
-                                "type": "array",
-                                "items": {}
-                              }
-                            }
-                          }
-                        }
-                      }
+                      "$ref": "#/components/schemas/author"
                     },
                     {
-                      "description": "Whether the author was updated without errors. Will not exist if author was merged.",
-                      "type": "boolean",
-                      "nullable": true
+                      "$ref": "#/components/schemas/authorUpdated"
                     }
                   ]
                 }
@@ -1081,28 +388,876 @@
             }
           },
           "404": {
-            "description": "Author not found.",
+            "$ref": "#/components/responses/author404"
+          }
+        }
+      }
+    },
+    "/api/libraries": {
+      "get": {
+        "operationId": "getLibraries",
+        "summary": "Get all libraries on server",
+        "description": "Get all libraries on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "responses": {
+          "200": {
+            "description": "getLibraries OK",
             "content": {
-              "text/html": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Author not found."
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/library"
+                  }
                 }
               }
             }
           }
         }
+      },
+      "post": {
+        "operationId": "createLibrary",
+        "summary": "Create a new library on server",
+        "description": "Create a new library on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "description": "The library object to create.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "folders"
+                ],
+                "properties": {
+                  "name": {
+                    "$ref": "#/components/schemas/libraryName"
+                  },
+                  "folders": {
+                    "$ref": "#/components/schemas/libraryFolders"
+                  },
+                  "displayOrder": {
+                    "$ref": "#/components/schemas/libraryDisplayOrder"
+                  },
+                  "icon": {
+                    "$ref": "#/components/schemas/libraryIcon"
+                  },
+                  "mediaType": {
+                    "$ref": "#/components/schemas/libraryMediaType"
+                  },
+                  "provider": {
+                    "$ref": "#/components/schemas/libraryProvider"
+                  },
+                  "settings": {
+                    "$ref": "#/components/schemas/librarySettings"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibraryById",
+        "summary": "Get a single library by ID on server",
+        "description": "Get a single library by ID on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateLibraryById",
+        "summary": "Update a single library by ID on server",
+        "description": "Update a single library by ID on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The library object to update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "$ref": "#/components/schemas/libraryName"
+                  },
+                  "folders": {
+                    "$ref": "#/components/schemas/libraryFolders"
+                  },
+                  "displayOrder": {
+                    "$ref": "#/components/schemas/libraryDisplayOrder"
+                  },
+                  "icon": {
+                    "$ref": "#/components/schemas/libraryIcon"
+                  },
+                  "mediaType": {
+                    "$ref": "#/components/schemas/libraryMediaType"
+                  },
+                  "provider": {
+                    "$ref": "#/components/schemas/libraryProvider"
+                  },
+                  "settings": {
+                    "$ref": "#/components/schemas/librarySettings"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLibraryById",
+        "summary": "Delete a single library by ID on server",
+        "description": "Delete a single library by ID on server and return the deleted object.",
+        "tags": [
+          "Libraries"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/library200"
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
       }
     }
   },
-  "tags": [
-    {
-      "name": "Authors",
-      "description": "Author endpoints"
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "description": "Bearer authentication",
+        "type": "http",
+        "scheme": "bearer"
+      }
     },
-    {
-      "name": "Libraries",
-      "description": "Library endpoints"
+    "schemas": {
+      "authorId": {
+        "type": "string",
+        "description": "The ID of the author.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "authorInclude": {
+        "description": "A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.",
+        "type": "string",
+        "example": "items"
+      },
+      "libraryId": {
+        "type": "string",
+        "description": "The ID of the library.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "authorAsin": {
+        "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
+        "type": "string",
+        "nullable": true,
+        "example": "B000APZOQA"
+      },
+      "authorName": {
+        "description": "The name of the author.",
+        "type": "string",
+        "example": "Terry Goodkind"
+      },
+      "authorDescription": {
+        "description": "The new description of the author.",
+        "type": "string",
+        "nullable": true,
+        "example": "Terry Goodkind is a"
+      },
+      "authorImagePath": {
+        "description": "The absolute path for the author image. This will be in the `metadata/` directory. Will be null if there is no image.",
+        "type": "string",
+        "nullable": true,
+        "example": "/metadata/authors/aut_z3leimgybl7uf3y4ab.jpg"
+      },
+      "addedAt": {
+        "type": "integer",
+        "description": "The time (in ms since POSIX epoch) when added to the server.",
+        "example": 1633522963509
+      },
+      "updatedAt": {
+        "type": "integer",
+        "description": "The time (in ms since POSIX epoch) when last updated.",
+        "example": 1633522963509
+      },
+      "libraryItemId": {
+        "type": "string",
+        "description": "The ID of library items after 2.3.0.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "oldLibraryItemId": {
+        "description": "The ID of library items on server version 2.2.23 and before.",
+        "type": "string",
+        "nullable": true,
+        "format": "li_[a-z0-9]{18}",
+        "example": "li_o78uaoeuh78h6aoeif"
+      },
+      "inode": {
+        "description": "The inode of the item in the file system.",
+        "type": "string",
+        "format": "[0-9]*",
+        "example": "649644248522215260"
+      },
+      "folderId": {
+        "type": "string",
+        "description": "The ID of the folder.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "mediaType": {
+        "type": "string",
+        "description": "The type of media, will be book or podcast.",
+        "enum": [
+          "book",
+          "podcast"
+        ]
+      },
+      "libraryItemBase": {
+        "type": "object",
+        "description": "Base library item schema",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "oldLibraryItemId": {
+            "$ref": "#/components/schemas/oldLibraryItemId"
+          },
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "folderId": {
+            "$ref": "#/components/schemas/folderId"
+          },
+          "path": {
+            "description": "The path of the library item on the server.",
+            "type": "string"
+          },
+          "relPath": {
+            "description": "The path, relative to the library folder, of the library item.",
+            "type": "string"
+          },
+          "isFile": {
+            "description": "Whether the library item is a single file in the root of the library folder.",
+            "type": "boolean"
+          },
+          "mtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item was last modified on disk.",
+            "type": "integer"
+          },
+          "ctimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item status was changed on disk.",
+            "type": "integer"
+          },
+          "birthtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the library item was created on disk. Will be 0 if unknown.",
+            "type": "integer"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "isMissing": {
+            "description": "Whether the library item was scanned and no longer exists.",
+            "type": "boolean"
+          },
+          "isInvalid": {
+            "description": "Whether the library item was scanned and no longer has media files.",
+            "type": "boolean"
+          },
+          "mediaType": {
+            "$ref": "#/components/schemas/mediaType"
+          }
+        }
+      },
+      "bookMetadataBase": {
+        "type": "object",
+        "description": "The base book metadata object for minified, normal, and extended schemas to inherit from.",
+        "properties": {
+          "title": {
+            "description": "The title of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "Wizards First Rule"
+          },
+          "subtitle": {
+            "description": "The subtitle of the book. Will be null if there is no subtitle.",
+            "type": "string",
+            "nullable": true
+          },
+          "genres": {
+            "description": "The genres of the book.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Fantasy",
+              "Sci-Fi",
+              "Nonfiction: History"
+            ]
+          },
+          "publishedYear": {
+            "description": "The year the book was published. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "2008"
+          },
+          "publishedDate": {
+            "description": "The date the book was published. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "publisher": {
+            "description": "The publisher of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "Brilliance Audio"
+          },
+          "description": {
+            "description": "A description for the book. Will be null if empty.",
+            "type": "string",
+            "nullable": true,
+            "example": "The masterpiece that started Terry Goodkind's New York Times bestselling epic Sword of Truth In the aftermath of the brutal murder of his father, a mysterious woman, Kahlan Amnell, appears in Richard Cypher's forest sanctuary seeking help...and more. His world, his very beliefs, are shattered when ancient debts come due with thundering violence. In a dark age it takes courage to live, and more than mere courage to challenge those who hold dominion, Richard and Kahlan must take up that challenge or become the next victims. Beyond awaits a bewitching land where even the best of their hearts could betray them. Yet, Richard fears nothing so much as what secrets his sword might reveal about his own soul. Falling in love would destroy them - for reasons Richard can't imagine and Kahlan dare not say. In their darkest hour, hunted relentlessly, tormented by treachery and loss, Kahlan calls upon Richard to reach beyond his sword - to invoke within himself something more noble. Neither knows that the rules of battle have just changed...or that their time has run out. Wizard's First Rule is the beginning. One book. One Rule. Witness the birth of a legend."
+          },
+          "isbn": {
+            "description": "The ISBN of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "asin": {
+            "description": "The ASIN of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true,
+            "example": "B002V0QK4C"
+          },
+          "language": {
+            "description": "The language of the book. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "explicit": {
+            "description": "Whether the book has been marked as explicit.",
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "bookMetadataMinified": {
+        "type": "object",
+        "description": "The minified metadata for a book in the database.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/bookMetadataBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "titleIgnorePrefix": {
+                "description": "The title of the book with any prefix moved to the end.",
+                "type": "string"
+              },
+              "authorName": {
+                "description": "The name of the book's author(s).",
+                "type": "string",
+                "example": "Terry Goodkind"
+              },
+              "authorNameLF": {
+                "description": "The name of the book's author(s) with last names first.",
+                "type": "string",
+                "example": "Goodkind, Terry"
+              },
+              "narratorName": {
+                "description": "The name of the audiobook's narrator(s).",
+                "type": "string",
+                "example": "Sam Tsoutsouvas"
+              },
+              "seriesName": {
+                "description": "The name of the book's series.",
+                "type": "string",
+                "example": "Sword of Truth"
+              }
+            }
+          }
+        ]
+      },
+      "bookCoverPath": {
+        "description": "The absolute path on the server of the cover file. Will be null if there is no cover.",
+        "type": "string",
+        "nullable": true,
+        "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/cover.jpg"
+      },
+      "tags": {
+        "description": "Tags applied to items.",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "To Be Read",
+          "Genre: Nonfiction"
+        ]
+      },
+      "durationSec": {
+        "description": "The total length (in seconds) of the item or file.",
+        "type": "number",
+        "example": 33854.905
+      },
+      "size": {
+        "description": "The total size (in bytes) of the item or file.",
+        "type": "integer",
+        "example": 268824228
+      },
+      "bookMinified": {
+        "type": "object",
+        "description": "Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.",
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/bookMetadataMinified"
+          },
+          "coverPath": {
+            "$ref": "#/components/schemas/bookCoverPath"
+          },
+          "tags": {
+            "$ref": "#/components/schemas/tags"
+          },
+          "numTracks": {
+            "description": "The number of tracks the book's audio files have.",
+            "type": "integer",
+            "example": 1
+          },
+          "numAudioFiles": {
+            "description": "The number of audio files the book has.",
+            "type": "integer",
+            "example": 1
+          },
+          "numChapters": {
+            "description": "The number of chapters the book has.",
+            "type": "integer",
+            "example": 1
+          },
+          "numMissingParts": {
+            "description": "The total number of missing parts the book has.",
+            "type": "integer",
+            "example": 0
+          },
+          "numInvalidAudioFiles": {
+            "description": "The number of invalid audio files the book has.",
+            "type": "integer",
+            "example": 0
+          },
+          "duration": {
+            "$ref": "#/components/schemas/durationSec"
+          },
+          "size": {
+            "$ref": "#/components/schemas/size"
+          },
+          "ebookFormat": {
+            "description": "The format of ebook of the book. Will be null if the book is an audiobook.",
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "mediaMinified": {
+        "description": "The minified media of the library item.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/bookMinified"
+          }
+        ]
+      },
+      "libraryItemMinified": {
+        "type": "object",
+        "description": "A single item on the server, like a book or podcast. Minified media format.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/libraryItemBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "media": {
+                "$ref": "#/components/schemas/mediaMinified"
+              }
+            }
+          }
+        ]
+      },
+      "seriesId": {
+        "type": "string",
+        "description": "The ID of the series.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "seriesName": {
+        "description": "The name of the series.",
+        "type": "string",
+        "example": "Sword of Truth"
+      },
+      "authorSeries": {
+        "type": "object",
+        "description": "Series and the included library items that an author has written.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/seriesId"
+          },
+          "name": {
+            "$ref": "#/components/schemas/seriesName"
+          },
+          "items": {
+            "description": "The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/libraryItemMinified"
+            }
+          }
+        }
+      },
+      "author": {
+        "description": "An author object which includes a description and image path. The library items and series associated with the author are optionally included.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/authorId"
+          },
+          "asin": {
+            "$ref": "#/components/schemas/authorAsin"
+          },
+          "name": {
+            "$ref": "#/components/schemas/authorName"
+          },
+          "description": {
+            "$ref": "#/components/schemas/authorDescription"
+          },
+          "imagePath": {
+            "$ref": "#/components/schemas/authorImagePath"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "libraryItems": {
+            "description": "The items associated with the author",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/libraryItemMinified"
+            }
+          },
+          "series": {
+            "description": "The series associated with the author",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/authorSeries"
+            }
+          }
+        }
+      },
+      "authorUpdated": {
+        "description": "Whether the author was updated without errors. Will not exist if author was merged.",
+        "type": "boolean",
+        "nullable": true
+      },
+      "authorMerged": {
+        "description": "Whether the author was merged with another author. Will not exist if author was updated.",
+        "type": "boolean",
+        "nullable": true
+      },
+      "imageWidth": {
+        "description": "The requested width of image in pixels.",
+        "type": "integer",
+        "default": 400,
+        "example": 400
+      },
+      "imageHeight": {
+        "description": "The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.",
+        "type": "integer",
+        "nullable": true,
+        "default": null,
+        "example": 600
+      },
+      "imageFormat": {
+        "description": "The requested output format.",
+        "type": "string",
+        "default": "jpeg",
+        "example": "webp"
+      },
+      "imageRaw": {
+        "description": "Return the raw image without scaling if true.",
+        "type": "boolean",
+        "default": false
+      },
+      "imageUrl": {
+        "description": "The URL of the image to add to the server",
+        "type": "string",
+        "format": "uri",
+        "example": "https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg"
+      },
+      "authorSearchName": {
+        "description": "The name of the author to use for searching.",
+        "type": "string",
+        "example": "Terry Goodkind"
+      },
+      "libraryName": {
+        "description": "The name of the library.",
+        "type": "string",
+        "example": "My Audiobooks"
+      },
+      "folder": {
+        "type": "object",
+        "description": "Folder used in library",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/folderId"
+          },
+          "fullPath": {
+            "description": "The path on the server for the folder. (Read Only)",
+            "type": "string",
+            "example": "/podcasts"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          }
+        }
+      },
+      "librarySettings": {
+        "description": "The settings for the library.",
+        "type": "object",
+        "properties": {
+          "coverAspectRatio": {
+            "description": "Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).",
+            "type": "integer",
+            "example": 1
+          },
+          "disableWatcher": {
+            "description": "Whether to disable the folder watcher for the library.",
+            "type": "boolean",
+            "example": false
+          },
+          "skipMatchingMediaWithAsin": {
+            "description": "Whether to skip matching books that already have an ASIN.",
+            "type": "boolean",
+            "example": false
+          },
+          "skipMatchingMediaWithIsbn": {
+            "description": "Whether to skip matching books that already have an ISBN.",
+            "type": "boolean",
+            "example": false
+          },
+          "autoScanCronExpression": {
+            "description": "The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.",
+            "type": "string",
+            "nullable": true,
+            "example": "0 0 0 * * *"
+          },
+          "audiobooksOnly": {
+            "description": "Whether the library should ignore ebook files and only allow ebook files to be supplementary.",
+            "type": "boolean",
+            "example": false
+          },
+          "hideSingleBookSeries": {
+            "description": "Whether to hide series with only one book.",
+            "type": "boolean",
+            "example": false
+          },
+          "onlyShowLaterBooksInContinueSeries": {
+            "description": "Whether to only show books in a series after the highest series sequence.",
+            "type": "boolean",
+            "example": false
+          },
+          "metadataPrecedence": {
+            "description": "The precedence of metadata sources. See Metadata Providers for a list of possible providers.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "folderStructure",
+              "audioMetatags",
+              "nfoFile",
+              "txtFiles",
+              "opfFile",
+              "absMetadata"
+            ]
+          },
+          "podcastSearchRegion": {
+            "description": "The region to use when searching for podcasts.",
+            "type": "string",
+            "example": "us"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "integer",
+        "description": "The time (in ms since POSIX epoch) when was created.",
+        "example": 1633522963509
+      },
+      "library": {
+        "description": "A library object which includes either books or podcasts.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "name": {
+            "$ref": "#/components/schemas/libraryName"
+          },
+          "folders": {
+            "description": "The folders that belong to the library.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/folder"
+            }
+          },
+          "displayOrder": {
+            "description": "Display position of the library in the list of libraries. Must be >= 1.",
+            "type": "integer",
+            "example": 1
+          },
+          "icon": {
+            "description": "The selected icon for the library. See Library Icons for a list of possible icons.",
+            "type": "string",
+            "example": "audiobookshelf"
+          },
+          "mediaType": {
+            "description": "The type of media that the library contains. Will be `book` or `podcast`. (Read Only)",
+            "type": "string",
+            "example": "book"
+          },
+          "provider": {
+            "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
+            "type": "string",
+            "example": "audible"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/librarySettings"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/createdAt"
+          },
+          "lastUpdate": {
+            "$ref": "#/components/schemas/updatedAt"
+          }
+        }
+      },
+      "libraryFolders": {
+        "description": "The folders of the library. Only specify the fullPath.",
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/folder"
+        }
+      },
+      "libraryDisplayOrder": {
+        "description": "The display order of the library. Must be >= 1.",
+        "type": "integer",
+        "minimum": 1,
+        "example": 1
+      },
+      "libraryIcon": {
+        "description": "The icon of the library. See Library Icons for a list of possible icons.",
+        "type": "string",
+        "example": "audiobookshelf"
+      },
+      "libraryMediaType": {
+        "description": "The type of media that the library contains. Must be `book` or `podcast`.",
+        "type": "string",
+        "example": "book"
+      },
+      "libraryProvider": {
+        "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
+        "type": "string",
+        "example": "audible"
+      }
+    },
+    "responses": {
+      "author404": {
+        "description": "Author not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Author not found."
+            }
+          }
+        }
+      },
+      "library200": {
+        "description": "Library found.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/library"
+            }
+          }
+        }
+      },
+      "library404": {
+        "description": "Library not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Library not found."
+            }
+          }
+        }
+      }
     }
-  ]
+  }
 }
