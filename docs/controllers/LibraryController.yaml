@@ -269,3 +269,100 @@ paths:
                 example: 'Issues deleted.'
         '404':
           $ref: '#/components/responses/library404'
+  /api/libraries/{id}/items:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryItems
+      summary: Get items in a library
+      description: Get items in a library by ID on server.
+      tags:
+        - Libraries
+      requestBody:
+        required: false
+        description: The filters to apply to the requested library items.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  $ref: '../schemas.yaml#/components/schemas/limit'
+                page:
+                  $ref: '../schemas.yaml#/components/schemas/page'
+                sort:
+                  $ref: '#/components/schemas/librarySort'
+                desc:
+                  $ref: '../schemas.yaml#/components/schemas/sortDesc'
+                filter:
+                  $ref: '#/components/schemas/libraryFilter'
+                minified:
+                  $ref: '../schemas.yaml#/components/schemas/minified'
+                collapseSeries:
+                  $ref: '#/components/schemas/libraryCollapseSeries'
+                include:
+                  $ref: '#/components/schemas/libraryInclude'
+      responses:
+        '200':
+          description: getLibraryItems OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+                  mediaType:
+                    $ref: '../objects/mediaTypes/media.yaml#/components/schemas/mediaType'
+                  minified:
+                    $ref: '../schemas.yaml#/components/schemas/minified'
+                  collapseSeries:
+                    $ref: '#/components/schemas/collapseSeries'
+                  include:
+                    $ref: '#/components/schemas/libraryInclude'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/authors:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryAuthors
+      summary: Get all authors in a library
+      description: Get all authors in a library by ID on server.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          description: getLibraryAuthors OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorExpanded'
+        '404':
+          $ref: '#/components/responses/library404'
