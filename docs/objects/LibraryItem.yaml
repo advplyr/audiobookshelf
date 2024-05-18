@@ -64,3 +64,9 @@ components:
           properties:
             media:
               $ref: './mediaTypes/media.yaml#/components/schemas/mediaMinified'
+    libraryItemSequence:
+      type: object
+      description: A single item on the server, like a book or podcast. Includes series sequence information.
+      allOf:
+        - $ref: '#/components/schemas/libraryItemBase'
+        - $ref: '../entities/Series.yaml#/components/schemas/sequence'
