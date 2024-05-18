@@ -8,115 +8,43 @@ components:
       description: Whether the author was merged with another author. Will not exist if author was updated.
       type: boolean
       nullable: true
-  requestBody:
-    asin:
-      name: asin
-      in: requestBody
-      description: The Audible Identifier (ASIN).
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
-    authorDescription:
-      name: description
-      in: requestBody
-      description: The new description of the author.
-      schema:
-        type: string
-        nullable: true
-        example: Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork, ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20 languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing.
     authorInclude:
-      name: include
-      in: requestBody
-      description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included.
-      schema:
-        type: string
-        example: 'items'
-      examples:
-        empty:
-          summary: Do not return library items
-          value: ''
-        itemOnly:
-          summary: Only return library items
-          value: 'items'
-        itemsAndSeries:
-          summary: Return library items and series
-          value: 'items,series'
+      description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.
+      type: string
+      example: 'items'
     authorLibraryId:
-      name: library
-      in: requestBody
-      description: The ID of the library to to include filter included items from.
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+      $ref: '../objects/Library.yaml#/components/schemas/libraryId'
     authorSearchName:
-      name: q
-      in: requestBody
       description: The name of the author to use for searching.
-      schema:
-        type: string
-        example: Terry Goodkind
+      type: string
+      example: Terry Goodkind
     authorName:
-      name: name
-      in: requestBody
-      description: The new name of the author.
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorName'
-    authorImagePath:
-      name: imagePath
-      in: requestBody
-      description: The new absolute path for the author image.
-      required: false
-      schema:
-        type: string
-        nullable: true
-        example: /metadata/authors/aut_z3leimgybl7uf3y4ab.jpg
+      $ref: '../objects/entities/Author.yaml#/components/schemas/authorName'
     imageUrl:
-      name: url
-      in: requestBody
       description: The URL of the image to add to the server
-      required: true
-      schema:
-        type: string
-        format: uri
-        example: https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg
+      type: string
+      format: uri
+      example: https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg
     imageWidth:
-      name: width
-      in: requestBody
       description: The requested width of image in pixels.
-      schema:
-        type: integer
-        default: 400
-        example: 400
+      type: integer
+      default: 400
       example: 400
     imageHeight:
-      name: height
-      in: requestBody
       description: The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.
-      schema:
-        type: integer
-        nullable: true
-        default: null
-        example: 600
-      examples:
-        scaleHeight:
-          summary: Scale height with width
-          value: null
-        fixedHeight:
-          summary: Force height of image
-          value: 600
+      type: integer
+      nullable: true
+      default: null
+      example: 600
     imageFormat:
-      name: format
-      in: requestBody
       description: The requested output format.
-      schema:
-        type: string
-        default: jpeg
-        example: webp
+      type: string
+      default: jpeg
+      example: webp
     imageRaw:
-      name: raw
-      in: requestBody
       description: Return the raw image without scaling if true.
-      schema:
-        type: boolean
-        default: false
+      type: boolean
+      default: false
   responses:
     author200:
       description: Author found.
@@ -154,9 +82,9 @@ paths:
             schema:
               properties:
                 include:
-                  $ref: '#/components/requestBody/authorInclude'
+                  $ref: '#/components/schemas/authorInclude'
                 library:
-                  $ref: '#/components/requestBody/authorLibraryId'
+                  $ref: '#/components/schemas/authorLibraryId'
       responses:
         '200':
           description: getAuthorById OK
@@ -173,20 +101,19 @@ paths:
       tags:
         - Authors
       requestBody:
-        required: true
         description: The author object to update.
         content:
           application/json:
             schema:
               properties:
                 name:
-                  $ref: '#/components/requestBody/authorName'
+                  $ref: '#/components/schemas/authorName'
                 description:
-                  $ref: '#/components/requestBody/authorDescription'
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorDescription'
                 imagePath:
-                  $ref: '#/components/requestBody/authorImagePath'
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorImagePath'
                 asin:
-                  $ref: '#/components/requestBody/asin'
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
       responses:
         '200':
           description: updateAuthorById OK
@@ -237,13 +164,13 @@ paths:
             schema:
               properties:
                 width:
-                  $ref: '#/components/requestBody/imageWidth'
+                  $ref: '#/components/schemas/imageWidth'
                 height:
-                  $ref: '#/components/requestBody/imageHeight'
+                  $ref: '#/components/schemas/imageHeight'
                 format:
-                  $ref: '#/components/requestBody/imageFormat'
+                  $ref: '#/components/schemas/imageFormat'
                 raw:
-                  $ref: '#/components/requestBody/imageRaw'
+                  $ref: '#/components/schemas/imageRaw'
       responses:
         '200':
           description: getAuthorImageById OK
@@ -269,14 +196,12 @@ paths:
       tags:
         - Authors
       requestBody:
-        $ref: '#/components/requestBody/imageUrl'
-      requestBody:
         required: true
         description: The author image to add by URL.
         content:
           application/json:
             schema:
-              $ref: '#/components/requestBody/imageUrl'
+              $ref: '#/components/schemas/imageUrl'
       responses:
         '200':
           description: addAuthorImageById OK
@@ -294,20 +219,19 @@ paths:
       tags:
         - Authors
       requestBody:
-        required: true
         description: The author image to update.
         content:
           application/json:
             schema:
               properties:
                 width:
-                  $ref: '#/components/requestBody/imageWidth'
+                  $ref: '#/components/schemas/imageWidth'
                 height:
-                  $ref: '#/components/requestBody/imageHeight'
+                  $ref: '#/components/schemas/imageHeight'
                 format:
-                  $ref: '#/components/requestBody/imageFormat'
+                  $ref: '#/components/schemas/imageFormat'
                 raw:
-                  $ref: '#/components/requestBody/imageRaw'
+                  $ref: '#/components/schemas/imageRaw'
       responses:
         '200':
           description: updateAuthorImageById OK
@@ -350,10 +274,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                asin:
-                  $ref: '#/components/requestBody/asin'
-                q:
-                  $ref: '#/components/requestBody/authorSearchName'
+                - $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+                - $ref: '#/components/schemas/authorSearchName'
       responses:
         '200':
           description: matchAuthorById OK

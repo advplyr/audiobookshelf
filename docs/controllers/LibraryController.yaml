@@ -17,101 +17,47 @@ components:
       type: boolean
       description: Whether collapse series was set in the request.
       example: true
-    libraryInclude:
-      type: string
-      description: The fields from the response.
-      example: 'rssfeed'
-  requestBody:
-    libraryName:
-      name: name
-      in: requestBody
-      description: The name of the library.
-      content:
-        application/json:
-          schema:
-            type: string
-            example: My Audiobooks
     libraryFolders:
-      name: folders
-      in: requestBody
-      summary: The folders of the library.
       description: The folders of the library. Only specify the fullPath.
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '../objects/Folder.yaml#/components/schemas/folder'
+      type: array
+      items:
+        $ref: '../objects/Folder.yaml#/components/schemas/folder'
     libraryDisplayOrder:
-      name: displayOrder
-      in: requestBody
       description: The display order of the library. Must be >= 1.
-      schema:
-        type: integer
-        minimum: 1
-        example: 1
+      type: integer
+      minimum: 1
+      example: 1
     libraryIcon:
-      name: icon
-      in: requestBody
-      summary: The icon of library.
       description: The icon of the library. See Library Icons for a list of possible icons.
-      schema:
-        type: string
-        example: 'audiobookshelf'
+      type: string
+      example: 'audiobookshelf'
     libraryMediaType:
-      name: mediaType
-      in: requestBody
-      summary: The type of media the library contains.
       description: The type of media that the library contains. Must be `book` or `podcast`.
-      schema:
-        type: string
-        example: 'book'
+      type: string
+      example: 'book'
     libraryProvider:
-      name: provider
-      in: requestBody
-      summary: Preferred metadata provider for the library.
       description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
-      schema:
-        type: string
-        example: 'audible'
+      type: string
+      example: 'audible'
     librarySettings:
-      name: settings
-      in: requestBody
-      summary: The settings for the library.
-      description: The settings for the library.
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+      $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
     librarySort:
-      name: sort
-      in: requestBody
-      summary: The sort order of the library.
       description: The sort order of the library. For example, to sort by title use 'sort=media.metadata.title'.
-      schema:
-        type: string
-        example: 'media.metadata.title'
+      type: string
+      example: 'media.metadata.title'
     libraryFilter:
-      name: filter
-      in: requestBody
-      summary: The filter for the library. TODO
       description: The filter for the library.
-      schema:
-        type: string
-        example: 'media.metadata.title'
+      type: string
+      example: 'media.metadata.title'
     libraryCollapseSeries:
-      name: collapseSeries
-      in: requestBody
       description: Whether to collapse series.
-      schema:
-        type: boolean
-        example: true
-        default: false
+      type: boolean
+      example: true
+      default: false
     libraryInclude:
-      name: include
-      in: requestBody
       description: The fields to include in the response. The only current option is `rssfeed`.
-      schema:
-        type: string
-        example: 'rssfeed'
+      type: string
+      example: 'rssfeed'
   responses:
     library200:
       description: Library found.
@@ -147,31 +93,30 @@ paths:
       operationId: createLibrary
       summary: Create a new library on server
       description: Create a new library on server.
-      required: [name, folders]
       tags:
         - Libraries
       requestBody:
-        required: true
         description: The library object to create.
         content:
           application/json:
             schema:
               type: object
+              required: [name, folders]
               properties:
                 name:
-                  $ref: '#/components/requestBody/libraryName'
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryName'
                 folders:
-                  $ref: '#/components/requestBody/libraryFolders'
+                  $ref: '#/components/schemas/libraryFolders'
                 displayOrder:
-                  $ref: '#/components/requestBody/libraryDisplayOrder'
+                  $ref: '#/components/schemas/libraryDisplayOrder'
                 icon:
-                  $ref: '#/components/requestBody/libraryIcon'
+                  $ref: '#/components/schemas/libraryIcon'
                 mediaType:
-                  $ref: '#/components/requestBody/libraryMediaType'
+                  $ref: '#/components/schemas/libraryMediaType'
                 provider:
-                  $ref: '#/components/requestBody/libraryProvider'
+                  $ref: '#/components/schemas/libraryProvider'
                 settings:
-                  $ref: '#/components/requestBody/librarySettings'
+                  $ref: '#/components/schemas/librarySettings'
       responses:
         '200':
           $ref: '#/components/responses/library200'
@@ -211,19 +156,19 @@ paths:
               type: object
               properties:
                 name:
-                  $ref: '#/components/requestBody/libraryName'
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryName'
                 folders:
-                  $ref: '#/components/requestBody/libraryFolders'
+                  $ref: '#/components/schemas/libraryFolders'
                 displayOrder:
-                  $ref: '#/components/requestBody/libraryDisplayOrder'
+                  $ref: '#/components/schemas/libraryDisplayOrder'
                 icon:
-                  $ref: '#/components/requestBody/libraryIcon'
+                  $ref: '#/components/schemas/libraryIcon'
                 mediaType:
-                  $ref: '#/components/requestBody/libraryMediaType'
+                  $ref: '#/components/schemas/libraryMediaType'
                 provider:
-                  $ref: '#/components/requestBody/libraryProvider'
+                  $ref: '#/components/schemas/libraryProvider'
                 settings:
-                  $ref: '#/components/requestBody/librarySettings'
+                  $ref: '#/components/schemas/librarySettings'
       responses:
         '200':
           $ref: '#/components/responses/library200'
@@ -263,21 +208,21 @@ paths:
               type: object
               properties:
                 limit:
-                  $ref: '../schemas.yaml#/components/requestBody/limit'
+                  $ref: '../schemas.yaml#/components/schemas/limit'
                 page:
-                  $ref: '../schemas.yaml#/components/requestBody/page'
+                  $ref: '../schemas.yaml#/components/schemas/page'
                 sort:
-                  $ref: '#/components/requestBody/librarySort'
+                  $ref: '#/components/schemas/librarySort'
                 desc:
-                  $ref: '../schemas.yaml#/components/requestBody/sortDesc'
+                  $ref: '../schemas.yaml#/components/schemas/sortDesc'
                 filter:
-                  $ref: '#/components/requestBody/libraryFilter'
+                  $ref: '#/components/schemas/libraryFilter'
                 minified:
-                  $ref: '../schemas.yaml#/components/requestBody/minified'
+                  $ref: '../schemas.yaml#/components/schemas/minified'
                 collapseSeries:
-                  $ref: '#/components/requestBody/libraryCollapseSeries'
+                  $ref: '#/components/schemas/libraryCollapseSeries'
                 include:
-                  $ref: '#/components/requestBody/libraryInclude'
+                  $ref: '#/components/schemas/libraryInclude'
       responses:
         '200':
           description: getLibraryItems OK
