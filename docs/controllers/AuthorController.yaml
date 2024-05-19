@@ -273,9 +273,12 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
-                - $ref: '#/components/schemas/authorSearchName'
+              type: object
+              properties:
+                q:
+                  $ref: '#/components/schemas/authorSearchName'
+                asin:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
       responses:
         '200':
           description: matchAuthorById OK
