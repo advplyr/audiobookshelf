@@ -306,3 +306,72 @@ paths:
                   $ref: '../objects/entities/Author.yaml#/components/schemas/authorExpanded'
         '404':
           $ref: '#/components/responses/library404'
+  /api/libraries/{id}/series:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibrarySeries
+      summary: Get library series
+      description: Get series in a library. Filtering and sorting can be applied.
+      tags:
+        - Libraries
+      requestBody:
+        required: false
+        description: The filters to apply to the requested library series.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  $ref: '../schemas.yaml#/components/schemas/limit'
+                page:
+                  $ref: '../schemas.yaml#/components/schemas/page'
+                sort:
+                  description: The field to sort by from the request.
+                  type: string
+                  enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
+                  example: 'numBooks'
+                  default: 'name'
+                desc:
+                  $ref: '../schemas.yaml#/components/schemas/sortDesc'
+                filter:
+                  $ref: '#/components/schemas/libraryFilter'
+                include:
+                  $ref: '#/components/schemas/libraryInclude'
+      responses:
+        '200':
+          description: getLibrarySeries OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/Series.yaml#/components/schemas/seriesBooks'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+                  minified:
+                    $ref: '../schemas.yaml#/components/schemas/minified'
+                  include:
+                    $ref: '#/components/schemas/libraryInclude'
+
+        '404':
+          $ref: '#/components/responses/library404'

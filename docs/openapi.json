@@ -566,6 +566,156 @@
         }
       }
     },
+    "/api/libraries/{id}/authors": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibraryAuthors",
+        "summary": "Get all authors in a library",
+        "description": "Get all authors in a library by ID on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "responses": {
+          "200": {
+            "description": "getLibraryAuthors OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/authorExpanded"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}/items": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibraryItems",
+        "summary": "Get items in a library",
+        "description": "Get items in a library by ID on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "The filters to apply to the requested library items.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "$ref": "#/components/schemas/limit"
+                  },
+                  "page": {
+                    "$ref": "#/components/schemas/page"
+                  },
+                  "sort": {
+                    "$ref": "#/components/schemas/librarySort"
+                  },
+                  "desc": {
+                    "$ref": "#/components/schemas/sortDesc"
+                  },
+                  "filter": {
+                    "$ref": "#/components/schemas/libraryFilter"
+                  },
+                  "minified": {
+                    "$ref": "#/components/schemas/minified"
+                  },
+                  "collapseSeries": {
+                    "$ref": "#/components/schemas/libraryCollapseSeries"
+                  },
+                  "include": {
+                    "$ref": "#/components/schemas/libraryInclude"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "getLibraryItems OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/libraryItemBase"
+                      }
+                    },
+                    "total": {
+                      "$ref": "#/components/schemas/total"
+                    },
+                    "limit": {
+                      "$ref": "#/components/schemas/limit"
+                    },
+                    "page": {
+                      "$ref": "#/components/schemas/page"
+                    },
+                    "sortBy": {
+                      "$ref": "#/components/schemas/sortBy"
+                    },
+                    "sortDesc": {
+                      "$ref": "#/components/schemas/sortDesc"
+                    },
+                    "filterBy": {
+                      "$ref": "#/components/schemas/filterBy"
+                    },
+                    "mediaType": {
+                      "$ref": "#/components/schemas/mediaType"
+                    },
+                    "minified": {
+                      "$ref": "#/components/schemas/minified"
+                    },
+                    "collapseSeries": {
+                      "$ref": "#/components/schemas/collapseSeries"
+                    },
+                    "include": {
+                      "$ref": "#/components/schemas/libraryInclude"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
     "/api/libraries/{id}/issues": {
       "parameters": [
         {
@@ -593,6 +743,116 @@
                 "schema": {
                   "type": "string",
                   "example": "Issues deleted."
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/libraries/{id}/series": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibrarySeries",
+        "summary": "Get library series",
+        "description": "Get series in a library. Filtering and sorting can be applied.",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "The filters to apply to the requested library series.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "$ref": "#/components/schemas/limit"
+                  },
+                  "page": {
+                    "$ref": "#/components/schemas/page"
+                  },
+                  "sort": {
+                    "description": "The field to sort by from the request.",
+                    "type": "string",
+                    "enum": [
+                      "name",
+                      "numBooks",
+                      "totalDuration",
+                      "addedAt",
+                      "lastBookAdded",
+                      "lastBookUpdated"
+                    ],
+                    "example": "numBooks",
+                    "default": "name"
+                  },
+                  "desc": {
+                    "$ref": "#/components/schemas/sortDesc"
+                  },
+                  "filter": {
+                    "$ref": "#/components/schemas/libraryFilter"
+                  },
+                  "include": {
+                    "$ref": "#/components/schemas/libraryInclude"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "getLibrarySeries OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/seriesBooks"
+                      }
+                    },
+                    "total": {
+                      "$ref": "#/components/schemas/total"
+                    },
+                    "limit": {
+                      "$ref": "#/components/schemas/limit"
+                    },
+                    "page": {
+                      "$ref": "#/components/schemas/page"
+                    },
+                    "sortBy": {
+                      "$ref": "#/components/schemas/sortBy"
+                    },
+                    "sortDesc": {
+                      "$ref": "#/components/schemas/sortDesc"
+                    },
+                    "filterBy": {
+                      "$ref": "#/components/schemas/filterBy"
+                    },
+                    "minified": {
+                      "$ref": "#/components/schemas/minified"
+                    },
+                    "include": {
+                      "$ref": "#/components/schemas/libraryInclude"
+                    }
+                  }
                 }
               }
             }
@@ -1260,6 +1520,145 @@
         "description": "Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.",
         "type": "string",
         "example": "audible"
+      },
+      "authorExpanded": {
+        "type": "object",
+        "description": "The author schema with the total number of books in the library.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/author"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "numBooks": {
+                "description": "The number of books associated with the author in the library.",
+                "type": "integer",
+                "example": 1
+              }
+            }
+          }
+        ]
+      },
+      "limit": {
+        "description": "The number of items to return. If 0, no items are returned.",
+        "type": "integer",
+        "example": 10,
+        "default": 0
+      },
+      "page": {
+        "description": "The page number (zero indexed) to return. If no limit is specified, then page will have no effect.",
+        "type": "integer",
+        "example": 1,
+        "default": 0
+      },
+      "librarySort": {
+        "description": "The sort order of the library. For example, to sort by title use 'sort=media.metadata.title'.",
+        "type": "string",
+        "example": "media.metadata.title"
+      },
+      "sortDesc": {
+        "description": "Return items in reversed order if true.",
+        "type": "boolean",
+        "example": true,
+        "default": false
+      },
+      "libraryFilter": {
+        "description": "The filter for the library.",
+        "type": "string",
+        "example": "media.metadata.title"
+      },
+      "minified": {
+        "description": "Return minified items if true.",
+        "type": "boolean",
+        "example": true,
+        "default": false
+      },
+      "libraryCollapseSeries": {
+        "description": "Whether to collapse series.",
+        "type": "boolean",
+        "example": true,
+        "default": false
+      },
+      "libraryInclude": {
+        "description": "The fields to include in the response. The only current option is `rssfeed`.",
+        "type": "string",
+        "example": "rssfeed"
+      },
+      "total": {
+        "description": "The total number of items in the response.",
+        "type": "integer",
+        "example": 100
+      },
+      "sortBy": {
+        "type": "string",
+        "description": "The field to sort by from the request.",
+        "example": "media.metadata.title"
+      },
+      "filterBy": {
+        "type": "string",
+        "description": "The field to filter by from the request. TODO",
+        "example": "media.metadata.title"
+      },
+      "collapseSeries": {
+        "type": "boolean",
+        "description": "Whether collapse series was set in the request.",
+        "example": true
+      },
+      "sequence": {
+        "description": "The position in the series the book is.",
+        "type": "string",
+        "nullable": true
+      },
+      "libraryItemSequence": {
+        "type": "object",
+        "description": "A single item on the server, like a book or podcast. Includes series sequence information.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/libraryItemBase"
+          },
+          {
+            "$ref": "#/components/schemas/sequence"
+          }
+        ]
+      },
+      "seriesBooks": {
+        "type": "object",
+        "description": "A series object which includes the name and books in the series.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/seriesId"
+          },
+          "name": {
+            "$ref": "#/components/schemas/seriesName"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "nameIgnorePrefix": {
+            "description": "The name of the series with any prefix moved to the end.",
+            "type": "string"
+          },
+          "nameIgnorePrefixSort": {
+            "description": "The name of the series with any prefix removed.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Will always be `series`.",
+            "type": "string"
+          },
+          "books": {
+            "description": "The library items that contain the books in the series. A sequence attribute that denotes the position in the series the book is in, is tacked on.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/libraryItemSequence"
+            }
+          },
+          "totalDuration": {
+            "description": "The combined duration (in seconds) of all books in the series.",
+            "type": "number"
+          }
+        }
       }
     },
     "responses": {
