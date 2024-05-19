@@ -50,6 +50,7 @@ class Server {
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
+    global.AllowCors = process.env.ALLOW_CORS === '1'
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -182,11 +183,12 @@ class Server {
      * @see https://ionicframework.com/docs/troubleshooting/cors
      *
      * Running in development allows cors to allow testing the mobile apps in the browser
+     * or env variable ALLOW_CORS = '1'
      */
     app.use((req, res, next) => {
       if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
-        if (Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
+        if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
           res.header('Access-Control-Allow-Headers', '*')

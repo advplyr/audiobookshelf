@@ -7,6 +7,7 @@ class Logger {
     this.logManager = null
 
     this.isDev = process.env.NODE_ENV !== 'production'
+
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
     this.socketListeners = []
   }
@@ -49,7 +50,7 @@ class Logger {
   }
 
   addSocketListener(socket, level) {
-    var index = this.socketListeners.findIndex(s => s.id === socket.id)
+    var index = this.socketListeners.findIndex((s) => s.id === socket.id)
     if (index >= 0) {
       this.socketListeners.splice(index, 1, {
         id: socket.id,
@@ -66,7 +67,7 @@ class Logger {
   }
 
   removeSocketListener(socketId) {
-    this.socketListeners = this.socketListeners.filter(s => s.id !== socketId)
+    this.socketListeners = this.socketListeners.filter((s) => s.id !== socketId)
   }
 
   /**
@@ -135,8 +136,8 @@ class Logger {
   /**
    * Fatal errors are ones that exit the process
    * Fatal logs are saved to crash_logs.txt
-   * 
-   * @param  {...any} args 
+   *
+   * @param  {...any} args
    */
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
