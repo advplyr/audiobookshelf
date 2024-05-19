@@ -279,6 +279,8 @@ paths:
                   $ref: '#/components/schemas/authorSearchName'
                 asin:
                   $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+                region:
+                  $ref: '../schemas.yaml#/components/schemas/region'
       responses:
         '200':
           description: matchAuthorById OK

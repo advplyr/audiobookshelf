@@ -357,14 +357,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "oneOf": [
-                  {
+                "type": "object",
+                "properties": {
+                  "q": {
+                    "$ref": "#/components/schemas/authorSearchName"
+                  },
+                  "asin": {
                     "$ref": "#/components/schemas/authorAsin"
                   },
-                  {
-                    "$ref": "#/components/schemas/authorSearchName"
+                  "region": {
+                    "$ref": "#/components/schemas/region"
                   }
-                ]
+                }
               }
             }
           }
@@ -591,9 +595,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/authorExpanded"
+                  "type": "object",
+                  "properties": {
+                    "authors": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/authorExpanded"
+                      }
+                    }
                   }
                 }
               }
@@ -1347,6 +1356,12 @@
         "description": "The name of the author to use for searching.",
         "type": "string",
         "example": "Terry Goodkind"
+      },
+      "region": {
+        "description": "The region used to search.",
+        "type": "string",
+        "example": "us",
+        "default": "us"
       },
       "libraryName": {
         "description": "The name of the library.",

@@ -55,3 +55,8 @@ components:
       type: boolean
       example: true
       default: false
+    region:
+      description: The region used to search.
+      type: string
+      example: 'us'
+      default: 'us'
