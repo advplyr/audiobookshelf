@@ -871,6 +871,103 @@
           }
         }
       }
+    },
+    "/api/series/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the series.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/seriesId"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Series"
+        ],
+        "summary": "Get series",
+        "description": "Get a series by ID.",
+        "requestBody": {
+          "required": false,
+          "description": "A comma separated list of what to include with the series.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "include": {
+                    "type": "string",
+                    "description": "A comma separated list of what to include with the series.",
+                    "example": "progress,rssfeed",
+                    "enum": [
+                      "progress",
+                      "rssfeed"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/seriesWithProgressAndRSS"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/series404"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Series"
+        ],
+        "summary": "Update series",
+        "description": "Update a series by ID.",
+        "requestBody": {
+          "required": true,
+          "description": "The series to update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "name": {
+                    "$ref": "#/components/schemas/seriesName"
+                  },
+                  "description": {
+                    "$ref": "#/components/schemas/seriesDescription"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/series"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/series404"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1674,6 +1771,57 @@
             "type": "number"
           }
         }
+      },
+      "seriesWithProgressAndRSS": {
+        "type": "object",
+        "description": "A series object which includes the name and progress of the series.",
+        "properties": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/series"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "progress": {
+                  "$ref": "#/components/schemas/seriesProgress"
+                },
+                "rssFeed": {
+                  "description": "The RSS feed for the series.",
+                  "type": "string",
+                  "example": "TBD"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "seriesDescription": {
+        "description": "A description for the series. Will be null if there is none.",
+        "type": "string",
+        "nullable": true,
+        "example": "The Sword of Truth is a series of twenty one epic fantasy novels written by Terry Goodkind."
+      },
+      "series": {
+        "type": "object",
+        "description": "A series object which includes the name and description of the series.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/seriesId"
+          },
+          "name": {
+            "$ref": "#/components/schemas/seriesName"
+          },
+          "description": {
+            "$ref": "#/components/schemas/seriesDescription"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          }
+        }
       }
     },
     "responses": {
@@ -1705,6 +1853,17 @@
             "schema": {
               "type": "string",
               "example": "Library not found."
+            }
+          }
+        }
+      },
+      "series404": {
+        "description": "Series not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Series not found."
             }
           }
         }

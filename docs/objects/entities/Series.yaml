@@ -18,6 +18,23 @@ components:
       description: The position in the series the book is.
       type: string
       nullable: true
+    seriesProgress:
+      type: object
+      description: The user's progress of a series.
+      properties:
+        libraryItemIds:
+          description: The IDs of the library items in the series.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        libraryItemIdsFinished:
+          description: The IDs of the library items in the series that are finished.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        isFinished:
+          description: Whether the series is finished.
+          type: boolean
     series:
       type: object
       description: A series object which includes the name and description of the series.
@@ -85,3 +102,17 @@ components:
           $ref: '#/components/schemas/seriesName'
         sequence:
           $ref: '#/components/schemas/sequence'
+    seriesWithProgressAndRSS:
+      type: object
+      description: A series object which includes the name and progress of the series.
+      properties:
+        oneOf:
+          - $ref: '#/components/schemas/series'
+          - type: object
+            properties:
+              progress:
+                $ref: '#/components/schemas/seriesProgress'
+              rssFeed:
+                description: The RSS feed for the series.
+                type: string
+                example: 'TBD'

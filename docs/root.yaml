@@ -33,6 +33,8 @@ paths:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1issues'
   /api/libraries/{id}/series:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series'
+  /api/series/{id}:
+    $ref: './controllers/SeriesController.yaml#/paths/~1api~1series~1{id}'
 tags:
   - name: Authors
     description: Author endpoints
