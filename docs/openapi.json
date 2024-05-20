@@ -876,6 +876,96 @@
         }
       }
     },
+    "/api/libraries/{id}/series/{seriesId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the library.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        },
+        {
+          "name": "seriesId",
+          "in": "path",
+          "description": "The ID of the series.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/seriesId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibrarySeriesById",
+        "summary": "Get single series in library",
+        "description": "Get a single series in a library by ID on server.",
+        "tags": [
+          "Libraries"
+        ],
+        "requestBody": {
+          "required": false,
+          "description": "The filters to apply to the requested library series.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "$ref": "#/components/schemas/limit"
+                  },
+                  "page": {
+                    "$ref": "#/components/schemas/page"
+                  },
+                  "sort": {
+                    "description": "The field to sort by from the request.",
+                    "type": "string",
+                    "enum": [
+                      "name",
+                      "numBooks",
+                      "totalDuration",
+                      "addedAt",
+                      "lastBookAdded",
+                      "lastBookUpdated"
+                    ],
+                    "example": "numBooks",
+                    "default": "name"
+                  },
+                  "desc": {
+                    "$ref": "#/components/schemas/sortDesc"
+                  },
+                  "filter": {
+                    "$ref": "#/components/schemas/libraryFilter"
+                  },
+                  "minified": {
+                    "$ref": "#/components/schemas/minified"
+                  },
+                  "include": {
+                    "$ref": "#/components/schemas/libraryInclude"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "getLibrarySeriesById OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/seriesWithProgressAndRSS"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
     "/api/series/{id}": {
       "parameters": [
         {
@@ -890,11 +980,12 @@
       ],
       "get": {
         "operationId": "getSeries",
+        "deprecated": true,
         "tags": [
           "Series"
         ],
         "summary": "Get series",
-        "description": "Get a series by ID.",
+        "description": "Get a series by ID. This endpoint is deprecated and will be removed in the future. Use `/api/libraries/{id}/series/{seriesId}` instead.",
         "requestBody": {
           "required": false,
           "description": "A comma separated list of what to include with the series.",
