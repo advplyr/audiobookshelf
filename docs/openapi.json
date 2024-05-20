@@ -24,6 +24,10 @@
     {
       "name": "Libraries",
       "description": "Library endpoints"
+    },
+    {
+      "name": "Series",
+      "description": "Series endpoints"
     }
   ],
   "paths": {
@@ -885,6 +889,7 @@
         }
       ],
       "get": {
+        "operationId": "getSeries",
         "tags": [
           "Series"
         ],
@@ -904,7 +909,9 @@
                     "example": "progress,rssfeed",
                     "enum": [
                       "progress",
-                      "rssfeed"
+                      "rssfeed",
+                      "progress,rssfeed",
+                      "rssfeed,progress"
                     ]
                   }
                 }
@@ -929,6 +936,7 @@
         }
       },
       "patch": {
+        "operationId": "updateSeries",
         "tags": [
           "Series"
         ],
@@ -1772,30 +1780,6 @@
           }
         }
       },
-      "seriesWithProgressAndRSS": {
-        "type": "object",
-        "description": "A series object which includes the name and progress of the series.",
-        "properties": {
-          "oneOf": [
-            {
-              "$ref": "#/components/schemas/series"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "progress": {
-                  "$ref": "#/components/schemas/seriesProgress"
-                },
-                "rssFeed": {
-                  "description": "The RSS feed for the series.",
-                  "type": "string",
-                  "example": "TBD"
-                }
-              }
-            }
-          ]
-        }
-      },
       "seriesDescription": {
         "description": "A description for the series. Will be null if there is none.",
         "type": "string",
@@ -1822,6 +1806,52 @@
             "$ref": "#/components/schemas/updatedAt"
           }
         }
+      },
+      "seriesProgress": {
+        "type": "object",
+        "description": "The user's progress of a series.",
+        "properties": {
+          "libraryItemIds": {
+            "description": "The IDs of the library items in the series.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/libraryItemId"
+            }
+          },
+          "libraryItemIdsFinished": {
+            "description": "The IDs of the library items in the series that are finished.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/libraryItemId"
+            }
+          },
+          "isFinished": {
+            "description": "Whether the series is finished.",
+            "type": "boolean"
+          }
+        }
+      },
+      "seriesWithProgressAndRSS": {
+        "type": "object",
+        "description": "A series object which includes the name and progress of the series.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/series"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "progress": {
+                "$ref": "#/components/schemas/seriesProgress"
+              },
+              "rssFeed": {
+                "description": "The RSS feed for the series.",
+                "type": "string",
+                "example": "TBD"
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {

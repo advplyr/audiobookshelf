@@ -105,14 +105,13 @@ components:
     seriesWithProgressAndRSS:
       type: object
       description: A series object which includes the name and progress of the series.
-      properties:
-        oneOf:
-          - $ref: '#/components/schemas/series'
-          - type: object
-            properties:
-              progress:
-                $ref: '#/components/schemas/seriesProgress'
-              rssFeed:
-                description: The RSS feed for the series.
-                type: string
-                example: 'TBD'
+      oneOf:
+        - $ref: '#/components/schemas/series'
+        - type: object
+          properties:
+            progress:
+              $ref: '#/components/schemas/seriesProgress'
+            rssFeed:
+              description: The RSS feed for the series.
+              type: string
+              example: 'TBD'

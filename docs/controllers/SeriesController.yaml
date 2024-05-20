@@ -17,6 +17,7 @@ paths:
         schema:
           $ref: '../objects/entities/Series.yaml#/components/schemas/seriesId'
     get:
+      operationId: getSeries
       tags:
         - Series
       summary: Get series
@@ -33,7 +34,7 @@ paths:
                   type: string
                   description: A comma separated list of what to include with the series.
                   example: 'progress,rssfeed'
-                  enum: ['progress', 'rssfeed']
+                  enum: ['progress', 'rssfeed', 'progress,rssfeed', 'rssfeed,progress']
       responses:
         '200':
           description: OK
@@ -44,6 +45,7 @@ paths:
         '404':
           $ref: '#/components/responses/series404'
     patch:
+      operationId: updateSeries
       tags:
         - Series
       summary: Update series

@@ -40,3 +40,5 @@ tags:
     description: Author endpoints
   - name: Libraries
     description: Library endpoints
+  - name: Series
+    description: Series endpoints
