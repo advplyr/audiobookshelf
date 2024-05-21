@@ -395,7 +395,8 @@ paths:
     get:
       operationId: getLibrarySeriesById
       summary: Get single series in library
-      description: Get a single series in a library by ID on server.
+      description: Get a single series in a library by ID on server. This endpoint is deprecated and `/api/series/{id}` should be used instead.
+      deprecated: true
       tags:
         - Libraries
       requestBody:

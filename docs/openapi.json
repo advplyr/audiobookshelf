@@ -900,7 +900,8 @@
       "get": {
         "operationId": "getLibrarySeriesById",
         "summary": "Get single series in library",
-        "description": "Get a single series in a library by ID on server.",
+        "description": "Get a single series in a library by ID on server. This endpoint is deprecated and `/api/series/{id}` should be used instead.",
+        "deprecated": true,
         "tags": [
           "Libraries"
         ],
@@ -980,12 +981,11 @@
       ],
       "get": {
         "operationId": "getSeries",
-        "deprecated": true,
         "tags": [
           "Series"
         ],
         "summary": "Get series",
-        "description": "Get a series by ID. This endpoint is deprecated and will be removed in the future. Use `/api/libraries/{id}/series/{seriesId}` instead.",
+        "description": "Get a series by ID.",
         "requestBody": {
           "required": false,
           "description": "A comma separated list of what to include with the series.",
