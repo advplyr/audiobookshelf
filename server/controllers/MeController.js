@@ -46,14 +46,11 @@ class MeController {
     const episode = await Database.podcastEpisodeModel.findByPk(req.params.episodeId)
 
     if (!libraryItem || (libraryItem.mediaType === 'podcast' && !episode)) {
-      Logger.error(`[PlaybackSessionManager] listening-sessions: Media item not found for library item id "${req.params.libraryItemId}"`)
-      return {
-        success: false,
-        error: 'Media item not found'
-      }
+      Logger.error(`[MeController] Media item not found for library item id "${req.params.libraryItemId}"`)
+      return res.sendStatus(404)
     }
 
-    const mediaItemId = episode ? episode.id : libraryItem.mediaId
+    const mediaItemId = episode?.id || libraryItem.mediaId
     let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
