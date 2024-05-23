@@ -456,25 +456,25 @@ class User {
     return this.checkCanAccessLibraryItemWithTags(tags)
   }
 
-  findBookmark(libraryItemId, time) {
-    return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time)
+  findBookmark(libraryItemId, type, time) {
+    return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time && bm.type === type)
   }
 
-  createBookmark(libraryItemId, time, title) {
-    var existingBookmark = this.findBookmark(libraryItemId, time)
+  createBookmark(libraryItemId, type, time, title) {
+    var existingBookmark = this.findBookmark(libraryItemId, type, time)
     if (existingBookmark) {
       Logger.warn('[User] Create Bookmark already exists for this time')
       existingBookmark.title = title
       return existingBookmark
     }
     var newBookmark = new AudioBookmark()
-    newBookmark.setData(libraryItemId, time, title)
+    newBookmark.setData(libraryItemId, type, time, title)
     this.bookmarks.push(newBookmark)
     return newBookmark
   }
 
-  updateBookmark(libraryItemId, time, title) {
-    var bookmark = this.findBookmark(libraryItemId, time)
+  updateBookmark(libraryItemId, type, time, title) {
+    var bookmark = this.findBookmark(libraryItemId, type, time)
     if (!bookmark) {
       Logger.error(`[User] updateBookmark not found`)
       return null
@@ -483,8 +483,8 @@ class User {
     return bookmark
   }
 
-  removeBookmark(libraryItemId, time) {
-    this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time))
+  removeBookmark(libraryItemId, type, time) {
+    this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time || bm.type !== type))
   }
 
   checkShouldHideSeriesFromContinueListening(seriesId) {
