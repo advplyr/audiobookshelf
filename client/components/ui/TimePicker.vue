@@ -174,7 +174,7 @@ export default {
         return this.increaseFocused()
       } else if (evt.key === 'ArrowDown') {
         return this.decreaseFocused()
-      } else if (evt.key === 'Enter' || evt.key === 'Escape') {
+      } else if (evt.key === 'Enter' || evt.key === 'Escape' || evt.key === 'Tab') {
         return this.removeFocus()
       }
 
