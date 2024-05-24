@@ -20,7 +20,7 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   var tagDuration = stream.tags.DURATION || stream.tags['DURATION-eng'] || stream.tags['DURATION_eng']
   var tagBytes = stream.tags.NUMBER_OF_BYTES || stream.tags['NUMBER_OF_BYTES-eng'] || stream.tags['NUMBER_OF_BYTES_eng']
   if (tagDuration && tagBytes && !isNaN(tagDuration) && !isNaN(tagBytes)) {
-    var bps = Math.floor(Number(tagBytes) * 8 / Number(tagDuration))
+    var bps = Math.floor((Number(tagBytes) * 8) / Number(tagDuration))
     if (bps && !isNaN(bps)) {
       return bps
     }
@@ -33,7 +33,7 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
         estimated_bit_rate -= Number(stream.bit_rate)
       }
     })
-    if (!all_streams.find(s => s.codec_type === 'audio' && s.bit_rate && Number(s.bit_rate) > estimated_bit_rate)) {
+    if (!all_streams.find((s) => s.codec_type === 'audio' && s.bit_rate && Number(s.bit_rate) > estimated_bit_rate)) {
       return estimated_bit_rate
     } else {
       return total_bit_rate
@@ -73,7 +73,7 @@ function tryGrabChannelLayout(stream) {
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
-    const tagKey = Object.keys(stream.tags).find(t => t.toLowerCase() === tags[i].toLowerCase())
+    const tagKey = Object.keys(stream.tags).find((t) => t.toLowerCase() === tags[i].toLowerCase())
     const value = stream.tags[tagKey]
     if (value && value.trim()) return value.trim()
   }
@@ -101,7 +101,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
 
   if (info.type === 'video') {
     info.profile = stream.profile || null
-    info.is_avc = (stream.is_avc !== '0' && stream.is_avc !== 'false')
+    info.is_avc = stream.is_avc !== '0' && stream.is_avc !== 'false'
     info.pix_fmt = stream.pix_fmt || null
     info.frame_rate = tryGrabFrameRate(stream)
     info.width = !isNaN(stream.width) ? Number(stream.width) : null
@@ -123,7 +123,6 @@ function isNullOrNaN(val) {
   return val === null || isNaN(val)
 }
 
-
 /* Example chapter object
  * {
       "id": 71,
@@ -137,23 +136,28 @@ function isNullOrNaN(val) {
       }
  * }
  */
-function parseChapters(chapters) {
-  if (!chapters) return []
-  let index = 0
-  return chapters.map(chap => {
-    let title = chap['TAG:title'] || chap.title || ''
-    if (!title && chap.tags?.title) title = chap.tags.title
+function parseChapters(_chapters) {
+  if (!_chapters) return []
 
-    const timebase = chap.time_base?.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
-    const start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
-    const end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
-    return {
-      id: index++,
-      start,
-      end,
-      title
-    }
-  })
+  return _chapters
+    .map((chap) => {
+      let title = chap['TAG:title'] || chap.title || ''
+      if (!title && chap.tags?.title) title = chap.tags.title
+
+      const timebase = chap.time_base?.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
+      const start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
+      const end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
+      return {
+        start,
+        end,
+        title
+      }
+    })
+    .toSorted((a, b) => a.start - b.start)
+    .map((chap, index) => {
+      chap.id = index
+      return chap
+    })
 }
 
 function parseTags(format, verbose) {
@@ -210,7 +214,7 @@ function parseTags(format, verbose) {
     file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
-    file_tag_overdrive_media_marker: tryGrabTags(format, 'OverDrive MediaMarkers'),
+    file_tag_overdrive_media_marker: tryGrabTags(format, 'OverDrive MediaMarkers')
   }
   for (const key in tags) {
     if (!tags[key]) {
@@ -224,7 +228,7 @@ function parseTags(format, verbose) {
 function getDefaultAudioStream(audioStreams) {
   if (!audioStreams || !audioStreams.length) return null
   if (audioStreams.length === 1) return audioStreams[0]
-  var defaultStream = audioStreams.find(a => a.is_default)
+  var defaultStream = audioStreams.find((a) => a.is_default)
   if (!defaultStream) return audioStreams[0]
   return defaultStream
 }
@@ -248,9 +252,9 @@ function parseProbeData(data, verbose = false) {
       cleanedData.rawTags = format.tags
     }
 
-    const cleaned_streams = streams.map(s => parseMediaStreamInfo(s, streams, cleanedData.bit_rate))
-    cleanedData.video_stream = cleaned_streams.find(s => s.type === 'video')
-    const audioStreams = cleaned_streams.filter(s => s.type === 'audio')
+    const cleaned_streams = streams.map((s) => parseMediaStreamInfo(s, streams, cleanedData.bit_rate))
+    cleanedData.video_stream = cleaned_streams.find((s) => s.type === 'video')
+    const audioStreams = cleaned_streams.filter((s) => s.type === 'audio')
     cleanedData.audio_stream = getDefaultAudioStream(audioStreams)
 
     if (cleanedData.audio_stream && cleanedData.video_stream) {
@@ -280,8 +284,8 @@ function parseProbeData(data, verbose = false) {
 
 /**
  * Run ffprobe on audio filepath
- * @param {string} filepath 
- * @param {boolean} [verbose=false] 
+ * @param {string} filepath
+ * @param {boolean} [verbose=false]
  * @returns {import('../scanner/MediaProbeData')|{error:string}}
  */
 function probe(filepath, verbose = false) {
@@ -290,7 +294,7 @@ function probe(filepath, verbose = false) {
   }
 
   return ffprobe(filepath)
-    .then(raw => {
+    .then((raw) => {
       if (raw.error) {
         return {
           error: raw.error.string
@@ -318,7 +322,7 @@ module.exports.probe = probe
 
 /**
  * Ffprobe for audio file path
- * 
+ *
  * @param {string} filepath
  * @returns {Object} ffprobe json output
  */
@@ -327,11 +331,10 @@ function rawProbe(filepath) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
   }
 
-  return ffprobe(filepath)
-    .catch((err) => {
-      return {
-        error: err
-      }
-    })
+  return ffprobe(filepath).catch((err) => {
+    return {
+      error: err
+    }
+  })
 }
 module.exports.rawProbe = rawProbe
