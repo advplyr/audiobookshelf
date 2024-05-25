@@ -59,7 +59,7 @@
       </div>
     </app-settings-content>
 
-    <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="''">
+    <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="$strings.MessageEreaderDevices">
       <template #header-items>
         <div class="flex-grow" />
 

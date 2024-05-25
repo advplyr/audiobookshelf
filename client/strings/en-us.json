@@ -631,6 +631,7 @@
   "MessageDragFilesIntoTrackOrder": "Drag files into correct track order",
   "MessageEmbedFinished": "Embed Finished!",
   "MessageEpisodesQueuedForDownload": "{0} Episode(s) queued for download",
+  "MessageEreaderDevices": "To ensure delivery of ebooks, you may need to add the above email address as a valid sender for each device listed below.",
   "MessageFeedURLWillBe": "Feed URL will be {0}",
   "MessageFetching": "Fetching...",
   "MessageForceReScanDescription": "will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be scanned as new.",
