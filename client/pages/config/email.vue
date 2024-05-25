@@ -91,12 +91,12 @@
           </td>
         </tr>
       </table>
-      <div v-else class="text-center py-4">
+      <div v-else-if="!loading" class="text-center py-4">
         <p class="text-lg text-gray-100">No Devices</p>
       </div>
     </app-settings-content>
 
-    <modals-emails-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="existingEReaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
+    <modals-emails-e-reader-device-modal v-model="showEReaderDeviceModal" :users="users" :existing-devices="existingEReaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" :loadUsers="loadUsers" />
   </div>
 </template>
 
@@ -152,6 +152,7 @@ export default {
       }
     },
     async loadUsers() {
+      if (this.users.length) return
       this.users = await this.$axios
         .$get('/api/users')
         .then((res) => {
@@ -161,6 +162,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
           return []
         })
     },
@@ -169,7 +171,6 @@ export default {
       if (user === 'userOrUp') return 'Users (excluding Guests)'
       if (user === 'guestOrUp') return 'Users (including Guests)'
       if (user === 'specificUsers') {
-        this.loadUsers()
         return device.users.map((id) => this.users.find((u) => u.id === id)?.username).join(', ')
       }
       return 'Admins Only'
@@ -212,6 +213,11 @@ export default {
     ereaderDevicesUpdated(ereaderDevices) {
       this.settings.ereaderDevices = ereaderDevices
       this.newSettings.ereaderDevices = ereaderDevices.map((d) => ({ ...d }))
+
+      // Load users if a device has availability set to specific users
+      if (ereaderDevices.some((device) => device.availabilityOption === 'specificUsers')) {
+        this.loadUsers()
+      }
     },
     addNewDeviceClick() {
       this.selectedEReaderDevice = null
@@ -279,7 +285,12 @@ export default {
 
       this.$axios
         .$get(`/api/emails/settings`)
-        .then((data) => {
+        .then(async (data) => {
+          // Load users if a device has availability set to specific users
+          if (data.settings.ereaderDevices.some((device) => device.availabilityOption === 'specificUsers')) {
+            await this.loadUsers()
+          }
+
           this.settings = data.settings
           this.newSettings = {
             ...this.settings
