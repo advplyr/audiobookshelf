@@ -70,6 +70,7 @@
         <tr>
           <th class="text-left">{{ $strings.LabelName }}</th>
           <th class="text-left">{{ $strings.LabelEmail }}</th>
+          <th class="text-left">{{ $strings.LabelAccessibleBy }}</th>
           <th class="w-40"></th>
         </tr>
         <tr v-for="device in existingEReaderDevices" :key="device.name">
@@ -78,6 +79,9 @@
           </td>
           <td class="text-left">
             <p class="text-sm md:text-base text-gray-100">{{ device.email }}</p>
+          </td>
+          <td class="text-left">
+            <p class="text-sm md:text-base text-gray-100">{{ getAccessibleBy(device) }}</p>
           </td>
           <td class="w-40">
             <div class="flex justify-end items-center h-10">
@@ -105,6 +109,7 @@ export default {
   },
   data() {
     return {
+      users: [],
       loading: false,
       savingSettings: false,
       sendingTest: false,
@@ -145,6 +150,29 @@ export default {
       this.newSettings = {
         ...this.settings
       }
+    },
+    async loadUsers() {
+      this.users = await this.$axios
+        .$get('/api/users')
+        .then((res) => {
+          return res.users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          return []
+        })
+    },
+    getAccessibleBy(device) {
+      const user = device.availabilityOption
+      if (user === 'userOrUp') return 'Users (excluding Guests)'
+      if (user === 'guestOrUp') return 'Users (including Guests)'
+      if (user === 'specificUsers') {
+        this.loadUsers()
+        return device.users.map((id) => this.users.find((u) => u.id === id)?.username).join(', ')
+      }
+      return 'Admins Only'
     },
     editDeviceClick(device) {
       this.selectedEReaderDevice = device

@@ -191,6 +191,7 @@
   "LabelAbridged": "Abridged",
   "LabelAbridgedChecked": "Abridged (checked)",
   "LabelAbridgedUnchecked": "Unabridged (unchecked)",
+  "LabelAccessibleBy": "Accessible by",
   "LabelAccountType": "Account Type",
   "LabelAccountTypeAdmin": "Admin",
   "LabelAccountTypeGuest": "Guest",
