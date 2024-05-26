@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Watcher inschakelen",
   "LabelSettingsEnableWatcherForLibrary": "Map-watcher voor bibliotheek inschakelen",
   "LabelSettingsEnableWatcherHelp": "Zorgt voor het automatisch toevoegen/bijwerken van onderdelen als bestandswijzigingen worden gedetecteerd. *Vereist herstarten van server",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Experimentele functies",
   "LabelSettingsExperimentalFeaturesHelp": "Functies in ontwikkeling die je feedback en testing kunnen gebruiken. Klik om de Github-discussie te openen.",
   "LabelSettingsFindCovers": "Zoek covers",

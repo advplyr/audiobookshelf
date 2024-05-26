@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Luba vaatamine",
   "LabelSettingsEnableWatcherForLibrary": "Luba kaustavaatamine raamatukogu jaoks",
   "LabelSettingsEnableWatcherHelp": "Lubab automaatset lisamist/uuendamist, kui tuvastatakse failimuudatused. *Nõuab serveri taaskäivitamist",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Eksperimentaalsed funktsioonid",
   "LabelSettingsExperimentalFeaturesHelp": "Arengus olevad funktsioonid, mis vajavad teie tagasisidet ja abi testimisel. Klõpsake GitHubi arutelu avamiseks.",
   "LabelSettingsFindCovers": "Leia ümbrised",

@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Ativar Monitoramento",
   "LabelSettingsEnableWatcherForLibrary": "Ativa o monitoramento de pastas para a biblioteca",
   "LabelSettingsEnableWatcherHelp": "Ativa o acréscimo/atualização de itens quando forem detectadas mudanças no arquivo. *Requer reiniciar o servidor",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Funcionalidade experimentais",
   "LabelSettingsExperimentalFeaturesHelp": "Funcionalidade em desenvolvimento que se beneficiairam dos seus comentários e da sua ajuda para testar. Clique para abrir a discussão no github.",
   "LabelSettingsFindCovers": "Localizar capas",

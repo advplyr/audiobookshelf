@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "啟用監視程序",
   "LabelSettingsEnableWatcherForLibrary": "為庫啟用資料夾監視程序",
   "LabelSettingsEnableWatcherHelp": "當檢測到檔案更改時, 啟用項目的自動新增/更新. *需要重新啟動伺服器",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "實驗功能",
   "LabelSettingsExperimentalFeaturesHelp": "開發中的功能需要你的反饋並幫助測試. 點擊打開 github 討論.",
   "LabelSettingsFindCovers": "查找封面",

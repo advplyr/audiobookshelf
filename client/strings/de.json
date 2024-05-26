@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Überwachung aktivieren",
   "LabelSettingsEnableWatcherForLibrary": "Ordnerüberwachung für die Bibliothek aktivieren",
   "LabelSettingsEnableWatcherHelp": "Aktiviert das automatische Hinzufügen/Aktualisieren von Elementen, wenn Dateiänderungen erkannt werden. *Erfordert einen Server-Neustart",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Experimentelle Funktionen",
   "LabelSettingsExperimentalFeaturesHelp": "Funktionen welche sich in der Entwicklung befinden, benötigen dein Feedback und deine Hilfe beim Testen. Klicke hier, um die Github-Diskussion zu öffnen.",
   "LabelSettingsFindCovers": "Suche Titelbilder",

@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Activer la veille",
   "LabelSettingsEnableWatcherForLibrary": "Activer la surveillance des dossiers pour la bibliothèque",
   "LabelSettingsEnableWatcherHelp": "Active la mise à jour automatique automatique lorsque des modifications de fichiers sont détectées. * nécessite le redémarrage du serveur",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Fonctionnalités expérimentales",
   "LabelSettingsExperimentalFeaturesHelp": "Fonctionnalités en cours de développement sur lesquelles nous attendons votre retour et expérience. Cliquez pour ouvrir la discussion GitHub.",
   "LabelSettingsFindCovers": "Chercher des couvertures de livre",

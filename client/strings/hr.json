@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Enable Watcher",
   "LabelSettingsEnableWatcherForLibrary": "Enable folder watcher for library",
   "LabelSettingsEnableWatcherHelp": "Enables the automatic adding/updating of items when file changes are detected. *Requires server restart",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Eksperimentalni features",
   "LabelSettingsExperimentalFeaturesHelp": "Features u razvoju trebaju vaš feedback i pomoć pri testiranju. Klikni da odeš to Github discussionsa.",
   "LabelSettingsFindCovers": "Pronađi covers",

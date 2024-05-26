@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "הפעל עוקב",
   "LabelSettingsEnableWatcherForLibrary": "הפעל עוקב תיקייה עבור ספרייה",
   "LabelSettingsEnableWatcherHelp": "מאפשר הוספת/עדכון אוטומטי של פריטים כאשר שינויי קבצים זוהים. *דורש איתחול שרת",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "תכונות ניסיוניות",
   "LabelSettingsExperimentalFeaturesHelp": "תכונות בפיתוח שדורשות משובך ובדיקה. לחץ לפתיחת דיון ב-GitHub.",
   "LabelSettingsFindCovers": "מצא כריכות",

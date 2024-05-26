@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Включи наблюдателя",
   "LabelSettingsEnableWatcherForLibrary": "Включи наблюдателя за библиотека",
   "LabelSettingsEnableWatcherHelp": "Включва автоматичното добавяне/обновяване на елементи, когато се открият промени във файловете. *Изисква рестарт на сървъра",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Експериментални Функции",
   "LabelSettingsExperimentalFeaturesHelp": "Функции в разработка, които могат да изискват вашето мнение и помощ за тестване. Кликнете за да отворите дискусия в github.",
   "LabelSettingsFindCovers": "Намери Корици",

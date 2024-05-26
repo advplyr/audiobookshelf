@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Aktivera Watcher",
   "LabelSettingsEnableWatcherForLibrary": "Aktivera mappbevakning för bibliotek",
   "LabelSettingsEnableWatcherHelp": "Aktiverar automatiskt lägga till/uppdatera objekt när filändringar upptäcks. *Kräver omstart av servern",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Experimentella funktioner",
   "LabelSettingsExperimentalFeaturesHelp": "Funktioner under utveckling som behöver din feedback och hjälp med testning. Klicka för att öppna diskussionen på GitHub.",
   "LabelSettingsFindCovers": "Hitta omslag",

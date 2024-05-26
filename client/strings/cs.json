@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Povolit sledování",
   "LabelSettingsEnableWatcherForLibrary": "Povolit sledování složky pro knihovnu",
   "LabelSettingsEnableWatcherHelp": "Povoluje automatické přidávání/aktualizaci položek, když jsou zjištěny změny souborů. *Vyžaduje restart serveru",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Experimentální funkce",
   "LabelSettingsExperimentalFeaturesHelp": "Funkce ve vývoji, které by mohly využít vaši zpětnou vazbu a pomoc s testováním. Kliknutím otevřete diskuzi na githubu.",
   "LabelSettingsFindCovers": "Najít obálky",

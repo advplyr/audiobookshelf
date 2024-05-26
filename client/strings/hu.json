@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Figyelő engedélyezése",
   "LabelSettingsEnableWatcherForLibrary": "Mappafigyelő engedélyezése a könyvtárban",
   "LabelSettingsEnableWatcherHelp": "Engedélyezi az automatikus elem hozzáadás/frissítés funkciót, amikor fájlváltozásokat észlel. *Szerver újraindítása szükséges",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Kísérleti funkciók",
   "LabelSettingsExperimentalFeaturesHelp": "Fejlesztés alatt álló funkciók, amelyek visszajelzésre és tesztelésre szorulnak. Kattintson a github megbeszélés megnyitásához.",
   "LabelSettingsFindCovers": "Borítók keresése",

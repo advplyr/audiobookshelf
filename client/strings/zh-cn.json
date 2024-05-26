@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "启用监视程序",
   "LabelSettingsEnableWatcherForLibrary": "为库启用文件夹监视程序",
   "LabelSettingsEnableWatcherHelp": "当检测到文件更改时, 启用项目的自动添加/更新. *需要重新启动服务器",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "实验功能",
   "LabelSettingsExperimentalFeaturesHelp": "开发中的功能需要你的反馈并帮助测试. 点击打开 github 讨论.",
   "LabelSettingsFindCovers": "查找封面",

@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Включить отслеживание",
   "LabelSettingsEnableWatcherForLibrary": "Включить отслеживание за папками библиотеки",
   "LabelSettingsEnableWatcherHelp": "Включает автоматическое добавление/обновление элементов при обнаружении изменений файлов. *Требуется перезапуск сервера",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Экспериментальные функции",
   "LabelSettingsExperimentalFeaturesHelp": "Функционал в разработке на который Вы могли бы дать отзыв или помочь в тестировании. Нажмите для открытия обсуждения на github.",
   "LabelSettingsFindCovers": "Найти обложки",

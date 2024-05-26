@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "প্রহরী সক্ষম করুন",
   "LabelSettingsEnableWatcherForLibrary": "লাইব্রেরির জন্য ফোল্ডার প্রহরী সক্ষম করুন",
   "LabelSettingsEnableWatcherHelp": "ফাইলের পরিবর্তন শনাক্ত হলে আইটেমগুলির স্বয়ংক্রিয় যোগ/আপডেট সক্ষম করবে। *সার্ভার পুনরায় চালু করতে হবে",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "পরীক্ষামূলক বৈশিষ্ট্য",
   "LabelSettingsExperimentalFeaturesHelp": "ফিচারের বৈশিষ্ট্য যা আপনার প্রতিক্রিয়া ব্যবহার করতে পারে এবং পরীক্ষায় সহায়তা করতে পারে। গিটহাব আলোচনা খুলতে ক্লিক করুন।",
   "LabelSettingsFindCovers": "কভার খুঁজুন",

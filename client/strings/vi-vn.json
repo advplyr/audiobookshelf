@@ -471,6 +471,8 @@
   "LabelSettingsEnableWatcher": "Bật Watcher",
   "LabelSettingsEnableWatcherForLibrary": "Bật watcher thư mục cho thư viện",
   "LabelSettingsEnableWatcherHelp": "Bật chức năng tự động thêm/cập nhật các mục khi phát hiện thay đổi tập tin. *Yêu cầu khởi động lại máy chủ",
+  "LabelSettingsEpubsAllowScriptedContent": "Allow scripted content in epubs",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Allow epub files to execute scripts. It is recommended to keep this setting disabled unless you trust the source of the epub files.",
   "LabelSettingsExperimentalFeatures": "Tính năng thử nghiệm",
   "LabelSettingsExperimentalFeaturesHelp": "Các tính năng đang phát triển có thể cần phản hồi của bạn và sự giúp đỡ trong thử nghiệm. Nhấp để mở thảo luận trên github.",
   "LabelSettingsFindCovers": "Tìm ảnh bìa",
