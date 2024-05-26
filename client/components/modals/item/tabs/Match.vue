@@ -493,9 +493,6 @@ export default {
         if (match.narrator && !Array.isArray(match.narrator)) {
           match.narrator = match.narrator.split(',').map((g) => g.trim())
         }
-        if (match.author && !Array.isArray(match.author)) {
-          match.author = match.author.split(',').map((g) => g.trim())
-        }
       }
 
       console.log('Select Match', match)
