@@ -113,6 +113,50 @@ class Playlist extends Model {
     return playlistExpanded
   }
 
+  /**
+   * Get old playlist toJSONExpanded, limiting each playlist to the first 4 items.
+   * @param {[string[]]} include
+   * @returns {Promise<object>} oldPlaylist.toJSONExpanded
+   */
+  async getLimitedOldJsonExpanded(include) {
+    this.playlistMediaItems =
+      (await this.getPlaylistMediaItems({
+        include: [
+          {
+            model: this.sequelize.models.book,
+            include: this.sequelize.models.libraryItem
+          },
+          {
+            model: this.sequelize.models.podcastEpisode,
+            include: {
+              model: this.sequelize.models.podcast,
+              include: this.sequelize.models.libraryItem
+            }
+          }
+        ],
+        limit: 4,
+        order: [['order', 'ASC']]
+      })) || []
+
+    const oldPlaylist = this.sequelize.models.playlist.getOldPlaylist(this)
+    const libraryItemIds = oldPlaylist.items.map((i) => i.libraryItemId)
+
+    let libraryItems = await this.sequelize.models.libraryItem.getAllOldLibraryItems({
+      id: libraryItemIds
+    })
+
+    const playlistExpanded = oldPlaylist.toJSONExpanded(libraryItems)
+
+    if (include?.includes('rssfeed')) {
+      const feeds = await this.getFeeds()
+      if (feeds?.length) {
+        playlistExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
+      }
+    }
+
+    return playlistExpanded
+  }
+
   static createFromOld(oldPlaylist) {
     const playlist = this.getFromOld(oldPlaylist)
     return this.create(playlist)
