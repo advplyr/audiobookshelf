@@ -79,7 +79,7 @@
         <div v-if="selectedMatchOrig.narrator" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.narrator" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" :label="$strings.LabelNarrators" />
+            <ui-multi-select v-model="selectedMatch.narrator" :items="narrators" :disabled="!selectedMatchUsage.narrator" :label="$strings.LabelNarrators" />
             <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.narratorName || '' }}</p>
           </div>
         </div>
@@ -122,7 +122,7 @@
         <div v-if="selectedMatchOrig.tags" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.tags" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" :label="$strings.LabelTags" />
+            <ui-multi-select v-model="selectedMatch.tags" :items="tags" :disabled="!selectedMatchUsage.tags" :label="$strings.LabelTags" />
             <p v-if="media.tags" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ media.tags.join(', ') }}</p>
           </div>
         </div>
@@ -280,6 +280,9 @@ export default {
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
+    filterData() {
+      return this.$store.state.libraries.filterData
+    },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
@@ -305,11 +308,16 @@ export default {
     isPodcast() {
       return this.mediaType == 'podcast'
     },
+    narrators() {
+      return this.filterData.narrators || []
+    },
     genres() {
-      const filterData = this.$store.state.libraries.filterData || {}
-      const currentGenres = filterData.genres || []
+      const currentGenres = this.filterData.genres || []
       const selectedMatchGenres = this.selectedMatch.genres || []
       return [...new Set([...currentGenres, ...selectedMatchGenres])]
+    },
+    tags() {
+      return this.filterData.tags || []
     }
   },
   methods: {
@@ -479,6 +487,15 @@ export default {
           // match.genres = match.genres.join(',')
           match.genres = match.genres.split(',').map((g) => g.trim())
         }
+        if (match.tags && !Array.isArray(match.tags)) {
+          match.tags = match.tags.split(',').map((g) => g.trim())
+        }
+        if (match.narrator && !Array.isArray(match.narrator)) {
+          match.narrator = match.narrator.split(',').map((g) => g.trim())
+        }
+        if (match.author && !Array.isArray(match.author)) {
+          match.author = match.author.split(',').map((g) => g.trim())
+        }
       }
 
       console.log('Select Match', match)
@@ -522,11 +539,11 @@ export default {
             )
             updatePayload.metadata.authors = authorPayload
           } else if (key === 'narrator') {
-            updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
+            updatePayload.metadata.narrators = this.selectedMatch[key]
           } else if (key === 'genres') {
             updatePayload.metadata.genres = [...this.selectedMatch[key]]
           } else if (key === 'tags') {
-            updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())
+            updatePayload.tags = this.selectedMatch[key]
           } else if (key === 'itunesId') {
             updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
           } else {
