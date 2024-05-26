@@ -40,9 +40,10 @@ class Collection extends Model {
    * @param {[oldUser]} user
    * @param {[string]} libraryId
    * @param {[string[]]} include
+   * @param {[number]} limitCollectionSize
    * @returns {Promise<object[]>} oldCollection.toJSONExpanded
    */
-  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
+  static async getOldCollectionsJsonExpanded(user, libraryId, include, limitCollectionSize) {
     let collectionWhere = null
     if (libraryId) {
       collectionWhere = {
@@ -88,7 +89,7 @@ class Collection extends Model {
     })
     // TODO: Handle user permission restrictions on initial query
     return collections.map(c => {
-      const oldCollection = this.getOldCollection(c)
+      const oldCollection = this.getOldCollection(c, limitCollectionSize)
 
       // Filter books using user permissions
       const books = c.books?.filter(b => {
@@ -199,11 +200,15 @@ class Collection extends Model {
 
   /**
    * Get old collection from Collection
-   * @param {Collection} collectionExpanded 
+   * @param {Collection} collectionExpanded
+   * @param {number} limitCollectionSize
    * @returns {oldCollection}
    */
-  static getOldCollection(collectionExpanded) {
-    const libraryItemIds = collectionExpanded.books?.map(b => b.libraryItem?.id || null).filter(lid => lid) || []
+  static getOldCollection(collectionExpanded, limitCollectionSize) {
+    let libraryItemIds = collectionExpanded.books?.map(b => b.libraryItem?.id || null).filter(lid => lid) || []
+    if (limitCollectionSize) {
+      libraryItemIds = libraryItemIds.slice(0,limitCollectionSize)
+    }
     return new oldCollection({
       id: collectionExpanded.id,
       libraryId: collectionExpanded.libraryId,
@@ -239,7 +244,7 @@ class Collection extends Model {
 
   /**
    * Get old collection by id
-   * @param {string} collectionId 
+   * @param {string} collectionId
    * @returns {Promise<oldCollection|null>} returns null if not found
    */
   static async getOldById(collectionId) {
@@ -287,7 +292,7 @@ class Collection extends Model {
 
   /**
    * Remove all collections belonging to library
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {Promise<number>} number of collections destroyed
    */
   static async removeAllForLibrary(libraryId) {
@@ -316,7 +321,7 @@ class Collection extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
     super.init({

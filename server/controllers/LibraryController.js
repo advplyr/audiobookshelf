@@ -492,7 +492,7 @@ class LibraryController {
     }
 
     // TODO: Create paginated queries
-    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
+    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user, req.library.id, include, 2)
 
     payload.total = collections.length
 
