@@ -153,7 +153,7 @@ function parseChapters(_chapters) {
         title
       }
     })
-    .toSorted((a, b) => a.start - b.start)
+    .sort((a, b) => a.start - b.start)
     .map((chap, index) => {
       chap.id = index
       return chap
