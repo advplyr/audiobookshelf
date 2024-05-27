@@ -166,6 +166,7 @@ class ApiRouter {
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
+    this.router.get('/me/item/listening-sessions/:libraryItemId/:episodeId?', MeController.getItemListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
     this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
@@ -474,6 +475,11 @@ class ApiRouter {
 
   async getUserListeningSessionsHelper(userId) {
     const userSessions = await Database.getPlaybackSessions({ userId })
+    return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
+  }
+
+  async getUserItemListeningSessionsHelper(userId, mediaItemId) {
+    const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 

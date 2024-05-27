@@ -1,4 +1,4 @@
-const axios = require('axios')
+const axios = require('axios').default
 const { levenshteinDistance } = require('../utils/index')
 const Logger = require('../Logger')
 
@@ -16,10 +16,10 @@ class Audnexus {
   }
 
   /**
-   * 
-   * @param {string} name 
-   * @param {string} region 
-   * @returns {Promise<{asin:string, name:string}[]>} 
+   *
+   * @param {string} name
+   * @param {string} region
+   * @returns {Promise<{asin:string, name:string}[]>}
    */
   authorASINsRequest(name, region) {
     const searchParams = new URLSearchParams()
@@ -27,18 +27,21 @@ class Audnexus {
     if (region) searchParams.set('region', region)
     const authorRequestUrl = `${this.baseUrl}/authors?${searchParams.toString()}`
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
-    return axios.get(authorRequestUrl).then((res) => {
-      return res.data || []
-    }).catch((error) => {
-      Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error)
-      return []
-    })
+    return axios
+      .get(authorRequestUrl)
+      .then((res) => {
+        return res.data || []
+      })
+      .catch((error) => {
+        Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error)
+        return []
+      })
   }
 
   /**
-   * 
-   * @param {string} asin 
-   * @param {string} region 
+   *
+   * @param {string} asin
+   * @param {string} region
    * @returns {Promise<AuthorSearchObj>}
    */
   authorRequest(asin, region) {
@@ -46,18 +49,21 @@ class Audnexus {
     const regionQuery = region ? `?region=${region}` : ''
     const authorRequestUrl = `${this.baseUrl}/authors/${asin}${regionQuery}`
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
-    return axios.get(authorRequestUrl).then((res) => {
-      return res.data
-    }).catch((error) => {
-      Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
-      return null
-    })
+    return axios
+      .get(authorRequestUrl)
+      .then((res) => {
+        return res.data
+      })
+      .catch((error) => {
+        Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
+        return null
+      })
   }
 
   /**
-   * 
-   * @param {string} asin 
-   * @param {string} region 
+   *
+   * @param {string} asin
+   * @param {string} region
    * @returns {Promise<AuthorSearchObj>}
    */
   async findAuthorByASIN(asin, region) {
@@ -74,10 +80,10 @@ class Audnexus {
   }
 
   /**
-   * 
-   * @param {string} name 
-   * @param {string} region 
-   * @param {number} maxLevenshtein 
+   *
+   * @param {string} name
+   * @param {string} region
+   * @param {number} maxLevenshtein
    * @returns {Promise<AuthorSearchObj>}
    */
   async findAuthorByName(name, region, maxLevenshtein = 3) {
@@ -108,12 +114,15 @@ class Audnexus {
 
   getChaptersByASIN(asin, region) {
     Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
-    return axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`).then((res) => {
-      return res.data
-    }).catch((error) => {
-      Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
-      return null
-    })
+    return axios
+      .get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`)
+      .then((res) => {
+        return res.data
+      })
+      .catch((error) => {
+        Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
+        return null
+      })
   }
 }
 module.exports = Audnexus

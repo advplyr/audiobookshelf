@@ -1,17 +1,31 @@
-var axios = require('axios')
+const axios = require('axios').default
 
 class OpenLibrary {
+  #responseTimeout = 30000
+
   constructor() {
     this.baseUrl = 'https://openlibrary.org'
   }
 
-  get(uri) {
-    return axios.get(`${this.baseUrl}/${uri}`).then((res) => {
-      return res.data
-    }).catch((error) => {
-      console.error('Failed', error)
-      return false
-    })
+  /**
+   *
+   * @param {string} uri
+   * @param {number} timeout
+   * @returns {Promise<Object>}
+   */
+  get(uri, timeout = this.#responseTimeout) {
+    if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
+    return axios
+      .get(`${this.baseUrl}/${uri}`, {
+        timeout
+      })
+      .then((res) => {
+        return res.data
+      })
+      .catch((error) => {
+        console.error('Failed', error)
+        return null
+      })
   }
 
   async isbnLookup(isbn) {
@@ -33,7 +47,7 @@ class OpenLibrary {
       }
     }
     if (!worksData.covers) worksData.covers = []
-    var coverImages = worksData.covers.filter(c => c > 0).map(c => `https://covers.openlibrary.org/b/id/${c}-L.jpg`)
+    var coverImages = worksData.covers.filter((c) => c > 0).map((c) => `https://covers.openlibrary.org/b/id/${c}-L.jpg`)
     var description = null
     if (worksData.description) {
       if (typeof worksData.description === 'string') {
@@ -73,26 +87,34 @@ class OpenLibrary {
   }
 
   async search(query) {
-    var queryString = Object.keys(query).map(key => key + '=' + query[key]).join('&')
+    var queryString = Object.keys(query)
+      .map((key) => key + '=' + query[key])
+      .join('&')
     var lookupData = await this.get(`/search.json?${queryString}`)
     if (!lookupData) {
       return {
         errorCode: 404
       }
     }
-    var searchDocs = await Promise.all(lookupData.docs.map(d => this.cleanSearchDoc(d)))
+    var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
     return searchDocs
   }
 
-  async searchTitle(title) {
-    title = encodeURIComponent(title);
-    var lookupData = await this.get(`/search.json?title=${title}`)
+  /**
+   *
+   * @param {string} title
+   * @param {number} timeout
+   * @returns {Promise<Object[]>}
+   */
+  async searchTitle(title, timeout = this.#responseTimeout) {
+    title = encodeURIComponent(title)
+    var lookupData = await this.get(`/search.json?title=${title}`, timeout)
     if (!lookupData) {
       return {
         errorCode: 404
       }
     }
-    var searchDocs = await Promise.all(lookupData.docs.map(d => this.cleanSearchDoc(d)))
+    var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
     return searchDocs
   }
 }

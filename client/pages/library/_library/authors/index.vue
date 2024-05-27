@@ -79,9 +79,6 @@ export default {
       }
     },
     authorUpdated(author) {
-      if (this.selectedAuthor && this.selectedAuthor.id === author.id) {
-        this.$store.commit('globals/setSelectedAuthor', author)
-      }
       this.authors = this.authors.map((au) => {
         if (au.id === author.id) {
           return author

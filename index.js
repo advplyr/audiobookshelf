@@ -4,7 +4,6 @@ global.appRoot = __dirname
 const isDev = process.env.NODE_ENV !== 'production'
 if (isDev) {
   const devEnv = require('./dev').config
-  process.env.NODE_ENV = 'development'
   if (devEnv.Port) process.env.PORT = devEnv.Port
   if (devEnv.ConfigPath) process.env.CONFIG_PATH = devEnv.ConfigPath
   if (devEnv.MetadataPath) process.env.METADATA_PATH = devEnv.MetadataPath

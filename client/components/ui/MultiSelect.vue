@@ -302,6 +302,14 @@ export default {
         this.recalcMenuPos()
       })
     },
+    resetInput() {
+      this.textInput = null
+      this.currentSearch = null
+      this.selectedMenuItemIndex = null
+      this.$nextTick(() => {
+        this.blur()
+      })
+    },
     insertNewItem(item) {
       this.selected.push(item)
       this.$emit('input', this.selected)
@@ -316,15 +324,18 @@ export default {
     submitForm() {
       if (!this.textInput) return
 
-      var cleaned = this.textInput.trim()
-      var matchesItem = this.items.find((i) => {
-        return i === cleaned
-      })
-      if (matchesItem) {
-        this.clickedOption(null, matchesItem)
+      const cleaned = this.textInput.trim()
+      if (!cleaned) {
+        this.resetInput()
       } else {
-        this.insertNewItem(this.textInput)
+        const matchesItem = this.items.find((i) => i === cleaned)
+        if (matchesItem) {
+          this.clickedOption(null, matchesItem)
+        } else {
+          this.insertNewItem(cleaned)
+        }
       }
+
       if (this.$refs.input) this.$refs.input.style.width = '24px'
     },
     scroll() {

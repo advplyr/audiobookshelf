@@ -512,8 +512,7 @@ class LibraryController {
    * @param {*} res
    */
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = await Database.playlistModel.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
-    playlistsForUser = await Promise.all(playlistsForUser.map(async (p) => p.getOldJsonExpanded()))
+    let playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id, req.library.id)
 
     const payload = {
       results: [],
