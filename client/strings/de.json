@@ -384,7 +384,7 @@
   "LabelNoEpisodesSelected": "Keine Episoden ausgewählt",
   "LabelNotes": "Notizen",
   "LabelNotFinished": "Nicht beendet",
-  "LabelNotificationAppriseURL": "Informations URL(s)",
+  "LabelNotificationAppriseURL": "Apprise URL(s)",
   "LabelNotificationAvailableVariables": "Verfügbare Variablen",
   "LabelNotificationBodyTemplate": "Textvorlage",
   "LabelNotificationEvent": "Benachrichtigungs Event",
