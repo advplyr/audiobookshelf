@@ -36,8 +36,8 @@
               <td class="hidden md:table-cell">
                 <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
               </td>
-              <td class="hidden sm:table-cell">
-                <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
+              <td class="hidden sm:table-cell min-w-32 max-w-32">
+                <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
               </td>
               <td class="text-center">
                 <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
@@ -193,6 +193,7 @@ export default {
     getDeviceInfoString(deviceInfo) {
       if (!deviceInfo) return ''
       var lines = []
+      if (deviceInfo.clientName) lines.push(`${deviceInfo.clientName} ${deviceInfo.clientVersion || ''}`)
       if (deviceInfo.osName) lines.push(`${deviceInfo.osName} ${deviceInfo.osVersion}`)
       if (deviceInfo.browserName) lines.push(deviceInfo.browserName)
 
@@ -213,7 +214,7 @@ export default {
         return null
       })
       if (!data) {
-        this.$toast.error('Failed to load listening sessions')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return
       }
 

@@ -117,16 +117,20 @@ class LibraryItemController {
     zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
-  //
-  // PATCH: will create new authors & series if in payload
-  //
+  /**
+   * PATCH: /items/:id/media
+   * Update media for a library item. Will create new authors & series when necessary
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async updateMedia(req, res) {
     const libraryItem = req.libraryItem
     const mediaPayload = req.body
 
     if (mediaPayload.url) {
       await LibraryItemController.prototype.uploadCover.bind(this)(req, res, false)
-      if (res.writableEnded) return
+      if (res.writableEnded || res.headersSent) return
     }
 
     // Book specific

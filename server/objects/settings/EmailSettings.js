@@ -105,6 +105,10 @@ class EmailSettings {
       host: this.host,
       secure: this.secure
     }
+    // Only set to true for port 465 (https://nodemailer.com/smtp/#tls-options)
+    if (this.port !== 465) {
+      payload.secure = false
+    }
     if (this.port) payload.port = this.port
     if (this.user && this.pass !== undefined) {
       payload.auth = {

@@ -18,8 +18,8 @@
         <form @submit.prevent="submitServerSetup">
           <p class="text-lg font-semibold mb-2 pl-1 text-center">Create Root User</p>
           <ui-text-input-with-label v-model.trim="newRoot.username" label="Username" :disabled="processing" class="w-full mb-3 text-sm" />
-          <ui-text-input-with-label v-model.trim="newRoot.password" label="Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
-          <ui-text-input-with-label v-model.trim="confirmPassword" label="Confirm Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
+          <ui-text-input-with-label v-model="newRoot.password" label="Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
+          <ui-text-input-with-label v-model="confirmPassword" label="Confirm Password" type="password" :disabled="processing" class="w-full mb-3 text-sm" />
 
           <p class="text-lg font-semibold mt-6 mb-2 pl-1 text-center">Directory Paths</p>
           <ui-text-input-with-label v-model="ConfigPath" label="Config Path" disabled class="w-full mb-3 text-sm" />

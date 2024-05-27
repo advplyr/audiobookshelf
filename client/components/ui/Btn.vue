@@ -1,5 +1,5 @@
 <template>
-  <nuxt-link v-if="to" :to="to" class="abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center" :disabled="disabled || loading" :class="classList">
+  <nuxt-link v-if="to" :to="to" class="abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center" :disabled="disabled || loading" :class="classList" @click.native="click">
     <slot />
     <div v-if="loading" class="text-white absolute top-0 left-0 w-full h-full flex items-center justify-center text-opacity-100">
       <svg class="animate-spin" style="width: 24px; height: 24px" viewBox="0 0 24 24">

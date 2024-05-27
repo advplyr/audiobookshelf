@@ -19,3 +19,4 @@
 sw.*
 .DS_STORE
 .idea/*
+tailwind.compiled.css

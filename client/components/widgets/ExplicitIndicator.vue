@@ -1,5 +1,5 @@
 <template>
-  <ui-tooltip v-if="explicit" :text="$strings.LabelExplicit" direction="top">
+  <ui-tooltip :text="$strings.LabelExplicit" direction="top">
     <svg xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" viewBox="0 0 512 512" class="ml-1">
       <path
         fill="white"
@@ -40,9 +40,7 @@
 
 <script>
 export default {
-  props: {
-    explicit: Boolean
-  },
+  props: {},
   data() {
     return {}
   },

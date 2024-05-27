@@ -1,6 +1,14 @@
 <template>
   <div>
     <app-settings-content :header-text="$strings.HeaderEmailSettings" :description="''">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/send_to_ereader" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
       <form @submit.prevent="submitForm">
         <div class="flex items-center -mx-1 mb-2">
           <div class="w-full md:w-3/4 px-1">
@@ -51,7 +59,7 @@
       </div>
     </app-settings-content>
 
-    <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="''">
+    <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="$strings.MessageEreaderDevices">
       <template #header-items>
         <div class="flex-grow" />
 
@@ -62,6 +70,7 @@
         <tr>
           <th class="text-left">{{ $strings.LabelName }}</th>
           <th class="text-left">{{ $strings.LabelEmail }}</th>
+          <th class="text-left">{{ $strings.LabelAccessibleBy }}</th>
           <th class="w-40"></th>
         </tr>
         <tr v-for="device in existingEReaderDevices" :key="device.name">
@@ -71,6 +80,9 @@
           <td class="text-left">
             <p class="text-sm md:text-base text-gray-100">{{ device.email }}</p>
           </td>
+          <td class="text-left">
+            <p class="text-sm md:text-base text-gray-100">{{ getAccessibleBy(device) }}</p>
+          </td>
           <td class="w-40">
             <div class="flex justify-end items-center h-10">
               <ui-icon-btn icon="edit" borderless :size="8" icon-font-size="1.1rem" :disabled="deletingDeviceName === device.name" class="mx-1" @click="editDeviceClick(device)" />
@@ -79,12 +91,12 @@
           </td>
         </tr>
       </table>
-      <div v-else class="text-center py-4">
+      <div v-else-if="!loading" class="text-center py-4">
         <p class="text-lg text-gray-100">No Devices</p>
       </div>
     </app-settings-content>
 
-    <modals-emails-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="existingEReaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
+    <modals-emails-e-reader-device-modal v-model="showEReaderDeviceModal" :users="users" :existing-devices="existingEReaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" :loadUsers="loadUsers" />
   </div>
 </template>
 
@@ -97,6 +109,7 @@ export default {
   },
   data() {
     return {
+      users: [],
       loading: false,
       savingSettings: false,
       sendingTest: false,
@@ -138,6 +151,30 @@ export default {
         ...this.settings
       }
     },
+    async loadUsers() {
+      if (this.users.length) return
+      this.users = await this.$axios
+        .$get('/api/users')
+        .then((res) => {
+          return res.users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
+          return []
+        })
+    },
+    getAccessibleBy(device) {
+      const user = device.availabilityOption
+      if (user === 'userOrUp') return 'Users (excluding Guests)'
+      if (user === 'guestOrUp') return 'Users (including Guests)'
+      if (user === 'specificUsers') {
+        return device.users.map((id) => this.users.find((u) => u.id === id)?.username).join(', ')
+      }
+      return 'Admins Only'
+    },
     editDeviceClick(device) {
       this.selectedEReaderDevice = device
       this.showEReaderDeviceModal = true
@@ -176,6 +213,11 @@ export default {
     ereaderDevicesUpdated(ereaderDevices) {
       this.settings.ereaderDevices = ereaderDevices
       this.newSettings.ereaderDevices = ereaderDevices.map((d) => ({ ...d }))
+
+      // Load users if a device has availability set to specific users
+      if (ereaderDevices.some((device) => device.availabilityOption === 'specificUsers')) {
+        this.loadUsers()
+      }
     },
     addNewDeviceClick() {
       this.selectedEReaderDevice = null
@@ -243,7 +285,12 @@ export default {
 
       this.$axios
         .$get(`/api/emails/settings`)
-        .then((data) => {
+        .then(async (data) => {
+          // Load users if a device has availability set to specific users
+          if (data.settings.ereaderDevices.some((device) => device.availabilityOption === 'specificUsers')) {
+            await this.loadUsers()
+          }
+
           this.settings = data.settings
           this.newSettings = {
             ...this.settings
@@ -251,7 +298,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get email settings', error)
-          this.$toast.error('Failed to load email settings')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.loading = false

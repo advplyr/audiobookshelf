@@ -60,8 +60,19 @@
         </ui-tooltip>
       </div>
     </div>
+    <div v-if="isBookLibrary" class="py-3">
+      <div class="flex items-center">
+        <ui-toggle-switch v-model="epubsAllowScriptedContent" @input="formUpdated" />
+        <ui-tooltip :text="$strings.LabelSettingsEpubsAllowScriptedContentHelp">
+          <p class="pl-4 text-base">
+            {{ $strings.LabelSettingsEpubsAllowScriptedContent }}
+            <span class="material-icons icon-text text-sm">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+    </div>
     <div v-if="isPodcastLibrary" class="py-3">
-      <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-52" @input="formUpdated" />
+      <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-72" menu-max-height="200px" @input="formUpdated" />
     </div>
   </div>
 </template>
@@ -83,6 +94,7 @@ export default {
       skipMatchingMediaWithAsin: false,
       skipMatchingMediaWithIsbn: false,
       audiobooksOnly: false,
+      epubsAllowScriptedContent: false,
       hideSingleBookSeries: false,
       onlyShowLaterBooksInContinueSeries: false,
       podcastSearchRegion: 'us'
@@ -118,6 +130,7 @@ export default {
           skipMatchingMediaWithAsin: !!this.skipMatchingMediaWithAsin,
           skipMatchingMediaWithIsbn: !!this.skipMatchingMediaWithIsbn,
           audiobooksOnly: !!this.audiobooksOnly,
+          epubsAllowScriptedContent: !!this.epubsAllowScriptedContent,
           hideSingleBookSeries: !!this.hideSingleBookSeries,
           onlyShowLaterBooksInContinueSeries: !!this.onlyShowLaterBooksInContinueSeries,
           podcastSearchRegion: this.podcastSearchRegion
@@ -133,6 +146,7 @@ export default {
       this.skipMatchingMediaWithAsin = !!this.librarySettings.skipMatchingMediaWithAsin
       this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
       this.audiobooksOnly = !!this.librarySettings.audiobooksOnly
+      this.epubsAllowScriptedContent = !!this.librarySettings.epubsAllowScriptedContent
       this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries
       this.onlyShowLaterBooksInContinueSeries = !!this.librarySettings.onlyShowLaterBooksInContinueSeries
       this.podcastSearchRegion = this.librarySettings.podcastSearchRegion || 'us'

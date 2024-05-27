@@ -5,6 +5,8 @@ import { supplant } from './utils'
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
+  'bg': { label: 'Български', dateFnsLocale: 'bg' },
+  'bn': { label: 'বাংলা', dateFnsLocale: 'bn' },
   'cs': { label: 'Čeština', dateFnsLocale: 'cs' },
   'da': { label: 'Dansk', dateFnsLocale: 'da' },
   'de': { label: 'Deutsch', dateFnsLocale: 'de' },
@@ -37,7 +39,30 @@ Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
 
 // iTunes search API uses ISO 3166 country codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 const podcastSearchRegionMap = {
+  'br': { label: 'Brasil' },
+  'be': { label: 'België / Belgique / Belgien' },
+  'cz': { label: 'Česko' },
+  'dk': { label: 'Danmark' },
+  'de': { label: 'Deutschland' },
+  'ee': { label: 'Eesti' },
+  'es': { label: 'España / Espanya / Espainia' },
+  'fr': { label: 'France' },
+  'hr': { label: 'Hrvatska' },
+  'il': { label: 'ישראל / إسرائيل' },
+  'it': { label: 'Italia' },
+  'lu': { label: 'Luxembourg / Luxemburg / Lëtezebuerg' },
+  'hu': { label: 'Magyarország' },
+  'nl': { label: 'Nederland' },
+  'no': { label: 'Norge' },
+  'at': { label: 'Österreich' },
+  'pl': { label: 'Polska' },
+  'pt': { label: 'Portugal' },
+  'ru': { label: 'Россия' },
+  'ch': { label: 'Schweiz / Suisse / Svizzera' },
+  'se': { label: 'Sverige' },
+  'vn': { label: 'Việt Nam' },
   'ua': { label: 'Україна' },
+  'gb': { label: 'United Kingdom' },
   'us': { label: 'United States' },
   'cn': { label: '中国' }
 }
@@ -49,14 +74,22 @@ Vue.prototype.$podcastSearchRegionOptions = Object.keys(podcastSearchRegionMap).
 })
 
 Vue.prototype.$languageCodes = {
-  default: defaultCode,
-  current: defaultCode,
-  local: null,
-  server: null
+  default: defaultCode, // en-us
+  current: defaultCode, // Current language code in use
+  local: null, // Language code set at user level
+  server: null // Language code set at server level
 }
 
+// Currently loaded strings (default enUS)
 Vue.prototype.$strings = { ...enUsStrings }
 
+/**
+ * Get string and substitute
+ * 
+ * @param {string} key 
+ * @param {string[]} subs 
+ * @returns {string}
+ */
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
@@ -65,7 +98,11 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
-var translations = {
+Vue.prototype.$formatNumber = (num) => {
+  return Intl.NumberFormat(Vue.prototype.$languageCodes.current).format(num)
+}
+
+const translations = {
   [defaultCode]: enUsStrings
 }
 

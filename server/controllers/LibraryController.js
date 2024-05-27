@@ -23,7 +23,7 @@ const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcast
 const authorFilters = require('../utils/queries/authorFilters')
 
 class LibraryController {
-  constructor() { }
+  constructor() {}
 
   async create(req, res) {
     const newLibraryPayload = {
@@ -35,7 +35,7 @@ class LibraryController {
 
     // Validate that the custom provider exists if given any
     if (newLibraryPayload.provider?.startsWith('custom-')) {
-      if (!await Database.customMetadataProviderModel.checkExistsBySlug(newLibraryPayload.provider)) {
+      if (!(await Database.customMetadataProviderModel.checkExistsBySlug(newLibraryPayload.provider))) {
         Logger.error(`[LibraryController] Custom metadata provider "${newLibraryPayload.provider}" does not exist`)
         return res.status(400).send('Custom metadata provider does not exist')
       }
@@ -43,14 +43,15 @@ class LibraryController {
 
     // Validate folder paths exist or can be created & resolve rel paths
     //   returns 400 if a folder fails to access
-    newLibraryPayload.folders = newLibraryPayload.folders.map(f => {
+    newLibraryPayload.folders = newLibraryPayload.folders.map((f) => {
       f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
       return f
     })
     for (const folder of newLibraryPayload.folders) {
       try {
         const direxists = await fs.pathExists(folder.fullPath)
-        if (!direxists) { // If folder does not exist try to make it and set file permissions/owner
+        if (!direxists) {
+          // If folder does not exist try to make it and set file permissions/owner
           await fs.mkdir(folder.fullPath)
         }
       } catch (error) {
@@ -85,20 +86,20 @@ class LibraryController {
     const librariesAccessible = req.user.librariesAccessible || []
     if (librariesAccessible.length) {
       return res.json({
-        libraries: libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON())
+        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toJSON())
       })
     }
 
     res.json({
-      libraries: libraries.map(lib => lib.toJSON())
+      libraries: libraries.map((lib) => lib.toJSON())
     })
   }
 
   /**
    * GET: /api/libraries/:id
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
@@ -120,20 +121,27 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/episode-downloads
    * Get podcast episodes in download queue
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async getEpisodeDownloadQueue(req, res) {
     const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
     res.json(libraryDownloadQueueDetails)
   }
 
+  /**
+   * PATCH: /api/libraries/:id
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async update(req, res) {
+    /** @type {import('../objects/Library')} */
     const library = req.library
 
     // Validate that the custom provider exists if given any
     if (req.body.provider?.startsWith('custom-')) {
-      if (!await Database.customMetadataProviderModel.checkExistsBySlug(req.body.provider)) {
+      if (!(await Database.customMetadataProviderModel.checkExistsBySlug(req.body.provider))) {
         Logger.error(`[LibraryController] Custom metadata provider "${req.body.provider}" does not exist`)
         return res.status(400).send('Custom metadata provider does not exist')
       }
@@ -143,7 +151,7 @@ class LibraryController {
     //   returns 400 if a new folder fails to access
     if (req.body.folders) {
       const newFolderPaths = []
-      req.body.folders = req.body.folders.map(f => {
+      req.body.folders = req.body.folders.map((f) => {
         if (!f.id) {
           f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
           newFolderPaths.push(f.fullPath)
@@ -154,10 +162,13 @@ class LibraryController {
         const pathExists = await fs.pathExists(path)
         if (!pathExists) {
           // Ensure dir will recursively create directories which might be preferred over mkdir
-          const success = await fs.ensureDir(path).then(() => true).catch((error) => {
-            Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
-            return false
-          })
+          const success = await fs
+            .ensureDir(path)
+            .then(() => true)
+            .catch((error) => {
+              Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
+              return false
+            })
           if (!success) {
             return res.status(400).send(`Invalid folder directory "${path}"`)
           }
@@ -166,7 +177,7 @@ class LibraryController {
 
       // Handle removing folders
       for (const folder of library.folders) {
-        if (!req.body.folders.some(f => f.id === folder.id)) {
+        if (!req.body.folders.some((f) => f.id === folder.id)) {
           // Remove library items in folder
           const libraryItemsInFolder = await Database.libraryItemModel.findAll({
             where: {
@@ -188,7 +199,7 @@ class LibraryController {
           for (const libraryItem of libraryItemsInFolder) {
             let mediaItemIds = []
             if (library.isPodcast) {
-              mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+              mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
             } else {
               mediaItemIds.push(libraryItem.mediaId)
             }
@@ -224,8 +235,8 @@ class LibraryController {
   /**
    * DELETE: /api/libraries/:id
    * Delete a library
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async delete(req, res) {
     const library = req.library
@@ -260,7 +271,7 @@ class LibraryController {
     for (const libraryItem of libraryItemsInLibrary) {
       let mediaItemIds = []
       if (library.isPodcast) {
-        mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+        mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
       }
@@ -286,12 +297,15 @@ class LibraryController {
 
   /**
    * GET /api/libraries/:id/items
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getLibraryItems(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => !!v)
 
     const payload = {
       results: [],
@@ -309,7 +323,9 @@ class LibraryController {
     payload.offset = payload.page * payload.limit
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
-    if (payload.filterBy?.split('.')[0] === 'series' && payload.collapseseries) {
+    const filterByGroup = payload.filterBy?.split('.').shift()
+    const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
+    if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
       payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
     } else {
@@ -324,8 +340,8 @@ class LibraryController {
   /**
    * DELETE: /libraries/:id/issues
    * Remove all library items missing or invalid
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async removeLibraryItemsWithIssues(req, res) {
     const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
@@ -362,7 +378,7 @@ class LibraryController {
     for (const libraryItem of libraryItemsWithIssues) {
       let mediaItemIds = []
       if (req.library.isPodcast) {
-        mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+        mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
       }
@@ -379,14 +395,17 @@ class LibraryController {
   }
 
   /**
- * GET: /api/libraries/:id/series
- * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
- * 
- * @param {import('express').Request} req 
- * @param {import('express').Response} res 
- */
+   * GET: /api/libraries/:id/series
+   * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async getAllSeriesForLibrary(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => !!v)
 
     const payload = {
       results: [],
@@ -414,12 +433,15 @@ class LibraryController {
    * Optional includes (e.g. `?include=rssfeed,progress`)
    * rssfeed: adds `rssFeed` to series object if a feed is open
    * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
-   * 
-   * @param {import('express').Request} req 
+   *
+   * @param {import('express').Request} req
    * @param {import('express').Response} res - Series
    */
   async getSeriesForLibrary(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => !!v)
 
     const series = await Database.seriesModel.findByPk(req.params.seriesId)
     if (!series) return res.sendStatus(404)
@@ -429,10 +451,10 @@ class LibraryController {
 
     const seriesJson = oldSeries.toJSON()
     if (include.includes('progress')) {
-      const libraryItemsFinished = libraryItemsInSeries.filter(li => !!req.user.getMediaProgress(li.id)?.isFinished)
+      const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.id)?.isFinished)
       seriesJson.progress = {
-        libraryItemIds: libraryItemsInSeries.map(li => li.id),
-        libraryItemIdsFinished: libraryItemsFinished.map(li => li.id),
+        libraryItemIds: libraryItemsInSeries.map((li) => li.id),
+        libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
         isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length
       }
     }
@@ -448,11 +470,14 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/collections
    * Get all collections for library
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async getCollectionsForLibrary(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => !!v)
 
     const payload = {
       results: [],
@@ -483,12 +508,12 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/playlists
    * Get playlists for user in library
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async getUserPlaylistsForLibrary(req, res) {
     let playlistsForUser = await Database.playlistModel.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
-    playlistsForUser = await Promise.all(playlistsForUser.map(async p => p.getOldJsonExpanded()))
+    playlistsForUser = await Promise.all(playlistsForUser.map(async (p) => p.getOldJsonExpanded()))
 
     const payload = {
       results: [],
@@ -508,8 +533,8 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/filterdata
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getLibraryFilterData(req, res) {
     const filterData = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
@@ -519,12 +544,15 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/personalized
    * Home page shelves
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getUserPersonalizedShelves(req, res) {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
-    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim().toLowerCase())
+      .filter((v) => !!v)
     const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
     res.json(shelves)
   }
@@ -532,8 +560,8 @@ class LibraryController {
   /**
    * POST: /api/libraries/order
    * Change the display order of libraries
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async reorder(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -545,7 +573,7 @@ class LibraryController {
     const orderdata = req.body
     let hasUpdates = false
     for (let i = 0; i < orderdata.length; i++) {
-      const library = libraries.find(lib => lib.id === orderdata[i].id)
+      const library = libraries.find((lib) => lib.id === orderdata[i].id)
       if (!library) {
         Logger.error(`[LibraryController] Invalid library not found in reorder ${orderdata[i].id}`)
         return res.sendStatus(500)
@@ -564,7 +592,7 @@ class LibraryController {
     }
 
     res.json({
-      libraries: libraries.map(lib => lib.toJSON())
+      libraries: libraries.map((lib) => lib.toJSON())
     })
   }
 
@@ -572,8 +600,8 @@ class LibraryController {
    * GET: /api/libraries/:id/search
    * Search library items with query
    * ?q=search
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async search(req, res) {
     if (!req.query.q || typeof req.query.q !== 'string') {
@@ -589,8 +617,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/stats
    * Get stats for library
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async stats(req, res) {
     const stats = {
@@ -598,12 +626,12 @@ class LibraryController {
     }
 
     if (req.library.isBook) {
-      const authors = await authorFilters.getAuthorsWithCount(req.library.id)
+      const authors = await authorFilters.getAuthorsWithCount(req.library.id, 10)
       const genres = await libraryItemsBookFilters.getGenresWithCount(req.library.id)
       const bookStats = await libraryItemsBookFilters.getBookLibraryStats(req.library.id)
       const longestBooks = await libraryItemsBookFilters.getLongestBooks(req.library.id, 10)
 
-      stats.totalAuthors = authors.length
+      stats.totalAuthors = await authorFilters.getAuthorsTotalCount(req.library.id)
       stats.authorsWithCount = authors
       stats.totalGenres = genres.length
       stats.genresWithCount = genres
@@ -631,8 +659,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/authors
    * Get authors for library
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getAuthors(req, res) {
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
@@ -650,9 +678,7 @@ class LibraryController {
           attributes: []
         }
       },
-      order: [
-        [Sequelize.literal('name COLLATE NOCASE'), 'ASC']
-      ]
+      order: [[Sequelize.literal('name COLLATE NOCASE'), 'ASC']]
     })
 
     const oldAuthors = []
@@ -671,8 +697,8 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/narrators
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async getNarrators(req, res) {
     // Get all books with narrators
@@ -692,7 +718,7 @@ class LibraryController {
 
     const narrators = {}
     for (const book of booksWithNarrators) {
-      book.narrators.forEach(n => {
+      book.narrators.forEach((n) => {
         if (typeof n !== 'string') {
           Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${book.title}"`)
         } else if (!narrators[n]) {
@@ -708,7 +734,7 @@ class LibraryController {
     }
 
     res.json({
-      narrators: naturalSort(Object.values(narrators)).asc(n => n.name)
+      narrators: naturalSort(Object.values(narrators)).asc((n) => n.name)
     })
   }
 
@@ -717,8 +743,8 @@ class LibraryController {
    * Update narrator name
    * :narratorId is base64 encoded name
    * req.body { name }
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async updateNarrator(req, res) {
     if (!req.user.canUpdate) {
@@ -740,7 +766,7 @@ class LibraryController {
     const itemsWithNarrator = await libraryItemFilters.getAllLibraryItemsWithNarrators([narratorName])
 
     for (const libraryItem of itemsWithNarrator) {
-      libraryItem.media.narrators = libraryItem.media.narrators.filter(n => n !== narratorName)
+      libraryItem.media.narrators = libraryItem.media.narrators.filter((n) => n !== narratorName)
       if (!libraryItem.media.narrators.includes(updatedName)) {
         libraryItem.media.narrators.push(updatedName)
       }
@@ -752,7 +778,10 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+      SocketAuthority.emitter(
+        'items_updated',
+        itemsUpdated.map((li) => li.toJSONExpanded())
+      )
     }
 
     res.json({
@@ -764,8 +793,8 @@ class LibraryController {
    * DELETE: /api/libraries/:id/narrators/:narratorId
    * Remove narrator
    * :narratorId is base64 encoded name
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async removeNarrator(req, res) {
     if (!req.user.canUpdate) {
@@ -783,7 +812,7 @@ class LibraryController {
     const itemsWithNarrator = await libraryItemFilters.getAllLibraryItemsWithNarrators([narratorName])
 
     for (const libraryItem of itemsWithNarrator) {
-      libraryItem.media.narrators = libraryItem.media.narrators.filter(n => n !== narratorName)
+      libraryItem.media.narrators = libraryItem.media.narrators.filter((n) => n !== narratorName)
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
@@ -792,7 +821,10 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+      SocketAuthority.emitter(
+        'items_updated',
+        itemsUpdated.map((li) => li.toJSONExpanded())
+      )
     }
 
     res.json({
@@ -803,9 +835,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/matchall
    * Quick match all library items. Book libraries only.
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async matchAll(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -820,9 +852,9 @@ class LibraryController {
    * POST: /api/libraries/:id/scan
    * Optional query:
    * ?force=1
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -841,8 +873,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/recent-episodes
    * Used for latest page
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getRecentEpisodes(req, res) {
     if (!req.library.isPodcast) {
@@ -852,7 +884,7 @@ class LibraryController {
     const payload = {
       episodes: [],
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
     }
 
     const offset = payload.page * payload.limit
@@ -863,8 +895,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/opml
    * Get OPML file for a podcast library
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getOPMLFile(req, res) {
     const userPermissionPodcastWhere = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(req.user)
@@ -888,9 +920,9 @@ class LibraryController {
 
   /**
    * Remove all metadata.json or metadata.abs files in library item folders
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async removeAllMetadataFiles(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -922,10 +954,10 @@ class LibraryController {
 
     let numRemoved = 0
     for (const libraryItem of libraryItemsWithMetadata) {
-      const metadataFilepath = libraryItem.libraryFiles.find(lf => lf.metadata.filename === metadataFilename)?.metadata.path
+      const metadataFilepath = libraryItem.libraryFiles.find((lf) => lf.metadata.filename === metadataFilename)?.metadata.path
       if (!metadataFilepath) continue
       Logger.debug(`[LibraryController] Removing file "${metadataFilepath}"`)
-      if ((await fileUtils.removeFile(metadataFilepath))) {
+      if (await fileUtils.removeFile(metadataFilepath)) {
         numRemoved++
       }
     }
@@ -938,9 +970,9 @@ class LibraryController {
 
   /**
    * Middleware that is not using libraryItems from memory
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
-   * @param {import('express').NextFunction} next 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
    */
   async middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {

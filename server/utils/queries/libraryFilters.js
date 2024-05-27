@@ -451,7 +451,7 @@ module.exports = {
             libraryId: libraryId
           }
         },
-        attributes: ['tags', 'genres']
+        attributes: ['tags', 'genres', 'language']
       })
       for (const podcast of podcasts) {
         if (podcast.tags?.length) {
@@ -459,6 +459,9 @@ module.exports = {
         }
         if (podcast.genres?.length) {
           podcast.genres.forEach((genre) => data.genres.add(genre))
+        }
+        if (podcast.language) {
+          data.languages.add(podcast.language)
         }
       }
     } else {

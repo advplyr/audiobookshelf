@@ -236,6 +236,11 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelLanguage,
+          value: 'languages',
+          sublist: true
+        },
+        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false

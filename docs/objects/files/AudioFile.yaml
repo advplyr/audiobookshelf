@@ -1,0 +1,94 @@
+components:
+  schemas:
+    audioFile:
+      type: object
+      description: An audio file for a book. Includes audio metadata and track numbers.
+      properties:
+        index:
+          description: The index of the audio file.
+          type: integer
+          example: 1
+        ino:
+          $ref: '../../schemas.yaml#/components/schemas/inode'
+        metadata:
+          $ref: '../metadata/FileMetadata.yaml#/components/schemas/fileMetadata'
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+        trackNumFromMeta:
+          description: The track number of the audio file as pulled from the file's metadata. Will be null if unknown.
+          type: integer
+          nullable: true
+          example: 1
+        discNumFromMeta:
+          description: The disc number of the audio file as pulled from the file's metadata. Will be null if unknown.
+          type: string
+          nullable: true
+        trackNumFromFilename:
+          description: The track number of the audio file as determined from the file's name. Will be null if unknown.
+          type: integer
+          nullable: true
+          example: 1
+        discNumFromFilename:
+          description: The disc number of the audio file as determined from the file's name. Will be null if unknown.
+          type: string
+          nullable: true
+        manuallyVerified:
+          description: Whether the audio file has been manually verified by a user.
+          type: boolean
+        invalid:
+          description: Whether the audio file is missing from the server.
+          type: boolean
+        exclude:
+          description: Whether the audio file has been marked for exclusion.
+          type: boolean
+        error:
+          description: Any error with the audio file. Will be null if there is none.
+          type: string
+          nullable: true
+        format:
+          description: The format of the audio file.
+          type: string
+          example: MP2/3 (MPEG audio layer 2/3)
+        duration:
+          $ref: '#/components/schemas/durationSec'
+        bitRate:
+          description: The bit rate (in bit/s) of the audio file.
+          type: integer
+          example: 64000
+        language:
+          description: The language of the audio file.
+          type: string
+          nullable: true
+        codec:
+          description: The codec of the audio file.
+          type: string
+          example: mp3
+        timeBase:
+          description: The time base of the audio file.
+          type: string
+          example: 1/14112000
+        channels:
+          description: The number of channels the audio file has.
+          type: integer
+          example: 2
+        channelLayout:
+          description: The layout of the audio file's channels.
+          type: string
+          example: stereo
+        chapters:
+          description: If the audio file is part of an audiobook, the chapters the file contains.
+          type: array
+          items:
+            $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
+        embeddedCoverArt:
+          description: The type of embedded cover art in the audio file. Will be null if none exists.
+          type: string
+          nullable: true
+        metaTags:
+          $ref: '../metadata/AudioMetaTags.yaml#/components/schemas/audioMetaTags'
+        mimeType:
+          description: The MIME type of the audio file.
+          type: string
+          example: audio/mpeg

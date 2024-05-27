@@ -18,7 +18,7 @@
                     <div class="flex" @click.stop>
                       <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                     </div>
-                    <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                    <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                   </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
@@ -29,7 +29,7 @@
                   <div class="flex" @click.stop>
                     <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                   </div>
-                  <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                  <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                 </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>
@@ -40,12 +40,12 @@
                 <div v-if="episode.episode">{{ episode.episode }}</div>
               </div>
 
-              <div class="flex items-center mb-2">
+              <div dir="auto" class="flex items-center mb-2">
                 <div class="font-semibold text-sm md:text-base">{{ episode.title }}</div>
                 <widgets-podcast-type-indicator :type="episode.episodeType" />
               </div>
 
-              <p class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
+              <p dir="auto" class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
 
               <div class="flex items-center">
                 <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">

@@ -27,17 +27,20 @@
               <h1 class="text-2xl md:text-3xl font-semibold">
                 <div class="flex items-center">
                   {{ title }}
-                  <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-explicit-indicator v-if="isExplicit" />
                   <widgets-abridged-indicator v-if="isAbridged" />
                 </div>
               </h1>
 
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
 
-              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
+              <template v-for="(_series, index) in seriesList">
+                <nuxt-link :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7">{{ _series.text }}</nuxt-link
+                ><span :key="index" v-if="index < seriesList.length - 1">, </span>
+              </template>
 
               <template v-if="!isVideo">
-                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
+                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
                 <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
                   <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
@@ -125,9 +128,9 @@
           </div>
 
           <div class="my-4 w-full">
-            <p ref="description" id="item-description" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
+            <p ref="description" id="item-description" dir="auto" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
-              {{ showFullDescription ? 'Read less' : 'Read more' }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
+              {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
             </button>
           </div>
 
@@ -282,7 +285,7 @@ export default {
       return this.mediaMetadata.subtitle
     },
     podcastAuthor() {
-      return this.mediaMetadata.author || ''
+      return this.mediaMetadata.author || 'Unknown'
     },
     authors() {
       return this.mediaMetadata.authors || []
