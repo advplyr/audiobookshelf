@@ -26,19 +26,22 @@ class CollectionBook extends Model {
   }
 
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        order: DataTypes.INTEGER
       },
-      order: DataTypes.INTEGER
-    }, {
-      sequelize,
-      timestamps: true,
-      updatedAt: false,
-      modelName: 'collectionBook'
-    })
+      {
+        sequelize,
+        timestamps: true,
+        updatedAt: false,
+        modelName: 'collectionBook'
+      }
+    )
 
     // Super Many-to-Many
     // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship

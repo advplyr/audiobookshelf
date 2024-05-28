@@ -25,21 +25,24 @@ class BookAuthor extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        }
+      },
+      {
+        sequelize,
+        modelName: 'bookAuthor',
+        timestamps: true,
+        updatedAt: false
       }
-    }, {
-      sequelize,
-      modelName: 'bookAuthor',
-      timestamps: true,
-      updatedAt: false
-    })
+    )
 
     // Super Many-to-Many
     // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship

@@ -17,32 +17,24 @@ class LibraryFolder extends Model {
   }
 
   /**
-   * Gets all library folder path strings
-   * @returns {Promise<string[]>} array of library folder paths
-   */
-  static async getAllLibraryFolderPaths() {
-    const libraryFolders = await this.findAll({
-      attributes: ['path']
-    })
-    return libraryFolders.map(l => l.path)
-  }
-
-  /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        path: DataTypes.STRING
       },
-      path: DataTypes.STRING
-    }, {
-      sequelize,
-      modelName: 'libraryFolder'
-    })
+      {
+        sequelize,
+        modelName: 'libraryFolder'
+      }
+    )
 
     const { library } = sequelize.models
     library.hasMany(LibraryFolder, {

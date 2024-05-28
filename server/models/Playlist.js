@@ -23,29 +23,6 @@ class Playlist extends Model {
     this.updatedAt
   }
 
-  static async getOldPlaylists() {
-    const playlists = await this.findAll({
-      include: {
-        model: this.sequelize.models.playlistMediaItem,
-        include: [
-          {
-            model: this.sequelize.models.book,
-            include: this.sequelize.models.libraryItem
-          },
-          {
-            model: this.sequelize.models.podcastEpisode,
-            include: {
-              model: this.sequelize.models.podcast,
-              include: this.sequelize.models.libraryItem
-            }
-          }
-        ]
-      },
-      order: [['playlistMediaItems', 'order', 'ASC']]
-    })
-    return playlists.map((p) => this.getOldPlaylist(p))
-  }
-
   static getOldPlaylist(playlistExpanded) {
     const items = playlistExpanded.playlistMediaItems
       .map((pmi) => {
@@ -76,8 +53,8 @@ class Playlist extends Model {
 
   /**
    * Get old playlist toJSONExpanded
-   * @param {[string[]]} include
-   * @returns {Promise<object>} oldPlaylist.toJSONExpanded
+   * @param {string[]} [include]
+   * @returns {Promise<oldPlaylist>} oldPlaylist.toJSONExpanded
    */
   async getOldJsonExpanded(include) {
     this.playlistMediaItems =

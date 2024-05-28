@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
@@ -45,17 +45,17 @@ class User extends Model {
     const users = await this.findAll({
       include: this.sequelize.models.mediaProgress
     })
-    return users.map(u => this.getOldUser(u))
+    return users.map((u) => this.getOldUser(u))
   }
 
   /**
    * Get old user model from new
-   * 
-   * @param {Object} userExpanded 
+   *
+   * @param {Object} userExpanded
    * @returns {oldUser}
    */
   static getOldUser(userExpanded) {
-    const mediaProgress = userExpanded.mediaProgresses.map(mp => mp.getOldMediaProgress())
+    const mediaProgress = userExpanded.mediaProgresses.map((mp) => mp.getOldMediaProgress())
 
     const librariesAccessible = userExpanded.permissions?.librariesAccessible || []
     const itemTagsSelected = userExpanded.permissions?.itemTagsSelected || []
@@ -86,8 +86,8 @@ class User extends Model {
   }
 
   /**
-   * 
-   * @param {oldUser} oldUser 
+   *
+   * @param {oldUser} oldUser
    * @returns {Promise<User>}
    */
   static createFromOld(oldUser) {
@@ -97,8 +97,8 @@ class User extends Model {
 
   /**
    * Update User from old user model
-   * 
-   * @param {oldUser} oldUser 
+   *
+   * @param {oldUser} oldUser
    * @param {boolean} [hooks=true] Run before / after bulk update hooks?
    * @returns {Promise<boolean>}
    */
@@ -109,16 +109,18 @@ class User extends Model {
       where: {
         id: user.id
       }
-    }).then((result) => result[0] > 0).catch((error) => {
-      Logger.error(`[User] Failed to save user ${oldUser.id}`, error)
-      return false
     })
+      .then((result) => result[0] > 0)
+      .catch((error) => {
+        Logger.error(`[User] Failed to save user ${oldUser.id}`, error)
+        return false
+      })
   }
 
   /**
    * Get new User model from old
-   * 
-   * @param {oldUser} oldUser 
+   *
+   * @param {oldUser} oldUser
    * @returns {Object}
    */
   static getFromOld(oldUser) {
@@ -160,9 +162,9 @@ class User extends Model {
 
   /**
    * Create root user
-   * @param {string} username 
-   * @param {string} pash 
-   * @param {Auth} auth 
+   * @param {string} username
+   * @param {string} pash
+   * @param {Auth} auth
    * @returns {Promise<oldUser>}
    */
   static async createRootUser(username, pash, auth) {
@@ -185,15 +187,15 @@ class User extends Model {
 
   /**
    * Create user from openid userinfo
-   * @param {Object} userinfo 
-   * @param {Auth} auth 
+   * @param {Object} userinfo
+   * @param {Auth} auth
    * @returns {Promise<oldUser>}
    */
   static async createUserFromOpenIdUserInfo(userinfo, auth) {
     const userId = uuidv4()
     // TODO: Ensure username is unique?
     const username = userinfo.preferred_username || userinfo.name || userinfo.sub
-    const email = (userinfo.email && userinfo.email_verified) ? userinfo.email : null
+    const email = userinfo.email && userinfo.email_verified ? userinfo.email : null
 
     const token = await auth.generateAccessToken({ id: userId, username })
 
@@ -218,7 +220,7 @@ class User extends Model {
   /**
    * Get a user by id or by the old database id
    * @temp User ids were updated in v2.3.0 migration and old API tokens may still use that id
-   * @param {string} userId 
+   * @param {string} userId
    * @returns {Promise<oldUser|null>} null if not found
    */
   static async getUserByIdOrOldId(userId) {
@@ -244,7 +246,7 @@ class User extends Model {
 
   /**
    * Get user by username case insensitive
-   * @param {string} username 
+   * @param {string} username
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserByUsername(username) {
@@ -263,7 +265,7 @@ class User extends Model {
 
   /**
    * Get user by email case insensitive
-   * @param {string} username 
+   * @param {string} username
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserByEmail(email) {
@@ -282,7 +284,7 @@ class User extends Model {
 
   /**
    * Get user by id
-   * @param {string} userId 
+   * @param {string} userId
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserById(userId) {
@@ -296,7 +298,7 @@ class User extends Model {
 
   /**
    * Get user by openid sub
-   * @param {string} sub 
+   * @param {string} sub
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserByOpenIDSub(sub) {
@@ -317,7 +319,7 @@ class User extends Model {
     const users = await this.findAll({
       attributes: ['id', 'username']
     })
-    return users.map(u => {
+    return users.map((u) => {
       return {
         id: u.id,
         username: u.username
@@ -340,36 +342,39 @@ class User extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        username: DataTypes.STRING,
+        email: DataTypes.STRING,
+        pash: DataTypes.STRING,
+        type: DataTypes.STRING,
+        token: DataTypes.STRING,
+        isActive: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        },
+        isLocked: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        },
+        lastSeen: DataTypes.DATE,
+        permissions: DataTypes.JSON,
+        bookmarks: DataTypes.JSON,
+        extraData: DataTypes.JSON
       },
-      username: DataTypes.STRING,
-      email: DataTypes.STRING,
-      pash: DataTypes.STRING,
-      type: DataTypes.STRING,
-      token: DataTypes.STRING,
-      isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      isLocked: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      lastSeen: DataTypes.DATE,
-      permissions: DataTypes.JSON,
-      bookmarks: DataTypes.JSON,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'user'
-    })
+      {
+        sequelize,
+        modelName: 'user'
+      }
+    )
   }
 }
 
