@@ -279,6 +279,8 @@
   "LabelEdit": "Editar",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "Remetente",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Seguro",
   "LabelEmailSettingsSecureHelp": "Se ativado, a conexão utilizará TLS para a conexão ao servidor. Se desativado TLS será usado se o servidor suportar a extensão STARTTLS. Na maioria dos casos ative esse valor se estiver conectando pela porta 465. Para portas 587 ou 25, mantenha inativo. (de nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Endereço de teste",

@@ -279,6 +279,8 @@
   "LabelEdit": "עריכה",
   "LabelEmail": "דואר אלקטרוני",
   "LabelEmailSettingsFromAddress": "מאת",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "מאובטח",
   "LabelEmailSettingsSecureHelp": "אם מופעל, החיבור ישתמש ב-TLS בעת ההתחברות לשרת. אם לא, אז TLS יהיה בשימוש אם השרת תומך בהרחבת STARTTLS. ברוב המקרים מומלץ להפעיל את הגדרה זו אם אתה מתחבר לפורט 465. לפורט 587 או 25, השאר כבוי. (from nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "כתובת לבדיקה",

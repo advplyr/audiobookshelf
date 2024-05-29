@@ -279,6 +279,8 @@
   "LabelEdit": "Wijzig",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "Van-adres",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Veilig",
   "LabelEmailSettingsSecureHelp": "Als 'waar', dan gebruikt de verbinding TLS om met de server te verbinden. Als 'onwaar', dan wordt TLS gebruikt als de server de STARTTLS-extensie ondersteunt. In de meeste gevallen kies je voor 'waar' verbindt met poort 465. Voo poort 587 of 25, laat op 'onwaar'. (van nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Test-adres",

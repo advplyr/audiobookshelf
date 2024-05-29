@@ -279,6 +279,8 @@
   "LabelEdit": "Upravit",
   "LabelEmail": "E-mail",
   "LabelEmailSettingsFromAddress": "Z adresy",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Zabezpečené",
   "LabelEmailSettingsSecureHelp": "Pokud je true, připojení bude při připojování k serveru používat TLS. Pokud je false, použije se protokol TLS, pokud server podporuje rozšíření STARTTLS. Ve většině případů nastavte tuto hodnotu na true, pokud se připojujete k portu 465. Pro port 587 nebo 25 ponechte hodnotu false. (z nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Testovací adresa",

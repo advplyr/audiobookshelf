@@ -279,6 +279,8 @@
   "LabelEdit": "Muuda",
   "LabelEmail": "E-post",
   "LabelEmailSettingsFromAddress": "Saatja aadress",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Turvaline",
   "LabelEmailSettingsSecureHelp": "Kui see on tõene, kasutab ühendus serveriga ühenduse loomisel TLS-i. Kui see on väär, kasutatakse TLS-i, kui server toetab STARTTLS-i laiendust. Enamikul juhtudest seadke see väärtus tõeks, kui ühendate pordile 465. Pordi 587 või 25 korral hoidke seda väär. (nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Testi aadress",

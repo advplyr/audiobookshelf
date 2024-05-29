@@ -279,6 +279,8 @@
   "LabelEdit": "Szerkesztés",
   "LabelEmail": "E-mail",
   "LabelEmailSettingsFromAddress": "Feladó címe",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Biztonságos",
   "LabelEmailSettingsSecureHelp": "Ha igaz, a kapcsolat TLS-t használ a szerverhez való csatlakozáskor. Ha hamis, akkor TLS-t használ, ha a szerver támogatja a STARTTLS kiterjesztést. A legtöbb esetben állítsa ezt az értéket igazra, ha a 465-ös portra csatlakozik. A 587-es vagy 25-ös port esetében tartsa hamis értéken. (a nodemailer.com/smtp/#authentication oldalról)",
   "LabelEmailSettingsTestAddress": "Teszt cím",

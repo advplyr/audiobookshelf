@@ -279,6 +279,8 @@
   "LabelEdit": "Chỉnh Sửa",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "Địa chỉ Gửi từ",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Bảo Mật",
   "LabelEmailSettingsSecureHelp": "Nếu đúng thì kết nối sẽ sử dụng TLS khi kết nối đến máy chủ. Nếu sai thì TLS sẽ được sử dụng nếu máy chủ hỗ trợ phần mở rộng STARTTLS. Trong hầu hết các trường hợp, hãy đặt giá trị này là đúng nếu bạn kết nối đến cổng 465. Đối với cổng 587 hoặc 25, giữ nó sai. (từ nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Địa Chỉ Kiểm Tra",

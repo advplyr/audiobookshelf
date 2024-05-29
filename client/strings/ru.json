@@ -279,6 +279,8 @@
   "LabelEdit": "Редактировать",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "Адрес От",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Безопасность",
   "LabelEmailSettingsSecureHelp": "Если значение истинно, то соединение будет использовать TLS при подключении к серверу. Если значение ложно, то TLS будет использован, если сервер поддерживает расширение STARTTLS. В большинстве случаев установите это значение в истину, если вы подключаетесь к порту 465. Для порта 587 или 25 оставьте значение ложным. (из nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Тестовый адрес",

@@ -279,6 +279,8 @@
   "LabelEdit": "编辑",
   "LabelEmail": "邮箱",
   "LabelEmailSettingsFromAddress": "发件人地址",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "安全",
   "LabelEmailSettingsSecureHelp": "如果选是, 则连接将在连接到服务器时使用TLS. 如果选否, 则若服务器支持STARTTLS扩展, 则使用TLS. 在大多数情况下, 如果连接到端口465, 请将该值设置为是. 对于端口587或25, 请保持为否. (来自nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "测试地址",

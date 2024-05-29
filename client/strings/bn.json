@@ -279,6 +279,8 @@
   "LabelEdit": "সম্পাদনা করুন",
   "LabelEmail": "ইমেইল",
   "LabelEmailSettingsFromAddress": "ঠিকানা থেকে",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "নিরাপদ",
   "LabelEmailSettingsSecureHelp": "যদি সত্য হয় সার্ভারের সাথে সংযোগ করার সময় সংযোগটি TLS ব্যবহার করবে। মিথ্যা হলে TLS ব্যবহার করা হবে যদি সার্ভার STARTTLS এক্সটেনশন সমর্থন করে। বেশিরভাগ ক্ষেত্রে এই মানটিকে সত্য হিসাবে সেট করুন যদি আপনি পোর্ট 465-এর সাথে সংযোগ করছেন। পোর্ট 587 বা পোর্টের জন্য 25 এটি মিথ্যা রাখুন। (nodemailer.com/smtp/#authentication থেকে)",
   "LabelEmailSettingsTestAddress": "পরীক্ষার ঠিকানা",

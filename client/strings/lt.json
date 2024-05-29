@@ -279,6 +279,8 @@
   "LabelEdit": "Redaguoti",
   "LabelEmail": "El. paštas",
   "LabelEmailSettingsFromAddress": "Siuntėjo adresas",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Apsaugota",
   "LabelEmailSettingsSecureHelp": "Jei ši reikšmė yra \"true\", ryšys naudos TLS protokolą. Jei \"false\", TLS bus naudojamas tik tada, jei serveris palaiko STARTTLS plėtinį. Daugumos atveju, jei jungiamasi prie 465 prievado, šią reikšmę turėtumėte nustatyti kaip \"true\". Jei jungiamasi prie 587 arba 25 prievado, turi būti nustatyta \"false\". (iš nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Testinis adresas",

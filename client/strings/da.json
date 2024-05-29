@@ -279,6 +279,8 @@
   "LabelEdit": "Rediger",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "Fra Adresse",
+  "LabelEmailSettingsRejectUnauthorized": "Reject unauthorized certificates",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Disabling SSL certificate validation may expose your connection to security risks, such as man-in-the-middle attacks. Only disable this option if you understand the implications and trust the mail server you are connecting to.",
   "LabelEmailSettingsSecure": "Sikker",
   "LabelEmailSettingsSecureHelp": "Hvis sandt, vil forbindelsen bruge TLS ved tilslutning til serveren. Hvis falsk, bruges TLS, hvis serveren understøtter STARTTLS-udvidelsen. I de fleste tilfælde skal denne værdi sættes til sandt, hvis du tilslutter til port 465. Til port 587 eller 25 skal du holde det falsk. (fra nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Test Adresse",
