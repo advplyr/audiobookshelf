@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "快速匹配将尝试为所选项目添加缺少的封面和元数据. 启用以下选项以允许快速匹配覆盖现有封面和或元数据.",
   "MessageBookshelfNoCollections": "你尚未进行任何收藏",
   "MessageBookshelfNoResultsForFilter": "过滤器无结果 \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "没有打开的 RSS 源",
   "MessageBookshelfNoSeries": "你没有系列",
   "MessageChapterEndIsAfter": "章节结束是在有声读物结束之后",

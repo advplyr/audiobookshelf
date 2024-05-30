@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Quick Match kommer försöka lägga till saknade omslag och metadata för de valda föremålen. Aktivera alternativen nedan för att tillåta Quick Match att överskriva befintliga omslag och/eller metadata.",
   "MessageBookshelfNoCollections": "Du har ännu inte skapat några samlingar",
   "MessageBookshelfNoResultsForFilter": "Inga resultat för filter \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Inga RSS-flöden är öppna",
   "MessageBookshelfNoSeries": "Du har inga serier",
   "MessageChapterEndIsAfter": "Kapitelns slut är efter din ljudboks slut",

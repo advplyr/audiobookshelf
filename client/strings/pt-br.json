@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Consulta Rápida tentará adicionar capas e metadados ausentes para os itens selecionados. Ative as opções abaixo para permitir que a Consulta Rápida sobrescreva capas e/ou metadados existentes.",
   "MessageBookshelfNoCollections": "Você ainda não criou coleções",
   "MessageBookshelfNoResultsForFilter": "Sem Resultados para o filtro \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Não existem feeds RSS abertos",
   "MessageBookshelfNoSeries": "Você não tem séries",
   "MessageChapterEndIsAfter": "O final do capítulo está além do final do seu audiobook",

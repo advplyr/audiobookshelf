@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Quick Match zal proberen ontbrekende covers en metadata voor de geselecteerde onderdelen te matchten. Schakel de opties hieronder in om Quick Match toe te staan bestaande covers en/of metadata te overschrijven.",
   "MessageBookshelfNoCollections": "Je hebt nog geen collecties gemaakt",
   "MessageBookshelfNoResultsForFilter": "Geen resultaten voor filter \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Geen RSS-feeds geopend",
   "MessageBookshelfNoSeries": "Je hebt geen series",
   "MessageChapterEndIsAfter": "Hoofdstukeinde is na het einde van je audioboek",

@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Rychlá párování se pokusí přidat chybějící obálky a metadata pro vybrané položky. Povolením níže uvedených možností umožníte funkci Rychlé párování přepsat stávající obálky a/nebo metadata.",
   "MessageBookshelfNoCollections": "Ještě jste nevytvořili žádnou sbírku",
   "MessageBookshelfNoResultsForFilter": "Filtr \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Nejsou otevřeny žádné RSS kanály",
   "MessageBookshelfNoSeries": "Nemáte žádnou sérii",
   "MessageChapterEndIsAfter": "Konec kapitoly přesahuje konec audioknihy",

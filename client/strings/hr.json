@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Quick Match će probati dodati nedostale covere i metapodatke za odabrane stavke. Uključi postavke ispod da omočutie Quick Mathchu da zamijeni postojeće covere i/ili metapodatke.",
   "MessageBookshelfNoCollections": "You haven't made any collections yet",
   "MessageBookshelfNoResultsForFilter": "No Results for filter \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "No RSS feeds are open",
   "MessageBookshelfNoSeries": "You have no series",
   "MessageChapterEndIsAfter": "Kraj poglavlja je nakon kraja audioknjige.",

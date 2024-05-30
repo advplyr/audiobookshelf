@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "\"Encontrar Rápido\" tratará de agregar portadas y metadatos faltantes de los elementos seleccionados. Habilite la opción de abajo para que \"Encontrar Rápido\" pueda sobrescribir portadas y/o metadatos existentes.",
   "MessageBookshelfNoCollections": "No tienes ninguna colección.",
   "MessageBookshelfNoResultsForFilter": "Ningún Resultado para el filtro \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Ninguna Fuente RSS esta abierta",
   "MessageBookshelfNoSeries": "No tienes ninguna serie",
   "MessageChapterEndIsAfter": "El final del capítulo es después del final de su audiolibro.",

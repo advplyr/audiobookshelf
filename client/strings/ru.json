@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Быстрый Поиск попытается добавить отсутствующие обложки и метаданные для выбранных элементов. Включите параметры ниже, чтобы разрешить Быстрому Поиску перезаписывать существующие обложки и/или метаданные.",
   "MessageBookshelfNoCollections": "Вы еще не создали ни одной коллекции",
   "MessageBookshelfNoResultsForFilter": "Нет Результатов для фильтра \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Нет открытых RSS-каналов",
   "MessageBookshelfNoSeries": "У вас нет серий",
   "MessageChapterEndIsAfter": "Конец главы после окончания вашей аудиокниги",

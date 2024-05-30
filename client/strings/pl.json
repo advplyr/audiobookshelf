@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Quick Match będzie próbował dodać brakujące okładki i metadane dla wybranych elementów. Włącz poniższe opcje, aby umożliwić Quick Match nadpisanie istniejących okładek i/lub metadanych.",
   "MessageBookshelfNoCollections": "Nie posiadasz jeszcze żadnych kolekcji",
   "MessageBookshelfNoResultsForFilter": "Nie znaleziono żadnych pozycji przy aktualnym filtrowaniu \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Nie posiadasz żadnych otwartych feedów RSS",
   "MessageBookshelfNoSeries": "Nie masz jeszcze żadnych serii",
   "MessageChapterEndIsAfter": "Koniec rozdziału następuje po zakończeniu audiobooka",

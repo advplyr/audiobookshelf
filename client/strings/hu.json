@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "A Gyors egyeztetés megpróbálja hozzáadni a hiányzó borítókat és metaadatokat a kiválasztott elemekhez. Engedélyezze az alábbi opciókat, hogy a Gyors egyeztetés felülírhassa a meglévő borítókat és/vagy metaadatokat.",
   "MessageBookshelfNoCollections": "Még nem készített gyűjteményeket",
   "MessageBookshelfNoResultsForFilter": "Nincs eredmény a \"{0}: {1}\" szűrőre",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Nincsenek nyitott RSS hírcsatornák",
   "MessageBookshelfNoSeries": "Nincsenek sorozatai",
   "MessageChapterEndIsAfter": "A fejezet vége a hangoskönyv végét követi",

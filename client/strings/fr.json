@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "La recherche par correspondance rapide tentera d’ajouter les couvertures et les métadonnées manquantes pour les articles sélectionnés. Activer l’option suivante pour autoriser la recherche par correspondance à écraser les données existantes.",
   "MessageBookshelfNoCollections": "Vous n’avez pas encore de collections",
   "MessageBookshelfNoResultsForFilter": "Aucun résultat pour le filtre « {0} : {1} »",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Aucun flux RSS n’est ouvert",
   "MessageBookshelfNoSeries": "Vous n’avez aucune série",
   "MessageChapterEndIsAfter": "La fin du chapitre se situe après la fin de votre livre audio.",

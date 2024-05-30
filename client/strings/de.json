@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Der Schnellabgleich versucht, fehlende Titelbilder und Metadaten für die ausgewählten Artikel hinzuzufügen. Aktiviere die nachstehenden Optionen, damit der Schnellabgleich vorhandene Titelbilder und/oder Metadaten überschreiben kann.",
   "MessageBookshelfNoCollections": "Es wurden noch keine Sammlungen erstellt",
   "MessageBookshelfNoResultsForFilter": "Keine Ergebnisse für Filter \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Keine RSS-Feeds geöffnet",
   "MessageBookshelfNoSeries": "Keine Serien vorhanden",
   "MessageChapterEndIsAfter": "Ungültige Kapitelendzeit: Kapitelende > Mediumende (Kapitelende liegt nach dem Ende des Mediums)",

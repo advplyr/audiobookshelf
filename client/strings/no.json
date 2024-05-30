@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Kjapt søk vil forsøke å legge til manglende omslag og metadata for de valgte gjenstandene. Aktiver dette valget for å tillate Kjapt søk til å overskrive eksisterende omslag og/eller metadata.",
   "MessageBookshelfNoCollections": "Du har ikke laget noen samlinger ennå",
   "MessageBookshelfNoResultsForFilter": "Ingen resultat for filter \"{0}: {1}\"",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Ingen RSS feed er åpen",
   "MessageBookshelfNoSeries": "Du har ingen serier",
   "MessageChapterEndIsAfter": "Kapittel slutt er etter slutt av lydboken",

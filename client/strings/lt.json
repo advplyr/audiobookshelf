@@ -594,6 +594,7 @@
   "MessageBatchQuickMatchDescription": "Greitas atitikmens rasti bandys pridėti trūkstamus viršelius ir metaduomenis pasirinktiems elementams. Įjunkite žemiau esančias parinktis, kad leistumėte Greitajam atitikmeniui perrašyti esamus viršelius ir/ar metaduomenis.",
   "MessageBookshelfNoCollections": "Dar nepridėjote jokių kolekcijų",
   "MessageBookshelfNoResultsForFilter": "Rezultatų pagal filtrą \"{0}: {1}\" nėra",
+  "MessageBookshelfNoResultsForQuery": "No results for query",
   "MessageBookshelfNoRSSFeeds": "Nėra atvertų RSS srautų",
   "MessageBookshelfNoSeries": "Neturite jokių serijų",
   "MessageChapterEndIsAfter": "Skyriaus pabaiga yra po jūsų garso knygos pabaigos",
