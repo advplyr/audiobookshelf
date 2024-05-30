@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Kan bijwerken",
   "LabelPermissionsUpload": "Kan uploaden",
   "LabelPhotoPathURL": "Foto pad/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Afspeellijsten",
   "LabelPlayMethod": "Afspeelwijze",
   "LabelPodcast": "Podcast",

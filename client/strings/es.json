@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Puede Actualizar",
   "LabelPermissionsUpload": "Puede Subir",
   "LabelPhotoPathURL": "Ruta de Acceso/URL de Foto",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Lista de Reproducción",
   "LabelPlayMethod": "Método de Reproducción",
   "LabelPodcast": "Podcast",

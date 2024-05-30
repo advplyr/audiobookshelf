@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Může aktualizovat",
   "LabelPermissionsUpload": "Může nahrávat",
   "LabelPhotoPathURL": "Cesta k fotografii/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Seznamy skladeb",
   "LabelPlayMethod": "Metoda přehrávání",
   "LabelPodcast": "Podcast",

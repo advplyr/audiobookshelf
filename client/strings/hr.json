@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Smije aktualizirati",
   "LabelPermissionsUpload": "Smije uploadati",
   "LabelPhotoPathURL": "Slika putanja/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Playlists",
   "LabelPlayMethod": "Vrsta reprodukcije",
   "LabelPodcast": "Podcast",

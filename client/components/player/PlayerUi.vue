@@ -53,7 +53,7 @@
       <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
       <div class="flex-grow" />
       <p class="text-xs sm:text-sm text-gray-300 pt-0.5">
-        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;{{ $setString('LabelPlayerChaperMarker', [currentChapterIndex + 1, chapters.length]) }}</span>
+        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
       </p>
       <div class="flex-grow" />
       <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>

@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Kan uppdatera",
   "LabelPermissionsUpload": "Kan ladda upp",
   "LabelPhotoPathURL": "Bildsökväg/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Spellistor",
   "LabelPlayMethod": "Spelläge",
   "LabelPodcast": "Podcast",

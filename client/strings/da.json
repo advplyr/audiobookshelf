@@ -392,6 +392,7 @@
   "LabelPermissionsUpdate": "Kan opdatere",
   "LabelPermissionsUpload": "Kan uploade",
   "LabelPhotoPathURL": "Foto sti/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Afspilningslister",
   "LabelPlayMethod": "Afspilningsmetode",
   "LabelPodcast": "Podcast",
