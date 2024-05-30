@@ -414,6 +414,7 @@
   "LabelPermissionsUpload": "可以上传",
   "LabelPersonalYearReview": "你的年度回顾 ({0})",
   "LabelPhotoPathURL": "图片路径或 URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "播放列表",
   "LabelPlayMethod": "播放方法",
   "LabelPodcast": "播客",

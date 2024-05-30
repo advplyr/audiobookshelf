@@ -414,6 +414,7 @@
   "LabelPermissionsUpload": "Может закачивать",
   "LabelPersonalYearReview": "Your Year in Review ({0})",
   "LabelPhotoPathURL": "Путь к фото/URL",
+  "LabelPlayerChapterNumberMarker": "{0} of {1}",
   "LabelPlaylists": "Плейлисты",
   "LabelPlayMethod": "Метод воспроизведения",
   "LabelPodcast": "Подкаст",
