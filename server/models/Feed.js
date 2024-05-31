@@ -58,7 +58,7 @@ class Feed extends Model {
         model: this.sequelize.models.feedEpisode
       }
     })
-    return feeds.map(f => this.getOldFeed(f))
+    return feeds.map((f) => this.getOldFeed(f))
   }
 
   /**
@@ -108,7 +108,7 @@ class Feed extends Model {
 
   /**
    * Find all library item ids that have an open feed (used in library filter)
-   * @returns {Promise<Array<String>>} array of library item ids
+   * @returns {Promise<string[]>} array of library item ids
    */
   static async findAllLibraryItemIds() {
     const feeds = await this.findAll({
@@ -117,13 +117,13 @@ class Feed extends Model {
         entityType: 'libraryItem'
       }
     })
-    return feeds.map(f => f.entityId).filter(f => f) || []
+    return feeds.map((f) => f.entityId).filter((f) => f) || []
   }
 
   /**
    * Find feed where and return oldFeed
-   * @param {object} where sequelize where object
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @param {Object} where sequelize where object
+   * @returns {Promise<oldFeed>} oldFeed
    */
   static async findOneOld(where) {
     if (!where) return null
@@ -140,7 +140,7 @@ class Feed extends Model {
   /**
    * Find feed and return oldFeed
    * @param {string} id
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @returns {Promise<oldFeed>} oldFeed
    */
   static async findByPkOld(id) {
     if (!id) return null
@@ -179,7 +179,7 @@ class Feed extends Model {
 
     // Remove and update existing feed episodes
     for (const feedEpisode of existingFeed.feedEpisodes) {
-      const oldFeedEpisode = oldFeedEpisodes.find(ep => ep.id === feedEpisode.id)
+      const oldFeedEpisode = oldFeedEpisodes.find((ep) => ep.id === feedEpisode.id)
       // Episode removed
       if (!oldFeedEpisode) {
         feedEpisode.destroy()
@@ -200,7 +200,7 @@ class Feed extends Model {
 
     // Add new feed episodes
     for (const episode of oldFeedEpisodes) {
-      if (!existingFeed.feedEpisodes.some(fe => fe.id === episode.id)) {
+      if (!existingFeed.feedEpisodes.some((fe) => fe.id === episode.id)) {
         await this.sequelize.models.feedEpisode.createFromOld(feedObj.id, episode)
         hasUpdates = true
       }
@@ -258,41 +258,44 @@ class Feed extends Model {
 
   /**
    * Initialize model
-   * 
+   *
    * Polymorphic association: Feeds can be created from LibraryItem, Collection, Playlist or Series
    * @see https://sequelize.org/docs/v6/advanced-association-concepts/polymorphic-associations/
-   * 
-   * @param {import('../Database').sequelize} sequelize 
+   *
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        slug: DataTypes.STRING,
+        entityType: DataTypes.STRING,
+        entityId: DataTypes.UUIDV4,
+        entityUpdatedAt: DataTypes.DATE,
+        serverAddress: DataTypes.STRING,
+        feedURL: DataTypes.STRING,
+        imageURL: DataTypes.STRING,
+        siteURL: DataTypes.STRING,
+        title: DataTypes.STRING,
+        description: DataTypes.TEXT,
+        author: DataTypes.STRING,
+        podcastType: DataTypes.STRING,
+        language: DataTypes.STRING,
+        ownerName: DataTypes.STRING,
+        ownerEmail: DataTypes.STRING,
+        explicit: DataTypes.BOOLEAN,
+        preventIndexing: DataTypes.BOOLEAN,
+        coverPath: DataTypes.STRING
       },
-      slug: DataTypes.STRING,
-      entityType: DataTypes.STRING,
-      entityId: DataTypes.UUIDV4,
-      entityUpdatedAt: DataTypes.DATE,
-      serverAddress: DataTypes.STRING,
-      feedURL: DataTypes.STRING,
-      imageURL: DataTypes.STRING,
-      siteURL: DataTypes.STRING,
-      title: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      author: DataTypes.STRING,
-      podcastType: DataTypes.STRING,
-      language: DataTypes.STRING,
-      ownerName: DataTypes.STRING,
-      ownerEmail: DataTypes.STRING,
-      explicit: DataTypes.BOOLEAN,
-      preventIndexing: DataTypes.BOOLEAN,
-      coverPath: DataTypes.STRING
-    }, {
-      sequelize,
-      modelName: 'feed'
-    })
+      {
+        sequelize,
+        modelName: 'feed'
+      }
+    )
 
     const { user, libraryItem, collection, series, playlist } = sequelize.models
 
@@ -335,7 +338,7 @@ class Feed extends Model {
     })
     Feed.belongsTo(playlist, { foreignKey: 'entityId', constraints: false })
 
-    Feed.addHook('afterFind', findResult => {
+    Feed.addHook('afterFind', (findResult) => {
       if (!findResult) return
 
       if (!Array.isArray(findResult)) findResult = [findResult]

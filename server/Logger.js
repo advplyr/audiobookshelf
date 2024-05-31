@@ -3,15 +3,20 @@ const { LogLevel } = require('./utils/constants')
 
 class Logger {
   constructor() {
+    /** @type {import('./managers/LogManager')} */
+    this.logManager = null
+
     this.isDev = process.env.NODE_ENV !== 'production'
+
     this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
     this.socketListeners = []
-
-    this.logManager = null
   }
 
+  /**
+   * @returns {string}
+   */
   get timestamp() {
-    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS')
   }
 
   get levelString() {
@@ -23,6 +28,9 @@ class Logger {
     return 'UNKNOWN'
   }
 
+  /**
+   * @returns {string}
+   */
   get source() {
     try {
       throw new Error()
@@ -42,7 +50,7 @@ class Logger {
   }
 
   addSocketListener(socket, level) {
-    var index = this.socketListeners.findIndex(s => s.id === socket.id)
+    var index = this.socketListeners.findIndex((s) => s.id === socket.id)
     if (index >= 0) {
       this.socketListeners.splice(index, 1, {
         id: socket.id,
@@ -59,27 +67,35 @@ class Logger {
   }
 
   removeSocketListener(socketId) {
-    this.socketListeners = this.socketListeners.filter(s => s.id !== socketId)
+    this.socketListeners = this.socketListeners.filter((s) => s.id !== socketId)
   }
 
-  handleLog(level, args) {
+  /**
+   *
+   * @param {number} level
+   * @param {string[]} args
+   * @param {string} src
+   */
+  async handleLog(level, args, src) {
     const logObj = {
       timestamp: this.timestamp,
-      source: this.source,
+      source: src,
       message: args.join(' '),
       levelName: this.getLogLevelString(level),
       level
     }
 
-    if (level >= this.logLevel && this.logManager) {
-      this.logManager.logToFile(logObj)
-    }
-
+    // Emit log to sockets that are listening to log events
     this.socketListeners.forEach((socketListener) => {
       if (socketListener.level <= level) {
         socketListener.socket.emit('log', logObj)
       }
     })
+
+    // Save log to file
+    if (level >= this.logLevel) {
+      await this.logManager?.logToFile(logObj)
+    }
   }
 
   setLogLevel(level) {
@@ -87,53 +103,50 @@ class Logger {
     this.debug(`Set Log Level to ${this.levelString}`)
   }
 
-  /**
-   * Only to console and only for development
-   * @param  {...any} args
-   */
-  dev(...args) {
-    if (!this.isDev || process.env.HIDE_DEV_LOGS === '1') return
-    console.log(`[${this.timestamp}] DEV:`, ...args)
-  }
-
   trace(...args) {
     if (this.logLevel > LogLevel.TRACE) return
     console.trace(`[${this.timestamp}] TRACE:`, ...args)
-    this.handleLog(LogLevel.TRACE, args)
+    this.handleLog(LogLevel.TRACE, args, this.source)
   }
 
   debug(...args) {
     if (this.logLevel > LogLevel.DEBUG) return
     console.debug(`[${this.timestamp}] DEBUG:`, ...args, `(${this.source})`)
-    this.handleLog(LogLevel.DEBUG, args)
+    this.handleLog(LogLevel.DEBUG, args, this.source)
   }
 
   info(...args) {
     if (this.logLevel > LogLevel.INFO) return
     console.info(`[${this.timestamp}] INFO:`, ...args)
-    this.handleLog(LogLevel.INFO, args)
+    this.handleLog(LogLevel.INFO, args, this.source)
   }
 
   warn(...args) {
     if (this.logLevel > LogLevel.WARN) return
     console.warn(`[${this.timestamp}] WARN:`, ...args, `(${this.source})`)
-    this.handleLog(LogLevel.WARN, args)
+    this.handleLog(LogLevel.WARN, args, this.source)
   }
 
   error(...args) {
     if (this.logLevel > LogLevel.ERROR) return
     console.error(`[${this.timestamp}] ERROR:`, ...args, `(${this.source})`)
-    this.handleLog(LogLevel.ERROR, args)
+    this.handleLog(LogLevel.ERROR, args, this.source)
   }
 
+  /**
+   * Fatal errors are ones that exit the process
+   * Fatal logs are saved to crash_logs.txt
+   *
+   * @param  {...any} args
+   */
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
-    this.handleLog(LogLevel.FATAL, args)
+    return this.handleLog(LogLevel.FATAL, args, this.source)
   }
 
   note(...args) {
     console.log(`[${this.timestamp}] NOTE:`, ...args)
-    this.handleLog(LogLevel.NOTE, args)
+    this.handleLog(LogLevel.NOTE, args, this.source)
   }
 }
 module.exports = new Logger()

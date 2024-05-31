@@ -31,7 +31,7 @@
         <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>
       </div>
     </div>
-    <modals-libraries-folder-chooser v-else :paths="folderPaths" @back="showDirectoryPicker = false" @select="selectFolder" />
+    <modals-libraries-lazy-folder-chooser v-else :paths="folderPaths" @back="showDirectoryPicker = false" @select="selectFolder" />
   </div>
 </template>
 

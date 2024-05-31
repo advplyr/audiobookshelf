@@ -37,7 +37,7 @@ class Scanner {
       var searchISBN = options.isbn || libraryItem.media.metadata.isbn
       var searchASIN = options.asin || libraryItem.media.metadata.asin
 
-      var results = await BookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
+      var results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
@@ -359,7 +359,7 @@ class Scanner {
       }
 
       offset += limit
-      hasMoreChunks = libraryItems.length < limit
+      hasMoreChunks = libraryItems.length === limit
       let oldLibraryItems = libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
 
       const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)

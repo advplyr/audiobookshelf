@@ -139,11 +139,30 @@ export default class LocalAudioPlayer extends EventEmitter {
     }
 
     var hlsOptions = {
-      startPosition: this.startTime || -1
-      // No longer needed because token is put in a query string
-      // xhrSetup: (xhr) => {
-      //   xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
-      // }
+      startPosition: this.startTime || -1,
+      fragLoadPolicy: {
+        default: {
+          maxTimeToFirstByteMs: 10000,
+          maxLoadTimeMs: 120000,
+          timeoutRetry: {
+            maxNumRetry: 4,
+            retryDelayMs: 0,
+            maxRetryDelayMs: 0,
+          },
+          errorRetry: {
+            maxNumRetry: 8,
+            retryDelayMs: 1000,
+            maxRetryDelayMs: 8000,
+            shouldRetry: (retryConfig, retryCount, isTimeout, httpStatus, retry) => {
+              if (httpStatus?.code === 404 && retryConfig?.maxNumRetry > retryCount) {
+                console.log(`[HLS] Server 404 for fragment retry ${retryCount} of ${retryConfig.maxNumRetry}`)
+                return true
+              }
+              return retry
+            }
+          },
+        }
+      }
     }
     this.hlsInstance = new Hls(hlsOptions)
 
@@ -156,9 +175,15 @@ export default class LocalAudioPlayer extends EventEmitter {
       })
 
       this.hlsInstance.on(Hls.Events.ERROR, (e, data) => {
-        console.error('[HLS] Error', data.type, data.details, data)
         if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
           console.error('[HLS] BUFFER STALLED ERROR')
+        } else if (data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR) {
+          // Only show error if the fragment is not being retried
+          if (data.errorAction?.action !== 5) {
+            console.error('[HLS] FRAG LOAD ERROR', data)
+          }
+        } else {
+          console.error('[HLS] Error', data.type, data.details, data)
         }
       })
       this.hlsInstance.on(Hls.Events.DESTROYING, () => {

@@ -32,7 +32,7 @@ class PodcastManager {
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
-    return this.downloadQueue.filter(d => d.libraryItemId === libraryItemId)
+    return this.downloadQueue.filter((d) => d.libraryItemId === libraryItemId)
   }
 
   clearDownloadQueue(libraryItemId = null) {
@@ -44,12 +44,12 @@ class PodcastManager {
     } else {
       var itemDownloads = this.getEpisodeDownloadsInQueue(libraryItemId)
       Logger.info(`[PodcastManager] Clearing downloads in queue for item "${libraryItemId}" (${itemDownloads.length})`)
-      this.downloadQueue = this.downloadQueue.filter(d => d.libraryItemId !== libraryItemId)
+      this.downloadQueue = this.downloadQueue.filter((d) => d.libraryItemId !== libraryItemId)
     }
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    let index = Math.max(...libraryItem.media.episodes.filter(ep => ep.index == null || isNaN(ep.index)).map(ep => Number(ep.index))) + 1
+    let index = Math.max(...libraryItem.media.episodes.filter((ep) => ep.index == null || isNaN(ep.index)).map((ep) => Number(ep.index))) + 1
     for (const ep of episodesToDownload) {
       const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
@@ -72,7 +72,7 @@ class PodcastManager {
     const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
     const taskData = {
       libraryId: podcastEpisodeDownload.libraryId,
-      libraryItemId: podcastEpisodeDownload.libraryItemId,
+      libraryItemId: podcastEpisodeDownload.libraryItemId
     }
     const task = TaskManager.createAndAddTask('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
 
@@ -104,10 +104,12 @@ class PodcastManager {
       })
     } else {
       // Download episode only
-      success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
-        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-        return false
-      })
+      success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
+        .then(() => true)
+        .catch((error) => {
+          Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+          return false
+        })
     }
 
     if (success) {
@@ -156,7 +158,7 @@ class PodcastManager {
     podcastEpisode.audioFile = audioFile
 
     if (audioFile.chapters?.length) {
-      podcastEpisode.chapters = audioFile.chapters.map(ch => ({ ...ch }))
+      podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
     }
 
     libraryItem.media.addPodcastEpisode(podcastEpisode)
@@ -181,7 +183,8 @@ class PodcastManager {
     podcastEpisodeExpanded.libraryItem = libraryItem.toJSONExpanded()
     SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
 
-    if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
+    if (this.currentDownload.isAutoDownload) {
+      // Notifications only for auto downloaded episodes
       this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
@@ -191,12 +194,14 @@ class PodcastManager {
   async removeOldestEpisode(libraryItem, episodeIdJustDownloaded) {
     var smallestPublishedAt = 0
     var oldestEpisode = null
-    libraryItem.media.episodesWithPubDate.filter(ep => ep.id !== episodeIdJustDownloaded).forEach((ep) => {
-      if (!smallestPublishedAt || ep.publishedAt < smallestPublishedAt) {
-        smallestPublishedAt = ep.publishedAt
-        oldestEpisode = ep
-      }
-    })
+    libraryItem.media.episodesWithPubDate
+      .filter((ep) => ep.id !== episodeIdJustDownloaded)
+      .forEach((ep) => {
+        if (!smallestPublishedAt || ep.publishedAt < smallestPublishedAt) {
+          smallestPublishedAt = ep.publishedAt
+          oldestEpisode = ep
+        }
+      })
     // TODO: Should we check for open playback sessions for this episode?
     // TODO: remove all user progress for this episode
     if (oldestEpisode?.audioFile) {
@@ -246,7 +251,8 @@ class PodcastManager {
     var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
     Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes?.length || 'N/A'} episodes found`)
 
-    if (!newEpisodes) { // Failed
+    if (!newEpisodes) {
+      // Failed
       // Allow up to MaxFailedEpisodeChecks failed attempts before disabling auto download
       if (!this.failedCheckMap[libraryItem.id]) this.failedCheckMap[libraryItem.id] = 0
       this.failedCheckMap[libraryItem.id]++
@@ -285,7 +291,7 @@ class PodcastManager {
     }
 
     // Filter new and not already has
-    let newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
+    let newEpisodes = feed.episodes.filter((ep) => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedEpisode(ep))
 
     if (maxNewEpisodes > 0) {
       newEpisodes = newEpisodes.slice(0, maxNewEpisodes)
@@ -322,7 +328,7 @@ class PodcastManager {
     }
 
     const matches = []
-    feed.episodes.forEach(ep => {
+    feed.episodes.forEach((ep) => {
       if (!ep.title) return
 
       const epTitle = ep.title.toLowerCase().trim()
@@ -370,7 +376,7 @@ class PodcastManager {
 
   /**
    * OPML file string for podcasts in a library
-   * @param {import('../models/Podcast')[]} podcasts 
+   * @param {import('../models/Podcast')[]} podcasts
    * @returns {string} XML string
    */
   generateOPMLFileText(podcasts) {
@@ -383,7 +389,7 @@ class PodcastManager {
 
     return {
       currentDownload: _currentDownload?.toJSONForClient(),
-      queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
+      queue: this.downloadQueue.filter((item) => !libraryId || item.libraryId === libraryId).map((item) => item.toJSONForClient())
     }
   }
 }

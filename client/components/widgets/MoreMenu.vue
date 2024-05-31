@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" class="absolute bg-bg rounded-md py-1 border border-black-200 shadow-lg z-50" v-click-outside="clickOutsideObj" :style="{ width: menuWidth + 'px' }" style="top: 0; left: 0">
+  <div ref="wrapper" class="absolute bg-bg rounded-md py-1 border border-black-200 shadow-lg z-50" v-click-outside="clickOutsideObj" :style="{ width: menuWidth + 'px' }">
     <template v-for="(item, index) in items">
       <template v-if="item.subitems">
         <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-default" :class="{ 'bg-white/5': mouseoverItemIndex == index }" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>

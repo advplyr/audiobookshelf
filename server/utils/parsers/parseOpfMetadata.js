@@ -100,13 +100,28 @@ function fetchLanguage(metadata) {
 }
 
 function fetchSeries(metadataMeta) {
-  if (!metadataMeta) return null
-  return fetchTagString(metadataMeta, "calibre:series")
-}
+  if (!metadataMeta) return []
+  const result = []
+  for (let i = 0; i < metadataMeta.length; i++) {
+    if (metadataMeta[i].$?.name === 'calibre:series' && metadataMeta[i].$.content?.trim()) {
+      const name = metadataMeta[i].$.content.trim()
+      let sequence = null
+      if (metadataMeta[i + 1]?.$?.name === 'calibre:series_index' && metadataMeta[i + 1].$?.content?.trim()) {
+        sequence = metadataMeta[i + 1].$.content.trim()
+      }
+      result.push({ name, sequence })
+    }
+  }
 
-function fetchVolumeNumber(metadataMeta) {
-  if (!metadataMeta) return null
-  return fetchTagString(metadataMeta, "calibre:series_index")
+  // If one series was found with no series_index then check if any series_index meta can be found
+  //   this is to support when calibre:series_index is not directly underneath calibre:series
+  if (result.length === 1 && !result[0].sequence) {
+    const seriesIndexMeta = metadataMeta.find(m => m.$?.name === 'calibre:series_index' && m.$.content?.trim())
+    if (seriesIndexMeta) {
+      result[0].sequence = seriesIndexMeta.$.content.trim()
+    }
+  }
+  return result
 }
 
 function fetchNarrators(creators, metadata) {
@@ -130,11 +145,7 @@ function stripPrefix(str) {
   return str.split(':').pop()
 }
 
-module.exports.parseOpfMetadataXML = async (xml) => {
-  const json = await xmlToJSON(xml)
-
-  if (!json) return null
-
+module.exports.parseOpfMetadataJson = (json) => {
   // Handle <package ...> or with prefix <ns0:package ...>
   const packageKey = Object.keys(json).find(key => stripPrefix(key) === 'package')
   if (!packageKey) return null
@@ -161,7 +172,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   const creators = parseCreators(metadata)
   const authors = (fetchCreators(creators, 'aut') || []).map(au => au?.trim()).filter(au => au)
   const narrators = (fetchNarrators(creators, metadata) || []).map(nrt => nrt?.trim()).filter(nrt => nrt)
-  const data = {
+  return {
     title: fetchTitle(metadata),
     subtitle: fetchSubtitle(metadata),
     authors,
@@ -173,9 +184,13 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     description: fetchDescription(metadata),
     genres: fetchGenres(metadata),
     language: fetchLanguage(metadata),
-    series: fetchSeries(metadata.meta),
-    sequence: fetchVolumeNumber(metadata.meta),
+    series: fetchSeries(metadataMeta),
     tags: fetchTags(metadata)
   }
-  return data
+}
+
+module.exports.parseOpfMetadataXML = async (xml) => {
+  const json = await xmlToJSON(xml)
+  if (!json) return null
+  return this.parseOpfMetadataJson(json)
 }

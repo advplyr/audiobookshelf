@@ -1,5 +1,12 @@
 const { DataTypes, Model } = require('sequelize')
 
+/**
+ * @typedef PodcastExpandedProperties
+ * @property {import('./PodcastEpisode')[]} podcastEpisodes
+ *
+ * @typedef {Podcast & PodcastExpandedProperties} PodcastExpanded
+ */
+
 class Podcast extends Model {
   constructor(values, options) {
     super(values, options)
@@ -54,7 +61,7 @@ class Podcast extends Model {
 
   static getOldPodcast(libraryItemExpanded) {
     const podcastExpanded = libraryItemExpanded.media
-    const podcastEpisodes = podcastExpanded.podcastEpisodes?.map(ep => ep.getOldPodcastEpisode(libraryItemExpanded.id).toJSON()).sort((a, b) => a.index - b.index)
+    const podcastEpisodes = podcastExpanded.podcastEpisodes?.map((ep) => ep.getOldPodcastEpisode(libraryItemExpanded.id).toJSON()).sort((a, b) => a.index - b.index)
     return {
       id: podcastExpanded.id,
       libraryItemId: libraryItemExpanded.id,
@@ -133,41 +140,44 @@ class Podcast extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-      },
-      title: DataTypes.STRING,
-      titleIgnorePrefix: DataTypes.STRING,
-      author: DataTypes.STRING,
-      releaseDate: DataTypes.STRING,
-      feedURL: DataTypes.STRING,
-      imageURL: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      itunesPageURL: DataTypes.STRING,
-      itunesId: DataTypes.STRING,
-      itunesArtistId: DataTypes.STRING,
-      language: DataTypes.STRING,
-      podcastType: DataTypes.STRING,
-      explicit: DataTypes.BOOLEAN,
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        title: DataTypes.STRING,
+        titleIgnorePrefix: DataTypes.STRING,
+        author: DataTypes.STRING,
+        releaseDate: DataTypes.STRING,
+        feedURL: DataTypes.STRING,
+        imageURL: DataTypes.STRING,
+        description: DataTypes.TEXT,
+        itunesPageURL: DataTypes.STRING,
+        itunesId: DataTypes.STRING,
+        itunesArtistId: DataTypes.STRING,
+        language: DataTypes.STRING,
+        podcastType: DataTypes.STRING,
+        explicit: DataTypes.BOOLEAN,
 
-      autoDownloadEpisodes: DataTypes.BOOLEAN,
-      autoDownloadSchedule: DataTypes.STRING,
-      lastEpisodeCheck: DataTypes.DATE,
-      maxEpisodesToKeep: DataTypes.INTEGER,
-      maxNewEpisodesToDownload: DataTypes.INTEGER,
-      coverPath: DataTypes.STRING,
-      tags: DataTypes.JSON,
-      genres: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'podcast'
-    })
+        autoDownloadEpisodes: DataTypes.BOOLEAN,
+        autoDownloadSchedule: DataTypes.STRING,
+        lastEpisodeCheck: DataTypes.DATE,
+        maxEpisodesToKeep: DataTypes.INTEGER,
+        maxNewEpisodesToDownload: DataTypes.INTEGER,
+        coverPath: DataTypes.STRING,
+        tags: DataTypes.JSON,
+        genres: DataTypes.JSON
+      },
+      {
+        sequelize,
+        modelName: 'podcast'
+      }
+    )
   }
 }
 

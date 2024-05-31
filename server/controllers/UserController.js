@@ -100,7 +100,7 @@ class UserController {
     account.id = uuidv4()
     account.pash = await this.auth.hashPass(account.password)
     delete account.password
-    account.token = await this.auth.generateAccessToken({ userId: account.id, username })
+    account.token = await this.auth.generateAccessToken(account)
     account.createdAt = Date.now()
     const newUser = new User(account)
 
@@ -150,7 +150,7 @@ class UserController {
 
     if (user.update(account)) {
       if (shouldUpdateToken) {
-        user.token = await this.auth.generateAccessToken({ userId: user.id, username: user.username })
+        user.token = await this.auth.generateAccessToken(user)
         Logger.info(`[UserController] User ${user.username} was generated a new api token`)
       }
       await Database.updateUser(user)
@@ -192,6 +192,23 @@ class UserController {
     res.json({
       success: true
     })
+  }
+
+  /**
+   * PATCH: /api/users/:id/openid-unlink
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
+  async unlinkFromOpenID(req, res) {
+    Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
+    req.reqUser.authOpenIDSub = null
+    if (await Database.userModel.updateFromOld(req.reqUser)) {
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toJSONForBrowser())
+      res.sendStatus(200)
+    } else {
+      res.sendStatus(500)
+    }
   }
 
   // GET: api/users/:id/listening-sessions

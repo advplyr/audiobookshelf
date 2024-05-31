@@ -24,6 +24,8 @@ class User {
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsSelected = [] // Empty if ALL item tags accessible
 
+    this.authOpenIDSub = null
+
     if (user) {
       this.construct(user)
     }
@@ -66,7 +68,7 @@ class User {
   getDefaultUserPermissions() {
     return {
       download: true,
-      update: true,
+      update: this.type === 'root' || this.type === 'admin',
       delete: this.type === 'root',
       upload: this.type === 'root' || this.type === 'admin',
       accessAllLibraries: true,
@@ -93,7 +95,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      authOpenIDSub: this.authOpenIDSub
     }
   }
 
@@ -114,7 +117,8 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsSelected: [...this.itemTagsSelected]
+      itemTagsSelected: [...this.itemTagsSelected],
+      hasOpenIDLink: !!this.authOpenIDSub
     }
     if (minimal) {
       delete json.mediaProgress
@@ -186,6 +190,8 @@ class User {
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
     this.itemTagsSelected = [...(user.itemTagsSelected || [])]
+
+    this.authOpenIDSub = user.authOpenIDSub || null
   }
 
   update(payload) {
@@ -260,6 +266,111 @@ class User {
       }
     }
     return hasUpdates
+  }
+
+  // List of expected permission properties from the client
+  static permissionMapping = {
+    canDownload: 'download',
+    canUpload: 'upload',
+    canDelete: 'delete',
+    canUpdate: 'update',
+    canAccessExplicitContent: 'accessExplicitContent',
+    canAccessAllLibraries: 'accessAllLibraries',
+    canAccessAllTags: 'accessAllTags',
+    tagsAreDenylist: 'selectedTagsNotAccessible',
+    // Direct mapping for array-based permissions
+    allowedLibraries: 'librariesAccessible',
+    allowedTags: 'itemTagsSelected'
+  }
+
+  /**
+   * Update user permissions from external JSON
+   * 
+   * @param {Object} absPermissions JSON containing user permissions
+   * @returns {boolean} true if updates were made
+   */
+  updatePermissionsFromExternalJSON(absPermissions) {
+    let hasUpdates = false
+    let updatedUserPermissions = {}
+
+    // Initialize all permissions to false first
+    Object.keys(User.permissionMapping).forEach(mappingKey => {
+      const userPermKey = User.permissionMapping[mappingKey]
+      if (typeof this.permissions[userPermKey] === 'boolean') {
+        updatedUserPermissions[userPermKey] = false // Default to false for boolean permissions
+      }
+    })
+
+    // Map the boolean permissions from absPermissions
+    Object.keys(absPermissions).forEach(absKey => {
+      const userPermKey = User.permissionMapping[absKey]
+      if (!userPermKey) {
+        throw new Error(`Unexpected permission property: ${absKey}`)
+      }
+
+      if (updatedUserPermissions[userPermKey] !== undefined) {
+        updatedUserPermissions[userPermKey] = !!absPermissions[absKey]
+      }
+    })
+
+    // Update user permissions if changes were made
+    if (JSON.stringify(this.permissions) !== JSON.stringify(updatedUserPermissions)) {
+      this.permissions = updatedUserPermissions
+      hasUpdates = true
+    }
+
+    // Handle allowedLibraries
+    if (this.permissions.accessAllLibraries) {
+      if (this.librariesAccessible.length) {
+        this.librariesAccessible = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedLibraries?.length && absPermissions.allowedLibraries.join(',') !== this.librariesAccessible.join(',')) {
+      if (absPermissions.allowedLibraries.some(lid => typeof lid !== 'string')) {
+        throw new Error('Invalid permission property "allowedLibraries", expecting array of strings')
+      }
+      this.librariesAccessible = absPermissions.allowedLibraries
+      hasUpdates = true
+    }
+
+    // Handle allowedTags
+    if (this.permissions.accessAllTags) {
+      if (this.itemTagsSelected.length) {
+        this.itemTagsSelected = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedTags?.length && absPermissions.allowedTags.join(',') !== this.itemTagsSelected.join(',')) {
+      if (absPermissions.allowedTags.some(tag => typeof tag !== 'string')) {
+        throw new Error('Invalid permission property "allowedTags", expecting array of strings')
+      }
+      this.itemTagsSelected = absPermissions.allowedTags
+      hasUpdates = true
+    }
+
+    return hasUpdates
+  }
+
+
+  /**
+   * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like 
+   * 
+   * @returns {string} JSON string
+   */
+  static getSampleAbsPermissions() {
+    // Start with a template object where all permissions are false for simplicity
+    const samplePermissions = Object.keys(User.permissionMapping).reduce((acc, key) => {
+      // For array-based permissions, provide a sample array
+      if (key === 'allowedLibraries') {
+        acc[key] = [`5406ba8a-16e1-451d-96d7-4931b0a0d966`, `918fd848-7c1d-4a02-818a-847435a879ca`]
+      } else if (key === 'allowedTags') {
+        acc[key] = [`ExampleTag`, `AnotherTag`, `ThirdTag`]
+      } else {
+        acc[key] = false
+      }
+      return acc
+    }, {})
+
+    return JSON.stringify(samplePermissions, null, 2) // Pretty print the JSON
   }
 
   /**

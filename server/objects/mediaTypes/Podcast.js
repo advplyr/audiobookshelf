@@ -42,7 +42,13 @@ class Podcast {
     this.autoDownloadSchedule = podcast.autoDownloadSchedule || '0 * * * *' // Added in 2.1.3 so default to hourly
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
     this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
-    this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload || 3
+
+    // Default is 3 but 0 is allowed
+    if (typeof podcast.maxNewEpisodesToDownload !== 'number') {
+      this.maxNewEpisodesToDownload = 3
+    } else {
+      this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload
+    }
   }
 
   toJSON() {
@@ -52,7 +58,7 @@ class Podcast {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
+      episodes: this.episodes.map((e) => e.toJSON()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
@@ -84,7 +90,7 @@ class Podcast {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSONExpanded()),
+      episodes: this.episodes.map((e) => e.toJSONExpanded()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
@@ -115,7 +121,7 @@ class Podcast {
 
   get size() {
     var total = 0
-    this.episodes.forEach((ep) => total += ep.size)
+    this.episodes.forEach((ep) => (total += ep.size))
     return total
   }
   get hasMediaEntities() {
@@ -123,7 +129,7 @@ class Podcast {
   }
   get duration() {
     let total = 0
-    this.episodes.forEach((ep) => total += ep.duration)
+    this.episodes.forEach((ep) => (total += ep.duration))
     return total
   }
   get numTracks() {
@@ -139,7 +145,7 @@ class Podcast {
     return largestPublishedAt
   }
   get episodesWithPubDate() {
-    return this.episodes.filter(ep => !!ep.publishedAt)
+    return this.episodes.filter((ep) => !!ep.publishedAt)
   }
 
   update(payload) {
@@ -163,7 +169,7 @@ class Podcast {
   }
 
   updateEpisode(id, payload) {
-    var episode = this.episodes.find(ep => ep.id == id)
+    var episode = this.episodes.find((ep) => ep.id == id)
     if (!episode) return false
     return episode.update(payload)
   }
@@ -176,15 +182,15 @@ class Podcast {
   }
 
   removeFileWithInode(inode) {
-    const hasEpisode = this.episodes.some(ep => ep.audioFile.ino === inode)
+    const hasEpisode = this.episodes.some((ep) => ep.audioFile.ino === inode)
     if (hasEpisode) {
-      this.episodes = this.episodes.filter(ep => ep.audioFile.ino !== inode)
+      this.episodes = this.episodes.filter((ep) => ep.audioFile.ino !== inode)
     }
     return hasEpisode
   }
 
   findFileWithInode(inode) {
-    var episode = this.episodes.find(ep => ep.audioFile.ino === inode)
+    var episode = this.episodes.find((ep) => ep.audioFile.ino === inode)
     if (episode) return episode.audioFile
     return null
   }
@@ -202,21 +208,23 @@ class Podcast {
   }
 
   checkHasEpisode(episodeId) {
-    return this.episodes.some(ep => ep.id === episodeId)
+    return this.episodes.some((ep) => ep.id === episodeId)
   }
-  checkHasEpisodeByFeedUrl(url) {
-    return this.episodes.some(ep => ep.checkEqualsEnclosureUrl(url))
+  checkHasEpisodeByFeedEpisode(feedEpisode) {
+    const guid = feedEpisode.guid
+    const url = feedEpisode.enclosure.url
+    return this.episodes.some((ep) => (ep.guid && ep.guid === guid) || ep.checkEqualsEnclosureUrl(url))
   }
 
   // Only checks container format
   checkCanDirectPlay(payload, episodeId) {
-    var episode = this.episodes.find(ep => ep.id === episodeId)
+    var episode = this.episodes.find((ep) => ep.id === episodeId)
     if (!episode) return false
     return episode.checkCanDirectPlay(payload)
   }
 
   getDirectPlayTracklist(episodeId) {
-    var episode = this.episodes.find(ep => ep.id === episodeId)
+    var episode = this.episodes.find((ep) => ep.id === episodeId)
     if (!episode) return false
     return episode.getDirectPlayTracklist()
   }
@@ -235,15 +243,15 @@ class Podcast {
   }
 
   removeEpisode(episodeId) {
-    const episode = this.episodes.find(ep => ep.id === episodeId)
+    const episode = this.episodes.find((ep) => ep.id === episodeId)
     if (episode) {
-      this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
+      this.episodes = this.episodes.filter((ep) => ep.id !== episodeId)
     }
     return episode
   }
 
   getPlaybackTitle(episodeId) {
-    var episode = this.episodes.find(ep => ep.id == episodeId)
+    var episode = this.episodes.find((ep) => ep.id == episodeId)
     if (!episode) return this.metadata.title
     return episode.title
   }
@@ -253,7 +261,7 @@ class Podcast {
   }
 
   getEpisodeDuration(episodeId) {
-    var episode = this.episodes.find(ep => ep.id == episodeId)
+    var episode = this.episodes.find((ep) => ep.id == episodeId)
     if (!episode) return 0
     return episode.duration
   }
@@ -262,13 +270,13 @@ class Podcast {
     if (!episodeId) return null
 
     // Support old episode ids for mobile downloads
-    if (episodeId.startsWith('ep_')) return this.episodes.find(ep => ep.oldEpisodeId == episodeId)
+    if (episodeId.startsWith('ep_')) return this.episodes.find((ep) => ep.oldEpisodeId == episodeId)
 
-    return this.episodes.find(ep => ep.id == episodeId)
+    return this.episodes.find((ep) => ep.id == episodeId)
   }
 
   getChapters(episodeId) {
-    return this.getEpisode(episodeId)?.chapters?.map(ch => ({ ...ch })) || []
+    return this.getEpisode(episodeId)?.chapters?.map((ch) => ({ ...ch })) || []
   }
 }
 module.exports = Podcast

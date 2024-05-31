@@ -1,29 +1,18 @@
 module.exports = {
-  purge: {
-    content: [
-      'components/**/*.vue',
-      'layouts/**/*.vue',
-      'pages/**/*.vue',
-      'templates/**/*.vue',
-      'plugins/**/*.js',
-      'nuxt.config.js'
-    ],
-    safelist: [
-      'bg-success',
-      'bg-red-600',
-      'bg-yellow-400',
-      'text-green-500',
-      'py-1.5',
-      'bg-info',
-      'px-1.5',
-      'min-w-5',
-      'w-3.5',
-      'h-3.5',
-      'border-warning',
-      'mb-px',
-      'text-1.5xl'
-    ],
-  },
+  content: [
+    'components/**/*.vue',
+    'layouts/**/*.vue',
+    'pages/**/*.vue',
+    'templates/**/*.vue',
+    'plugins/**/*.js',
+    'nuxt.config.js'
+  ],
+  safelist: [
+    'bg-red-600',
+    'px-1.5',
+    'min-w-5',
+    'border-warning'
+  ],
   theme: {
     extend: {
       height: {
@@ -56,6 +45,7 @@ module.exports = {
         '16': '4rem',
         '20': '5rem',
         '24': '6rem',
+        '26': '6.5rem',
         '32': '8rem',
         '48': '12rem',
         '64': '16rem',
@@ -96,7 +86,8 @@ module.exports = {
       fontSize: {
         xxs: '0.625rem',
         '1.5xl': '1.375rem',
-        '2.5xl': '1.6875rem'
+        '2.5xl': '1.6875rem',
+        '4.5xl': '2.625rem'
       },
       zIndex: {
         '50': 50,

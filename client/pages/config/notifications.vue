@@ -142,7 +142,7 @@ export default {
       this.loading = true
       const notificationResponse = await this.$axios.$get('/api/notifications').catch((error) => {
         console.error('Failed to get notification settings', error)
-        this.$toast.error('Failed to load notification settings')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.loading = false

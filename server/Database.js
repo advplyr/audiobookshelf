@@ -1,5 +1,5 @@
 const Path = require('path')
-const { Sequelize } = require('sequelize')
+const { Sequelize, Op } = require('sequelize')
 
 const packageJson = require('../package.json')
 const fs = require('./libs/fsExtra')
@@ -122,9 +122,19 @@ class Database {
     return this.models.feed
   }
 
-  /** @type {typeof import('./models/Feed')} */
+  /** @type {typeof import('./models/FeedEpisode')} */
   get feedEpisodeModel() {
     return this.models.feedEpisode
+  }
+
+  /** @type {typeof import('./models/PlaybackSession')} */
+  get playbackSessionModel() {
+    return this.models.playbackSession
+  }
+
+  /** @type {typeof import('./models/CustomMetadataProvider')} */
+  get customMetadataProviderModel() {
+    return this.models.customMetadataProvider
   }
 
   /**
@@ -172,11 +182,11 @@ class Database {
     if (process.env.QUERY_LOGGING === "log") {
       // Setting QUERY_LOGGING=log will log all Sequelize queries before they run
       Logger.info(`[Database] Query logging enabled`)
-      logging = (query) => Logger.dev(`Running the following query:\n ${query}`)
+      logging = (query) => Logger.debug(`Running the following query:\n ${query}`)
     } else if (process.env.QUERY_LOGGING === "benchmark") {
       // Setting QUERY_LOGGING=benchmark will log all Sequelize queries and their execution times, after they run
       Logger.info(`[Database] Query benchmarking enabled"`)
-      logging = (query, time) => Logger.dev(`Ran the following query in ${time}ms:\n ${query}`)
+      logging = (query, time) => Logger.debug(`Ran the following query in ${time}ms:\n ${query}`)
       benchmark = true
     }
 
@@ -207,7 +217,6 @@ class Database {
   async disconnect() {
     Logger.info(`[Database] Disconnecting sqlite db`)
     await this.sequelize.close()
-    this.sequelize = null
   }
 
   /**
@@ -240,6 +249,7 @@ class Database {
     require('./models/Feed').init(this.sequelize)
     require('./models/FeedEpisode').init(this.sequelize)
     require('./models/Setting').init(this.sequelize)
+    require('./models/CustomMetadataProvider').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
@@ -408,10 +418,21 @@ class Database {
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
   }
 
+  /**
+   * Save metadata file and update library item
+   * 
+   * @param {import('./objects/LibraryItem')} oldLibraryItem 
+   * @returns {Promise<boolean>}
+   */
   async updateLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
     await oldLibraryItem.saveMetadata()
-    return this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
+    // Clear library filter data cache
+    if (updated) {
+      delete this.libraryFilterData[oldLibraryItem.libraryId]
+    }
+    return updated
   }
 
   async removeLibraryItem(libraryItemId) {
@@ -668,6 +689,34 @@ class Database {
   }
 
   /**
+   * Get author id for library by name. Uses library filter data if available
+   * 
+   * @param {string} libraryId 
+   * @param {string} authorName 
+   * @returns {Promise<string>} author id or null if not found 
+   */
+  async getAuthorIdByName(libraryId, authorName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return (await this.authorModel.getOldByNameAndLibrary(authorName, libraryId))?.id || null
+    }
+    return this.libraryFilterData[libraryId].authors.find(au => au.name === authorName)?.id || null
+  }
+
+  /**
+   * Get series id for library by name. Uses library filter data if available
+   * 
+   * @param {string} libraryId 
+   * @param {string} seriesName 
+   * @returns {Promise<string>} series id or null if not found
+   */
+  async getSeriesIdByName(libraryId, seriesName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return (await this.seriesModel.getOldByNameAndLibrary(seriesName, libraryId))?.id || null
+    }
+    return this.libraryFilterData[libraryId].series.find(se => se.name === seriesName)?.id || null
+  }
+
+  /**
    * Reset numIssues for library
    * @param {string} libraryId 
    */
@@ -693,6 +742,7 @@ class Database {
    * Clean invalid records in database
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem
+   * Remove playback sessions that are 3 seconds or less
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -732,6 +782,18 @@ class Database {
     for (const series of emptySeries) {
       Logger.warn(`Found series "${series.name}" with no books - removing it`)
       await series.destroy()
+    }
+
+    // Remove playback sessions that were 3 seconds or less
+    const badSessionsRemoved = await this.playbackSessionModel.destroy({
+      where: {
+        timeListening: {
+          [Op.lte]: 3
+        }
+      }
+    })
+    if (badSessionsRemoved > 0) {
+      Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
   }
 }

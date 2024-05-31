@@ -15,24 +15,37 @@
 
       <div class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="itemData.title" :disabled="processing" :label="$strings.LabelTitle" @input="titleUpdated" />
+          <ui-text-input-with-label v-model.trim="itemData.title" :disabled="processing" :label="$strings.LabelTitle" @input="titleUpdated" />
         </div>
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-if="!isPodcast" v-model="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
+          <div v-if="!isPodcast" class="flex items-end">
+            <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
+            <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
+              <div class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
+                <span class="text-base text-white text-opacity-80 font-mono material-icons">sync</span>
+              </div>
+            </ui-tooltip>
+          </div>
           <div v-else class="w-full">
-            <p class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></p>
-            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 38px" />
+            <p class="px-1 text-sm font-semibold">
+              {{ $strings.LabelDirectory }}
+              <em class="font-normal text-xs pl-2">(auto)</em>
+            </p>
+            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" />
           </div>
         </div>
       </div>
       <div v-if="!isPodcast" class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="itemData.series" :disabled="processing" :label="$strings.LabelSeries" note="(optional)" />
+          <ui-text-input-with-label v-model.trim="itemData.series" :disabled="processing" :label="$strings.LabelSeries" note="(optional)" inputClass="h-10" />
         </div>
         <div class="w-1/2 px-2">
           <div class="w-full">
-            <p class="px-1 text-sm font-semibold">{{ $strings.LabelDirectory }} <em class="font-normal text-xs pl-2">(auto)</em></p>
-            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 38px" />
+            <label class="px-1 text-sm font-semibold">
+              {{ $strings.LabelDirectory }}
+              <em class="font-normal text-xs pl-2">(auto)</em>
+            </label>
+            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs h-10" />
           </div>
         </div>
       </div>
@@ -42,14 +55,14 @@
       <tables-uploaded-files-table v-if="item.ignoredFiles.length" :title="$strings.HeaderIgnoredFiles" :files="item.ignoredFiles" />
     </template>
     <widgets-alert v-if="uploadSuccess" type="success">
-      <p class="text-base">{{ $strings.MessageUploaderItemSuccess }}</p>
+      <p class="text-base">"{{ itemData.title }}" {{ $strings.MessageUploaderItemSuccess }}</p>
     </widgets-alert>
     <widgets-alert v-if="uploadFailed" type="error">
-      <p class="text-base">{{ $strings.MessageUploaderItemFailed }}</p>
+      <p class="text-base">"{{ itemData.title }}" {{ $strings.MessageUploaderItemFailed }}</p>
     </widgets-alert>
 
-    <div v-if="isUploading" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
-      <ui-loading-indicator :text="$strings.MessageUploading" />
+    <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
+      <ui-loading-indicator :text="nonInteractionLabel" />
     </div>
   </div>
 </template>
@@ -64,7 +77,8 @@ export default {
       default: () => {}
     },
     mediaType: String,
-    processing: Boolean
+    processing: Boolean,
+    provider: String
   },
   data() {
     return {
@@ -76,7 +90,8 @@ export default {
       error: '',
       isUploading: false,
       uploadFailed: false,
-      uploadSuccess: false
+      uploadSuccess: false,
+      isFetchingMetadata: false
     }
   },
   computed: {
@@ -87,12 +102,19 @@ export default {
       if (!this.itemData.title) return ''
       if (this.isPodcast) return this.itemData.title
 
-      if (this.itemData.series && this.itemData.author) {
-        return Path.join(this.itemData.author, this.itemData.series, this.itemData.title)
-      } else if (this.itemData.author) {
-        return Path.join(this.itemData.author, this.itemData.title)
-      } else {
-        return this.itemData.title
+      const outputPathParts = [this.itemData.author, this.itemData.series, this.itemData.title]
+      const cleanedOutputPathParts = outputPathParts.filter(Boolean).map((part) => this.$sanitizeFilename(part))
+
+      return Path.join(...cleanedOutputPathParts)
+    },
+    isNonInteractable() {
+      return this.isUploading || this.isFetchingMetadata
+    },
+    nonInteractionLabel() {
+      if (this.isUploading) {
+        return this.$strings.MessageUploading
+      } else if (this.isFetchingMetadata) {
+        return this.$strings.LabelFetchingMetadata
       }
     }
   },
@@ -105,9 +127,42 @@ export default {
     titleUpdated() {
       this.error = ''
     },
+    async fetchMetadata() {
+      if (!this.itemData.title.trim().length) {
+        return
+      }
+
+      this.isFetchingMetadata = true
+      this.error = ''
+
+      try {
+        const searchQueryString = new URLSearchParams({
+          title: this.itemData.title,
+          author: this.itemData.author,
+          provider: this.provider
+        })
+        const [bestCandidate, ..._rest] = await this.$axios.$get(`/api/search/books?${searchQueryString}`)
+
+        if (bestCandidate) {
+          this.itemData = {
+            ...this.itemData,
+            title: bestCandidate.title,
+            author: bestCandidate.author,
+            series: (bestCandidate.series || [])[0]?.series
+          }
+        } else {
+          this.error = this.$strings.ErrorUploadFetchMetadataNoResults
+        }
+      } catch (e) {
+        console.error('Failed', e)
+        this.error = this.$strings.ErrorUploadFetchMetadataAPI
+      } finally {
+        this.isFetchingMetadata = false
+      }
+    },
     getData() {
       if (!this.itemData.title) {
-        this.error = 'Must have a title'
+        this.error = this.$strings.ErrorUploadLacksTitle
         return null
       }
       this.error = ''

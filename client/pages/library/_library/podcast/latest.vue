@@ -8,17 +8,17 @@
         <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
         <template v-for="(episode, index) in episodesMapped">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
-            <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
+            <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
             <div class="flex-grow pl-4 max-w-2xl">
               <!-- mobile -->
               <div class="flex md:hidden mb-2">
-                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
                 <div class="flex-grow px-2">
                   <div class="flex items-center">
                     <div class="flex" @click.stop>
                       <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                     </div>
-                    <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                    <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                   </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
@@ -29,7 +29,7 @@
                   <div class="flex" @click.stop>
                     <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                   </div>
-                  <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                  <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                 </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>
@@ -40,12 +40,12 @@
                 <div v-if="episode.episode">{{ episode.episode }}</div>
               </div>
 
-              <div class="flex items-center mb-2">
+              <div dir="auto" class="flex items-center mb-2">
                 <div class="font-semibold text-sm md:text-base">{{ episode.title }}</div>
                 <widgets-podcast-type-indicator :type="episode.episodeType" />
               </div>
 
-              <p class="text-sm text-gray-200 mb-4 episode-subtitle-long" v-html="episode.subtitle || episode.description" />
+              <p dir="auto" class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
 
               <div class="flex items-center">
                 <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
@@ -54,9 +54,16 @@
                   <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
                 </button>
 
-                <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
-                  <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
-                </button>
+                <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" direction="top">
+                  <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" />
+                  <!-- <button class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
+                    <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
+                  </button> -->
+                </ui-tooltip>
+
+                <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
+                  <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist(episode)" />
+                </ui-tooltip>
               </div>
             </div>
 
@@ -136,6 +143,15 @@ export default {
     }
   },
   methods: {
+    clickAddToPlaylist(episode) {
+      // Makeshift libraryItem
+      const libraryItem = {
+        id: episode.libraryItemId,
+        media: episode.podcast
+      }
+      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: libraryItem, episode }])
+      this.$store.commit('globals/setShowPlaylistsModal', true)
+    },
     async clickEpisode(episode) {
       if (this.openingItem) return
       this.openingItem = true
@@ -155,7 +171,9 @@ export default {
       if (this.episodeIdStreaming === episode.id) return this.streamIsPlaying ? 'Streaming' : 'Play'
       if (!episode.progress) return this.$elapsedPretty(episode.duration)
       if (episode.progress.isFinished) return 'Finished'
-      var remaining = Math.floor(episode.progress.duration - episode.progress.currentTime)
+
+      const duration = episode.progress.duration || episode.duration
+      const remaining = Math.floor(duration - episode.progress.currentTime)
       return `${this.$elapsedPretty(remaining)} left`
     },
     playClick(episodeToPlay) {

@@ -16,7 +16,7 @@
                 <div class="flex-grow px-2">
                   <div class="flex items-center">
                     <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcastTitle }}</nuxt-link>
-                    <widgets-explicit-indicator :explicit="episode.podcastExplicit" />
+                    <widgets-explicit-indicator v-if="episode.podcastExplicit" />
                   </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
@@ -25,7 +25,7 @@
               <div class="hidden md:block">
                 <div class="flex items-center">
                   <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcastTitle }}</nuxt-link>
-                  <widgets-explicit-indicator :explicit="episode.podcastExplicit" />
+                  <widgets-explicit-indicator v-if="episode.podcastExplicit" />
                 </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>

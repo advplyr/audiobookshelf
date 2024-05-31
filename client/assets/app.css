@@ -30,8 +30,7 @@
 }
 
 .bookshelf-row {
-  /* Sidebar width + scrollbar width */
-  width: calc(100vw - 88px);
+  width: calc(100vw - (100vw - 100%));
 }
 
 @media (max-width: 768px) {
@@ -217,36 +216,6 @@ Bookshelf Label
   filter: blur(20px);
 }
 
-
-.episode-subtitle {
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-height: 16px;
-  /* fallback */
-  max-height: 32px;
-  /* fallback */
-  -webkit-line-clamp: 2;
-  /* number of lines to show */
-  -webkit-box-orient: vertical;
-}
-
-.episode-subtitle-long {
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-height: 16px;
-  /* fallback */
-  max-height: 72px;
-  /* fallback */
-  -webkit-line-clamp: 6;
-  /* number of lines to show */
-  -webkit-box-orient: vertical;
-}
-
-
 /* Padding for toastification toasts in the top right to not cover appbar/toolbar */
 .app-bar-and-toolbar .Vue-Toastification__container.top-right {
   padding-top: 104px;
@@ -258,4 +227,24 @@ Bookshelf Label
 
 .no-bars .Vue-Toastification__container.top-right {
   padding-top: 8px;
+}
+
+.abs-btn::before {
+  content: '';
+  position: absolute;
+  border-radius: 6px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0);
+  transition: all 0.1s ease-in-out;
+}
+
+.abs-btn:hover:not(:disabled)::before {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.abs-btn:disabled::before {
+  background-color: rgba(0, 0, 0, 0.2);
 }

@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "2.5.0",
+  "version": "2.10.1",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
@@ -9,7 +9,10 @@
     "dev2": "nuxt --hostname localhost --port 1337",
     "build": "nuxt build",
     "start": "nuxt start",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "test": "npm run compile-tailwind && cypress run --component --browser chrome",
+    "test-visually": "npm run compile-tailwind && cypress open --component --browser chrome",
+    "compile-tailwind": "tailwindcss -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -21,9 +24,9 @@
     "cron-parser": "^4.7.1",
     "date-fns": "^2.25.0",
     "epubjs": "^0.3.88",
-    "hls.js": "^1.0.7",
+    "hls.js": "^1.5.7",
     "libarchive.js": "^1.3.0",
-    "nuxt": "^2.15.8",
+    "nuxt": "^2.17.3",
     "nuxt-socket-io": "^1.1.18",
     "pdfvuer": "^1.10.0",
     "trix": "^1.3.1",
@@ -32,11 +35,10 @@
     "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
-    "@nuxt/postcss8": "^1.1.3",
     "@nuxtjs/pwa": "^3.3.5",
-    "@nuxtjs/tailwindcss": "^4.2.1",
     "autoprefixer": "^10.4.7",
+    "cypress": "^13.7.3",
     "postcss": "^8.3.6",
-    "tailwindcss": "^3.1.4"
+    "tailwindcss": "^3.4.1"
   }
 }

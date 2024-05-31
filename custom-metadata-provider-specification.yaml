@@ -1,0 +1,140 @@
+openapi: 3.0.0
+
+servers:
+  - url: https://example.com
+    description: Local server
+
+info:
+  title: Custom Metadata Provider
+  version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+security:
+  - api_key: []
+
+paths:
+  /search:
+    get:
+      description: Search for books
+      operationId: search
+      summary: Search for books
+      security:
+        - api_key: []
+
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: author
+          in: query
+          required: false
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookMetadata"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: AUTHORIZATION
+      in: header
+
+  schemas:
+    BookMetadata:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        author:
+          type: string
+        narrator:
+          type: string
+        publisher:
+          type: string
+        publishedYear:
+          type: string
+        description:
+          type: string
+        cover:
+          type: string
+          description: URL to the cover image
+        isbn:
+          type: string
+          format: isbn
+        asin:
+          type: string
+          format: asin
+        genres:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        series:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeriesMetadata"
+        language:
+          type: string
+        duration:
+          type: integer
+          format: int64
+          description: Duration in seconds
+
+    SeriesMetadata:
+      type: object
+      required:
+        - series
+      properties:
+        series:
+          type: string
+        sequence:
+          type: string

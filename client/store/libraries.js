@@ -16,8 +16,8 @@ export const state = () => ({
 })
 
 export const getters = {
-  getCurrentLibrary: state => {
-    return state.libraries.find(lib => lib.id === state.currentLibraryId)
+  getCurrentLibrary: (state) => {
+    return state.libraries.find((lib) => lib.id === state.currentLibraryId)
   },
   getCurrentLibraryName: (state, getters) => {
     var currentLibrary = getters.getCurrentLibrary
@@ -28,11 +28,11 @@ export const getters = {
     if (!getters.getCurrentLibrary) return null
     return getters.getCurrentLibrary.mediaType
   },
-  getSortedLibraries: state => () => {
-    return state.libraries.map(lib => ({ ...lib })).sort((a, b) => a.displayOrder - b.displayOrder)
+  getSortedLibraries: (state) => () => {
+    return state.libraries.map((lib) => ({ ...lib })).sort((a, b) => a.displayOrder - b.displayOrder)
   },
-  getLibraryProvider: state => libraryId => {
-    var library = state.libraries.find(l => l.id === libraryId)
+  getLibraryProvider: (state) => (libraryId) => {
+    var library = state.libraries.find((l) => l.id === libraryId)
     if (!library) return null
     return library.provider
   },
@@ -60,11 +60,14 @@ export const getters = {
   getLibraryIsAudiobooksOnly: (state, getters) => {
     return !!getters.getCurrentLibrarySettings?.audiobooksOnly
   },
-  getCollection: state => id => {
-    return state.collections.find(c => c.id === id)
+  getLibraryEpubsAllowScriptedContent: (state, getters) => {
+    return !!getters.getCurrentLibrarySettings?.epubsAllowScriptedContent
   },
-  getPlaylist: state => id => {
-    return state.userPlaylists.find(p => p.id === id)
+  getCollection: (state) => (id) => {
+    return state.collections.find((c) => c.id === id)
+  },
+  getPlaylist: (state) => (id) => {
+    return state.userPlaylists.find((p) => p.id === id)
   }
 }
 
@@ -75,18 +78,17 @@ export const actions = {
   loadFolders({ state, commit }) {
     if (state.folders.length) {
       const lastCheck = Date.now() - state.folderLastUpdate
-      if (lastCheck < 1000 * 5) { // 5 seconds
+      if (lastCheck < 1000 * 5) {
+        // 5 seconds
         // Folders up to date
         return state.folders
       }
     }
-    console.log('Loading folders')
     commit('setFoldersLastUpdate')
 
     return this.$axios
       .$get('/api/filesystem')
       .then((res) => {
-        console.log('Settings folders', res)
         commit('setFolders', res.directories)
         return res.directories
       })
@@ -115,19 +117,23 @@ export const actions = {
         const library = data.library
         const filterData = data.filterdata
         const issues = data.issues || 0
+        const customMetadataProviders = data.customMetadataProviders || []
         const numUserPlaylists = data.numUserPlaylists
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
+
+        if (libraryChanging) {
+          commit('setCollections', [])
+          commit('setUserPlaylists', [])
+        }
 
         commit('addUpdate', library)
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setNumUserPlaylists', numUserPlaylists)
+        commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
+
         commit('setCurrentLibrary', libraryId)
-        if (libraryChanging) {
-          commit('setCollections', [])
-          commit('setUserPlaylists', [])
-        }
         return data
       })
       .catch((error) => {
@@ -202,7 +208,7 @@ export const mutations = {
     })
   },
   addUpdate(state, library) {
-    var index = state.libraries.findIndex(a => a.id === library.id)
+    var index = state.libraries.findIndex((a) => a.id === library.id)
     if (index >= 0) {
       state.libraries.splice(index, 1, library)
     } else {
@@ -214,19 +220,19 @@ export const mutations = {
     })
   },
   remove(state, library) {
-    state.libraries = state.libraries.filter(a => a.id !== library.id)
+    state.libraries = state.libraries.filter((a) => a.id !== library.id)
 
     state.listeners.forEach((listener) => {
       listener.meth()
     })
   },
   addListener(state, listener) {
-    var index = state.listeners.findIndex(l => l.id === listener.id)
+    var index = state.listeners.findIndex((l) => l.id === listener.id)
     if (index >= 0) state.listeners.splice(index, 1, listener)
     else state.listeners.push(listener)
   },
   removeListener(state, listenerId) {
-    state.listeners = state.listeners.filter(l => l.id !== listenerId)
+    state.listeners = state.listeners.filter((l) => l.id !== listenerId)
   },
   setLibraryFilterData(state, filterData) {
     state.filterData = filterData
@@ -236,7 +242,7 @@ export const mutations = {
   },
   removeSeriesFromFilterData(state, seriesId) {
     if (!seriesId || !state.filterData) return
-    state.filterData.series = state.filterData.series.filter(se => se.id !== seriesId)
+    state.filterData.series = state.filterData.series.filter((se) => se.id !== seriesId)
   },
   updateFilterDataWithItem(state, libraryItem) {
     if (!libraryItem || !state.filterData) return
@@ -258,12 +264,12 @@ export const mutations = {
     // Add/update book authors
     if (mediaMetadata.authors?.length) {
       mediaMetadata.authors.forEach((author) => {
-        const indexOf = state.filterData.authors.findIndex(au => au.id === author.id)
+        const indexOf = state.filterData.authors.findIndex((au) => au.id === author.id)
         if (indexOf >= 0) {
           state.filterData.authors.splice(indexOf, 1, author)
         } else {
           state.filterData.authors.push(author)
-          state.filterData.authors.sort((a, b) => (a.name || '').localeCompare((b.name || '')))
+          state.filterData.authors.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
         }
       })
     }
@@ -271,12 +277,12 @@ export const mutations = {
     // Add/update series
     if (mediaMetadata.series?.length) {
       mediaMetadata.series.forEach((series) => {
-        const indexOf = state.filterData.series.findIndex(se => se.id === series.id)
+        const indexOf = state.filterData.series.findIndex((se) => se.id === series.id)
         if (indexOf >= 0) {
           state.filterData.series.splice(indexOf, 1, { id: series.id, name: series.name })
         } else {
           state.filterData.series.push({ id: series.id, name: series.name })
-          state.filterData.series.sort((a, b) => (a.name || '').localeCompare((b.name || '')))
+          state.filterData.series.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
         }
       })
     }
@@ -327,7 +333,7 @@ export const mutations = {
     state.collections = collections
   },
   addUpdateCollection(state, collection) {
-    var index = state.collections.findIndex(c => c.id === collection.id)
+    var index = state.collections.findIndex((c) => c.id === collection.id)
     if (index >= 0) {
       state.collections.splice(index, 1, collection)
     } else {
@@ -335,14 +341,14 @@ export const mutations = {
     }
   },
   removeCollection(state, collection) {
-    state.collections = state.collections.filter(c => c.id !== collection.id)
+    state.collections = state.collections.filter((c) => c.id !== collection.id)
   },
   setUserPlaylists(state, playlists) {
     state.userPlaylists = playlists
     state.numUserPlaylists = playlists.length
   },
   addUpdateUserPlaylist(state, playlist) {
-    const index = state.userPlaylists.findIndex(p => p.id === playlist.id)
+    const index = state.userPlaylists.findIndex((p) => p.id === playlist.id)
     if (index >= 0) {
       state.userPlaylists.splice(index, 1, playlist)
     } else {
@@ -351,7 +357,7 @@ export const mutations = {
     }
   },
   removeUserPlaylist(state, playlist) {
-    state.userPlaylists = state.userPlaylists.filter(p => p.id !== playlist.id)
+    state.userPlaylists = state.userPlaylists.filter((p) => p.id !== playlist.id)
     state.numUserPlaylists = state.userPlaylists.length
   },
   setEReaderDevices(state, ereaderDevices) {

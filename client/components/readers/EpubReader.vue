@@ -63,6 +63,9 @@ export default {
     libraryItemId() {
       return this.libraryItem?.id
     },
+    allowScriptedContent() {
+      return this.$store.getters['libraries/getLibraryEpubsAllowScriptedContent']
+    },
     hasPrev() {
       return !this.rendition?.location?.atStart
     },
@@ -316,6 +319,7 @@ export default {
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
         height: this.readerHeight * 0.8,
+        allowScriptedContent: this.allowScriptedContent,
         spread: 'auto',
         snap: true,
         manager: 'continuous',

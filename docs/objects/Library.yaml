@@ -1,0 +1,12 @@
+components:
+  schemas:
+    oldLibraryId:
+      type: string
+      description: The ID of the libraries created on server version 2.2.23 and before.
+      format: "lib_[a-z0-9]{18}"
+      example: lib_o78uaoeuh78h6aoeif
+    libraryId:
+      type: string
+      description: The ID of the library.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b

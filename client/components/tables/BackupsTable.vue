@@ -1,5 +1,5 @@
 <template>
-  <div class="text-center mt-4">
+  <div class="text-center mt-4 relative">
     <div class="flex py-4">
       <ui-file-input ref="fileInput" class="mr-2" accept=".audiobookshelf" @change="backupUploaded">{{ $strings.ButtonUploadBackup }}</ui-file-input>
       <div class="flex-grow" />
@@ -54,6 +54,10 @@
         </div>
       </div>
     </prompt-dialog>
+
+    <div v-if="isApplyingBackup" class="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20 rounded-md">
+      <ui-loading-indicator />
+    </div>
   </div>
 </template>
 
@@ -64,6 +68,7 @@ export default {
       showConfirmApply: false,
       selectedBackup: null,
       isBackingUp: false,
+      isApplyingBackup: false,
       processing: false,
       backups: []
     }
@@ -85,18 +90,20 @@ export default {
     },
     confirm() {
       this.showConfirmApply = false
+      this.isApplyingBackup = true
 
       this.$axios
         .$get(`/api/backups/${this.selectedBackup.id}/apply`)
         .then(() => {
-          this.isBackingUp = false
           location.replace('/config/backups?backup=1')
         })
         .catch((error) => {
-          this.isBackingUp = false
           console.error('Failed to apply backup', error)
           const errorMsg = error.response.data || this.$strings.ToastBackupRestoreFailed
           this.$toast.error(errorMsg)
+        })
+        .finally(() => {
+          this.isApplyingBackup = false
         })
     },
     deleteBackupClick(backup) {
@@ -169,7 +176,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to load backups', error)
-          this.$toast.error('Failed to load backups')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.processing = false
@@ -180,7 +187,6 @@ export default {
     this.loadBackups()
     if (this.$route.query.backup) {
       this.$toast.success('Backup applied successfully')
-      this.$router.replace('/config')
     }
   }
 }

@@ -83,15 +83,21 @@ export default {
     },
     async updateLibrary(library) {
       var currLibraryId = this.currentLibraryId
+      if (currLibraryId === library.id) {
+        return
+      }
 
       this.disabled = true
       await this.$store.dispatch('libraries/fetch', library.id)
 
       if (this.$route.name.startsWith('config')) {
         // No need to refresh
-      } else if (this.$route.name.startsWith('library')) {
-        var newRoute = this.$route.path.replace(currLibraryId, library.id)
+      } else if (this.$route.name.startsWith('library') && this.$route.name !== 'library-library-series-id') {
+        const newRoute = this.$route.path.replace(currLibraryId, library.id)
         this.$router.push(newRoute)
+      } else if (this.$route.name === 'library-library-series-id' && library.mediaType === 'book') {
+        // For series item page redirect to root series page
+        this.$router.push(`/library/${library.id}/bookshelf/series`)
       } else {
         this.$router.push(`/library/${library.id}`)
       }

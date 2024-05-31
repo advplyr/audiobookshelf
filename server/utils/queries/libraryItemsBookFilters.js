@@ -7,7 +7,7 @@ const { asciiOnlyToLowerCase } = require('../index')
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
-   * @param {import('../../objects/user/User')} user 
+   * @param {import('../../objects/user/User')} user
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
@@ -25,9 +25,11 @@ module.exports = {
       if (user.permissions.selectedTagsNotAccessible) {
         bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
       } else {
-        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
-          [Sequelize.Op.gte]: 1
-        }))
+        bookWhere.push(
+          Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
+            [Sequelize.Op.gte]: 1
+          })
+        )
       }
     }
     return {
@@ -39,8 +41,8 @@ module.exports = {
   /**
    * When collapsing series and filtering by progress
    * different where options are required
-   * 
-   * @param {string} value 
+   *
+   * @param {string} value
    * @returns {Sequelize.WhereOptions}
    */
   getCollapseSeriesMediaProgressFilter(value) {
@@ -90,8 +92,8 @@ module.exports = {
 
   /**
    * Get where options for Book model
-   * @param {string} group 
-   * @param {[string]} value 
+   * @param {string} group
+   * @param {[string]} value
    * @returns {object} { Sequelize.WhereOptions, string[] }
    */
   getMediaGroupQuery(group, value) {
@@ -170,7 +172,7 @@ module.exports = {
           Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
           {
             '$mediaProgresses.isFinished$': true,
-            'ebookFile': {
+            ebookFile: {
               [Sequelize.Op.not]: null
             }
           }
@@ -204,6 +206,10 @@ module.exports = {
         mediaWhere['ebookFile'] = {
           [Sequelize.Op.not]: null
         }
+      } else if (value == 'no-ebook') {
+        mediaWhere['ebookFile'] = {
+          [Sequelize.Op.eq]: null
+        }
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
@@ -228,8 +234,8 @@ module.exports = {
 
   /**
    * Get sequelize order
-   * @param {string} sortBy 
-   * @param {boolean} sortDesc 
+   * @param {string} sortBy
+   * @param {boolean} sortDesc
    * @param {boolean} collapseseries
    * @returns {Sequelize.order}
    */
@@ -274,18 +280,14 @@ module.exports = {
    * When collapsing series get first book in each series
    * to know which books to exclude from primary query.
    * Additionally use this query to get the number of books in each series
-   * 
-   * @param {Sequelize.ModelStatic} bookFindOptions 
-   * @param {Sequelize.WhereOptions} seriesWhere 
+   *
+   * @param {Sequelize.ModelStatic} bookFindOptions
+   * @param {Sequelize.WhereOptions} seriesWhere
    * @returns {object} { booksToExclude, bookSeriesToInclude }
    */
   async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
     const allSeries = await Database.seriesModel.findAll({
-      attributes: [
-        'id',
-        'name',
-        [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']
-      ],
+      attributes: ['id', 'name', [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']],
       distinct: true,
       subQuery: false,
       where: seriesWhere,
@@ -300,23 +302,22 @@ module.exports = {
           required: true
         }
       ],
-      order: [
-        Sequelize.literal('CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')
-      ]
+      order: [Sequelize.literal('CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]
     })
     const bookSeriesToInclude = []
     const booksToInclude = []
     let booksToExclude = []
-    allSeries.forEach(s => {
+    allSeries.forEach((s) => {
       let found = false
       for (let book of s.books) {
         if (!found && !booksToInclude.includes(book.id)) {
           booksToInclude.push(book.id)
           bookSeriesToInclude.push({
             id: book.bookSeries.id,
-            numBooks: s.dataValues.numBooks
+            numBooks: s.dataValues.numBooks,
+            libraryItemIds: s.books?.map((b) => b.libraryItem.id) || []
           })
-          booksToExclude = booksToExclude.filter(bid => bid !== book.id)
+          booksToExclude = booksToExclude.filter((bid) => bid !== book.id)
           found = true
         } else if (!booksToExclude.includes(book.id) && !booksToInclude.includes(book.id)) {
           booksToExclude.push(book.id)
@@ -328,16 +329,16 @@ module.exports = {
 
   /**
    * Get library items for book media type using filter and sort
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @param {[oldUser]} user
-   * @param {[string]} filterGroup 
-   * @param {[string]} filterValue 
-   * @param {string} sortBy 
-   * @param {string} sortDesc 
+   * @param {[string]} filterGroup
+   * @param {[string]} filterValue
+   * @param {string} sortBy
+   * @param {string} sortDesc
    * @param {boolean} collapseseries
    * @param {string[]} include
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {number} limit
+   * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
@@ -359,15 +360,11 @@ module.exports = {
     let bookAttributes = null
     if (sortBy === 'media.metadata.authorNameLF') {
       bookAttributes = {
-        include: [
-          [Sequelize.literal(`(SELECT group_concat(a.lastFirst, ", ") FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id)`), 'author_name']
-        ]
+        include: [[Sequelize.literal(`(SELECT group_concat(lastFirst, ", ") FROM (SELECT a.lastFirst FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
       }
     } else if (sortBy === 'media.metadata.authorName') {
       bookAttributes = {
-        include: [
-          [Sequelize.literal(`(SELECT group_concat(a.name, ", ") FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id)`), 'author_name']
-        ]
+        include: [[Sequelize.literal(`(SELECT group_concat(name, ", ") FROM (SELECT a.name FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
       }
     }
 
@@ -382,9 +379,7 @@ module.exports = {
         model: Database.seriesModel,
         attributes: ['id', 'name', 'nameIgnorePrefix']
       },
-      order: [
-        ['createdAt', 'ASC']
-      ],
+      order: [['createdAt', 'ASC']],
       separate: true
     }
 
@@ -395,9 +390,7 @@ module.exports = {
         model: Database.authorModel,
         attributes: ['id', 'name']
       },
-      order: [
-        ['createdAt', 'ASC']
-      ],
+      order: [['createdAt', 'ASC']],
       separate: true
     }
 
@@ -420,6 +413,10 @@ module.exports = {
       // TODO: Temp workaround for filtering supplementary ebook
       libraryItemWhere['libraryFiles'] = {
         [Sequelize.Op.substring]: `"isSupplementary":true`
+      }
+    } else if (filterGroup === 'ebooks' && filterValue === 'no-supplementary') {
+      libraryItemWhere['libraryFiles'] = {
+        [Sequelize.Op.notLike]: Sequelize.literal(`\'%"isSupplementary":true%\'`)
       }
     } else if (filterGroup === 'missing' && filterValue === 'authors') {
       authorInclude = {
@@ -488,7 +485,7 @@ module.exports = {
       })
     } else if (filterGroup === 'recent') {
       libraryItemWhere['createdAt'] = {
-        [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
+        [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       }
     }
 
@@ -543,9 +540,9 @@ module.exports = {
       // When collapsing series and sorting by title then use the series name instead of the book title
       //  for this set an attribute "display_title" to use in sorting
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map(v => `"${v.id}"`).join(', ')})), titleIgnorePrefix)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), titleIgnorePrefix)`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map(v => `"${v.id}"`).join(', ')})), \`book\`.\`title\`)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`book\`.\`title\`)`), 'display_title'])
       }
     }
 
@@ -590,15 +587,16 @@ module.exports = {
 
       // For showing details of collapsed series
       if (collapseseries && book.bookSeries?.length) {
-        const collapsedSeries = book.bookSeries.find(bs => collapseSeriesBookSeries.some(cbs => cbs.id === bs.id))
+        const collapsedSeries = book.bookSeries.find((bs) => collapseSeriesBookSeries.some((cbs) => cbs.id === bs.id))
         if (collapsedSeries) {
-          const collapseSeriesObj = collapseSeriesBookSeries.find(csbs => csbs.id === collapsedSeries.id)
+          const collapseSeriesObj = collapseSeriesBookSeries.find((csbs) => csbs.id === collapsedSeries.id)
           libraryItem.collapsedSeries = {
             id: collapsedSeries.series.id,
             name: collapsedSeries.series.name,
             nameIgnorePrefix: collapsedSeries.series.nameIgnorePrefix,
             sequence: collapsedSeries.sequence,
-            numBooks: collapseSeriesObj?.numBooks || 0
+            numBooks: collapseSeriesObj?.numBooks || 0,
+            libraryItemIds: collapseSeriesObj?.libraryItemIds || []
           }
         }
       }
@@ -625,14 +623,15 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {string} libraryId 
-   * @param {oldUser} user 
-   * @param {string[]} include 
-   * @param {number} limit 
-   * @param {number} offset 
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @param {import('../../objects/Library')} library
+   * @param {import('../../objects/user/User')} user
+   * @param {string[]} include
+   * @param {number} limit
+   * @param {number} offset
+   * @returns {{ libraryItems:import('../../models/LibraryItem')[], count:number }}
    */
-  async getContinueSeriesLibraryItems(libraryId, user, include, limit, offset) {
+  async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
+    const libraryId = library.id
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
@@ -645,6 +644,16 @@ module.exports = {
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
+
+    let includeAttributes = [[Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']]
+    let booksNotFinishedQuery = `SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL)`
+
+    if (library.settings.onlyShowLaterBooksInContinueSeries) {
+      const maxSequenceQuery = `(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)`
+      includeAttributes.push([Sequelize.literal(`${maxSequenceQuery}`), 'maxSequence'])
+
+      booksNotFinishedQuery = booksNotFinishedQuery + ` AND CAST(bs.sequence as FLOAT) > ${maxSequenceQuery}`
+    }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
       where: [
@@ -659,17 +668,15 @@ module.exports = {
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE bs.seriesId = series.id AND mp.mediaItemId = bs.bookId AND mp.userId = :userId AND mp.isFinished = 1)`), {
           [Sequelize.Op.gte]: 1
         }),
-        // Has at least 1 book not finished
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
+        // Has at least 1 book not finished (that has a sequence number higher than the highest already read, if library config is toggled)
+        Sequelize.where(Sequelize.literal(`(${booksNotFinishedQuery})`), {
           [Sequelize.Op.gte]: 1
         }),
         // Has no books in progress
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0)
       ],
       attributes: {
-        include: [
-          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']
-        ]
+        include: includeAttributes
       },
       replacements: {
         userId: user.id,
@@ -680,9 +687,7 @@ module.exports = {
         attributes: ['bookId', 'sequence'],
         separate: true,
         subQuery: false,
-        order: [
-          [Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]
-        ],
+        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
         where: {
           '$book.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, 0]
@@ -712,31 +717,44 @@ module.exports = {
           ]
         }
       },
-      order: [
-        [Sequelize.literal('recent_progress DESC')]
-      ],
+      order: [[Sequelize.literal('recent_progress DESC')]],
       distinct: true,
       subQuery: false,
       limit,
       offset
     })
 
-    const libraryItems = series.map(s => {
-      if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
-      const libraryItem = s.bookSeries[0].book.libraryItem.toJSON()
-      const book = s.bookSeries[0].book.toJSON()
-      delete book.libraryItem
-      libraryItem.series = {
-        id: s.id,
-        name: s.name,
-        sequence: s.bookSeries[0].sequence
-      }
-      if (libraryItem.feeds?.length) {
-        libraryItem.rssFeed = libraryItem.feeds[0]
-      }
-      libraryItem.media = book
-      return libraryItem
-    }).filter(s => s)
+    const libraryItems = series
+      .map((s) => {
+        if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
+
+        let bookIndex = 0
+        // if the library setting is toggled, only show later entries in series, otherwise skip
+        if (library.settings.onlyShowLaterBooksInContinueSeries) {
+          bookIndex = s.bookSeries.findIndex(function (b) {
+            return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+          })
+          if (bookIndex === -1) {
+            // no later books than maxSequence
+            return null
+          }
+        }
+
+        const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
+        const book = s.bookSeries[bookIndex].book.toJSON()
+        delete book.libraryItem
+        libraryItem.series = {
+          id: s.id,
+          name: s.name,
+          sequence: s.bookSeries[bookIndex].sequence
+        }
+        if (libraryItem.feeds?.length) {
+          libraryItem.rssFeed = libraryItem.feeds[0]
+        }
+        libraryItem.media = book
+        return libraryItem
+      })
+      .filter((s) => s)
 
     return {
       libraryItems,
@@ -748,10 +766,10 @@ module.exports = {
    * Get book library items for the "Discover" shelf
    * Random selection of books that are not started
    *  - only includes the first book of a not-started series
-   * @param {string} libraryId 
-   * @param {oldUser} user 
-   * @param {string[]} include 
-   * @param {number} limit 
+   * @param {string} libraryId
+   * @param {oldUser} user
+   * @param {string[]} include
+   * @param {number} limit
    * @returns {object} {libraryItems:LibraryItem, count:number}
    */
   async getDiscoverLibraryItems(libraryId, user, include, limit) {
@@ -779,9 +797,7 @@ module.exports = {
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere
         },
-        order: [
-          [Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]
-        ],
+        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
         limit: 1
       },
       subQuery: false,
@@ -789,7 +805,7 @@ module.exports = {
       order: Database.sequelize.random()
     })
 
-    const booksFromSeriesToInclude = seriesNotStarted.map(se => se.bookSeries?.[0]?.bookId).filter(bid => bid)
+    const booksFromSeriesToInclude = seriesNotStarted.map((se) => se.bookSeries?.[0]?.bookId).filter((bid) => bid)
 
     // optional include rssFeed
     const libraryItemIncludes = []
@@ -881,7 +897,7 @@ module.exports = {
 
   /**
    * Get book library items in a collection
-   * @param {oldCollection} collection 
+   * @param {oldCollection} collection
    * @returns {Promise<LibraryItem[]>}
    */
   async getLibraryItemsForCollection(collection) {
@@ -925,22 +941,22 @@ module.exports = {
 
   /**
    * Get library items for series
-   * @param {import('../../objects/entities/Series')} oldSeries 
-   * @param {import('../../objects/user/User')} [oldUser] 
+   * @param {import('../../objects/entities/Series')} oldSeries
+   * @param {import('../../objects/user/User')} [oldUser]
    * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
   async getLibraryItemsForSeries(oldSeries, oldUser) {
     const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
-    return libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
+    return libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
   },
 
   /**
    * Search books, authors, series
    * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary 
-   * @param {string} query 
-   * @param {number} limit 
-   * @param {number} offset 
+   * @param {import('../../objects/Library')} oldLibrary
+   * @param {string} query
+   * @param {number} limit
+   * @param {number} offset
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
   async search(oldUser, oldLibrary, query, limit, offset) {
@@ -1119,7 +1135,7 @@ module.exports = {
 
   /**
    * Genres with num books
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {{genre:string, count:number}[]}
    */
   async getGenresWithCount(libraryId) {
@@ -1141,7 +1157,7 @@ module.exports = {
 
   /**
    * Get stats for book library
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
   async getBookLibraryStats(libraryId) {
@@ -1155,8 +1171,8 @@ module.exports = {
 
   /**
    * Get longest books in library
-   * @param {string} libraryId 
-   * @param {number} limit 
+   * @param {string} libraryId
+   * @param {number} limit
    * @returns {Promise<{ id:string, title:string, duration:number }[]>}
    */
   async getLongestBooks(libraryId, limit) {
@@ -1169,12 +1185,10 @@ module.exports = {
           libraryId
         }
       },
-      order: [
-        ['duration', 'DESC']
-      ],
+      order: [['duration', 'DESC']],
       limit
     })
-    return books.map(book => {
+    return books.map((book) => {
       return {
         id: book.libraryItem.id,
         title: book.title,

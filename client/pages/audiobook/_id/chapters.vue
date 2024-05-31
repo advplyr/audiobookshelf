@@ -18,7 +18,7 @@
           <div class="w-12 hidden lg:block" />
           <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
           <div class="flex-grow" />
-          <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
+          <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" :label="$strings.LabelShowSeconds" class="mx-2" />
           <div class="w-32 hidden lg:block" />
         </div>
         <div class="flex items-center mb-3 py-1 -mx-1">
@@ -142,7 +142,7 @@
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
         <div v-if="!chapterData" class="flex p-20">
-          <ui-text-input-with-label v-model="asinInput" label="ASIN" />
+          <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
           <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 mx-1" />
           <ui-btn small color="primary" class="mt-5" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
         </div>
@@ -281,7 +281,7 @@ export default {
       return this.media.audioFiles || []
     },
     audioTracks() {
-      return this.audioFiles.filter((af) => !af.exclude && !af.invalid)
+      return this.audioFiles.filter((af) => !af.exclude)
     },
     selectedChapterId() {
       return this.selectedChapter ? this.selectedChapter.id : null

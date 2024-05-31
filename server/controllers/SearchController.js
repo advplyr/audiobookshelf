@@ -3,15 +3,18 @@ const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const MusicFinder = require('../finders/MusicFinder')
+const Database = require("../Database")
 
 class SearchController {
   constructor() { }
 
   async findBooks(req, res) {
+    const id = req.query.id
+    const libraryItem = await Database.libraryItemModel.getOldById(id)
     const provider = req.query.provider || 'google'
     const title = req.query.title || ''
     const author = req.query.author || ''
-    const results = await BookFinder.search(provider, title, author)
+    const results = await BookFinder.search(libraryItem, provider, title, author)
     res.json(results)
   }
 
@@ -32,9 +35,23 @@ class SearchController {
     })
   }
 
+  /**
+   * Find podcast RSS feeds given a term
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async findPodcasts(req, res) {
     const term = req.query.term
-    const results = await PodcastFinder.search(term)
+    const country = req.query.country || 'us'
+    if (!term) {
+      Logger.error('[SearchController] Invalid request query param "term" is required')
+      return res.status(400).send('Invalid request query param "term" is required')
+    }
+
+    const results = await PodcastFinder.search(term, {
+      country
+    })
     res.json(results)
   }
 

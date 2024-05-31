@@ -1,6 +1,14 @@
 <template>
   <div>
-    <app-settings-content :header-text="$strings.HeaderLogs">
+    <app-settings-content :header-text="$strings.HeaderLogs" :description="$strings.MessageLogsDescription">
+      <template #header-items>
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/server_logs" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </template>
+
       <div class="flex justify-between mb-2 place-items-end">
         <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
@@ -8,7 +16,7 @@
       </div>
 
       <div class="relative">
-        <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 800px; min-height: 550px">
+        <div ref="container" id="log-container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="min-height: 550px">
           <template v-for="(log, index) in logs">
             <div :key="index" class="flex flex-nowrap px-2 py-1 items-start text-sm bg-opacity-10" :class="`bg-${logColors[log.level]}`">
               <p class="text-gray-400 w-36 font-mono text-xs">{{ log.timestamp }}</p>
@@ -136,7 +144,15 @@ export default {
         this.loadedLogs = this.loadedLogs.slice(-5000)
       }
     },
-    init(attempts = 0) {
+    async loadLoggerData() {
+      const loggerData = await this.$axios.$get('/api/logger-data').catch((error) => {
+        console.error('Failed to load logger data', error)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
+      })
+
+      this.loadedLogs = loggerData?.currentDailyLogs || []
+    },
+    async init(attempts = 0) {
       if (!this.$root.socket) {
         if (attempts > 10) {
           return console.error('Failed to setup socket listeners')
@@ -147,14 +163,11 @@ export default {
         return
       }
 
+      await this.loadLoggerData()
+
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
-      this.$root.socket.on('daily_logs', this.dailyLogsLoaded)
       this.$root.socket.on('log', this.logEvtReceived)
       this.$root.socket.emit('set_log_listener', this.newServerSettings.logLevel)
-      this.$root.socket.emit('fetch_daily_logs')
-    },
-    dailyLogsLoaded(lines) {
-      this.loadedLogs = lines
     }
   },
   updated() {
@@ -166,13 +179,15 @@ export default {
   beforeDestroy() {
     if (!this.$root.socket) return
     this.$root.socket.emit('remove_log_listener')
-    this.$root.socket.off('daily_logs', this.dailyLogsLoaded)
     this.$root.socket.off('log', this.logEvtReceived)
   }
 }
 </script>
 
 <style scoped>
+#log-container {
+  height: calc(100vh - 285px);
+}
 .logmessage {
   width: calc(100% - 208px);
 }

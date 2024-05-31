@@ -146,23 +146,73 @@ class BackupManager {
     }
   }
 
-  async requestApplyBackup(backup, res) {
+  /**
+   * 
+   * @param {import('./ApiCacheManager')} apiCacheManager 
+   * @param {Backup} backup 
+   * @param {import('express').Response} res 
+   */
+  async requestApplyBackup(apiCacheManager, backup, res) {
+    Logger.info(`[BackupManager] Applying backup at "${backup.fullPath}"`)
+
     const zip = new StreamZip.async({ file: backup.fullPath })
 
     const entries = await zip.entries()
+
+    // Ensure backup has an absdatabase.sqlite file
     if (!Object.keys(entries).includes('absdatabase.sqlite')) {
       Logger.error(`[BackupManager] Cannot apply old backup ${backup.fullPath}`)
+      await zip.close()
       return res.status(500).send('Invalid backup file. Does not include absdatabase.sqlite. This might be from an older Audiobookshelf server.')
     }
 
     await Database.disconnect()
 
-    await zip.extract('absdatabase.sqlite', global.ConfigPath)
+    const dbPath = Path.join(global.ConfigPath, 'absdatabase.sqlite')
+    const tempDbPath = Path.join(global.ConfigPath, 'absdatabase-temp.sqlite')
+
+    // Extract backup sqlite file to temporary path
+    await zip.extract('absdatabase.sqlite', tempDbPath)
+    Logger.info(`[BackupManager] Extracted backup sqlite db to temp path ${tempDbPath}`)
+
+    // Verify extract - Abandon backup if sqlite file did not extract
+    if (!await fs.pathExists(tempDbPath)) {
+      Logger.error(`[BackupManager] Sqlite file not found after extract - abandon backup apply and reconnect db`)
+      await zip.close()
+      await Database.reconnect()
+      return res.status(500).send('Failed to extract sqlite db from backup')
+    }
+
+    // Attempt to remove existing db file
+    try {
+      await fs.remove(dbPath)
+    } catch (error) {
+      // Abandon backup and remove extracted sqlite file if unable to remove existing db file
+      Logger.error(`[BackupManager] Unable to overwrite existing db file - abandon backup apply and reconnect db`, error)
+      await fs.remove(tempDbPath)
+      await zip.close()
+      await Database.reconnect()
+      return res.status(500).send(`Failed to overwrite sqlite db: ${error?.message || 'Unknown Error'}`)
+    }
+
+    // Rename temp db
+    await fs.move(tempDbPath, dbPath)
+    Logger.info(`[BackupManager] Saved backup sqlite file at "${dbPath}"`)
+
+    // Extract /metadata/items and /metadata/authors folders
     await zip.extract('metadata-items/', this.ItemsMetadataPath)
     await zip.extract('metadata-authors/', this.AuthorsMetadataPath)
+    await zip.close()
 
+    // Reconnect db
     await Database.reconnect()
 
+    // Reset api cache, set hooks again
+    await apiCacheManager.reset()
+
+    res.sendStatus(200)
+
+    // Triggers browser refresh for all clients
     SocketAuthority.emitter('backup_applied')
   }
 

@@ -10,7 +10,7 @@
       <p class="text-center text-2xl mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
+        <ui-btn color="success" class="w-52" :loading="isScanningLibrary || tempIsScanning" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
       </div>
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-50" />
+    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
   </div>
 </template>
 
@@ -62,7 +62,8 @@ export default {
       currScrollTop: 0,
       resizeTimeout: null,
       mountWindowWidth: 0,
-      lastItemIndexSelected: -1
+      lastItemIndexSelected: -1,
+      tempIsScanning: false
     }
   },
   watch: {
@@ -205,6 +206,12 @@ export default {
     sizeMultiplier() {
       const baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.entityWidth / baseSize
+    },
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
+    },
+    isScanningLibrary() {
+      return !!this.$store.getters['tasks/getRunningLibraryScanTask'](this.currentLibraryId)
     }
   },
   methods: {
@@ -724,14 +731,15 @@ export default {
       }
     },
     scan() {
+      this.tempIsScanning = true
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
-        .then(() => {
-          this.$toast.success('Library scan started')
-        })
         .catch((error) => {
           console.error('Failed to start scan', error)
-          this.$toast.error('Failed to start scan')
+          this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
+        })
+        .finally(() => {
+          this.tempIsScanning = false
         })
     }
   },

@@ -1,7 +1,9 @@
-const uuidv4 = require("uuid").v4
-const { DataTypes, Model, Op } = require('sequelize')
+const uuidv4 = require('uuid').v4
+const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
+const SocketAuthority = require('../SocketAuthority')
+const { DataTypes, Model } = sequelize
 
 class User extends Model {
   constructor(values, options) {
@@ -43,11 +45,17 @@ class User extends Model {
     const users = await this.findAll({
       include: this.sequelize.models.mediaProgress
     })
-    return users.map(u => this.getOldUser(u))
+    return users.map((u) => this.getOldUser(u))
   }
 
+  /**
+   * Get old user model from new
+   *
+   * @param {Object} userExpanded
+   * @returns {oldUser}
+   */
   static getOldUser(userExpanded) {
-    const mediaProgress = userExpanded.mediaProgresses.map(mp => mp.getOldMediaProgress())
+    const mediaProgress = userExpanded.mediaProgresses.map((mp) => mp.getOldMediaProgress())
 
     const librariesAccessible = userExpanded.permissions?.librariesAccessible || []
     const itemTagsSelected = userExpanded.permissions?.itemTagsSelected || []
@@ -72,28 +80,58 @@ class User extends Model {
       createdAt: userExpanded.createdAt.valueOf(),
       permissions,
       librariesAccessible,
-      itemTagsSelected
+      itemTagsSelected,
+      authOpenIDSub: userExpanded.extraData?.authOpenIDSub || null
     })
   }
 
+  /**
+   *
+   * @param {oldUser} oldUser
+   * @returns {Promise<User>}
+   */
   static createFromOld(oldUser) {
     const user = this.getFromOld(oldUser)
     return this.create(user)
   }
 
-  static updateFromOld(oldUser) {
+  /**
+   * Update User from old user model
+   *
+   * @param {oldUser} oldUser
+   * @param {boolean} [hooks=true] Run before / after bulk update hooks?
+   * @returns {Promise<boolean>}
+   */
+  static updateFromOld(oldUser, hooks = true) {
     const user = this.getFromOld(oldUser)
     return this.update(user, {
+      hooks: !!hooks,
       where: {
         id: user.id
       }
-    }).then((result) => result[0] > 0).catch((error) => {
-      Logger.error(`[User] Failed to save user ${oldUser.id}`, error)
-      return false
     })
+      .then((result) => result[0] > 0)
+      .catch((error) => {
+        Logger.error(`[User] Failed to save user ${oldUser.id}`, error)
+        return false
+      })
   }
 
+  /**
+   * Get new User model from old
+   *
+   * @param {oldUser} oldUser
+   * @returns {Object}
+   */
   static getFromOld(oldUser) {
+    const extraData = {
+      seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
+      oldUserId: oldUser.oldUserId
+    }
+    if (oldUser.authOpenIDSub) {
+      extraData.authOpenIDSub = oldUser.authOpenIDSub
+    }
+
     return {
       id: oldUser.id,
       username: oldUser.username,
@@ -103,10 +141,7 @@ class User extends Model {
       token: oldUser.token || null,
       isActive: !!oldUser.isActive,
       lastSeen: oldUser.lastSeen || null,
-      extraData: {
-        seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
-        oldUserId: oldUser.oldUserId
-      },
+      extraData,
       createdAt: oldUser.createdAt || Date.now(),
       permissions: {
         ...oldUser.permissions,
@@ -127,15 +162,15 @@ class User extends Model {
 
   /**
    * Create root user
-   * @param {string} username 
-   * @param {string} pash 
-   * @param {Auth} auth 
-   * @returns {oldUser}
+   * @param {string} username
+   * @param {string} pash
+   * @param {Auth} auth
+   * @returns {Promise<oldUser>}
    */
   static async createRootUser(username, pash, auth) {
     const userId = uuidv4()
 
-    const token = await auth.generateAccessToken({ userId, username })
+    const token = await auth.generateAccessToken({ id: userId, username })
 
     const newRoot = new oldUser({
       id: userId,
@@ -151,22 +186,54 @@ class User extends Model {
   }
 
   /**
+   * Create user from openid userinfo
+   * @param {Object} userinfo
+   * @param {Auth} auth
+   * @returns {Promise<oldUser>}
+   */
+  static async createUserFromOpenIdUserInfo(userinfo, auth) {
+    const userId = uuidv4()
+    // TODO: Ensure username is unique?
+    const username = userinfo.preferred_username || userinfo.name || userinfo.sub
+    const email = userinfo.email && userinfo.email_verified ? userinfo.email : null
+
+    const token = await auth.generateAccessToken({ id: userId, username })
+
+    const newUser = new oldUser({
+      id: userId,
+      type: 'user',
+      username,
+      email,
+      pash: null,
+      token,
+      isActive: true,
+      authOpenIDSub: userinfo.sub,
+      createdAt: Date.now()
+    })
+    if (await this.createFromOld(newUser)) {
+      SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
+      return newUser
+    }
+    return null
+  }
+
+  /**
    * Get a user by id or by the old database id
    * @temp User ids were updated in v2.3.0 migration and old API tokens may still use that id
-   * @param {string} userId 
+   * @param {string} userId
    * @returns {Promise<oldUser|null>} null if not found
    */
   static async getUserByIdOrOldId(userId) {
     if (!userId) return null
     const user = await this.findOne({
       where: {
-        [Op.or]: [
+        [sequelize.Op.or]: [
           {
             id: userId
           },
           {
             extraData: {
-              [Op.substring]: userId
+              [sequelize.Op.substring]: userId
             }
           }
         ]
@@ -179,7 +246,7 @@ class User extends Model {
 
   /**
    * Get user by username case insensitive
-   * @param {string} username 
+   * @param {string} username
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserByUsername(username) {
@@ -187,7 +254,26 @@ class User extends Model {
     const user = await this.findOne({
       where: {
         username: {
-          [Op.like]: username
+          [sequelize.Op.like]: username
+        }
+      },
+      include: this.sequelize.models.mediaProgress
+    })
+    if (!user) return null
+    return this.getOldUser(user)
+  }
+
+  /**
+   * Get user by email case insensitive
+   * @param {string} username
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getUserByEmail(email) {
+    if (!email) return null
+    const user = await this.findOne({
+      where: {
+        email: {
+          [sequelize.Op.like]: email
         }
       },
       include: this.sequelize.models.mediaProgress
@@ -198,12 +284,27 @@ class User extends Model {
 
   /**
    * Get user by id
-   * @param {string} userId 
+   * @param {string} userId
    * @returns {Promise<oldUser|null>} returns null if not found
    */
   static async getUserById(userId) {
     if (!userId) return null
     const user = await this.findByPk(userId, {
+      include: this.sequelize.models.mediaProgress
+    })
+    if (!user) return null
+    return this.getOldUser(user)
+  }
+
+  /**
+   * Get user by openid sub
+   * @param {string} sub
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getUserByOpenIDSub(sub) {
+    if (!sub) return null
+    const user = await this.findOne({
+      where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
       include: this.sequelize.models.mediaProgress
     })
     if (!user) return null
@@ -218,7 +319,7 @@ class User extends Model {
     const users = await this.findAll({
       attributes: ['id', 'username']
     })
-    return users.map(u => {
+    return users.map((u) => {
       return {
         id: u.id,
         username: u.username
@@ -241,36 +342,39 @@ class User extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        username: DataTypes.STRING,
+        email: DataTypes.STRING,
+        pash: DataTypes.STRING,
+        type: DataTypes.STRING,
+        token: DataTypes.STRING,
+        isActive: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        },
+        isLocked: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        },
+        lastSeen: DataTypes.DATE,
+        permissions: DataTypes.JSON,
+        bookmarks: DataTypes.JSON,
+        extraData: DataTypes.JSON
       },
-      username: DataTypes.STRING,
-      email: DataTypes.STRING,
-      pash: DataTypes.STRING,
-      type: DataTypes.STRING,
-      token: DataTypes.STRING,
-      isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      isLocked: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
-      },
-      lastSeen: DataTypes.DATE,
-      permissions: DataTypes.JSON,
-      bookmarks: DataTypes.JSON,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'user'
-    })
+      {
+        sequelize,
+        modelName: 'user'
+      }
+    )
   }
 }
 

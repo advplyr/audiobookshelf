@@ -1,6 +1,7 @@
 const axios = require('axios')
 const Path = require('path')
 const ssrfFilter = require('ssrf-req-filter')
+const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
@@ -58,7 +59,7 @@ async function getFileTimestampsWithIno(path) {
       ino: String(stat.ino)
     }
   } catch (err) {
-    Logger.error('[fileUtils] Failed to getFileTimestampsWithIno', err)
+    Logger.error(`[fileUtils] Failed to getFileTimestampsWithIno for path "${path}"`, err)
     return false
   }
 }
@@ -81,7 +82,12 @@ module.exports.getFileSize = async (path) => {
  * @returns {Promise<number>} epoch timestamp
  */
 module.exports.getFileMTimeMs = async (path) => {
-  return (await getFileStat(path))?.mtimeMs || 0
+  try {
+    return (await getFileStat(path))?.mtimeMs || 0
+  } catch (err) {
+    Logger.error(`[fileUtils] Failed to getFileMtimeMs`, err)
+    return 0
+  }
 }
 
 /**
@@ -308,6 +314,7 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
     .replace(lineBreaks, replacement)
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement)
+    .replace(/\s+/g, ' ') // Replace consecutive spaces with a single space
 
   // Check if basename is too many bytes
   const ext = Path.extname(sanitized) // separate out file extension
@@ -350,6 +357,91 @@ module.exports.removeFile = (path) => {
 }
 
 module.exports.encodeUriPath = (path) => {
-  const uri = new URL(path, "file://")
+  const uri = new URL('/', "file://")
+  // we assign the path here to assure that URL control characters like # are
+  // actually interpreted as part of the URL path
+  uri.pathname = path
   return uri.pathname
+}
+
+/**
+ * Check if directory is writable.
+ * This method is necessary because fs.access(directory, fs.constants.W_OK) does not work on Windows
+ * 
+ * @param {string} directory 
+ * @returns {Promise<boolean>}
+ */
+module.exports.isWritable = async (directory) => {
+  try {
+    const accessTestFile = Path.join(directory, 'accessTest')
+    await fs.writeFile(accessTestFile, '')
+    await fs.remove(accessTestFile)
+    return true
+  } catch (err) {
+    Logger.info(`[fileUtils] Directory is not writable "${directory}"`, err)
+    return false
+  }
+}
+
+/**
+ * Get Windows drives as array e.g. ["C:/", "F:/"]
+ * 
+ * @returns {Promise<string[]>}
+ */
+module.exports.getWindowsDrives = async () => {
+  if (!global.isWin) {
+    return []
+  }
+  return new Promise((resolve, reject) => {
+    exec('wmic logicaldisk get name', async (error, stdout, stderr) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      let drives = stdout?.split(/\r?\n/).map(line => line.trim()).filter(line => line).slice(1)
+      const validDrives = []
+      for (const drive of drives) {
+        let drivepath = drive + '/'
+        if (await fs.pathExists(drivepath)) {
+          validDrives.push(drivepath)
+        } else {
+          Logger.error(`Invalid drive ${drivepath}`)
+        }
+      }
+      resolve(validDrives)
+    })
+  })
+}
+
+/**
+ * Get array of directory paths in a directory
+ * 
+ * @param {string} dirPath 
+ * @param {number} level
+ * @returns {Promise<{ path:string, dirname:string, level:number }[]>}
+ */
+module.exports.getDirectoriesInPath = async (dirPath, level) => {
+  try {
+    const paths = await fs.readdir(dirPath)
+    let dirs = await Promise.all(paths.map(async dirname => {
+      const fullPath = Path.join(dirPath, dirname)
+
+      const lstat = await fs.lstat(fullPath).catch((error) => {
+        Logger.debug(`Failed to lstat "${fullPath}"`, error)
+        return null
+      })
+      if (!lstat?.isDirectory()) return null
+
+      return {
+        path: this.filePathToPOSIX(fullPath),
+        dirname,
+        level
+      }
+    }))
+    dirs = dirs.filter(d => d)
+    return dirs
+  } catch (error) {
+    Logger.error('Failed to readdir', dirPath, error)
+    return []
+  }
 }

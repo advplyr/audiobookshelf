@@ -1,6 +1,7 @@
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
+const User = require('../user/User')
 
 class ServerSettings {
   constructor(settings) {
@@ -54,6 +55,28 @@ class ServerSettings {
     this.version = packageJson.version
     this.buildNumber = packageJson.buildNumber
 
+    // Auth settings
+    this.authLoginCustomMessage = null
+    this.authActiveAuthMethods = ['local']
+
+    // openid settings
+    this.authOpenIDIssuerURL = null
+    this.authOpenIDAuthorizationURL = null
+    this.authOpenIDTokenURL = null
+    this.authOpenIDUserInfoURL = null
+    this.authOpenIDJwksURL = null
+    this.authOpenIDLogoutURL = null
+    this.authOpenIDClientID = null
+    this.authOpenIDClientSecret = null
+    this.authOpenIDTokenSigningAlgorithm = 'RS256'
+    this.authOpenIDButtonText = 'Login with OpenId'
+    this.authOpenIDAutoLaunch = false
+    this.authOpenIDAutoRegister = false
+    this.authOpenIDMatchExistingBy = null
+    this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
+    this.authOpenIDGroupClaim = ''
+    this.authOpenIDAdvancedPermsClaim = ''
+
     if (settings) {
       this.construct(settings)
     }
@@ -93,6 +116,41 @@ class ServerSettings {
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
+
+    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.8.0
+    this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
+
+    this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null
+    this.authOpenIDAuthorizationURL = settings.authOpenIDAuthorizationURL || null
+    this.authOpenIDTokenURL = settings.authOpenIDTokenURL || null
+    this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || null
+    this.authOpenIDJwksURL = settings.authOpenIDJwksURL || null
+    this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || null
+    this.authOpenIDClientID = settings.authOpenIDClientID || null
+    this.authOpenIDClientSecret = settings.authOpenIDClientSecret || null
+    this.authOpenIDTokenSigningAlgorithm = settings.authOpenIDTokenSigningAlgorithm || 'RS256'
+    this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
+    this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
+    this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
+    this.authOpenIDMatchExistingBy = settings.authOpenIDMatchExistingBy || null
+    this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
+    this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
+    this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
+
+    if (!Array.isArray(this.authActiveAuthMethods)) {
+      this.authActiveAuthMethods = ['local']
+    }
+
+    // remove uninitialized methods
+    // OpenID
+    if (this.authActiveAuthMethods.includes('openid') && !this.isOpenIDAuthSettingsValid) {
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
+    }
+
+    // fallback to local    
+    if (!Array.isArray(this.authActiveAuthMethods) || this.authActiveAuthMethods.length == 0) {
+      this.authActiveAuthMethods = ['local']
+    }
 
     // Migrations
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
@@ -150,23 +208,114 @@ class ServerSettings {
       language: this.language,
       logLevel: this.logLevel,
       version: this.version,
-      buildNumber: this.buildNumber
+      buildNumber: this.buildNumber,
+      authLoginCustomMessage: this.authLoginCustomMessage,
+      authActiveAuthMethods: this.authActiveAuthMethods,
+      authOpenIDIssuerURL: this.authOpenIDIssuerURL,
+      authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
+      authOpenIDTokenURL: this.authOpenIDTokenURL,
+      authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDJwksURL: this.authOpenIDJwksURL,
+      authOpenIDLogoutURL: this.authOpenIDLogoutURL,
+      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
+      authOpenIDButtonText: this.authOpenIDButtonText,
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
+      authOpenIDAutoRegister: this.authOpenIDAutoRegister,
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
+      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim // Do not return to client
     }
   }
 
   toJSONForBrowser() {
     const json = this.toJSON()
     delete json.tokenSecret
+    delete json.authOpenIDClientID
+    delete json.authOpenIDClientSecret
+    delete json.authOpenIDMobileRedirectURIs
+    delete json.authOpenIDGroupClaim
+    delete json.authOpenIDAdvancedPermsClaim
     return json
   }
 
+  get supportedAuthMethods() {
+    return ['local', 'openid']
+  }
+
+  /**
+   * Auth settings required for openid to be valid
+   */
+  get isOpenIDAuthSettingsValid() {
+    return this.authOpenIDIssuerURL &&
+      this.authOpenIDAuthorizationURL &&
+      this.authOpenIDTokenURL &&
+      this.authOpenIDUserInfoURL &&
+      this.authOpenIDJwksURL &&
+      this.authOpenIDClientID &&
+      this.authOpenIDClientSecret &&
+      this.authOpenIDTokenSigningAlgorithm
+  }
+
+  get authenticationSettings() {
+    return {
+      authLoginCustomMessage: this.authLoginCustomMessage,
+      authActiveAuthMethods: this.authActiveAuthMethods,
+      authOpenIDIssuerURL: this.authOpenIDIssuerURL,
+      authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
+      authOpenIDTokenURL: this.authOpenIDTokenURL,
+      authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDJwksURL: this.authOpenIDJwksURL,
+      authOpenIDLogoutURL: this.authOpenIDLogoutURL,
+      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
+      authOpenIDButtonText: this.authOpenIDButtonText,
+      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
+      authOpenIDAutoRegister: this.authOpenIDAutoRegister,
+      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
+      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+
+      authOpenIDSamplePermissions: User.getSampleAbsPermissions()
+    }
+  }
+
+  get authFormData() {
+    const clientFormData = {
+      authLoginCustomMessage: this.authLoginCustomMessage
+    }
+    if (this.authActiveAuthMethods.includes('openid')) {
+      clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
+      clientFormData.authOpenIDAutoLaunch = this.authOpenIDAutoLaunch
+    }
+    return clientFormData
+  }
+
+  /**
+   * Update server settings
+   * 
+   * @param {Object} payload 
+   * @returns {boolean} true if updates were made
+   */
   update(payload) {
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in payload) {
-      if (key === 'sortingPrefixes' && payload[key] && payload[key].length) {
-        var prefixesCleaned = payload[key].filter(prefix => !!prefix).map(prefix => prefix.toLowerCase())
-        if (prefixesCleaned.join(',') !== this[key].join(',')) {
-          this[key] = [...prefixesCleaned]
+      if (key === 'sortingPrefixes') {
+        // Sorting prefixes are updated with the /api/sorting-prefixes endpoint
+        continue
+      } else if (key === 'authActiveAuthMethods') {
+        if (!payload[key]?.length) {
+          Logger.error(`[ServerSettings] Invalid authActiveAuthMethods`, payload[key])
+          continue
+        }
+        this.authActiveAuthMethods.sort()
+        payload[key].sort()
+        if (payload[key].join() !== this.authActiveAuthMethods.join()) {
+          this.authActiveAuthMethods = payload[key]
           hasUpdates = true
         }
       } else if (this[key] !== payload[key]) {

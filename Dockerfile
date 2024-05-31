@@ -1,5 +1,5 @@
 ### STAGE 0: Build client ###
-FROM node:16-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /client
 COPY /client /client
 RUN npm ci && npm cache clean --force
@@ -7,7 +7,7 @@ RUN npm run generate
 
 ### STAGE 1: Build server ###
 FROM sandreas/tone:v0.1.5 AS tone
-FROM node:16-alpine
+FROM node:20-alpine
 
 ENV NODE_ENV=production
 
@@ -18,7 +18,8 @@ RUN apk update && \
     ffmpeg \
     make \
     python3 \
-    g++
+    g++ \
+    tini
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
@@ -31,4 +32,5 @@ RUN apk del make python3 g++
 
 EXPOSE 80
 
+ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]

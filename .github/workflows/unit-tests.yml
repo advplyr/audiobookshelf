@@ -1,0 +1,37 @@
+name: Run Unit Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/Tag/SHA to test'
+        required: true
+  pull_request:
+  push:
+
+jobs:
+  run-unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (push/pull request)
+        uses: actions/checkout@v4
+        if: github.event_name != 'workflow_dispatch'
+
+      - name: Checkout (workflow_dispatch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+        if: github.event_name == 'workflow_dispatch'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test

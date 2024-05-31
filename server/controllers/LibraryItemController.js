@@ -117,16 +117,20 @@ class LibraryItemController {
     zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
-  //
-  // PATCH: will create new authors & series if in payload
-  //
+  /**
+   * PATCH: /items/:id/media
+   * Update media for a library item. Will create new authors & series when necessary
+   * 
+   * @param {import('express').Request} req 
+   * @param {import('express').Response} res 
+   */
   async updateMedia(req, res) {
     const libraryItem = req.libraryItem
     const mediaPayload = req.body
 
-    // Item has cover and update is removing cover so purge it from cache
-    if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
-      await CacheManager.purgeCoverCache(libraryItem.id)
+    if (mediaPayload.url) {
+      await LibraryItemController.prototype.uploadCover.bind(this)(req, res, false)
+      if (res.writableEnded || res.headersSent) return
     }
 
     // Book specific
@@ -151,7 +155,7 @@ class LibraryItemController {
       seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
     }
 
-    const hasUpdates = libraryItem.media.update(mediaPayload)
+    const hasUpdates = libraryItem.media.update(mediaPayload) || mediaPayload.url
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
 
@@ -176,7 +180,7 @@ class LibraryItemController {
   }
 
   // POST: api/items/:id/cover
-  async uploadCover(req, res) {
+  async uploadCover(req, res, updateAndReturnJson = true) {
     if (!req.user.canUpload) {
       Logger.warn('User attempted to upload a cover without permission', req.user)
       return res.sendStatus(403)
@@ -201,12 +205,14 @@ class LibraryItemController {
       return res.status(500).send('Unknown error occurred')
     }
 
-    await Database.updateLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json({
-      success: true,
-      cover: result.cover
-    })
+    if (updateAndReturnJson) {
+      await Database.updateLibraryItem(libraryItem)
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+      res.json({
+        success: true,
+        cover: result.cover
+      })
+    }
   }
 
   // PATCH: api/items/:id/cover
@@ -280,6 +286,9 @@ class LibraryItemController {
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
       return res.sendStatus(404)
     }
+
+    if (req.query.ts)
+      res.set('Cache-Control', 'private, max-age=86400')
 
     if (raw) { // any value
       if (global.XAccel) {

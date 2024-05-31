@@ -3,9 +3,10 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
 const { toNumber } = require('../utils/index')
+const userStats = require('../utils/queries/userStats')
 
 class MeController {
-  constructor() { }
+  constructor() {}
 
   getCurrentUser(req, res) {
     res.json(req.user.toJSONForBrowser())
@@ -14,6 +15,43 @@ class MeController {
   // GET: api/me/listening-sessions
   async getListeningSessions(req, res) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
+
+    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
+    const page = toNumber(req.query.page, 0)
+
+    const start = page * itemsPerPage
+    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+
+    const payload = {
+      total: listeningSessions.length,
+      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+
+    res.json(payload)
+  }
+
+  /**
+   * GET: /api/me/item/listening-sessions/:libraryItemId/:episodeId
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getItemListeningSessions(req, res) {
+    const libraryItem = await Database.libraryItemModel.findByPk(req.params.libraryItemId)
+    const episode = await Database.podcastEpisodeModel.findByPk(req.params.episodeId)
+
+    if (!libraryItem || (libraryItem.mediaType === 'podcast' && !episode)) {
+      Logger.error(`[MeController] Media item not found for library item id "${req.params.libraryItemId}"`)
+      return res.sendStatus(404)
+    }
+
+    const mediaItemId = episode?.id || libraryItem.mediaId
+    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
@@ -79,7 +117,7 @@ class MeController {
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
-    if (!libraryItem.media.episodes.find(ep => ep.id === episodeId)) {
+    if (!libraryItem.media.episodes.find((ep) => ep.id === episodeId)) {
       Logger.error(`[MeController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
       return res.status(404).send('Episode not found')
     }
@@ -122,7 +160,7 @@ class MeController {
 
   // POST: api/me/item/:id/bookmark
   async createBookmark(req, res) {
-    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const { time, title } = req.body
     const bookmark = req.user.createBookmark(req.params.id, time, title)
@@ -133,7 +171,7 @@ class MeController {
 
   // PATCH: api/me/item/:id/bookmark
   async updateBookmark(req, res) {
-    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const { time, title } = req.body
     if (!req.user.findBookmark(req.params.id, time)) {
@@ -151,7 +189,7 @@ class MeController {
 
   // DELETE: api/me/item/:id/bookmark/:time
   async removeBookmark(req, res) {
-    if (!await Database.libraryItemModel.checkExistsById(req.params.id)) return res.sendStatus(404)
+    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const time = Number(req.params.time)
     if (isNaN(time)) return res.sendStatus(500)
@@ -253,11 +291,10 @@ class MeController {
     // TODO: More efficient to do this in a single query
     for (const mediaProgress of req.user.mediaProgress) {
       if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || mediaProgress.ebookProgress > 0)) {
-
         const libraryItem = await Database.libraryItemModel.getOldById(mediaProgress.libraryItemId)
         if (libraryItem) {
           if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
-            const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)
+            const episode = libraryItem.media.episodes.find((ep) => ep.id === mediaProgress.episodeId)
             if (episode) {
               const libraryItemWithEpisode = {
                 ...libraryItem.toJSONMinified(),
@@ -276,7 +313,9 @@ class MeController {
       }
     }
 
-    itemsInProgress = sort(itemsInProgress).desc(li => li.progressLastUpdate).slice(0, limit)
+    itemsInProgress = sort(itemsInProgress)
+      .desc((li) => li.progressLastUpdate)
+      .slice(0, limit)
     res.json({
       libraryItems: itemsInProgress
     })
@@ -316,22 +355,41 @@ class MeController {
 
   // GET: api/me/progress/:id/remove-from-continue-listening
   async removeItemFromContinueListening(req, res) {
-    const mediaProgress = req.user.mediaProgress.find(mp => mp.id === req.params.id)
+    const mediaProgress = req.user.mediaProgress.find((mp) => mp.id === req.params.id)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
     const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
     if (hasUpdated) {
-      await Database.mediaProgressModel.update({
-        hideFromContinueListening: true
-      }, {
-        where: {
-          id: mediaProgress.id
+      await Database.mediaProgressModel.update(
+        {
+          hideFromContinueListening: true
+        },
+        {
+          where: {
+            id: mediaProgress.id
+          }
         }
-      })
+      )
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())
+  }
+
+  /**
+   * GET: /api/me/stats/year/:year
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getStatsForYear(req, res) {
+    const year = Number(req.params.year)
+    if (isNaN(year) || year < 2000 || year > 9999) {
+      Logger.error(`[MeController] Invalid year "${year}"`)
+      return res.status(400).send('Invalid year')
+    }
+    const data = await userStats.getStatsForYear(req.user, year)
+    res.json(data)
   }
 }
 module.exports = new MeController()

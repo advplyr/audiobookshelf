@@ -21,10 +21,10 @@
             <div class="flex-grow pl-4 max-w-2xl">
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
-                <widgets-explicit-indicator :explicit="podcast.explicit" />
+                <widgets-explicit-indicator v-if="podcast.explicit" />
                 <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
               </div>
-              <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
+              <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">{{ $getString('LabelByAuthor', [podcast.artistName]) }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} {{ $strings.HeaderEpisodes }}</p>
             </div>
@@ -45,6 +45,11 @@
 <script>
 export default {
   async asyncData({ params, query, store, app, redirect }) {
+    // Podcast search/add page is restricted to admins
+    if (!store.getters['user/getIsAdminOrUp']) {
+      return redirect(`/library/${params.library}`)
+    }
+
     var libraryId = params.library
     var libraryData = await store.dispatch('libraries/fetch', libraryId)
     if (!libraryData) {
@@ -81,6 +86,9 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    librarySettings() {
+      return this.$store.getters['libraries/getCurrentLibrarySettings']
     }
   },
   methods: {
@@ -146,7 +154,12 @@ export default {
     async submitSearch(term) {
       this.processing = true
       this.termSearched = ''
-      let results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(term)}`).catch((error) => {
+
+      const searchParams = new URLSearchParams({
+        term,
+        country: this.librarySettings?.podcastSearchRegion || 'us'
+      })
+      let results = await this.$axios.$get(`/api/search/podcast?${searchParams.toString()}`).catch((error) => {
         console.error('Search request failed', error)
         return []
       })

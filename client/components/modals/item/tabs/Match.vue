@@ -32,7 +32,7 @@
         </div>
         <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>
-      <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
+      <ui-checkbox v-model="selectAll" :label="$strings.LabelSelectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
           <div class="flex flex-grow items-center py-2">
@@ -42,15 +42,15 @@
 
           <div class="flex py-2">
             <div>
-              <p class="text-center text-gray-200">New</p>
+              <p class="text-center text-gray-200">{{ $strings.LabelNew }}</p>
               <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
                 <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
-            <div v-if="media.coverPath">
-              <p class="text-center text-gray-200">Current</p>
-              <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
-                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+            <div v-if="media.coverPath" class="ml-0.5">
+              <p class="text-center text-gray-200">{{ $strings.LabelCurrent }}</p>
+              <a :href="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrc'](libraryItem, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               </a>
             </div>
           </div>
@@ -79,7 +79,7 @@
         <div v-if="selectedMatchOrig.narrator" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.narrator" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" :label="$strings.LabelNarrators" />
+            <ui-multi-select v-model="selectedMatch.narrator" :items="narrators" :disabled="!selectedMatchUsage.narrator" :label="$strings.LabelNarrators" />
             <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.narratorName || '' }}</p>
           </div>
         </div>
@@ -122,7 +122,7 @@
         <div v-if="selectedMatchOrig.tags" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.tags" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" :label="$strings.LabelTags" />
+            <ui-multi-select v-model="selectedMatch.tags" :items="tags" :disabled="!selectedMatchUsage.tags" :label="$strings.LabelTags" />
             <p v-if="media.tags" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ media.tags.join(', ') }}</p>
           </div>
         </div>
@@ -180,14 +180,14 @@
           <ui-checkbox v-model="selectedMatchUsage.explicit" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.explicit != null }">
             <ui-checkbox v-model="selectedMatch.explicit" :label="$strings.LabelExplicit" :disabled="!selectedMatchUsage.explicit" :checkbox-bg="!selectedMatchUsage.explicit ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
-            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? 'Explicit (checked)' : 'Not Explicit (unchecked)' }}</p>
+            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? $strings.LabelExplicitChecked : $strings.LabelExplicitUnchecked }}</p>
           </div>
         </div>
         <div v-if="selectedMatchOrig.abridged != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.abridged == null }">
           <ui-checkbox v-model="selectedMatchUsage.abridged" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.abridged != null }">
             <ui-checkbox v-model="selectedMatch.abridged" :label="$strings.LabelAbridged" :disabled="!selectedMatchUsage.abridged" :checkbox-bg="!selectedMatchUsage.abridged ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
-            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? 'Abridged (checked)' : 'Unabridged (unchecked)' }}</p>
+            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? $strings.LabelAbridgedChecked : $strings.LabelAbridgedUnchecked }}</p>
           </div>
         </div>
 
@@ -280,6 +280,9 @@ export default {
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
+    filterData() {
+      return this.$store.state.libraries.filterData
+    },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
@@ -305,11 +308,16 @@ export default {
     isPodcast() {
       return this.mediaType == 'podcast'
     },
+    narrators() {
+      return this.filterData.narrators || []
+    },
     genres() {
-      const filterData = this.$store.state.libraries.filterData || {}
-      const currentGenres = filterData.genres || []
+      const currentGenres = this.filterData.genres || []
       const selectedMatchGenres = this.selectedMatch.genres || []
       return [...new Set([...currentGenres, ...selectedMatchGenres])]
+    },
+    tags() {
+      return this.filterData.tags || []
     }
   },
   methods: {
@@ -328,10 +336,22 @@ export default {
         console.error('PersistProvider', error)
       }
     },
+    getDefaultBookProvider() {
+      let provider = localStorage.getItem('book-provider')
+      if (!provider) return 'google'
+      // Validate book provider
+      if (!this.$store.getters['scanners/checkBookProviderExists'](provider)) {
+        console.error('Stored book provider does not exist', provider)
+        localStorage.removeItem('book-provider')
+        return 'google'
+      }
+      return provider
+    },
     getSearchQuery() {
       if (this.isPodcast) return `term=${encodeURIComponent(this.searchTitle)}`
       var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle)}`
       if (this.searchAuthor) searchQuery += `&author=${encodeURIComponent(this.searchAuthor)}`
+      if (this.libraryItemId) searchQuery += `&id=${this.libraryItemId}`
       return searchQuery
     },
     submitSearch() {
@@ -433,7 +453,9 @@ export default {
       this.searchTitle = this.libraryItem.media.metadata.title
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-provider') || 'google'
+      else {
+        this.provider = this.getDefaultBookProvider()
+      }
 
       // Prefer using ASIN if set and using audible provider
       if (this.provider.startsWith('audible') && this.libraryItem.media.metadata.asin) {
@@ -465,6 +487,12 @@ export default {
           // match.genres = match.genres.join(',')
           match.genres = match.genres.split(',').map((g) => g.trim())
         }
+        if (match.tags && !Array.isArray(match.tags)) {
+          match.tags = match.tags.split(',').map((g) => g.trim())
+        }
+        if (match.narrator && !Array.isArray(match.narrator)) {
+          match.narrator = match.narrator.split(',').map((g) => g.trim())
+        }
       }
 
       console.log('Select Match', match)
@@ -494,7 +522,10 @@ export default {
           } else if (key === 'author' && !this.isPodcast) {
             var authors = this.selectedMatch[key]
             if (!Array.isArray(authors)) {
-              authors = authors.split(',').map((au) => au.trim())
+              authors = authors
+                .split(',')
+                .map((au) => au.trim())
+                .filter((au) => !!au)
             }
             var authorPayload = []
             authors.forEach((authorName) =>
@@ -505,11 +536,11 @@ export default {
             )
             updatePayload.metadata.authors = authorPayload
           } else if (key === 'narrator') {
-            updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
+            updatePayload.metadata.narrators = this.selectedMatch[key]
           } else if (key === 'genres') {
             updatePayload.metadata.genres = [...this.selectedMatch[key]]
           } else if (key === 'tags') {
-            updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())
+            updatePayload.tags = this.selectedMatch[key]
           } else if (key === 'itunesId') {
             updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
           } else {
@@ -532,24 +563,11 @@ export default {
       // Persist in local storage
       localStorage.setItem('selectedMatchUsage', JSON.stringify(this.selectedMatchUsage))
 
-      if (updatePayload.metadata.cover) {
-        const coverPayload = {
-          url: updatePayload.metadata.cover
-        }
-        const success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
-          console.error('Failed to update', error)
-          return false
-        })
-        if (success) {
-          this.$toast.success(this.$strings.ToastItemCoverUpdateSuccess)
-        } else {
-          this.$toast.error(this.$strings.ToastItemCoverUpdateFailed)
-        }
-        console.log('Updated cover')
-        delete updatePayload.metadata.cover
-      }
-
       if (Object.keys(updatePayload).length) {
+        if (updatePayload.metadata.cover) {
+          updatePayload.url = updatePayload.metadata.cover
+          delete updatePayload.metadata.cover
+        }
         const mediaUpdatePayload = updatePayload
         const updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)

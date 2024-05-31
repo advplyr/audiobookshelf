@@ -7,12 +7,16 @@
 /podcasts/
 /media/
 /metadata/
-test/
 /client/.nuxt/
 /client/dist/
 /dist/
 /deploy/
+/coverage/
+/.nyc_output/
+/ffmpeg*
+/ffprobe*
 
 sw.*
 .DS_STORE
 .idea/*
+tailwind.compiled.css

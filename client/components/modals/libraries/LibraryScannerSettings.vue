@@ -19,9 +19,11 @@
         <li v-for="(source, index) in metadataSourceMapped" :key="source.id" :class="source.include ? 'item' : 'opacity-50'" class="w-full px-2 flex items-center relative border border-white/10">
           <span class="material-icons drag-handle text-xl text-gray-400 hover:text-gray-50 mr-2 md:mr-4">reorder</span>
           <div class="text-center py-1 w-8 min-w-8">
-            {{ source.include ? index + 1 : '' }}
+            {{ source.include ? getSourceIndex(source.id) : '' }}
           </div>
-          <div class="flex-grow px-4 py-3">{{ source.name }}</div>
+          <div class="flex-grow inline-flex justify-between px-4 py-3">
+            {{ source.name }} <span v-if="source.include && (index === firstActiveSourceIndex || index === lastActiveSourceIndex)" class="px-2 italic font-semibold text-xs text-gray-400">{{ index === firstActiveSourceIndex ? $strings.LabelHighestPriority : $strings.LabelLowestPriority }}</span>
+          </div>
           <div class="px-2 opacity-100">
             <ui-toggle-switch v-model="source.include" :off-color="'error'" @input="includeToggled(source)" />
           </div>
@@ -61,7 +63,12 @@ export default {
         },
         audioMetatags: {
           id: 'audioMetatags',
-          name: 'Audio file meta tags',
+          name: 'Audio file meta tags OR ebook metadata',
+          include: true
+        },
+        nfoFile: {
+          id: 'nfoFile',
+          name: 'NFO file',
           include: true
         },
         txtFiles: {
@@ -92,20 +99,34 @@ export default {
     },
     isBookLibrary() {
       return this.mediaType === 'book'
+    },
+    firstActiveSourceIndex() {
+      return this.metadataSourceMapped.findIndex((source) => source.include)
+    },
+    lastActiveSourceIndex() {
+      return this.metadataSourceMapped.findLastIndex((source) => source.include)
     }
   },
   methods: {
+    getSourceIndex(source) {
+      const activeSources = (this.librarySettings.metadataPrecedence || []).map((s) => s).reverse()
+      return activeSources.findIndex((s) => s === source) + 1
+    },
     resetToDefault() {
       this.metadataSourceMapped = []
       for (const key in this.metadataSourceData) {
         this.metadataSourceMapped.push({ ...this.metadataSourceData[key] })
       }
+      this.metadataSourceMapped.reverse()
+
       this.$emit('update', this.getLibraryData())
     },
     getLibraryData() {
+      const metadataSourceIds = this.metadataSourceMapped.map((source) => (source.include ? source.id : null)).filter((s) => s)
+      metadataSourceIds.reverse()
       return {
         settings: {
-          metadataPrecedence: this.metadataSourceMapped.map((source) => (source.include ? source.id : null)).filter((s) => s)
+          metadataPrecedence: metadataSourceIds
         }
       }
     },
@@ -120,15 +141,16 @@ export default {
     },
     init() {
       const metadataPrecedence = this.librarySettings.metadataPrecedence || []
-
       this.metadataSourceMapped = metadataPrecedence.map((source) => this.metadataSourceData[source]).filter((s) => s)
 
       for (const sourceKey in this.metadataSourceData) {
         if (!metadataPrecedence.includes(sourceKey)) {
           const unusedSourceData = { ...this.metadataSourceData[sourceKey], include: false }
-          this.metadataSourceMapped.push(unusedSourceData)
+          this.metadataSourceMapped.unshift(unusedSourceData)
         }
       }
+
+      this.metadataSourceMapped.reverse()
     }
   },
   mounted() {

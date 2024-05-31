@@ -17,7 +17,10 @@
           </div>
 
           <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
-          <p class="text-white max-w-3xl text-sm leading-5 whitespace-pre-wrap">{{ author.description }}</p>
+          <p ref="description" id="author-description" class="text-white max-w-3xl text-base whitespace-pre-wrap" :class="{ 'show-full': showFullDescription }">{{ author.description }}</p>
+          <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
+            {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
+          </button>
         </div>
       </div>
 
@@ -62,7 +65,10 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      isDescriptionClamped: false,
+      showFullDescription: false
+    }
   },
   computed: {
     streamLibraryItem() {
@@ -82,6 +88,10 @@ export default {
     }
   },
   methods: {
+    checkDescriptionClamped() {
+      if (!this.$refs.description) return
+      this.isDescriptionClamped = this.$refs.description.scrollHeight > this.$refs.description.clientHeight
+    },
     editAuthor() {
       this.$store.commit('globals/showEditAuthorModal', this.author)
     },
@@ -93,6 +103,7 @@ export default {
           series: this.authorSeries,
           libraryItems: this.libraryItems
         }
+        this.$nextTick(this.checkDescriptionClamped)
       }
     },
     authorRemoved(author) {
@@ -104,6 +115,7 @@ export default {
   },
   mounted() {
     if (!this.author) this.$router.replace('/')
+    this.checkDescriptionClamped()
 
     this.$root.socket.on('author_updated', this.authorUpdated)
     this.$root.socket.on('author_removed', this.authorRemoved)
@@ -114,3 +126,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+#author-description {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  max-height: 6.25rem;
+  transition: all 0.3s ease-in-out;
+}
+#author-description.show-full {
+  -webkit-line-clamp: unset;
+  max-height: 999rem;
+}
+</style>

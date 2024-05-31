@@ -1,0 +1,104 @@
+components:
+  schemas:
+    authorId:
+      type: string
+      description: The ID of the author.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    authorAsin:
+      type: string
+      description: The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.
+      nullable: true
+      example: B000APZOQA
+    authorName:
+      description: The name of the author.
+      type: string
+      example: Terry Goodkind
+    authorSeries:
+      type: object
+      description: Series and the included library items that an author has written.
+      properties:
+        id:
+          $ref: './Series.yaml#/components/schemas/seriesId'
+        name:
+          $ref: './Series.yaml#/components/schemas/seriesName'
+        items:
+          description: The items in the series. Each library item's media's metadata will have a `series` attribute, a `Series Sequence`, which is the matching series.
+          type: array
+          items:
+            ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
+    author:
+      description: An author object which includes a description and image path.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/authorId'
+        asin:
+          $ref: '#/components/schemas/authorAsin'
+        name:
+          $ref: '#/components/schemas/authorName'
+        description:
+          description: A description of the author. Will be null if there is none.
+          type: string
+          nullable: true
+          example: |
+            Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork,
+            ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20
+            languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary
+            tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing. Terry Goodkind's
+            brilliant books are character-driven stories, with a focus on the complexity of the human psyche. Goodkind
+            has an uncanny grasp for crafting compelling stories about people like you and me, trapped in terrifying
+            situations.
+        imagePath:
+          description: The absolute path for the author image located in the `metadata/` directory. Will be null if there is no image.
+          type: string
+          nullable: true
+          example: /metadata/authors/aut_bxxbyjiptmgb56yzoz.jpg
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+    authorWithItems:
+      type: object
+      description: The author schema with an array of items they are associated with.
+      allOf:
+        - $ref: '#/components/schemas/author'
+        - type: object
+          properties:
+            libraryItems:
+              description: The items associated with the author
+              type: string
+              type: array
+              items:
+                $ref: '../LibraryItem.yaml#/components/schemas/libraryItemMinified'
+    authorWithSeries:
+      type: object
+      description: The author schema with an array of items and series they are associated with.
+      allOf:
+        - $ref: '#/components/schemas/authorWithItems'
+        - type: object
+          properties:
+            series:
+              description: The series associated with the author
+              type: array
+              items:
+                $ref: '#/components/schemas/authorSeries'
+    authorMinified:
+      type: object
+      description: Minified author object which only contains the author name and ID.
+      properties:
+        id:
+          $ref: '#/components/schemas/authorId'
+        name:
+          $ref: '#/components/schemas/authorName'
+    authorExpanded:
+      type: object
+      description: The author schema with the total number of books in the library.
+      allOf:
+        - $ref: '#/components/schemas/author'
+        - type: object
+          properties:
+            numBooks:
+              description: The number of books associated with the author in the library.
+              type: integer
+              example: 1

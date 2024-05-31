@@ -4,7 +4,7 @@
       <p class="pr-4">{{ $strings.HeaderChapters }}</p>
       <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ chapters.length }}</span>
       <div class="flex-grow" />
-      <ui-btn v-if="userCanUpdate" small :to="`/audiobook/${libraryItemId}/chapters`" color="primary" class="mr-2">{{ $strings.ButtonEditChapters }}</ui-btn>
+      <ui-btn v-if="userCanUpdate" small :to="`/audiobook/${libraryItemId}/chapters`" color="primary" class="mr-2" @click="clickEditChapters">{{ $strings.ButtonEditChapters }}</ui-btn>
       <div v-if="!keepOpen" class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="expanded ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
       </div>
@@ -21,7 +21,7 @@
           <td class="text-left">
             <p class="px-4">{{ chapter.id }}</p>
           </td>
-          <td>
+          <td dir="auto">
             {{ chapter.title }}
           </td>
           <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
@@ -106,6 +106,12 @@ export default {
           type: 'yesNo'
         }
         this.$store.commit('globals/setConfirmPrompt', payload)
+      }
+    },
+    clickEditChapters() {
+      // Used for Chapters tab in modal
+      if (this.$route.name === 'audiobook-id-chapters' && this.$route.params?.id === this.libraryItem?.id) {
+        this.$emit('close')
       }
     }
   },

@@ -2,7 +2,6 @@ const uuidv4 = require("uuid").v4
 const Path = require('path')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix } = require('../utils/index')
-const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
@@ -72,7 +71,7 @@ class PodcastScanner {
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
-        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified)
+        let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(existingLibraryItem.mediaType, libraryItemData, libraryItemData.audioLibraryFilesModified.map(lf => lf.new))
 
         for (const podcastEpisode of existingPodcastEpisodes) {
           let matchedScannedAudioFile = scannedAudioFiles.find(saf => saf.metadata.path === podcastEpisode.audioFile.metadata.path)
@@ -133,9 +132,23 @@ class PodcastScanner {
     let hasMediaChanges = false
 
     // Check if cover was removed
-    if (media.coverPath && !libraryItemData.imageLibraryFiles.some(lf => lf.metadata.path === media.coverPath)) {
+    if (media.coverPath && libraryItemData.imageLibraryFilesRemoved.some(lf => lf.metadata.path === media.coverPath)) {
       media.coverPath = null
       hasMediaChanges = true
+    }
+
+    // Update cover if it was modified
+    if (media.coverPath && libraryItemData.imageLibraryFilesModified.length) {
+      let coverMatch = libraryItemData.imageLibraryFilesModified.find(iFile => iFile.old.metadata.path === media.coverPath)
+      if (coverMatch) {
+        const coverPath = coverMatch.new.metadata.path
+        if (coverPath !== media.coverPath) {
+          libraryScan.addLog(LogLevel.DEBUG, `Updating podcast cover "${media.coverPath}" => "${coverPath}" for podcast "${media.title}"`)
+          media.coverPath = coverPath
+          media.changed('coverPath', true)
+          hasMediaChanges = true
+        }
+      }
     }
 
     // Check if cover is not set and image files were found

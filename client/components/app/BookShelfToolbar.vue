@@ -22,6 +22,10 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
         </svg>
       </nuxt-link>
+      <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
+        <span v-else class="material-icons-outlined text-lg">queue_music</span>
+      </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
         <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
@@ -36,7 +40,7 @@
         </svg>
       </nuxt-link>
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="flex-grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">{{ $strings.ButtonSearch }}</p>
+        <p class="text-sm">{{ $strings.ButtonAdd }}</p>
       </nuxt-link>
     </div>
     <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-40 flex items-center justify-end md:justify-start px-2 md:px-8">
@@ -94,6 +98,9 @@
       <template v-else-if="page === 'authors'">
         <div class="flex-grow" />
         <ui-btn v-if="userCanUpdate && authors && authors.length && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
+
+        <!-- author sort select -->
+        <controls-sort-select v-if="authors && authors.length" v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
       </template>
     </div>
   </div>
@@ -176,6 +183,30 @@ export default {
         {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
+        }
+      ]
+    },
+    authorSortItems() {
+      return [
+        {
+          text: this.$strings.LabelAuthorFirstLast,
+          value: 'name'
+        },
+        {
+          text: this.$strings.LabelAuthorLastFirst,
+          value: 'lastFirst'
+        },
+        {
+          text: this.$strings.LabelNumberOfBooks,
+          value: 'numBooks'
+        },
+        {
+          text: this.$strings.LabelAddedAt,
+          value: 'addedAt'
+        },
+        {
+          text: this.$strings.LabelUpdatedAt,
+          value: 'updatedAt'
         }
       ]
     },
@@ -293,6 +324,9 @@ export default {
       }
 
       return items
+    },
+    showPlaylists() {
+      return this.$store.state.libraries.numUserPlaylists > 0
     }
   },
   methods: {
@@ -446,6 +480,9 @@ export default {
       this.saveSettings()
     },
     updateCollapseBookSeries() {
+      this.saveSettings()
+    },
+    updateAuthorSort() {
       this.saveSettings()
     },
     saveSettings() {
