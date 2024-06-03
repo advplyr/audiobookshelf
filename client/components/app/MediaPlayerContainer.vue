@@ -1,5 +1,6 @@
 <template>
-  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
+    <div v-if="streamLibraryItem" id="mediaPlayerContainer"  class="w-full fixed bottom-0 left-0 right-0 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2"
+         :class="[showTranscriptionUi ? 'h-64' : 'h-48', showTranscriptionUi ? 'lg:h-64' : 'lg:h-40']">
     <div id="videoDock" />
     <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
@@ -43,6 +44,7 @@
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
       :is-podcast="isPodcast"
+      :transcription-enabled="showTranscriptionUi"
       @playPause="playPause"
       @jumpForward="jumpForward"
       @jumpBackward="jumpBackward"
@@ -53,6 +55,12 @@
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
+      @showTranscription="showTranscriptionUi = !showTranscriptionUi"
+    />
+
+    <transcription-ui
+      v-if="showTranscriptionUi"
+      @seek="seek"
     />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
@@ -65,8 +73,10 @@
 
 <script>
 import PlayerHandler from '@/players/PlayerHandler'
+import TranscriptionUi from "@/components/player/TranscriptionUi.vue"
 
 export default {
+  components: {TranscriptionUi},
   data() {
     return {
       playerHandler: new PlayerHandler(this),
@@ -78,6 +88,7 @@ export default {
       currentTime: 0,
       showSleepTimerModal: false,
       showPlayerQueueItemsModal: false,
+      showTranscriptionUi: false,
       sleepTimerSet: false,
       sleepTimerTime: 0,
       sleepTimerRemaining: 0,
@@ -87,6 +98,17 @@ export default {
       syncFailedToast: null,
       coverAspectRatio: 1
     }
+  },
+  watch: {
+    'playerHandler.playerState': function (newVal) {
+      // Refresh the transcription UI when the audio track is changed
+      if (newVal === 'LOADED') {
+        this.showTranscriptionUi = false
+        this.$nextTick(() => {
+          this.showTranscriptionUi = true
+        });
+      }
+    },
   },
   computed: {
     isSquareCover() {
@@ -487,6 +509,7 @@ export default {
     this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
+    this.showTranscriptionUi = false
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)

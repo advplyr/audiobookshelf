@@ -5,6 +5,7 @@ export default class AudioTrack {
     this.duration = track.duration || 0
     this.title = track.title || ''
     this.contentUrl = track.contentUrl || null
+    this.transcriptUrl = track.transcriptUrl || null
     this.mimeType = track.mimeType
     this.metadata = track.metadata || {}
 
@@ -28,5 +29,15 @@ export default class AudioTrack {
     }
 
     return this.contentUrl + `?token=${this.userToken}`
+  }
+
+  get relativeTranscriptionUrl() {
+    if (!this.transcriptUrl || this.transcriptUrl.startsWith('http')) return this.transcriptUrl
+
+    if (process.env.NODE_ENV === 'development') {
+      return `${process.env.serverUrl}${this.transcriptUrl}?token=${this.userToken}`
+    }
+
+    return this.transcriptUrl + `?token=${this.userToken}`
   }
 }

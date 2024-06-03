@@ -22,9 +22,9 @@ class LibraryItemController {
    * Optional query params:
    * ?include=progress,rssfeed,downloads
    * ?expanded=1
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
@@ -88,9 +88,9 @@ class LibraryItemController {
   /**
    * GET: /api/items/:id/download
    * Download library item. Zip file if multiple files.
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   download(req, res) {
     if (!req.user.canDownload) {
@@ -120,9 +120,9 @@ class LibraryItemController {
   /**
    * PATCH: /items/:id/media
    * Update media for a library item. Will create new authors & series when necessary
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async updateMedia(req, res) {
     const libraryItem = req.libraryItem
@@ -252,9 +252,9 @@ class LibraryItemController {
 
   /**
    * GET: api/items/:id/cover
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getCover(req, res) {
     const { query: { width, height, format, raw } } = req
@@ -593,9 +593,9 @@ class LibraryItemController {
   /**
    * GET api/items/:id/ffprobe/:fileid
    * FFProbe JSON result from audio file
-   * 
+   *
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
    */
   async getFFprobeData(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -619,9 +619,9 @@ class LibraryItemController {
 
   /**
    * GET api/items/:id/file/:fileid
-   * 
+   *
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
    */
   async getLibraryFile(req, res) {
     const libraryFile = req.libraryFile
@@ -641,10 +641,35 @@ class LibraryItemController {
   }
 
   /**
-   * DELETE api/items/:id/file/:fileid
-   * 
+   * GET api/items/:id/file/:fileid/transcript
+   *
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
+   */
+  async getTranscriptionFile(req, res) {
+    const libraryFile = req.libraryFile
+
+    const baseName = Path.basename(libraryFile.metadata.path, Path.extname(libraryFile.metadata.path))
+
+    const vttFilePath = Path.join(Path.dirname(libraryFile.metadata.path), `${baseName}.vtt`)
+
+    if (global.XAccel) {
+      const encodedURI = encodeUriPath(global.XAccel + vttFilePath)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+    }
+
+    // Set the correct mimetype for .vtt files
+    res.setHeader('Content-Type', 'text/vtt')
+
+    res.sendFile(vttFilePath)
+  }
+
+  /**
+   * DELETE api/items/:id/file/:fileid
+   *
+   * @param {express.Request} req
+   * @param {express.Response} res
    */
   async deleteLibraryFile(req, res) {
     const libraryFile = req.libraryFile
@@ -672,7 +697,7 @@ class LibraryItemController {
    * GET api/items/:id/file/:fileid/download
    * Same as GET api/items/:id/file/:fileid but allows logging and restricting downloads
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
    */
   async downloadLibraryFile(req, res) {
     const libraryFile = req.libraryFile
@@ -704,9 +729,9 @@ class LibraryItemController {
    * fileid is the inode value stored in LibraryFile.ino or EBookFile.ino
    * fileid is only required when reading a supplementary ebook
    * when no fileid is passed in the primary ebook will be returned
-   * 
+   *
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
    */
   async getEBookFile(req, res) {
     let ebookFile = null
@@ -740,9 +765,9 @@ class LibraryItemController {
    * toggle the status of an ebook file.
    * if an ebook file is the primary ebook, then it will be changed to supplementary
    * if an ebook file is supplementary, then it will be changed to primary
-   * 
+   *
    * @param {express.Request} req
-   * @param {express.Response} res 
+   * @param {express.Response} res
    */
   async updateEbookFileStatus(req, res) {
     const ebookLibraryFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.fileid)

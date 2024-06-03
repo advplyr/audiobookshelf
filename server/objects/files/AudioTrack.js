@@ -5,6 +5,7 @@ class AudioTrack {
     this.duration = null
     this.title = null
     this.contentUrl = null
+    this.transcriptUrl = null
     this.mimeType = null
     this.codec = null
     this.metadata = null
@@ -17,6 +18,7 @@ class AudioTrack {
       duration: this.duration,
       title: this.title,
       contentUrl: this.contentUrl,
+      transcriptUrl: this.transcriptUrl,
       mimeType: this.mimeType,
       codec: this.codec,
       metadata: this.metadata?.toJSON() || null
@@ -30,6 +32,7 @@ class AudioTrack {
     this.title = audioFile.metadata.filename || ''
 
     this.contentUrl = `${global.RouterBasePath}/api/items/${itemId}/file/${audioFile.ino}`
+    this.transcriptUrl = `${global.RouterBasePath}/api/items/${itemId}/file/${audioFile.ino}/transcript`
     this.mimeType = audioFile.mimeType
     this.codec = audioFile.codec || null
     this.metadata = audioFile.metadata.clone()

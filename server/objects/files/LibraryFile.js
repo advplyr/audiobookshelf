@@ -46,6 +46,7 @@ class LibraryFile {
     if (globals.SupportedVideoTypes.includes(this.metadata.format)) return 'video'
     if (globals.TextFileTypes.includes(this.metadata.format)) return 'text'
     if (globals.MetadataFileTypes.includes(this.metadata.format)) return 'metadata'
+    if (globals.SubtitleFileTypes.includes(this.metadata.format)) return 'subtitle'
     return 'unknown'
   }
 
