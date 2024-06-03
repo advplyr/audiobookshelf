@@ -4,7 +4,7 @@
     <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
       <div class="flex flex-wrap justify-center">
         <template v-for="author in authorsSorted">
-          <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
+          <cards-author-card :key="author.id" :author="author" class="p-3" @edit="editAuthor" />
         </template>
       </div>
     </div>

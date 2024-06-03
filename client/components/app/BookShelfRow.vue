@@ -1,66 +1,52 @@
 <template>
   <div class="relative">
-    <div ref="shelf" class="w-full max-w-full bookshelf-row categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem', height: shelfHeight + 'px' }" @scroll="scrolled">
+    <div ref="shelf" class="w-full max-w-full bookshelf-row categorizedBookshelfRow relative overflow-x-scroll no-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft + 'em' }" @scroll="scrolled">
       <div class="w-full h-full pt-6">
         <div v-if="shelf.type === 'book' || shelf.type === 'podcast'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="`${entity.id}-${index}`" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editItem" />
+            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :book-mount="entity" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editItem" />
           </template>
         </div>
         <div v-if="shelf.type === 'episode'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card
-              :key="entity.recentEpisode.id"
-              :ref="`shelf-episode-${entity.recentEpisode.id}`"
-              :index="index"
-              :width="bookCoverWidth"
-              :height="bookCoverHeight"
-              :book-cover-aspect-ratio="bookCoverAspectRatio"
-              :book-mount="entity"
-              :continue-listening-shelf="continueListeningShelf"
-              class="relative mx-2"
-              @hook:updated="updatedBookCard"
-              @select="selectItem"
-              @editPodcast="editItem"
-              @edit="editEpisode"
-            />
+            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :book-mount="entity" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @editPodcast="editItem" @edit="editEpisode" />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-lazy-series-card :key="entity.name" :series-mount="entity" :height="bookCoverHeight" :width="bookCoverWidth * 2" :book-cover-aspect-ratio="bookCoverAspectRatio" class="relative mx-2" @hook:updated="updatedBookCard" />
+            <cards-lazy-series-card :key="entity.name" :series-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" />
           </template>
         </div>
         <div v-if="shelf.type === 'tags'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-group-card :key="entity.name" :group="entity" :height="bookCoverHeight" :width="bookCoverWidth * 2" :book-cover-aspect-ratio="bookCoverAspectRatio" class="relative mx-2" @hook:updated="updatedBookCard" />
+            <cards-group-card :key="entity.name" :group="entity" class="relative mx-2" @hook:updated="updatedBookCard" />
           </template>
         </div>
         <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-author-card :key="entity.id" :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" @edit="editAuthor" />
+            <cards-author-card :key="entity.id" :author="entity" @hook:updated="updatedBookCard" class="mx-2" @edit="editAuthor" />
           </template>
         </div>
         <div v-if="shelf.type === 'narrators'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-narrator-card :key="entity.name" :width="150" :height="100" :narrator="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" />
+            <cards-narrator-card :key="entity.name" :narrator="entity" @hook:updated="updatedBookCard" class="mx-2" />
           </template>
         </div>
       </div>
     </div>
-
-    <div class="absolute text-center categoryPlacard transform z-30 bottom-px left-4 md:left-8 w-44 rounded-md" style="height: 22px">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border">
-        <p class="transform text-sm">{{ $strings[shelf.labelStringKey] }}</p>
+    <div class="relative">
+      <div class="relative text-center categoryPlacard transform z-30 top-0 left-4 md:left-8 w-44 rounded-md">
+        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em 0.5em` }">
+          <p :style="{ fontSize: 0.9 + 'em' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </div>
       </div>
+
+      <div class="bookshelfDividerCategorized h-6 w-full absolute top-0 left-0 right-0 z-20"></div>
     </div>
-
-    <div class="bookshelfDividerCategorized h-6 w-full absolute bottom-0 left-0 right-0 z-20"></div>
-
-    <div v-show="canScrollLeft && !isScrolling" class="hidden sm:flex absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollLeft">
+    <div v-show="canScrollLeft && !isScrolling" class="hidden sm:flex absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-40" @click="scrollLeft">
       <span class="material-icons text-6xl text-white">chevron_left</span>
     </div>
-    <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
+    <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-40" @click="scrollRight">
       <span class="material-icons text-6xl text-white">chevron_right</span>
     </div>
   </div>
@@ -74,9 +60,6 @@ export default {
       type: Object,
       default: () => {}
     },
-    sizeMultiplier: Number,
-    bookCoverWidth: Number,
-    bookCoverAspectRatio: Number,
     continueListeningShelf: Boolean
   },
   data() {
@@ -89,12 +72,8 @@ export default {
     }
   },
   computed: {
-    bookCoverHeight() {
-      return this.bookCoverWidth * this.bookCoverAspectRatio
-    },
-    shelfHeight() {
-      if (this.shelf.type === 'narrators') return 148
-      return this.bookCoverHeight + 48
+    sizeMultiplier() {
+      return this.$store.getters['user/getSizeMultiplier']
     },
     paddingLeft() {
       if (window.innerWidth < 768) return 1

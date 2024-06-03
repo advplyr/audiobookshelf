@@ -1,9 +1,9 @@
 <template>
   <div class="relative">
-    <div class="rounded-sm h-full relative" :style="{ width: width + 'px', height: height + 'px' }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
+    <div class="rounded-sm h-full relative" :style="{ width: cardWidth + 'px', height: cardHeight + 'px' }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
         <div class="w-full h-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'">
-          <covers-group-cover ref="groupcover" :id="groupEncode" :name="groupName" :type="groupType" :book-items="bookItems" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+          <covers-group-cover ref="groupcover" :id="groupEncode" :name="groupName" :type="groupType" :book-items="bookItems" :width="cardWidth" :height="cardHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
           <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
             <p :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ groupName }}</p>
@@ -24,8 +24,10 @@ export default {
       default: () => null
     },
     width: Number,
-    height: Number,
-    bookCoverAspectRatio: Number
+    height: {
+      type: Number,
+      default: 192
+    }
   },
   data() {
     return {
@@ -33,6 +35,15 @@ export default {
     }
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    cardWidth() {
+      return this.width || this.cardHeight * 2
+    },
+    cardHeight() {
+      return this.height * this.sizeMultiplier
+    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -46,8 +57,7 @@ export default {
       return `/library/${this.currentLibraryId}/bookshelf?filter=${this.filter}`
     },
     sizeMultiplier() {
-      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
-      return this.width / 240
+      return this.$store.getters['user/getSizeMultiplier']
     },
     bookItems() {
       return this._group.books || []

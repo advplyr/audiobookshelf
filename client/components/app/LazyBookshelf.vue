@@ -1,8 +1,8 @@
 <template>
-  <div id="bookshelf" class="w-full overflow-y-auto">
+  <div id="bookshelf" ref="bookshelf" class="w-full overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <template v-for="shelf in totalShelves">
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6" />
       </div>
     </template>
 
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
+    <widgets-cover-size-widget class="fixed right-4r z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
   </div>
 </template>
 
@@ -49,10 +49,9 @@ export default {
       entityIndexesMounted: [],
       entityComponentRefs: {},
       currentBookWidth: 0,
-      pageLoadQueue: [],
       isFetchingEntities: false,
       scrollTimeout: null,
-      booksPerFetch: 100,
+      booksPerFetch: 0,
       totalShelves: 0,
       bookshelfMarginLeft: 0,
       isSelectionMode: false,
@@ -63,7 +62,10 @@ export default {
       resizeTimeout: null,
       mountWindowWidth: 0,
       lastItemIndexSelected: -1,
-      tempIsScanning: false
+      tempIsScanning: false,
+      cardWidth: 0,
+      cardHeight: 0,
+      resizeObserver: null
     }
   },
   watch: {
@@ -160,52 +162,40 @@ export default {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
     bookWidth() {
-      const coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
-      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return coverSize * 1.6
-      return coverSize
+      return this.cardWidth
     },
     bookHeight() {
-      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return this.bookWidth
-      return this.bookWidth * 1.6
+      return this.cardHeight
     },
     shelfPadding() {
-      if (this.bookshelfWidth < 640) return 32
-      return 64
+      if (this.bookshelfWidth < 640) return 32 * this.sizeMultiplier
+      return 64 * this.sizeMultiplier
     },
     totalPadding() {
       return this.shelfPadding * 2
     },
     entityWidth() {
-      if (this.entityName === 'series' || this.entityName === 'collections') {
-        if (this.bookWidth * 2 > this.bookshelfWidth - this.shelfPadding) return this.bookWidth * 1.6
-        return this.bookWidth * 2
-      }
-      return this.bookWidth
+      return this.cardWidth
     },
     entityHeight() {
-      return this.bookHeight
+      return this.cardHeight
     },
-    shelfDividerHeightIndex() {
-      return 6
+    shelfPaddingHeight() {
+      return 16
     },
     shelfHeight() {
-      if (this.isAlternativeBookshelfView) {
-        const isItemEntity = this.entityName === 'series-books' || this.entityName === 'items'
-        const extraTitleSpace = isItemEntity ? 80 : this.entityName === 'albums' ? 60 : 40
-        return this.entityHeight + extraTitleSpace * this.sizeMultiplier
-      }
-      return this.entityHeight + 40
+      const dividerHeight = this.isAlternativeBookshelfView ? 0 : 24 // h-6
+      return this.cardHeight + (this.shelfPaddingHeight + dividerHeight) * this.sizeMultiplier
     },
     totalEntityCardWidth() {
       // Includes margin
-      return this.entityWidth + 24
+      return this.entityWidth + 24 * this.sizeMultiplier
     },
     selectedMediaItems() {
       return this.$store.state.globals.selectedMediaItems || []
     },
     sizeMultiplier() {
-      const baseSize = this.isCoverSquareAspectRatio ? 192 : 120
-      return this.entityWidth / baseSize
+      return this.$store.getters['user/getSizeMultiplier']
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -436,10 +426,14 @@ export default {
     rebuild() {
       this.initSizeData()
 
-      var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
+      var lastBookIndex = Math.min(this.totalEntities, this.booksPerFetch)
       this.entityIndexesMounted = []
       for (let i = 0; i < lastBookIndex; i++) {
         this.entityIndexesMounted.push(i)
+        if (!this.entities[i]) {
+          const page = Math.floor(i / this.booksPerFetch)
+          this.loadPage(page)
+        }
       }
       var bookshelfEl = document.getElementById('bookshelf')
       if (bookshelfEl) {
@@ -501,7 +495,8 @@ export default {
         this.resetEntities()
       }
     },
-    settingsUpdated(settings) {
+    async settingsUpdated(settings) {
+      await this.cardsHelpers.setCardSize()
       const wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
         this.resetEntities()
@@ -606,6 +601,20 @@ export default {
         this.executeRebuild()
       }
     },
+    updatePagesLoaded() {
+      let numPages = Math.ceil(this.totalEntities / this.booksPerFetch)
+      for (let page = 0; page < numPages; page++) {
+        let numEntities = Math.min(this.totalEntities - page * this.booksPerFetch, this.booksPerFetch)
+        this.pagesLoaded[page] = true
+        for (let i = 0; i < numEntities; i++) {
+          const index = page * this.booksPerFetch + i
+          if (!this.entities[index]) {
+            this.pagesLoaded[page] = false
+            break
+          }
+        }
+      }
+    },
     initSizeData(_bookshelf) {
       var bookshelf = _bookshelf || document.getElementById('bookshelf')
       if (!bookshelf) {
@@ -622,6 +631,13 @@ export default {
       this.entitiesPerShelf = Math.max(1, Math.floor((this.bookshelfWidth - this.shelfPadding) / this.totalEntityCardWidth))
       this.shelvesPerPage = Math.ceil(this.bookshelfHeight / this.shelfHeight) + 2
       this.bookshelfMarginLeft = (this.bookshelfWidth - this.entitiesPerShelf * this.totalEntityCardWidth) / 2
+      const booksPerFetch = this.entitiesPerShelf * this.shelvesPerPage
+      if (booksPerFetch !== this.booksPerFetch) {
+        this.booksPerFetch = booksPerFetch
+        if (this.totalEntities) {
+          this.updatePagesLoaded()
+        }
+      }
 
       this.currentBookWidth = this.bookWidth
       if (this.totalEntities) {
@@ -630,13 +646,8 @@ export default {
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },
     async init(bookshelf) {
-      if (this.entityName === 'series') {
-        this.booksPerFetch = 50
-      } else {
-        this.booksPerFetch = 100
-      }
-      this.checkUpdateSearchParams()
       this.initSizeData(bookshelf)
+      this.checkUpdateSearchParams()
 
       this.pagesLoaded[0] = true
       await this.fetchEntites(0)
@@ -743,7 +754,8 @@ export default {
         })
     }
   },
-  mounted() {
+  async mounted() {
+    await this.cardsHelpers.setCardSize()
     this.initListeners()
 
     this.routeFullPath = window.location.pathname + (window.location.search || '')
@@ -778,6 +790,6 @@ export default {
 .bookshelfDivider {
   background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);
-  box-shadow: 2px 14px 8px #111111aa;
+  box-shadow: 0.125em 0.875em 0.5em #111111aa;
 }
 </style>
