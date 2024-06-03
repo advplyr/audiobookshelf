@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     supportedShelves() {
-      return this.shelves.filter((shelf) => ['book', 'episode', 'series', 'authors', 'narrators'].includes(shelf.type))
+      return this.shelves.filter((shelf) => ['book', 'podcast', 'episode', 'series', 'authors', 'narrators'].includes(shelf.type))
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
