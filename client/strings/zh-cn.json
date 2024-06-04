@@ -307,6 +307,7 @@
   "LabelFolder": "文件夹",
   "LabelFolders": "文件夹",
   "LabelFontBold": "Bold",
+  "LabelFontBoldness": "Font Boldness",
   "LabelFontFamily": "字体系列",
   "LabelFontItalic": "斜体",
   "LabelFontScale": "字体比例",
