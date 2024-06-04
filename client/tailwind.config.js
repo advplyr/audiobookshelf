@@ -1,3 +1,4 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['components/**/*.vue', 'layouts/**/*.vue', 'pages/**/*.vue', 'templates/**/*.vue', 'plugins/**/*.js', 'nuxt.config.js'],
   safelist: ['bg-red-600', 'px-1.5', 'min-w-5', 'border-warning'],
@@ -118,6 +119,7 @@ module.exports = {
       }
     },
     spacing: {
+      // based on tailwind default config converted to em units, see client\node_modules\tailwindcss\stubs\config.full.js
       px: '1px',
       0: '0px',
       0.5: '0.125em',
@@ -155,19 +157,20 @@ module.exports = {
       96: '24em'
     },
     fontSize: {
-      xs: '0.75em',
-      sm: '0.875em',
-      base: '1em',
-      lg: '1.125em',
-      xl: '1.25em',
-      '2xl': '1.5em',
-      '3xl': '1.875em',
-      '4xl': '2.25em',
-      '5xl': '3em',
-      '6xl': '3.75em',
-      '7xl': '4.5em',
-      '8xl': '6em',
-      '9xl': '8em'
+      // based on tailwind default config converted to em units, see client\node_modules\tailwindcss\stubs\config.full.js
+      xs: ['0.75em', '1em'],
+      sm: ['0.875em', '1.25em'],
+      base: ['1em', '1.5em'],
+      lg: ['1.125em', '1.75em'],
+      xl: ['1.25em', '1.75em'],
+      '2xl': ['1.5em', '2em'],
+      '3xl': ['1.875em', '2.25em'],
+      '4xl': ['2.25em', '2.5em'],
+      '5xl': ['3em', '1'],
+      '6xl': ['3.75em', '1'],
+      '7xl': ['4.5em', '1'],
+      '8xl': ['6em', '1'],
+      '9xl': ['8em', '1']
     }
   },
   variants: {
