@@ -120,6 +120,9 @@ export default {
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
+    showSubtitles() {
+      return this.$store.getters['user/getUserSetting']('showSubtitles')
+    },
     collapseSeries() {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
     },
