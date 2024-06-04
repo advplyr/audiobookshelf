@@ -46,7 +46,8 @@ export default {
         font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
-        spread: 'auto'
+        spread: 'auto',
+        textStroke: 0
       }
     }
   },
@@ -109,11 +110,14 @@ export default {
 
       const fontScale = this.ereaderSettings.fontScale / 100
 
+      const textStroke = this.ereaderSettings.textStroke / 100
+
       return {
         '*': {
           color: `${fontColor}!important`,
           'background-color': `${backgroundColor}!important`,
-          'line-height': lineSpacing * fontScale + 'rem!important'
+          'line-height': lineSpacing * fontScale + 'rem!important',
+          '-webkit-text-stroke': textStroke + 'px ' + fontColor + '!important'
         },
         a: {
           color: `${fontColor}!important`
