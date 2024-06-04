@@ -102,7 +102,7 @@
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelFontBoldness }}:</p>
           </div>
-          <ui-range-input v-model="ereaderSettings.textStroke" :min="0" :max="300" :step="0.1" @input="settingsUpdated" />
+          <ui-range-input v-model="ereaderSettings.textStroke" :min="0" :max="300" :step="5" @input="settingsUpdated" />
         </div>
         <div class="flex items-center">
           <div class="w-40">
