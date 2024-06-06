@@ -114,26 +114,29 @@ class Device extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        deviceId: DataTypes.STRING,
+        clientName: DataTypes.STRING, // e.g. Abs Web, Abs Android
+        clientVersion: DataTypes.STRING, // e.g. Server version or mobile version
+        ipAddress: DataTypes.STRING,
+        deviceName: DataTypes.STRING, // e.g. Windows 10 Chrome, Google Pixel 6, Apple iPhone 10,3
+        deviceVersion: DataTypes.STRING, // e.g. Browser version or Android SDK
+        extraData: DataTypes.JSON
       },
-      deviceId: DataTypes.STRING,
-      clientName: DataTypes.STRING, // e.g. Abs Web, Abs Android
-      clientVersion: DataTypes.STRING, // e.g. Server version or mobile version
-      ipAddress: DataTypes.STRING,
-      deviceName: DataTypes.STRING, // e.g. Windows 10 Chrome, Google Pixel 6, Apple iPhone 10,3
-      deviceVersion: DataTypes.STRING, // e.g. Browser version or Android SDK
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'device'
-    })
+      {
+        sequelize,
+        modelName: 'device'
+      }
+    )
 
     const { user } = sequelize.models
 

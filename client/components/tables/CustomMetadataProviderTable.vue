@@ -21,7 +21,7 @@
       </tr>
     </table>
     <div v-else-if="!processing" class="text-center py-8">
-      <p class="text-lg">No custom metadata providers</p>
+      <p class="text-lg">{{ $strings.LabelNoCustomMetadataProviders }}</p>
     </div>
 
     <div v-if="processing" class="absolute inset-0 h-full flex items-center justify-center bg-black/40 rounded-md">

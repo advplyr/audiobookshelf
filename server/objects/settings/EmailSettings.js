@@ -16,6 +16,7 @@ class EmailSettings {
     this.host = null
     this.port = 465
     this.secure = true
+    this.rejectUnauthorized = true
     this.user = null
     this.pass = null
     this.testAddress = null
@@ -33,11 +34,17 @@ class EmailSettings {
     this.host = settings.host
     this.port = settings.port
     this.secure = !!settings.secure
+    this.rejectUnauthorized = !!settings.rejectUnauthorized
     this.user = settings.user
     this.pass = settings.pass
     this.testAddress = settings.testAddress
     this.fromAddress = settings.fromAddress
-    this.ereaderDevices = settings.ereaderDevices?.map(d => ({ ...d })) || []
+    this.ereaderDevices = settings.ereaderDevices?.map((d) => ({ ...d })) || []
+
+    // rejectUnauthorized added after v2.10.1 - defaults to true
+    if (settings.rejectUnauthorized === undefined) {
+      this.rejectUnauthorized = true
+    }
   }
 
   toJSON() {
@@ -46,11 +53,12 @@ class EmailSettings {
       host: this.host,
       port: this.port,
       secure: this.secure,
+      rejectUnauthorized: this.rejectUnauthorized,
       user: this.user,
       pass: this.pass,
       testAddress: this.testAddress,
       fromAddress: this.fromAddress,
-      ereaderDevices: this.ereaderDevices.map(d => ({ ...d }))
+      ereaderDevices: this.ereaderDevices.map((d) => ({ ...d }))
     }
   }
 
@@ -62,27 +70,30 @@ class EmailSettings {
       else payload.port = Number(payload.port)
     }
     if (payload.secure !== undefined) payload.secure = !!payload.secure
+    if (payload.rejectUnauthorized !== undefined) payload.rejectUnauthorized = !!payload.rejectUnauthorized
 
     if (payload.ereaderDevices !== undefined && !Array.isArray(payload.ereaderDevices)) payload.ereaderDevices = undefined
 
     if (payload.ereaderDevices?.length) {
       // Validate ereader devices
-      payload.ereaderDevices = payload.ereaderDevices.map((device) => {
-        if (!device.name || !device.email) {
-          Logger.error(`[EmailSettings] Update ereader device is invalid`, device)
-          return null
-        }
-        if (!device.availabilityOption || !['adminOrUp', 'userOrUp', 'guestOrUp', 'specificUsers'].includes(device.availabilityOption)) {
-          device.availabilityOption = 'adminOrUp'
-        }
-        if (device.availabilityOption === 'specificUsers' && !device.users?.length) {
-          device.availabilityOption = 'adminOrUp'
-        }
-        if (device.availabilityOption !== 'specificUsers' && device.users?.length) {
-          device.users = []
-        }
-        return device
-      }).filter(d => d)
+      payload.ereaderDevices = payload.ereaderDevices
+        .map((device) => {
+          if (!device.name || !device.email) {
+            Logger.error(`[EmailSettings] Update ereader device is invalid`, device)
+            return null
+          }
+          if (!device.availabilityOption || !['adminOrUp', 'userOrUp', 'guestOrUp', 'specificUsers'].includes(device.availabilityOption)) {
+            device.availabilityOption = 'adminOrUp'
+          }
+          if (device.availabilityOption === 'specificUsers' && !device.users?.length) {
+            device.availabilityOption = 'adminOrUp'
+          }
+          if (device.availabilityOption !== 'specificUsers' && device.users?.length) {
+            device.users = []
+          }
+          return device
+        })
+        .filter((d) => d)
     }
 
     let hasUpdates = false
@@ -116,14 +127,20 @@ class EmailSettings {
         pass: this.pass
       }
     }
+    // Allow self-signed certs (https://nodemailer.com/smtp/#3-allow-self-signed-certificates)
+    if (!this.rejectUnauthorized) {
+      payload.tls = {
+        rejectUnauthorized: false
+      }
+    }
 
     return payload
   }
 
   /**
-   * 
-   * @param {EreaderDeviceObject} device 
-   * @param {import('../user/User')} user 
+   *
+   * @param {EreaderDeviceObject} device
+   * @param {import('../user/User')} user
    * @returns {boolean}
    */
   checkUserCanAccessDevice(device, user) {
@@ -140,8 +157,8 @@ class EmailSettings {
 
   /**
    * Get ereader devices accessible to user
-   * 
-   * @param {import('../user/User')} user 
+   *
+   * @param {import('../user/User')} user
    * @returns {EreaderDeviceObject[]}
    */
   getEReaderDevices(user) {
@@ -150,12 +167,12 @@ class EmailSettings {
 
   /**
    * Get ereader device by name
-   * 
-   * @param {string} deviceName 
+   *
+   * @param {string} deviceName
    * @returns {EreaderDeviceObject}
    */
   getEReaderDevice(deviceName) {
-    return this.ereaderDevices.find(d => d.name === deviceName)
+    return this.ereaderDevices.find((d) => d.name === deviceName)
   }
 }
 module.exports = EmailSettings

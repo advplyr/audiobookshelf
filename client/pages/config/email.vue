@@ -20,13 +20,30 @@
         </div>
 
         <div class="flex items-center mb-2 py-3">
-          <ui-toggle-switch labeledBy="email-settings-secure" v-model="newSettings.secure" :disabled="savingSettings" />
-          <ui-tooltip :text="$strings.LabelEmailSettingsSecureHelp">
-            <div class="pl-4 flex items-center">
-              <span id="email-settings-secure">{{ $strings.LabelEmailSettingsSecure }}</span>
-              <span class="material-icons text-lg pl-1">info_outlined</span>
+          <div class="w-full md:w-1/2 px-1">
+            <!-- secure toggle -->
+            <div class="flex items-center">
+              <ui-toggle-switch labeledBy="email-settings-secure" v-model="newSettings.secure" :disabled="savingSettings" />
+              <ui-tooltip :text="$strings.LabelEmailSettingsSecureHelp">
+                <div class="pl-4 flex items-center">
+                  <span id="email-settings-secure">{{ $strings.LabelEmailSettingsSecure }}</span>
+                  <span class="material-icons text-lg pl-1">info_outlined</span>
+                </div>
+              </ui-tooltip>
             </div>
-          </ui-tooltip>
+          </div>
+          <div class="w-full md:w-1/2 px-1">
+            <!-- reject unauthorized toggle -->
+            <div class="flex items-center">
+              <ui-toggle-switch labeledBy="email-settings-reject-unauthorized" v-model="newSettings.rejectUnauthorized" :disabled="savingSettings" />
+              <ui-tooltip :text="$strings.LabelEmailSettingsRejectUnauthorizedHelp">
+                <div class="pl-4 flex items-center">
+                  <span id="email-settings-reject-unauthorized">{{ $strings.LabelEmailSettingsRejectUnauthorized }}</span>
+                  <span class="material-icons text-lg pl-1">info_outlined</span>
+                </div>
+              </ui-tooltip>
+            </div>
+          </div>
         </div>
 
         <div class="flex items-center -mx-1 mb-2">
@@ -119,6 +136,7 @@ export default {
         host: null,
         port: 465,
         secure: true,
+        rejectUnauthorized: true,
         user: null,
         pass: null,
         testAddress: null,
@@ -257,6 +275,7 @@ export default {
         host: this.newSettings.host,
         port: this.newSettings.port,
         secure: this.newSettings.secure,
+        rejectUnauthorized: this.newSettings.rejectUnauthorized,
         user: this.newSettings.user,
         pass: this.newSettings.pass,
         testAddress: this.newSettings.testAddress,

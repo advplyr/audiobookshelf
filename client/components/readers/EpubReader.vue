@@ -195,7 +195,7 @@ export default {
      */
     updateProgress(payload) {
       if (!this.keepProgress) return
-      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },

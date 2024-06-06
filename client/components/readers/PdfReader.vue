@@ -23,13 +23,10 @@
       <div class="flex items-center justify-center">
         <div :style="{ width: pdfWidth + 'px', height: pdfHeight + 'px' }" class="overflow-auto">
           <div v-if="loadedRatio > 0 && loadedRatio < 1" style="background-color: green; color: white; text-align: center" :style="{ width: loadedRatio * 100 + '%' }">{{ Math.floor(loadedRatio * 100) }}%</div>
-          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="pdfDocInitParams" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
+          <pdf v-if="pdfDocInitParams" ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="pdfDocInitParams" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
         </div>
       </div>
     </div>
-    <!-- <div class="text-center py-2 text-lg">
-      <p>{{ page }} / {{ numPages }}</p>
-    </div> -->
   </div>
 </template>
 
@@ -57,7 +54,8 @@ export default {
       rotate: 0,
       loadedRatio: 0,
       page: 1,
-      numPages: 0
+      numPages: 0,
+      pdfDocInitParams: null
     }
   },
   computed: {
@@ -108,14 +106,6 @@ export default {
         return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
       return `/api/items/${this.libraryItemId}/ebook`
-    },
-    pdfDocInitParams() {
-      return {
-        url: this.ebookUrl,
-        httpHeaders: {
-          Authorization: `Bearer ${this.userToken}`
-        }
-      }
     }
   },
   methods: {
@@ -136,7 +126,7 @@ export default {
         ebookLocation: this.page,
         ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
       }
-      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },
@@ -149,6 +139,7 @@ export default {
       this.loadedRatio = progress
     },
     numPagesLoaded(e) {
+      if (!e) return
       this.numPages = e
     },
     prev() {
@@ -167,12 +158,22 @@ export default {
     resize() {
       this.windowWidth = window.innerWidth
       this.windowHeight = window.innerHeight
+    },
+    init() {
+      this.pdfDocInitParams = {
+        url: this.ebookUrl,
+        httpHeaders: {
+          Authorization: `Bearer ${this.userToken}`
+        }
+      }
     }
   },
   mounted() {
     this.windowWidth = window.innerWidth
     this.windowHeight = window.innerHeight
     window.addEventListener('resize', this.resize)
+
+    this.init()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)

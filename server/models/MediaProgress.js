@@ -100,38 +100,41 @@ class MediaProgress extends Model {
 
   /**
    * Initialize model
-   * 
+   *
    * Polymorphic association: Book has many MediaProgress. PodcastEpisode has many MediaProgress.
    * @see https://sequelize.org/docs/v6/advanced-association-concepts/polymorphic-associations/
-   * 
-   * @param {import('../Database').sequelize} sequelize 
+   *
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        mediaItemId: DataTypes.UUIDV4,
+        mediaItemType: DataTypes.STRING,
+        duration: DataTypes.FLOAT,
+        currentTime: DataTypes.FLOAT,
+        isFinished: DataTypes.BOOLEAN,
+        hideFromContinueListening: DataTypes.BOOLEAN,
+        ebookLocation: DataTypes.STRING,
+        ebookProgress: DataTypes.FLOAT,
+        finishedAt: DataTypes.DATE,
+        extraData: DataTypes.JSON
       },
-      mediaItemId: DataTypes.UUIDV4,
-      mediaItemType: DataTypes.STRING,
-      duration: DataTypes.FLOAT,
-      currentTime: DataTypes.FLOAT,
-      isFinished: DataTypes.BOOLEAN,
-      hideFromContinueListening: DataTypes.BOOLEAN,
-      ebookLocation: DataTypes.STRING,
-      ebookProgress: DataTypes.FLOAT,
-      finishedAt: DataTypes.DATE,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'mediaProgress',
-      indexes: [
-        {
-          fields: ['updatedAt']
-        }
-      ]
-    })
+      {
+        sequelize,
+        modelName: 'mediaProgress',
+        indexes: [
+          {
+            fields: ['updatedAt']
+          }
+        ]
+      }
+    )
 
     const { book, podcastEpisode, user } = sequelize.models
 
@@ -153,7 +156,7 @@ class MediaProgress extends Model {
     })
     MediaProgress.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-    MediaProgress.addHook('afterFind', findResult => {
+    MediaProgress.addHook('afterFind', (findResult) => {
       if (!findResult) return
 
       if (!Array.isArray(findResult)) findResult = [findResult]

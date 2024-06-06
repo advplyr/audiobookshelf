@@ -15,7 +15,7 @@ var ffCodecRegexp = /^\s*([D\.])([E\.])([VAS])([I\.])([L\.])([S\.]) ([^ ]+) +(.*
 var ffEncodersRegexp = /\(encoders:([^\)]+)\)/;
 var ffDecodersRegexp = /\(decoders:([^\)]+)\)/;
 var encodersRegexp = /^\s*([VAS\.])([F\.])([S\.])([X\.])([B\.])([D\.]) ([^ ]+) +(.*)$/;
-var formatRegexp = /^\s*([D ])([E ]) ([^ ]+) +(.*)$/;
+var formatRegexp = /^\s*([D ])([E ])\s+([^ ]+)\s+(.*)$/;
 var lineBreakRegexp = /\r\n|\r|\n/;
 var filterRegexp = /^(?: [T\.][S\.][C\.] )?([^ ]+) +(AA?|VV?|\|)->(AA?|VV?|\|) +(.*)$/;
 

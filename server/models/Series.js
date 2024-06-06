@@ -24,7 +24,7 @@ class Series extends Model {
 
   static async getAllOldSeries() {
     const series = await this.findAll()
-    return series.map(se => se.getOldSeries())
+    return series.map((se) => se.getOldSeries())
   }
 
   getOldSeries() {
@@ -77,7 +77,7 @@ class Series extends Model {
 
   /**
    * Get oldSeries by id
-   * @param {string} seriesId 
+   * @param {string} seriesId
    * @returns {Promise<oldSeries>}
    */
   static async getOldById(seriesId) {
@@ -88,7 +88,7 @@ class Series extends Model {
 
   /**
    * Check if series exists
-   * @param {string} seriesId 
+   * @param {string} seriesId
    * @returns {Promise<boolean>}
    */
   static async checkExistsById(seriesId) {
@@ -97,58 +97,65 @@ class Series extends Model {
 
   /**
    * Get old series by name and libraryId. name case insensitive
-   * 
-   * @param {string} seriesName 
-   * @param {string} libraryId 
+   *
+   * @param {string} seriesName
+   * @param {string} libraryId
    * @returns {Promise<oldSeries>}
    */
   static async getOldByNameAndLibrary(seriesName, libraryId) {
-    const series = (await this.findOne({
-      where: [
-        where(fn('lower', col('name')), seriesName.toLowerCase()),
-        {
-          libraryId
-        }
-      ]
-    }))?.getOldSeries()
+    const series = (
+      await this.findOne({
+        where: [
+          where(fn('lower', col('name')), seriesName.toLowerCase()),
+          {
+            libraryId
+          }
+        ]
+      })
+    )?.getOldSeries()
     return series
   }
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-      },
-      name: DataTypes.STRING,
-      nameIgnorePrefix: DataTypes.STRING,
-      description: DataTypes.TEXT
-    }, {
-      sequelize,
-      modelName: 'series',
-      indexes: [
-        {
-          fields: [{
-            name: 'name',
-            collate: 'NOCASE'
-          }]
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
         },
-        // {
-        //   fields: [{
-        //     name: 'nameIgnorePrefix',
-        //     collate: 'NOCASE'
-        //   }]
-        // },
-        {
-          fields: ['libraryId']
-        }
-      ]
-    })
+        name: DataTypes.STRING,
+        nameIgnorePrefix: DataTypes.STRING,
+        description: DataTypes.TEXT
+      },
+      {
+        sequelize,
+        modelName: 'series',
+        indexes: [
+          {
+            fields: [
+              {
+                name: 'name',
+                collate: 'NOCASE'
+              }
+            ]
+          },
+          // {
+          //   fields: [{
+          //     name: 'nameIgnorePrefix',
+          //     collate: 'NOCASE'
+          //   }]
+          // },
+          {
+            fields: ['libraryId']
+          }
+        ]
+      }
+    )
 
     const { library } = sequelize.models
     library.hasMany(Series, {

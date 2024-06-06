@@ -2,7 +2,6 @@ const { DataTypes, Model } = require('sequelize')
 
 const oldPlaybackSession = require('../objects/PlaybackSession')
 
-
 class PlaybackSession extends Model {
   constructor(values, options) {
     super(values, options)
@@ -62,7 +61,7 @@ class PlaybackSession extends Model {
         }
       ]
     })
-    return playbackSessions.map(session => this.getOldPlaybackSession(session))
+    return playbackSessions.map((session) => this.getOldPlaybackSession(session))
   }
 
   static async getById(sessionId) {
@@ -170,35 +169,38 @@ class PlaybackSession extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        mediaItemId: DataTypes.UUIDV4,
+        mediaItemType: DataTypes.STRING,
+        displayTitle: DataTypes.STRING,
+        displayAuthor: DataTypes.STRING,
+        duration: DataTypes.FLOAT,
+        playMethod: DataTypes.INTEGER,
+        mediaPlayer: DataTypes.STRING,
+        startTime: DataTypes.FLOAT,
+        currentTime: DataTypes.FLOAT,
+        serverVersion: DataTypes.STRING,
+        coverPath: DataTypes.STRING,
+        timeListening: DataTypes.INTEGER,
+        mediaMetadata: DataTypes.JSON,
+        date: DataTypes.STRING,
+        dayOfWeek: DataTypes.STRING,
+        extraData: DataTypes.JSON
       },
-      mediaItemId: DataTypes.UUIDV4,
-      mediaItemType: DataTypes.STRING,
-      displayTitle: DataTypes.STRING,
-      displayAuthor: DataTypes.STRING,
-      duration: DataTypes.FLOAT,
-      playMethod: DataTypes.INTEGER,
-      mediaPlayer: DataTypes.STRING,
-      startTime: DataTypes.FLOAT,
-      currentTime: DataTypes.FLOAT,
-      serverVersion: DataTypes.STRING,
-      coverPath: DataTypes.STRING,
-      timeListening: DataTypes.INTEGER,
-      mediaMetadata: DataTypes.JSON,
-      date: DataTypes.STRING,
-      dayOfWeek: DataTypes.STRING,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'playbackSession'
-    })
+      {
+        sequelize,
+        modelName: 'playbackSession'
+      }
+    )
 
     const { book, podcastEpisode, user, device, library } = sequelize.models
 
@@ -229,7 +231,7 @@ class PlaybackSession extends Model {
     })
     PlaybackSession.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-    PlaybackSession.addHook('afterFind', findResult => {
+    PlaybackSession.addHook('afterFind', (findResult) => {
       if (!findResult) return
 
       if (!Array.isArray(findResult)) findResult = [findResult]

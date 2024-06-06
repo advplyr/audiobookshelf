@@ -10,7 +10,7 @@ const oldLibrary = require('../objects/Library')
  * @property {boolean} skipMatchingMediaWithIsbn
  * @property {string} autoScanCronExpression
  * @property {boolean} audiobooksOnly
- * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book 
+ * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
  * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
  * @property {string[]} metadataPrecedence
  */
@@ -54,16 +54,16 @@ class Library extends Model {
       include: this.sequelize.models.libraryFolder,
       order: [['displayOrder', 'ASC']]
     })
-    return libraries.map(lib => this.getOldLibrary(lib))
+    return libraries.map((lib) => this.getOldLibrary(lib))
   }
 
   /**
    * Convert expanded Library to oldLibrary
-   * @param {Library} libraryExpanded 
+   * @param {Library} libraryExpanded
    * @returns {Promise<oldLibrary>}
    */
   static getOldLibrary(libraryExpanded) {
-    const folders = libraryExpanded.libraryFolders.map(folder => {
+    const folders = libraryExpanded.libraryFolders.map((folder) => {
       return {
         id: folder.id,
         fullPath: folder.path,
@@ -90,13 +90,13 @@ class Library extends Model {
   }
 
   /**
-   * @param {object} oldLibrary 
+   * @param {object} oldLibrary
    * @returns {Library|null}
    */
   static async createFromOld(oldLibrary) {
     const library = this.getFromOld(oldLibrary)
 
-    library.libraryFolders = oldLibrary.folders.map(folder => {
+    library.libraryFolders = oldLibrary.folders.map((folder) => {
       return {
         id: folder.id,
         path: folder.fullPath
@@ -113,8 +113,8 @@ class Library extends Model {
 
   /**
    * Update library and library folders
-   * @param {object} oldLibrary 
-   * @returns 
+   * @param {object} oldLibrary
+   * @returns
    */
   static async updateFromOld(oldLibrary) {
     const existingLibrary = await this.findByPk(oldLibrary.id, {
@@ -127,7 +127,7 @@ class Library extends Model {
 
     const library = this.getFromOld(oldLibrary)
 
-    const libraryFolders = oldLibrary.folders.map(folder => {
+    const libraryFolders = oldLibrary.folders.map((folder) => {
       return {
         id: folder.id,
         path: folder.fullPath,
@@ -135,7 +135,7 @@ class Library extends Model {
       }
     })
     for (const libraryFolder of libraryFolders) {
-      const existingLibraryFolder = existingLibrary.libraryFolders.find(lf => lf.id === libraryFolder.id)
+      const existingLibraryFolder = existingLibrary.libraryFolders.find((lf) => lf.id === libraryFolder.id)
       if (!existingLibraryFolder) {
         await this.sequelize.models.libraryFolder.create(libraryFolder)
       } else if (existingLibraryFolder.path !== libraryFolder.path) {
@@ -143,7 +143,7 @@ class Library extends Model {
       }
     }
 
-    const libraryFoldersRemoved = existingLibrary.libraryFolders.filter(lf => !libraryFolders.some(_lf => _lf.id === lf.id))
+    const libraryFoldersRemoved = existingLibrary.libraryFolders.filter((lf) => !libraryFolders.some((_lf) => _lf.id === lf.id))
     for (const existingLibraryFolder of libraryFoldersRemoved) {
       await existingLibraryFolder.destroy()
     }
@@ -177,8 +177,8 @@ class Library extends Model {
 
   /**
    * Destroy library by id
-   * @param {string} libraryId 
-   * @returns 
+   * @param {string} libraryId
+   * @returns
    */
   static removeById(libraryId) {
     return this.destroy({
@@ -197,12 +197,12 @@ class Library extends Model {
       attributes: ['id', 'displayOrder'],
       order: [['displayOrder', 'ASC']]
     })
-    return libraries.map(l => l.id)
+    return libraries.map((l) => l.id)
   }
 
   /**
    * Find Library by primary key & return oldLibrary
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {Promise<oldLibrary|null>} Returns null if not found
    */
   static async getOldById(libraryId) {
@@ -244,28 +244,31 @@ class Library extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        name: DataTypes.STRING,
+        displayOrder: DataTypes.INTEGER,
+        icon: DataTypes.STRING,
+        mediaType: DataTypes.STRING,
+        provider: DataTypes.STRING,
+        lastScan: DataTypes.DATE,
+        lastScanVersion: DataTypes.STRING,
+        settings: DataTypes.JSON,
+        extraData: DataTypes.JSON
       },
-      name: DataTypes.STRING,
-      displayOrder: DataTypes.INTEGER,
-      icon: DataTypes.STRING,
-      mediaType: DataTypes.STRING,
-      provider: DataTypes.STRING,
-      lastScan: DataTypes.DATE,
-      lastScanVersion: DataTypes.STRING,
-      settings: DataTypes.JSON,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'library'
-    })
+      {
+        sequelize,
+        modelName: 'library'
+      }
+    )
   }
 }
 

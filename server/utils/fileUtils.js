@@ -7,13 +7,12 @@ const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
 
-
 /**
-* Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
-*
-* @param {String} path - Ugly file path
-* @return {String} Pretty posix file path
-*/
+ * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
+ *
+ * @param {String} path - Ugly file path
+ * @return {String} Pretty posix file path
+ */
 const filePathToPOSIX = (path) => {
   if (!global.isWin || !path) return path
   return path.replace(/\\/g, '/')
@@ -22,9 +21,9 @@ module.exports.filePathToPOSIX = filePathToPOSIX
 
 /**
  * Check path is a child of or equal to another path
- * 
- * @param {string} parentPath 
- * @param {string} childPath 
+ *
+ * @param {string} parentPath
+ * @param {string} childPath
  * @returns {boolean}
  */
 function isSameOrSubPath(parentPath, childPath) {
@@ -33,8 +32,8 @@ function isSameOrSubPath(parentPath, childPath) {
   if (parentPath === childPath) return true
   const relativePath = Path.relative(parentPath, childPath)
   return (
-    relativePath === '' // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
-    || !relativePath.startsWith('..') && !Path.isAbsolute(relativePath) // Sub path
+    relativePath === '' || // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
+    (!relativePath.startsWith('..') && !Path.isAbsolute(relativePath)) // Sub path
   )
 }
 module.exports.isSameOrSubPath = isSameOrSubPath
@@ -67,8 +66,8 @@ module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
 
 /**
  * Get file size
- * 
- * @param {string} path 
+ *
+ * @param {string} path
  * @returns {Promise<number>}
  */
 module.exports.getFileSize = async (path) => {
@@ -77,8 +76,8 @@ module.exports.getFileSize = async (path) => {
 
 /**
  * Get file mtimeMs
- * 
- * @param {string} path 
+ *
+ * @param {string} path
  * @returns {Promise<number>} epoch timestamp
  */
 module.exports.getFileMTimeMs = async (path) => {
@@ -91,8 +90,8 @@ module.exports.getFileMTimeMs = async (path) => {
 }
 
 /**
- * 
- * @param {string} filepath 
+ *
+ * @param {string} filepath
  * @returns {boolean}
  */
 async function checkPathIsFile(filepath) {
@@ -106,16 +105,19 @@ async function checkPathIsFile(filepath) {
 module.exports.checkPathIsFile = checkPathIsFile
 
 function getIno(path) {
-  return fs.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
-    Logger.error('[Utils] Failed to get ino for path', path, err)
-    return null
-  })
+  return fs
+    .stat(path, { bigint: true })
+    .then((data) => String(data.ino))
+    .catch((err) => {
+      Logger.error('[Utils] Failed to get ino for path', path, err)
+      return null
+    })
 }
 module.exports.getIno = getIno
 
 /**
  * Read contents of file
- * @param {string} path 
+ * @param {string} path
  * @returns {string}
  */
 async function readTextFile(path) {
@@ -144,8 +146,8 @@ module.exports.bytesPretty = bytesPretty
 
 /**
  * Get array of files inside dir
- * @param {string} path 
- * @param {string} [relPathToReplace] 
+ * @param {string} path
+ * @param {string} [relPathToReplace]
  * @returns {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]}
  */
 async function recurseFiles(path, relPathToReplace = null) {
@@ -177,55 +179,58 @@ async function recurseFiles(path, relPathToReplace = null) {
 
   const directoriesToIgnore = []
 
-  list = list.filter((item) => {
-    if (item.error) {
-      Logger.error(`[fileUtils] Recurse files file "${item.fullname}" has error`, item.error)
-      return false
-    }
+  list = list
+    .filter((item) => {
+      if (item.error) {
+        Logger.error(`[fileUtils] Recurse files file "${item.fullname}" has error`, item.error)
+        return false
+      }
 
-    const relpath = item.fullname.replace(relPathToReplace, '')
-    let reldirname = Path.dirname(relpath)
-    if (reldirname === '.') reldirname = ''
-    const dirname = Path.dirname(item.fullname)
+      const relpath = item.fullname.replace(relPathToReplace, '')
+      let reldirname = Path.dirname(relpath)
+      if (reldirname === '.') reldirname = ''
+      const dirname = Path.dirname(item.fullname)
 
-    // Directory has a file named ".ignore" flag directory and ignore
-    if (item.name === '.ignore' && reldirname && reldirname !== '.' && !directoriesToIgnore.includes(dirname)) {
-      Logger.debug(`[fileUtils] .ignore found - ignoring directory "${reldirname}"`)
-      directoriesToIgnore.push(dirname)
-      return false
-    }
+      // Directory has a file named ".ignore" flag directory and ignore
+      if (item.name === '.ignore' && reldirname && reldirname !== '.' && !directoriesToIgnore.includes(dirname)) {
+        Logger.debug(`[fileUtils] .ignore found - ignoring directory "${reldirname}"`)
+        directoriesToIgnore.push(dirname)
+        return false
+      }
 
-    if (item.extension === '.part') {
-      Logger.debug(`[fileUtils] Ignoring .part file "${relpath}"`)
-      return false
-    }
+      if (item.extension === '.part') {
+        Logger.debug(`[fileUtils] Ignoring .part file "${relpath}"`)
+        return false
+      }
 
-    // Ignore any file if a directory or the filename starts with "."
-    if (relpath.split('/').find(p => p.startsWith('.'))) {
-      Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
-      return false
-    }
+      // Ignore any file if a directory or the filename starts with "."
+      if (relpath.split('/').find((p) => p.startsWith('.'))) {
+        Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
+        return false
+      }
 
-    return true
-  }).filter(item => {
-    // Filter out items in ignore directories
-    if (directoriesToIgnore.some(dir => item.fullname.startsWith(dir))) {
-      Logger.debug(`[fileUtils] Ignoring path in dir with .ignore "${item.fullname}"`)
-      return false
-    }
-    return true
-  }).map((item) => {
-    var isInRoot = (item.path + '/' === relPathToReplace)
-    return {
-      name: item.name,
-      path: item.fullname.replace(relPathToReplace, ''),
-      dirpath: item.path,
-      reldirpath: isInRoot ? '' : item.path.replace(relPathToReplace, ''),
-      fullpath: item.fullname,
-      extension: item.extension,
-      deep: item.deep
-    }
-  })
+      return true
+    })
+    .filter((item) => {
+      // Filter out items in ignore directories
+      if (directoriesToIgnore.some((dir) => item.fullname.startsWith(dir))) {
+        Logger.debug(`[fileUtils] Ignoring path in dir with .ignore "${item.fullname}"`)
+        return false
+      }
+      return true
+    })
+    .map((item) => {
+      var isInRoot = item.path + '/' === relPathToReplace
+      return {
+        name: item.name,
+        path: item.fullname.replace(relPathToReplace, ''),
+        dirpath: item.path,
+        reldirpath: isInRoot ? '' : item.path.replace(relPathToReplace, ''),
+        fullpath: item.fullname,
+        extension: item.extension,
+        deep: item.deep
+      }
+    })
 
   // Sort from least deep to most
   list.sort((a, b) => a.deep - b.deep)
@@ -237,8 +242,8 @@ module.exports.recurseFiles = recurseFiles
 /**
  * Download file from web to local file system
  * Uses SSRF filter to prevent internal URLs
- * 
- * @param {string} url 
+ *
+ * @param {string} url
  * @param {string} filepath path to download the file to
  * @param {Function} [contentTypeFilter] validate content type before writing
  * @returns {Promise}
@@ -251,33 +256,35 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
       method: 'GET',
       responseType: 'stream',
       timeout: 30000,
-      httpAgent: ssrfFilter(url),
-      httpsAgent: ssrfFilter(url)
-    }).then((response) => {
-      // Validate content type
-      if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
-        return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
-      }
-
-      // Write to filepath
-      const writer = fs.createWriteStream(filepath)
-      response.data.pipe(writer)
-
-      writer.on('finish', resolve)
-      writer.on('error', reject)
-    }).catch((err) => {
-      Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)
-      reject(err)
+      httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(url),
+      httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(url)
     })
+      .then((response) => {
+        // Validate content type
+        if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
+          return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+        }
+
+        // Write to filepath
+        const writer = fs.createWriteStream(filepath)
+        response.data.pipe(writer)
+
+        writer.on('finish', resolve)
+        writer.on('error', reject)
+      })
+      .catch((err) => {
+        Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)
+        reject(err)
+      })
   })
 }
 
 /**
  * Download image file from web to local file system
  * Response header must have content-type of image/ (excluding svg)
- * 
- * @param {string} url 
- * @param {string} filepath 
+ *
+ * @param {string} url
+ * @param {string} filepath
  * @returns {Promise}
  */
 module.exports.downloadImageFile = (url, filepath) => {
@@ -350,14 +357,17 @@ module.exports.getAudioMimeTypeFromExtname = (extname) => {
 
 module.exports.removeFile = (path) => {
   if (!path) return false
-  return fs.remove(path).then(() => true).catch((error) => {
-    Logger.error(`[fileUtils] Failed remove file "${path}"`, error)
-    return false
-  })
+  return fs
+    .remove(path)
+    .then(() => true)
+    .catch((error) => {
+      Logger.error(`[fileUtils] Failed remove file "${path}"`, error)
+      return false
+    })
 }
 
 module.exports.encodeUriPath = (path) => {
-  const uri = new URL('/', "file://")
+  const uri = new URL('/', 'file://')
   // we assign the path here to assure that URL control characters like # are
   // actually interpreted as part of the URL path
   uri.pathname = path
@@ -367,8 +377,8 @@ module.exports.encodeUriPath = (path) => {
 /**
  * Check if directory is writable.
  * This method is necessary because fs.access(directory, fs.constants.W_OK) does not work on Windows
- * 
- * @param {string} directory 
+ *
+ * @param {string} directory
  * @returns {Promise<boolean>}
  */
 module.exports.isWritable = async (directory) => {
@@ -385,7 +395,7 @@ module.exports.isWritable = async (directory) => {
 
 /**
  * Get Windows drives as array e.g. ["C:/", "F:/"]
- * 
+ *
  * @returns {Promise<string[]>}
  */
 module.exports.getWindowsDrives = async () => {
@@ -398,7 +408,11 @@ module.exports.getWindowsDrives = async () => {
         reject(error)
         return
       }
-      let drives = stdout?.split(/\r?\n/).map(line => line.trim()).filter(line => line).slice(1)
+      let drives = stdout
+        ?.split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .slice(1)
       const validDrives = []
       for (const drive of drives) {
         let drivepath = drive + '/'
@@ -415,30 +429,32 @@ module.exports.getWindowsDrives = async () => {
 
 /**
  * Get array of directory paths in a directory
- * 
- * @param {string} dirPath 
+ *
+ * @param {string} dirPath
  * @param {number} level
  * @returns {Promise<{ path:string, dirname:string, level:number }[]>}
  */
 module.exports.getDirectoriesInPath = async (dirPath, level) => {
   try {
     const paths = await fs.readdir(dirPath)
-    let dirs = await Promise.all(paths.map(async dirname => {
-      const fullPath = Path.join(dirPath, dirname)
+    let dirs = await Promise.all(
+      paths.map(async (dirname) => {
+        const fullPath = Path.join(dirPath, dirname)
 
-      const lstat = await fs.lstat(fullPath).catch((error) => {
-        Logger.debug(`Failed to lstat "${fullPath}"`, error)
-        return null
+        const lstat = await fs.lstat(fullPath).catch((error) => {
+          Logger.debug(`Failed to lstat "${fullPath}"`, error)
+          return null
+        })
+        if (!lstat?.isDirectory()) return null
+
+        return {
+          path: this.filePathToPOSIX(fullPath),
+          dirname,
+          level
+        }
       })
-      if (!lstat?.isDirectory()) return null
-
-      return {
-        path: this.filePathToPOSIX(fullPath),
-        dirname,
-        level
-      }
-    }))
-    dirs = dirs.filter(d => d)
+    )
+    dirs = dirs.filter((d) => d)
     return dirs
   } catch (error) {
     Logger.error('Failed to readdir', dirPath, error)
