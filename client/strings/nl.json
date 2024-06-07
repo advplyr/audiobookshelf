@@ -307,6 +307,7 @@
   "LabelFolder": "Map",
   "LabelFolders": "Mappen",
   "LabelFontBold": "Bold",
+  "LabelFontBoldness": "Font Boldness",
   "LabelFontFamily": "Lettertypefamilie",
   "LabelFontItalic": "Italic",
   "LabelFontScale": "Lettertype schaal",
