@@ -386,7 +386,12 @@ export default {
       try {
         const settings = localStorage.getItem('ereaderSettings')
         if (settings) {
-          this.ereaderSettings = JSON.parse(settings)
+          const _ereaderSettings = JSON.parse(settings)
+          for (const key in this.ereaderSettings) {
+            if (_ereaderSettings[key] !== undefined) {
+              this.ereaderSettings[key] = _ereaderSettings[key]
+            }
+          }
           this.settingsUpdated()
         }
       } catch (error) {
