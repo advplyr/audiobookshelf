@@ -1,35 +1,35 @@
 <template>
-  <nuxt-link :to="`/author/${author.id}`">
-    <div @mouseover="mouseover" @mouseleave="mouseleave">
-      <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
+  <nuxt-link :to="`/author/${author?.id}`">
+    <div cy-id="card" :style="{ width: width + 'px'}" @mouseover="mouseover" @mouseleave="mouseleave">
+      <div cy-id="imageArea" :style="{ height: height + 'px' }" class=" bg-primary box-shadow-book rounded-md relative overflow-hidden">
         <!-- Image or placeholder -->
-        <covers-author-image :author="author" />
+        <covers-author-image :author="author"/>
 
         <!-- Author name & num books overlay -->
-        <div v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
+        <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
           <p class="text-center font-semibold truncate" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
           <p class="text-center text-gray-200" :style="{ fontSize: sizeMultiplier * 0.65 + 'rem' }">{{ numBooks }} {{ $strings.LabelBooks }}</p>
         </div>
 
         <!-- Search icon btn -->
-        <div v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="searchAuthor">
+        <div cy-id="match" v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="searchAuthor">
           <ui-tooltip :text="$strings.ButtonQuickMatch" direction="bottom">
             <span class="material-icons text-lg">search</span>
           </ui-tooltip>
         </div>
-        <div v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="$emit('edit', author)">
+        <div cy-id="edit" v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="$emit('edit', author)">
           <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
             <span class="material-icons text-lg">edit</span>
           </ui-tooltip>
         </div>
 
         <!-- Loading spinner -->
-        <div v-show="searching" class="absolute top-0 left-0 z-10 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+        <div cy-id="spinner" v-show="searching" class="absolute top-0 left-0 z-10 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
           <widgets-loading-spinner size="" />
         </div>
       </div>
-      <div v-show="nameBelow" class="w-full py-1 px-2">
-        <p class="text-center font-semibold truncate text-gray-200" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
+      <div cy-id="nameBelow" v-show="nameBelow" class="w-full py-1 px-2">
+          <p class="text-center font-semibold truncate text-gray-200" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
       </div>
     </div>
   </nuxt-link>

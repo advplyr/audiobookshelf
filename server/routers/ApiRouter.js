@@ -166,6 +166,7 @@ class ApiRouter {
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
+    this.router.get('/me/item/listening-sessions/:libraryItemId/:episodeId?', MeController.getItemListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
     this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
@@ -425,9 +426,9 @@ class ApiRouter {
   /**
    * Used when a series is removed from a book
    * Series is removed if it only has 1 book
-   * 
+   *
    * @param {string} bookId
-   * @param {string[]} seriesIds 
+   * @param {string[]} seriesIds
    */
   async checkRemoveEmptySeries(bookId, seriesIds) {
     if (!seriesIds?.length) return
@@ -455,7 +456,7 @@ class ApiRouter {
 
   /**
    * Remove an empty series & close an open RSS feed
-   * @param {import('../models/Series')} series 
+   * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
@@ -471,6 +472,11 @@ class ApiRouter {
 
   async getUserListeningSessionsHelper(userId) {
     const userSessions = await Database.getPlaybackSessions({ userId })
+    return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
+  }
+
+  async getUserItemListeningSessionsHelper(userId, mediaItemId) {
+    const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
@@ -531,6 +537,7 @@ class ApiRouter {
           const authorName = (mediaMetadata.authors[i].name || '').trim()
           if (!authorName) {
             Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
+            mediaMetadata.authors[i].id = null
             continue
           }
 
@@ -559,6 +566,8 @@ class ApiRouter {
             mediaMetadata.authors[i].id = author.id
           }
         }
+        // Remove authors without an id
+        mediaMetadata.authors = mediaMetadata.authors.filter(au => !!au.id)
         if (newAuthors.length) {
           await Database.createBulkAuthors(newAuthors)
           SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
@@ -572,6 +581,7 @@ class ApiRouter {
           const seriesName = (mediaMetadata.series[i].name || '').trim()
           if (!seriesName) {
             Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
+            mediaMetadata.series[i].id = null
             continue
           }
 
@@ -600,6 +610,8 @@ class ApiRouter {
             mediaMetadata.series[i].id = seriesItem.id
           }
         }
+        // Remove series without an id
+        mediaMetadata.series = mediaMetadata.series.filter(se => se.id)
         if (newSeries.length) {
           await Database.createBulkSeries(newSeries)
           SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))

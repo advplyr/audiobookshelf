@@ -217,7 +217,6 @@ class Database {
   async disconnect() {
     Logger.info(`[Database] Disconnecting sqlite db`)
     await this.sequelize.close()
-    this.sequelize = null
   }
 
   /**
@@ -687,6 +686,34 @@ class Database {
       return this.seriesModel.checkExistsById(seriesId)
     }
     return this.libraryFilterData[libraryId].series.some(se => se.id === seriesId)
+  }
+
+  /**
+   * Get author id for library by name. Uses library filter data if available
+   * 
+   * @param {string} libraryId 
+   * @param {string} authorName 
+   * @returns {Promise<string>} author id or null if not found 
+   */
+  async getAuthorIdByName(libraryId, authorName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return (await this.authorModel.getOldByNameAndLibrary(authorName, libraryId))?.id || null
+    }
+    return this.libraryFilterData[libraryId].authors.find(au => au.name === authorName)?.id || null
+  }
+
+  /**
+   * Get series id for library by name. Uses library filter data if available
+   * 
+   * @param {string} libraryId 
+   * @param {string} seriesName 
+   * @returns {Promise<string>} series id or null if not found
+   */
+  async getSeriesIdByName(libraryId, seriesName) {
+    if (!this.libraryFilterData[libraryId]) {
+      return (await this.seriesModel.getOldByNameAndLibrary(seriesName, libraryId))?.id || null
+    }
+    return this.libraryFilterData[libraryId].series.find(se => se.name === seriesName)?.id || null
   }
 
   /**

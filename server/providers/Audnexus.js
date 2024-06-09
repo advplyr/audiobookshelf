@@ -1,4 +1,4 @@
-const axios = require('axios')
+const axios = require('axios').default
 const { levenshteinDistance } = require('../utils/index')
 const Logger = require('../Logger')
 const Throttle = require('p-throttle')
@@ -15,7 +15,7 @@ class Audnexus {
   static _instance = null
 
   constructor() {
-    // ensures Audnexus class is singleton 
+    // ensures Audnexus class is singleton
     if (Audnexus._instance) {
       return Audnexus._instance
     }
@@ -25,7 +25,7 @@ class Audnexus {
     // Rate limit is 100 requests per minute.
     // @see https://github.com/laxamentumtech/audnexus#-deployment-
     this.limiter = Throttle({
-      // Setting the limit to 1 allows for a short pause between requests that is imperceptible to the end user. 
+      // Setting the limit to 1 allows for a short pause between requests that is imperceptible to the end user.
       // A larger limit will grab blocks faster and then wait for the alloted time(interval) before
       // fetching another batch, but with a discernable pause from the user perspective.
       limit: 1,
@@ -37,10 +37,10 @@ class Audnexus {
   }
 
   /**
-   * 
-   * @param {string} name 
-   * @param {string} region 
-   * @returns {Promise<{asin:string, name:string}[]>} 
+   *
+   * @param {string} name
+   * @param {string} region
+   * @returns {Promise<{asin:string, name:string}[]>}
    */
   authorASINsRequest(name, region) {
     const searchParams = new URLSearchParams()
@@ -60,9 +60,9 @@ class Audnexus {
   }
 
   /**
-   * 
-   * @param {string} asin 
-   * @param {string} region 
+   *
+   * @param {string} asin
+   * @param {string} region
    * @returns {Promise<AuthorSearchObj>}
    */
   authorRequest(asin, region) {
@@ -73,17 +73,17 @@ class Audnexus {
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
     return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
-      .then((res) => res.data)
-      .catch((error) => {
+      .then(res => res.data)
+      .catch(error => {
         Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
         return null
       })
   }
 
   /**
-   * 
-   * @param {string} asin 
-   * @param {string} region 
+   *
+   * @param {string} asin
+   * @param {string} region
    * @returns {Promise<AuthorSearchObj>}
    */
   async findAuthorByASIN(asin, region) {
@@ -99,10 +99,10 @@ class Audnexus {
   }
 
   /**
-   * 
-   * @param {string} name 
-   * @param {string} region 
-   * @param {number} maxLevenshtein 
+   *
+   * @param {string} name
+   * @param {string} region
+   * @param {number} maxLevenshtein
    * @returns {Promise<AuthorSearchObj>}
    */
   async findAuthorByName(name, region, maxLevenshtein = 3) {
@@ -138,8 +138,8 @@ class Audnexus {
     Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
 
     return this._processRequest(this.limiter(() => axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`)))
-      .then((res) => res.data)
-      .catch((error) => {
+      .then(res => res.data)
+      .catch(error => {
         Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
         return null
       })
@@ -150,8 +150,7 @@ class Audnexus {
    */
   async _processRequest(request) {
     try {
-      const response = await request()
-      return response
+      return await request()
     } catch (error) {
       if (error.response?.status === 429) {
         const retryAfter = parseInt(error.response.headers?.['retry-after'], 10) || 5

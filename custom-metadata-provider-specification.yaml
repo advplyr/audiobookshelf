@@ -1,15 +1,16 @@
 openapi: 3.0.0
-servers: 
+
+servers:
   - url: https://example.com
-    description: Local server 
+    description: Local server
+
 info:
-  license: 
+  title: Custom Metadata Provider
+  version: 0.1.0
+  license:
     name: MIT
     url: https://opensource.org/licenses/MIT
 
-    
-  title: Custom Metadata Provider
-  version: 0.1.0
 security:
   - api_key: []
 
@@ -19,8 +20,9 @@ paths:
       description: Search for books
       operationId: search
       summary: Search for books
-      security: 
-        -  api_key: []
+      security:
+        - api_key: []
+
       parameters:
         - name: query
           in: query
@@ -32,6 +34,7 @@ paths:
           required: false
           schema:
             type: string
+
       responses:
         "200":
           description: OK
@@ -72,9 +75,17 @@ paths:
                   error:
                     type: string
 components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: AUTHORIZATION
+      in: header
+
   schemas:
     BookMetadata:
       type: object
+      required:
+        - title
       properties:
         title:
           type: string
@@ -110,26 +121,20 @@ components:
         series:
           type: array
           items:
-            type: object
-            properties:
-              series:
-                type: string
-                required: true
-              sequence:
-                type: number
-                format: int64
+            $ref: "#/components/schemas/SeriesMetadata"
         language:
           type: string
         duration:
-          type: number
+          type: integer
           format: int64
           description: Duration in seconds
-      required: 
-        -  title
-  securitySchemes:
-    api_key:
-      type: apiKey
-      name: AUTHORIZATION
-      in: header
-        
-          
+
+    SeriesMetadata:
+      type: object
+      required:
+        - series
+      properties:
+        series:
+          type: string
+        sequence:
+          type: string

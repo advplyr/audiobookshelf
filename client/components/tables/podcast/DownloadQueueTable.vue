@@ -20,7 +20,7 @@
               <td class="px-4">
                 <div class="flex items-center">
                   <nuxt-link :to="`/item/${downloadQueued.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ downloadQueued.podcastTitle }}</nuxt-link>
-                  <widgets-explicit-indicator :explicit="downloadQueued.podcastExplicit" />
+                  <widgets-explicit-indicator v-if="downloadQueued.podcastExplicit" />
                 </div>
               </td>
               <td>
@@ -30,7 +30,7 @@
                   <widgets-podcast-type-indicator :type="downloadQueued.episodeType" />
                 </div>
               </td>
-              <td class="px-4">
+              <td dir="auto" class="px-4">
                 {{ downloadQueued.episodeDisplayTitle }}
               </td>
               <td class="text-xs">

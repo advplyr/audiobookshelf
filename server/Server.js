@@ -5,7 +5,7 @@ const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
-const cookieParser = require("cookie-parser")
+const cookieParser = require('cookie-parser')
 
 const { version } = require('../package.json')
 
@@ -41,17 +41,17 @@ const passport = require('passport')
 const expressSession = require('express-session')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
     global.isWin = process.platform === 'win32'
-    global.Uid = isNaN(UID) ? undefined : Number(UID)
-    global.Gid = isNaN(GID) ? undefined : Number(GID)
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
+    global.AllowCors = process.env.ALLOW_CORS === '1'
+    global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -182,15 +182,16 @@ class Server {
      * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
      * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
      * @see https://ionicframework.com/docs/troubleshooting/cors
-     * 
-     * Running in development allows cors to allow testing the mobile apps in the browser 
+     *
+     * Running in development allows cors to allow testing the mobile apps in the browser
+     * or env variable ALLOW_CORS = '1'
      */
     app.use((req, res, next) => {
       if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
-        if (Logger.isDev || allowedOrigins.some(o => o === req.get('origin'))) {
+        if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
-          res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
+          res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
           res.header('Access-Control-Allow-Headers', '*')
           res.header('Access-Control-Allow-Credentials', true)
           if (req.method === 'OPTIONS') {
@@ -205,15 +206,17 @@ class Server {
     // parse cookies in requests
     app.use(cookieParser())
     // enable express-session
-    app.use(expressSession({
-      secret: global.ServerSettings.tokenSecret,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        // also send the cookie if were are not on https (not every use has https)
-        secure: false
-      },
-    }))
+    app.use(
+      expressSession({
+        secret: global.ServerSettings.tokenSecret,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          // also send the cookie if were are not on https (not every use has https)
+          secure: false
+        }
+      })
+    )
     // init passport.js
     app.use(passport.initialize())
     // register passport in express-session
@@ -227,14 +230,16 @@ class Server {
 
     this.server = http.createServer(app)
 
-    router.use(fileUpload({
-      defCharset: 'utf8',
-      defParamCharset: 'utf8',
-      useTempFiles: true,
-      tempFileDir: Path.join(global.MetadataPath, 'tmp')
-    }))
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
-    router.use(express.json({ limit: "5mb" }))
+    router.use(
+      fileUpload({
+        defCharset: 'utf8',
+        defParamCharset: 'utf8',
+        useTempFiles: true,
+        tempFileDir: Path.join(global.MetadataPath, 'tmp')
+      })
+    )
+    router.use(express.urlencoded({ extended: true, limit: '5mb' }))
+    router.use(express.json({ limit: '5mb' }))
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
@@ -363,7 +368,7 @@ class Server {
       const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
         where: {
           id: {
-            [Sequelize.Op.in]: mediaProgressToRemove.map(mp => mp.id)
+            [Sequelize.Op.in]: mediaProgressToRemove.map((mp) => mp.id)
           }
         }
       })
@@ -377,15 +382,18 @@ class Server {
     for (const _user of users) {
       let hasUpdated = false
       if (_user.seriesHideFromContinueListening.length) {
-        const seriesHiding = (await Database.seriesModel.findAll({
-          where: {
-            id: _user.seriesHideFromContinueListening
-          },
-          attributes: ['id'],
-          raw: true
-        })).map(se => se.id)
-        _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {
-          if (!seriesHiding.includes(seriesId)) { // Series removed
+        const seriesHiding = (
+          await Database.seriesModel.findAll({
+            where: {
+              id: _user.seriesHideFromContinueListening
+            },
+            attributes: ['id'],
+            raw: true
+          })
+        ).map((se) => se.id)
+        _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter((seriesId) => {
+          if (!seriesHiding.includes(seriesId)) {
+            // Series removed
             hasUpdated = true
             return false
           }

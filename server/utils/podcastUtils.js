@@ -220,8 +220,8 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
 /**
  * Get podcast RSS feed as JSON
  * Uses SSRF filter to prevent internal URLs
- * 
- * @param {string} feedUrl 
+ *
+ * @param {string} feedUrl
  * @param {boolean} [excludeEpisodeMetadata=false]
  * @returns {Promise}
  */
@@ -234,37 +234,38 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     timeout: 12000,
     responseType: 'arraybuffer',
     headers: { Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8' },
-    httpAgent: ssrfFilter(feedUrl),
-    httpsAgent: ssrfFilter(feedUrl)
-  }).then(async (data) => {
-
-    // Adding support for ios-8859-1 encoded RSS feeds.
-    //  See: https://github.com/advplyr/audiobookshelf/issues/1489
-    const contentType = data.headers?.['content-type'] || '' // e.g. text/xml; charset=iso-8859-1
-    if (contentType.toLowerCase().includes('iso-8859-1')) {
-      data.data = data.data.toString('latin1')
-    } else {
-      data.data = data.data.toString()
-    }
-
-    if (!data?.data) {
-      Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
-      return null
-    }
-    Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-    const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
-    if (!payload) {
-      return null
-    }
-
-    // RSS feed may be a private RSS feed
-    payload.podcast.metadata.feedUrl = feedUrl
-
-    return payload.podcast
-  }).catch((error) => {
-    Logger.error('[podcastUtils] getPodcastFeed Error', error)
-    return null
+    httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl),
+    httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl)
   })
+    .then(async (data) => {
+      // Adding support for ios-8859-1 encoded RSS feeds.
+      //  See: https://github.com/advplyr/audiobookshelf/issues/1489
+      const contentType = data.headers?.['content-type'] || '' // e.g. text/xml; charset=iso-8859-1
+      if (contentType.toLowerCase().includes('iso-8859-1')) {
+        data.data = data.data.toString('latin1')
+      } else {
+        data.data = data.data.toString()
+      }
+
+      if (!data?.data) {
+        Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
+        return null
+      }
+      Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
+      const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+      if (!payload) {
+        return null
+      }
+
+      // RSS feed may be a private RSS feed
+      payload.podcast.metadata.feedUrl = feedUrl
+
+      return payload.podcast
+    })
+    .catch((error) => {
+      Logger.error('[podcastUtils] getPodcastFeed Error', error)
+      return null
+    })
 }
 
 // Return array of episodes ordered by closest match (Levenshtein distance of 6 or less)
@@ -283,7 +284,7 @@ module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   }
 
   const matches = []
-  feed.episodes.forEach(ep => {
+  feed.episodes.forEach((ep) => {
     if (!ep.title) return
 
     const epTitle = ep.title.toLowerCase().trim()

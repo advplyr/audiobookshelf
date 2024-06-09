@@ -179,7 +179,7 @@ export default {
         ebookLocation: this.page,
         ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
       }
-      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('ComicReader.updateProgress failed:', error)
       })
     },
@@ -334,7 +334,7 @@ export default {
       }
     },
     parseFilenames(filenames) {
-      const acceptableImages = ['.jpeg', '.jpg', '.png']
+      const acceptableImages = ['.jpeg', '.jpg', '.png', '.webp']
       var imageFiles = filenames.filter((f) => {
         return acceptableImages.includes((Path.extname(f) || '').toLowerCase())
       })

@@ -20,7 +20,7 @@
           </ui-tooltip>
         </div>
         <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">
-          <ui-text-input ref="maxEpisodesInput" type="number" v-model="newMaxNewEpisodesToDownload" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updateMaxNewEpisodesToDownload" />
+          <ui-text-input ref="maxEpisodesToDownloadInput" type="number" v-model="newMaxNewEpisodesToDownload" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updateMaxNewEpisodesToDownload" />
           <ui-tooltip text="Value of 0 sets no max limit. When checking for new episodes this is the max number of episodes that will be downloaded.">
             <p class="pl-4 text-base">
               Max new episodes to download per check
@@ -129,9 +129,12 @@ export default {
           return
         }
       }
-      if (this.$refs.maxEpisodesInput && this.$refs.maxEpisodesInput.isFocused) {
+
+      if (this.$refs.maxEpisodesInput?.isFocused) {
         this.$refs.maxEpisodesInput.blur()
-        return
+      }
+      if (this.$refs.maxEpisodesToDownloadInput?.isFocused) {
+        this.$refs.maxEpisodesToDownloadInput.blur()
       }
 
       const updatePayload = {
@@ -140,9 +143,11 @@ export default {
       if (this.enableAutoDownloadEpisodes) {
         updatePayload.autoDownloadSchedule = this.cronExpression
       }
+      this.newMaxEpisodesToKeep = Number(this.newMaxEpisodesToKeep)
       if (this.newMaxEpisodesToKeep !== this.maxEpisodesToKeep) {
         updatePayload.maxEpisodesToKeep = this.newMaxEpisodesToKeep
       }
+      this.newMaxNewEpisodesToDownload = Number(this.newMaxNewEpisodesToDownload)
       if (this.newMaxNewEpisodesToDownload !== this.maxNewEpisodesToDownload) {
         updatePayload.maxNewEpisodesToDownload = this.newMaxNewEpisodesToDownload
       }

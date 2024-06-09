@@ -11,13 +11,13 @@
             </div>
             {{ item }}
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
       <ul ref="menu" v-show="showMenu" class="absolute z-60 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
-          <li :key="item" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+          <li :key="item" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
               <span class="font-normal ml-3 block truncate">{{ item }}</span>
             </div>
@@ -54,7 +54,7 @@ export default {
     menuDisabled: {
       type: Boolean,
       default: false
-    },
+    }
   },
   data() {
     return {
@@ -62,7 +62,9 @@ export default {
       currentSearch: null,
       typingTimeout: null,
       isFocused: false,
-      menu: null
+      menu: null,
+      filteredItems: null,
+      selectedMenuItemIndex: null
     }
   },
   watch: {
@@ -91,24 +93,63 @@ export default {
       return classes.join(' ')
     },
     itemsToShow() {
-      if (!this.currentSearch || !this.textInput) {
+      if (!this.currentSearch || !this.textInput || !this.filteredItems) {
         return this.items
       }
 
-      return this.items.filter((i) => {
-        var iValue = String(i).toLowerCase()
-        return iValue.includes(this.currentSearch.toLowerCase())
-      })
+      return this.filteredItems
     }
   },
   methods: {
     editItem(item) {
       this.$emit('edit', item)
     },
-    keydownInput() {
+    search() {
+      if (!this.textInput) {
+        this.filteredItems = null
+        return
+      }
+      this.currentSearch = this.textInput
+
+      const results = this.items.filter((i) => {
+        var iValue = String(i).toLowerCase()
+        return iValue.includes(this.currentSearch.toLowerCase())
+      })
+
+      this.filteredItems = results || []
+    },
+    keydownInput(event) {
+      let items = this.itemsToShow
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        if (!items.length) return
+        if (event.key === 'ArrowDown') {
+          if (this.selectedMenuItemIndex === null) {
+            this.selectedMenuItemIndex = 0
+          } else {
+            this.selectedMenuItemIndex = Math.min(this.selectedMenuItemIndex + 1, items.length - 1)
+          }
+        } else if (event.key === 'ArrowUp') {
+          if (this.selectedMenuItemIndex === null) {
+            this.selectedMenuItemIndex = items.length - 1
+          } else {
+            this.selectedMenuItemIndex = Math.max(this.selectedMenuItemIndex - 1, 0)
+          }
+        }
+        this.recalcScroll()
+        return
+      } else if (event.key === 'Enter') {
+        if (this.selectedMenuItemIndex !== null) {
+          this.clickedOption(event, items[this.selectedMenuItemIndex])
+        } else {
+          this.submitForm()
+        }
+        return
+      }
+      this.selectedMenuItemIndex = null
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
-        this.currentSearch = this.textInput
+        this.search()
       }, 100)
       this.setInputWidth()
     },
@@ -119,6 +160,24 @@ export default {
         this.$refs.input.style.width = len + 'px'
         this.recalcMenuPos()
       }, 50)
+    },
+    recalcScroll() {
+      if (!this.menu) return
+      var menuItems = this.menu.querySelectorAll('li')
+      if (!menuItems.length) return
+      var selectedItem = menuItems[this.selectedMenuItemIndex]
+      if (!selectedItem) return
+      var menuHeight = this.menu.offsetHeight
+      var itemHeight = selectedItem.offsetHeight
+      var itemTop = selectedItem.offsetTop
+      var itemBottom = itemTop + itemHeight
+      if (itemBottom > this.menu.scrollTop + menuHeight) {
+        let menuPaddingBottom = parseFloat(window.getComputedStyle(this.menu).paddingBottom)
+        this.menu.scrollTop = itemBottom - menuHeight + menuPaddingBottom
+      } else if (itemTop < this.menu.scrollTop) {
+        let menuPaddingTop = parseFloat(window.getComputedStyle(this.menu).paddingTop)
+        this.menu.scrollTop = itemTop - menuPaddingTop
+      }
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
@@ -208,7 +267,10 @@ export default {
         e.stopPropagation()
         e.preventDefault()
       }
-      if (this.$refs.input) this.$refs.input.focus()
+      if (this.$refs.input) {
+        this.$refs.input.style.width = '24px'
+        this.$refs.input.focus()
+      }
 
       var newSelected = null
       if (this.selected.includes(itemValue)) {
@@ -219,6 +281,7 @@ export default {
       }
       this.textInput = null
       this.currentSearch = null
+      this.selectedMenuItemIndex = null
       this.$emit('input', newSelected)
       this.$nextTick(() => {
         this.recalcMenuPos()
@@ -239,12 +302,21 @@ export default {
         this.recalcMenuPos()
       })
     },
+    resetInput() {
+      this.textInput = null
+      this.currentSearch = null
+      this.selectedMenuItemIndex = null
+      this.$nextTick(() => {
+        this.blur()
+      })
+    },
     insertNewItem(item) {
       this.selected.push(item)
       this.$emit('input', this.selected)
       this.$emit('newItem', item)
       this.textInput = null
       this.currentSearch = null
+      this.selectedMenuItemIndex = null
       this.$nextTick(() => {
         this.blur()
       })
@@ -252,15 +324,19 @@ export default {
     submitForm() {
       if (!this.textInput) return
 
-      var cleaned = this.textInput.trim()
-      var matchesItem = this.items.find((i) => {
-        return i === cleaned
-      })
-      if (matchesItem) {
-        this.clickedOption(null, matchesItem)
+      const cleaned = this.textInput.trim()
+      if (!cleaned) {
+        this.resetInput()
       } else {
-        this.insertNewItem(this.textInput)
+        const matchesItem = this.items.find((i) => i === cleaned)
+        if (matchesItem) {
+          this.clickedOption(null, matchesItem)
+        } else {
+          this.insertNewItem(cleaned)
+        }
       }
+
+      if (this.$refs.input) this.$refs.input.style.width = '24px'
     },
     scroll() {
       this.recalcMenuPos()

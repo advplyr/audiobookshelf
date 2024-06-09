@@ -13,9 +13,9 @@
           <div class="flex-grow" />
           <p class="text-sm md:text-base">{{ book.publishedYear }}</p>
         </div>
-        <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">by {{ book.author }}</p>
-        <p v-if="book.narrator" class="text-gray-400 text-xs">Narrated by {{ book.narrator }}</p>
-        <p v-if="book.duration" class="text-gray-400 text-xs">Runtime: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
+        <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">{{ $getString('LabelByAuthor', [book.author]) }}</p>
+        <p v-if="book.narrator" class="text-gray-400 text-xs">{{ $strings.LabelNarrators }}: {{ book.narrator }}</p>
+        <p v-if="book.duration" class="text-gray-400 text-xs">{{ $strings.LabelDuration }}: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
         <div v-if="book.series?.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white bg-opacity-10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">
@@ -29,9 +29,9 @@
       </div>
       <div v-else class="px-4 flex-grow">
         <h1>
-          <div class="flex items-center">{{ book.title }}<widgets-explicit-indicator :explicit="book.explicit" /></div>
+          <div class="flex items-center">{{ book.title }}<widgets-explicit-indicator v-if="book.explicit" /></div>
         </h1>
-        <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ book.author }}</p>
+        <p class="text-base text-gray-300 whitespace-nowrap truncate">{{ $getString('LabelByAuthor', [book.author]) }}</p>
         <p v-if="book.genres" class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
         <p class="text-xs text-gray-400 leading-5">{{ book.trackCount }} Episodes</p>
       </div>
@@ -75,11 +75,11 @@ export default {
       let differenceInMinutes = currentBookDurationMinutes - this.book.duration
       if (differenceInMinutes < 0) {
         differenceInMinutes = Math.abs(differenceInMinutes)
-        return `(${this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)} shorter)`
+        return this.$getString('LabelDurationComparisonLonger', [this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)])
       } else if (differenceInMinutes > 0) {
-        return `(${this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)} longer)`
+        return this.$getString('LabelDurationComparisonShorter', [this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)])
       }
-      return '(exact match)'
+      return this.$strings.LabelDurationComparisonExactMatch
     }
   },
   methods: {

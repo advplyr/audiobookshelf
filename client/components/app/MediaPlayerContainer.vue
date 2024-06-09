@@ -1,25 +1,25 @@
 <template>
-  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
     <div id="videoDock" />
-    <div class="absolute left-2 top-2 md:left-4 cursor-pointer">
+    <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </div>
-    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
-      <div class="min-w-0">
-        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
-          {{ title }}
-        </nuxt-link>
-        <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
+    <div class="flex items-start mb-6 lg:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
+      <div class="min-w-0 w-full">
+        <div class="flex items-center">
+          <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
+            {{ title }}
+          </nuxt-link>
+          <widgets-explicit-indicator v-if="isExplicit" />
+        </div>
+        <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
           <span class="material-icons text-sm">person</span>
-          <div class="flex items-center">
-            <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
-            <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
-            <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
-              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-            </div>
-            <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
-            <widgets-explicit-indicator :explicit="isExplicit"></widgets-explicit-indicator>
+          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+          <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
+          <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
+            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </div>
+          <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -29,7 +29,7 @@
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
@@ -82,13 +82,11 @@ export default {
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
-      syncFailedToast: null
+      syncFailedToast: null,
+      coverAspectRatio: 1
     }
   },
   computed: {
-    coverAspectRatio() {
-      return this.$store.getters['libraries/getBookCoverAspectRatio']
-    },
     isSquareCover() {
       return this.coverAspectRatio === 1
     },
@@ -138,7 +136,7 @@ export default {
       return this.streamLibraryItem?.mediaType === 'music'
     },
     isExplicit() {
-      return this.mediaMetadata.explicit || false
+      return !!this.mediaMetadata.explicit
     },
     mediaMetadata() {
       return this.media.metadata || {}
@@ -457,6 +455,9 @@ export default {
         episodeId,
         queueItems: payload.queueItems || []
       })
+      // Set cover aspect ratio for this item's library since the library may change
+      this.coverAspectRatio = this.$store.getters['libraries/getBookCoverAspectRatio']
+
       this.$nextTick(() => {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })

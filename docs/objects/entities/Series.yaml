@@ -1,0 +1,11 @@
+components:
+  schemas:
+    seriesId:
+      type: string
+      description: The ID of the series.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    seriesName:
+      description: The name of the series.
+      type: string
+      example: Sword of Truth

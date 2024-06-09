@@ -103,15 +103,28 @@ class FolderWatcher extends EventEmitter {
     this.buildLibraryWatcher(library)
   }
 
+  /**
+   * 
+   * @param {import('./objects/Library')} library 
+   */
   updateLibrary(library) {
-    if (this.disabled || library.settings.disableWatcher) return
-    var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
+    if (this.disabled) return
+
+    const libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
     if (libwatcher) {
+      // Library watcher was disabled
+      if (library.settings.disableWatcher) {
+        Logger.info(`[Watcher] updateLibrary: Library "${library.name}" watcher disabled`)
+        libwatcher.watcher.close()
+        this.libraryWatchers = this.libraryWatchers.filter(lw => lw.id !== libwatcher.id)
+        return
+      }
+
       libwatcher.name = library.name
 
       // If any folder paths were added or removed then re-init watcher
-      var pathsToAdd = library.folderPaths.filter(path => !libwatcher.paths.includes(path))
-      var pathsRemoved = libwatcher.paths.filter(path => !library.folderPaths.includes(path))
+      const pathsToAdd = library.folderPaths.filter(path => !libwatcher.paths.includes(path))
+      const pathsRemoved = libwatcher.paths.filter(path => !library.folderPaths.includes(path))
       if (pathsToAdd.length || pathsRemoved.length) {
         Logger.info(`[Watcher] Re-Initializing watcher for "${library.name}".`)
 
@@ -119,6 +132,10 @@ class FolderWatcher extends EventEmitter {
         this.libraryWatchers = this.libraryWatchers.filter(lw => lw.id !== libwatcher.id)
         this.buildLibraryWatcher(library)
       }
+    } else if (!library.settings.disableWatcher) {
+      // Library watcher was enabled
+      Logger.info(`[Watcher] updateLibrary: Library "${library.name}" watcher enabled - initializing`)
+      this.buildLibraryWatcher(library)
     }
   }
 

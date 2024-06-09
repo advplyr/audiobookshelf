@@ -1,7 +1,7 @@
 <template>
   <div>
     <input ref="fileInput" type="file" :accept="accept" class="hidden" @change="inputChanged" />
-    <ui-btn @click="clickUpload" color="primary" class="hidden md:block" type="text"><slot /></ui-btn>
+    <ui-btn @click="clickUpload" color="primary" class="hidden md:block w-full" type="text"><slot /></ui-btn>
     <ui-icon-btn @click="clickUpload" icon="upload" class="block md:hidden" />
   </div>
 </template>

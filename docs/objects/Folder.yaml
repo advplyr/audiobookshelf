@@ -1,0 +1,21 @@
+components:
+  schemas:
+    folderId:
+      type: string
+      description: The ID of the folder.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    folder:
+      type: object
+      description: Folder used in library
+      properties:
+        id:
+          $ref: '#/components/schemas/folderId'
+        fullPath:
+          description: The path on the server for the folder. (Read Only)
+          type: string
+          example: /podcasts
+        libraryId:
+          $ref: './Library.yaml#/components/schemas/libraryId'
+        addedAt:
+          $ref: '../schemas.yaml#/components/schemas/addedAt'

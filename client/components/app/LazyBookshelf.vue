@@ -10,7 +10,7 @@
       <p class="text-center text-2xl mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
+        <ui-btn color="success" class="w-52" :loading="isScanningLibrary || tempIsScanning" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
       </div>
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
@@ -62,7 +62,8 @@ export default {
       currScrollTop: 0,
       resizeTimeout: null,
       mountWindowWidth: 0,
-      lastItemIndexSelected: -1
+      lastItemIndexSelected: -1,
+      tempIsScanning: false
     }
   },
   watch: {
@@ -208,6 +209,9 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    isScanningLibrary() {
+      return !!this.$store.getters['tasks/getRunningLibraryScanTask'](this.currentLibraryId)
     }
   },
   methods: {
@@ -727,14 +731,15 @@ export default {
       }
     },
     scan() {
+      this.tempIsScanning = true
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
-        .then(() => {
-          this.$toast.success('Library scan started')
-        })
         .catch((error) => {
           console.error('Failed to start scan', error)
-          this.$toast.error('Failed to start scan')
+          this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
+        })
+        .finally(() => {
+          this.tempIsScanning = false
         })
     }
   },

@@ -8,7 +8,9 @@ class LibrarySettings {
     this.skipMatchingMediaWithIsbn = false
     this.autoScanCronExpression = null
     this.audiobooksOnly = false
-    this.hideSingleBookSeries = false // Do not show series that only have 1 book 
+    this.epubsAllowScriptedContent = false
+    this.hideSingleBookSeries = false // Do not show series that only have 1 book
+    this.onlyShowLaterBooksInContinueSeries = false // Skip showing books that are earlier than the max sequence read
     this.metadataPrecedence = ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
     this.podcastSearchRegion = 'us'
 
@@ -24,7 +26,9 @@ class LibrarySettings {
     this.skipMatchingMediaWithIsbn = !!settings.skipMatchingMediaWithIsbn
     this.autoScanCronExpression = settings.autoScanCronExpression || null
     this.audiobooksOnly = !!settings.audiobooksOnly
+    this.epubsAllowScriptedContent = !!settings.epubsAllowScriptedContent
     this.hideSingleBookSeries = !!settings.hideSingleBookSeries
+    this.onlyShowLaterBooksInContinueSeries = !!settings.onlyShowLaterBooksInContinueSeries
     if (settings.metadataPrecedence) {
       this.metadataPrecedence = [...settings.metadataPrecedence]
     } else {
@@ -42,7 +46,9 @@ class LibrarySettings {
       skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn,
       autoScanCronExpression: this.autoScanCronExpression,
       audiobooksOnly: this.audiobooksOnly,
+      epubsAllowScriptedContent: this.epubsAllowScriptedContent,
       hideSingleBookSeries: this.hideSingleBookSeries,
+      onlyShowLaterBooksInContinueSeries: this.onlyShowLaterBooksInContinueSeries,
       metadataPrecedence: [...this.metadataPrecedence],
       podcastSearchRegion: this.podcastSearchRegion
     }

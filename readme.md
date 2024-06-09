@@ -336,6 +336,8 @@ Need to do one of following:
 
 This application is built using [NodeJs](https://nodejs.org/).
 
+Information on helping with translations of the web client [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations).
+
 ### Dev Container Setup
 The easiest way to begin developing this project is to use a dev container. An introduction to dev containers in VSCode can be found [here](https://code.visualstudio.com/docs/devcontainers/containers).
 

@@ -22,6 +22,16 @@ class ApiCacheManager {
     this.cache.clear()
   }
 
+  /**
+   * Reset hooks and clear cache. Used when applying backups
+   */
+  reset() {
+    Logger.info(`[ApiCacheManager] Resetting cache`)
+
+    this.init()
+    this.cache.clear()
+  }
+
   get middleware() {
     return (req, res, next) => {
       const key = { user: req.user.username, url: req.url }

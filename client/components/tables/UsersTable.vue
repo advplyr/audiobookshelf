@@ -10,7 +10,7 @@
           <th class="w-32 hidden sm:table-cell">{{ $strings.LabelCreatedAt }}</th>
           <th class="w-32"></th>
         </tr>
-        <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : 'bg-error bg-opacity-20'" @click="$router.push(`/config/users/${user.id}`)">
+        <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : '!bg-error/10'" @click="$router.push(`/config/users/${user.id}`)">
           <td>
             <div class="flex items-center">
               <widgets-online-indicator :value="!!usersOnline[user.id]" />

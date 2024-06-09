@@ -1,11 +1,11 @@
 <template>
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
-      <div class="absolute -top-10 md:top-0 right-0 lg:right-2 flex items-center h-full">
+      <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
         <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
-          <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
+          <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelSleepTimer">
@@ -53,7 +53,7 @@
       <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
       <div class="flex-grow" />
       <p class="text-xs sm:text-sm text-gray-300 pt-0.5">
-        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ currentChapterIndex + 1 }} of {{ chapters.length }})</span>
+        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
       </p>
       <div class="flex-grow" />
       <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>

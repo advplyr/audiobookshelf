@@ -50,9 +50,8 @@ echo "$controlfile" > dist/debian/DEBIAN/control;
 # Package debian
 pkg -t node18-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
 
-fakeroot dpkg-deb --build dist/debian
+fakeroot dpkg-deb -Zxz --build dist/debian
 
 mv dist/debian.deb "dist/$OUTPUT_FILE"
-chmod +x "dist/$OUTPUT_FILE"
 
 echo "Finished! Filename: $OUTPUT_FILE"

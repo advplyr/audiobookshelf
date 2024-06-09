@@ -1,6 +1,7 @@
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
+const User = require('../user/User')
 
 class ServerSettings {
   constructor(settings) {
@@ -67,11 +68,14 @@ class ServerSettings {
     this.authOpenIDLogoutURL = null
     this.authOpenIDClientID = null
     this.authOpenIDClientSecret = null
+    this.authOpenIDTokenSigningAlgorithm = 'RS256'
     this.authOpenIDButtonText = 'Login with OpenId'
     this.authOpenIDAutoLaunch = false
     this.authOpenIDAutoRegister = false
     this.authOpenIDMatchExistingBy = null
     this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
+    this.authOpenIDGroupClaim = ''
+    this.authOpenIDAdvancedPermsClaim = ''
 
     if (settings) {
       this.construct(settings)
@@ -124,11 +128,14 @@ class ServerSettings {
     this.authOpenIDLogoutURL = settings.authOpenIDLogoutURL || null
     this.authOpenIDClientID = settings.authOpenIDClientID || null
     this.authOpenIDClientSecret = settings.authOpenIDClientSecret || null
+    this.authOpenIDTokenSigningAlgorithm = settings.authOpenIDTokenSigningAlgorithm || 'RS256'
     this.authOpenIDButtonText = settings.authOpenIDButtonText || 'Login with OpenId'
     this.authOpenIDAutoLaunch = !!settings.authOpenIDAutoLaunch
     this.authOpenIDAutoRegister = !!settings.authOpenIDAutoRegister
     this.authOpenIDMatchExistingBy = settings.authOpenIDMatchExistingBy || null
     this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
+    this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
+    this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -212,11 +219,14 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
+      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim // Do not return to client
     }
   }
 
@@ -226,6 +236,8 @@ class ServerSettings {
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
     delete json.authOpenIDMobileRedirectURIs
+    delete json.authOpenIDGroupClaim
+    delete json.authOpenIDAdvancedPermsClaim
     return json
   }
 
@@ -243,7 +255,8 @@ class ServerSettings {
       this.authOpenIDUserInfoURL &&
       this.authOpenIDJwksURL &&
       this.authOpenIDClientID &&
-      this.authOpenIDClientSecret
+      this.authOpenIDClientSecret &&
+      this.authOpenIDTokenSigningAlgorithm
   }
 
   get authenticationSettings() {
@@ -258,11 +271,16 @@ class ServerSettings {
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
       authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
       authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs // Do not return to client
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
+      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+
+      authOpenIDSamplePermissions: User.getSampleAbsPermissions()
     }
   }
 

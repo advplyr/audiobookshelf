@@ -249,7 +249,7 @@ export default {
       return this.media.metadata || {}
     },
     audioFiles() {
-      return (this.media.audioFiles || []).filter((af) => !af.exclude && !af.invalid)
+      return (this.media.audioFiles || []).filter((af) => !af.exclude)
     },
     isSingleM4b() {
       return this.audioFiles.length === 1 && this.audioFiles[0].metadata.ext.toLowerCase() === '.m4b'

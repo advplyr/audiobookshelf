@@ -10,8 +10,8 @@
         <span class="material-icons text-2xl">chevron_right</span>
       </button>
     </div>
-    <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
-      <div class="flex" :style="{ height: height + 'px' }">
+    <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll" style="scroll-behavior: smooth" @scroll="scrolled">
+      <div class="flex space-x-4" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
           <cards-lazy-book-card
             :key="item.recentEpisode.id"
@@ -23,7 +23,7 @@
             :book-cover-aspect-ratio="bookCoverAspectRatio"
             :bookshelf-view="bookshelfView"
             :continue-listening-shelf="continueListeningShelf"
-            class="relative mx-2"
+            class="relative"
             @edit="editEpisode"
             @editPodcast="editPodcast"
             @select="selectItem"

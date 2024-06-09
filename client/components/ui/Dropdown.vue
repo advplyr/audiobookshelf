@@ -13,7 +13,7 @@
     </button>
 
     <transition name="menu">
-      <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm" tabindex="-1" role="listbox">
+      <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm" tabindex="-1" role="listbox" :style="{ maxHeight: menuMaxHeight }">
         <template v-for="item in itemsToShow">
           <li :key="item.value" class="text-gray-100 relative py-2 cursor-pointer hover:bg-black-400" :id="'listbox-option-' + item.value" role="option" tabindex="0" @keyup.enter="clickedOption(item.value)" @click="clickedOption(item.value)">
             <div class="flex items-center">
@@ -41,7 +41,11 @@ export default {
       default: () => []
     },
     disabled: Boolean,
-    small: Boolean
+    small: Boolean,
+    menuMaxHeight: {
+      type: String,
+      default: '224px'
+    }
   },
   data() {
     return {
