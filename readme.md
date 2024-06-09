@@ -333,7 +333,9 @@ Health checking is enabled by default. `Http check method` of `OPTIONS` is not s
 
 This application is built using [NodeJs](https://nodejs.org/).
 
-Information on helping with translations of the web client [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations).
+### Localization
+
+Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations). <a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/horizontal-auto.svg" alt="Translation status" /> </a>
 
 ### Dev Container Setup
 
