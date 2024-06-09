@@ -1,7 +1,8 @@
 const axios = require('axios').default
-const { levenshteinDistance } = require('../utils/index')
-const Logger = require('../Logger')
 const Throttle = require('p-throttle')
+const Logger = require('../Logger')
+const { levenshteinDistance } = require('../utils/index')
+const { isValidASIN } = require('../utils/index')
 
 /**
  * @typedef AuthorSearchObj
@@ -66,13 +67,19 @@ class Audnexus {
    * @returns {Promise<AuthorSearchObj>}
    */
   authorRequest(asin, region) {
-    asin = encodeURIComponent(asin)
-    const regionQuery = region ? `?region=${region}` : ''
-    const authorRequestUrl = `${this.baseUrl}/authors/${asin}${regionQuery}`
+    if (!isValidASIN(asin?.toUpperCase?.())) {
+      Logger.error(`[Audnexus] Invalid ASIN ${asin}`)
+      return null
+    }
+
+    asin = encodeURIComponent(asin.toUpperCase())
+
+    const authorRequestUrl = new URL(`${this.baseUrl}/authors/${asin}`)
+    if (region) authorRequestUrl.searchParams.set('region', region)
 
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
-    return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
+    return this._processRequest(this.limiter(() => axios.get(authorRequestUrl.toString())))
       .then((res) => res.data)
       .catch((error) => {
         Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
@@ -135,10 +142,20 @@ class Audnexus {
     }
   }
 
+  /**
+   *
+   * @param {string} asin
+   * @param {string} region
+   * @returns {Promise<Object>}
+   */
   getChaptersByASIN(asin, region) {
     Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
 
-    return this._processRequest(this.limiter(() => axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`)))
+    asin = encodeURIComponent(asin.toUpperCase())
+    const chaptersRequestUrl = new URL(`${this.baseUrl}/books/${asin}/chapters`)
+    if (region) chaptersRequestUrl.searchParams.set('region', region)
+
+    return this._processRequest(this.limiter(() => axios.get(chaptersRequestUrl.toString())))
       .then((res) => res.data)
       .catch((error) => {
         Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
