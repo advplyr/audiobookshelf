@@ -73,8 +73,8 @@ class Audnexus {
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
     return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
-      .then(res => res.data)
-      .catch(error => {
+      .then((res) => res.data)
+      .catch((error) => {
         Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
         return null
       })
@@ -89,13 +89,14 @@ class Audnexus {
   async findAuthorByASIN(asin, region) {
     const author = await this.authorRequest(asin, region)
 
-    return author ?
-      {
-        asin: author.asin,
-        description: author.description,
-        image: author.image || null,
-        name: author.name
-      } : null
+    return author
+      ? {
+          asin: author.asin,
+          description: author.description,
+          image: author.image || null,
+          name: author.name
+        }
+      : null
   }
 
   /**
@@ -138,8 +139,8 @@ class Audnexus {
     Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
 
     return this._processRequest(this.limiter(() => axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`)))
-      .then(res => res.data)
-      .catch(error => {
+      .then((res) => res.data)
+      .catch((error) => {
         Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
         return null
       })
@@ -156,7 +157,7 @@ class Audnexus {
         const retryAfter = parseInt(error.response.headers?.['retry-after'], 10) || 5
 
         Logger.warn(`[Audnexus] Rate limit exceeded. Retrying in ${retryAfter} seconds.`)
-        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000))
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000))
 
         return this._processRequest(request)
       }
