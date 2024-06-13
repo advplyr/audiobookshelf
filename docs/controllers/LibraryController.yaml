@@ -322,30 +322,48 @@ paths:
       description: Get series in a library. Filtering and sorting can be applied.
       tags:
         - Libraries
-      requestBody:
-        required: false
-        description: The filters to apply to the requested library series.
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                limit:
-                  $ref: '../schemas.yaml#/components/schemas/limit'
-                page:
-                  $ref: '../schemas.yaml#/components/schemas/page'
-                sort:
-                  description: The field to sort by from the request.
-                  type: string
-                  enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
-                  example: 'numBooks'
-                  default: 'name'
-                desc:
-                  $ref: '../schemas.yaml#/components/schemas/sortDesc'
-                filter:
-                  $ref: '#/components/schemas/libraryFilter'
-                include:
-                  $ref: '#/components/schemas/libraryInclude'
+      parameters:
+        - in: query
+          name: limit
+          description: The number of series to return. If 0, all series are returned.
+          example: 10
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: page
+          description: The page number (zero indexed) to return. If no limit is specified, then page will have no effect.
+          example: 0
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numBooks'
+          schema:
+            type: string
+            enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
+            default: 'name'
+        - in: query
+          name: desc
+          description: Return items in reversed order if true.
+          example: true
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+        - in: query
+          name: include
+          description: The fields to include in the response. The only current option is `rssfeed`.
+          example: 'rssfeed'
+          schema:
+            type: string
       responses:
         '200':
           description: getLibrarySeries OK

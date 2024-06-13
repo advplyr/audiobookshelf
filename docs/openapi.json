@@ -47,9 +47,7 @@
         "operationId": "getAuthorById",
         "summary": "Get an author by ID",
         "description": "Get an author by ID. The author's books and series can be included in the response.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "required": false,
           "description": "The author object to create.",
@@ -88,9 +86,7 @@
         "operationId": "updateAuthorById",
         "summary": "Update an author by ID",
         "description": "Update an author by ID. The author's name and description can be updated. This endpoint will merge two authors if the new author name matches another author name in the database.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "description": "The author object to update.",
           "content": {
@@ -144,9 +140,7 @@
         "operationId": "deleteAuthorById",
         "summary": "Delete an author by ID",
         "description": "Delete an author by ID. This will remove the author from all books.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "responses": {
           "200": {
             "description": "deleteAuthorById OK",
@@ -181,9 +175,7 @@
         "operationId": "getAuthorImageById",
         "summary": "Get an author image by author ID",
         "description": "Get an author image by author ID. The image will be returned in the requested format and size.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "required": false,
           "description": "The author image to get.",
@@ -241,9 +233,7 @@
         "operationId": "addAuthorImageById",
         "summary": "Add an author image to the server",
         "description": "Add an author image to the server. The image will be downloaded from the provided URL and stored on the server.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "required": true,
           "description": "The author image to add by URL.",
@@ -276,9 +266,7 @@
         "operationId": "updateAuthorImageById",
         "summary": "Update an author image by author ID",
         "description": "Update an author image by author ID. The image will be resized if the width, height, or format is provided.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "description": "The author image to update.",
           "content": {
@@ -323,9 +311,7 @@
         "operationId": "deleteAuthorImageById",
         "summary": "Delete an author image by author ID",
         "description": "Delete an author image by author ID. This will remove the image from the server and the database.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "responses": {
           "200": {
             "description": "deleteAuthorImageById OK"
@@ -352,9 +338,7 @@
         "operationId": "matchAuthorById",
         "summary": "Match the author against Audible using quick match",
         "description": "Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.",
-        "tags": [
-          "Authors"
-        ],
+        "tags": ["Authors"],
         "requestBody": {
           "required": true,
           "description": "The author object to match against an online provider.",
@@ -406,9 +390,7 @@
         "operationId": "getLibraries",
         "summary": "Get all libraries on server",
         "description": "Get all libraries on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "responses": {
           "200": {
             "description": "getLibraries OK",
@@ -429,19 +411,14 @@
         "operationId": "createLibrary",
         "summary": "Create a new library on server",
         "description": "Create a new library on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "requestBody": {
           "description": "The library object to create.",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "folders"
-                ],
+                "required": ["name", "folders"],
                 "properties": {
                   "name": {
                     "$ref": "#/components/schemas/libraryName"
@@ -495,9 +472,7 @@
         "operationId": "getLibraryById",
         "summary": "Get a single library by ID on server",
         "description": "Get a single library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "responses": {
           "200": {
             "$ref": "#/components/responses/library200"
@@ -511,9 +486,7 @@
         "operationId": "updateLibraryById",
         "summary": "Update a single library by ID on server",
         "description": "Update a single library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "requestBody": {
           "required": true,
           "description": "The library object to update.",
@@ -561,9 +534,7 @@
         "operationId": "deleteLibraryById",
         "summary": "Delete a single library by ID on server",
         "description": "Delete a single library by ID on server and return the deleted object.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "responses": {
           "200": {
             "$ref": "#/components/responses/library200"
@@ -590,9 +561,7 @@
         "operationId": "getLibraryAuthors",
         "summary": "Get all authors in a library",
         "description": "Get all authors in a library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "responses": {
           "200": {
             "description": "getLibraryAuthors OK",
@@ -634,9 +603,7 @@
         "operationId": "getLibraryItems",
         "summary": "Get items in a library",
         "description": "Get items in a library by ID on server.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "requestBody": {
           "required": false,
           "description": "The filters to apply to the requested library items.",
@@ -745,9 +712,7 @@
         "operationId": "deleteLibraryIssues",
         "summary": "Delete items with issues in a library.",
         "description": "Delete all items with issues in a library by library ID on the server. This only removes the items from the ABS database and does not delete media files.",
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "responses": {
           "200": {
             "description": "deleteLibraryIssues OK",
@@ -782,51 +747,68 @@
         "operationId": "getLibrarySeries",
         "summary": "Get library series",
         "description": "Get series in a library. Filtering and sorting can be applied.",
-        "tags": [
-          "Libraries"
-        ],
-        "requestBody": {
-          "required": false,
-          "description": "The filters to apply to the requested library series.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "limit": {
-                    "$ref": "#/components/schemas/limit"
-                  },
-                  "page": {
-                    "$ref": "#/components/schemas/page"
-                  },
-                  "sort": {
-                    "description": "The field to sort by from the request.",
-                    "type": "string",
-                    "enum": [
-                      "name",
-                      "numBooks",
-                      "totalDuration",
-                      "addedAt",
-                      "lastBookAdded",
-                      "lastBookUpdated"
-                    ],
-                    "example": "numBooks",
-                    "default": "name"
-                  },
-                  "desc": {
-                    "$ref": "#/components/schemas/sortDesc"
-                  },
-                  "filter": {
-                    "$ref": "#/components/schemas/libraryFilter"
-                  },
-                  "include": {
-                    "$ref": "#/components/schemas/libraryInclude"
-                  }
-                }
-              }
+        "tags": ["Libraries"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of series to return. If 0, all series are returned.",
+            "example": 10,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "description": "The page number (zero indexed) to return. If no limit is specified, then page will have no effect.",
+            "example": 0,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "The field to sort by from the request.",
+            "example": "numBooks",
+            "schema": {
+              "type": "string",
+              "enum": ["name", "numBooks", "totalDuration", "addedAt", "lastBookAdded", "lastBookUpdated"],
+              "default": "name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "desc",
+            "description": "Return items in reversed order if true.",
+            "example": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The filter for the library.",
+            "example": "media.metadata.title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "The fields to include in the response. The only current option is `rssfeed`.",
+            "example": "rssfeed",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "getLibrarySeries OK",
@@ -902,9 +884,7 @@
         "summary": "Get single series in library",
         "description": "Get a single series in a library by ID on server. This endpoint is deprecated and `/api/series/{id}` should be used instead.",
         "deprecated": true,
-        "tags": [
-          "Libraries"
-        ],
+        "tags": ["Libraries"],
         "requestBody": {
           "required": false,
           "description": "The filters to apply to the requested library series.",
@@ -922,14 +902,7 @@
                   "sort": {
                     "description": "The field to sort by from the request.",
                     "type": "string",
-                    "enum": [
-                      "name",
-                      "numBooks",
-                      "totalDuration",
-                      "addedAt",
-                      "lastBookAdded",
-                      "lastBookUpdated"
-                    ],
+                    "enum": ["name", "numBooks", "totalDuration", "addedAt", "lastBookAdded", "lastBookUpdated"],
                     "example": "numBooks",
                     "default": "name"
                   },
@@ -981,9 +954,7 @@
       ],
       "get": {
         "operationId": "getSeries",
-        "tags": [
-          "Series"
-        ],
+        "tags": ["Series"],
         "summary": "Get series",
         "description": "Get a series by ID.",
         "requestBody": {
@@ -998,12 +969,7 @@
                     "type": "string",
                     "description": "A comma separated list of what to include with the series.",
                     "example": "progress,rssfeed",
-                    "enum": [
-                      "progress",
-                      "rssfeed",
-                      "progress,rssfeed",
-                      "rssfeed,progress"
-                    ]
+                    "enum": ["progress", "rssfeed", "progress,rssfeed", "rssfeed,progress"]
                   }
                 }
               }
@@ -1028,9 +994,7 @@
       },
       "patch": {
         "operationId": "updateSeries",
-        "tags": [
-          "Series"
-        ],
+        "tags": ["Series"],
         "summary": "Update series",
         "description": "Update a series by ID.",
         "requestBody": {
@@ -1156,10 +1120,7 @@
       "mediaType": {
         "type": "string",
         "description": "The type of media, will be book or podcast.",
-        "enum": [
-          "book",
-          "podcast"
-        ]
+        "enum": ["book", "podcast"]
       },
       "libraryItemBase": {
         "type": "object",
@@ -1244,11 +1205,7 @@
             "items": {
               "type": "string"
             },
-            "example": [
-              "Fantasy",
-              "Sci-Fi",
-              "Nonfiction: History"
-            ]
+            "example": ["Fantasy", "Sci-Fi", "Nonfiction: History"]
           },
           "publishedYear": {
             "description": "The year the book was published. Will be null if unknown.",
@@ -1346,10 +1303,7 @@
         "items": {
           "type": "string"
         },
-        "example": [
-          "To Be Read",
-          "Genre: Nonfiction"
-        ]
+        "example": ["To Be Read", "Genre: Nonfiction"]
       },
       "durationSec": {
         "description": "The total length (in seconds) of the item or file.",
@@ -1635,14 +1589,7 @@
             "items": {
               "type": "string"
             },
-            "example": [
-              "folderStructure",
-              "audioMetatags",
-              "nfoFile",
-              "txtFiles",
-              "opfFile",
-              "absMetadata"
-            ]
+            "example": ["folderStructure", "audioMetatags", "nfoFile", "txtFiles", "opfFile", "absMetadata"]
           },
           "podcastSearchRegion": {
             "description": "The region to use when searching for podcasts.",
