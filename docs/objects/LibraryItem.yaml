@@ -4,7 +4,7 @@ components:
       description: The ID of library items on server version 2.2.23 and before.
       type: string
       nullable: true
-      format: "li_[a-z0-9]{18}"
+      format: 'li_[a-z0-9]{18}'
       example: li_o78uaoeuh78h6aoeif
     libraryItemId:
       type: string
@@ -59,8 +59,14 @@ components:
       type: object
       description: A single item on the server, like a book or podcast. Minified media format.
       allOf:
-        - $ref : '#/components/schemas/libraryItemBase'
+        - $ref: '#/components/schemas/libraryItemBase'
         - type: object
           properties:
             media:
               $ref: './mediaTypes/media.yaml#/components/schemas/mediaMinified'
+    libraryItemSequence:
+      type: object
+      description: A single item on the server, like a book or podcast. Includes series sequence information.
+      allOf:
+        - $ref: '#/components/schemas/libraryItemBase'
+        - $ref: './entities/Series.yaml#/components/schemas/sequence'

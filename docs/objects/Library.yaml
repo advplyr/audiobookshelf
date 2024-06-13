@@ -3,10 +3,96 @@ components:
     oldLibraryId:
       type: string
       description: The ID of the libraries created on server version 2.2.23 and before.
-      format: "lib_[a-z0-9]{18}"
-      example: lib_o78uaoeuh78h6aoeif
+      format: 'lib_[a-z0-9]{18}'
+      example: 'lib_o78uaoeuh78h6aoeif'
     libraryId:
       type: string
       description: The ID of the library.
       format: uuid
-      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+      example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+    libraryName:
+      description: The name of the library.
+      type: string
+      example: My Audiobooks
+    librarySettings:
+      description: The settings for the library.
+      type: object
+      properties:
+        coverAspectRatio:
+          description: Whether the library should use square book covers. Must be 0 (for false) or 1 (for true).
+          type: integer
+          example: 1
+        disableWatcher:
+          description: Whether to disable the folder watcher for the library.
+          type: boolean
+          example: false
+        skipMatchingMediaWithAsin:
+          description: Whether to skip matching books that already have an ASIN.
+          type: boolean
+          example: false
+        skipMatchingMediaWithIsbn:
+          description: Whether to skip matching books that already have an ISBN.
+          type: boolean
+          example: false
+        autoScanCronExpression:
+          description: The cron expression for when to automatically scan the library folders. If null, automatic scanning will be disabled.
+          type: string
+          nullable: true
+          example: '0 0 0 * * *'
+        audiobooksOnly:
+          description: Whether the library should ignore ebook files and only allow ebook files to be supplementary.
+          type: boolean
+          example: false
+        hideSingleBookSeries:
+          description: Whether to hide series with only one book.
+          type: boolean
+          example: false
+        onlyShowLaterBooksInContinueSeries:
+          description: Whether to only show books in a series after the highest series sequence.
+          type: boolean
+          example: false
+        metadataPrecedence:
+          description: The precedence of metadata sources. See Metadata Providers for a list of possible providers.
+          type: array
+          items:
+            type: string
+          example: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+        podcastSearchRegion:
+          description: The region to use when searching for podcasts.
+          type: string
+          example: 'us'
+    library:
+      description: A library object which includes either books or podcasts.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/libraryId'
+        name:
+          $ref: '#/components/schemas/libraryName'
+        folders:
+          description: The folders that belong to the library.
+          type: array
+          items:
+            $ref: './Folder.yaml#/components/schemas/folder'
+        displayOrder:
+          description: Display position of the library in the list of libraries. Must be >= 1.
+          type: integer
+          example: 1
+        icon:
+          description: The selected icon for the library. See Library Icons for a list of possible icons.
+          type: string
+          example: 'audiobookshelf'
+        mediaType:
+          description: The type of media that the library contains. Will be `book` or `podcast`. (Read Only)
+          type: string
+          example: 'book'
+        provider:
+          description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
+          type: string
+          example: 'audible'
+        settings:
+          $ref: '#/components/schemas/librarySettings'
+        createdAt:
+          $ref: '../schemas.yaml#/components/schemas/createdAt'
+        lastUpdate:
+          $ref: '../schemas.yaml#/components/schemas/updatedAt'

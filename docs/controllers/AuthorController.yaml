@@ -4,136 +4,291 @@ components:
       description: Whether the author was updated without errors. Will not exist if author was merged.
       type: boolean
       nullable: true
-  parameters:
-    authorId:
-      name: id
-      in: path
-      description: Author ID
-      required: true
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    authorMerged:
+      description: Whether the author was merged with another author. Will not exist if author was updated.
+      type: boolean
+      nullable: true
     authorInclude:
-      name: include
-      in: query
-      description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included.
-      required: false
-      schema:
-        type: string
-        example: "items"
-      examples:
-        empty:
-          summary: Do not return library items
-          value: ""
-        itemOnly:
-          summary: Only return library items
-          value: "items"
-        itemsAndSeries:
-          summary: Return library items and series
-          value: "items,series"
+      description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.
+      type: string
+      example: 'items'
     authorLibraryId:
-      name: library
-      in: query
-      description: The ID of the library to to include filter included items from.
-      required: false
-      schema:
-        $ref: '../objects/Library.yaml#/components/schemas/libraryId'
-    asin:
-      name: asin
-      in: query
-      description: The Audible Identifier (ASIN).
-      required: false
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+      $ref: '../objects/Library.yaml#/components/schemas/libraryId'
     authorSearchName:
-      name: q
-      in: query
       description: The name of the author to use for searching.
-      required: false
-      schema:
-        type: string
-        example: Terry Goodkind
+      type: string
+      example: Terry Goodkind
     authorName:
-      name: name
-      in: query
-      description: The new name of the author.
-      required: false
-      schema:
-        $ref: '../objects/entities/Author.yaml#/components/schemas/authorName'
-    authorDescription:
-      name: description
-      in: query
-      description: The new description of the author.
-      required: false
-      schema:
-        type: string
-        nullable: true
-        example: Terry Goodkind is a #1 New York Times Bestselling Author and creator of the critically acclaimed masterwork, ‘The Sword of Truth’. He has written 30+ major, bestselling novels, has been published in more than 20 languages world-wide, and has sold more than 26 Million books. ‘The Sword of Truth’ is a revered literary tour de force, comprised of 17 volumes, borne from over 25 years of dedicated writing.
-    authorImagePath:
-      name: imagePath
-      in: query
-      description: The new absolute path for the author image.
-      required: false
-      schema:
-        type: string
-        nullable: true
-        example: /metadata/authors/aut_z3leimgybl7uf3y4ab.jpg
+      $ref: '../objects/entities/Author.yaml#/components/schemas/authorName'
     imageUrl:
-      name: url
-      in: query
       description: The URL of the image to add to the server
-      required: true
-      schema:
-        type: string
-        format: uri
-        example: https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg
+      type: string
+      format: uri
+      example: https://images-na.ssl-images-amazon.com/images/I/51NoQTm33OL.__01_SX120_CR0,0,120,120__.jpg
     imageWidth:
-      name: width
-      in: query
       description: The requested width of image in pixels.
-      schema:
-        type: integer
-        default: 400
-        example: 400
+      type: integer
+      default: 400
       example: 400
     imageHeight:
-      name: height
-      in: query
       description: The requested height of image in pixels. If `null`, the height is scaled to maintain aspect ratio based on the requested width.
-      schema:
-        type: integer
-        nullable: true
-        default: null
-        example: 600
-      examples:
-        scaleHeight:
-          summary: Scale height with width
-          value: null
-        fixedHeight:
-          summary: Force height of image
-          value: 600
+      type: integer
+      nullable: true
+      default: null
+      example: 600
     imageFormat:
-      name: format
-      in: query
       description: The requested output format.
-      schema:
-        type: string
-        default: jpeg
-        example: webp
+      type: string
+      default: jpeg
+      example: webp
     imageRaw:
-      name: raw
-      in: query
       description: Return the raw image without scaling if true.
-      schema:
-        type: boolean
-        default: false
-  responses: 
+      type: boolean
+      default: false
+  responses:
+    author200:
+      description: Author found.
+      content:
+        application/json:
+          schema:
+            $ref: '../objects/entities/Author.yaml#/components/schemas/author'
     author404:
       description: Author not found.
       content:
         text/html:
           schema:
             type: string
-            example: Not found
-tags:
-  - name: Authors
-    description: Author endpoints
+            example: Author not found.
+paths:
+  /api/authors/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    get:
+      operationId: getAuthorById
+      summary: Get an author by ID
+      description: Get an author by ID. The author's books and series can be included in the response.
+      tags:
+        - Authors
+      requestBody:
+        required: false
+        description: The author object to create.
+        content:
+          application/json:
+            schema:
+              properties:
+                include:
+                  $ref: '#/components/schemas/authorInclude'
+                library:
+                  $ref: '#/components/schemas/authorLibraryId'
+      responses:
+        '200':
+          description: getAuthorById OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/Author.yaml#/components/schemas/author'
+        '404':
+          $ref: '#/components/responses/author404'
+    patch:
+      operationId: updateAuthorById
+      summary: Update an author by ID
+      description: Update an author by ID. The author's name and description can be updated. This endpoint will merge two authors if the new author name matches another author name in the database.
+      tags:
+        - Authors
+      requestBody:
+        description: The author object to update.
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  $ref: '#/components/schemas/authorName'
+                description:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorDescription'
+                imagePath:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorImagePath'
+                asin:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+      responses:
+        '200':
+          description: updateAuthorById OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '../objects/entities/Author.yaml#/components/schemas/author'
+                  - $ref: '#/components/schemas/authorUpdated'
+                  - $ref: '#/components/schemas/authorMerged'
+        '404':
+          $ref: '#/components/responses/author404'
+    delete:
+      operationId: deleteAuthorById
+      summary: Delete an author by ID
+      description: Delete an author by ID. This will remove the author from all books.
+      tags:
+        - Authors
+      responses:
+        '200':
+          description: deleteAuthorById OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Author deleted.
+        '404':
+          $ref: '#/components/responses/author404'
+  /api/authors/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    get:
+      operationId: getAuthorImageById
+      summary: Get an author image by author ID
+      description: Get an author image by author ID. The image will be returned in the requested format and size.
+      tags:
+        - Authors
+      requestBody:
+        required: false
+        description: The author image to get.
+        content:
+          application/json:
+            schema:
+              properties:
+                width:
+                  $ref: '#/components/schemas/imageWidth'
+                height:
+                  $ref: '#/components/schemas/imageHeight'
+                format:
+                  $ref: '#/components/schemas/imageFormat'
+                raw:
+                  $ref: '#/components/schemas/imageRaw'
+      responses:
+        '200':
+          description: getAuthorImageById OK
+          content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/author404'
+    post:
+      operationId: addAuthorImageById
+      summary: Add an author image to the server
+      description: Add an author image to the server. The image will be downloaded from the provided URL and stored on the server.
+      tags:
+        - Authors
+      requestBody:
+        required: true
+        description: The author image to add by URL.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/imageUrl'
+      responses:
+        '200':
+          description: addAuthorImageById OK
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/author404'
+    patch:
+      operationId: updateAuthorImageById
+      summary: Update an author image by author ID
+      description: Update an author image by author ID. The image will be resized if the width, height, or format is provided.
+      tags:
+        - Authors
+      requestBody:
+        description: The author image to update.
+        content:
+          application/json:
+            schema:
+              properties:
+                width:
+                  $ref: '#/components/schemas/imageWidth'
+                height:
+                  $ref: '#/components/schemas/imageHeight'
+                format:
+                  $ref: '#/components/schemas/imageFormat'
+                raw:
+                  $ref: '#/components/schemas/imageRaw'
+      responses:
+        '200':
+          description: updateAuthorImageById OK
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/author404'
+    delete:
+      operationId: deleteAuthorImageById
+      summary: Delete an author image by author ID
+      description: Delete an author image by author ID. This will remove the image from the server and the database.
+      tags:
+        - Authors
+      responses:
+        '200':
+          description: deleteAuthorImageById OK
+        '404':
+          $ref: '#/components/responses/author404'
+  /api/authors/{id}/match:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    post:
+      operationId: matchAuthorById
+      summary: Match the author against Audible using quick match
+      description: Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.
+      tags:
+        - Authors
+      requestBody:
+        required: true
+        description: The author object to match against an online provider.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                q:
+                  $ref: '#/components/schemas/authorSearchName'
+                asin:
+                  $ref: '../objects/entities/Author.yaml#/components/schemas/authorAsin'
+                region:
+                  $ref: '../schemas.yaml#/components/schemas/region'
+      responses:
+        '200':
+          description: matchAuthorById OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '../objects/entities/Author.yaml#/components/schemas/author'
+                  - $ref: '#/components/schemas/authorUpdated'
+        '404':
+          $ref: '#/components/responses/author404'
