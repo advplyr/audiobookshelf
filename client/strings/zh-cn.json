@@ -654,7 +654,7 @@
   "MessageItemsUpdated": "已更新 {0} 个项目",
   "MessageJoinUsOn": "加入我们",
   "MessageListeningSessionsInTheLastYear": "去年收听 {0} 个会话",
-  "MessageLoading": "加载...",
+  "MessageLoading": "正在加载...",
   "MessageLoadingFolders": "加载文件夹...",
   "MessageLogsDescription": "日志以 JSON 文件形式存储在 <code>/metadata/logs</code> 目录中. 崩溃日志存储在 <code>/metadata/logs/crash_logs.txt</code> 目录中.",
   "MessageM4BFailed": "M4B 失败!",
