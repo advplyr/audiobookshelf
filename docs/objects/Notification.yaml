@@ -1,0 +1,57 @@
+components:
+  schemas:
+    notificationId:
+      type: string
+      description: The ID of the notification.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    Notification:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/notificationId'
+        libraryId:
+          $ref: './Library.yaml#/components/schemas/libraryId'
+        eventName:
+          type: string
+          description: The name of the event the notification will fire on.
+          enum: ['onPodcastEpisodeDownloaded', 'onTest']
+        urls:
+          type: array
+          items:
+            type: string
+          description: The Apprise URLs to use for the notification.
+          example: http://192.168.0.3:8000/notify/my-cool-notification
+        titleTemplate:
+          type: string
+          description: The template for the notification title.
+          example: 'New {{podcastTitle}} Episode!'
+        bodyTemplate:
+          type: string
+          description: The template for the notification body.
+          example: '{{episodeTitle}} has been added to {{libraryName}} library.'
+        enabled:
+          type: boolean
+          description: Whether the notification is enabled.
+        type:
+          type: string
+          enum: ['info', 'success', 'warning', 'failure']
+          default: 'info'
+          description: The notification's type.
+        lastFiredAt:
+          type: integer
+          nullable: true
+          description: The time (in ms since POSIX epoch) when the notification was last fired. Will be null if the notification has not fired.
+        lastAttemptFailed:
+          type: boolean
+          description: Whether the last notification attempt failed.
+        numConsecutiveFailedAttempts:
+          type: integer
+          description: The number of consecutive times the notification has failed.
+          default: 0
+        numTimesFired:
+          type: integer
+          description: The number of times the notification has fired.
+          default: 0
+        createdAt:
+          $ref: '../schemas.yaml#/components/schemas/createdAt'
