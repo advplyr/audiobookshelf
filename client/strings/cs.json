@@ -493,7 +493,7 @@
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Skip earlier books in Continue Series",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "The Continue Series home page shelf shows the first book not started in series that have at least one book finished and no books in progress. Enabling this setting will continue series from the furthest completed book instead of the first book not started.",
   "LabelSettingsParseSubtitles": "Analzyovat podtitul",
-  "LabelSettingsParseSubtitlesHelp": "Rozparsovat podtitul z názvů složek audioknih.<br>Podtiul musí být oddělen znakem \" - \"<br>tj. \"Název knihy - Zde Podtitul\"  má podtitul \"Zde podtitul\"",
+  "LabelSettingsParseSubtitlesHelp": "Rozparsovat podtitul z názvů složek audioknih.<br>Podtiul musí být oddělen znakem \" - \"<br>tj. \"Název knihy - Zde Podtitul\" má podtitul \"Zde podtitul\"",
   "LabelSettingsPreferMatchedMetadata": "Preferovat spárovaná metadata",
   "LabelSettingsPreferMatchedMetadataHelp": "Spárovaná data budou mít při použití funkce Rychlé párování přednost před údaji o položce. Ve výchozím nastavení funkce Rychlé párování pouze doplní chybějící údaje.",
   "LabelSettingsSkipMatchingBooksWithASIN": "Přeskočit párování knih, které již mají ASIN",
