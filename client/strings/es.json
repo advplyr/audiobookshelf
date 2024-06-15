@@ -623,7 +623,7 @@
   "MessageConfirmMarkSeriesNotFinished": "¿Está seguro de que desea marcar todos los libros en esta serie como no terminados?",
   "MessageConfirmPurgeCache": "Purgar el caché eliminará el directorio completo ubicado en <code>/metadata/cache</code>. <br /><br />¿Está seguro que desea eliminar el directorio del caché?",
   "MessageConfirmPurgeItemsCache": "Purgar la caché de los elementos eliminará todo el directorio <code>/metadata/cache/items</code>.<br />¿Estás seguro?",
-  "MessageConfirmQuickEmbed": "¡Advertencia! La integración rápida no realiza copias de seguridad a ninguno de tus archivos de audio. Asegúrate de haber realizado una copia de los mismos previamente.  <br><br>¿Deseas continuar?",
+  "MessageConfirmQuickEmbed": "¡Advertencia! La integración rápida no realiza copias de seguridad a ninguno de tus archivos de audio. Asegúrate de haber realizado una copia de los mismos previamente. <br><br>¿Deseas continuar?",
   "MessageConfirmReScanLibraryItems": "¿Estás seguro de querer re escanear {0} elemento(s)?",
   "MessageConfirmRemoveAllChapters": "¿Está seguro de que desea remover todos los capitulos?",
   "MessageConfirmRemoveAuthor": "¿Está seguro de que desea remover el autor \"{0}\"?",
