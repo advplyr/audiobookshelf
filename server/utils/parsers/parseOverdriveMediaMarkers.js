@@ -63,7 +63,7 @@ function cleanOverdriveMediaMarkers(overdriveMediaMarkers) {
 function objectValuesArrayToString(arrayOfObjects) {
   Logger.debug('[parseOverdriveMediaMarkers] Converting Marker object values from arrays to strings')
   arrayOfObjects.forEach((item) => {
-    Object.keys(item).forEach(key => {
+    Object.keys(item).forEach((key) => {
       item[key] = item[key].toString()
     })
   })
@@ -78,7 +78,7 @@ function removeExtraChapters(parsedOverdriveMediaMarkers) {
   const weirdChapterFilterRegex = /([(]\d|[cC]ontinued)/
   var cleaned = []
   parsedOverdriveMediaMarkers.forEach(function (item) {
-    cleaned.push(item.filter(chapter => !weirdChapterFilterRegex.test(chapter.Name)))
+    cleaned.push(item.filter((chapter) => !weirdChapterFilterRegex.test(chapter.Name)))
   })
 
   return cleaned
@@ -110,11 +110,20 @@ function generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers
 
   // cleanedOverdriveMediaMarkers is an array of array of objects, where the inner array matches to the included audio files tracks
   //     this allows us to leverage the individual track durations when calculating the start times of chapters in tracks after the first (using length)
-  // TODO: can we guarantee the inner array matches the included audio files? 
+  // TODO: can we guarantee the inner array matches the included audio files?
   includedAudioFiles.forEach((track, track_index) => {
     cleanedOverdriveMediaMarkers[track_index].forEach((chapter) => {
-      time = chapter.Time.split(":")
-      time = length + parseFloat(time[0]) * 60 + parseFloat(time[1])
+      let timeParts = chapter.Time.split(':')
+      // add seconds
+      time = length + parseFloat(timeParts.pop())
+      if (timeParts.length) {
+        // add minutes
+        time += parseFloat(timeParts.pop()) * 60
+      }
+      if (timeParts.length) {
+        // add hours
+        time += parseFloat(timeParts.pop()) * 3600
+      }
       var newChapterData = {
         id: index++,
         start: time,
@@ -131,7 +140,7 @@ function generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers
 }
 
 module.exports.parseOverdriveMediaMarkersAsChapters = (includedAudioFiles) => {
-  const overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(af => af) || []
+  const overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter((af) => af) || []
   if (!overdriveMediaMarkers.length) return null
 
   var cleanedOverdriveMediaMarkers = cleanOverdriveMediaMarkers(overdriveMediaMarkers)
