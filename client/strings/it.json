@@ -629,7 +629,7 @@
   "MessageConfirmRemoveAuthor": "Sei sicuro di voler rimuovere l'autore? \"{0}\"?",
   "MessageConfirmRemoveCollection": "Sei sicuro di voler rimuovere la Raccolta \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Sei sicuro di voler rimuovere l'episodio \"{0}\"?",
-  "MessageConfirmRemoveEpisodes": "Sei sicuro di voler rimuovere  {0} episodi?",
+  "MessageConfirmRemoveEpisodes": "Sei sicuro di voler rimuovere {0} episodi?",
   "MessageConfirmRemoveListeningSessions": "Sei sicuro di voler rimuovere {0} sessioni di Ascolto?",
   "MessageConfirmRemoveNarrator": "Sei sicuro di voler rimuovere il narratore \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Sei sicuro di voler rimuovere la tua playlist \"{0}\"?",
