@@ -115,12 +115,12 @@ function generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers
     cleanedOverdriveMediaMarkers[track_index].forEach((chapter) => {
       let timeParts = chapter.Time.split(':')
       // add seconds
-      time = parseFloat(timeParts.pop())
-      if (parts.length) {
+      time = length + parseFloat(timeParts.pop())
+      if (timeParts.length) {
         // add minutes
         time += parseFloat(timeParts.pop()) * 60
       }
-      if (parts.length) {
+      if (timeParts.length) {
         // add hours
         time += parseFloat(timeParts.pop()) * 3600
       }
