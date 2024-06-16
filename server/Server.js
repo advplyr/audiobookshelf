@@ -1,6 +1,7 @@
 const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
+const OpenApiValidator = require('express-openapi-validator')
 const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
@@ -202,6 +203,23 @@ class Server {
 
       next()
     })
+
+    // Install the OpenApiValidator middleware
+    const apiSpec = Path.join(__dirname, 'openapi.json')
+    app.use(
+      OpenApiValidator.middleware({
+        apiSpec: apiSpec,
+        validateRequests: true,
+        validateResponses: {
+          onError: (error, body, req) => {
+            console.log(`Response body fails validation: `, error)
+            console.log(`Emitted from:`, req.originalUrl)
+            console.debug(body)
+          }
+        },
+        ignoreUndocumented: true
+      })
+    )
 
     // parse cookies in requests
     app.use(cookieParser())
