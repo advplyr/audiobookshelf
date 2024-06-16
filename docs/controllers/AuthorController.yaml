@@ -74,17 +74,14 @@ paths:
       description: Get an author by ID. The author's books and series can be included in the response.
       tags:
         - Authors
-      requestBody:
-        required: false
-        description: The author object to create.
-        content:
-          application/json:
-            schema:
-              properties:
-                include:
-                  $ref: '#/components/schemas/authorInclude'
-                library:
-                  $ref: '#/components/schemas/authorLibraryId'
+      parameters:
+        - in: query
+          name: include
+          description: A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.
+          allowReserved: true
+          schema:
+            type: string
+          example: 'items,series'
       responses:
         '200':
           description: getAuthorById OK
