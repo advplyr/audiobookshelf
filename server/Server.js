@@ -205,30 +205,32 @@ class Server {
     })
 
     // Install the OpenApiValidator middleware
-    const apiSpec = Path.join(__dirname, 'openapi.json')
-    app.use(
-      OpenApiValidator.middleware({
-        apiSpec: apiSpec,
-        validateRequests: true,
-        validateResponses: {
-          onError: (error, body, req) => {
-            console.log(`Response body fails validation: `, error)
-            console.log(`Emitted from:`, req.originalUrl)
-            console.debug(body)
-          }
-        },
-        formats: [
-          // Define custom format types for OpenAPI spec
-          {
-            name: 'uuid',
-            type: 'string',
-            validate: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v.toString())
-          }
-        ],
-        unknownFormats: ['li_[a-z0-9]{18}', '[0-9]*'],
-        ignoreUndocumented: true
-      })
-    )
+    if (Logger.isDev) {
+      const apiSpec = Path.join(__dirname, 'openapi.json')
+      app.use(
+        OpenApiValidator.middleware({
+          apiSpec: apiSpec,
+          validateRequests: true,
+          validateResponses: {
+            onError: (error, body, req) => {
+              console.log(`Response body fails validation: `, error)
+              console.log(`Emitted from:`, req.originalUrl)
+              console.debug(body)
+            }
+          },
+          formats: [
+            // Define custom format types for OpenAPI spec
+            {
+              name: 'uuid',
+              type: 'string',
+              validate: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v.toString())
+            }
+          ],
+          unknownFormats: ['li_[a-z0-9]{18}', '[0-9]*'],
+          ignoreUndocumented: true
+        })
+      )
+    }
 
     // parse cookies in requests
     app.use(cookieParser())
