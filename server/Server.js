@@ -206,7 +206,7 @@ class Server {
 
     // Install the OpenApiValidator middleware
     if (Logger.isDev) {
-      const apiSpec = Path.join(__dirname, 'openapi.json')
+      const apiSpec = Path.join(__dirname, '..', 'docs', 'openapi.json')
       app.use(
         OpenApiValidator.middleware({
           apiSpec: apiSpec,
