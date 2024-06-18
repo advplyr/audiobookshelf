@@ -708,7 +708,7 @@
   "MessageRemoveUserWarning": "Opravdu chcete trvale smazat uživatele \"{0}\"?",
   "MessageReportBugsAndContribute": "Hlásit chyby, žádat o funkce a přispívat",
   "MessageResetChaptersConfirm": "Opravdu chcete resetovat kapitoly a vrátit zpět provedené změny?",
-  "MessageRestoreBackupConfirm": "Opravdu chcete obnovit zálohu vytvořenou dne?",
+  "MessageRestoreBackupConfirm": "Opravdu chcete obnovit zálohu vytvořenou dne",
   "MessageRestoreBackupWarning": "Obnovení zálohy přepíše celou databázi umístěnou v /config a obálku obrázků v /metadata/items & /metadata/authors.<br /><br />Backups nezmění žádné soubory ve složkách knihovny. Pokud jste povolili nastavení serveru pro ukládání obrázků obalu a metadat do složek knihovny, nebudou zálohovány ani přepsány.<br /><br />Všichni klienti používající váš server budou automaticky obnoveni.",
   "MessageSearchResultsFor": "Výsledky hledání pro",
   "MessageSelected": "{0} vybráno",
