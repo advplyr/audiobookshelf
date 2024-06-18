@@ -2,12 +2,12 @@ const Logger = require('../Logger')
 const { encodeUriPath } = require('../utils/fileUtils')
 
 class BackupController {
-  constructor() { }
+  constructor() {}
 
   getAll(req, res) {
     res.json({
-      backups: this.backupManager.backups.map(b => b.toJSON()),
-      backupLocation: this.backupManager.backupLocation
+      backups: this.backupManager.backups.map((b) => b.toJSON()),
+      backupLocation: this.backupManager.backupPath
     })
   }
 
@@ -19,7 +19,7 @@ class BackupController {
     await this.backupManager.removeBackup(req.backup)
 
     res.json({
-      backups: this.backupManager.backups.map(b => b.toJSON())
+      backups: this.backupManager.backups.map((b) => b.toJSON())
     })
   }
 
@@ -33,9 +33,9 @@ class BackupController {
 
   /**
    * api/backups/:id/download
-   * 
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {*} req
+   * @param {*} res
    */
   download(req, res) {
     if (global.XAccel) {
@@ -50,9 +50,9 @@ class BackupController {
   }
 
   /**
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   apply(req, res) {
     this.backupManager.requestApplyBackup(this.apiCacheManager, req.backup, res)
@@ -65,7 +65,7 @@ class BackupController {
     }
 
     if (req.params.id) {
-      req.backup = this.backupManager.backups.find(b => b.id === req.params.id)
+      req.backup = this.backupManager.backups.find((b) => b.id === req.params.id)
       if (!req.backup) {
         return res.sendStatus(404)
       }
