@@ -178,13 +178,15 @@ class PlaybackSessionManager {
     // Update user and emit socket event
     if (result.progressSynced) {
       const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      if (itemProgress) await Database.upsertMediaProgress(itemProgress)
-      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
-        id: itemProgress.id,
-        sessionId: session.id,
-        deviceDescription: session.deviceDescription,
-        data: itemProgress.toJSON()
-      })
+      if (itemProgress) {
+        await Database.upsertMediaProgress(itemProgress)
+        SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
+          id: itemProgress.id,
+          sessionId: session.id,
+          deviceDescription: session.deviceDescription,
+          data: itemProgress.toJSON()
+        })
+      }
     }
 
     return result
