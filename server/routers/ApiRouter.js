@@ -40,6 +40,7 @@ class ApiRouter {
     this.auth = Server.auth
     this.playbackSessionManager = Server.playbackSessionManager
     this.abMergeManager = Server.abMergeManager
+    /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
     /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
@@ -193,6 +194,7 @@ class ApiRouter {
     this.router.get('/backups/:id/download', BackupController.middleware.bind(this), BackupController.download.bind(this))
     this.router.get('/backups/:id/apply', BackupController.middleware.bind(this), BackupController.apply.bind(this))
     this.router.post('/backups/upload', BackupController.middleware.bind(this), BackupController.upload.bind(this))
+    this.router.patch('/backups/path', BackupController.middleware.bind(this), BackupController.updatePath.bind(this))
 
     //
     // File System Routes
@@ -307,7 +309,6 @@ class ApiRouter {
     this.router.get('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.getAll.bind(this))
     this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.create.bind(this))
     this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.delete.bind(this))
-
 
     //
     // Misc Routes
@@ -567,10 +568,13 @@ class ApiRouter {
           }
         }
         // Remove authors without an id
-        mediaMetadata.authors = mediaMetadata.authors.filter(au => !!au.id)
+        mediaMetadata.authors = mediaMetadata.authors.filter((au) => !!au.id)
         if (newAuthors.length) {
           await Database.createBulkAuthors(newAuthors)
-          SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
+          SocketAuthority.emitter(
+            'authors_added',
+            newAuthors.map((au) => au.toJSON())
+          )
         }
       }
 
@@ -611,10 +615,13 @@ class ApiRouter {
           }
         }
         // Remove series without an id
-        mediaMetadata.series = mediaMetadata.series.filter(se => se.id)
+        mediaMetadata.series = mediaMetadata.series.filter((se) => se.id)
         if (newSeries.length) {
           await Database.createBulkSeries(newSeries)
-          SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
+          SocketAuthority.emitter(
+            'multiple_series_added',
+            newSeries.map((se) => se.toJSON())
+          )
         }
       }
     }

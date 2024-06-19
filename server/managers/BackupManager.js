@@ -51,6 +51,16 @@ class BackupManager {
     this.scheduleCron()
   }
 
+  /**
+   * Reload backups after updating backup path
+   */
+  async reload() {
+    Logger.info(`[BackupManager] Reloading backups with backup path "${this.backupPath}"`)
+    this.backups = []
+    await this.loadBackups()
+    this.updateCronSchedule()
+  }
+
   scheduleCron() {
     if (!this.backupSchedule) {
       Logger.info(`[BackupManager] Auto Backups are disabled`)
