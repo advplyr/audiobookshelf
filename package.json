@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "chai": "^4.3.10",
+    "express-openapi-validator": "^5.2.0",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
