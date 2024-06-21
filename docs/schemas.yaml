@@ -60,3 +60,12 @@ components:
       type: string
       example: 'us'
       default: 'us'
+  parameters:
+    minified:
+      in: query
+      name: minified
+      description: Return minified items if true
+      schema:
+        type: integer
+        minimum: 0
+        example: 1
