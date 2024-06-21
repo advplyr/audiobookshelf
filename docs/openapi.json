@@ -169,12 +169,29 @@
           "schema": {
             "$ref": "#/components/schemas/authorId"
           }
+        },
+        {
+          "name": "token",
+          "in": "query",
+          "description": "API token",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "ts",
+          "in": "query",
+          "description": "Updated at value",
+          "schema": {
+            "type": "integer"
+          }
         }
       ],
       "get": {
         "operationId": "getAuthorImageById",
         "summary": "Get an author image by author ID",
         "description": "Get an author image by author ID. The image will be returned in the requested format and size.",
+        "security": [],
         "tags": [
           "Authors"
         ],
