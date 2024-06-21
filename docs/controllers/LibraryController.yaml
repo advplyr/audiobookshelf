@@ -78,10 +78,10 @@ components:
       in: query
       name: desc
       description: Return items in reversed order if true.
-      example: true
+      example: 0
       schema:
-        type: boolean
-        default: false
+        type: integer
+        default: 0
 
   responses:
     library200:
@@ -166,6 +166,7 @@ paths:
           name: include
           schema:
             type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
       responses:
         '200':
           $ref: '#/components/responses/library200'
@@ -262,7 +263,6 @@ paths:
           example: 'numBooks'
           schema:
             type: string
-            enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
             default: 'name'
         - $ref: '#/components/parameters/desc'
         - in: query
@@ -386,6 +386,7 @@ paths:
           example: 'rssfeed'
           schema:
             type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
       responses:
         '200':
           description: getLibrarySeries OK

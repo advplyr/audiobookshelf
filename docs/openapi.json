@@ -499,6 +499,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
           }
         ],
         "responses": {
@@ -654,14 +657,6 @@
             "example": "numBooks",
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "numBooks",
-                "totalDuration",
-                "addedAt",
-                "lastBookAdded",
-                "lastBookUpdated"
-              ],
               "default": "name"
             }
           },
@@ -857,6 +852,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
           }
         ],
         "responses": {
@@ -2007,6 +2005,16 @@
       }
     },
     "parameters": {
+      "minified": {
+        "in": "query",
+        "name": "minified",
+        "description": "Return minified items if true",
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "example": 1
+        }
+      },
       "limit": {
         "in": "query",
         "name": "limit",
@@ -2031,20 +2039,10 @@
         "in": "query",
         "name": "desc",
         "description": "Return items in reversed order if true.",
-        "example": true,
-        "schema": {
-          "type": "boolean",
-          "default": false
-        }
-      },
-      "minified": {
-        "in": "query",
-        "name": "minified",
-        "description": "Return minified items if true",
+        "example": 0,
         "schema": {
           "type": "integer",
-          "minimum": 0,
-          "example": 1
+          "default": 0
         }
       }
     }
