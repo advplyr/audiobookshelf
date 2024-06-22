@@ -5,6 +5,45 @@ components:
       description: The ID of the notification.
       format: uuid
       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    appriseApiUrl:
+      type: string
+      nullable: true
+      description: The full URL where the Apprise API to use is located.
+    maxFailedAttempts:
+      type: integer
+      minimum: 0
+      default: 5
+      description: The maximum number of times a notification fails before being disabled.
+    maxNotificationQueue:
+      type: integer
+      description: The maximum number of notifications in the notification queue before events are ignored.
+    notificationEventName:
+      type: string
+      description: The name of the event the notification will fire on.
+      enum: ['onPodcastEpisodeDownloaded', 'onTest']
+    urls:
+      type: array
+      items:
+        type: string
+      description: The Apprise URLs to use for the notification.
+      example: http://192.168.0.3:8000/notify/my-cool-notification
+    titleTemplate:
+      type: string
+      description: The template for the notification title.
+      example: 'New {{podcastTitle}} Episode!'
+    bodyTemplate:
+      type: string
+      description: The template for the notification body.
+      example: '{{episodeTitle}} has been added to {{libraryName}} library.'
+    enabled:
+      type: boolean
+      default: false
+      description: Whether the notification is enabled.
+    notificationType:
+      type: string
+      enum: ['info', 'success', 'warning', 'failure']
+      default: 'info'
+      description: The notification's type.
     Notification:
       type: object
       properties:
@@ -13,31 +52,17 @@ components:
         libraryId:
           $ref: './Library.yaml#/components/schemas/libraryId'
         eventName:
-          type: string
-          description: The name of the event the notification will fire on.
-          enum: ['onPodcastEpisodeDownloaded', 'onTest']
+          $ref: '#/components/schemas/notificationEventName'
         urls:
-          type: array
-          items:
-            type: string
-          description: The Apprise URLs to use for the notification.
-          example: http://192.168.0.3:8000/notify/my-cool-notification
+          $ref: '#/components/schemas/urls'
         titleTemplate:
-          type: string
-          description: The template for the notification title.
-          example: 'New {{podcastTitle}} Episode!'
+          $ref: '#/components/schemas/titleTemplate'
         bodyTemplate:
-          type: string
-          description: The template for the notification body.
-          example: '{{episodeTitle}} has been added to {{libraryName}} library.'
+          $ref: '#/components/schemas/bodyTemplate'
         enabled:
-          type: boolean
-          description: Whether the notification is enabled.
+          $ref: '#/components/schemas/enabled'
         type:
-          type: string
-          enum: ['info', 'success', 'warning', 'failure']
-          default: 'info'
-          description: The notification's type.
+          $ref: '#/components/schemas/notificationType'
         lastFiredAt:
           type: integer
           nullable: true
@@ -99,20 +124,16 @@ components:
           type: string
           description: The type of Apprise that will be used. At the moment, only api is available.
         appriseApiUrl:
-          type: string
-          nullable: true
-          description: The full URL where the Apprise API to use is located.
+          $ref: '#/components/schemas/appriseApiUrl'
         notifications:
           type: array
           items:
             $ref: '#/components/schemas/Notification'
           description: The set notifications.
         maxFailedAttempts:
-          type: integer
-          description: The maximum number of times a notification fails before being disabled.
+          $ref: '#/components/schemas/maxFailedAttempts'
         maxNotificationQueue:
-          type: integer
-          description: The maximum number of notifications in the notification queue before events are ignored.
+          $ref: '#/components/schemas/maxNotificationQueue'
         notificationDelay:
           type: integer
           description: The time (in ms) between notification pushes.
