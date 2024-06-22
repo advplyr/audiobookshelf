@@ -28,6 +28,10 @@
     {
       "name": "Series",
       "description": "Series endpoints"
+    },
+    {
+      "name": "Notification",
+      "description": "Notifications endpoints"
     }
   ],
   "paths": {
@@ -47,7 +51,9 @@
         "operationId": "getAuthorById",
         "summary": "Get an author by ID",
         "description": "Get an author by ID. The author's books and series can be included in the response.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "required": false,
           "description": "The author object to create.",
@@ -86,7 +92,9 @@
         "operationId": "updateAuthorById",
         "summary": "Update an author by ID",
         "description": "Update an author by ID. The author's name and description can be updated. This endpoint will merge two authors if the new author name matches another author name in the database.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "description": "The author object to update.",
           "content": {
@@ -140,7 +148,9 @@
         "operationId": "deleteAuthorById",
         "summary": "Delete an author by ID",
         "description": "Delete an author by ID. This will remove the author from all books.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "responses": {
           "200": {
             "description": "deleteAuthorById OK",
@@ -175,7 +185,9 @@
         "operationId": "getAuthorImageById",
         "summary": "Get an author image by author ID",
         "description": "Get an author image by author ID. The image will be returned in the requested format and size.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "required": false,
           "description": "The author image to get.",
@@ -233,7 +245,9 @@
         "operationId": "addAuthorImageById",
         "summary": "Add an author image to the server",
         "description": "Add an author image to the server. The image will be downloaded from the provided URL and stored on the server.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "required": true,
           "description": "The author image to add by URL.",
@@ -266,7 +280,9 @@
         "operationId": "updateAuthorImageById",
         "summary": "Update an author image by author ID",
         "description": "Update an author image by author ID. The image will be resized if the width, height, or format is provided.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "description": "The author image to update.",
           "content": {
@@ -311,7 +327,9 @@
         "operationId": "deleteAuthorImageById",
         "summary": "Delete an author image by author ID",
         "description": "Delete an author image by author ID. This will remove the image from the server and the database.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "responses": {
           "200": {
             "description": "deleteAuthorImageById OK"
@@ -338,7 +356,9 @@
         "operationId": "matchAuthorById",
         "summary": "Match the author against Audible using quick match",
         "description": "Match the author against Audible using quick match. Quick match updates the author's description and image (if no image already existed) with information from audible. Either `asin` or `q` must be provided, with `asin` taking priority if both are provided.",
-        "tags": ["Authors"],
+        "tags": [
+          "Authors"
+        ],
         "requestBody": {
           "required": true,
           "description": "The author object to match against an online provider.",
@@ -390,7 +410,9 @@
         "operationId": "getLibraries",
         "summary": "Get all libraries on server",
         "description": "Get all libraries on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "responses": {
           "200": {
             "description": "getLibraries OK",
@@ -411,14 +433,19 @@
         "operationId": "createLibrary",
         "summary": "Create a new library on server",
         "description": "Create a new library on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "requestBody": {
           "description": "The library object to create.",
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "folders"],
+                "required": [
+                  "name",
+                  "folders"
+                ],
                 "properties": {
                   "name": {
                     "$ref": "#/components/schemas/libraryName"
@@ -472,7 +499,9 @@
         "operationId": "getLibraryById",
         "summary": "Get a single library by ID on server",
         "description": "Get a single library by ID on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/library200"
@@ -486,7 +515,9 @@
         "operationId": "updateLibraryById",
         "summary": "Update a single library by ID on server",
         "description": "Update a single library by ID on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "requestBody": {
           "required": true,
           "description": "The library object to update.",
@@ -534,7 +565,9 @@
         "operationId": "deleteLibraryById",
         "summary": "Delete a single library by ID on server",
         "description": "Delete a single library by ID on server and return the deleted object.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/library200"
@@ -561,7 +594,9 @@
         "operationId": "getLibraryAuthors",
         "summary": "Get all authors in a library",
         "description": "Get all authors in a library by ID on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "responses": {
           "200": {
             "description": "getLibraryAuthors OK",
@@ -603,7 +638,9 @@
         "operationId": "getLibraryItems",
         "summary": "Get items in a library",
         "description": "Get items in a library by ID on server.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "requestBody": {
           "required": false,
           "description": "The filters to apply to the requested library items.",
@@ -712,7 +749,9 @@
         "operationId": "deleteLibraryIssues",
         "summary": "Delete items with issues in a library.",
         "description": "Delete all items with issues in a library by library ID on the server. This only removes the items from the ABS database and does not delete media files.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "responses": {
           "200": {
             "description": "deleteLibraryIssues OK",
@@ -747,7 +786,9 @@
         "operationId": "getLibrarySeries",
         "summary": "Get library series",
         "description": "Get series in a library. Filtering and sorting can be applied.",
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -776,7 +817,14 @@
             "example": "numBooks",
             "schema": {
               "type": "string",
-              "enum": ["name", "numBooks", "totalDuration", "addedAt", "lastBookAdded", "lastBookUpdated"],
+              "enum": [
+                "name",
+                "numBooks",
+                "totalDuration",
+                "addedAt",
+                "lastBookAdded",
+                "lastBookUpdated"
+              ],
               "default": "name"
             }
           },
@@ -884,7 +932,9 @@
         "summary": "Get single series in library",
         "description": "Get a single series in a library by ID on server. This endpoint is deprecated and `/api/series/{id}` should be used instead.",
         "deprecated": true,
-        "tags": ["Libraries"],
+        "tags": [
+          "Libraries"
+        ],
         "requestBody": {
           "required": false,
           "description": "The filters to apply to the requested library series.",
@@ -902,7 +952,14 @@
                   "sort": {
                     "description": "The field to sort by from the request.",
                     "type": "string",
-                    "enum": ["name", "numBooks", "totalDuration", "addedAt", "lastBookAdded", "lastBookUpdated"],
+                    "enum": [
+                      "name",
+                      "numBooks",
+                      "totalDuration",
+                      "addedAt",
+                      "lastBookAdded",
+                      "lastBookUpdated"
+                    ],
                     "example": "numBooks",
                     "default": "name"
                   },
@@ -940,6 +997,338 @@
         }
       }
     },
+    "/api/notifications": {
+      "get": {
+        "operationId": "getNotifications",
+        "description": "Get all Apprise notification events and notification settings for server.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/NotificationEvent"
+                          }
+                        }
+                      }
+                    },
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "patch": {
+        "operation": "updateNotificationSettings",
+        "description": "Update Notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "description": "The Apprise Notification settings",
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "appriseApiUrl": {
+                    "$ref": "#/components/schemas/appriseApiUrl"
+                  },
+                  "maxFailedAttempts": {
+                    "$ref": "#/components/schemas/maxFailedAttempts"
+                  },
+                  "maxNotificationQueue": {
+                    "$ref": "#/components/schemas/maxNotificationQueue"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "post": {
+        "operation": "createNotification",
+        "description": "Update Notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "libraryId": {
+                    "$ref": "#/components/schemas/libraryId"
+                  },
+                  "eventName": {
+                    "$ref": "#/components/schemas/notificationEventName"
+                  },
+                  "urls": {
+                    "$ref": "#/components/schemas/urls"
+                  },
+                  "titleTemplate": {
+                    "$ref": "#/components/schemas/titleTemplate"
+                  },
+                  "bodyTemplate": {
+                    "$ref": "#/components/schemas/bodyTemplate"
+                  },
+                  "enabled": {
+                    "$ref": "#/components/schemas/enabled"
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/notificationType"
+                  }
+                },
+                "required": [
+                  "eventName",
+                  "urls",
+                  "titleTemplate",
+                  "bodyTemplate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notificationdata": {
+      "get": {
+        "operationId": "getNotificationEventData",
+        "description": "Get all Apprise notification event data for the server.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NotificationEvent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/test": {
+      "get": {
+        "operationId": "sendDefaultTestNotification",
+        "description": "Send a test notification.",
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fail",
+            "description": "Whether to intentionally cause the notification to fail. `0` for false, `1` for true.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the notification.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/notificationId"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteNotification",
+        "description": "Delete the notification by ID and return the notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "patch": {
+        "operation": "createNotification",
+        "description": "Update Notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/components/schemas/notificationId"
+                  },
+                  "libraryId": {
+                    "$ref": "#/components/schemas/libraryId"
+                  },
+                  "eventName": {
+                    "$ref": "#/components/schemas/notificationEventName"
+                  },
+                  "urls": {
+                    "$ref": "#/components/schemas/urls"
+                  },
+                  "titleTemplate": {
+                    "$ref": "#/components/schemas/titleTemplate"
+                  },
+                  "bodyTemplate": {
+                    "$ref": "#/components/schemas/bodyTemplate"
+                  },
+                  "enabled": {
+                    "$ref": "#/components/schemas/enabled"
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/notificationType"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/test": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the notification.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/notificationId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "sendTestNotification",
+        "description": "Send a test to the given notification.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
     "/api/series/{id}": {
       "parameters": [
         {
@@ -954,7 +1343,9 @@
       ],
       "get": {
         "operationId": "getSeries",
-        "tags": ["Series"],
+        "tags": [
+          "Series"
+        ],
         "summary": "Get series",
         "description": "Get a series by ID.",
         "requestBody": {
@@ -969,7 +1360,12 @@
                     "type": "string",
                     "description": "A comma separated list of what to include with the series.",
                     "example": "progress,rssfeed",
-                    "enum": ["progress", "rssfeed", "progress,rssfeed", "rssfeed,progress"]
+                    "enum": [
+                      "progress",
+                      "rssfeed",
+                      "progress,rssfeed",
+                      "rssfeed,progress"
+                    ]
                   }
                 }
               }
@@ -994,7 +1390,9 @@
       },
       "patch": {
         "operationId": "updateSeries",
-        "tags": ["Series"],
+        "tags": [
+          "Series"
+        ],
         "summary": "Update series",
         "description": "Update a series by ID.",
         "requestBody": {
@@ -1120,7 +1518,10 @@
       "mediaType": {
         "type": "string",
         "description": "The type of media, will be book or podcast.",
-        "enum": ["book", "podcast"]
+        "enum": [
+          "book",
+          "podcast"
+        ]
       },
       "libraryItemBase": {
         "type": "object",
@@ -1205,7 +1606,11 @@
             "items": {
               "type": "string"
             },
-            "example": ["Fantasy", "Sci-Fi", "Nonfiction: History"]
+            "example": [
+              "Fantasy",
+              "Sci-Fi",
+              "Nonfiction: History"
+            ]
           },
           "publishedYear": {
             "description": "The year the book was published. Will be null if unknown.",
@@ -1303,7 +1708,10 @@
         "items": {
           "type": "string"
         },
-        "example": ["To Be Read", "Genre: Nonfiction"]
+        "example": [
+          "To Be Read",
+          "Genre: Nonfiction"
+        ]
       },
       "durationSec": {
         "description": "The total length (in seconds) of the item or file.",
@@ -1589,7 +1997,14 @@
             "items": {
               "type": "string"
             },
-            "example": ["folderStructure", "audioMetatags", "nfoFile", "txtFiles", "opfFile", "absMetadata"]
+            "example": [
+              "folderStructure",
+              "audioMetatags",
+              "nfoFile",
+              "txtFiles",
+              "opfFile",
+              "absMetadata"
+            ]
           },
           "podcastSearchRegion": {
             "description": "The region to use when searching for podcasts.",
@@ -1890,6 +2305,201 @@
             }
           }
         ]
+      },
+      "NotificationEvent": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the notification event. The names and allowable values are defined at https://github.com/advplyr/audiobookshelf/blob/master/server/utils/notifications.js"
+          },
+          "requiresLibrary": {
+            "type": "boolean",
+            "description": "Whether the notification event depends on a library existing."
+          },
+          "libraryMediaType": {
+            "type": "string",
+            "description": "The type of media of the library the notification depends on existing. Will not exist if requiresLibrary is false.",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the notification event."
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The variables of the notification event that can be used in the notification templates."
+          },
+          "defaults": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The default title template for notifications using the notification event."
+              },
+              "body": {
+                "type": "string",
+                "description": "The default body template for notifications using the notification event."
+              }
+            }
+          },
+          "testData": {
+            "type": "object",
+            "description": "The keys of the testData object will match the list of variables. The values will be the data used when sending a test notification.",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "notificationId": {
+        "type": "string",
+        "description": "The ID of the notification.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "appriseApiUrl": {
+        "type": "string",
+        "nullable": true,
+        "description": "The full URL where the Apprise API to use is located."
+      },
+      "notificationEventName": {
+        "type": "string",
+        "description": "The name of the event the notification will fire on.",
+        "enum": [
+          "onPodcastEpisodeDownloaded",
+          "onTest"
+        ]
+      },
+      "urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The Apprise URLs to use for the notification.",
+        "example": "http://192.168.0.3:8000/notify/my-cool-notification"
+      },
+      "titleTemplate": {
+        "type": "string",
+        "description": "The template for the notification title.",
+        "example": "New {{podcastTitle}} Episode!"
+      },
+      "bodyTemplate": {
+        "type": "string",
+        "description": "The template for the notification body.",
+        "example": "{{episodeTitle}} has been added to {{libraryName}} library."
+      },
+      "enabled": {
+        "type": "boolean",
+        "default": false,
+        "description": "Whether the notification is enabled."
+      },
+      "notificationType": {
+        "type": "string",
+        "enum": [
+          "info",
+          "success",
+          "warning",
+          "failure"
+        ],
+        "default": "info",
+        "description": "The notification's type."
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/notificationId"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "eventName": {
+            "$ref": "#/components/schemas/notificationEventName"
+          },
+          "urls": {
+            "$ref": "#/components/schemas/urls"
+          },
+          "titleTemplate": {
+            "$ref": "#/components/schemas/titleTemplate"
+          },
+          "bodyTemplate": {
+            "$ref": "#/components/schemas/bodyTemplate"
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/enabled"
+          },
+          "type": {
+            "$ref": "#/components/schemas/notificationType"
+          },
+          "lastFiredAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The time (in ms since POSIX epoch) when the notification was last fired. Will be null if the notification has not fired."
+          },
+          "lastAttemptFailed": {
+            "type": "boolean",
+            "description": "Whether the last notification attempt failed."
+          },
+          "numConsecutiveFailedAttempts": {
+            "type": "integer",
+            "description": "The number of consecutive times the notification has failed.",
+            "default": 0
+          },
+          "numTimesFired": {
+            "type": "integer",
+            "description": "The number of times the notification has fired.",
+            "default": 0
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/createdAt"
+          }
+        }
+      },
+      "maxFailedAttempts": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 5,
+        "description": "The maximum number of times a notification fails before being disabled."
+      },
+      "maxNotificationQueue": {
+        "type": "integer",
+        "description": "The maximum number of notifications in the notification queue before events are ignored."
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/notificationId"
+          },
+          "appriseType": {
+            "type": "string",
+            "description": "The type of Apprise that will be used. At the moment, only api is available."
+          },
+          "appriseApiUrl": {
+            "$ref": "#/components/schemas/appriseApiUrl"
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            },
+            "description": "The set notifications."
+          },
+          "maxFailedAttempts": {
+            "$ref": "#/components/schemas/maxFailedAttempts"
+          },
+          "maxNotificationQueue": {
+            "$ref": "#/components/schemas/maxNotificationQueue"
+          },
+          "notificationDelay": {
+            "type": "integer",
+            "description": "The time (in ms) between notification pushes."
+          }
+        }
       }
     },
     "responses": {
@@ -1921,6 +2531,28 @@
             "schema": {
               "type": "string",
               "example": "Library not found."
+            }
+          }
+        }
+      },
+      "notification404": {
+        "description": "An admin user is required or notification with the given ID not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Series not found."
+            }
+          }
+        }
+      },
+      "notification200": {
+        "description": "Notification endpoint success.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "OK"
             }
           }
         }
