@@ -147,6 +147,7 @@
       </div>
     </div>
 
+    <modals-share-modal v-model="showShareModal" :media-item-share="mediaItemShare" :library-item="libraryItem" @opened="openedShare" @removed="removedShare" />
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
@@ -160,7 +161,7 @@ export default {
     }
 
     // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -170,7 +171,8 @@ export default {
     }
     return {
       libraryItem: item,
-      rssFeed: item.rssFeed || null
+      rssFeed: item.rssFeed || null,
+      mediaItemShare: item.mediaItemShare || null
     }
   },
   data() {
@@ -184,7 +186,8 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      showShareModal: false
     }
   },
   computed: {
@@ -437,6 +440,13 @@ export default {
         })
       }
 
+      if (this.userIsAdminOrUp && !this.isPodcast) {
+        items.push({
+          text: 'Share',
+          action: 'share'
+        })
+      }
+
       if (this.userCanDelete) {
         items.push({
           text: this.$strings.ButtonDelete,
@@ -448,6 +458,12 @@ export default {
     }
   },
   methods: {
+    openedShare(mediaItemShare) {
+      this.mediaItemShare = mediaItemShare
+    },
+    removedShare() {
+      this.mediaItemShare = null
+    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
@@ -761,6 +777,8 @@ export default {
         this.deleteLibraryItem()
       } else if (action === 'sendToDevice') {
         this.sendToDevice(data)
+      } else if (action === 'share') {
+        this.showShareModal = true
       }
     }
   },

@@ -30,6 +30,7 @@ const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
+const ShareController = require('../controllers/ShareController')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
@@ -309,6 +310,12 @@ class ApiRouter {
     this.router.get('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.getAll.bind(this))
     this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.create.bind(this))
     this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.delete.bind(this))
+
+    //
+    // Share routes
+    //
+    this.router.post('/share/mediaitem', ShareController.createMediaItemShare.bind(this))
+    this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
 
     //
     // Misc Routes
