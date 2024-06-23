@@ -430,9 +430,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/library"
+                  "type": "object",
+                  "properties": {
+                    "libraries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/library"
+                      }
+                    }
                   }
                 }
               }
@@ -1109,9 +1114,15 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "eventName",
+                  "urls",
+                  "titleTemplate",
+                  "bodyTemplate"
+                ],
                 "properties": {
                   "libraryId": {
-                    "$ref": "#/components/schemas/libraryId"
+                    "$ref": "#/components/schemas/libraryIdNullable"
                   },
                   "eventName": {
                     "$ref": "#/components/schemas/notificationEventName"
@@ -1131,13 +1142,7 @@
                   "type": {
                     "$ref": "#/components/schemas/notificationType"
                   }
-                },
-                "required": [
-                  "eventName",
-                  "urls",
-                  "titleTemplate",
-                  "bodyTemplate"
-                ]
+                }
               }
             }
           }
@@ -1263,8 +1268,8 @@
         }
       },
       "patch": {
-        "operationId": "createNotification",
-        "description": "Update Notification settings.",
+        "operationId": "updateNotification",
+        "description": "Update individual Notification",
         "tags": [
           "Notification"
         ],
@@ -1274,9 +1279,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "$ref": "#/components/schemas/notificationId"
-                  },
                   "libraryId": {
                     "$ref": "#/components/schemas/libraryId"
                   },
@@ -1298,10 +1300,7 @@
                   "type": {
                     "$ref": "#/components/schemas/notificationType"
                   }
-                },
-                "required": [
-                  "id"
-                ]
+                }
               }
             }
           }
@@ -2196,7 +2195,12 @@
             "$ref": "#/components/schemas/libraryItemBase"
           },
           {
-            "$ref": "#/components/schemas/sequence"
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "$ref": "#/components/schemas/sequence"
+              }
+            }
           }
         ]
       },
@@ -2363,13 +2367,19 @@
       "notificationId": {
         "type": "string",
         "description": "The ID of the notification.",
-        "format": "uuid",
-        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+        "example": "notification-settings"
       },
       "appriseApiUrl": {
         "type": "string",
         "nullable": true,
         "description": "The full URL where the Apprise API to use is located."
+      },
+      "libraryIdNullable": {
+        "type": "string",
+        "description": "The ID of the library. Applies to all libraries if `null`.",
+        "format": "uuid",
+        "nullable": true,
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
       "notificationEventName": {
         "type": "string",
@@ -2410,6 +2420,7 @@
           "warning",
           "failure"
         ],
+        "nullable": true,
         "default": "info",
         "description": "The notification's type."
       },
@@ -2420,7 +2431,7 @@
             "$ref": "#/components/schemas/notificationId"
           },
           "libraryId": {
-            "$ref": "#/components/schemas/libraryId"
+            "$ref": "#/components/schemas/libraryIdNullable"
           },
           "eventName": {
             "$ref": "#/components/schemas/notificationEventName"
