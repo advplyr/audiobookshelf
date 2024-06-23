@@ -69,4 +69,7 @@ components:
       description: A single item on the server, like a book or podcast. Includes series sequence information.
       allOf:
         - $ref: '#/components/schemas/libraryItemBase'
-        - $ref: './entities/Series.yaml#/components/schemas/sequence'
+        - type: object
+          properties:
+            sequence:
+              $ref: './entities/Series.yaml#/components/schemas/sequence'

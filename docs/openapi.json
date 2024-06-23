@@ -28,6 +28,10 @@
     {
       "name": "Series",
       "description": "Series endpoints"
+    },
+    {
+      "name": "Notification",
+      "description": "Notifications endpoints"
     }
   ],
   "paths": {
@@ -426,9 +430,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/library"
+                  "type": "object",
+                  "properties": {
+                    "libraries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/library"
+                      }
+                    }
                   }
                 }
               }
@@ -1016,6 +1025,332 @@
           },
           "404": {
             "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "getNotifications",
+        "description": "Get all Apprise notification events and notification settings for server.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/NotificationEvent"
+                          }
+                        }
+                      }
+                    },
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateNotificationSettings",
+        "description": "Update Notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appriseApiUrl": {
+                    "$ref": "#/components/schemas/appriseApiUrl"
+                  },
+                  "maxFailedAttempts": {
+                    "$ref": "#/components/schemas/maxFailedAttempts"
+                  },
+                  "maxNotificationQueue": {
+                    "$ref": "#/components/schemas/maxNotificationQueue"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createNotification",
+        "description": "Update Notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "eventName",
+                  "urls",
+                  "titleTemplate",
+                  "bodyTemplate"
+                ],
+                "properties": {
+                  "libraryId": {
+                    "$ref": "#/components/schemas/libraryIdNullable"
+                  },
+                  "eventName": {
+                    "$ref": "#/components/schemas/notificationEventName"
+                  },
+                  "urls": {
+                    "$ref": "#/components/schemas/urls"
+                  },
+                  "titleTemplate": {
+                    "$ref": "#/components/schemas/titleTemplate"
+                  },
+                  "bodyTemplate": {
+                    "$ref": "#/components/schemas/bodyTemplate"
+                  },
+                  "enabled": {
+                    "$ref": "#/components/schemas/enabled"
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/notificationType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notificationdata": {
+      "get": {
+        "operationId": "getNotificationEventData",
+        "description": "Get all Apprise notification event data for the server.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NotificationEvent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/test": {
+      "get": {
+        "operationId": "sendDefaultTestNotification",
+        "description": "Send a test notification.",
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fail",
+            "description": "Whether to intentionally cause the notification to fail. `0` for false, `1` for true.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the notification.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/notificationId"
+          }
+        }
+      ],
+      "delete": {
+        "operationId": "deleteNotification",
+        "description": "Delete the notification by ID and return the notification settings.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateNotification",
+        "description": "Update individual Notification",
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "libraryId": {
+                    "$ref": "#/components/schemas/libraryId"
+                  },
+                  "eventName": {
+                    "$ref": "#/components/schemas/notificationEventName"
+                  },
+                  "urls": {
+                    "$ref": "#/components/schemas/urls"
+                  },
+                  "titleTemplate": {
+                    "$ref": "#/components/schemas/titleTemplate"
+                  },
+                  "bodyTemplate": {
+                    "$ref": "#/components/schemas/bodyTemplate"
+                  },
+                  "enabled": {
+                    "$ref": "#/components/schemas/enabled"
+                  },
+                  "type": {
+                    "$ref": "#/components/schemas/notificationType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "settings": {
+                      "$ref": "#/components/schemas/NotificationSettings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/test": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "The ID of the notification.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/notificationId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "sendTestNotification",
+        "description": "Send a test to the given notification.",
+        "tags": [
+          "Notification"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/notification200"
+          },
+          "404": {
+            "$ref": "#/components/responses/notification404"
           }
         }
       }
@@ -1860,7 +2195,12 @@
             "$ref": "#/components/schemas/libraryItemBase"
           },
           {
-            "$ref": "#/components/schemas/sequence"
+            "type": "object",
+            "properties": {
+              "sequence": {
+                "$ref": "#/components/schemas/sequence"
+              }
+            }
           }
         ]
       },
@@ -1974,6 +2314,208 @@
             }
           }
         ]
+      },
+      "NotificationEvent": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the notification event. The names and allowable values are defined at https://github.com/advplyr/audiobookshelf/blob/master/server/utils/notifications.js"
+          },
+          "requiresLibrary": {
+            "type": "boolean",
+            "description": "Whether the notification event depends on a library existing."
+          },
+          "libraryMediaType": {
+            "type": "string",
+            "description": "The type of media of the library the notification depends on existing. Will not exist if requiresLibrary is false.",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the notification event."
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The variables of the notification event that can be used in the notification templates."
+          },
+          "defaults": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The default title template for notifications using the notification event."
+              },
+              "body": {
+                "type": "string",
+                "description": "The default body template for notifications using the notification event."
+              }
+            }
+          },
+          "testData": {
+            "type": "object",
+            "description": "The keys of the testData object will match the list of variables. The values will be the data used when sending a test notification.",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "notificationId": {
+        "type": "string",
+        "description": "The ID of the notification.",
+        "example": "notification-settings"
+      },
+      "appriseApiUrl": {
+        "type": "string",
+        "nullable": true,
+        "description": "The full URL where the Apprise API to use is located."
+      },
+      "libraryIdNullable": {
+        "type": "string",
+        "description": "The ID of the library. Applies to all libraries if `null`.",
+        "format": "uuid",
+        "nullable": true,
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "notificationEventName": {
+        "type": "string",
+        "description": "The name of the event the notification will fire on.",
+        "enum": [
+          "onPodcastEpisodeDownloaded",
+          "onTest"
+        ]
+      },
+      "urls": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The Apprise URLs to use for the notification.",
+        "example": "http://192.168.0.3:8000/notify/my-cool-notification"
+      },
+      "titleTemplate": {
+        "type": "string",
+        "description": "The template for the notification title.",
+        "example": "New {{podcastTitle}} Episode!"
+      },
+      "bodyTemplate": {
+        "type": "string",
+        "description": "The template for the notification body.",
+        "example": "{{episodeTitle}} has been added to {{libraryName}} library."
+      },
+      "enabled": {
+        "type": "boolean",
+        "default": false,
+        "description": "Whether the notification is enabled."
+      },
+      "notificationType": {
+        "type": "string",
+        "enum": [
+          "info",
+          "success",
+          "warning",
+          "failure"
+        ],
+        "nullable": true,
+        "default": "info",
+        "description": "The notification's type."
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/notificationId"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryIdNullable"
+          },
+          "eventName": {
+            "$ref": "#/components/schemas/notificationEventName"
+          },
+          "urls": {
+            "$ref": "#/components/schemas/urls"
+          },
+          "titleTemplate": {
+            "$ref": "#/components/schemas/titleTemplate"
+          },
+          "bodyTemplate": {
+            "$ref": "#/components/schemas/bodyTemplate"
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/enabled"
+          },
+          "type": {
+            "$ref": "#/components/schemas/notificationType"
+          },
+          "lastFiredAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The time (in ms since POSIX epoch) when the notification was last fired. Will be null if the notification has not fired."
+          },
+          "lastAttemptFailed": {
+            "type": "boolean",
+            "description": "Whether the last notification attempt failed."
+          },
+          "numConsecutiveFailedAttempts": {
+            "type": "integer",
+            "description": "The number of consecutive times the notification has failed.",
+            "default": 0
+          },
+          "numTimesFired": {
+            "type": "integer",
+            "description": "The number of times the notification has fired.",
+            "default": 0
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/createdAt"
+          }
+        }
+      },
+      "maxFailedAttempts": {
+        "type": "integer",
+        "minimum": 0,
+        "default": 5,
+        "description": "The maximum number of times a notification fails before being disabled."
+      },
+      "maxNotificationQueue": {
+        "type": "integer",
+        "description": "The maximum number of notifications in the notification queue before events are ignored."
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/notificationId"
+          },
+          "appriseType": {
+            "type": "string",
+            "description": "The type of Apprise that will be used. At the moment, only api is available."
+          },
+          "appriseApiUrl": {
+            "$ref": "#/components/schemas/appriseApiUrl"
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            },
+            "description": "The set notifications."
+          },
+          "maxFailedAttempts": {
+            "$ref": "#/components/schemas/maxFailedAttempts"
+          },
+          "maxNotificationQueue": {
+            "$ref": "#/components/schemas/maxNotificationQueue"
+          },
+          "notificationDelay": {
+            "type": "integer",
+            "description": "The time (in ms) between notification pushes."
+          }
+        }
       }
     },
     "responses": {
@@ -2005,6 +2547,28 @@
             "schema": {
               "type": "string",
               "example": "Library not found."
+            }
+          }
+        }
+      },
+      "notification404": {
+        "description": "An admin user is required or notification with the given ID not found.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "Series not found."
+            }
+          }
+        }
+      },
+      "notification200": {
+        "description": "Notification endpoint success.",
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "example": "OK"
             }
           }
         }
