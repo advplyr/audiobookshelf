@@ -1,6 +1,6 @@
+const { Op } = require('sequelize')
 const Logger = require('../Logger')
 const Database = require('../Database')
-const { Op } = require('sequelize')
 
 const ShareManager = require('../managers/ShareManager')
 
@@ -34,6 +34,7 @@ class ShareController {
       if (!mediaItemShare.mediaItem) {
         return res.status(404).send('Media item not found')
       }
+
       res.json(mediaItemShare)
     } catch (error) {
       Logger.error(`[ShareController] Failed`, error)
