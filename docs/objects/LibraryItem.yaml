@@ -70,6 +70,6 @@ components:
       allOf:
         - $ref: '#/components/schemas/libraryItemBase'
         - type: object
-          properies:
-          sequence:
-            $ref: './entities/Series.yaml#/components/schemas/sequence'
+          properties:
+            sequence:
+              $ref: './entities/Series.yaml#/components/schemas/sequence'
