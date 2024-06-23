@@ -7,7 +7,7 @@
         </div>
 
         <!-- Narrator name & num books overlay -->
-        <div class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
+        <div class="absolute bottom-0 left-0 w-full py-1e bg-black bg-opacity-60 px-2e">
           <p cy-id="name" class="text-center font-semibold truncate text-gray-200" :style="{ fontSize: 0.75 + 'em' }">{{ name }}</p>
           <p cy-id="numBooks" class="text-center text-gray-200" :style="{ fontSize: 0.65 + 'em' }">{{ numBooks }} Book{{ numBooks === 1 ? '' : 's' }}</p>
         </div>

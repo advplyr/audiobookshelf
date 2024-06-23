@@ -39,7 +39,7 @@
         </div>
 
         <!-- No progress shown for podcasts (unless showing podcast episode) -->
-        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
+        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
 
         <!-- Overlay is not shown if collapsing series in library -->
         <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded md:block" :class="overlayWrapperClasslist">
@@ -85,9 +85,9 @@
         </div>
 
         <!-- Error widget -->
-        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
+        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
           <div :style="{ height: 1.5 + 'em', width: 2.5 + 'em' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-            <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
+            <span class="material-icons text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
           </div>
         </ui-tooltip>
 
@@ -120,7 +120,7 @@
     </div>
 
     <!-- Alternative bookshelf title/author/sort -->
-    <div cy-id="detailBottom" :id="`description-area-${index}`" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="relative mt-2 mb-2 left-0 z-50 w-full">
+    <div cy-id="detailBottom" :id="`description-area-${index}`" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="relative mt-2e mb-2e left-0 z-50 w-full">
       <div :style="{ fontSize: 0.9 + 'em' }">
         <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
           <p cy-id="title" ref="displayTitle" class="truncate">{{ displayTitle }}</p>

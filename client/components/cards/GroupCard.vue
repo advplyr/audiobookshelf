@@ -9,7 +9,7 @@
             <p :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
-          <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ bookItems.length }}</div>
+          <div class="absolute z-10 top-1.5e right-1.5e rounded-md leading-3e p-1e font-semibold text-white flex items-center justify-center" :style="{ fontSize: 0.8 + 'em' }" style="background-color: #cd9d49dd">{{ bookItems.length }}</div>
         </div>
       </nuxt-link>
     </div>

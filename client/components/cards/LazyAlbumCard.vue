@@ -8,12 +8,12 @@
     </div>
 
     <div class="relative w-full">
-      <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
+      <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
         <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em ${0.5}em` }">
           <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
         </div>
       </div>
-      <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
+      <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8e h-8e py-1e rounded-md text-center">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
         <p class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ artist || '&nbsp;' }}</p>
       </div>

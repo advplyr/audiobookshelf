@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <!-- Cover size widget -->
-    <widgets-cover-size-widget class="fixed right-4r z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
+    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
 
     <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
@@ -14,9 +14,9 @@
       <p class="text-center text-xl py-4">No results for query</p>
     </div>
     <!-- Alternate plain view -->
-    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
+    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24e">
       <template v-for="(shelf, index) in supportedShelves">
-        <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+        <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8e my-6e" @selectEntity="(payload) => selectEntity(payload, index)">
           <p class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
       </template>

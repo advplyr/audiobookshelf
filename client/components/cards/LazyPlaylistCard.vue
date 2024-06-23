@@ -7,17 +7,17 @@
       </div>
       <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
         <div class="absolute pointer-events-auto" :style="{ top: 0.5 + 'em', right: 0.5 + 'em' }" @click.stop.prevent="clickEdit">
-          <span class="material-icons text-xl text-white text-opacity-75 hover:text-opacity-100">edit</span>
+          <span class="material-icons text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
         </div>
       </div>
     </div>
 
-    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 -bottom-6 left-0 right-0 mx-auto h-6 rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
+    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 -bottom-6e left-0 right-0 mx-auto h-6e rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em ${0.5}em` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
       </div>
     </div>
-    <div v-else class="relative z-30 left-0 right-0 mx-auto h-8 py-1 rounded-md text-center">
+    <div v-else class="relative z-30 left-0 right-0 mx-auto h-8e py-1e rounded-md text-center">
       <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
     </div>
   </div>

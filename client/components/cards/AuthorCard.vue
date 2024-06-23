@@ -1,5 +1,5 @@
 <template>
-  <div :style="{ width: cardWidth + 'px' }">
+  <div :style="{ minWidth: cardWidth + 'px', maxWidth: cardWidth + 'px' }">
     <nuxt-link :to="`/author/${author.id}`">
       <div cy-id="card" @mouseover="mouseover" @mouseleave="mouseleave">
         <div cy-id="imageArea" :style="{ height: cardHeight + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
@@ -7,20 +7,20 @@
           <covers-author-image :author="author" />
 
           <!-- Author name & num books overlay -->
-          <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
+          <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1e bg-black bg-opacity-60 px-2e">
             <p class="text-center font-semibold truncate" :style="{ fontSize: 0.75 + 'em' }">{{ name }}</p>
             <p class="text-center text-gray-200" :style="{ fontSize: 0.65 + 'em' }">{{ numBooks }} {{ $strings.LabelBooks }}</p>
           </div>
 
           <!-- Search icon btn -->
-          <div cy-id="match" v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="searchAuthor">
+          <div cy-id="match" v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2e cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="searchAuthor">
             <ui-tooltip :text="$strings.ButtonQuickMatch" direction="bottom">
-              <span class="material-icons text-lg">search</span>
+              <span class="material-icons" :style="{ fontSize: 1.125 + 'em' }">search</span>
             </ui-tooltip>
           </div>
-          <div cy-id="edit" v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="$emit('edit', author)">
+          <div cy-id="edit" v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2e cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="$emit('edit', author)">
             <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
-              <span class="material-icons text-lg">edit</span>
+              <span class="material-icons" :style="{ fontSize: 1.125 + 'em' }">edit</span>
             </ui-tooltip>
           </div>
 
@@ -29,7 +29,7 @@
             <widgets-loading-spinner size="" />
           </div>
         </div>
-        <div cy-id="nameBelow" v-show="nameBelow" class="w-full py-1 px-2">
+        <div cy-id="nameBelow" v-show="nameBelow" class="w-full py-1e px-2e">
           <p class="text-center font-semibold truncate text-gray-200" :style="{ fontSize: 0.75 + 'em' }">{{ name }}</p>
         </div>
       </div>

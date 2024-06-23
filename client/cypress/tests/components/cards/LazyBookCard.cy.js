@@ -44,6 +44,7 @@ function createMountOptions() {
         'user/getUserCanDownload': true,
         'user/getIsAdminOrUp': true,
         'user/getUserMediaProgress': (id) => null,
+        'user/getUserSetting': (settingName) => false,
         'user/getSizeMultiplier': 1,
         'libraries/getLibraryProvider': () => 'audible.us',
         'libraries/getBookCoverAspectRatio': 1,

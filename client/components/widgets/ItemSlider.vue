@@ -1,17 +1,17 @@
 <template>
   <div class="w-full">
-    <div class="flex items-center py-3">
+    <div class="flex items-center py-3e">
       <slot />
       <div class="flex-grow" />
-      <button cy-id="leftScrollButton" v-if="isScrollable" class="w-8 h-8 mx-1 flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
-        <span class="material-icons text-2xl">chevron_left</span>
+      <button cy-id="leftScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
+        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
       </button>
-      <button cy-id="rightScrollButton" v-if="isScrollable" class="w-8 h-8 mx-1 flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
-        <span class="material-icons text-2xl">chevron_right</span>
+      <button cy-id="rightScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
+        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
       </button>
     </div>
     <div cy-id="slider" ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll" style="scroll-behavior: smooth" @scroll="scrolled">
-      <div class="flex space-x-4">
+      <div class="flex space-x-4e">
         <template v-for="(item, index) in items">
           <div cy-id="item" ref="item" :key="itemKeyFunc(item)">
             <component :is="componentName" :ref="itemRefFunc(item)" :index="index" :[itemPropName]="item" :bookshelf-view="bookshelfView" :continue-listening-shelf="continueListeningShelf" class="relative" @edit="editFunc" @editPodcast="editItem" @select="selectItem" @hook:updated="setScrollVars" />

@@ -1,10 +1,12 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="authors" is-home :authors="authors" />
-    <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
+    <div id="bookshelf" class="w-full h-full p-8e overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
+      <!-- Cover size widget -->
+      <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
       <div class="flex flex-wrap justify-center">
         <template v-for="author in authorsSorted">
-          <cards-author-card :key="author.id" :author="author" class="p-3" @edit="editAuthor" />
+          <cards-author-card :key="author.id" :author="author" class="p-3e" @edit="editAuthor" />
         </template>
       </div>
     </div>
@@ -36,6 +38,9 @@ export default {
     }
   },
   computed: {
+    sizeMultiplier() {
+      return this.$store.getters['user/getSizeMultiplier']
+    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },

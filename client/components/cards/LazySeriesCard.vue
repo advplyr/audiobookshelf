@@ -10,7 +10,7 @@
         <p :style="{ fontSize: 0.8 + 'em' }">{{ books.length }}</p>
       </div>
 
-      <div cy-id="seriesProgressBar" v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
+      <div cy-id="seriesProgressBar" v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
 
       <div cy-id="hoveringDisplayTitle" v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: '1em' }">
         <p :style="{ fontSize: 1.2 + 'em' }">{{ displayTitle }}</p>
@@ -19,12 +19,12 @@
       <span cy-id="rssFeedMarker" v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 + 'em', left: 0.5 + 'em', fontSize: 1.5 + 'em' }">rss_feed</span>
     </div>
 
-    <div cy-id="standardBottomText" v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
+    <div cy-id="standardBottomText" v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em 0.5em` }">
         <p cy-id="standardBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
       </div>
     </div>
-    <div cy-id="detailBottomText" v-else class="relative z-30 left-0 right-0 mx-auto py-1 rounded-md text-center">
+    <div cy-id="detailBottomText" v-else class="relative z-30 left-0 right-0 mx-auto py-1e rounded-md text-center">
       <p cy-id="detailBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
       <p cy-id="detailBottomSortLine" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>

@@ -1,8 +1,8 @@
 <template>
   <div id="bookshelf" ref="bookshelf" class="w-full overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6" />
+      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4e sm:px-8e relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6e" />
       </div>
     </template>
 
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <widgets-cover-size-widget class="fixed right-4r z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
+    <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
   </div>
 </template>
 
