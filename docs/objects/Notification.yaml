@@ -53,7 +53,7 @@ components:
         id:
           $ref: '#/components/schemas/notificationId'
         libraryId:
-          $ref: './Library.yaml#/components/schemas/libraryId'
+          $ref: './Library.yaml#/components/schemas/libraryIdNullable'
         eventName:
           $ref: '#/components/schemas/notificationEventName'
         urls:

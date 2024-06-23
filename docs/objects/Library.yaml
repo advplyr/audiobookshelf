@@ -10,6 +10,12 @@ components:
       description: The ID of the library.
       format: uuid
       example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+    libraryIdNullable:
+      type: string
+      description: The ID of the library. Applies to all libraries if `null`.
+      format: uuid
+      nullable: true
+      example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
     libraryName:
       description: The name of the library.
       type: string
