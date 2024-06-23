@@ -35,11 +35,8 @@ const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
-<<<<<<< Updated upstream
 const ShareManager = require('./managers/ShareManager')
-=======
 const DLNAManager = require('./managers/DLNAManager')
->>>>>>> Stashed changes
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
