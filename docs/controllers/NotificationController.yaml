@@ -167,8 +167,8 @@ paths:
         '404':
           $ref: '#/components/responses/notification404'
     patch:
-      operationId: createNotification
-      description: Update Notification settings.
+      operationId: updateNotification
+      description: Update individual Notification
       tags:
         - Notification
       requestBody:
@@ -191,8 +191,6 @@ paths:
                   $ref: '../objects/Notification.yaml#/components/schemas/enabled'
                 type:
                   $ref: '../objects/Notification.yaml#/components/schemas/notificationType'
-              required:
-                - id
       responses:
         '200':
           description: Success
