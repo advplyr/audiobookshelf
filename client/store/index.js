@@ -32,33 +32,33 @@ export const state = () => ({
 })
 
 export const getters = {
-  getServerSetting: state => key => {
+  getServerSetting: (state) => (key) => {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
-  getLibraryItemIdStreaming: state => {
+  getLibraryItemIdStreaming: (state) => {
     return state.streamLibraryItem?.id || null
   },
   getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
     if (!state.streamLibraryItem) return false
     return state.streamLibraryItem.libraryId !== rootState.libraries.currentLibraryId
   },
-  getIsMediaStreaming: state => (libraryItemId, episodeId) => {
+  getIsMediaStreaming: (state) => (libraryItemId, episodeId) => {
     if (!state.streamLibraryItem) return null
     if (!episodeId) return state.streamLibraryItem.id == libraryItemId
     return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
   },
-  getIsMediaQueued: state => (libraryItemId, episodeId) => {
-    return state.playerQueueItems.some(i => {
+  getIsMediaQueued: (state) => (libraryItemId, episodeId) => {
+    return state.playerQueueItems.some((i) => {
       if (!episodeId) return i.libraryItemId === libraryItemId
       return i.libraryItemId === libraryItemId && i.episodeId === episodeId
     })
   },
-  getBookshelfView: state => {
+  getBookshelfView: (state) => {
     if (!state.serverSettings || isNaN(state.serverSettings.bookshelfView)) return Constants.BookshelfView.STANDARD
     return state.serverSettings.bookshelfView
   },
-  getHomeBookshelfView: state => {
+  getHomeBookshelfView: (state) => {
     if (!state.serverSettings || isNaN(state.serverSettings.homeBookshelfView)) return Constants.BookshelfView.STANDARD
     return state.serverSettings.homeBookshelfView
   }
@@ -69,17 +69,20 @@ export const actions = {
     const updatePayload = {
       ...payload
     }
-    return this.$axios.$patch('/api/settings', updatePayload).then((result) => {
-      if (result.success) {
-        commit('setServerSettings', result.serverSettings)
-        return true
-      } else {
+    return this.$axios
+      .$patch('/api/settings', updatePayload)
+      .then((result) => {
+        if (result.success) {
+          commit('setServerSettings', result.serverSettings)
+          return true
+        } else {
+          return false
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to update server settings', error)
         return false
-      }
-    }).catch((error) => {
-      console.error('Failed to update server settings', error)
-      return false
-    })
+      })
   },
   checkForUpdate({ commit }) {
     const VERSION_CHECK_BUFF = 1000 * 60 * 5 // 5 minutes
@@ -180,7 +183,7 @@ export const mutations = {
     })
   },
   addItemToQueue(state, item) {
-    const exists = state.playerQueueItems.some(i => {
+    const exists = state.playerQueueItems.some((i) => {
       if (!i.episodeId) return i.libraryItemId === item.libraryItemId
       return i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId
     })
@@ -235,5 +238,6 @@ export const mutations = {
   },
   setInnerModalOpen(state, val) {
     state.innerModalOpen = val
-  }
+  },
+
 }

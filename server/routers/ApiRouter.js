@@ -30,8 +30,12 @@ const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
+<<<<<<< Updated upstream
 const ShareController = require('../controllers/ShareController')
 
+=======
+const DLNAController = require('../controllers/DLNAController')
+>>>>>>> Stashed changes
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
@@ -52,6 +56,7 @@ class ApiRouter {
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
+    this.DLNAManager = Server.DLNAManager
 
     this.router = express()
     this.router.disable('x-powered-by')
@@ -311,12 +316,15 @@ class ApiRouter {
     this.router.post('/custom-metadata-providers', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.create.bind(this))
     this.router.delete('/custom-metadata-providers/:id', CustomMetadataProviderController.middleware.bind(this), CustomMetadataProviderController.delete.bind(this))
 
+<<<<<<< Updated upstream
     //
     // Share routes
     //
     this.router.post('/share/mediaitem', ShareController.createMediaItemShare.bind(this))
     this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
 
+=======
+>>>>>>> Stashed changes
     //
     // Misc Routes
     //
@@ -337,6 +345,12 @@ class ApiRouter {
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
     this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
     this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
+
+    //
+    //DLNA Routes
+    //
+
+    this.router.get('/dlna/devices', DLNAController.middleware.bind(this), DLNAController.get_Devices.bind(this))
   }
 
   //

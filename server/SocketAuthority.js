@@ -18,27 +18,29 @@ class SocketAuthority {
    */
   getUsersOnline() {
     const onlineUsersMap = {}
-    Object.values(this.clients).filter(c => c.user).forEach(client => {
-      if (onlineUsersMap[client.user.id]) {
-        onlineUsersMap[client.user.id].connections++
-      } else {
-        onlineUsersMap[client.user.id] = {
-          ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions),
-          connections: 1
+    Object.values(this.clients)
+      .filter((c) => c.user)
+      .forEach((client) => {
+        if (onlineUsersMap[client.user.id]) {
+          onlineUsersMap[client.user.id].connections++
+        } else {
+          onlineUsersMap[client.user.id] = {
+            ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions),
+            connections: 1
+          }
         }
-      }
-    })
+      })
     return Object.values(onlineUsersMap)
   }
 
   getClientsForUser(userId) {
-    return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
+    return Object.values(this.clients).filter((c) => c.user && c.user.id === userId)
   }
 
   /**
    * Emits event to all authorized clients
-   * @param {string} evt 
-   * @param {any} data 
+   * @param {string} evt
+   * @param {any} data
    * @param {Function} [filter] optional filter function to only send event to specific users
    */
   emitter(evt, data, filter = null) {
@@ -75,16 +77,14 @@ class SocketAuthority {
 
   /**
    * Closes the Socket.IO server and disconnect all clients
-   * 
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   close(callback) {
     Logger.info('[SocketAuthority] Shutting down')
     // This will close all open socket connections, and also close the underlying http server
-    if (this.io)
-      this.io.close(callback)
-    else
-      callback()
+    if (this.io) this.io.close(callback)
+    else callback()
   }
 
   initialize(Server) {
@@ -93,7 +93,7 @@ class SocketAuthority {
     this.io = new SocketIO.Server(this.Server.server, {
       cors: {
         origin: '*',
-        methods: ["GET", "POST"]
+        methods: ['GET', 'POST']
       }
     })
 
@@ -113,6 +113,9 @@ class SocketAuthority {
       // Scanning
       socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
 
+      //DLNA
+
+      socket.on('dlna_start', (data) => this.Server.DLNAManager.start_playback(socket.id, data))
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
@@ -162,8 +165,8 @@ class SocketAuthority {
   /**
    * When setting up a socket connection the user needs to be associated with a socket id
    * for this the client will send a 'auth' event that includes the users API token
-   * 
-   * @param {SocketIO.Socket} socket 
+   *
+   * @param {SocketIO.Socket} socket
    * @param {string} token JWT
    */
   async authenticateSocket(socket, token) {

@@ -3,6 +3,7 @@ import LocalVideoPlayer from './LocalVideoPlayer'
 import CastPlayer from './CastPlayer'
 import AudioTrack from './AudioTrack'
 import VideoTrack from './VideoTrack'
+import DLNAPlayer from './DLNAPlayer'
 
 export default class PlayerHandler {
   constructor(ctx) {
@@ -32,14 +33,17 @@ export default class PlayerHandler {
   get isCasting() {
     return this.ctx.$store.state.globals.isCasting
   }
+  get get_Dlna() {
+    return this.ctx.$store.state.globals.dlnaDevice
+  }
   get libraryItemId() {
     return this.libraryItem ? this.libraryItem.id : null
   }
   get isPlayingCastedItem() {
-    return this.libraryItem && (this.player instanceof CastPlayer)
+    return this.libraryItem && this.player instanceof CastPlayer
   }
   get isPlayingLocalItem() {
-    return this.libraryItem && (this.player instanceof LocalAudioPlayer)
+    return this.libraryItem && this.player instanceof LocalAudioPlayer
   }
   get userToken() {
     return this.ctx.$store.getters['user/getToken']
@@ -49,7 +53,7 @@ export default class PlayerHandler {
   }
   get episode() {
     if (!this.episodeId) return null
-    return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
+    return this.libraryItem.media.episodes.find((ep) => ep.id === this.episodeId)
   }
 
   setSessionId(sessionId) {
@@ -66,7 +70,7 @@ export default class PlayerHandler {
     this.playWhenReady = playWhenReady
     this.initialPlaybackRate = this.isMusic ? 1 : playbackRate
 
-    this.startTimeOverride = (startTimeOverride == null || isNaN(startTimeOverride)) ? undefined : Number(startTimeOverride)
+    this.startTimeOverride = startTimeOverride == null || isNaN(startTimeOverride) ? undefined : Number(startTimeOverride)
 
     if (!this.player) this.switchPlayer(playWhenReady)
     else this.prepare()
@@ -84,6 +88,22 @@ export default class PlayerHandler {
         this.player.destroy()
       }
       this.player = new CastPlayer(this.ctx)
+      this.setPlayerListeners()
+
+      if (this.libraryItem) {
+        // libraryItem was already loaded - prepare for cast
+        this.playWhenReady = playWhenReady
+        this.prepare()
+      }
+    } else if (this.get_Dlna) {
+      console.log('[PlayerHandler] Switching to DLNA player')
+      this.stopPlayInterval()
+      this.playerStateChange('LOADING')
+      this.startTime = this.player ? this.player.getCurrentTime() : this.startTime
+      if (this.player) {
+        this.player.destroy()
+      }
+      this.player = new DLNAPlayer(this.ctx)
       this.setPlayerListeners()
 
       if (this.libraryItem) {
@@ -127,7 +147,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && (this.player instanceof LocalAudioPlayer)) {
+    if (!this.isCasting && this.player instanceof LocalAudioPlayer) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -199,15 +219,17 @@ export default class PlayerHandler {
       forceTranscode,
       forceDirectPlay: this.isCasting || this.isVideo // TODO: add transcode support for chromecast
     }
-
+    console.log('Payload:', payload)
     const path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
     const session = await this.ctx.$axios.$post(path, payload).catch((error) => {
       console.error('Failed to start stream', error)
     })
+    console.log(session)
     this.prepareSession(session)
   }
 
-  prepareOpenSession(session, playbackRate) { // Session opened on init socket
+  prepareOpenSession(session, playbackRate) {
+    // Session opened on init socket
     if (!this.player) this.switchPlayer() // Must set player first for open sessions
 
     this.libraryItem = session.libraryItem
@@ -241,14 +263,14 @@ export default class PlayerHandler {
 
       this.player.set(this.libraryItem, videoTrack, this.isHlsTranscode, this.startTime, this.playWhenReady)
     } else {
-      var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
+      var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, this.userToken))
 
       this.ctx.playerLoading = true
       this.isHlsTranscode = true
       if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
         this.isHlsTranscode = false
       }
-
+      console.log('blub', audioTracks)
       this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
     }
 
@@ -295,7 +317,7 @@ export default class PlayerHandler {
       const currentTime = this.player.getCurrentTime()
       this.ctx.setCurrentTime(currentTime)
 
-      const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
+      const exactTimeElapsed = (Date.now() - lastTick) / 1000
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
       const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 10 : 20
@@ -340,17 +362,20 @@ export default class PlayerHandler {
     }
 
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000 }).then(() => {
-      this.failedProgressSyncs = 0
-    }).catch((error) => {
-      console.error('Failed to update session progress', error)
-      // After 4 failed sync attempts show an alert toast
-      this.failedProgressSyncs++
-      if (this.failedProgressSyncs >= 4) {
-        this.ctx.showFailedProgressSyncs()
+    this.ctx.$axios
+      .$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000 })
+      .then(() => {
         this.failedProgressSyncs = 0
-      }
-    })
+      })
+      .catch((error) => {
+        console.error('Failed to update session progress', error)
+        // After 4 failed sync attempts show an alert toast
+        this.failedProgressSyncs++
+        if (this.failedProgressSyncs >= 4) {
+          this.ctx.showFailedProgressSyncs()
+          this.failedProgressSyncs = 0
+        }
+      })
   }
 
   stopPlayInterval() {

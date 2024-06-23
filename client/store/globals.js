@@ -24,6 +24,8 @@ export const state = () => ({
   selectedRawCoverUrl: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
+  dlnaDevice: '',
+  dlnaDevices: [],
   showBatchQuickMatchModal: false,
   dateFormats: [
     {
@@ -118,6 +120,12 @@ export const getters = {
     },
   getIsBatchSelectingMediaItems: (state) => {
     return state.selectedMediaItems.length
+  },
+  getDLNAdevice: (state) => {
+    return state.dlnaDevice
+  },
+  getDLNAdevices: (state) => {
+    return state.dlnaDevices
   }
 }
 
@@ -221,5 +229,17 @@ export const mutations = {
     } else if (selected && !isAlreadySelected) {
       state.selectedMediaItems.push(item)
     }
+  },
+  setDlnaDevices(state, val){
+    state.dlnaDevices = val
+    for (var device in devices){
+      if (device.host == state.dlnaDevice){
+        return
+      }
+    }
+    state.dlnaDevice = ''
+  },
+  setDlnaDevice(state, val){
+    state.dlnaDevice = val
   }
 }

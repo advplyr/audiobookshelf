@@ -52,7 +52,8 @@
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
     "ssrf-req-filter": "^1.1.0",
-    "xml2js": "^0.5.0"
+    "xml2js": "^0.5.0",
+    "dlnacasts": "^0.1.0"
   },
   "devDependencies": {
     "chai": "^4.3.10",
@@ -60,5 +61,12 @@
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1"
+  },
+  "overrides": {
+    "dlnacasts": {
+      "upnp-mediarenderer-client":{
+        "typescript": "git+https://github.com/kontiko/node-upnp-device-client-sonos-support.git"
+      }
+    }
   }
 }

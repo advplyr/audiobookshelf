@@ -21,7 +21,7 @@
         <div v-if="isChromecastInitialized" class="w-6 min-w-6 h-6 ml-2 mr-1 sm:mx-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
         </div>
-
+        <ui-dlna-dropdown class="mr-2" />
         <widgets-notification-widget class="hidden md:block" />
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
@@ -155,6 +155,7 @@ export default {
     isChromecastInitialized() {
       return this.$store.state.globals.isChromecastInitialized
     },
+
     isHttps() {
       return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
     },

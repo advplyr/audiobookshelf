@@ -113,7 +113,6 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
     this.startTime = startTime
-
     if (this.hlsInstance) {
       this.destroyHlsInstance()
     }
@@ -147,7 +146,7 @@ export default class LocalAudioPlayer extends EventEmitter {
           timeoutRetry: {
             maxNumRetry: 4,
             retryDelayMs: 0,
-            maxRetryDelayMs: 0,
+            maxRetryDelayMs: 0
           },
           errorRetry: {
             maxNumRetry: 8,
@@ -160,7 +159,7 @@ export default class LocalAudioPlayer extends EventEmitter {
               }
               return retry
             }
-          },
+          }
         }
       }
     }
@@ -194,7 +193,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   setDirectPlay() {
     // Set initial track and track time offset
-    var trackIndex = this.audioTracks.findIndex(t => this.startTime >= t.startOffset && this.startTime < (t.startOffset + t.duration))
+    var trackIndex = this.audioTracks.findIndex((t) => this.startTime >= t.startOffset && this.startTime < t.startOffset + t.duration)
     this.currentTrackIndex = trackIndex >= 0 ? trackIndex : 0
 
     this.loadCurrentTrack()
@@ -270,7 +269,7 @@ export default class LocalAudioPlayer extends EventEmitter {
       // Seeking Direct play
       if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
         // Change Track
-        var trackIndex = this.audioTracks.findIndex(t => time >= t.startOffset && time < (t.startOffset + t.duration))
+        var trackIndex = this.audioTracks.findIndex((t) => time >= t.startOffset && time < t.startOffset + t.duration)
         if (trackIndex >= 0) {
           this.startTime = time
           this.currentTrackIndex = trackIndex
@@ -292,7 +291,6 @@ export default class LocalAudioPlayer extends EventEmitter {
     if (!this.player) return
     this.player.volume = volume
   }
-
 
   // Utils
   isValidDuration(duration) {
