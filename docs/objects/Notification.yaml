@@ -3,8 +3,10 @@ components:
     notificationId:
       type: string
       description: The ID of the notification.
-      format: uuid
-      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+      example: notification-settings
+      # This is using a value of `notification-settings`, not a UUID. Need to investigate
+      #format: uuid
+      #example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
     appriseApiUrl:
       type: string
       nullable: true
