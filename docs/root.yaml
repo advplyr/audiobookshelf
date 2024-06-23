@@ -35,6 +35,16 @@ paths:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series'
   /api/libraries/{id}/series/{seriesId}:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series~1{seriesId}'
+  /api/notifications:
+    $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications'
+  /api/notificationdata:
+    $ref: './controllers/NotificationController.yaml#/paths/~1api~1notificationdata'
+  /api/notifications/test:
+    $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications~1test'
+  /api/notifications/{id}:
+    $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications~1{id}'
+  /api/notifications/{id}/test:
+    $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications~1{id}~1test'
   /api/series/{id}:
     $ref: './controllers/SeriesController.yaml#/paths/~1api~1series~1{id}'
 tags:
@@ -44,3 +54,5 @@ tags:
     description: Library endpoints
   - name: Series
     description: Series endpoints
+  - name: Notification
+    description: Notifications endpoints

@@ -111,9 +111,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '../objects/Library.yaml#/components/schemas/library'
+                type: object
+                properties:
+                  libraries:
+                    type: array
+                    items:
+                      $ref: '../objects/Library.yaml#/components/schemas/library'
     post:
       operationId: createLibrary
       summary: Create a new library on server
