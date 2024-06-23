@@ -15,7 +15,7 @@
           <th class="text-left w-16"><span class="px-4">Id</span></th>
           <th class="text-left">{{ $strings.LabelTitle }}</th>
           <th class="text-center">{{ $strings.LabelStart }}</th>
-          <th class="text-center">{{ $strings.LabelEnd }}</th>
+          <th class="text-center">{{ $strings.LabelDuration }}</th>
         </tr>
         <tr v-for="chapter in chapters" :key="chapter.id">
           <td class="text-left">
@@ -27,8 +27,8 @@
           <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
             {{ $secondsToTimestamp(chapter.start) }}
           </td>
-          <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
-            {{ $secondsToTimestamp(chapter.end) }}
+          <td class="font-mono text-center">
+            {{ $secondsToTimestamp(Math.max(0, chapter.end - chapter.start)) }}
           </td>
         </tr>
       </table>

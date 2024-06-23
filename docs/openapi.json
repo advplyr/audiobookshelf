@@ -54,24 +54,18 @@
         "tags": [
           "Authors"
         ],
-        "requestBody": {
-          "required": false,
-          "description": "The author object to create.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "properties": {
-                  "include": {
-                    "$ref": "#/components/schemas/authorInclude"
-                  },
-                  "library": {
-                    "$ref": "#/components/schemas/libraryId"
-                  }
-                }
-              }
-            }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include",
+            "description": "A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.",
+            "allowReserved": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "items,series"
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "getAuthorById OK",
@@ -179,12 +173,29 @@
           "schema": {
             "$ref": "#/components/schemas/authorId"
           }
+        },
+        {
+          "name": "token",
+          "in": "query",
+          "description": "API token",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "ts",
+          "in": "query",
+          "description": "Updated at value",
+          "schema": {
+            "type": "integer"
+          }
         }
       ],
       "get": {
         "operationId": "getAuthorImageById",
         "summary": "Get an author image by author ID",
         "description": "Get an author image by author ID. The image will be returned in the requested format and size.",
+        "security": [],
         "tags": [
           "Authors"
         ],
@@ -502,6 +513,18 @@
         "tags": [
           "Libraries"
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/library200"
@@ -641,43 +664,58 @@
         "tags": [
           "Libraries"
         ],
-        "requestBody": {
-          "required": false,
-          "description": "The filters to apply to the requested library items.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "limit": {
-                    "$ref": "#/components/schemas/limit"
-                  },
-                  "page": {
-                    "$ref": "#/components/schemas/page"
-                  },
-                  "sort": {
-                    "$ref": "#/components/schemas/librarySort"
-                  },
-                  "desc": {
-                    "$ref": "#/components/schemas/sortDesc"
-                  },
-                  "filter": {
-                    "$ref": "#/components/schemas/libraryFilter"
-                  },
-                  "minified": {
-                    "$ref": "#/components/schemas/minified"
-                  },
-                  "collapseSeries": {
-                    "$ref": "#/components/schemas/libraryCollapseSeries"
-                  },
-                  "include": {
-                    "$ref": "#/components/schemas/libraryInclude"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "The field to sort by from the request.",
+            "example": "numBooks",
+            "schema": {
+              "type": "string",
+              "default": "name"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/desc"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The filter for the library.",
+            "example": "media.metadata.title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "The fields to include in the response. The only current option is `rssfeed`.",
+            "allowReserved": true,
+            "example": "rssfeed",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
+          },
+          {
+            "in": "query",
+            "name": "collapseSeries",
+            "description": "Whether to collapse series into a single cover",
+            "schema": {
+              "type": "integer",
+              "default": 0
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "getLibraryItems OK",
@@ -791,24 +829,10 @@
         ],
         "parameters": [
           {
-            "in": "query",
-            "name": "limit",
-            "description": "The number of series to return. If 0, all series are returned.",
-            "example": 10,
-            "schema": {
-              "type": "integer",
-              "default": 0
-            }
+            "$ref": "#/components/parameters/limit"
           },
           {
-            "in": "query",
-            "name": "page",
-            "description": "The page number (zero indexed) to return. If no limit is specified, then page will have no effect.",
-            "example": 0,
-            "schema": {
-              "type": "integer",
-              "default": 0
-            }
+            "$ref": "#/components/parameters/page"
           },
           {
             "in": "query",
@@ -829,14 +853,7 @@
             }
           },
           {
-            "in": "query",
-            "name": "desc",
-            "description": "Return items in reversed order if true.",
-            "example": true,
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
+            "$ref": "#/components/parameters/desc"
           },
           {
             "in": "query",
@@ -851,10 +868,14 @@
             "in": "query",
             "name": "include",
             "description": "The fields to include in the response. The only current option is `rssfeed`.",
+            "allowReserved": true,
             "example": "rssfeed",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
           }
         ],
         "responses": {
@@ -935,51 +956,57 @@
         "tags": [
           "Libraries"
         ],
-        "requestBody": {
-          "required": false,
-          "description": "The filters to apply to the requested library series.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "limit": {
-                    "$ref": "#/components/schemas/limit"
-                  },
-                  "page": {
-                    "$ref": "#/components/schemas/page"
-                  },
-                  "sort": {
-                    "description": "The field to sort by from the request.",
-                    "type": "string",
-                    "enum": [
-                      "name",
-                      "numBooks",
-                      "totalDuration",
-                      "addedAt",
-                      "lastBookAdded",
-                      "lastBookUpdated"
-                    ],
-                    "example": "numBooks",
-                    "default": "name"
-                  },
-                  "desc": {
-                    "$ref": "#/components/schemas/sortDesc"
-                  },
-                  "filter": {
-                    "$ref": "#/components/schemas/libraryFilter"
-                  },
-                  "minified": {
-                    "$ref": "#/components/schemas/minified"
-                  },
-                  "include": {
-                    "$ref": "#/components/schemas/libraryInclude"
-                  }
-                }
-              }
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/page"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "The field to sort by from the request.",
+            "example": "numBooks",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "numBooks",
+                "totalDuration",
+                "addedAt",
+                "lastBookAdded",
+                "lastBookUpdated"
+              ],
+              "default": "name"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/desc"
+          },
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "The filter for the library.",
+            "example": "media.metadata.title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/minified"
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "The fields to include in the response. The only current option is `rssfeed`.",
+            "allowReserved": true,
+            "example": "rssfeed",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "getLibrarySeriesById OK",
@@ -1446,17 +1473,6 @@
         "format": "uuid",
         "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
-      "authorInclude": {
-        "description": "A comma separated list of what to include with the author. The options are `items` and `series`. `series` will only have an effect if `items` is included. For example, the value `items,series` will include both library items and series.",
-        "type": "string",
-        "example": "items"
-      },
-      "libraryId": {
-        "type": "string",
-        "description": "The ID of the library.",
-        "format": "uuid",
-        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
-      },
       "authorAsin": {
         "description": "The Audible identifier (ASIN) of the author. Will be null if unknown. Not the Amazon identifier.",
         "type": "string",
@@ -1508,6 +1524,12 @@
         "type": "string",
         "format": "[0-9]*",
         "example": "649644248522215260"
+      },
+      "libraryId": {
+        "type": "string",
+        "description": "The ID of the library.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
       },
       "folderId": {
         "type": "string",
@@ -2113,6 +2135,11 @@
           }
         ]
       },
+      "total": {
+        "description": "The total number of items in the response.",
+        "type": "integer",
+        "example": 100
+      },
       "limit": {
         "description": "The number of items to return. If 0, no items are returned.",
         "type": "integer",
@@ -2125,20 +2152,19 @@
         "example": 1,
         "default": 0
       },
-      "librarySort": {
-        "description": "The sort order of the library. For example, to sort by title use 'sort=media.metadata.title'.",
+      "sortBy": {
         "type": "string",
+        "description": "The field to sort by from the request.",
         "example": "media.metadata.title"
       },
       "sortDesc": {
-        "description": "Return items in reversed order if true.",
+        "description": "Whether to sort in descending order.",
         "type": "boolean",
-        "example": true,
-        "default": false
+        "example": true
       },
-      "libraryFilter": {
-        "description": "The filter for the library.",
+      "filterBy": {
         "type": "string",
+        "description": "The field to filter by from the request. TODO",
         "example": "media.metadata.title"
       },
       "minified": {
@@ -2147,36 +2173,15 @@
         "example": true,
         "default": false
       },
-      "libraryCollapseSeries": {
-        "description": "Whether to collapse series.",
+      "collapseSeries": {
         "type": "boolean",
-        "example": true,
-        "default": false
+        "description": "Whether collapse series was set in the request.",
+        "example": true
       },
       "libraryInclude": {
         "description": "The fields to include in the response. The only current option is `rssfeed`.",
         "type": "string",
         "example": "rssfeed"
-      },
-      "total": {
-        "description": "The total number of items in the response.",
-        "type": "integer",
-        "example": 100
-      },
-      "sortBy": {
-        "type": "string",
-        "description": "The field to sort by from the request.",
-        "example": "media.metadata.title"
-      },
-      "filterBy": {
-        "type": "string",
-        "description": "The field to filter by from the request. TODO",
-        "example": "media.metadata.title"
-      },
-      "collapseSeries": {
-        "type": "boolean",
-        "description": "Whether collapse series was set in the request.",
-        "example": true
       },
       "sequence": {
         "description": "The position in the series the book is.",
@@ -2566,6 +2571,48 @@
               "example": "Series not found."
             }
           }
+        }
+      }
+    },
+    "parameters": {
+      "minified": {
+        "in": "query",
+        "name": "minified",
+        "description": "Return minified items if true",
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "example": 1
+        }
+      },
+      "limit": {
+        "in": "query",
+        "name": "limit",
+        "description": "The number of items to return. This the size of a single page for the optional `page` query.",
+        "example": 10,
+        "schema": {
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "page": {
+        "in": "query",
+        "name": "page",
+        "description": "The page number (zero indexed) to return. If no limit is specified, then page will have no effect.",
+        "example": 0,
+        "schema": {
+          "type": "integer",
+          "default": 0
+        }
+      },
+      "desc": {
+        "in": "query",
+        "name": "desc",
+        "description": "Return items in reversed order if true.",
+        "example": 0,
+        "schema": {
+          "type": "integer",
+          "default": 0
         }
       }
     }

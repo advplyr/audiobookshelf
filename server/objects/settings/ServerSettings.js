@@ -1,3 +1,4 @@
+const Path = require('path')
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
@@ -25,6 +26,7 @@ class ServerSettings {
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     // Backups
+    this.backupPath = Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
     this.maxBackupSize = 1
@@ -97,6 +99,7 @@ class ServerSettings {
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
 
+    this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
     this.maxBackupSize = settings.maxBackupSize || 1
@@ -147,22 +150,26 @@ class ServerSettings {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('openid', 0), 1)
     }
 
-    // fallback to local    
+    // fallback to local
     if (!Array.isArray(this.authActiveAuthMethods) || this.authActiveAuthMethods.length == 0) {
       this.authActiveAuthMethods = ['local']
     }
 
     // Migrations
-    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
+    if (settings.storeCoverWithBook != undefined) {
+      // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
       this.storeCoverWithItem = !!settings.storeCoverWithBook
     }
-    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
+    if (settings.storeMetadataWithBook != undefined) {
+      // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
       this.storeMetadataWithItem = !!settings.storeMetadataWithBook
     }
-    if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
+    if (settings.homeBookshelfView == undefined) {
+      // homeBookshelfView was added in 2.1.3
       this.homeBookshelfView = settings.bookshelfView
     }
-    if (settings.metadataFileFormat == undefined) { // metadataFileFormat was added in 2.2.21
+    if (settings.metadataFileFormat == undefined) {
+      // metadataFileFormat was added in 2.2.21
       // All users using old settings will stay abs until changed
       this.metadataFileFormat = 'abs'
     }
@@ -176,9 +183,15 @@ class ServerSettings {
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
     }
+
+    if (process.env.BACKUP_PATH && this.backupPath !== process.env.BACKUP_PATH) {
+      Logger.info(`[ServerSettings] Using backup path from environment variable ${process.env.BACKUP_PATH}`)
+      this.backupPath = process.env.BACKUP_PATH
+    }
   }
 
-  toJSON() { // Use toJSONForBrowser if sending to client
+  toJSON() {
+    // Use toJSONForBrowser if sending to client
     return {
       id: this.id,
       tokenSecret: this.tokenSecret, // Do not return to client
@@ -192,6 +205,7 @@ class ServerSettings {
       metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
+      backupPath: this.backupPath,
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
       maxBackupSize: this.maxBackupSize,
@@ -249,14 +263,7 @@ class ServerSettings {
    * Auth settings required for openid to be valid
    */
   get isOpenIDAuthSettingsValid() {
-    return this.authOpenIDIssuerURL &&
-      this.authOpenIDAuthorizationURL &&
-      this.authOpenIDTokenURL &&
-      this.authOpenIDUserInfoURL &&
-      this.authOpenIDJwksURL &&
-      this.authOpenIDClientID &&
-      this.authOpenIDClientSecret &&
-      this.authOpenIDTokenSigningAlgorithm
+    return this.authOpenIDIssuerURL && this.authOpenIDAuthorizationURL && this.authOpenIDTokenURL && this.authOpenIDUserInfoURL && this.authOpenIDJwksURL && this.authOpenIDClientID && this.authOpenIDClientSecret && this.authOpenIDTokenSigningAlgorithm
   }
 
   get authenticationSettings() {
@@ -297,8 +304,8 @@ class ServerSettings {
 
   /**
    * Update server settings
-   * 
-   * @param {Object} payload 
+   *
+   * @param {Object} payload
    * @returns {boolean} true if updates were made
    */
   update(payload) {
