@@ -41,15 +41,15 @@ paths:
         '404':
           $ref: '#/components/responses/notification404'
     patch:
-      operation: updateNotificationSettings
+      operationId: updateNotificationSettings
       description: Update Notification settings.
       tags:
         - Notification
       requestBody:
-        description: The Apprise Notification settings
         content:
           application/json:
             schema:
+              type: object
               properties:
                 appriseApiUrl:
                   $ref: '../objects/Notification.yaml#/components/schemas/appriseApiUrl'
@@ -63,7 +63,7 @@ paths:
         '404':
           $ref: '#/components/responses/notification404'
     post:
-      operation: createNotification
+      operationId: createNotification
       description: Update Notification settings.
       tags:
         - Notification
@@ -167,7 +167,7 @@ paths:
         '404':
           $ref: '#/components/responses/notification404'
     patch:
-      operation: createNotification
+      operationId: createNotification
       description: Update Notification settings.
       tags:
         - Notification

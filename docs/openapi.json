@@ -1064,16 +1064,16 @@
         }
       },
       "patch": {
-        "operation": "updateNotificationSettings",
+        "operationId": "updateNotificationSettings",
         "description": "Update Notification settings.",
         "tags": [
           "Notification"
         ],
         "requestBody": {
-          "description": "The Apprise Notification settings",
           "content": {
             "application/json": {
               "schema": {
+                "type": "object",
                 "properties": {
                   "appriseApiUrl": {
                     "$ref": "#/components/schemas/appriseApiUrl"
@@ -1099,7 +1099,7 @@
         }
       },
       "post": {
-        "operation": "createNotification",
+        "operationId": "createNotification",
         "description": "Update Notification settings.",
         "tags": [
           "Notification"
@@ -1263,7 +1263,7 @@
         }
       },
       "patch": {
-        "operation": "createNotification",
+        "operationId": "createNotification",
         "description": "Update Notification settings.",
         "tags": [
           "Notification"
