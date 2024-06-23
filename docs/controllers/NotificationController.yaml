@@ -74,11 +74,7 @@ paths:
               type: object
               properties:
                 libraryId:
-                  type: string
-                  description: The ID of the library for the notification. Applies to all libraries if `null`.
-                  nullable: true
-                  format: uuid
-                  example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryIdNullable'
                 eventName:
                   $ref: '../objects/Notification.yaml#/components/schemas/notificationEventName'
                 urls:
@@ -181,8 +177,6 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  $ref: '../objects/Notification.yaml#/components/schemas/notificationId'
                 libraryId:
                   $ref: '../objects/Library.yaml#/components/schemas/libraryId'
                 eventName:
