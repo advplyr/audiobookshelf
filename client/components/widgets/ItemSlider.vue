@@ -83,8 +83,7 @@ export default {
           itemPropName: 'book-mount',
           itemIdFunc: (item) => item.id
         }
-      },
-      shelfOptions: null
+      }
     }
   },
   computed: {
@@ -92,10 +91,7 @@ export default {
       return this.$store.getters['globals/getIsBatchSelectingMediaItems']
     },
     options() {
-      if (!this.shelfOptions) {
-        this.shelfOptions = this.shelfOptionsByType[this.type]
-      }
-      return this.shelfOptions
+      return this.shelfOptionsByType[this.type]
     },
     itemIdFunc() {
       return this.options.itemIdFunc
@@ -148,7 +144,6 @@ export default {
     },
     updateSelectionMode(val) {
       const selectedMediaItems = this.$store.state.globals.selectedMediaItems
-
       this.items.forEach((item) => {
         let component = this.$refs[this.itemRefFunc(item)]
         if (!component || !component.length) return
