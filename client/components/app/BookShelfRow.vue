@@ -197,12 +197,12 @@ export default {
 }
 
 .book-shelf-arrow-right {
-  height: calc(100% - 24px);
+  height: calc(100% - 1.5em);
   background: rgb(48, 48, 48);
   background: linear-gradient(90deg, rgba(48, 48, 48, 0) 0%, rgba(25, 25, 25, 0.25) 8%, rgba(17, 17, 17, 0.4) 28%, rgba(17, 17, 17, 0.6) 71%, rgba(10, 10, 10, 0.6) 86%, rgba(0, 0, 0, 0.7) 100%);
 }
 .book-shelf-arrow-left {
-  height: calc(100% - 24px);
+  height: calc(100% - 1.5em);
   background: rgb(48, 48, 48);
   background: linear-gradient(-90deg, rgba(48, 48, 48, 0) 0%, rgba(25, 25, 25, 0.25) 8%, rgba(17, 17, 17, 0.4) 28%, rgba(17, 17, 17, 0.6) 71%, rgba(10, 10, 10, 0.6) 86%, rgba(0, 0, 0, 0.7) 100%);
 }

@@ -23,7 +23,7 @@
     </div>
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
-      <template v-for="(shelf, index) in shelves">
+      <template v-for="(shelf, index) in supportedShelves">
         <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
