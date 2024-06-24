@@ -233,7 +233,10 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     method: 'GET',
     timeout: 12000,
     responseType: 'arraybuffer',
-    headers: { Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8' },
+    headers: {
+      Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
+      'User-Agent': 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
+    },
     httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl),
     httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl)
   })
