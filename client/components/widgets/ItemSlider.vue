@@ -192,25 +192,15 @@ export default {
   },
   mounted() {
     this.setScrollVars()
-    switch (this.type) {
-      case 'series':
-        return
-      case 'authors':
-        return
-      default:
-        this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
-        this.$eventBus.$on('item-selected', this.itemSelectedEvt)
+    if (['book', 'podcast', 'episode'].includes(this.type)) {
+      this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
+      this.$eventBus.$on('item-selected', this.itemSelectedEvt)
     }
   },
   beforeDestroy() {
-    switch (this.type) {
-      case 'series':
-        return
-      case 'authors':
-        return
-      default:
-        this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
-        this.$eventBus.$off('item-selected', this.itemSelectedEvt)
+    if (['book', 'podcast', 'episode'].includes(this.type)) {
+      this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
+      this.$eventBus.$off('item-selected', this.itemSelectedEvt)
     }
   }
 }
