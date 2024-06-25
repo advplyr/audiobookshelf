@@ -597,6 +597,8 @@
   "MessageAddToPlayerQueue": "Agregar a fila del Reproductor",
   "MessageAppriseDescription": "Para usar esta función deberás tener <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">la API de Apprise</a> corriendo o una API que maneje los mismos resultados. <br/>La URL de la API de Apprise debe tener la misma ruta de archivos que donde se envían las notificaciones. Por ejemplo: si su API esta en <code>http://192.168.1.1:8337</code> entonces pondría <code>http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Los respaldos incluyen: usuarios, el progreso del los usuarios, los detalles de los elementos de la biblioteca, la configuración del servidor y las imágenes en <code>/metadata/items</code> y <code>/metadata/authors</code>. Los Respaldos <strong>NO</strong> incluyen ningún archivo guardado en la carpeta de tu biblioteca.",
+  "MessageBackupsLocationEditNote": "Nota: Actualizar la ubicación de la copia de seguridad no moverá ni modificará las copias de seguridad existentes",
+  "MessageBackupsLocationPathEmpty": "La ruta de la copia de seguridad no puede estar vacía",
   "MessageBatchQuickMatchDescription": "\"Encontrar Rápido\" tratará de agregar portadas y metadatos faltantes de los elementos seleccionados. Habilite la opción de abajo para que \"Encontrar Rápido\" pueda sobrescribir portadas y/o metadatos existentes.",
   "MessageBookshelfNoCollections": "No tienes ninguna colección.",
   "MessageBookshelfNoRSSFeeds": "Ninguna Fuente RSS esta abierta",
