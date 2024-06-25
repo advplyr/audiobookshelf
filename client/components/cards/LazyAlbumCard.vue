@@ -1,18 +1,22 @@
 <template>
-  <div ref="card" :id="`album-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
-    <div class="w-full h-full bg-primary relative rounded overflow-hidden">
-      <covers-preview-cover ref="cover" :src="coverSrc" :width="width" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-    </div>
-
-    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
-        <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
+  <div ref="card" :id="`album-card-${index}`" :style="{ width: cardWidth + 'px' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div class="relative" :style="{ height: coverHeight + 'px' }">
+      <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
+      <div class="w-full h-full bg-primary relative rounded overflow-hidden">
+        <covers-preview-cover ref="cover" :src="coverSrc" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </div>
     </div>
-    <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
-      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ artist || '&nbsp;' }}</p>
+
+    <div class="relative w-full">
+      <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
+        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em ${0.5}em` }">
+          <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
+        </div>
+      </div>
+      <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8e h-8e py-1e rounded-md text-center">
+        <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
+        <p class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ artist || '&nbsp;' }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -22,8 +26,10 @@ export default {
   props: {
     index: Number,
     width: Number,
-    height: Number,
-    bookCoverAspectRatio: Number,
+    height: {
+      type: Number,
+      default: 192
+    },
     bookshelfView: {
       type: Number,
       default: 0
@@ -42,6 +48,29 @@ export default {
     }
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.store.getters['libraries/getBookCoverAspectRatio']
+    },
+    cardWidth() {
+      return this.width || this.coverHeight
+    },
+    coverHeight() {
+      return this.height * this.sizeMultiplier
+    },
+    /*
+    cardHeight() {
+      return this.coverHeight + this.bottomTextHeight
+    },
+    bottomTextHeight() {
+      if (!this.isAlternativeBookshelfView) return 0
+      const lineHeight = 1.5
+      const remSize = 16
+      const baseHeight = this.sizeMultiplier * lineHeight * remSize
+      const titleHeight = this.labelFontSize * baseHeight
+      const paddingHeight = 4 * 2 * this.sizeMultiplier // py-1
+      return titleHeight + paddingHeight
+    },
+    */
     coverSrc() {
       const config = this.$config || this.$nuxt.$config
       if (!this.album || !this.album.libraryItemId) return `${config.routerBasePath}/book_placeholder.jpg`
@@ -49,11 +78,10 @@ export default {
     },
     labelFontSize() {
       if (this.width < 160) return 0.75
-      return 0.875
+      return 0.9
     },
     sizeMultiplier() {
-      const baseSize = this.bookCoverAspectRatio === 1 ? 192 : 120
-      return this.width / baseSize
+      return this.store.getters['user/getSizeMultiplier']
     },
     title() {
       return this.album ? this.album.title : ''

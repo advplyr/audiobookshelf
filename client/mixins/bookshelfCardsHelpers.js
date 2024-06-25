@@ -9,7 +9,8 @@ export default {
   data() {
     return {
       cardsHelpers: {
-        mountEntityCard: this.mountEntityCard
+        mountEntityCard: this.mountEntityCard,
+        setCardSize: this.setCardSize
       }
     }
   },
@@ -20,6 +21,56 @@ export default {
       if (this.entityName === 'playlists') return Vue.extend(LazyPlaylistCard)
       if (this.entityName === 'albums') return Vue.extend(LazyAlbumCard)
       return Vue.extend(LazyBookCard)
+    },
+    getComponentName() {
+      if (this.entityName === 'series') return 'cards-lazy-series-card'
+      if (this.entityName === 'collections') return 'cards-lazy-collection-card'
+      if (this.entityName === 'playlists') return 'cards-lazy-playlist-card'
+      if (this.entityName === 'albums') return 'cards-lazy-album-card'
+      return 'cards-lazy-book-card'
+    },
+    async setCardSize() {
+      this.cardWidth = 0
+      this.cardHeight = 0
+      // load a dummy card to get the its width and height
+      const ComponentClass = this.getComponentClass()
+      const props = {
+        index: -1,
+        bookshelfView: this.bookshelfView,
+        sortingIgnorePrefix: !!this.sortingIgnorePrefix
+      }
+      if (this.entityName === 'items') {
+        props.filterBy = this.filterBy
+        props.orderBy = this.orderBy
+      } else if (this.entityName === 'series') {
+        props.orderBy = this.seriesSortBy
+      }
+      const instance = new ComponentClass({
+        propsData: props
+      })
+      instance.$mount()
+      this.resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          this.cardWidth = entry.contentRect.width
+          this.cardHeight = entry.contentRect.height
+          this.resizeObserver.disconnect()
+          this.$refs.bookshelf.removeChild(instance.$el)
+        }
+      })
+      instance.$el.style.visibility = 'hidden'
+      instance.$el.style.position = 'absolute'
+      this.$refs.bookshelf.appendChild(instance.$el)
+      this.resizeObserver.observe(instance.$el)
+      const timeBefore = performance.now()
+      await new Promise((resolve) => {
+        const unwatch = this.$watch('cardWidth', (value) => {
+          if (value) {
+            unwatch()
+            resolve()
+          }
+        })
+      })
+      const timeAfter = performance.now()
     },
     async mountEntityCard(index) {
       var shelf = Math.floor(index / this.entitiesPerShelf)
@@ -34,7 +85,7 @@ export default {
         shelfEl.appendChild(bookComponent.$el)
         if (this.isSelectionMode) {
           bookComponent.setSelectionMode(true)
-          if (this.selectedMediaItems.some(i => i.id === bookComponent.libraryItemId) || this.isSelectAll) {
+          if (this.selectedMediaItems.some((i) => i.id === bookComponent.libraryItemId) || this.isSelectAll) {
             bookComponent.selected = true
           } else {
             bookComponent.selected = false
@@ -45,17 +96,10 @@ export default {
         bookComponent.isHovering = false
         return
       }
-      const shelfOffsetY = 16
-      const row = index % this.entitiesPerShelf
-      const shelfOffsetX = row * this.totalEntityCardWidth + this.bookshelfMarginLeft
-
       const ComponentClass = this.getComponentClass()
 
       const props = {
         index,
-        width: this.entityWidth,
-        height: this.entityHeight,
-        bookCoverAspectRatio: this.coverAspectRatio,
         bookshelfView: this.bookshelfView,
         sortingIgnorePrefix: !!this.sortingIgnorePrefix
       }
@@ -82,6 +126,9 @@ export default {
       this.entityComponentRefs[index] = instance
 
       instance.$mount()
+      const shelfOffsetY = this.shelfPaddingHeight * this.sizeMultiplier
+      const row = index % this.entitiesPerShelf
+      const shelfOffsetX = row * this.totalEntityCardWidth + this.bookshelfMarginLeft
       instance.$el.style.transform = `translate3d(${shelfOffsetX}px, ${shelfOffsetY}px, 0px)`
       instance.$el.classList.add('absolute', 'top-0', 'left-0')
       shelfEl.appendChild(instance.$el)
@@ -91,10 +138,10 @@ export default {
       }
       if (this.isSelectionMode) {
         instance.setSelectionMode(true)
-        if (instance.libraryItemId && this.selectedMediaItems.some(i => i.id === instance.libraryItemId) || this.isSelectAll) {
+        if ((instance.libraryItemId && this.selectedMediaItems.some((i) => i.id === instance.libraryItemId)) || this.isSelectAll) {
           instance.selected = true
         }
       }
-    },
+    }
   }
 }

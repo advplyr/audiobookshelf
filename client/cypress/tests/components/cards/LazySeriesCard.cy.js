@@ -18,10 +18,6 @@ describe('LazySeriesCard', () => {
 
   const propsData = {
     index: 0,
-    width: 192 * 2,
-    height: 192,
-    sizeMultiplier: 1,
-    bookCoverAspectRatio: 1,
     bookshelfView: 1,
     isCategorized: false,
     seriesMount: series,
@@ -38,6 +34,8 @@ describe('LazySeriesCard', () => {
       getters: {
         'user/getUserCanUpdate': true,
         'user/getUserMediaProgress': (id) => null,
+        'user/getSizeMultiplier': 1,
+        'libraries/getBookCoverAspectRatio': 1,
         'libraries/getLibraryProvider': () => 'audible.us',
         'globals/getLibraryItemCoverSrc': () => 'https://my.server.com/book_placeholder.jpg'
       },
@@ -62,11 +60,13 @@ describe('LazySeriesCard', () => {
   it('renders the component', () => {
     cy.mount(LazySeriesCard, { propsData, stubs, mocks })
 
-    cy.get('&card').should(($el) => {
+    cy.get('&covers-area').should(($el) => {
       const width = $el.width()
       const height = $el.height()
-      expect(width).to.be.closeTo(propsData.width, 0.01)
-      expect(height).to.be.closeTo(propsData.height, 0.01)
+      const defailtHeight = 192
+      const defaultWidth = defailtHeight * 2
+      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(height).to.be.closeTo(defailtHeight, 0.01)
     })
     cy.get('&seriesLengthMarker').should('be.visible').and('have.text', propsData.seriesMount.books.length)
     cy.get('&seriesProgressBar').should('not.exist')
@@ -126,7 +126,9 @@ describe('LazySeriesCard', () => {
       .and('have.class', 'bg-yellow-400')
       .and(($el) => {
         const width = $el.width()
-        expect(width).to.be.closeTo(((1 + 0.5) / 3) * propsData.width, 0.01)
+        const defailtHeight = 192
+        const defaultWidth = defailtHeight * 2
+        expect(width).to.be.closeTo(((1 + 0.5) / 3) * defaultWidth, 0.01)
       })
   })
 
@@ -150,7 +152,9 @@ describe('LazySeriesCard', () => {
       .and('have.class', 'bg-success')
       .and(($el) => {
         const width = $el.width()
-        expect(width).to.equal(propsData.width)
+        const defailtHeight = 192
+        const defaultWidth = defailtHeight * 2
+        expect(width).to.equal(defaultWidth)
       })
   })
 
