@@ -127,9 +127,6 @@
           <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
-      <ui-tooltip v-if="showSubtitles" :text="displayLineOne" :disabled="!displayLineOneTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
-        <p class="truncate" ref="displayLineOne" :style="{ fontSize: 0.6 + 'em' }">{{ displayLineOne }}</p>
-      </ui-tooltip>
       <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p cy-id="line3" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>
@@ -169,7 +166,6 @@ export default {
       selected: false,
       isSelectionMode: false,
       displayTitleTruncated: false,
-      displayLineOneTruncated: false,
       showCoverBg: false
     }
   },
@@ -337,13 +333,6 @@ export default {
       const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
       if (this.collapsedSeries) return ignorePrefix ? this.collapsedSeries.nameIgnorePrefix : this.collapsedSeries.name
       return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix : this.title || '\u00A0'
-    },
-    displayLineOne() {
-      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
-      if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
-      if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
-      if (this.mediaMetadata.genres) return this.mediaMetadata.genres.filter((genre) => !['Podcasts', 'Audiobook'].includes(genre)).join(', ') || '\u00A0'
-      return '\u00A0'
     },
     displayLineTwo() {
       if (this.recentEpisode) return this.title
@@ -638,9 +627,6 @@ export default {
     rssFeed() {
       if (this.booksInSeries) return null
       return this._libraryItem.rssFeed || null
-    },
-    showSubtitles() {
-      return this.store.getters['user/getUserSetting']('showSubtitles')
     }
   },
   methods: {
@@ -681,9 +667,6 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.displayTitle) {
           this.displayTitleTruncated = this.$refs.displayTitle.scrollWidth > this.$refs.displayTitle.clientWidth
-        }
-        if (this.$refs.displayLineOne) {
-          this.displayLineOneTruncated = this.$refs.displayLineOne.scrollWidth > this.$refs.displayLineOne.clientWidth
         }
       })
     },

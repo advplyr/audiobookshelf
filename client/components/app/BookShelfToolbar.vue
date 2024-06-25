@@ -68,8 +68,6 @@
 
         <div class="flex-grow hidden sm:inline-block" />
 
-        <ui-checkbox v-if="isLibraryPage && !isBatchSelecting" v-model="settings.showSubtitles" :label="$strings.LabelShowSubtitles" checkbox-bg="bg" check-color="white" small class="mr-6" @input="updateShowSubtitles" />
-
         <!-- collapse series checkbox -->
         <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
 
@@ -90,17 +88,11 @@
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
-      <!-- home page -->
-      <template v-else-if="isHome">
-        <div class="flex-grow" />
-        <ui-checkbox v-model="settings.showSubtitles" :label="$strings.LabelShowSubtitles" checkbox-bg="bg" check-color="white" small class="mr-6" @input="updateShowSubtitles" />
-      </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
         <div class="flex-grow" />
         <p>{{ $strings.MessageSearchResultsFor }} "{{ searchQuery }}"</p>
         <div class="flex-grow" />
-        <ui-checkbox v-model="settings.showSubtitles" :label="$strings.LabelShowSubtitles" checkbox-bg="bg" check-color="white" small class="mr-6" @input="updateShowSubtitles" />
       </template>
       <!-- authors page -->
       <template v-else-if="page === 'authors'">
@@ -488,9 +480,6 @@ export default {
       this.saveSettings()
     },
     updateCollapseBookSeries() {
-      this.saveSettings()
-    },
-    updateShowSubtitles() {
       this.saveSettings()
     },
     updateAuthorSort() {
