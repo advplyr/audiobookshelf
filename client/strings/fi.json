@@ -49,5 +49,19 @@
   "LabelAddToPlaylist": "Lisää soittolistaan",
   "LabelAdded": "Lisätty",
   "LabelAddedAt": "Lisätty",
-  "LabelAll": "Kaikki"
+  "LabelAll": "Kaikki",
+  "LabelAuthor": "Tekijä",
+  "LabelAuthorFirstLast": "Tekijä (Etunimi Sukunimi)",
+  "LabelAuthorLastFirst": "Tekijä (Sukunimi, Etunimi)",
+  "LabelAuthors": "Tekijät",
+  "LabelAutoDownloadEpisodes": "Lataa jaksot automaattisesti",
+  "LabelBooks": "Kirjat",
+  "LabelChapters": "Luvut",
+  "LabelClosePlayer": "Sulje soitin",
+  "LabelCollapseSeries": "Pienennä sarja",
+  "LabelComplete": "Valmis",
+  "LabelContinueListening": "Jatka kuuntelua",
+  "LabelContinueReading": "Jatka lukemista",
+  "LabelContinueSeries": "Jatka sarjoja",
+  "LabelDescription": "Kuvaus"
 }
