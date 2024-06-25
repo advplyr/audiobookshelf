@@ -18,18 +18,18 @@ components:
         audioFiles:
           type: array
           items:
-            $ref: '#/components/schemas/audioFile'
+            $ref: '../files/AudioFile.yaml#/components/schemas/audioFile'
         chapters:
           type: array
           items:
-            $ref: '#/components/schemas/bookChapter'
+            $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
         missingParts:
           description: Any parts missing from the book by track index.
           type: array
           items:
             type: integer
         ebookFile:
-          $ref: '#/components/schemas/ebookFile'
+          $ref: '../files/EBookFile.yaml#/components/schemas/ebookFile'
     bookMinified:
       type: object
       description: Minified book schema. Does not depend on `bookBase` because there's pretty much no overlap.

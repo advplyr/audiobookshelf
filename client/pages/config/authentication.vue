@@ -4,7 +4,7 @@
       <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
         <div class="flex items-center">
           <ui-checkbox v-model="showCustomLoginMessage" checkbox-bg="bg" />
-          <p class="text-lg pl-4">Custom Message on Login</p>
+          <p class="text-lg pl-4">{{ $strings.HeaderCustomMessageOnLogin }}</p>
         </div>
         <transition name="slide">
           <div v-if="showCustomLoginMessage" class="w-full pt-4">

@@ -368,7 +368,8 @@ export default {
     },
     purgeItemsCache() {
       const payload = {
-        message: `<span class="text-warning text-base">Warning! This will delete the entire folder at /metadata/cache/items.</span><br />Are you sure you want to purge items cache?`,
+        // message: `This will delete the entire folder at <code>/metadata/cache/items</code>.<br />Are you sure you want to purge items cache?`,
+        message: this.$strings.MessageConfirmPurgeItemsCache,
         callback: (confirmed) => {
           if (confirmed) {
             this.sendPurgeItemsCache()

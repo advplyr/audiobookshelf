@@ -37,12 +37,12 @@
             <span class="material-icons text-2xl">arrow_left</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="font-normal block truncate">Back</span>
+            <span class="font-normal block truncate">{{ $strings.ButtonBack }}</span>
           </div>
         </li>
         <li v-if="!sublistItems.length" class="text-gray-400 select-none relative px-2" role="option">
           <div class="flex items-center justify-center">
-            <span class="font-normal block truncate py-2">No {{ sublist }}</span>
+            <span class="font-normal block truncate py-2">{{ $getString('LabelLibraryFilterSublistEmpty', [selectedSublistText]) }}</span>
           </div>
         </li>
         <template v-for="item in sublistItems">
@@ -106,31 +106,37 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelAuthor,
+          textPlural: this.$strings.LabelAuthors,
           value: 'authors',
           sublist: true
         },
         {
           text: this.$strings.LabelNarrator,
+          textPlural: this.$strings.LabelNarrators,
           value: 'narrators',
           sublist: true
         },
         {
           text: this.$strings.LabelPublisher,
+          textPlural: this.$strings.LabelPublishers,
           value: 'publishers',
           sublist: true
         },
         {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
           sublist: true
         },
@@ -149,36 +155,43 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelSeries,
+          textPlural: this.$strings.LabelSeries,
           value: 'series',
           sublist: true
         },
         {
           text: this.$strings.LabelAuthor,
+          textPlural: this.$strings.LabelAuthors,
           value: 'authors',
           sublist: true
         },
         {
           text: this.$strings.LabelNarrator,
+          textPlural: this.$strings.LabelNarrators,
           value: 'narrators',
           sublist: true
         },
         {
           text: this.$strings.LabelPublisher,
+          textPlural: this.$strings.LabelPublishers,
           value: 'publishers',
           sublist: true
         },
         {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
           sublist: true
         },
@@ -227,16 +240,19 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
           sublist: true
         },
@@ -255,11 +271,13 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
@@ -278,6 +296,13 @@ export default {
     },
     selectedItemSublist() {
       return this.selected?.includes('.') ? this.selected.split('.')[0] : null
+    },
+    selectedSublistText() {
+      if (!this.sublist) {
+        return ''
+      }
+      const sublistItem = this.selectItems.find((i) => i.value === this.sublist)
+      return sublistItem?.textPlural || sublistItem?.text || ''
     },
     selectedText() {
       if (!this.selected) return ''

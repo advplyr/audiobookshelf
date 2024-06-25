@@ -14,7 +14,6 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastController {
-
   async create(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
@@ -28,7 +27,7 @@ class PodcastController {
       return res.status(404).send('Library not found')
     }
 
-    const folder = library.folders.find(fold => fold.id === payload.folderId)
+    const folder = library.folders.find((fold) => fold.id === payload.folderId)
     if (!folder) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
       return res.status(404).send('Folder not found')
@@ -37,20 +36,24 @@ class PodcastController {
     const podcastPath = filePathToPOSIX(payload.path)
 
     // Check if a library item with this podcast folder exists already
-    const existingLibraryItem = (await Database.libraryItemModel.count({
-      where: {
-        path: podcastPath
-      }
-    })) > 0
+    const existingLibraryItem =
+      (await Database.libraryItemModel.count({
+        where: {
+          path: podcastPath
+        }
+      })) > 0
     if (existingLibraryItem) {
       Logger.error(`[PodcastController] Podcast already exists at path "${podcastPath}"`)
       return res.status(400).send('Podcast already exists')
     }
 
-    const success = await fs.ensureDir(podcastPath).then(() => true).catch((error) => {
-      Logger.error(`[PodcastController] Failed to ensure podcast dir "${podcastPath}"`, error)
-      return false
-    })
+    const success = await fs
+      .ensureDir(podcastPath)
+      .then(() => true)
+      .catch((error) => {
+        Logger.error(`[PodcastController] Failed to ensure podcast dir "${podcastPath}"`, error)
+        return false
+      })
     if (!success) return res.status(400).send('Invalid podcast path')
 
     const libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
@@ -105,12 +108,12 @@ class PodcastController {
 
   /**
    * POST: /api/podcasts/feed
-   * 
+   *
    * @typedef getPodcastFeedReqBody
    * @property {string} rssFeed
-   * 
-   * @param {import('express').Request<{}, {}, getPodcastFeedReqBody, {}} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request<{}, {}, getPodcastFeedReqBody, {}} req
+   * @param {import('express').Response} res
    */
   async getPodcastFeed(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -178,7 +181,7 @@ class PodcastController {
 
     var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
     res.json({
-      downloads: downloadsInQueue.map(d => d.toJSONForClient())
+      downloads: downloadsInQueue.map((d) => d.toJSONForClient())
     })
   }
 
@@ -189,8 +192,8 @@ class PodcastController {
       return res.status(500).send('Podcast does not have an RSS feed URL')
     }
 
-    var searchTitle = req.query.title
-    if (!searchTitle) {
+    const searchTitle = req.query.title
+    if (!searchTitle || typeof searchTitle !== 'string') {
       return res.sendStatus(500)
     }
     const episodes = await findMatchingEpisodes(rssFeedUrl, searchTitle)
@@ -254,7 +257,7 @@ class PodcastController {
     const episodeId = req.params.episodeId
     const libraryItem = req.libraryItem
 
-    const episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    const episode = libraryItem.media.episodes.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[PodcastController] getEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
       return res.sendStatus(404)
@@ -269,7 +272,7 @@ class PodcastController {
     const libraryItem = req.libraryItem
     const hardDelete = req.query.hard === '1'
 
-    const episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    const episode = libraryItem.media.episodes.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[PodcastController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
       return res.sendStatus(404)
@@ -278,11 +281,14 @@ class PodcastController {
     if (hardDelete) {
       const audioFile = episode.audioFile
       // TODO: this will trigger the watcher. should maybe handle this gracefully
-      await fs.remove(audioFile.metadata.path).then(() => {
-        Logger.info(`[PodcastController] Hard deleted episode file at "${audioFile.metadata.path}"`)
-      }).catch((error) => {
-        Logger.error(`[PodcastController] Failed to hard delete episode file at "${audioFile.metadata.path}"`, error)
-      })
+      await fs
+        .remove(audioFile.metadata.path)
+        .then(() => {
+          Logger.info(`[PodcastController] Hard deleted episode file at "${audioFile.metadata.path}"`)
+        })
+        .catch((error) => {
+          Logger.error(`[PodcastController] Failed to hard delete episode file at "${audioFile.metadata.path}"`, error)
+        })
     }
 
     // Remove episode from Podcast and library file

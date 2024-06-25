@@ -25,9 +25,47 @@ components:
       type: array
       items:
         type: string
-      example: ["To Be Read", "Genre: Nonfiction"]
+      example: ['To Be Read', 'Genre: Nonfiction']
     inode:
       description: The inode of the item in the file system.
       type: string
-      format: "[0-9]*"
+      format: '[0-9]*'
       example: '649644248522215260'
+    total:
+      description: The total number of items in the response.
+      type: integer
+      example: 100
+    limit:
+      description: The number of items to return. If 0, no items are returned.
+      type: integer
+      example: 10
+      default: 0
+    page:
+      description: The page number (zero indexed) to return. If no limit is specified, then page will have no effect.
+      type: integer
+      example: 1
+      default: 0
+    sortDesc:
+      description: Return items in reversed order if true.
+      type: boolean
+      example: true
+      default: false
+    minified:
+      description: Return minified items if true.
+      type: boolean
+      example: true
+      default: false
+    region:
+      description: The region used to search.
+      type: string
+      example: 'us'
+      default: 'us'
+  parameters:
+    minified:
+      in: query
+      name: minified
+      description: Return minified items if true
+      schema:
+        type: integer
+        minimum: 0
+        example: 1

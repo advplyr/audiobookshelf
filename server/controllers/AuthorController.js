@@ -9,7 +9,7 @@ const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
-const { reqSupportsWebp } = require('../utils/index')
+const { reqSupportsWebp, isValidASIN } = require('../utils/index')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -252,7 +252,7 @@ class AuthorController {
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
-    if (req.body.asin) {
+    if (req.body.asin && isValidASIN(req.body.asin.toUpperCase?.())) {
       authorData = await AuthorFinder.findAuthorByASIN(req.body.asin, region)
     } else {
       authorData = await AuthorFinder.findAuthorByName(req.body.q, region)

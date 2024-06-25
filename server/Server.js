@@ -20,6 +20,7 @@ const SocketAuthority = require('./SocketAuthority')
 
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
+const PublicRouter = require('./routers/PublicRouter')
 
 const LogManager = require('./managers/LogManager')
 const NotificationManager = require('./managers/NotificationManager')
@@ -34,6 +35,7 @@ const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
+const ShareManager = require('./managers/ShareManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
@@ -51,6 +53,7 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
+    global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -78,6 +81,7 @@ class Server {
     // Routers
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.auth, this.playbackSessionManager)
+    this.publicRouter = new PublicRouter()
 
     Logger.logManager = new LogManager()
 
@@ -115,6 +119,7 @@ class Server {
     await this.cleanUserData() // Remove invalid user item progress
     await CacheManager.ensureCachePaths()
 
+    await ShareManager.init()
     await this.backupManager.init()
     await this.rssFeedManager.init()
 
@@ -249,6 +254,7 @@ class Server {
 
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/public', this.publicRouter.router)
 
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
@@ -286,7 +292,8 @@ class Server {
       '/config/users/:id/sessions',
       '/config/item-metadata-utils/:id',
       '/collection/:id',
-      '/playlist/:id'
+      '/playlist/:id',
+      '/share/:slug'
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
