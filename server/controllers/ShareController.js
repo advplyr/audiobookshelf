@@ -1,7 +1,12 @@
+const Path = require('path')
 const { Op } = require('sequelize')
 const Logger = require('../Logger')
 const Database = require('../Database')
 
+const { PlayMethod } = require('../utils/constants')
+const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
+
+const PlaybackSession = require('../objects/PlaybackSession')
 const ShareManager = require('../managers/ShareManager')
 
 class ShareController {
@@ -9,7 +14,7 @@ class ShareController {
 
   /**
    * Public route
-   * GET: /api/share/mediaitem/:slug
+   * GET: /api/share/:slug
    * Get media item share by slug
    *
    * @param {import('express').Request} req
@@ -28,18 +33,82 @@ class ShareController {
     }
 
     try {
-      const mediaItemModel = mediaItemShare.mediaItemType === 'book' ? Database.bookModel : Database.podcastEpisodeModel
-      mediaItemShare.mediaItem = await mediaItemModel.findByPk(mediaItemShare.mediaItemId)
+      const oldLibraryItem = await Database.mediaItemShareModel.getMediaItemsOldLibraryItem(mediaItemShare.mediaItemId, mediaItemShare.mediaItemType)
 
-      if (!mediaItemShare.mediaItem) {
+      if (!oldLibraryItem) {
         return res.status(404).send('Media item not found')
       }
+
+      let startOffset = 0
+      const publicTracks = oldLibraryItem.media.includedAudioFiles.map((audioFile) => {
+        const audioTrack = {
+          index: audioFile.index,
+          startOffset,
+          duration: audioFile.duration,
+          title: audioFile.metadata.filename || '',
+          contentUrl: `${global.RouterBasePath}/public/share/${slug}/file/${audioFile.ino}`,
+          mimeType: audioFile.mimeType,
+          codec: audioFile.codec || null,
+          metadata: audioFile.metadata.clone()
+        }
+        startOffset += audioTrack.duration
+        return audioTrack
+      })
+
+      const newPlaybackSession = new PlaybackSession()
+      newPlaybackSession.setData(oldLibraryItem, null, 'web-public', null, 0)
+      newPlaybackSession.audioTracks = publicTracks
+      newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
+
+      mediaItemShare.playbackSession = newPlaybackSession.toJSONForClient()
 
       res.json(mediaItemShare)
     } catch (error) {
       Logger.error(`[ShareController] Failed`, error)
       res.status(500).send('Internal server error')
     }
+  }
+
+  /**
+   * Public route
+   * GET: /api/share/:slug/file/:fileid
+   * Get media item share file
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getMediaItemShareFile(req, res) {
+    const { slug, fileid } = req.params
+
+    const mediaItemShare = ShareManager.findBySlug(slug)
+    if (!mediaItemShare) {
+      return res.status(404)
+    }
+
+    /** @type {import('../models/LibraryItem')} */
+    const libraryItem = await Database.libraryItemModel.findOne({
+      where: {
+        mediaId: mediaItemShare.mediaItemId
+      }
+    })
+
+    const libraryFile = libraryItem?.libraryFiles.find((lf) => lf.ino === fileid)
+    if (!libraryFile) {
+      return res.status(404).send('File not found')
+    }
+
+    if (global.XAccel) {
+      const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+    }
+
+    // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
+    if (audioMimeType) {
+      res.setHeader('Content-Type', audioMimeType)
+    }
+    res.sendFile(libraryFile.metadata.path)
   }
 
   /**
@@ -69,7 +138,7 @@ class ShareController {
 
     try {
       // Check if the media item share already exists by slug or mediaItemId
-      const existingMediaItemShare = await Database.models.mediaItemShare.findOne({
+      const existingMediaItemShare = await Database.mediaItemShareModel.findOne({
         where: {
           [Op.or]: [{ slug }, { mediaItemId }]
         }
@@ -89,7 +158,7 @@ class ShareController {
         return res.status(404).send('Media item not found')
       }
 
-      const mediaItemShare = await Database.models.mediaItemShare.create({
+      const mediaItemShare = await Database.mediaItemShareModel.create({
         slug,
         expiresAt: expiresAt || null,
         mediaItemId,
@@ -120,7 +189,7 @@ class ShareController {
     }
 
     try {
-      const mediaItemShare = await Database.models.mediaItemShare.findByPk(req.params.id)
+      const mediaItemShare = await Database.mediaItemShareModel.findByPk(req.params.id)
       if (!mediaItemShare) {
         return res.status(404).send('Media item share not found')
       }

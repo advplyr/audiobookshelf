@@ -109,7 +109,7 @@ class PlaybackSession {
       currentTime: this.currentTime,
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
-      audioTracks: this.audioTracks.map((at) => at.toJSON()),
+      audioTracks: this.audioTracks.map((at) => at.toJSON?.() || { ...at }),
       videoTrack: this.videoTrack?.toJSON() || null,
       libraryItem: libraryItem?.toJSONExpanded() || null
     }

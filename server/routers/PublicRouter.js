@@ -10,6 +10,7 @@ class PublicRouter {
 
   init() {
     this.router.get('/share/:slug', ShareController.getMediaItemShareBySlug.bind(this))
+    this.router.get('/share/:slug/file/:fileid', ShareController.getMediaItemShareFile.bind(this))
   }
 }
 module.exports = PublicRouter

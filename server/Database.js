@@ -137,6 +137,11 @@ class Database {
     return this.models.customMetadataProvider
   }
 
+  /** @type {typeof import('./models/MediaItemShare')} */
+  get mediaItemShareModel() {
+    return this.models.mediaItemShare
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}

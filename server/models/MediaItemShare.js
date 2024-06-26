@@ -46,6 +46,41 @@ class MediaItemShare extends Model {
 
   /**
    *
+   * @param {string} mediaItemId
+   * @param {string} mediaItemType
+   * @returns {Promise<import('../objects/LibraryItem')>}
+   */
+  static async getMediaItemsOldLibraryItem(mediaItemId, mediaItemType) {
+    if (mediaItemType === 'book') {
+      const book = await this.sequelize.models.book.findByPk(mediaItemId, {
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          },
+          {
+            model: this.sequelize.models.libraryItem
+          }
+        ]
+      })
+      const libraryItem = book.libraryItem
+      libraryItem.media = book
+      delete book.libraryItem
+      return this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+    }
+    return null
+  }
+
+  /**
+   *
    * @param {import('sequelize').FindOptions} options
    * @returns {Promise<import('./Book')|import('./PodcastEpisode')>}
    */
