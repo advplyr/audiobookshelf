@@ -151,5 +151,12 @@
   "LabelContinueListening": "Jatka kuuntelua",
   "LabelContinueReading": "Jatka lukemista",
   "LabelContinueSeries": "Jatka sarjoja",
-  "LabelDescription": "Kuvaus"
+  "LabelDescription": "Kuvaus",
+  "LabelDuration": "Kesto",
+  "LabelEbook": "E-kirja",
+  "LabelEbooks": "E-kirjat",
+  "LabelFile": "Tiedosto",
+  "LabelFileBirthtime": "Tiedoston syntymäaika",
+  "LabelFileModified": "Muutettu tiedosto",
+  "LabelFilename": "Tiedostonimi"
 }
