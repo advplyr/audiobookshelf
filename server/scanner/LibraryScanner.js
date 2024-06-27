@@ -176,9 +176,11 @@ class LibraryScanner {
 
             // TODO: Temporary while using old model to socket emit
             const oldLibraryItem = await Database.libraryItemModel.getOldById(existingLibraryItem.id)
-            oldLibraryItem.isMissing = true
-            oldLibraryItem.updatedAt = Date.now()
-            oldLibraryItemsUpdated.push(oldLibraryItem)
+            if (oldLibraryItem) {
+              oldLibraryItem.isMissing = true
+              oldLibraryItem.updatedAt = Date.now()
+              oldLibraryItemsUpdated.push(oldLibraryItem)
+            }
           }
         }
       } else {
