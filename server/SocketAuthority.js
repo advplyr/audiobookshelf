@@ -115,7 +115,11 @@ class SocketAuthority {
 
       //DLNA
 
-      socket.on('dlna_start', (data) => this.Server.DLNAManager.start_playback(socket.id, data))
+      socket.on('dlna_start', (player, audiobook, start_time, serverAddress) => this.Server.DLNAManager.start_playback(socket.id, player, audiobook, start_time, serverAddress))
+      socket.on('dlna_exit', () => this.Server.DLNAManager.exit_session(socket.id))
+      socket.on('dlna_play', () => this.Server.DLNAManager.continue_session(socket.id))
+      socket.on('dlna_pause', () => this.Server.DLNAManager.pause_session(socket.id))
+      socket.on('dlna_seek', (time) => this.Server.DLNAManager.seek(socket.id, time))
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))

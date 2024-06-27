@@ -78,7 +78,7 @@ class Server {
     this.cronManager = new CronManager(this.podcastManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
-    this.DLNAManager = new DLNAManager()
+    this.DLNAManager = new DLNAManager(this.auth)
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -101,7 +101,7 @@ class Server {
   }
 
   /**
-   * Initialize database, backups, logs, rss feeds, cron jobs & watcher
+   * Initialize  , backups, logs, rss feeds, cron jobs & watcher
    * Cleanup stale/invalid data
    */
   async init() {

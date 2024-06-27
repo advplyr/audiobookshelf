@@ -9,36 +9,24 @@
       "request": "launch",
       "name": "Debug server",
       "runtimeExecutable": "npm",
-      "args": [
-        "run",
-        "dev"
-      ],
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "args": ["run", "dev"],
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Debug client (nuxt)",
       "runtimeExecutable": "npm",
-      "args": [
-        "run",
-        "dev"
-      ],
+      "args": ["run", "dev"],
       "cwd": "${workspaceFolder}/client",
-      "skipFiles": [
-        "${workspaceFolder}/<node_internals>/**"
-      ]
+      "skipFiles": ["${workspaceFolder}/<node_internals>/**"]
     }
   ],
   "compounds": [
     {
       "name": "Debug server and client (nuxt)",
-      "configurations": [
-        "Debug server",
-        "Debug client (nuxt)"
-      ]
+      "configurations": ["Debug server", "Debug client (nuxt)"]
     }
-  ]
+  ],
+  "outputCapture": "std"
 }

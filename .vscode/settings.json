@@ -23,5 +23,6 @@
   },
   "[vue]": {
     "editor.defaultFormatter": "octref.vetur"
-  }
+  },
+  "console": "integratedTerminal"
 }

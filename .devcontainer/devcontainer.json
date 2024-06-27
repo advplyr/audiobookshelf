@@ -15,11 +15,8 @@
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  //"forwardPorts": [
-  //	3000,
-  //	3333
-  //],
-  "runArgs": ["--network=host"],
+  "forwardPorts": [3000, 3333],
+  "runArgs": ["--network=host", "-p 3000:3000", "-p 3333:3333"],
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "sh .devcontainer/post-create.sh",
   // Configure tool-specific properties.

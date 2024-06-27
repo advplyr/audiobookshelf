@@ -7,7 +7,7 @@ export default class DLNAPlayer extends EventEmitter {
     this.ctx = ctx
     this.player = null
     this.playerController = null
-
+    this.state = null
     this.libraryItem = null
     this.audioTracks = []
     this.currentTrackIndex = 0
@@ -15,7 +15,8 @@ export default class DLNAPlayer extends EventEmitter {
     this.currentTime = 0
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
-
+    this.paused
+    this.currentTime = null
     // TODO: Use canDisplayType on receiver to check mime types
     this.playableMimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff', 'audio/webm']
 
@@ -34,13 +35,15 @@ export default class DLNAPlayer extends EventEmitter {
   }
 
   initialize() {
-    this.ctx.$root.socket.on('test', this.destroy)
+    this.ctx.$root.socket.on('dlna_status', (data) => this.setStatus(data))
     //this.player = this.ctx.$root.castPlayer
   }
 
   evtMediaInfoChanged() {}
 
-  destroy() {}
+  destroy() {
+    this.ctx.$root.socket.emit('dlna_exit')
+  }
 
   async set(libraryItem, tracks, isHlsTranscode, startTime, playWhenReady = false) {
     this.libraryItem = libraryItem
@@ -56,16 +59,28 @@ export default class DLNAPlayer extends EventEmitter {
     } else {
       this.coverUrl = `${window.location.origin}${coverImg}`
     }
-    this.ctx.$root.socket.emit('dlna_start', this.audioTracks)
+    var serverAddress = window.origin
+    if (this.$isDev) serverAddress = `http://localhost:3333${this.$config.routerBasePath}`
+    this.ctx.$root.socket.emit('dlna_start', this.ctx.$store.state.globals.dlnaDevice, this.audioTracks, startTime, serverAddress)
   }
 
   resetStream(startTime) {}
 
-  playPause() {}
+  playPause() {
+    if (this.state == 'PLAYING') {
+      this.pause()
+    } else {
+      this.play()
+    }
+  }
 
-  play() {}
+  play() {
+    this.ctx.$root.socket.emit('dlna_play')
+  }
 
-  pause() {}
+  pause() {
+    this.ctx.$root.socket.emit('dlna_pause')
+  }
 
   getCurrentTime() {
     //var currentTrackOffset = this.currentTrack.startOffset || 0
@@ -83,6 +98,22 @@ export default class DLNAPlayer extends EventEmitter {
   }
 
   async seek(time, playWhenReady) {}
+  setStatus(data) {
+    console.log(data)
+    if (this.state != data.status) {
+      this.state = data.status
+      this.emit('stateChange', this.state)
+    }
+    this.currentTrackIndex = data.track_idx
+    this.currentTime = data.pos
+    console.log(this.currentTrackIndex, this.currentTime)
+  }
 
+  getCurrentTime() {
+    return this.currentTime + this.audioTracks[this.currentTrackIndex].startOffset
+  }
+  seek(time) {
+    this.ctx.$root.socket.emit('dlna_seek', time)
+  }
   setVolume(volume) {}
 }
