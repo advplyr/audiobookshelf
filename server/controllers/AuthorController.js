@@ -62,6 +62,11 @@ class AuthorController {
     return res.json(authorJson)
   }
 
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async update(req, res) {
     const payload = req.body
     let hasUpdated = false
@@ -88,22 +93,36 @@ class AuthorController {
       existingAuthor = author?.getOldAuthor()
     }
     if (existingAuthor) {
+      Logger.info(`[AuthorController] Merging author "${req.author.name}" with "${existingAuthor.name}"`)
       const bookAuthorsToCreate = []
-      const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
-      itemsWithAuthor.forEach((libraryItem) => {
+      const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
+
+      const oldLibraryItems = []
+      allItemsWithAuthor.forEach((libraryItem) => {
         // Replace old author with merging author for each book
-        libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
+        libraryItem.media.authors = libraryItem.media.authors.filter((au) => au.id !== req.author.id)
+        libraryItem.media.authors.push({
+          id: existingAuthor.id,
+          name: existingAuthor.name
+        })
+
+        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
+        oldLibraryItems.push(oldLibraryItem)
+
         bookAuthorsToCreate.push({
           bookId: libraryItem.media.id,
           authorId: existingAuthor.id
         })
       })
-      if (itemsWithAuthor.length) {
+      if (oldLibraryItems.length) {
         await Database.removeBulkBookAuthors(req.author.id) // Remove all old BookAuthor
         await Database.createBulkBookAuthors(bookAuthorsToCreate) // Create all new BookAuthor
+        for (const libraryItem of allItemsWithAuthor) {
+          await libraryItem.saveMetadataFile()
+        }
         SocketAuthority.emitter(
           'items_updated',
-          itemsWithAuthor.map((li) => li.toJSONExpanded())
+          oldLibraryItems.map((li) => li.toJSONExpanded())
         )
       }
 
@@ -114,7 +133,7 @@ class AuthorController {
       Database.removeAuthorFromFilterData(req.author.libraryId, req.author.id)
 
       // Send updated num books for merged author
-      const numBooks = (await Database.libraryItemModel.getForAuthor(existingAuthor)).length
+      const numBooks = await Database.bookAuthorModel.getCountForAuthor(existingAuthor.id)
       SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
 
       res.json({
@@ -130,22 +149,38 @@ class AuthorController {
       if (hasUpdated) {
         req.author.updatedAt = Date.now()
 
-        const itemsWithAuthor = await Database.libraryItemModel.getForAuthor(req.author)
+        let numBooksForAuthor = 0
         if (authorNameUpdate) {
+          const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
+
+          numBooksForAuthor = allItemsWithAuthor.length
+          const oldLibraryItems = []
           // Update author name on all books
-          itemsWithAuthor.forEach((libraryItem) => {
-            libraryItem.media.metadata.updateAuthor(req.author)
-          })
-          if (itemsWithAuthor.length) {
+          for (const libraryItem of allItemsWithAuthor) {
+            libraryItem.media.authors = libraryItem.media.authors.map((au) => {
+              if (au.id === req.author.id) {
+                au.name = req.author.name
+              }
+              return au
+            })
+            const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
+            oldLibraryItems.push(oldLibraryItem)
+
+            await libraryItem.saveMetadataFile()
+          }
+
+          if (oldLibraryItems.length) {
             SocketAuthority.emitter(
               'items_updated',
-              itemsWithAuthor.map((li) => li.toJSONExpanded())
+              oldLibraryItems.map((li) => li.toJSONExpanded())
             )
           }
+        } else {
+          numBooksForAuthor = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
         }
 
         await Database.updateAuthor(req.author)
-        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(itemsWithAuthor.length))
+        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooksForAuthor))
       }
 
       res.json({
