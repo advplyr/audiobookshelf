@@ -252,7 +252,7 @@ class AuthorController {
     req.author.updatedAt = Date.now()
     await Database.authorModel.updateFromOld(req.author)
 
-    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
+    const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
     SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     res.json({
       author: req.author.toJSON()
@@ -277,7 +277,7 @@ class AuthorController {
     req.author.imagePath = null
     await Database.authorModel.updateFromOld(req.author)
 
-    const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
+    const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
     SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     res.json({
       author: req.author.toJSON()
@@ -324,7 +324,7 @@ class AuthorController {
 
       await Database.updateAuthor(req.author)
 
-      const numBooks = (await Database.libraryItemModel.getForAuthor(req.author)).length
+      const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
       SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
 
