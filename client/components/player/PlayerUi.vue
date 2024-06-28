@@ -8,7 +8,7 @@
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
-        <ui-tooltip direction="top" :text="$strings.LabelSleepTimer">
+        <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings.LabelSleepTimer">
           <button :aria-label="$strings.LabelSleepTimer" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
             <span v-if="!sleepTimerSet" class="material-icons text-2xl">snooze</span>
             <div v-else class="flex items-center">
@@ -18,7 +18,7 @@
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="!isPodcast" direction="top" :text="$strings.LabelViewBookmarks">
+        <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
           <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
             <span class="material-icons text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
           </button>
@@ -78,7 +78,9 @@ export default {
     },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
-    isPodcast: Boolean
+    isPodcast: Boolean,
+    hideBookmarks: Boolean,
+    hideSleepTimer: Boolean
   },
   data() {
     return {
