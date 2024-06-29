@@ -5,7 +5,7 @@ const Logger = require('../Logger')
 
 const fs = require('../libs/fsExtra')
 
-const toneHelpers = require('../utils/toneHelpers')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const TaskManager = require('./TaskManager')
 
@@ -21,22 +21,19 @@ class AudioMetadataMangaer {
   }
 
   /**
-  * Get queued task data
-  * @return {Array}
-  */
+   * Get queued task data
+   * @return {Array}
+   */
   getQueuedTaskData() {
-    return this.tasksQueued.map(t => t.data)
+    return this.tasksQueued.map((t) => t.data)
   }
 
   getIsLibraryItemQueuedOrProcessing(libraryItemId) {
-    return this.tasksQueued.some(t => t.data.libraryItemId === libraryItemId) || this.tasksRunning.some(t => t.data.libraryItemId === libraryItemId)
+    return this.tasksQueued.some((t) => t.data.libraryItemId === libraryItemId) || this.tasksRunning.some((t) => t.data.libraryItemId === libraryItemId)
   }
 
   getToneMetadataObjectForApi(libraryItem) {
-    const audioFiles = libraryItem.media.includedAudioFiles
-    let mimeType = audioFiles[0].mimeType
-    if (audioFiles.some(a => a.mimeType !== mimeType)) mimeType = null
-    return toneHelpers.getToneMetadataObject(libraryItem, libraryItem.media.chapters, libraryItem.media.tracks.length, mimeType)
+    return ffmpegHelpers.getFFMetadataObject(libraryItem, libraryItem.media.includedAudioFiles.length)
   }
 
   handleBatchEmbed(user, libraryItems, options = {}) {
@@ -56,29 +53,28 @@ class AudioMetadataMangaer {
     const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
 
     // Only writing chapters for single file audiobooks
-    const chapters = (audioFiles.length == 1 || forceEmbedChapters) ? libraryItem.media.chapters.map(c => ({ ...c })) : null
+    const chapters = audioFiles.length == 1 || forceEmbedChapters ? libraryItem.media.chapters.map((c) => ({ ...c })) : null
 
     let mimeType = audioFiles[0].mimeType
-    if (audioFiles.some(a => a.mimeType !== mimeType)) mimeType = null
+    if (audioFiles.some((a) => a.mimeType !== mimeType)) mimeType = null
 
     // Create task
     const taskData = {
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
       userId: user.id,
-      audioFiles: audioFiles.map(af => (
-        {
-          index: af.index,
-          ino: af.ino,
-          filename: af.metadata.filename,
-          path: af.metadata.path,
-          cachePath: Path.join(itemCachePath, af.metadata.filename)
-        }
-      )),
+      audioFiles: audioFiles.map((af) => ({
+        index: af.index,
+        ino: af.ino,
+        filename: af.metadata.filename,
+        path: af.metadata.path,
+        cachePath: Path.join(itemCachePath, af.metadata.filename)
+      })),
       coverPath: libraryItem.media.coverPath,
-      metadataObject: toneHelpers.getToneMetadataObject(libraryItem, chapters, audioFiles.length, mimeType),
+      metadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, audioFiles.length),
       itemCachePath,
       chapters,
+      mimeType,
       options: {
         forceEmbedChapters,
         backupFiles
@@ -107,18 +103,19 @@ class AudioMetadataMangaer {
 
     // Ensure item cache dir exists
     let cacheDirCreated = false
-    if (!await fs.pathExists(task.data.itemCachePath)) {
+    if (!(await fs.pathExists(task.data.itemCachePath))) {
       await fs.mkdir(task.data.itemCachePath)
       cacheDirCreated = true
     }
 
     // Create metadata json file
-    const toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
+    const ffmetadataPath = Path.join(task.data.itemCachePath, 'ffmetadata.txt')
     try {
-      await fs.writeFile(toneJsonPath, JSON.stringify({ meta: task.data.metadataObject }, null, 2))
+      await fs.writeFile(ffmetadataPath, ffmpegHelpers.generateFFMetadata(task.data.metadataObject, task.data.chapters))
+      Logger.debug(`[AudioMetadataManager] Wrote ${ffmetadataPath}`)
     } catch (error) {
-      Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
-      task.setFailed('Failed to write metadata.json')
+      Logger.error(`[AudioMetadataManager] Write ${ffmetadataPath} failed`, error)
+      task.setFailed('Failed to write file ffmetadata.txt')
       this.handleTaskFinished(task)
       return
     }
@@ -141,16 +138,7 @@ class AudioMetadataMangaer {
         }
       }
 
-      const _toneMetadataObject = {
-        'ToneJsonFile': toneJsonPath,
-        'TrackNumber': af.index,
-      }
-
-      if (task.data.coverPath) {
-        _toneMetadataObject['CoverFile'] = task.data.coverPath
-      }
-
-      const success = await toneHelpers.tagAudioFile(af.path, _toneMetadataObject)
+      const success = await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.path)
       if (success) {
         Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
       }
@@ -167,7 +155,7 @@ class AudioMetadataMangaer {
       if (cacheDirCreated) {
         await fs.remove(task.data.itemCachePath)
       } else {
-        await fs.remove(toneJsonPath)
+        await fs.remove(ffmetadataPath)
       }
     }
 
@@ -177,7 +165,7 @@ class AudioMetadataMangaer {
 
   handleTaskFinished(task) {
     TaskManager.taskFinished(task)
-    this.tasksRunning = this.tasksRunning.filter(t => t.id !== task.id)
+    this.tasksRunning = this.tasksRunning.filter((t) => t.id !== task.id)
 
     if (this.tasksRunning.length < this.MAX_CONCURRENT_TASKS && this.tasksQueued.length) {
       Logger.info(`[AudioMetadataManager] Task finished and dequeueing next task. ${this.tasksQueued} tasks queued.`)

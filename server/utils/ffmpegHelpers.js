@@ -1,6 +1,7 @@
 const axios = require('axios')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
+const os = require('os')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX } = require('./fileUtils')
@@ -184,3 +185,125 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     ffmpeg.run()
   })
 }
+
+/**
+ * Generates ffmetadata file content from the provided metadata object and chapters array.
+ * @param {Object} metadata - The input metadata object.
+ * @param {Array} chapters - An array of chapter objects.
+ * @returns {string} - The ffmetadata file content.
+ */
+function generateFFMetadata(metadata, chapters) {
+  let ffmetadataContent = ';FFMETADATA1\n'
+
+  // Add global metadata
+  for (const key in metadata) {
+    if (metadata[key]) {
+      ffmetadataContent += `${key}=${escapeFFMetadataValue(metadata[key])}\n`
+    }
+  }
+
+  // Add chapters
+  chapters.forEach((chapter) => {
+    ffmetadataContent += '\n[CHAPTER]\n'
+    ffmetadataContent += `TIMEBASE=1/1000\n`
+    ffmetadataContent += `START=${Math.floor(chapter.start * 1000)}\n`
+    ffmetadataContent += `END=${Math.floor(chapter.end * 1000)}\n`
+    if (chapter.title) {
+      ffmetadataContent += `title=${escapeFFMetadataValue(chapter.title)}\n`
+    }
+  })
+
+  return ffmetadataContent
+}
+
+module.exports.generateFFMetadata = generateFFMetadata
+
+/**
+ * Adds an ffmetadata and optionally a cover image to an audio file using fluent-ffmpeg.
+ * @param {string} audioFilePath - Path to the input audio file.
+ * @param {string|null} coverFilePath - Path to the cover image file.
+ * @param {string} metadataFilePath - Path to the ffmetadata file.
+ */
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath) {
+  return new Promise((resolve) => {
+    const tempFilePath = Path.join(os.tmpdir(), 'temp_output.m4b')
+    let ffmpeg = Ffmpeg()
+    ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
+      '-map 0:a', // map audio stream from input file
+      '-map_metadata 1', // map metadata from metadata file
+      '-map_chapters 1', // map chapters from metadata file
+      '-c copy', // copy streams
+      '-f mp4' // force mp4 format
+    ])
+
+    if (coverFilePath) {
+      ffmpeg.input(coverFilePath).outputOptions([
+        '-map 2:v', // map video stream from cover image file
+        '-disposition:v:0 attached_pic', // set cover image as attached picture
+        '-metadata:s:v',
+        'title=Cover', // add title metadata to cover image stream
+        '-metadata:s:v',
+        'comment=Cover' // add comment metadata to cover image stream
+      ])
+    } else {
+      ffmpeg.outputOptions([
+        '-map 0:v?' // retain video stream from input file if exists
+      ])
+    }
+
+    ffmpeg
+      .output(tempFilePath)
+      .on('start', function (commandLine) {
+        Logger.debug('[ffmpegHelpers] Spawned Ffmpeg with command: ' + commandLine)
+      })
+      .on('end', (stdout, stderr) => {
+        Logger.debug('[ffmpegHelpers] ffmpeg stdout:', stdout)
+        Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
+        fs.copyFileSync(tempFilePath, audioFilePath)
+        fs.unlinkSync(tempFilePath)
+        resolve(true)
+      })
+      .on('error', (err, stdout, stderr) => {
+        Logger.error('Error adding cover image and metadata:', err)
+        Logger.error('ffmpeg stdout:', stdout)
+        Logger.error('ffmpeg stderr:', stderr)
+        resolve(false)
+      })
+
+    ffmpeg.run()
+  })
+}
+
+module.exports.addCoverAndMetadataToFile = addCoverAndMetadataToFile
+
+function escapeFFMetadataValue(value) {
+  return value.replace(/([;=\n\\#])/g, '\\$1')
+}
+
+function getFFMetadataObject(libraryItem, audioFilesLength) {
+  const metadata = libraryItem.media.metadata
+
+  const ffmetadata = {
+    title: metadata.title,
+    artist: metadata.authors?.map((a) => a.name).join(', '),
+    album_artist: metadata.authors?.map((a) => a.name).join(', '),
+    album: (metadata.title || '') + (metadata.subtitle ? `: ${metadata.subtitle}` : ''),
+    genre: metadata.genres?.join('; '),
+    date: metadata.publishedYear,
+    comment: metadata.description,
+    description: metadata.description,
+    composer: metadata.narratorName,
+    copyright: metadata.publisher,
+    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
+  }
+
+  Object.keys(ffmetadata).forEach((key) => {
+    if (!ffmetadata[key]) {
+      delete ffmetadata[key]
+    }
+  })
+
+  return ffmetadata
+}
+
+module.exports.getFFMetadataObject = getFFMetadataObject
