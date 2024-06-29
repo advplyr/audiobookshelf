@@ -1,23 +1,19 @@
 const SocketAuthority = require('../SocketAuthority')
 const timespan = require('../libs/jsonwebtoken/lib/timespan')
 const clientEmitter = require('../SocketAuthority')
+const Logger = require('../Logger')
 class DLNASession {
-  constructor(id, player, audiobook, start_time, serverAddress, token) {
+  constructor(id, player, audiobook, start_time, serverAddress) {
     this.socket_id = id
     this.player = player
     this.tracks = audiobook
     this.serverAddress = serverAddress
     this.playtime = 0
     this.is_active = true
-    this.token = token
     this.status = 'PAUSED'
-    console.log(serverAddress)
     this.trackIndex = null
     this.player.pause()
     this.load(start_time)
-    this.player.on('status', function (status) {
-      console.log('Session: ', status)
-    })
     this.socket = SocketAuthority.clients[this.socket_id].socket
   }
   update() {
@@ -30,6 +26,7 @@ class DLNASession {
           } else if (info.CurrentTransportState == 'PAUSED_PLAYBACK') {
             status = 'PAUSED'
           } else if (info.CurrentTransportState == 'STOPPED') {
+            //If playback is stopped check if playback of track ended and Load new track
             var t = this.tracks[this.trackIndex]
             if (t.duration - this.playtime < 2) {
               if (this.trackIndex < this.tracks.length) {
@@ -44,7 +41,6 @@ class DLNASession {
           this.player.getPosition(
             function (err, position) {
               this.set_status(status, this.trackIndex, position)
-              console.log('pos:', position) // Current position in seconds
             }.bind(this)
           )
         }.bind(this)
@@ -57,21 +53,21 @@ class DLNASession {
     if (this.trackIndex != idx) {
       this.trackIndex = idx
       var options = {
-        autoplay: false,
+        autoplay: true,
         contentType: track.mimeType,
         metadata: {
-          type: 'audio' // can be 'video', 'audio' or 'image'
+          title: 'Test',
+          type: 'audio', // can be 'video', 'audio' or 'image'
+          subtitlesUrl: null
         }
       }
-      var url = this.serverAddress + track.contentUrl + '?token=' + track.userToken
-      console.log(this.tracks[this.trackIndex])
+      var url = `${this.serverAddress}/public/dlna/${this.socket_id}/${this.trackIndex}/track${track.metadata.ext}`
       console.log(url)
       this.player.load(
         url,
         options,
         function (err, result) {
-          if (err) throw err
-          console.log('playing ...', this.playtime - track.startOffset)
+          if (err) Logger.error(err)
           this.player.play()
           this.player.seek(time - track.startOffset)
         }.bind(this)

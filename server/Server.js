@@ -83,7 +83,7 @@ class Server {
     // Routers
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.auth, this.playbackSessionManager)
-    this.publicRouter = new PublicRouter()
+    this.publicRouter = new PublicRouter(this)
 
     Logger.logManager = new LogManager()
 
@@ -295,7 +295,8 @@ class Server {
       '/config/item-metadata-utils/:id',
       '/collection/:id',
       '/playlist/:id',
-      '/share/:slug'
+      '/share/:slug',
+      '/dlna/:session/:id/track.*'
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 

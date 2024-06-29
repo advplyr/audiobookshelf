@@ -12,14 +12,14 @@ FROM node:20-alpine
 ENV NODE_ENV=production
 
 RUN apk update && \
-    apk add --no-cache --update \
-    curl \
-    tzdata \
-    ffmpeg \
-    make \
-    python3 \
-    g++ \
-    tini
+  apk add --no-cache --update \
+  curl \
+  tzdata \
+  ffmpeg \
+  make \
+  python3 \
+  g++ \
+  tini
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
@@ -30,7 +30,8 @@ RUN npm ci --only=production
 
 RUN apk del make python3 g++
 
-EXPOSE 80
+ENV PORT=13377
+EXPOSE 13377
 
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]

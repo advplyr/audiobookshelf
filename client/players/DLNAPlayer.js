@@ -17,6 +17,13 @@ export default class DLNAPlayer extends EventEmitter {
     this.defaultPlaybackRate = 1
     this.paused
     this.currentTime = null
+    //This is stupid but the best way to keep the site loaded on Smartphones is to have a fake player playing in the background \(^_^)/
+    var audioEl = document.createElement('audio')
+    audioEl.id = 'audio-player'
+    audioEl.style.display = 'none'
+    audioEl.muted = true
+    document.body.appendChild(audioEl)
+    this.fake_player = audioEl
     // TODO: Use canDisplayType on receiver to check mime types
     this.playableMimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff', 'audio/webm']
 
@@ -43,6 +50,9 @@ export default class DLNAPlayer extends EventEmitter {
 
   destroy() {
     this.ctx.$root.socket.emit('dlna_exit')
+    if (this.fake_player) {
+      this.fake_player.remove()
+    }
   }
 
   async set(libraryItem, tracks, isHlsTranscode, startTime, playWhenReady = false) {
@@ -62,6 +72,9 @@ export default class DLNAPlayer extends EventEmitter {
     var serverAddress = window.origin
     if (this.$isDev) serverAddress = `http://localhost:3333${this.$config.routerBasePath}`
     this.ctx.$root.socket.emit('dlna_start', this.ctx.$store.state.globals.dlnaDevice, this.audioTracks, startTime, serverAddress)
+    this.fake_player.src = tracks[0].relativeContentUrl
+    this.fake_player.load()
+    this.fake_player.play()
   }
 
   resetStream(startTime) {}
@@ -100,10 +113,8 @@ export default class DLNAPlayer extends EventEmitter {
   async seek(time, playWhenReady) {}
   setStatus(data) {
     console.log(data)
-    if (this.state != data.status) {
-      this.state = data.status
-      this.emit('stateChange', this.state)
-    }
+    this.state = data.status
+    this.emit('stateChange', this.state)
     this.currentTrackIndex = data.track_idx
     this.currentTime = data.pos
     console.log(this.currentTrackIndex, this.currentTime)
@@ -115,5 +126,8 @@ export default class DLNAPlayer extends EventEmitter {
   seek(time) {
     this.ctx.$root.socket.emit('dlna_seek', time)
   }
-  setVolume(volume) {}
+  setVolume(volume) {
+    console.log('SetVolume')
+    this.ctx.$root.socket.emit('dlna_set_volume', volume)
+  }
 }

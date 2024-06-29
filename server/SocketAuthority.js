@@ -120,14 +120,17 @@ class SocketAuthority {
       socket.on('dlna_play', () => this.Server.DLNAManager.continue_session(socket.id))
       socket.on('dlna_pause', () => this.Server.DLNAManager.pause_session(socket.id))
       socket.on('dlna_seek', (time) => this.Server.DLNAManager.seek(socket.id, time))
+      socket.on('dlna_set_volume', (volume) => this.Server.DLNAManager.setVolume(socket.id, volume))
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
 
       // Sent automatically from socket.io clients
       socket.on('disconnect', (reason) => {
+        //Stop playback when socket is closed
         Logger.removeSocketListener(socket.id)
 
+        this.Server.DLNAManager.exit_session(socket.id)
         const _client = this.clients[socket.id]
         if (!_client) {
           Logger.warn(`[SocketAuthority] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
