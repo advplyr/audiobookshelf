@@ -2,11 +2,11 @@
   <div id="page-wrapper" class="w-full h-screen max-h-screen overflow-hidden">
     <div class="w-full h-full flex items-center justify-center">
       <div class="w-full p-2 sm:p-4 md:p-8">
-        <div :style="{ width: coverWidth + 'px', height: coverHeight + 'px' }" class="mx-auto overflow-hidden rounded-xl my-2">
+        <div v-if="!isMobileLandscape" :style="{ width: coverWidth + 'px', height: coverHeight + 'px' }" class="mx-auto overflow-hidden rounded-xl my-2">
           <img :src="coverUrl" class="object-contain w-full h-full" />
         </div>
-        <p class="text-2xl md:text-3xl font-semibold text-center mb-1">{{ mediaItemShare.playbackSession.displayTitle || 'No title' }}</p>
-        <p v-if="mediaItemShare.playbackSession.displayAuthor" class="text-xl text-slate-400 font-semibold text-center mb-1">{{ mediaItemShare.playbackSession.displayAuthor }}</p>
+        <p class="text-2xl lg:text-3xl font-semibold text-center mb-1 line-clamp-2">{{ mediaItemShare.playbackSession.displayTitle || 'No title' }}</p>
+        <p v-if="mediaItemShare.playbackSession.displayAuthor" class="text-lg lg:text-xl text-slate-400 font-semibold text-center mb-1 truncate">{{ mediaItemShare.playbackSession.displayAuthor }}</p>
 
         <div class="w-full pt-16">
           <player-ui ref="audioPlayer" :chapters="chapters" :paused="isPaused" :loading="!hasLoaded" :is-podcast="false" hide-bookmarks hide-sleep-timer @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" />
@@ -78,6 +78,9 @@ export default {
     coverAspectRatio() {
       const coverAspectRatio = this.playbackSession.coverAspectRatio
       return coverAspectRatio === this.$constants.BookCoverAspectRatio.STANDARD ? 1.6 : 1
+    },
+    isMobileLandscape() {
+      return this.windowWidth > this.windowHeight && this.windowHeight < 450
     },
     coverWidth() {
       const availableCoverWidth = Math.min(450, this.windowWidth - 32)

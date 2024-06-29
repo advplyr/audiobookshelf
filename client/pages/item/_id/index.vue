@@ -442,7 +442,7 @@ export default {
 
       if (this.userIsAdminOrUp && !this.isPodcast) {
         items.push({
-          text: 'Share',
+          text: this.$strings.LabelShare,
           action: 'share'
         })
       }
