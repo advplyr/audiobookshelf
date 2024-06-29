@@ -12,10 +12,21 @@ class ShareManager {
   constructor() {
     /** @type {OpenMediaItemShareObject[]} */
     this.openMediaItemShares = []
+
+    /** @type {import('../objects/PlaybackSession')[]} */
+    this.openSharePlaybackSessions = []
   }
 
   init() {
     this.loadMediaItemShares()
+  }
+
+  /**
+   * @param {import('../objects/PlaybackSession')} playbackSession
+   */
+  addOpenSharePlaybackSession(playbackSession) {
+    Logger.info(`[ShareManager] Adding new open share playback session ${playbackSession.shareSessionId}`)
+    this.openSharePlaybackSessions.push(playbackSession)
   }
 
   /**
@@ -50,6 +61,14 @@ class ShareManager {
       return mediaItemShareObjectForClient
     }
     return null
+  }
+
+  /**
+   * @param {string} shareSessionId
+   * @returns {import('../objects/PlaybackSession')}
+   */
+  findPlaybackSessionBySessionId(shareSessionId) {
+    return this.openSharePlaybackSessions.find((s) => s.shareSessionId === shareSessionId)
   }
 
   /**
@@ -123,6 +142,7 @@ class ShareManager {
     }
 
     this.openMediaItemShares = this.openMediaItemShares.filter((s) => s.id !== mediaItemShareId)
+    this.openSharePlaybackSessions = this.openSharePlaybackSessions.filter((s) => s.mediaItemShareId !== mediaItemShareId)
     await this.destroyMediaItemShare(mediaItemShareId)
   }
 

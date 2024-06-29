@@ -1,3 +1,4 @@
+const uuidv4 = require('uuid').v4
 const Path = require('path')
 const { Op } = require('sequelize')
 const Logger = require('../Logger')
@@ -32,6 +33,18 @@ class ShareController {
       return res.status(404).send('Media item share not found')
     }
 
+    if (req.cookies.share_session_id) {
+      const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+      if (playbackSession) {
+        Logger.debug(`[ShareController] Found share playback session ${req.cookies.share_session_id}`)
+        mediaItemShare.playbackSession = playbackSession.toJSONForClient()
+        return res.json(mediaItemShare)
+      } else {
+        Logger.info(`[ShareController] Share playback session not found with id ${req.cookies.share_session_id}`)
+        res.clearCookie('share_session_id')
+      }
+    }
+
     try {
       const oldLibraryItem = await Database.mediaItemShareModel.getMediaItemsOldLibraryItem(mediaItemShare.mediaItemId, mediaItemShare.mediaItemType)
 
@@ -46,7 +59,7 @@ class ShareController {
           startOffset,
           duration: audioFile.duration,
           title: audioFile.metadata.filename || '',
-          contentUrl: `${global.RouterBasePath}/public/share/${slug}/file/${audioFile.ino}`,
+          contentUrl: `${global.RouterBasePath}/public/share/${slug}/track/${audioFile.index}`,
           mimeType: audioFile.mimeType,
           codec: audioFile.codec || null,
           metadata: audioFile.metadata.clone()
@@ -59,8 +72,15 @@ class ShareController {
       newPlaybackSession.setData(oldLibraryItem, null, 'web-public', null, 0)
       newPlaybackSession.audioTracks = publicTracks
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
+      newPlaybackSession.shareSessionId = uuidv4() // New share session id
+      newPlaybackSession.mediaItemShareId = mediaItemShare.id
+      newPlaybackSession.coverAspectRatio = oldLibraryItem.librarySettings.coverAspectRatio
 
       mediaItemShare.playbackSession = newPlaybackSession.toJSONForClient()
+      ShareManager.addOpenSharePlaybackSession(newPlaybackSession)
+
+      // 30 day cookie
+      res.cookie('share_session_id', newPlaybackSession.shareSessionId, { maxAge: 1000 * 60 * 60 * 24 * 30, httpOnly: true })
 
       res.json(mediaItemShare)
     } catch (error) {
@@ -70,45 +90,127 @@ class ShareController {
   }
 
   /**
-   * Public route
-   * GET: /api/share/:slug/file/:fileid
-   * Get media item share file
+   * Public route - requires share_session_id cookie
+   *
+   * GET: /api/share/:slug/cover
+   * Get media item share cover image
    *
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
-  async getMediaItemShareFile(req, res) {
-    const { slug, fileid } = req.params
+  async getMediaItemShareCoverImage(req, res) {
+    if (!req.cookies.share_session_id) {
+      return res.status(404).send('Share session not set')
+    }
+
+    const { slug } = req.params
 
     const mediaItemShare = ShareManager.findBySlug(slug)
     if (!mediaItemShare) {
       return res.status(404)
     }
 
-    /** @type {import('../models/LibraryItem')} */
-    const libraryItem = await Database.libraryItemModel.findOne({
-      where: {
-        mediaId: mediaItemShare.mediaItemId
-      }
-    })
+    const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+    if (!playbackSession || playbackSession.mediaItemShareId !== mediaItemShare.id) {
+      res.clearCookie('share_session_id')
+      return res.status(404).send('Share session not found')
+    }
 
-    const libraryFile = libraryItem?.libraryFiles.find((lf) => lf.ino === fileid)
-    if (!libraryFile) {
-      return res.status(404).send('File not found')
+    const coverPath = playbackSession.coverPath
+    if (!coverPath) {
+      return res.status(404).send('Cover image not found')
     }
 
     if (global.XAccel) {
-      const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
+      const encodedURI = encodeUriPath(global.XAccel + coverPath)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+    }
+
+    res.sendFile(coverPath)
+  }
+
+  /**
+   * Public route - requires share_session_id cookie
+   *
+   * GET: /api/share/:slug/track/:index
+   * Get media item share audio track
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getMediaItemShareAudioTrack(req, res) {
+    if (!req.cookies.share_session_id) {
+      return res.status(404).send('Share session not set')
+    }
+
+    const { slug, index } = req.params
+
+    const mediaItemShare = ShareManager.findBySlug(slug)
+    if (!mediaItemShare) {
+      return res.status(404)
+    }
+
+    const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+    if (!playbackSession || playbackSession.mediaItemShareId !== mediaItemShare.id) {
+      res.clearCookie('share_session_id')
+      return res.status(404).send('Share session not found')
+    }
+
+    const audioTrack = playbackSession.audioTracks.find((t) => t.index === parseInt(index))
+    if (!audioTrack) {
+      return res.status(404).send('Track not found')
+    }
+    const audioTrackPath = audioTrack.metadata.path
+
+    if (global.XAccel) {
+      const encodedURI = encodeUriPath(global.XAccel + audioTrackPath)
       Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
       return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
     // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
+    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(audioTrackPath))
     if (audioMimeType) {
       res.setHeader('Content-Type', audioMimeType)
     }
-    res.sendFile(libraryFile.metadata.path)
+    res.sendFile(audioTrackPath)
+  }
+
+  /**
+   * Public route - requires share_session_id cookie
+   *
+   * PATCH: /api/share/:slug/progress
+   * Update media item share progress
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async updateMediaItemShareProgress(req, res) {
+    if (!req.cookies.share_session_id) {
+      return res.status(404).send('Share session not set')
+    }
+
+    const { slug } = req.params
+    const { currentTime } = req.body
+    if (currentTime === null || isNaN(currentTime) || currentTime < 0) {
+      return res.status(400).send('Invalid current time')
+    }
+
+    const mediaItemShare = ShareManager.findBySlug(slug)
+    if (!mediaItemShare) {
+      return res.status(404)
+    }
+
+    const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+    if (!playbackSession || playbackSession.mediaItemShareId !== mediaItemShare.id) {
+      res.clearCookie('share_session_id')
+      return res.status(404).send('Share session not found')
+    }
+
+    playbackSession.currentTime = Math.min(currentTime, playbackSession.duration)
+    Logger.debug(`[ShareController] Update share playback session ${req.cookies.share_session_id} currentTime: ${playbackSession.currentTime}`)
+    res.sendStatus(204)
   }
 
   /**

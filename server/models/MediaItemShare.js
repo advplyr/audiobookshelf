@@ -67,14 +67,20 @@ class MediaItemShare extends Model {
             }
           },
           {
-            model: this.sequelize.models.libraryItem
+            model: this.sequelize.models.libraryItem,
+            include: {
+              model: this.sequelize.models.library,
+              attributes: ['settings']
+            }
           }
         ]
       })
       const libraryItem = book.libraryItem
       libraryItem.media = book
       delete book.libraryItem
-      return this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+      const oldLibraryItem = this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+      oldLibraryItem.librarySettings = libraryItem.library.settings
+      return oldLibraryItem
     }
     return null
   }

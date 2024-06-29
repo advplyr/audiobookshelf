@@ -43,6 +43,10 @@ class PlaybackSession {
     this.audioTracks = []
     this.videoTrack = null
     this.stream = null
+    // Used for share sessions
+    this.shareSessionId = null
+    this.mediaItemShareId = null
+    this.coverAspectRatio = null
 
     if (session) {
       this.construct(session)
