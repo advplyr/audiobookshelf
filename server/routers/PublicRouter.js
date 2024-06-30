@@ -2,7 +2,10 @@ const express = require('express')
 const ShareController = require('../controllers/ShareController')
 
 class PublicRouter {
-  constructor() {
+  constructor(playbackSessionManager) {
+    /** @type {import('../managers/PlaybackSessionManager')} */
+    this.playbackSessionManager = playbackSessionManager
+
     this.router = express()
     this.router.disable('x-powered-by')
     this.init()

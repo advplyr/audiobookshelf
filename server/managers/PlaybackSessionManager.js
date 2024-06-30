@@ -35,14 +35,18 @@ class PlaybackSessionManager {
     return session?.stream || null
   }
 
-  async getDeviceInfo(req) {
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {Object} [clientDeviceInfo]
+   * @returns {Promise<DeviceInfo>}
+   */
+  async getDeviceInfo(req, clientDeviceInfo = null) {
     const ua = uaParserJs(req.headers['user-agent'])
     const ip = requestIp.getClientIp(req)
 
-    const clientDeviceInfo = req.body?.deviceInfo || null
-
     const deviceInfo = new DeviceInfo()
-    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user.id)
+    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
     if (clientDeviceInfo?.deviceId) {
       const existingDevice = await Database.getDeviceByDeviceId(clientDeviceInfo.deviceId)
@@ -66,7 +70,7 @@ class PlaybackSessionManager {
    * @param {string} [episodeId]
    */
   async startSessionRequest(req, res, episodeId) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
     const { user, libraryItem, body: options } = req
     const session = await this.startSession(user, deviceInfo, libraryItem, episodeId, options)
@@ -82,7 +86,7 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionsRequest(req, res) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const user = req.user
     const sessions = req.body.sessions || []
 
@@ -199,7 +203,7 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionRequest(req, res) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const user = req.user
     const sessionJson = req.body
     const result = await this.syncLocalSession(user, sessionJson, deviceInfo)

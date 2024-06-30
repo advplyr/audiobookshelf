@@ -81,7 +81,7 @@ class Server {
     // Routers
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.auth, this.playbackSessionManager)
-    this.publicRouter = new PublicRouter()
+    this.publicRouter = new PublicRouter(this.playbackSessionManager)
 
     Logger.logManager = new LogManager()
 
