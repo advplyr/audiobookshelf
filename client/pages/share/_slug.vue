@@ -31,7 +31,7 @@ export default {
       return null
     })
     if (!mediaItemShare) {
-      return error({ statusCode: 404, message: 'Not found' })
+      return error({ statusCode: 404, message: 'Media item not found or expired' })
     }
 
     return {
