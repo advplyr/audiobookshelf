@@ -189,7 +189,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 /**
  * Generates ffmetadata file content from the provided metadata object and chapters array.
  * @param {Object} metadata - The input metadata object.
- * @param {Array} chapters - An array of chapter objects.
+ * @param {Array|null} chapters - An array of chapter objects.
  * @returns {string} - The ffmetadata file content.
  */
 function generateFFMetadata(metadata, chapters) {
@@ -203,15 +203,17 @@ function generateFFMetadata(metadata, chapters) {
   }
 
   // Add chapters
-  chapters.forEach((chapter) => {
-    ffmetadataContent += '\n[CHAPTER]\n'
-    ffmetadataContent += `TIMEBASE=1/1000\n`
-    ffmetadataContent += `START=${Math.floor(chapter.start * 1000)}\n`
-    ffmetadataContent += `END=${Math.floor(chapter.end * 1000)}\n`
-    if (chapter.title) {
-      ffmetadataContent += `title=${escapeFFMetadataValue(chapter.title)}\n`
-    }
-  })
+  if (chapters) {
+    chapters.forEach((chapter) => {
+      ffmetadataContent += '\n[CHAPTER]\n'
+      ffmetadataContent += `TIMEBASE=1/1000\n`
+      ffmetadataContent += `START=${Math.floor(chapter.start * 1000)}\n`
+      ffmetadataContent += `END=${Math.floor(chapter.end * 1000)}\n`
+      if (chapter.title) {
+        ffmetadataContent += `title=${escapeFFMetadataValue(chapter.title)}\n`
+      }
+    })
+  }
 
   return ffmetadataContent
 }
@@ -223,18 +225,36 @@ module.exports.generateFFMetadata = generateFFMetadata
  * @param {string} audioFilePath - Path to the input audio file.
  * @param {string|null} coverFilePath - Path to the cover image file.
  * @param {string} metadataFilePath - Path to the ffmetadata file.
+ * @param {string} mimeType - The MIME type of the audio file.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, mimeType) {
+  const isMp4 = mimeType === 'audio/mp4'
+  const isMp3 = mimeType === 'audio/mpeg'
+
+  const audioFileDir = Path.dirname(audioFilePath)
+  const audioFileExt = Path.extname(audioFilePath)
+  const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
+  const tempFilePath = Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`)
+
   return new Promise((resolve) => {
-    const tempFilePath = Path.join(os.tmpdir(), 'temp_output.m4b')
     let ffmpeg = Ffmpeg()
     ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
       '-map 0:a', // map audio stream from input file
-      '-map_metadata 1', // map metadata from metadata file
+      '-map_metadata 1', // map metadata tags from metadata file first
+      '-map_metadata 0', // add additional metadata tags from input file
       '-map_chapters 1', // map chapters from metadata file
-      '-c copy', // copy streams
-      '-f mp4' // force mp4 format
+      '-c copy' // copy streams
     ])
+
+    if (isMp4) {
+      ffmpeg.outputOptions([
+        '-f mp4' // force output format to mp4
+      ])
+    } else if (isMp3) {
+      ffmpeg.outputOptions([
+        '-id3v2_version 3' // set ID3v2 version to 3
+      ])
+    }
 
     if (coverFilePath) {
       ffmpeg.input(coverFilePath).outputOptions([
@@ -285,15 +305,18 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
 
   const ffmetadata = {
     title: metadata.title,
-    artist: metadata.authors?.map((a) => a.name).join(', '),
-    album_artist: metadata.authors?.map((a) => a.name).join(', '),
+    artist: metadata.authorName,
+    album_artist: metadata.authorName,
     album: (metadata.title || '') + (metadata.subtitle ? `: ${metadata.subtitle}` : ''),
+    TIT3: metadata.subtitle, // mp3 only
     genre: metadata.genres?.join('; '),
     date: metadata.publishedYear,
     comment: metadata.description,
     description: metadata.description,
     composer: metadata.narratorName,
     copyright: metadata.publisher,
+    publisher: metadata.publisher, // mp3 only
+    TRACKTOTAL: `${audioFilesLength}`, // mp3 only
     grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
   }
 
