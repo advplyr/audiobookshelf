@@ -21,8 +21,12 @@ import LocalAudioPlayer from '../../players/LocalAudioPlayer'
 
 export default {
   layout: 'blank',
-  async asyncData({ params, error, app }) {
-    const mediaItemShare = await app.$axios.$get(`/public/share/${params.slug}`).catch((error) => {
+  async asyncData({ params, error, app, query }) {
+    let endpoint = `/public/share/${params.slug}`
+    if (query.t && !isNaN(query.t)) {
+      endpoint += `?t=${query.t}`
+    }
+    const mediaItemShare = await app.$axios.$get(endpoint).catch((error) => {
       console.error('Failed', error)
       return null
     })

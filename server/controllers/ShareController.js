@@ -23,6 +23,8 @@ class ShareController {
    */
   async getMediaItemShareBySlug(req, res) {
     const { slug } = req.params
+    // Optional start time
+    let startTime = req.query.t && !isNaN(req.query.t) ? Math.max(0, parseInt(req.query.t)) : 0
 
     const mediaItemShare = ShareManager.findBySlug(slug)
     if (!mediaItemShare) {
@@ -68,8 +70,13 @@ class ShareController {
         return audioTrack
       })
 
+      if (startTime > startOffset) {
+        Logger.warn(`[ShareController] Start time ${startTime} is greater than total duration ${startOffset}`)
+        startTime = 0
+      }
+
       const newPlaybackSession = new PlaybackSession()
-      newPlaybackSession.setData(oldLibraryItem, null, 'web-public', null, 0)
+      newPlaybackSession.setData(oldLibraryItem, null, 'web-public', null, startTime)
       newPlaybackSession.audioTracks = publicTracks
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       newPlaybackSession.shareSessionId = uuidv4() // New share session id
