@@ -18,17 +18,24 @@ export default class DLNAPlayer extends EventEmitter {
     this.paused
     this.currentTime = null
     //This is stupid but the best way to keep the site loaded on Smartphones is to have a fake player playing in the background \(^_^)/
+    this.playableMimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff', 'audio/webm']
     var audioEl = document.createElement('audio')
     audioEl.id = 'audio-player'
     audioEl.style.display = 'none'
-    audioEl.muted = true
     document.body.appendChild(audioEl)
     this.fake_player = audioEl
-    // TODO: Use canDisplayType on receiver to check mime types
-    this.playableMimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff', 'audio/webm']
-
-    this.coverUrl = ''
-    this.castPlayerState = 'IDLE'
+    this.fake_player.volume = 0.00001
+    this.fake_player.addEventListener(
+      'play',
+      function () {
+        setTimeout(
+          function () {
+            this.fake_player.muted = true
+          }.bind(this),
+          1000
+        )
+      }.bind(this)
+    )
 
     // Supported audio codecs for chromecast
 
@@ -43,6 +50,7 @@ export default class DLNAPlayer extends EventEmitter {
 
   initialize() {
     this.ctx.$root.socket.on('dlna_status', (data) => this.setStatus(data))
+    this.ctx.$root.socket.on('dlna_finished', () => this.emit('finished'))
     //this.player = this.ctx.$root.castPlayer
   }
 

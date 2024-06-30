@@ -29,7 +29,7 @@ class DLNASession {
             //If playback is stopped check if playback of track ended and Load new track
             var t = this.tracks[this.trackIndex]
             if (t.duration - this.playtime < 2) {
-              if (this.trackIndex < this.tracks.length) {
+              if (this.trackIndex < this.tracks.length - 1) {
                 this.load(this.tracks[this.trackIndex + 1].startOffset)
                 this.playtime = 0
                 return

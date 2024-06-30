@@ -270,7 +270,6 @@ export default class PlayerHandler {
       if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
         this.isHlsTranscode = false
       }
-      console.log('blub', audioTracks)
       this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
     }
 
