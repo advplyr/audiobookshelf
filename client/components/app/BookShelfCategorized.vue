@@ -168,7 +168,7 @@ export default {
     },
     async fetchCategories() {
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete,share`)
         .then((data) => {
           return data
         })

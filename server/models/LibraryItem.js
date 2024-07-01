@@ -10,6 +10,8 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
 
+const ShareManager = require('../managers/ShareManager')
+
 /**
  * @typedef LibraryFileObject
  * @property {string} ino
@@ -537,7 +539,7 @@ class LibraryItem extends Model {
    * @param {oldLibrary} library
    * @param {oldUser} user
    * @param {object} options
-   * @returns {object} { libraryItems:oldLibraryItem[], count:number }
+   * @returns {{ libraryItems:oldLibraryItem[], count:number }}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
@@ -564,6 +566,10 @@ class LibraryItem extends Model {
         }
         if (li.numEpisodesIncomplete) {
           oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
+        }
+        if (li.mediaType === 'book' && options.include?.includes?.('share')) {
+          console.log('Lookup share for media item id', li.mediaId)
+          oldLibraryItem.mediaItemShare = ShareManager.findByMediaItemId(li.mediaId)
         }
 
         return oldLibraryItem

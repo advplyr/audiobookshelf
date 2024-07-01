@@ -4,6 +4,8 @@ const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 const { asciiOnlyToLowerCase } = require('../index')
 
+const ShareManager = require('../../managers/ShareManager')
+
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
@@ -354,6 +356,7 @@ module.exports = {
       sortBy = 'media.metadata.title'
     }
     const includeRSSFeed = include.includes('rssfeed')
+    const includeMediaItemShare = include.includes('share')
 
     // For sorting by author name an additional attribute must be added
     //   with author names concatenated
@@ -603,6 +606,10 @@ module.exports = {
 
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
+      }
+
+      if (includeMediaItemShare) {
+        libraryItem.mediaItemShare = ShareManager.findByMediaItemId(libraryItem.mediaId)
       }
 
       libraryItem.media = book

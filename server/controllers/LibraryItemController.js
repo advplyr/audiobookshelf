@@ -21,7 +21,7 @@ class LibraryItemController {
   /**
    * GET: /api/items/:id
    * Optional query params:
-   * ?include=progress,rssfeed,downloads
+   * ?include=progress,rssfeed,downloads,share
    * ?expanded=1
    *
    * @param {import('express').Request} req
