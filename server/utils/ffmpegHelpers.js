@@ -225,9 +225,10 @@ module.exports.generateFFMetadata = generateFFMetadata
  * @param {string} audioFilePath - Path to the input audio file.
  * @param {string|null} coverFilePath - Path to the cover image file.
  * @param {string} metadataFilePath - Path to the ffmetadata file.
+ * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, mimeType) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType) {
   const isMp4 = mimeType === 'audio/mp4'
   const isMp3 = mimeType === 'audio/mpeg'
 
@@ -245,6 +246,10 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
       '-map_chapters 1', // map chapters from metadata file
       '-c copy' // copy streams
     ])
+
+    if (track && !isNaN(track)) {
+      ffmpeg.outputOptions(['-metadata track=' + track])
+    }
 
     if (isMp4) {
       ffmpeg.outputOptions([

@@ -138,7 +138,7 @@ class AudioMetadataMangaer {
         }
       }
 
-      const success = await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, task.data.mimeType)
+      const success = await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.index, task.data.mimeType)
       if (success) {
         Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
       }
