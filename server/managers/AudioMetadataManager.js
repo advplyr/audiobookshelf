@@ -108,14 +108,12 @@ class AudioMetadataMangaer {
       cacheDirCreated = true
     }
 
-    // Create metadata json file
+    // Create ffmetadata file
     const ffmetadataPath = Path.join(task.data.itemCachePath, 'ffmetadata.txt')
-    try {
-      await fs.writeFile(ffmetadataPath, ffmpegHelpers.generateFFMetadata(task.data.metadataObject, task.data.chapters))
-      Logger.debug(`[AudioMetadataManager] Wrote ${ffmetadataPath}`)
-    } catch (error) {
-      Logger.error(`[AudioMetadataManager] Write ${ffmetadataPath} failed`, error)
-      task.setFailed('Failed to write file ffmetadata.txt')
+    const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, ffmetadataPath)
+    if (!success) {
+      Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
+      task.setFailed('Failed to write metadata file.')
       this.handleTaskFinished(task)
       return
     }

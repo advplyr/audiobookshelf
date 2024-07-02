@@ -220,6 +220,19 @@ function generateFFMetadata(metadata, chapters) {
 
 module.exports.generateFFMetadata = generateFFMetadata
 
+async function writeFFMetadataFile(metadata, chapters, ffmetadataPath) {
+  try {
+    await fs.writeFile(ffmetadataPath, generateFFMetadata(metadata, chapters))
+    Logger.debug(`[ffmpegHelpers] Wrote ${ffmetadataPath}`)
+    return true
+  } catch (error) {
+    Logger.error(`[ffmpegHelpers] Write ${ffmetadataPath} failed`, error)
+    return false
+  }
+}
+
+module.exports.writeFFMetadataFile = writeFFMetadataFile
+
 /**
  * Adds an ffmetadata and optionally a cover image to an audio file using fluent-ffmpeg.
  * @param {string} audioFilePath - Path to the input audio file.
