@@ -1,9 +1,10 @@
 <template>
-  <div id="page-wrapper" class="w-full h-screen max-h-screen overflow-hidden">
-    <div class="w-full h-full flex items-center justify-center">
+  <div class="w-full h-screen max-h-screen overflow-hidden" :style="{ backgroundColor: coverRgb }">
+    <div class="w-screen h-screen absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(38, 38, 38, 1) 80%)"></div>
+    <div class="absolute inset-0 w-screen h-screen flex items-center justify-center z-10">
       <div class="w-full p-2 sm:p-4 md:p-8">
         <div v-if="!isMobileLandscape" :style="{ width: coverWidth + 'px', height: coverHeight + 'px' }" class="mx-auto overflow-hidden rounded-xl my-2">
-          <img :src="coverUrl" class="object-contain w-full h-full" />
+          <img ref="coverImg" :src="coverUrl" class="object-contain w-full h-full" @load="coverImageLoaded" />
         </div>
         <p class="text-2xl lg:text-3xl font-semibold text-center mb-1 line-clamp-2">{{ mediaItemShare.playbackSession.displayTitle || 'No title' }}</p>
         <p v-if="mediaItemShare.playbackSession.displayAuthor" class="text-lg lg:text-xl text-slate-400 font-semibold text-center mb-1 truncate">{{ mediaItemShare.playbackSession.displayAuthor }}</p>
@@ -18,6 +19,7 @@
 
 <script>
 import LocalAudioPlayer from '../../players/LocalAudioPlayer'
+import { FastAverageColor } from 'fast-average-color'
 
 export default {
   layout: 'blank',
@@ -47,7 +49,9 @@ export default {
       totalDuration: 0,
       windowWidth: 0,
       windowHeight: 0,
-      listeningTimeSinceSync: 0
+      listeningTimeSinceSync: 0,
+      coverRgb: null,
+      coverBgIsLight: false
     }
   },
   computed: {
@@ -101,6 +105,19 @@ export default {
     }
   },
   methods: {
+    async coverImageLoaded(e) {
+      if (!this.playbackSession.coverPath) return
+      const fac = new FastAverageColor()
+      fac
+        .getColorAsync(e.target)
+        .then((color) => {
+          this.coverRgb = color.rgba
+          this.coverBgIsLight = color.isLight
+        })
+        .catch((e) => {
+          console.log(e)
+        })
+    },
     playPause() {
       if (!this.localAudioPlayer || !this.hasLoaded) return
       this.localAudioPlayer.playPause()

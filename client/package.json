@@ -24,6 +24,7 @@
     "cron-parser": "^4.7.1",
     "date-fns": "^2.25.0",
     "epubjs": "^0.3.88",
+    "fast-average-color": "^9.4.0",
     "hls.js": "^1.5.7",
     "libarchive.js": "^1.3.0",
     "nuxt": "^2.17.3",
