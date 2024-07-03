@@ -237,6 +237,13 @@ export default {
     resize() {
       this.windowWidth = window.innerWidth
       this.windowHeight = window.innerHeight
+    },
+    playerError(error) {
+      console.error('Player error', error)
+      this.$toast.error('Failed to play audio on device')
+    },
+    playerFinished() {
+      console.log('Player finished')
     }
   },
   mounted() {
@@ -252,12 +259,17 @@ export default {
     this.localAudioPlayer.set(null, this.audioTracks, false, startTime, false)
     this.localAudioPlayer.on('stateChange', this.playerStateChange.bind(this))
     this.localAudioPlayer.on('timeupdate', this.playerTimeUpdate.bind(this))
+    this.localAudioPlayer.on('error', this.playerError.bind(this))
+    this.localAudioPlayer.on('finished', this.playerFinished.bind(this))
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
     window.removeEventListener('keydown', this.keyDown)
 
-    this.localAudioPlayer.off('stateChange', this.playerStateChange)
+    this.localAudioPlayer.off('stateChange', this.playerStateChange.bind(this))
+    this.localAudioPlayer.off('timeupdate', this.playerTimeUpdate.bind(this))
+    this.localAudioPlayer.off('error', this.playerError.bind(this))
+    this.localAudioPlayer.off('finished', this.playerFinished.bind(this))
     this.localAudioPlayer.destroy()
   }
 }

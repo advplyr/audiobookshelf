@@ -40,10 +40,22 @@ class ShareController {
 
     if (req.cookies.share_session_id) {
       const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+
       if (playbackSession) {
-        Logger.debug(`[ShareController] Found share playback session ${req.cookies.share_session_id}`)
-        mediaItemShare.playbackSession = playbackSession.toJSONForClient()
-        return res.json(mediaItemShare)
+        const playbackSessionMediaItemShare = ShareManager.findByMediaItemId(playbackSession.mediaItemId)
+        if (!playbackSessionMediaItemShare) {
+          Logger.error(`[ShareController] Share playback session ${req.cookies.share_session_id} media item share not found with id ${playbackSession.mediaItemId}`)
+          return res.sendStatus(500)
+        }
+        if (playbackSessionMediaItemShare.slug === slug) {
+          Logger.debug(`[ShareController] Found share playback session ${req.cookies.share_session_id}`)
+          mediaItemShare.playbackSession = playbackSession.toJSONForClient()
+          return res.json(mediaItemShare)
+        } else {
+          // TODO: Close old session and use same session id
+          Logger.info(`[ShareController] Share playback session found with id ${req.cookies.share_session_id} but media item share slug ${playbackSessionMediaItemShare.slug} does not match requested slug ${slug}`)
+          res.clearCookie('share_session_id')
+        }
       } else {
         Logger.info(`[ShareController] Share playback session not found with id ${req.cookies.share_session_id}`)
         if (!uuid.validate(req.cookies.share_session_id) || uuid.version(req.cookies.share_session_id) !== 4) {
