@@ -5,6 +5,7 @@ const os = require('os')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX } = require('./fileUtils')
+const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
   // return path.replace(/'/g, '\'\\\'\'')
@@ -220,6 +221,14 @@ function generateFFMetadata(metadata, chapters) {
 
 module.exports.generateFFMetadata = generateFFMetadata
 
+/**
+ * Writes FFmpeg metadata file with the given metadata and chapters.
+ *
+ * @param {Object} metadata - The metadata object.
+ * @param {Array} chapters - The array of chapter objects.
+ * @param {string} ffmetadataPath - The path to the FFmpeg metadata file.
+ * @returns {Promise<boolean>} - A promise that resolves to true if the file was written successfully, false otherwise.
+ */
 async function writeFFMetadataFile(metadata, chapters, ffmetadataPath) {
   try {
     await fs.writeFile(ffmetadataPath, generateFFMetadata(metadata, chapters))
@@ -235,23 +244,25 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
 
 /**
  * Adds an ffmetadata and optionally a cover image to an audio file using fluent-ffmpeg.
+ *
  * @param {string} audioFilePath - Path to the input audio file.
  * @param {string|null} coverFilePath - Path to the cover image file.
  * @param {string} metadataFilePath - Path to the ffmetadata file.
  * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
+ * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
+ * @returns {Promise<boolean>} A promise that resolves to true if the operation is successful, false otherwise.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, ffmpeg = Ffmpeg()) {
   const isMp4 = mimeType === 'audio/mp4'
   const isMp3 = mimeType === 'audio/mpeg'
 
   const audioFileDir = Path.dirname(audioFilePath)
   const audioFileExt = Path.extname(audioFilePath)
   const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
-  const tempFilePath = Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`)
+  const tempFilePath = filePathToPOSIX(Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`))
 
   return new Promise((resolve) => {
-    let ffmpeg = Ffmpeg()
     ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
       '-map 0:a', // map audio stream from input file
       '-map_metadata 1', // map metadata tags from metadata file first
@@ -318,6 +329,13 @@ function escapeFFMetadataValue(value) {
   return value.replace(/([;=\n\\#])/g, '\\$1')
 }
 
+/**
+ * Retrieves the FFmpeg metadata object for a given library item.
+ *
+ * @param {LibraryItem} libraryItem - The library item containing the media metadata.
+ * @param {number} audioFilesLength - The length of the audio files.
+ * @returns {Object} - The FFmpeg metadata object.
+ */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
   const metadata = libraryItem.media.metadata
 
