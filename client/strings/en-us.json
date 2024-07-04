@@ -512,6 +512,7 @@
   "LabelSettingsStoreMetadataWithItemHelp": "By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders",
   "LabelSettingsTimeFormat": "Time Format",
   "LabelShare": "Share",
+  "LabelShareOpen": "Share Open",
   "LabelShareURL": "Share URL",
   "LabelShowAll": "Show All",
   "LabelShowSeconds": "Show seconds",

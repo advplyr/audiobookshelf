@@ -229,6 +229,11 @@ export default {
           text: this.$strings.LabelRSSFeedOpen,
           value: 'feed-open',
           sublist: false
+        },
+        {
+          text: this.$strings.LabelShareOpen,
+          value: 'share-open',
+          sublist: false
         }
       ]
     },
