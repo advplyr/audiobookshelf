@@ -1,12 +1,14 @@
 components:
   schemas:
+    ereaderName:
+      type: string
+      description: The name of the e-reader device.
     EreaderDeviceObject:
       type: object
       description: An e-reader device configured to receive EPUB through e-mail.
       properties:
         name:
-          type: string
-          description: The name of the e-reader device.
+          $ref: '#/components/schemas/ereaderName'
         email:
           type: string
           description: The email address associated with the e-reader device.
@@ -73,5 +75,4 @@ components:
         - id
         - port
         - secure
-        - rejectUnauthorized
         - ereaderDevices
