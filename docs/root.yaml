@@ -21,6 +21,14 @@ paths:
     $ref: './controllers/AuthorController.yaml#/paths/~1api~1authors~1{id}~1image'
   /api/authors/{id}/match:
     $ref: './controllers/AuthorController.yaml#/paths/~1api~1authors~1{id}~1match'
+  /api/emails:
+    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails'
+  /api/emails/test:
+    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails~1test'
+  /api/emails/ereader-devices:
+    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails~1ereader-devices'
+  /api/emails/send-ebook-to-device:
+    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails~1send-ebook-to-device'
   /api/libraries:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries'
   /api/libraries/{id}:
@@ -54,5 +62,7 @@ tags:
     description: Library endpoints
   - name: Series
     description: Series endpoints
+  - name: Email
+    description: Email endpoints
   - name: Notification
     description: Notifications endpoints
