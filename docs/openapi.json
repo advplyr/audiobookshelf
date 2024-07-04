@@ -30,6 +30,10 @@
       "description": "Series endpoints"
     },
     {
+      "name": "Email",
+      "description": "Email endpoints"
+    },
+    {
       "name": "Notification",
       "description": "Notifications endpoints"
     }
@@ -412,6 +416,132 @@
           },
           "404": {
             "$ref": "#/components/responses/author404"
+          }
+        }
+      }
+    },
+    "/api/emails": {
+      "get": {
+        "description": "Get email settings",
+        "operationId": "getEmailSettings",
+        "tags": [
+          "Email"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/email200"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update email settings",
+        "operationId": "updateEmailSettings",
+        "tags": [
+          "Email"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/email200"
+          }
+        }
+      }
+    },
+    "/api/emails/test": {
+      "post": {
+        "summary": "Send test email",
+        "operationId": "sendTestEmail",
+        "tags": [
+          "Email"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/api/emails/ereader-devices": {
+      "post": {
+        "summary": "Update e-reader devices",
+        "operationId": "updateEReaderDevices",
+        "tags": [
+          "Email"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ereaderDevices": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/EreaderDeviceObject"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ereader200"
+          },
+          "400": {
+            "description": "Invalid payload"
+          }
+        }
+      }
+    },
+    "/api/emails/send-ebook-to-device": {
+      "post": {
+        "summary": "Send ebook to device",
+        "operationId": "sendEBookToDevice",
+        "tags": [
+          "Email"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "libraryItemId": {
+                    "$ref": "#/components/schemas/libraryItemId"
+                  },
+                  "deviceName": {
+                    "$ref": "#/components/schemas/ereaderName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       }
@@ -1114,12 +1244,6 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "eventName",
-                  "urls",
-                  "titleTemplate",
-                  "bodyTemplate"
-                ],
                 "properties": {
                   "libraryId": {
                     "$ref": "#/components/schemas/libraryIdNullable"
@@ -1142,7 +1266,13 @@
                   "type": {
                     "$ref": "#/components/schemas/notificationType"
                   }
-                }
+                },
+                "required": [
+                  "eventName",
+                  "urls",
+                  "titleTemplate",
+                  "bodyTemplate"
+                ]
               }
             }
           }
@@ -1942,6 +2072,110 @@
         "example": "us",
         "default": "us"
       },
+      "ereaderName": {
+        "type": "string",
+        "description": "The name of the e-reader device."
+      },
+      "EreaderDeviceObject": {
+        "type": "object",
+        "description": "An e-reader device configured to receive EPUB through e-mail.",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/ereaderName"
+          },
+          "email": {
+            "type": "string",
+            "description": "The email address associated with the e-reader device."
+          },
+          "availabilityOption": {
+            "type": "string",
+            "description": "The availability option for the device.",
+            "enum": [
+              "adminOrUp",
+              "userOrUp",
+              "guestOrUp",
+              "specificUsers"
+            ]
+          },
+          "users": {
+            "type": "array",
+            "description": "List of specific users allowed to access the device.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "availabilityOption"
+        ]
+      },
+      "EmailSettings": {
+        "type": "object",
+        "description": "The email settings configuration for the server. This includes the credentials to send e-books and an array of e-reader devices.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the email settings. Currently this is always `email-settings`",
+            "example": "email-settings"
+          },
+          "host": {
+            "type": "string",
+            "description": "The SMTP host address.",
+            "nullable": true
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The port number for the SMTP server.",
+            "example": 465
+          },
+          "secure": {
+            "type": "boolean",
+            "description": "Indicates if the connection should use SSL/TLS.",
+            "example": true
+          },
+          "rejectUnauthorized": {
+            "type": "boolean",
+            "description": "Indicates if unauthorized SSL/TLS certificates should be rejected.",
+            "example": true
+          },
+          "user": {
+            "type": "string",
+            "description": "The username for SMTP authentication.",
+            "nullable": true
+          },
+          "pass": {
+            "type": "string",
+            "description": "The password for SMTP authentication.",
+            "nullable": true
+          },
+          "testAddress": {
+            "type": "string",
+            "description": "The test email address used for sending test emails.",
+            "nullable": true
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The default \"from\" email address for outgoing emails.",
+            "nullable": true
+          },
+          "ereaderDevices": {
+            "type": "array",
+            "description": "List of configured e-reader devices.",
+            "items": {
+              "$ref": "#/components/schemas/EreaderDeviceObject"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "port",
+          "secure",
+          "ereaderDevices"
+        ]
+      },
       "libraryName": {
         "description": "The name of the library.",
         "type": "string",
@@ -2526,6 +2760,34 @@
             "schema": {
               "type": "string",
               "example": "Author not found."
+            }
+          }
+        }
+      },
+      "email200": {
+        "description": "Successful response - Email",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EmailSettings"
+            }
+          }
+        }
+      },
+      "ereader200": {
+        "description": "Successful response - Ereader",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ereaderDevices": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EreaderDeviceObject"
+                  }
+                }
+              }
             }
           }
         }
