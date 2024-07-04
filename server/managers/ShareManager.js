@@ -25,8 +25,17 @@ class ShareManager {
    * @param {import('../objects/PlaybackSession')} playbackSession
    */
   addOpenSharePlaybackSession(playbackSession) {
-    Logger.info(`[ShareManager] Adding new open share playback session ${playbackSession.shareSessionId}`)
+    Logger.info(`[ShareManager] Adding new open share playback session "${playbackSession.displayTitle}"`)
     this.openSharePlaybackSessions.push(playbackSession)
+  }
+
+  /**
+   *
+   * @param {import('../objects/PlaybackSession')} playbackSession
+   */
+  closeSharePlaybackSession(playbackSession) {
+    Logger.info(`[ShareManager] Closing share playback session "${playbackSession.displayTitle}"`)
+    this.openSharePlaybackSessions = this.openSharePlaybackSessions.filter((s) => s.id !== playbackSession.id)
   }
 
   /**
