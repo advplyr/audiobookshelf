@@ -21,6 +21,8 @@ class PlaybackSessionManager {
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
 
     this.oldPlaybackSessionMap = {} // TODO: Remove after updated mobile versions
+
+    /** @type {PlaybackSession[]} */
     this.sessions = []
   }
 
@@ -346,6 +348,10 @@ class PlaybackSessionManager {
     }
   }
 
+  /**
+   *
+   * @param {string} sessionId
+   */
   async removeSession(sessionId) {
     const session = this.sessions.find((s) => s.id === sessionId)
     if (!session) return
@@ -376,6 +382,19 @@ class PlaybackSessionManager {
       }
     } catch (error) {
       Logger.error(`[PlaybackSessionManager] cleanOrphanStreams failed`, error)
+    }
+  }
+
+  /**
+   * Close all open sessions that have not been updated in the last 36 hours
+   */
+  async closeStaleOpenSessions() {
+    const updatedAtTimeCutoff = Date.now() - 1000 * 60 * 60 * 36
+    const staleSessions = this.sessions.filter((session) => session.updatedAt < updatedAtTimeCutoff)
+    for (const session of staleSessions) {
+      const sessionLastUpdate = new Date(session.updatedAt)
+      Logger.info(`[PlaybackSessionManager] Closing stale session "${session.displayTitle}" (${session.id}) last updated at ${sessionLastUpdate}`)
+      await this.removeSession(session.id)
     }
   }
 }

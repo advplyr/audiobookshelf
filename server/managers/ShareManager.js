@@ -162,5 +162,18 @@ class ShareManager {
   destroyMediaItemShare(mediaItemShareId) {
     return Database.models.mediaItemShare.destroy({ where: { id: mediaItemShareId } })
   }
+
+  /**
+   * Close open share sessions that have not been updated in the last 24 hours
+   */
+  closeStaleOpenShareSessions() {
+    const updatedAtTimeCutoff = Date.now() - 1000 * 60 * 60 * 24
+    const staleSessions = this.openSharePlaybackSessions.filter((session) => session.updatedAt < updatedAtTimeCutoff)
+    for (const session of staleSessions) {
+      const sessionLastUpdate = new Date(session.updatedAt)
+      Logger.info(`[PlaybackSessionManager] Closing stale session "${session.displayTitle}" (${session.id}) last updated at ${sessionLastUpdate}`)
+      this.closeSharePlaybackSession(session)
+    }
+  }
 }
 module.exports = new ShareManager()

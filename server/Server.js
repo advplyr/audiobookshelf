@@ -74,7 +74,7 @@ class Server {
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
-    this.cronManager = new CronManager(this.podcastManager)
+    this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
 

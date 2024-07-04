@@ -233,6 +233,7 @@ class ShareController {
     }
 
     playbackSession.currentTime = Math.min(currentTime, playbackSession.duration)
+    playbackSession.updatedAt = Date.now()
     Logger.debug(`[ShareController] Update share playback session ${req.cookies.share_session_id} currentTime: ${playbackSession.currentTime}`)
     res.sendStatus(204)
   }
