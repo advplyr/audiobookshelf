@@ -23,7 +23,7 @@ components:
                 items:
                   $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EreaderDeviceObject'
 paths:
-  /api/emails:
+  /api/emails/settings:
     get:
       description: Get email settings
       operationId: getEmailSettings

@@ -420,7 +420,7 @@
         }
       }
     },
-    "/api/emails": {
+    "/api/emails/settings": {
       "get": {
         "description": "Get email settings",
         "operationId": "getEmailSettings",

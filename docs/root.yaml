@@ -21,8 +21,8 @@ paths:
     $ref: './controllers/AuthorController.yaml#/paths/~1api~1authors~1{id}~1image'
   /api/authors/{id}/match:
     $ref: './controllers/AuthorController.yaml#/paths/~1api~1authors~1{id}~1match'
-  /api/emails:
-    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails'
+  /api/emails/settings:
+    $ref: './controllers/EmailController.yaml#/paths/~1api~1emails~1settings'
   /api/emails/test:
     $ref: './controllers/EmailController.yaml#/paths/~1api~1emails~1test'
   /api/emails/ereader-devices:
