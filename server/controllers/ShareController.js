@@ -42,19 +42,14 @@ class ShareController {
       const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
 
       if (playbackSession) {
-        const playbackSessionMediaItemShare = ShareManager.findByMediaItemId(playbackSession.mediaItemId)
-        if (!playbackSessionMediaItemShare) {
-          Logger.error(`[ShareController] Share playback session ${req.cookies.share_session_id} media item share not found with id ${playbackSession.mediaItemId}`)
-          return res.sendStatus(500)
-        }
-        if (playbackSessionMediaItemShare.slug === slug) {
+        if (mediaItemShare.id === playbackSession.mediaItemShareId) {
           Logger.debug(`[ShareController] Found share playback session ${req.cookies.share_session_id}`)
           mediaItemShare.playbackSession = playbackSession.toJSONForClient()
           return res.json(mediaItemShare)
         } else {
-          // TODO: Close old session and use same session id
-          Logger.info(`[ShareController] Share playback session found with id ${req.cookies.share_session_id} but media item share slug ${playbackSessionMediaItemShare.slug} does not match requested slug ${slug}`)
-          res.clearCookie('share_session_id')
+          // Changed media item share - close other session
+          Logger.debug(`[ShareController] Other playback session is already open for share session. Closing session "${playbackSession.displayTitle}"`)
+          ShareManager.closeSharePlaybackSession(playbackSession)
         }
       } else {
         Logger.info(`[ShareController] Share playback session not found with id ${req.cookies.share_session_id}`)
@@ -238,6 +233,7 @@ class ShareController {
     }
 
     playbackSession.currentTime = Math.min(currentTime, playbackSession.duration)
+    playbackSession.updatedAt = Date.now()
     Logger.debug(`[ShareController] Update share playback session ${req.cookies.share_session_id} currentTime: ${playbackSession.currentTime}`)
     res.sendStatus(204)
   }

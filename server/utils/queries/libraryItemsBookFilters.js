@@ -412,6 +412,11 @@ module.exports = {
         model: Database.feedModel,
         required: true
       })
+    } else if (filterGroup === 'share-open') {
+      bookIncludes.push({
+        model: Database.mediaItemShareModel,
+        required: true
+      })
     } else if (filterGroup === 'ebooks' && filterValue === 'supplementary') {
       // TODO: Temp workaround for filtering supplementary ebook
       libraryItemWhere['libraryFiles'] = {

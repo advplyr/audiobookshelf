@@ -25,8 +25,17 @@ class ShareManager {
    * @param {import('../objects/PlaybackSession')} playbackSession
    */
   addOpenSharePlaybackSession(playbackSession) {
-    Logger.info(`[ShareManager] Adding new open share playback session ${playbackSession.shareSessionId}`)
+    Logger.info(`[ShareManager] Adding new open share playback session "${playbackSession.displayTitle}"`)
     this.openSharePlaybackSessions.push(playbackSession)
+  }
+
+  /**
+   *
+   * @param {import('../objects/PlaybackSession')} playbackSession
+   */
+  closeSharePlaybackSession(playbackSession) {
+    Logger.info(`[ShareManager] Closing share playback session "${playbackSession.displayTitle}"`)
+    this.openSharePlaybackSessions = this.openSharePlaybackSessions.filter((s) => s.id !== playbackSession.id)
   }
 
   /**
@@ -152,6 +161,19 @@ class ShareManager {
    */
   destroyMediaItemShare(mediaItemShareId) {
     return Database.models.mediaItemShare.destroy({ where: { id: mediaItemShareId } })
+  }
+
+  /**
+   * Close open share sessions that have not been updated in the last 24 hours
+   */
+  closeStaleOpenShareSessions() {
+    const updatedAtTimeCutoff = Date.now() - 1000 * 60 * 60 * 24
+    const staleSessions = this.openSharePlaybackSessions.filter((session) => session.updatedAt < updatedAtTimeCutoff)
+    for (const session of staleSessions) {
+      const sessionLastUpdate = new Date(session.updatedAt)
+      Logger.info(`[PlaybackSessionManager] Closing stale session "${session.displayTitle}" (${session.id}) last updated at ${sessionLastUpdate}`)
+      this.closeSharePlaybackSession(session)
+    }
   }
 }
 module.exports = new ShareManager()

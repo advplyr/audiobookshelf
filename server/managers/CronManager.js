@@ -4,9 +4,14 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 const LibraryScanner = require('../scanner/LibraryScanner')
 
+const ShareManager = require('./ShareManager')
+
 class CronManager {
-  constructor(podcastManager) {
+  constructor(podcastManager, playbackSessionManager) {
+    /** @type {import('./PodcastManager')} */
     this.podcastManager = podcastManager
+    /** @type {import('./PlaybackSessionManager')} */
+    this.playbackSessionManager = playbackSessionManager
 
     this.libraryScanCrons = []
     this.podcastCrons = []
@@ -19,8 +24,24 @@ class CronManager {
    * @param {import('../objects/Library')[]} libraries
    */
   async init(libraries) {
+    this.initOpenSessionCleanupCron()
     this.initLibraryScanCrons(libraries)
     await this.initPodcastCrons()
+  }
+
+  /**
+   * Initialize open session cleanup cron
+   * Runs every day at 00:30
+   * Closes open share sessions that have not been updated in 24 hours
+   * Closes open playback sessions that have not been updated in 36 hours
+   * TODO: Clients should re-open the session if it is closed so that stale sessions can be closed sooner
+   */
+  initOpenSessionCleanupCron() {
+    cron.schedule('30 0 * * *', async () => {
+      Logger.debug('[CronManager] Open session cleanup cron executing')
+      ShareManager.closeStaleOpenShareSessions()
+      await this.playbackSessionManager.closeStaleOpenSessions()
+    })
   }
 
   /**

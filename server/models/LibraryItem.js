@@ -568,7 +568,6 @@ class LibraryItem extends Model {
           oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
         }
         if (li.mediaType === 'book' && options.include?.includes?.('share')) {
-          console.log('Lookup share for media item id', li.mediaId)
           oldLibraryItem.mediaItemShare = ShareManager.findByMediaItemId(li.mediaId)
         }
 
