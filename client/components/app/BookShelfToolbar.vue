@@ -88,11 +88,17 @@
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
+      <!-- home page -->
+      <template v-else-if="isHome">
+        <div class="flex-grow" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
+      </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
         <div class="flex-grow" />
         <p>{{ $strings.MessageSearchResultsFor }} "{{ searchQuery }}"</p>
         <div class="flex-grow" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- authors page -->
       <template v-else-if="page === 'authors'">
@@ -155,6 +161,8 @@ export default {
           action: 're-add-to-continue-listening'
         })
       }
+
+      this.addSubtitlesMenuItem(items)
 
       return items
     },
@@ -323,6 +331,8 @@ export default {
         })
       }
 
+      this.addSubtitlesMenuItem(items)
+
       return items
     },
     showPlaylists() {
@@ -330,9 +340,40 @@ export default {
     }
   },
   methods: {
+    addSubtitlesMenuItem(items) {
+      if (this.isBookLibrary && (!this.page || this.page === 'search')) {
+        if (this.settings.showSubtitles) {
+          items.push({
+            text: 'Hide Subtitles',
+            action: 'hide-subtitles'
+          })
+        } else {
+          items.push({
+            text: 'Show Subtitles',
+            action: 'show-subtitles'
+          })
+        }
+      }
+    },
+    handleSubtitlesAction(action) {
+      if (action === 'show-subtitles') {
+        this.settings.showSubtitles = true
+        this.updateShowSubtitles()
+        return true
+      }
+      if (action === 'hide-subtitles') {
+        this.settings.showSubtitles = false
+        this.updateShowSubtitles()
+        return true
+      }
+      return false
+    },
     contextMenuAction({ action }) {
       if (action === 'export-opml') {
         this.exportOPML()
+        return
+      } else if (this.handleSubtitlesAction(action)) {
+        return
       }
     },
     exportOPML() {
@@ -353,6 +394,8 @@ export default {
           return
         }
         this.markSeriesFinished()
+      } else if (this.handleSubtitlesAction(action)) {
+        return
       }
     },
     showOpenSeriesRSSFeed() {
@@ -480,6 +523,9 @@ export default {
       this.saveSettings()
     },
     updateCollapseBookSeries() {
+      this.saveSettings()
+    },
+    updateShowSubtitles() {
       this.saveSettings()
     },
     updateAuthorSort() {
