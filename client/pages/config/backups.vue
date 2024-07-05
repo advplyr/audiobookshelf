@@ -92,6 +92,7 @@ export default {
       newServerSettings: {},
       showCronBuilder: false,
       showEditBackupPath: false,
+      backupPathEnvSet: false,
       backupLocation: '',
       newBackupLocation: '',
       savingBackupPath: false
@@ -116,8 +117,8 @@ export default {
       return this.serverSettings.timeFormat
     },
     canEditBackup() {
-      // Prevent editing of backup path if an environement variable is set
-      return !this.serverSettings.backupPathEnvSet
+      // Prevent editing of backup path if an environment variable is set
+      return !this.backupPathEnvSet
     },
     scheduleDescription() {
       if (!this.cronExpression) return ''
@@ -131,9 +132,10 @@ export default {
     }
   },
   methods: {
-    backupsLoaded(backupLocation) {
-      this.backupLocation = backupLocation
-      this.newBackupLocation = backupLocation
+    backupsLoaded(data) {
+      this.backupLocation = data.backupLocation
+      this.newBackupLocation = data.backupLocation
+      this.backupPathEnvSet = data.backupPathEnvSet
     },
     cancelEditBackupPath() {
       this.newBackupLocation = this.backupLocation

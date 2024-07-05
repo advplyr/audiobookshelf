@@ -26,7 +26,6 @@ class ServerSettings {
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     // Backups
-    this.backupPathEnvSet = false
     this.backupPath = Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
@@ -189,8 +188,6 @@ class ServerSettings {
       Logger.info(`[ServerSettings] Using backup path from environment variable ${process.env.BACKUP_PATH}`)
       this.backupPath = process.env.BACKUP_PATH
     }
-
-    this.backupPathEnvSet = !!process.env.BACKUP_PATH || false
   }
 
   toJSON() {
@@ -209,7 +206,6 @@ class ServerSettings {
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupPath: this.backupPath,
-      backupPathEnvSet: this.backupPathEnvSet,
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
       maxBackupSize: this.maxBackupSize,
