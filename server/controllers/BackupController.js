@@ -11,7 +11,7 @@ class BackupController {
     res.json({
       backups: this.backupManager.backups.map((b) => b.toJSON()),
       backupLocation: this.backupManager.backupPath,
-      backupEnvSet: this.backupManager.backupPathEnvSet
+      backupPathEnvSet: this.backupManager.backupPathEnvSet
     })
   }
 
