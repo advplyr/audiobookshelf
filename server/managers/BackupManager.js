@@ -29,6 +29,10 @@ class BackupManager {
     return global.ServerSettings.backupPath
   }
 
+  get backupPathEnvSet() {
+    return global.ServerSettings.backupPathEnvSet
+  }
+
   get backupSchedule() {
     return global.ServerSettings.backupSchedule
   }
