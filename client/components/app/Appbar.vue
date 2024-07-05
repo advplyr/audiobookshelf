@@ -170,13 +170,13 @@ export default {
 
       if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
         options.push({
-          text: 'Quick Embed Metadata',
+          text: this.$strings.ButtonQuickEmbedMetadata,
           action: 'quick-embed'
         })
       }
 
       options.push({
-        text: 'Re-Scan',
+        text: this.$strings.ButtonReScan,
         action: 'rescan'
       })
 

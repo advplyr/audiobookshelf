@@ -153,7 +153,7 @@ export default {
 
       if (this.isSeriesRemovedFromContinueListening) {
         items.push({
-          text: 'Re-Add Series to Continue Listening',
+          text: this.$strings.LabelReAddSeriesToContinueListening,
           action: 're-add-to-continue-listening'
         })
       }
@@ -322,7 +322,7 @@ export default {
 
       if (this.isPodcastLibrary && this.isLibraryPage && this.userCanDownload) {
         items.push({
-          text: 'Export OPML',
+          text: this.$strings.LabelExportOPML,
           action: 'export-opml'
         })
       }
@@ -341,12 +341,12 @@ export default {
       if (this.isBookLibrary && (!this.page || this.page === 'search')) {
         if (this.settings.showSubtitles) {
           items.push({
-            text: 'Hide Subtitles',
+            text: this.$strings.LabelHideSubtitles,
             action: 'hide-subtitles'
           })
         } else {
           items.push({
-            text: 'Show Subtitles',
+            text: this.$strings.LabelShowSubtitles,
             action: 'show-subtitles'
           })
         }
@@ -356,12 +356,12 @@ export default {
       if (this.isLibraryPage && this.isBookLibrary && !this.isBatchSelecting) {
         if (this.settings.collapseSeries) {
           items.push({
-            text: 'Expand Series',
+            text: this.$strings.LabelExpandSeries,
             action: 'expand-series'
           })
         } else {
           items.push({
-            text: 'Collapse Series',
+            text: this.$strings.LabelCollapseSeries,
             action: 'collapse-series'
           })
         }
