@@ -190,7 +190,7 @@ class ServerSettings {
       this.backupPath = process.env.BACKUP_PATH
     }
 
-    this.backupPathEnvSet = !!settings.process.env.BACKUP_PATH || false
+    this.backupPathEnvSet = !!process.env.BACKUP_PATH || false
   }
 
   toJSON() {
