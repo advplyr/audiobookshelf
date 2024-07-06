@@ -13,7 +13,9 @@ export const state = () => ({
     seriesSortDesc: false,
     seriesFilterBy: 'all',
     authorSortBy: 'name',
-    authorSortDesc: false
+    authorSortDesc: false,
+    jumpForwardAmount: 10,
+    jumpBackwardAmount: 10,
   }
 })
 
