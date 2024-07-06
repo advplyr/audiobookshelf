@@ -339,6 +339,8 @@
   "LabelIntervalEveryHour": "Every hour",
   "LabelInvert": "Invert",
   "LabelItem": "Item",
+  "LabelJumpForwardAmount": "Jump forward amount",
+  "LabelJumpBackwardAmount": "Jump backward amount",
   "LabelLanguage": "Language",
   "LabelLanguageDefaultServer": "Default Server Language",
   "LabelLanguages": "Languages",
