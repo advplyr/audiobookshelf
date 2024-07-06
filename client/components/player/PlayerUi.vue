@@ -90,12 +90,15 @@ export default {
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
-      duration: 0,
-      useChapterTrack: false
+      duration: 0
     }
   },
   watch: {
     playbackRate() {
+      this.updateTimestamp()
+    },
+    useChapterTrack() {
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.updateTimestamp()
     }
   },
@@ -162,6 +165,10 @@ export default {
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
+    },
+    useChapterTrack() {
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      return this.chapters.length ? _useChapterTrack : false
     }
   },
   methods: {
@@ -309,9 +316,6 @@ export default {
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
-
-      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
-      this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.setPlaybackRate(this.playbackRate)
