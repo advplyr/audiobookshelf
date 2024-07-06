@@ -121,7 +121,7 @@
       <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
     </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
+    <modals-changelog-view-modal v-model="showChangelogModal" :versionData="versionData" />
   </div>
 </template>
 
@@ -218,9 +218,6 @@ export default {
     },
     githubTagUrl() {
       return this.versionData.githubTagUrl
-    },
-    currentVersionChangelog() {
-      return this.versionData.currentVersionChangelog || 'No Changelog Available'
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
