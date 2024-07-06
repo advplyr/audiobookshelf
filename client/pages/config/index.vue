@@ -94,29 +94,6 @@
               </p>
             </ui-tooltip>
           </div>
-
-          <div class="pt-4">
-            <h2 class="font-semibold">{{ $strings.HeaderSettingsPlayback }}</h2>
-          </div>
-          <div class="flex items-center py-2">
-            <ui-icon-btn @click="toggleJumpBackwards" :icon="currentJumpBackwardsIcon" iconFontSize="35px" :size="50" />
-            <ui-tooltip :text="$strings.LabelSettingsJumpBackwardsTimeHelp">
-              <p class="pl-4">
-                <span id="settings-jump-backwards-time">{{ $strings.LabelSettingsJumpBackwardsTime }}</span>
-                <span class="material-icons icon-text">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div>
-
-          <div class="flex items-center py-2">
-            <ui-icon-btn @click="toggleJumpForwards" :icon="currentJumpForwardsIcon" iconFontSize="35px" :size="50" />
-            <ui-tooltip :text="$strings.LabelSettingsJumpForwardsTimeHelp">
-              <p class="pl-4">
-                <span id="settings-jump-forwards-time">{{ $strings.LabelSettingsJumpForwardsTime }}</span>
-                <span class="material-icons icon-text">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div>
         </div>
 
         <div class="flex-1">
@@ -251,12 +228,6 @@ export default {
       homepageUseBookshelfView: false,
       useBookshelfView: false,
       scannerEnableWatcher: false,
-      jumpForwardsTime: 10,
-      jumpForwardsIcons: ['forward_10', 'forward_30', 'forward_5'],
-      currentJumpForwardsIndex: 0,
-      jumpBackwardsTime: 10,
-      jumpBackwardsIcons: ['replay_10', 'replay_30', 'replay_5'],
-      currentJumpBackwardsIndex: 0,
       isPurgingCache: false,
       hasPrefixesChanged: false,
       newServerSettings: {},
@@ -291,12 +262,6 @@ export default {
     timeExample() {
       const date = new Date(2014, 2, 25, 17, 30, 0)
       return this.$formatJsTime(date, this.newServerSettings.timeFormat)
-    },
-    currentJumpForwardsIcon() {
-      return this.jumpForwardsIcons[this.currentJumpForwardsIndex]
-    },
-    currentJumpBackwardsIcon() {
-      return this.jumpBackwardsIcons[this.currentJumpBackwardsIndex]
     }
   },
   methods: {
@@ -305,12 +270,6 @@ export default {
       this.newServerSettings.sortingPrefixes = prefixes
       const serverPrefixes = this.serverSettings.sortingPrefixes || []
       this.hasPrefixesChanged = prefixes.some((p) => !serverPrefixes.includes(p)) || serverPrefixes.some((p) => !prefixes.includes(p))
-    },
-    toggleJumpForwards() {
-      this.currentJumpForwardsIndex = (this.currentJumpForwardsIndex + 1) % this.jumpForwardsIcons.length
-    },
-    toggleJumpBackwards() {
-      this.currentJumpBackwardsIndex = (this.currentJumpBackwardsIndex + 1) % this.jumpBackwardsIcons.length
     },
     updateSortingPrefixes() {
       const prefixes = [...new Set(this.newServerSettings.sortingPrefixes.map((prefix) => prefix.trim().toLowerCase()) || [])]
