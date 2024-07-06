@@ -104,6 +104,7 @@ class Server {
    */
   async init() {
     Logger.info('[Server] Init v' + version)
+    Logger.info('[Server] Node.js Version:', process.version)
 
     await this.playbackSessionManager.removeOrphanStreams()
 
