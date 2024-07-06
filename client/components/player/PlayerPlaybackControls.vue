@@ -9,7 +9,7 @@
       </ui-tooltip>
       <ui-tooltip direction="top" :text="$strings.ButtonJumpBackward">
         <button :aria-label="$strings.ButtonJumpBackward" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
-          <span class="material-icons text-2xl sm:text-3xl">replay_10</span>
+          <span class="material-icons text-2xl sm:text-3xl">replay</span>
         </button>
       </ui-tooltip>
       <button :aria-label="paused ? $strings.ButtonPlay : $strings.ButtonPause" class="p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-4 lg:mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPause">
