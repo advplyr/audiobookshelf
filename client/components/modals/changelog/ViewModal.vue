@@ -6,7 +6,7 @@
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">
-      <p class="text-xl font-bold pb-4">Changelog v{{ currentVersionNumber }}</p>
+      <p class="text-xl font-bold pb-4">Changelog v{{ currentVersionNumber }} ({{ currentVersionPubDate }})</p>
       <div class="custom-text" v-html="compiledMarkedown" />
     </div>
   </modals-modal>
@@ -19,6 +19,7 @@ export default {
   props: {
     value: Boolean,
     changelog: String,
+    currentPubDate: String,
     currentVersion: String
   },
   watch: {
@@ -43,6 +44,9 @@ export default {
     compiledMarkedown() {
       return marked.parse(this.changelog, { gfm: true, breaks: true })
     },
+    currentVersionPubDate() {
+      return this.currentPubDate
+    },
     currentVersionNumber() {
       return this.currentVersion
     }
@@ -57,7 +61,7 @@ export default {
 <style scoped>
 /*
 1. we need to manually define styles to apply to the parsed markdown elements,
-since we don't have access to the actual elements in this component 
+since we don't have access to the actual elements in this component
 
 2. v-deep allows these to take effect on the content passed in to the v-html in the div above
 */

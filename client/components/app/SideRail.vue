@@ -121,7 +121,7 @@
       <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
     </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
+    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" :currentPubDate="currentVersionPubDate" />
   </div>
 </template>
 
@@ -151,6 +151,9 @@ export default {
     },
     paramId() {
       return this.$route.params ? this.$route.params.id || '' : ''
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
@@ -221,6 +224,9 @@ export default {
     },
     currentVersionChangelog() {
       return this.versionData.currentVersionChangelog || 'No Changelog Available'
+    },
+    currentVersionPubDate() {
+      return `${this.$formatDate(this.versionData.currentVersionPubDate, this.dateFormat)}` || 'Unknown release date'
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
