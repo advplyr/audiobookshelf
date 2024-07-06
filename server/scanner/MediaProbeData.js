@@ -63,15 +63,5 @@ class MediaProbeData {
     this.audioMetaTags = new AudioMetaTags()
     this.audioMetaTags.setData(data.tags)
   }
-
-  setDataFromTone(data) {
-    // TODO: Implement
-
-    this.format = data.format
-    this.duration = data.duration
-    this.size = data.size
-    this.audioMetaTags = new AudioMetaTags()
-    this.audioMetaTags.setDataFromTone(data.tags)
-  }
 }
 module.exports = MediaProbeData
