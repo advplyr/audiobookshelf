@@ -10,6 +10,3 @@ RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
     curl tzdata ffmpeg && \
   rm -rf /var/lib/apt/lists/*
-
-# Move tone executable to appropriate directory
-COPY --from=sandreas/tone:v0.1.5 /usr/local/bin/tone /usr/local/bin/

@@ -11,10 +11,9 @@
       </div>
     </div>
 
-    <div class="flex justify-center">
+    <div class="flex justify-center mb-2">
       <div class="w-full max-w-2xl">
-        <p class="text-xl mb-1">{{ $strings.HeaderMetadataToEmbed }}</p>
-        <p class="mb-2 text-base text-gray-300">audiobookshelf uses <a href="https://github.com/sandreas/tone" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">tone</a> to write metadata.</p>
+        <p class="text-xl">{{ $strings.HeaderMetadataToEmbed }}</p>
       </div>
       <div class="w-full max-w-2xl"></div>
     </div>
@@ -26,7 +25,7 @@
           <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
-          <template v-for="(value, key, index) in toneObject">
+          <template v-for="(value, key, index) in metadataObject">
             <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
               <div class="w-1/3 font-semibold">{{ key }}</div>
               <div class="w-2/3">
@@ -208,7 +207,7 @@ export default {
       processing: false,
       audiofilesEncoding: {},
       audiofilesFinished: {},
-      toneObject: null,
+      metadataObject: null,
       selectedTool: 'embed',
       isCancelingEncode: false,
       showEncodeOptions: false,
@@ -387,7 +386,7 @@ export default {
       window.history.replaceState({ path: newurl }, '', newurl)
     },
     init() {
-      this.fetchToneObject()
+      this.fetchMetadataEmbedObject()
       if (this.$route.query.tool === 'm4b') {
         if (this.availableTools.some((t) => t.value === 'm4b')) {
           this.selectedTool = 'm4b'
@@ -401,15 +400,14 @@ export default {
       const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
       this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
     },
-    fetchToneObject() {
+    fetchMetadataEmbedObject() {
       this.$axios
-        .$get(`/api/items/${this.libraryItemId}/tone-object`)
-        .then((toneObject) => {
-          delete toneObject.CoverFile
-          this.toneObject = toneObject
+        .$get(`/api/items/${this.libraryItemId}/metadata-object`)
+        .then((metadataObject) => {
+          this.metadataObject = metadataObject
         })
         .catch((error) => {
-          console.error('Failed to fetch tone object', error)
+          console.error('Failed to fetch metadata object', error)
         })
     },
     taskUpdated(task) {
