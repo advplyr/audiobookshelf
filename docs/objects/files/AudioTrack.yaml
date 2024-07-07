@@ -30,7 +30,7 @@ components:
           type: string
           nullable: true
           description: The URL where the audio track content is located.
-          example: `/api/items/${itemId}/file/${audioFile.ino}`
+          example: '`/api/items/${itemId}/file/${audioFile.ino}`'
         mimeType:
           type: string
           nullable: true
