@@ -408,6 +408,36 @@ export default {
         }
       })
     },
+    shareOpen(mediaItemShare) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.media.id === mediaItemShare.mediaItemId) {
+              return {
+                ...ent,
+                mediaItemShare
+              }
+            }
+            return ent
+          })
+        }
+      })
+    },
+    shareClosed(mediaItemShare) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.media.id === mediaItemShare.mediaItemId) {
+              return {
+                ...ent,
+                mediaItemShare: null
+              }
+            }
+            return ent
+          })
+        }
+      })
+    },
     initListeners() {
       if (this.$root.socket) {
         this.$root.socket.on('user_updated', this.userUpdated)
@@ -419,6 +449,8 @@ export default {
         this.$root.socket.on('items_updated', this.libraryItemsUpdated)
         this.$root.socket.on('items_added', this.libraryItemsAdded)
         this.$root.socket.on('episode_added', this.episodeAdded)
+        this.$root.socket.on('share_open', this.shareOpen)
+        this.$root.socket.on('share_closed', this.shareClosed)
       } else {
         console.error('Error socket not initialized')
       }
@@ -434,6 +466,8 @@ export default {
         this.$root.socket.off('items_updated', this.libraryItemsUpdated)
         this.$root.socket.off('items_added', this.libraryItemsAdded)
         this.$root.socket.off('episode_added', this.episodeAdded)
+        this.$root.socket.off('share_open', this.shareOpen)
+        this.$root.socket.off('share_closed', this.shareClosed)
       } else {
         console.error('Error socket not initialized')
       }
