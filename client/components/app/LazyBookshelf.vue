@@ -601,6 +601,30 @@ export default {
         this.executeRebuild()
       }
     },
+    shareOpen(mediaItemShare) {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
+        var indexOf = this.entities.findIndex((ent) => ent?.media?.id === mediaItemShare.mediaItemId)
+        if (indexOf >= 0) {
+          if (this.entityComponentRefs[indexOf]) {
+            const libraryItem = { ...this.entityComponentRefs[indexOf].libraryItem }
+            libraryItem.mediaItemShare = mediaItemShare
+            this.entityComponentRefs[indexOf].setEntity?.(libraryItem)
+          }
+        }
+      }
+    },
+    shareClosed(mediaItemShare) {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
+        var indexOf = this.entities.findIndex((ent) => ent?.media?.id === mediaItemShare.mediaItemId)
+        if (indexOf >= 0) {
+          if (this.entityComponentRefs[indexOf]) {
+            const libraryItem = { ...this.entityComponentRefs[indexOf].libraryItem }
+            libraryItem.mediaItemShare = null
+            this.entityComponentRefs[indexOf].setEntity?.(libraryItem)
+          }
+        }
+      }
+    },
     updatePagesLoaded() {
       let numPages = Math.ceil(this.totalEntities / this.booksPerFetch)
       for (let page = 0; page < numPages; page++) {
@@ -703,6 +727,8 @@ export default {
         this.$root.socket.on('playlist_added', this.playlistAdded)
         this.$root.socket.on('playlist_updated', this.playlistUpdated)
         this.$root.socket.on('playlist_removed', this.playlistRemoved)
+        this.$root.socket.on('share_open', this.shareOpen)
+        this.$root.socket.on('share_closed', this.shareClosed)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -730,6 +756,8 @@ export default {
         this.$root.socket.off('playlist_added', this.playlistAdded)
         this.$root.socket.off('playlist_updated', this.playlistUpdated)
         this.$root.socket.off('playlist_removed', this.playlistRemoved)
+        this.$root.socket.off('share_open', this.shareOpen)
+        this.$root.socket.off('share_closed', this.shareClosed)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }

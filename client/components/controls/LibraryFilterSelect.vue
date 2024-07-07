@@ -89,6 +89,9 @@ export default {
         this.$emit('input', val)
       }
     },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     libraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
@@ -148,7 +151,7 @@ export default {
       ]
     },
     bookItems() {
-      return [
+      const items = [
         {
           text: this.$strings.LabelAll,
           value: 'all'
@@ -229,13 +232,16 @@ export default {
           text: this.$strings.LabelRSSFeedOpen,
           value: 'feed-open',
           sublist: false
-        },
-        {
+        }
+      ]
+      if (this.userIsAdminOrUp) {
+        items.push({
           text: this.$strings.LabelShareOpen,
           value: 'share-open',
           sublist: false
-        }
-      ]
+        })
+      }
+      return items
     },
     podcastItems() {
       return [

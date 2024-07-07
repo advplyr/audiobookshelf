@@ -147,7 +147,6 @@
       </div>
     </div>
 
-    <modals-share-modal v-model="showShareModal" :media-item-share="mediaItemShare" :library-item="libraryItem" @opened="openedShare" @removed="removedShare" />
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
@@ -186,8 +185,7 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false,
-      showShareModal: false
+      showFullDescription: false
     }
   },
   computed: {
@@ -440,7 +438,7 @@ export default {
         })
       }
 
-      if (this.userIsAdminOrUp && !this.isPodcast) {
+      if (this.userIsAdminOrUp && !this.isPodcast && this.tracks.length) {
         items.push({
           text: this.$strings.LabelShare,
           action: 'share'
@@ -458,12 +456,6 @@ export default {
     }
   },
   methods: {
-    openedShare(mediaItemShare) {
-      this.mediaItemShare = mediaItemShare
-    },
-    removedShare() {
-      this.mediaItemShare = null
-    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
@@ -682,6 +674,16 @@ export default {
         this.rssFeed = null
       }
     },
+    shareOpen(mediaItemShare) {
+      if (mediaItemShare.mediaItemId === this.media.id) {
+        this.mediaItemShare = mediaItemShare
+      }
+    },
+    shareClosed(mediaItemShare) {
+      if (mediaItemShare.mediaItemId === this.media.id) {
+        this.mediaItemShare = null
+      }
+    },
     queueBtnClick() {
       if (this.isQueued) {
         // Remove from queue
@@ -778,7 +780,8 @@ export default {
       } else if (action === 'sendToDevice') {
         this.sendToDevice(data)
       } else if (action === 'share') {
-        this.showShareModal = true
+        this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+        this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
     }
   },
@@ -796,6 +799,8 @@ export default {
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.on('share_open', this.shareOpen)
+    this.$root.socket.on('share_closed', this.shareClosed)
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
@@ -805,6 +810,8 @@ export default {
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
     this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.off('share_open', this.shareOpen)
+    this.$root.socket.off('share_closed', this.shareClosed)
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)

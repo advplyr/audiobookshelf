@@ -43,7 +43,7 @@ class LibraryItemController {
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 
-      if (item.mediaType === 'book' && includeEntities.includes('share')) {
+      if (item.mediaType === 'book' && req.user.isAdminOrUp && includeEntities.includes('share')) {
         item.mediaItemShare = ShareManager.findByMediaItemId(item.media.id)
       }
 

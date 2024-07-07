@@ -53,17 +53,7 @@
 
 <script>
 export default {
-  props: {
-    value: Boolean,
-    libraryItem: {
-      type: Object,
-      default: () => null
-    },
-    mediaItemShare: {
-      type: Object,
-      default: () => null
-    }
-  },
+  props: {},
   data() {
     return {
       processing: false,
@@ -99,11 +89,17 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.globals.showShareModal
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('globals/setShowShareModal', val)
       }
+    },
+    mediaItemShare() {
+      return this.$store.state.globals.selectedMediaItemShare
+    },
+    libraryItem() {
+      return this.$store.state.selectedLibraryItem
     },
     user() {
       return this.$store.state.user.user
