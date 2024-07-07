@@ -6,6 +6,13 @@
       </div>
     </template>
     <div class="px-6 py-8 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+      <div class="absolute top-0 right-0 p-4">
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/media-item-shares" target="_blank" class="inline-flex">
+            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </div>
       <template v-if="currentShare">
         <div class="w-full py-2">
           <label class="px-1 text-sm font-semibold block">{{ $strings.LabelShareURL }}</label>
