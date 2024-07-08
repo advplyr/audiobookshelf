@@ -10,7 +10,7 @@
       <p v-if="isOpenInPlayer" class="text-sm text-right text-gray-400">{{ $strings.ButtonPlaying }}</p>
       <div v-else-if="isHovering" class="flex items-center justify-end -mx-1">
         <button class="outline-none mx-1 flex items-center" @click.stop="playClick">
-          <span class="material-symbols text-2xl text-success">play_arrow</span>
+          <span class="material-symbols fill text-2xl text-success">play_arrow</span>
         </button>
         <button class="outline-none mx-1 flex items-center" @click.stop="removeClick">
           <span class="material-symbols text-2xl text-error">close</span>

@@ -11,7 +11,7 @@
           <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
           <div class="absolute top-0 left-0 flex items-center justify-center bg-black bg-opacity-50 h-full w-full z-10" v-show="isHovering && showPlayBtn">
             <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
-              <span class="material-symbols text-2xl">play_arrow</span>
+              <span class="material-symbols fill text-2xl">play_arrow</span>
             </div>
           </div>
         </div>
