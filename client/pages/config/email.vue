@@ -4,7 +4,7 @@
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
           <a href="https://www.audiobookshelf.org/guides/send_to_ereader" target="_blank" class="inline-flex">
-            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
       </template>
@@ -27,7 +27,7 @@
               <ui-tooltip :text="$strings.LabelEmailSettingsSecureHelp">
                 <div class="pl-4 flex items-center">
                   <span id="email-settings-secure">{{ $strings.LabelEmailSettingsSecure }}</span>
-                  <span class="material-icons text-lg pl-1">info_outlined</span>
+                  <span class="material-symbols text-lg pl-1">info</span>
                 </div>
               </ui-tooltip>
             </div>
@@ -39,7 +39,7 @@
               <ui-tooltip :text="$strings.LabelEmailSettingsRejectUnauthorizedHelp">
                 <div class="pl-4 flex items-center">
                   <span id="email-settings-reject-unauthorized">{{ $strings.LabelEmailSettingsRejectUnauthorized }}</span>
-                  <span class="material-icons text-lg pl-1">info_outlined</span>
+                  <span class="material-symbols text-lg pl-1">info</span>
                 </div>
               </ui-tooltip>
             </div>

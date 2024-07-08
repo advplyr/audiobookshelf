@@ -28,7 +28,7 @@
     <div v-if="selectedMatchOrig" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
       <div class="flex mb-4">
         <div class="w-8 h-8 rounded-full hover:bg-white hover:bg-opacity-10 flex items-center justify-center cursor-pointer" @click="clearSelectedMatch">
-          <span class="material-icons text-3xl">arrow_back</span>
+          <span class="material-symbols text-3xl">arrow_back</span>
         </div>
         <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>

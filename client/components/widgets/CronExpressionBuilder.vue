@@ -30,14 +30,14 @@
 
         <div class="flex items-center justify-center">
           <widgets-loading-spinner v-if="isValidating" class="mr-2" />
-          <span v-else class="material-icons-outlined mr-2 text-xl" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
+          <span v-else class="material-symbols-outlined mr-2 text-xl" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
           <p v-if="isValidating" class="text-gray-300 text-base md:text-lg text-center">{{ $strings.MessageCheckingCron }}</p>
           <p v-else-if="customCronError" class="text-error text-base md:text-lg text-center">{{ customCronError }}</p>
           <p v-else class="text-success text-base md:text-lg text-center">{{ $strings.MessageValidCronExpression }}</p>
         </div>
       </template>
       <div v-if="cronExpression && isValid" class="flex items-center justify-center text-yellow-400 mt-2">
-        <span class="material-icons-outlined mr-2 text-xl">event</span>
+        <span class="material-symbols-outlined mr-2 text-xl">event</span>
         <p>{{ $strings.LabelNextScheduledRun }}: {{ nextRun }}</p>
       </div>
     </div>

@@ -8,7 +8,7 @@
           <ui-text-input ref="maxNotificationQueueInput" type="number" v-model="maxNotificationQueue" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
 
           <ui-tooltip :text="$strings.LabelNotificationsMaxQueueSizeHelp" direction="right">
-            <p class="pl-2 md:pl-4 text-base md:text-lg">{{ $strings.LabelNotificationsMaxQueueSize }}<span class="material-icons icon-text ml-1">info_outlined</span></p>
+            <p class="pl-2 md:pl-4 text-base md:text-lg">{{ $strings.LabelNotificationsMaxQueueSize }}<span class="material-symbols icon-text ml-1">info</span></p>
           </ui-tooltip>
         </div>
 
@@ -16,7 +16,7 @@
           <ui-text-input ref="maxFailedAttemptsInput" type="number" v-model="maxFailedAttempts" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
 
           <ui-tooltip :text="$strings.LabelNotificationsMaxFailedAttemptsHelp" direction="right">
-            <p class="pl-2 md:pl-4 text-base md:text-lg">{{ $strings.LabelNotificationsMaxFailedAttempts }}<span class="material-icons icon-text ml-1">info_outlined</span></p>
+            <p class="pl-2 md:pl-4 text-base md:text-lg">{{ $strings.LabelNotificationsMaxFailedAttempts }}<span class="material-symbols icon-text ml-1">info</span></p>
           </ui-tooltip>
         </div>
 
@@ -29,7 +29,7 @@
 
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold">{{ $strings.HeaderNotifications }}</h2>
-        <ui-btn small color="success" class="flex items-center" @click="clickCreate">{{ $strings.ButtonCreate }} <span class="material-icons text-lg pl-2">add</span></ui-btn>
+        <ui-btn small color="success" class="flex items-center" @click="clickCreate">{{ $strings.ButtonCreate }} <span class="material-symbols text-lg pl-2">add</span></ui-btn>
       </div>
 
       <div v-if="!notifications.length" class="flex justify-center text-center">

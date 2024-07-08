@@ -49,15 +49,15 @@
 
               <div class="flex items-center">
                 <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
-                  <span v-if="episodeIdStreaming === episode.id" class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-                  <span v-else class="material-icons text-2xl text-success">play_arrow</span>
+                  <span v-if="episodeIdStreaming === episode.id" class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+                  <span v-else class="material-symbols text-2xl text-success">play_arrow</span>
                   <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
                 </button>
 
                 <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" direction="top">
                   <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" />
                   <!-- <button class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
-                    <span class="material-icons-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
+                    <span class="material-symbols-outlined text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
                   </button> -->
                 </ui-tooltip>
 

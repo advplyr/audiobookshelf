@@ -15,13 +15,13 @@
     </div>
 
     <div v-if="numPages" class="absolute top-0 left-4 sm:left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
-      <span class="material-icons text-xl">menu</span>
+      <span class="material-symbols text-xl">menu</span>
     </div>
     <div v-if="comicMetadata" class="absolute top-0 left-16 sm:left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
-      <span class="material-icons text-xl">more</span>
+      <span class="material-symbols text-xl">more</span>
     </div>
     <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-28 sm:left-32' : 'left-16 sm:left-20'">
-      <span class="material-icons text-xl">download</span>
+      <span class="material-symbols text-xl">download</span>
     </a>
 
     <div v-if="numPages" class="absolute top-0 right-14 sm:right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
@@ -35,12 +35,12 @@
     <div class="w-full h-full relative">
       <div v-show="canGoPrev" ref="prevButton" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2">
-          <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
+          <span v-show="loadedFirstPage" class="material-symbols text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
         </div>
       </div>
       <div v-show="canGoNext" ref="nextButton" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2 ml-auto">
-          <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
+          <span v-show="loadedFirstPage" class="material-symbols text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
         </div>
       </div>
       <div ref="imageContainer" class="w-full h-full relative overflow-auto">

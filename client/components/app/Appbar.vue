@@ -16,7 +16,7 @@
         <div class="flex-grow" />
 
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
-          <span class="material-icons-outlined text-2xl text-warning text-opacity-50"> cast </span>
+          <span class="material-symbols-outlined text-2xl text-warning text-opacity-50"> cast </span>
         </ui-tooltip>
         <div v-if="isChromecastInitialized" class="w-6 min-w-6 h-6 ml-2 mr-1 sm:mx-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
@@ -26,19 +26,19 @@
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom" class="flex items-center">
-            <span class="material-icons text-2xl" aria-label="User Stats" role="button">equalizer</span>
+            <span class="material-symbols text-2xl" aria-label="User Stats" role="button">equalizer</span>
           </ui-tooltip>
         </nuxt-link>
 
         <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.ButtonUpload" direction="bottom" class="flex items-center">
-            <span class="material-icons text-2xl" aria-label="Upload Media" role="button">upload</span>
+            <span class="material-symbols text-2xl" aria-label="Upload Media" role="button">upload</span>
           </ui-tooltip>
         </nuxt-link>
 
         <nuxt-link v-if="userIsAdminOrUp" to="/config" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
-            <span class="material-icons text-2xl" aria-label="System Settings" role="button">settings</span>
+            <span class="material-symbols text-2xl" aria-label="System Settings" role="button">settings</span>
           </ui-tooltip>
         </nuxt-link>
 
@@ -47,7 +47,7 @@
             <span class="block truncate">{{ username }}</span>
           </span>
           <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
-            <span class="material-icons text-xl text-gray-100">person</span>
+            <span class="material-symbols text-xl text-gray-100">person</span>
           </span>
         </nuxt-link>
       </div>
@@ -55,7 +55,7 @@
         <h1 class="text-lg md:text-2xl px-4">{{ $getString('MessageItemsSelected', [numMediaItemsSelected]) }}</h1>
         <div class="flex-grow" />
         <ui-btn v-if="!isPodcastLibrary && selectedMediaItemsArePlayable" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playSelectedItems">
-          <span class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
+          <span class="material-symbols text-2xl -ml-2 pr-1 text-white">play_arrow</span>
           {{ $strings.ButtonPlay }}
         </ui-btn>
         <ui-tooltip v-if="isBookLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
@@ -76,7 +76,7 @@
         <ui-context-menu-dropdown v-if="contextMenuItems.length && !processingBatch" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
 
         <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom" class="flex items-center">
-          <span class="material-icons text-3xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+          <span class="material-symbols text-3xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>
     </div>

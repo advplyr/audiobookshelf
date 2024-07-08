@@ -2,10 +2,10 @@
   <div v-if="show" id="reader" :data-theme="ereaderTheme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black" :class="{ 'reader-player-open': !!streamLibraryItem }">
     <div class="absolute top-4 left-4 z-20 flex items-center">
       <button v-if="isEpub" @click="toggleToC" type="button" aria-label="Table of contents menu" class="inline-flex opacity-80 hover:opacity-100">
-        <span class="material-icons text-2xl">menu</span>
+        <span class="material-symbols text-2xl">menu</span>
       </button>
       <button v-if="hasSettings" @click="openSettings" type="button" aria-label="Ereader settings" class="mx-4 inline-flex opacity-80 hover:opacity-100">
-        <span class="material-icons text-1.5xl">settings</span>
+        <span class="material-symbols text-1.5xl">settings</span>
       </button>
     </div>
 
@@ -19,7 +19,7 @@
 
     <div class="absolute top-4 right-4 z-20">
       <button @click="close" type="button" aria-label="Close ereader" class="inline-flex opacity-80 hover:opacity-100">
-        <span class="material-icons text-2xl">close</span>
+        <span class="material-symbols text-2xl">close</span>
       </button>
     </div>
 
@@ -31,7 +31,7 @@
       <div class="flex flex-col p-4 h-full">
         <div class="flex items-center mb-2">
           <button @click.stop.prevent="toggleToC" type="button" aria-label="Close table of contents" class="inline-flex opacity-80 hover:opacity-100">
-            <span class="material-icons text-2xl">arrow_back</span>
+            <span class="material-symbols text-2xl">arrow_back</span>
           </button>
 
           <p class="text-lg font-semibold ml-2">{{ $strings.HeaderTableOfContents }}</p>

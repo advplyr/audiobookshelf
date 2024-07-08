@@ -4,10 +4,10 @@
       <slot />
       <div class="flex-grow" />
       <button cy-id="leftScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
-        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
+        <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
       </button>
       <button cy-id="rightScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
-        <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
+        <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
       </button>
     </div>
     <div cy-id="slider" ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll" style="scroll-behavior: smooth" @scroll="scrolled">

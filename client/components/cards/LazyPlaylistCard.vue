@@ -7,7 +7,7 @@
       </div>
       <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
         <div class="absolute pointer-events-auto" :style="{ top: 0.5 + 'em', right: 0.5 + 'em' }" @click.stop.prevent="clickEdit">
-          <span class="material-icons text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
+          <span class="material-symbols text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
         </div>
       </div>
     </div>

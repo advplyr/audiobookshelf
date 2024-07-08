@@ -12,7 +12,7 @@
       </div>
       <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
         <p class="text-lg">Preview Cover</p>
-        <span class="absolute top-4 right-4 material-icons text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
+        <span class="absolute top-4 right-4 material-symbols text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
         <div class="flex justify-center py-4">
           <covers-preview-cover :src="previewUpload" :width="240" />
         </div>

@@ -15,7 +15,7 @@
             <div class="flex-grow" />
 
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
-              <span v-show="!streaming" class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
+              <span v-show="!streaming" class="material-symbols text-2xl -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
@@ -25,7 +25,7 @@
             </ui-tooltip>
 
             <button type="button" class="h-9 w-9 flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5 mx-px" @click.stop.prevent="editClick">
-              <span class="material-icons text-xl">edit</span>
+              <span class="material-symbols text-xl">edit</span>
             </button>
 
             <ui-context-menu-dropdown :items="contextMenuItems" class="mx-px" @action="contextMenuAction" />

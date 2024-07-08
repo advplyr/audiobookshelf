@@ -20,29 +20,29 @@
             </th>
             <th v-if="!numSelected" class="flex-grow sm:flex-grow-0 sm:w-48 sm:max-w-48 text-left group cursor-pointer" @click.stop="sortColumn('displayTitle')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
             <th v-if="!numSelected" class="w-26 min-w-26 text-left hidden md:table-cell group cursor-pointer" @click.stop="sortColumn('playMethod')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelPlayMethod }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('playMethod') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelPlayMethod }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('playMethod') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
             <th v-if="!numSelected" class="w-24 min-w-24 sm:w-32 sm:min-w-32 group cursor-pointer" @click.stop="sortColumn('timeListening')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-symbols text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-24 min-w-24 group cursor-pointer" @click.stop="sortColumn('currentTime')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-symbols text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="flex-grow hidden sm:table-cell cursor-pointer group" @click.stop="sortColumn('updatedAt')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelLastUpdate }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('updatedAt') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelLastUpdate }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('updatedAt') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
           </tr>

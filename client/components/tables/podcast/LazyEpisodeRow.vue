@@ -21,7 +21,7 @@
 
         <div class="flex items-center pt-2">
           <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
-            <span class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <span class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
 

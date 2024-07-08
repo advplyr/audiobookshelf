@@ -15,12 +15,12 @@
           <!-- Search icon btn -->
           <div cy-id="match" v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2e cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="searchAuthor">
             <ui-tooltip :text="$strings.ButtonQuickMatch" direction="bottom">
-              <span class="material-icons" :style="{ fontSize: 1.125 + 'em' }">search</span>
+              <span class="material-symbols" :style="{ fontSize: 1.125 + 'em' }">search</span>
             </ui-tooltip>
           </div>
           <div cy-id="edit" v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2e cursor-pointer hover:text-white text-gray-200 transform hover:scale-125 duration-150" @click.prevent.stop="$emit('edit', author)">
             <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
-              <span class="material-icons" :style="{ fontSize: 1.125 + 'em' }">edit</span>
+              <span class="material-symbols" :style="{ fontSize: 1.125 + 'em' }">edit</span>
             </ui-tooltip>
           </div>
 
