@@ -97,7 +97,7 @@
         </div>
         <!-- media item shared icon -->
         <div cy-id="mediaItemShare" v-if="mediaItemShare && !isSelectionMode && !isHovering" class="absolute text-success left-0 z-10" :style="{ padding: 0.375 + 'em', top: rssFeed ? '2em' : '0px' }">
-          <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">public</span>
+          <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">public</span>
         </div>
 
         <!-- Series sequence -->
