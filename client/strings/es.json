@@ -512,6 +512,7 @@
   "LabelSettingsStoreMetadataWithItemHelp": "Por defecto, los archivos de metadatos se almacenan en /metadata/items. Si habilita esta opción, los archivos de metadatos se guardarán en la carpeta de elementos de su biblioteca",
   "LabelSettingsTimeFormat": "Formato de Tiempo",
   "LabelShare": "Compartir",
+  "LabelShareOpen": "abrir un recurso compartido",
   "LabelShareURL": "Compartir la URL",
   "LabelShowAll": "Mostrar Todos",
   "LabelShowSeconds": "Mostrar segundos",
