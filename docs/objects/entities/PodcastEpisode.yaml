@@ -51,7 +51,6 @@ components:
           nullable: true
         pubDate:
           type: string
-          format: date-time
           description: The publication date of the episode.
           nullable: true
         chapters:
