@@ -76,3 +76,5 @@ tags:
     description: Series endpoints
   - name: Notification
     description: Notifications endpoints
+  - name: Podcasts
+    description: Podcast endpoints

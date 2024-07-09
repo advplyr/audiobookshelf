@@ -3,6 +3,8 @@ paths:
     post:
       summary: Create a new podcast
       operationId: createPodcast
+      tags:
+        - Podcasts
       requestBody:
         required: true
         content:
@@ -27,6 +29,8 @@ paths:
     post:
       summary: Get podcast feed
       operationId: getPodcastFeed
+      tags:
+        - Podcasts
       requestBody:
         required: true
         content:
@@ -58,6 +62,8 @@ paths:
     post:
       summary: Get feeds from OPML text
       operationId: getFeedsFromOPMLText
+      tags:
+        - Podcasts
       requestBody:
         required: true
         content:
@@ -94,6 +100,8 @@ paths:
     get:
       summary: Check and download new episodes
       operationId: checkNewEpisodes
+      tags:
+        - Podcasts
       parameters:
         - name: limit
           in: query
@@ -132,6 +140,8 @@ paths:
     get:
       summary: Clear episode download queue
       operationId: clearEpisodeDownloadQueue
+      tags:
+        - Podcasts
       responses:
         200:
           description: Successfully cleared download queue
@@ -150,6 +160,8 @@ paths:
     get:
       summary: Get episode downloads
       operationId: getEpisodeDownloads
+      tags:
+        - Podcasts
       responses:
         200:
           description: Successfully retrieved episode downloads
@@ -177,6 +189,8 @@ paths:
     get:
       summary: Find episode by title
       operationId: findEpisode
+      tags:
+        - Podcasts
       parameters:
         - name: title
           in: query
@@ -213,6 +227,8 @@ paths:
     post:
       summary: Download podcast episodes
       operationId: downloadEpisodes
+      tags:
+        - Podcasts
       requestBody:
         required: true
         content:
@@ -241,6 +257,8 @@ paths:
     post:
       summary: Quick match podcast episodes
       operationId: quickMatchEpisodes
+      tags:
+        - Podcasts
       parameters:
         - name: override
           in: query
@@ -279,6 +297,8 @@ paths:
     patch:
       summary: Update a podcast episode
       operationId: updateEpisode
+      tags:
+        - Podcasts
       requestBody:
         required: true
         content:
@@ -298,6 +318,8 @@ paths:
     get:
       summary: Get a specific podcast episode
       operationId: getEpisode
+      tags:
+        - Podcasts
       responses:
         200:
           description: Successfully retrieved episode
@@ -311,6 +333,8 @@ paths:
     delete:
       summary: Remove a podcast episode
       operationId: removeEpisode
+      tags:
+        - Podcasts
       parameters:
         - name: hard
           in: query
