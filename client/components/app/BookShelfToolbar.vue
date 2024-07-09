@@ -328,7 +328,7 @@ export default {
       }
 
       this.addSubtitlesMenuItem(items)
-      this.addCollpaseSeriesMenuItem(items)
+      this.addCollapseSeriesMenuItem(items)
 
       return items
     },
@@ -352,7 +352,7 @@ export default {
         }
       }
     },
-    addCollpaseSeriesMenuItem(items) {
+    addCollapseSeriesMenuItem(items) {
       if (this.isLibraryPage && this.isBookLibrary && !this.isBatchSelecting) {
         if (this.settings.collapseSeries) {
           items.push({
