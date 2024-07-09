@@ -25,7 +25,8 @@ components:
 paths:
   /api/emails/settings:
     get:
-      description: Get email settings
+      summary: Get email settings
+      description: Get email settings for sending e-books to e-readers.
       operationId: getEmailSettings
       tags:
         - Email
@@ -42,7 +43,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmailSettings'
+              $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EmailSettings'
       responses:
         200:
           $ref: '#/components/responses/email200'
