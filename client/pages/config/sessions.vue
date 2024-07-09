@@ -100,7 +100,7 @@
       </div>
       <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
 
-      <div class="w-full my-8 h-px bg-white/10" />
+      <div v-if="openListeningSessions.length" class="w-full my-8 h-px bg-white/10" />
 
       <!-- open listening sessions table -->
       <p v-if="openListeningSessions.length" class="text-lg my-4">Open Listening Sessions</p>
@@ -132,6 +132,45 @@
             </td>
             <td class="text-center">
               <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
+            </td>
+            <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
+              <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
+            </td>
+            <td class="text-center hidden sm:table-cell">
+              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
+                <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+              </ui-tooltip>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div v-if="openShareListeningSessions.length" class="w-full my-8 h-px bg-white/10" />
+
+      <!-- open share listening sessions table -->
+      <p v-if="openShareListeningSessions.length" class="text-lg my-4">Open Share Listening Sessions</p>
+      <div v-if="openShareListeningSessions.length" class="block max-w-full">
+        <table class="userSessionsTable">
+          <tr class="bg-primary bg-opacity-40">
+            <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+            <th class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
+            <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+            <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+            <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+            <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
+          </tr>
+
+          <tr v-for="session in openShareListeningSessions" :key="`open-${session.id}`" class="cursor-pointer" @click="showSession(session)">
+            <td class="py-1 max-w-48">
+              <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
+              <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
+            </td>
+            <td class="hidden md:table-cell"></td>
+            <td class="hidden md:table-cell">
+              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
+            </td>
+            <td class="hidden sm:table-cell max-w-32 min-w-32">
+              <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
             </td>
             <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
@@ -180,6 +219,7 @@ export default {
       selectedSession: null,
       listeningSessions: [],
       openListeningSessions: [],
+      openShareListeningSessions: [],
       numPages: 0,
       total: 0,
       currentPage: 0,
@@ -455,6 +495,7 @@ export default {
         s.open = true
         return s
       })
+      this.openShareListeningSessions = data.shareSessions || []
     },
     init() {
       this.loadSessions(0)

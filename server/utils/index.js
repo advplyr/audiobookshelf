@@ -1,7 +1,7 @@
 const Path = require('path')
 const uuid = require('uuid')
 const Logger = require('../Logger')
-const { parseString } = require("xml2js")
+const { parseString } = require('xml2js')
 const areEquivalent = require('./areEquivalent')
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
@@ -11,8 +11,9 @@ const levenshteinDistance = (str1, str2, caseSensitive = false) => {
     str1 = str1.toLowerCase()
     str2 = str2.toLowerCase()
   }
-  const track = Array(str2.length + 1).fill(null).map(() =>
-    Array(str1.length + 1).fill(null))
+  const track = Array(str2.length + 1)
+    .fill(null)
+    .map(() => Array(str1.length + 1).fill(null))
   for (let i = 0; i <= str1.length; i += 1) {
     track[0][i] = i
   }
@@ -25,7 +26,7 @@ const levenshteinDistance = (str1, str2, caseSensitive = false) => {
       track[j][i] = Math.min(
         track[j][i - 1] + 1, // deletion
         track[j - 1][i] + 1, // insertion
-        track[j - 1][i - 1] + indicator, // substitution
+        track[j - 1][i - 1] + indicator // substitution
       )
     }
   }
@@ -138,7 +139,10 @@ module.exports.toNumber = (val, fallback = 0) => {
 module.exports.cleanStringForSearch = (str) => {
   if (!str) return ''
   // Remove ' . ` " ,
-  return str.toLowerCase().replace(/[\'\.\`\",]/g, '').trim()
+  return str
+    .toLowerCase()
+    .replace(/[\'\.\`\",]/g, '')
+    .trim()
 }
 
 const getTitleParts = (title) => {
@@ -156,7 +160,7 @@ const getTitleParts = (title) => {
 /**
  * Remove sortingPrefixes from title
  * @example "The Good Book" => "Good Book"
- * @param {string} title 
+ * @param {string} title
  * @returns {string}
  */
 module.exports.getTitleIgnorePrefix = (title) => {
@@ -164,9 +168,9 @@ module.exports.getTitleIgnorePrefix = (title) => {
 }
 
 /**
- * Put sorting prefix at the end of title 
+ * Put sorting prefix at the end of title
  * @example "The Good Book" => "Good Book, The"
- * @param {string} title 
+ * @param {string} title
  * @returns {string}
  */
 module.exports.getTitlePrefixAtEnd = (title) => {
@@ -178,8 +182,8 @@ module.exports.getTitlePrefixAtEnd = (title) => {
  * to lower case for only ascii characters
  * used to handle sqlite that doesnt support unicode lower
  * @see https://github.com/advplyr/audiobookshelf/issues/2187
- * 
- * @param {string} str 
+ *
+ * @param {string} str
  * @returns {string}
  */
 module.exports.asciiOnlyToLowerCase = (str) => {
@@ -200,8 +204,8 @@ module.exports.asciiOnlyToLowerCase = (str) => {
 /**
  * Escape string used in RegExp
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping
- * 
- * @param {string} str 
+ *
+ * @param {string} str
  * @returns {string}
  */
 module.exports.escapeRegExp = (str) => {
@@ -211,8 +215,8 @@ module.exports.escapeRegExp = (str) => {
 
 /**
  * Validate url string with URL class
- * 
- * @param {string} rawUrl 
+ *
+ * @param {string} rawUrl
  * @returns {string} null if invalid
  */
 module.exports.validateUrl = (rawUrl) => {
@@ -227,11 +231,22 @@ module.exports.validateUrl = (rawUrl) => {
 
 /**
  * Check if a string is a valid UUID
- * 
- * @param {string} str 
+ *
+ * @param {string} str
  * @returns {boolean}
  */
 module.exports.isUUID = (str) => {
   if (!str || typeof str !== 'string') return false
   return uuid.validate(str)
+}
+
+/**
+ * Check if a string is a valid ASIN
+ *
+ * @param {string} str
+ * @returns {boolean}
+ */
+module.exports.isValidASIN = (str) => {
+  if (!str || typeof str !== 'string') return false
+  return /^[A-Z0-9]{10}$/.test(str)
 }

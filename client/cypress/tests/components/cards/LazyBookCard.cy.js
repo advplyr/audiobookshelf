@@ -7,61 +7,21 @@ import { Constants } from '@/plugins/constants'
 function createMountOptions() {
   const book = {
     id: '1',
-    ino: '281474976785140',
     libraryId: 'library-123',
-    folderId: 'folder-123',
-    path: '/path/to/book',
-    relPath: 'book',
-    isFile: false,
-    mtimeMs: 1689017292016,
-    ctimeMs: 1689017292016,
-    birthtimeMs: 1689017281555,
-    addedAt: 1700154928492,
-    updatedAt: 1713300533345,
-    isMissing: false,
-    isInvalid: false,
     mediaType: 'book',
     media: {
       id: 'book1',
-      metadata: {
-        title: 'The Fellowship of the Ring',
-        titleIgnorePrefix: 'Fellowship of the Ring',
-        subtitle: 'LOTR, Book 1',
-        authorName: 'J. R. R. Tolkien',
-        authorNameLF: 'Tolkien, J. R. R.',
-        narratorName: 'Andy Sirkis',
-        genres: ['Science Fiction & Fantasy'],
-        publishedYear: '2017',
-        publishedDate: null,
-        publisher: 'Book Publisher',
-        description: 'Book Description',
-        isbn: null,
-        asin: 'B075LXMLNV',
-        language: 'English',
-        explicit: false,
-        abridged: false
-      },
-      coverPath: null,
-      tags: ['Fantasy', 'Adventure'],
-      numTracks: 1,
-      numAudioFiles: 1,
-      numChapters: 31,
-      duration: 64410,
-      size: 511206878
-    },
-    numFiles: 4,
-    size: 511279587
+      metadata: { title: 'The Fellowship of the Ring', titleIgnorePrefix: 'Fellowship of the Ring', authorName: 'J. R. R. Tolkien' },
+      numTracks: 1
+    }
   }
 
   const propsData = {
     index: 0,
     bookMount: book,
-    bookCoverAspectRatio: 1,
     bookshelfView: Constants.BookshelfView.DETAIL,
     continueListeningShelf: false,
     filterBy: null,
-    width: 192,
-    height: 192,
     sortingIgnorePrefix: false,
     orderBy: null
   }
@@ -84,7 +44,10 @@ function createMountOptions() {
         'user/getUserCanDownload': true,
         'user/getIsAdminOrUp': true,
         'user/getUserMediaProgress': (id) => null,
+        'user/getUserSetting': (settingName) => false,
+        'user/getSizeMultiplier': 1,
         'libraries/getLibraryProvider': () => 'audible.us',
+        'libraries/getBookCoverAspectRatio': 1,
         'globals/getLibraryItemCoverSrc': () => 'https://my.server.com/book_placeholder.jpg',
         getLibraryItemsStreaming: () => null,
         getIsMediaQueued: () => false,
@@ -109,16 +72,6 @@ describe('LazyBookCard', () => {
   let mountOptions = null
   beforeEach(() => {
     mountOptions = createMountOptions()
-    // cy.intercept(
-    //   'https://my.server.com/**/*',
-    //   { middleware: true },
-    //   (req) => {
-    //     req.on('before:response', (res) => {
-    //       // force all API responses to not be cached
-    //       res.headers['cache-control'] = 'no-store'
-    //     })
-    //   }
-    // )
   })
 
   before(() => {
@@ -174,11 +127,14 @@ describe('LazyBookCard', () => {
     // the detailBottom element, currently rendered outside the card's area,
     // and requires complex layout calculations outside of the component.
     // todo: fix the component to render the detailBottom element inside the card's area
-    cy.get('#book-card-0').should(($el) => {
+    cy.get('#cover-area-0').should(($el) => {
       const width = $el.width()
       const height = $el.height()
-      expect(width).to.be.closeTo(mountOptions.propsData.width, 0.01)
-      expect(height).to.be.closeTo(mountOptions.propsData.height, 0.01)
+      const defaultHeight = 192
+      const defaultWidth = defaultHeight
+
+      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(height).to.be.closeTo(defaultHeight, 0.01)
     })
   })
 
@@ -201,6 +157,7 @@ describe('LazyBookCard', () => {
     cy.mount(LazyBookCard, mountOptions)
     cy.get('#book-card-0').click()
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('@routerPush').should('have.been.calledOnceWithExactly', '/item/1')
   })
 
@@ -215,6 +172,7 @@ describe('LazyBookCard', () => {
     mountOptions.mocks.$store.getters['globals/getLibraryItemCoverSrc'] = () => 'https://my.server.com/cover1.jpg'
     cy.mount(LazyBookCard, mountOptions)
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&coverBg').should('be.visible')
     cy.get('&coverImage').should('have.class', 'object-contain')
   })
@@ -223,6 +181,7 @@ describe('LazyBookCard', () => {
     mountOptions.mocks.$store.getters['globals/getLibraryItemCoverSrc'] = () => 'https://my.server.com/cover2.jpg'
     cy.mount(LazyBookCard, mountOptions)
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&coverBg').should('be.hidden')
     cy.get('&coverImage').should('have.class', 'object-fill')
   })
@@ -235,6 +194,7 @@ describe('LazyBookCard', () => {
     mountOptions.propsData.bookMount.media.coverPath = 'cover1.jpg'
     cy.mount(LazyBookCard, mountOptions)
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&placeholderTitle').should('not.exist')
     cy.get('&placeholderAuthor').should('not.exist')
   })
@@ -243,6 +203,7 @@ describe('LazyBookCard', () => {
     mountOptions.propsData.bookshelfView = Constants.BookshelfView.STANDARD
     cy.mount(LazyBookCard, mountOptions)
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&detailBottom').should('not.exist')
   })
 
@@ -250,6 +211,7 @@ describe('LazyBookCard', () => {
     mountOptions.propsData.bookMount.media.metadata.explicit = true
     cy.mount(LazyBookCard, mountOptions)
 
+    cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&explicitIndicator').should('be.visible')
   })
 
@@ -267,6 +229,7 @@ describe('LazyBookCard', () => {
     it('shows the collpased series', () => {
       cy.mount(LazyBookCard, mountOptions)
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&seriesSequenceList').should('not.exist')
       cy.get('&booksInSeries').should('be.visible').and('have.text', '3')
       cy.get('&title').should('be.visible').and('have.text', 'The Lord of the Rings')
@@ -283,6 +246,7 @@ describe('LazyBookCard', () => {
       cy.mount(LazyBookCard, mountOptions)
       cy.get('#book-card-0').trigger('mouseover')
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&seriesNameOverlay').should('be.visible').and('have.text', 'Middle Earth Chronicles')
     })
 
@@ -290,6 +254,7 @@ describe('LazyBookCard', () => {
       mountOptions.propsData.bookMount.collapsedSeries.seriesSequenceList = '1-3'
       cy.mount(LazyBookCard, mountOptions)
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&seriesSequenceList').should('be.visible').and('have.text', '#1-3')
       cy.get('&booksInSeries').should('not.exist')
     })
@@ -299,6 +264,7 @@ describe('LazyBookCard', () => {
       cy.mount(LazyBookCard, mountOptions)
       cy.get('#book-card-0').click()
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('@routerPush').should('have.been.calledOnceWithExactly', '/library/library-123/series/series-123')
     })
 
@@ -315,12 +281,15 @@ describe('LazyBookCard', () => {
       }
       cy.mount(LazyBookCard, mountOptions)
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&progressBar')
         .should('be.visible')
         .and('have.class', 'bg-yellow-400')
         .and(($el) => {
           const width = $el.width()
-          expect(width).to.be.closeTo(((1 + 0.5) / 3) * mountOptions.propsData.width, 0.01)
+          const defaultHeight = 192
+          const defaultWidth = defaultHeight
+          expect(width).to.be.closeTo(((1 + 0.5) / 3) * defaultWidth, 0.01)
         })
     })
 
@@ -330,12 +299,15 @@ describe('LazyBookCard', () => {
       }
       cy.mount(LazyBookCard, mountOptions)
 
+      cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&progressBar')
         .should('be.visible')
         .and('have.class', 'bg-success')
         .and(($el) => {
           const width = $el.width()
-          expect(width).to.be.equal(mountOptions.propsData.width)
+          const defaultHeight = 192
+          const defaultWidth = defaultHeight
+          expect(width).to.be.equal(defaultWidth)
         })
     })
   })

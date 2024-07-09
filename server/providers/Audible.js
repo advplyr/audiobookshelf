@@ -1,6 +1,7 @@
 const axios = require('axios').default
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
+const { isValidASIN } = require('../utils/index')
 
 class Audible {
   #responseTimeout = 30000
@@ -82,16 +83,6 @@ class Audible {
   }
 
   /**
-   * Test if a search title matches an ASIN. Supports lowercase letters
-   *
-   * @param {string} title
-   * @returns {boolean}
-   */
-  isProbablyAsin(title) {
-    return /^[0-9A-Za-z]{10}$/.test(title)
-  }
-
-  /**
    *
    * @param {string} asin
    * @param {string} region
@@ -137,11 +128,11 @@ class Audible {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
     let items
-    if (asin) {
+    if (asin && isValidASIN(asin.toUpperCase())) {
       items = [await this.asinSearch(asin, region, timeout)]
     }
 
-    if (!items && this.isProbablyAsin(title)) {
+    if (!items && isValidASIN(title.toUpperCase())) {
       items = [await this.asinSearch(title, region, timeout)]
     }
 

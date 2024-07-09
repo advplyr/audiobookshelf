@@ -1,13 +1,15 @@
 const axios = require('axios')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
+const os = require('os')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX } = require('./fileUtils')
+const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
   // return path.replace(/'/g, '\'\\\'\'')
-  return filePathToPOSIX(path).replace(/ /g, '\\ ').replace(/'/g, '\\\'')
+  return filePathToPOSIX(path).replace(/ /g, '\\ ').replace(/'/g, "\\'")
 }
 
 // Returns first track start time
@@ -19,7 +21,7 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
   // Find first track greater than startTime
   if (startTime > 0) {
     var currTrackEnd = 0
-    var startingTrack = tracks.find(t => {
+    var startingTrack = tracks.find((t) => {
       currTrackEnd += t.duration
       return startTime < currTrackEnd
     })
@@ -29,8 +31,8 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
     }
   }
 
-  var tracksToInclude = tracks.filter(t => t.index >= trackToStartWithIndex)
-  var trackPaths = tracksToInclude.map(t => {
+  var tracksToInclude = tracks.filter((t) => t.index >= trackToStartWithIndex)
+  var trackPaths = tracksToInclude.map((t) => {
     var line = 'file ' + escapeSingleQuotes(t.metadata.path) + '\n' + `duration ${t.duration}`
     return line
   })
@@ -99,6 +101,9 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       url: podcastEpisodeDownload.url,
       method: 'GET',
       responseType: 'stream',
+      headers: {
+        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
+      },
       timeout: 30000
     }).catch((error) => {
       Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
@@ -108,35 +113,31 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
-    ffmpeg.outputOptions(
-      '-c:a', 'copy',
-      '-map', '0:a',
-      '-metadata', 'podcast=1'
-    )
+    ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
 
     const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
     const podcastEpisode = podcastEpisodeDownload.podcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
     const taggings = {
-      'album': podcastMetadata.title,
+      album: podcastMetadata.title,
       'album-sort': podcastMetadata.title,
-      'artist': podcastMetadata.author,
+      artist: podcastMetadata.author,
       'artist-sort': podcastMetadata.author,
-      'comment': podcastEpisode.description,
-      'subtitle': podcastEpisode.subtitle,
-      'disc': podcastEpisode.season,
-      'genre': podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
-      'language': podcastMetadata.language,
-      'MVNM': podcastMetadata.title,
-      'MVIN': podcastEpisode.episode,
-      'track': podcastEpisode.episode,
+      comment: podcastEpisode.description,
+      subtitle: podcastEpisode.subtitle,
+      disc: podcastEpisode.season,
+      genre: podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
+      language: podcastMetadata.language,
+      MVNM: podcastMetadata.title,
+      MVIN: podcastEpisode.episode,
+      track: podcastEpisode.episode,
       'series-part': podcastEpisode.episode,
-      'title': podcastEpisode.title,
+      title: podcastEpisode.title,
       'title-sort': podcastEpisode.title,
-      'year': podcastEpisode.pubYear,
-      'date': podcastEpisode.pubDate,
-      'releasedate': podcastEpisode.pubDate,
+      year: podcastEpisode.pubYear,
+      date: podcastEpisode.pubDate,
+      releasedate: podcastEpisode.pubDate,
       'itunes-id': podcastMetadata.itunesId,
       'podcast-type': podcastMetadata.type,
       'episode-type': podcastMetadata.episodeType
@@ -185,3 +186,183 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     ffmpeg.run()
   })
 }
+
+/**
+ * Generates ffmetadata file content from the provided metadata object and chapters array.
+ * @param {Object} metadata - The input metadata object.
+ * @param {Array|null} chapters - An array of chapter objects.
+ * @returns {string} - The ffmetadata file content.
+ */
+function generateFFMetadata(metadata, chapters) {
+  let ffmetadataContent = ';FFMETADATA1\n'
+
+  // Add global metadata
+  for (const key in metadata) {
+    if (metadata[key]) {
+      ffmetadataContent += `${key}=${escapeFFMetadataValue(metadata[key])}\n`
+    }
+  }
+
+  // Add chapters
+  if (chapters) {
+    chapters.forEach((chapter) => {
+      ffmetadataContent += '\n[CHAPTER]\n'
+      ffmetadataContent += `TIMEBASE=1/1000\n`
+      ffmetadataContent += `START=${Math.floor(chapter.start * 1000)}\n`
+      ffmetadataContent += `END=${Math.floor(chapter.end * 1000)}\n`
+      if (chapter.title) {
+        ffmetadataContent += `title=${escapeFFMetadataValue(chapter.title)}\n`
+      }
+    })
+  }
+
+  return ffmetadataContent
+}
+
+module.exports.generateFFMetadata = generateFFMetadata
+
+/**
+ * Writes FFmpeg metadata file with the given metadata and chapters.
+ *
+ * @param {Object} metadata - The metadata object.
+ * @param {Array} chapters - The array of chapter objects.
+ * @param {string} ffmetadataPath - The path to the FFmpeg metadata file.
+ * @returns {Promise<boolean>} - A promise that resolves to true if the file was written successfully, false otherwise.
+ */
+async function writeFFMetadataFile(metadata, chapters, ffmetadataPath) {
+  try {
+    await fs.writeFile(ffmetadataPath, generateFFMetadata(metadata, chapters))
+    Logger.debug(`[ffmpegHelpers] Wrote ${ffmetadataPath}`)
+    return true
+  } catch (error) {
+    Logger.error(`[ffmpegHelpers] Write ${ffmetadataPath} failed`, error)
+    return false
+  }
+}
+
+module.exports.writeFFMetadataFile = writeFFMetadataFile
+
+/**
+ * Adds an ffmetadata and optionally a cover image to an audio file using fluent-ffmpeg.
+ *
+ * @param {string} audioFilePath - Path to the input audio file.
+ * @param {string|null} coverFilePath - Path to the cover image file.
+ * @param {string} metadataFilePath - Path to the ffmetadata file.
+ * @param {number} track - The track number to embed in the audio file.
+ * @param {string} mimeType - The MIME type of the audio file.
+ * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
+ * @returns {Promise<boolean>} A promise that resolves to true if the operation is successful, false otherwise.
+ */
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, ffmpeg = Ffmpeg()) {
+  const isMp4 = mimeType === 'audio/mp4'
+  const isMp3 = mimeType === 'audio/mpeg'
+
+  const audioFileDir = Path.dirname(audioFilePath)
+  const audioFileExt = Path.extname(audioFilePath)
+  const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
+  const tempFilePath = filePathToPOSIX(Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`))
+
+  return new Promise((resolve) => {
+    ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
+      '-map 0:a', // map audio stream from input file
+      '-map_metadata 1', // map metadata tags from metadata file first
+      '-map_metadata 0', // add additional metadata tags from input file
+      '-map_chapters 1', // map chapters from metadata file
+      '-c copy' // copy streams
+    ])
+
+    if (track && !isNaN(track)) {
+      ffmpeg.outputOptions(['-metadata track=' + track])
+    }
+
+    if (isMp4) {
+      ffmpeg.outputOptions([
+        '-f mp4' // force output format to mp4
+      ])
+    } else if (isMp3) {
+      ffmpeg.outputOptions([
+        '-id3v2_version 3' // set ID3v2 version to 3
+      ])
+    }
+
+    if (coverFilePath) {
+      ffmpeg.input(coverFilePath).outputOptions([
+        '-map 2:v', // map video stream from cover image file
+        '-disposition:v:0 attached_pic', // set cover image as attached picture
+        '-metadata:s:v',
+        'title=Cover', // add title metadata to cover image stream
+        '-metadata:s:v',
+        'comment=Cover' // add comment metadata to cover image stream
+      ])
+    } else {
+      ffmpeg.outputOptions([
+        '-map 0:v?' // retain video stream from input file if exists
+      ])
+    }
+
+    ffmpeg
+      .output(tempFilePath)
+      .on('start', function (commandLine) {
+        Logger.debug('[ffmpegHelpers] Spawned Ffmpeg with command: ' + commandLine)
+      })
+      .on('end', (stdout, stderr) => {
+        Logger.debug('[ffmpegHelpers] ffmpeg stdout:', stdout)
+        Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
+        fs.copyFileSync(tempFilePath, audioFilePath)
+        fs.unlinkSync(tempFilePath)
+        resolve(true)
+      })
+      .on('error', (err, stdout, stderr) => {
+        Logger.error('Error adding cover image and metadata:', err)
+        Logger.error('ffmpeg stdout:', stdout)
+        Logger.error('ffmpeg stderr:', stderr)
+        resolve(false)
+      })
+
+    ffmpeg.run()
+  })
+}
+
+module.exports.addCoverAndMetadataToFile = addCoverAndMetadataToFile
+
+function escapeFFMetadataValue(value) {
+  return value.replace(/([;=\n\\#])/g, '\\$1')
+}
+
+/**
+ * Retrieves the FFmpeg metadata object for a given library item.
+ *
+ * @param {LibraryItem} libraryItem - The library item containing the media metadata.
+ * @param {number} audioFilesLength - The length of the audio files.
+ * @returns {Object} - The FFmpeg metadata object.
+ */
+function getFFMetadataObject(libraryItem, audioFilesLength) {
+  const metadata = libraryItem.media.metadata
+
+  const ffmetadata = {
+    title: metadata.title,
+    artist: metadata.authorName,
+    album_artist: metadata.authorName,
+    album: (metadata.title || '') + (metadata.subtitle ? `: ${metadata.subtitle}` : ''),
+    TIT3: metadata.subtitle, // mp3 only
+    genre: metadata.genres?.join('; '),
+    date: metadata.publishedYear,
+    comment: metadata.description,
+    description: metadata.description,
+    composer: metadata.narratorName,
+    copyright: metadata.publisher,
+    publisher: metadata.publisher, // mp3 only
+    TRACKTOTAL: `${audioFilesLength}`, // mp3 only
+    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
+  }
+
+  Object.keys(ffmetadata).forEach((key) => {
+    if (!ffmetadata[key]) {
+      delete ffmetadata[key]
+    }
+  })
+
+  return ffmetadata
+}
+
+module.exports.getFFMetadataObject = getFFMetadataObject

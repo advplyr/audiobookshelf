@@ -13,9 +13,6 @@ describe('AuthorCard', () => {
 
   const propsData = {
     author,
-    width: 192 * 0.8,
-    height: 192,
-    sizeMultiplier: 1,
     nameBelow: false
   }
 
@@ -27,7 +24,8 @@ describe('AuthorCard', () => {
     $store: {
       getters: {
         'user/getUserCanUpdate': true,
-        'libraries/getLibraryProvider': () => 'audible.us'
+        'libraries/getLibraryProvider': () => 'audible.us',
+        'user/getSizeMultiplier': 1
       },
       state: {
         libraries: {
@@ -36,9 +34,9 @@ describe('AuthorCard', () => {
       }
     },
     $eventBus: {
-      $on: () => { },
-      $off: () => { },
-    },
+      $on: () => {},
+      $off: () => {}
+    }
   }
 
   const stubs = {
@@ -59,8 +57,10 @@ describe('AuthorCard', () => {
     cy.get('&card').should(($el) => {
       const width = $el.width()
       const height = $el.height()
-      expect(width).to.be.closeTo(propsData.width, 0.01)
-      expect(height).to.be.closeTo(propsData.height, 0.01)
+      const defaultHeight = 192
+      const defaultWidth = defaultHeight * 0.8
+      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(height).to.be.closeTo(defaultHeight, 0.01)
     })
   })
 
@@ -78,21 +78,25 @@ describe('AuthorCard', () => {
       .and(($el) => {
         const height = $el.height()
         const width = $el.width()
-        const sizeMultiplier = propsData.sizeMultiplier
+        const sizeMultiplier = 1
         const defaultFontSize = 16
         const defaultLineHeight = 1.5
         const fontSizeMultiplier = 0.75
         const px2 = 16
+        const defaultHeight = 192
+        const defaultWidth = defaultHeight * 0.8
         expect(height).to.be.closeTo(defaultFontSize * fontSizeMultiplier * sizeMultiplier * defaultLineHeight, 0.01)
         nameBelowHeight = height
-        expect(width).to.be.closeTo(propsData.width - px2, 0.01)
+        expect(width).to.be.closeTo(defaultWidth - px2, 0.01)
       })
     cy.get('&card').should(($el) => {
       const width = $el.width()
       const height = $el.height()
       const py1 = 8
-      expect(width).to.be.closeTo(propsData.width, 0.01)
-      expect(height).to.be.closeTo(propsData.height + nameBelowHeight + py1, 0.01)
+      const defaultHeight = 192
+      const defaultWidth = defaultHeight * 0.8
+      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(height).to.be.closeTo(defaultHeight + nameBelowHeight + py1, 0.01)
     })
   })
 
@@ -110,11 +114,12 @@ describe('AuthorCard', () => {
     cy.get('&card').trigger('mouseleave')
     cy.get('&match').should('be.hidden')
     cy.get('&edit').should('be.hidden')
-
   })
 
   it('renders the component with spinner while searching', () => {
-    const data = () => { return { searching: true, isHovering: false } }
+    const data = () => {
+      return { searching: true, isHovering: false }
+    }
     cy.mount(AuthorCard, { ...mountOptions, data })
 
     cy.get('&textInline').should('be.hidden')
@@ -171,7 +176,7 @@ describe('AuthorCard', () => {
     const updatedMocks = {
       ...mocks,
       $axios: {
-        $post: cy.stub().resolves({ updated: true, author: { name: 'John Doe', imagePath: "path/to/image" } })
+        $post: cy.stub().resolves({ updated: true, author: { name: 'John Doe', imagePath: 'path/to/image' } })
       },
       $toast: {
         success: cy.stub().as('success'),

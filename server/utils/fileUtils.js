@@ -255,6 +255,9 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
       url,
       method: 'GET',
       responseType: 'stream',
+      headers: {
+        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
+      },
       timeout: 30000,
       httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(url),
       httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(url)

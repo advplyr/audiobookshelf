@@ -1,0 +1,479 @@
+components:
+  schemas:
+    sortBy:
+      type: string
+      description: The field to sort by from the request.
+      example: 'media.metadata.title'
+    sortDesc:
+      description: Whether to sort in descending order.
+      type: boolean
+      example: true
+    filterBy:
+      type: string
+      description: The field to filter by from the request. TODO
+      example: 'media.metadata.title'
+    collapseSeries:
+      type: boolean
+      description: Whether collapse series was set in the request.
+      example: true
+    libraryFolders:
+      description: The folders of the library. Only specify the fullPath.
+      type: array
+      items:
+        $ref: '../objects/Folder.yaml#/components/schemas/folder'
+    libraryDisplayOrder:
+      description: The display order of the library. Must be >= 1.
+      type: integer
+      minimum: 1
+      example: 1
+    libraryIcon:
+      description: The icon of the library. See Library Icons for a list of possible icons.
+      type: string
+      example: 'audiobookshelf'
+    libraryMediaType:
+      description: The type of media that the library contains. Must be `book` or `podcast`.
+      type: string
+      example: 'book'
+    libraryProvider:
+      description: Preferred metadata provider for the library. See Metadata Providers for a list of possible providers.
+      type: string
+      example: 'audible'
+    librarySettings:
+      $ref: '../objects/Library.yaml#/components/schemas/librarySettings'
+    librarySort:
+      description: The sort order of the library. For example, to sort by title use 'sort=media.metadata.title'.
+      type: string
+      example: 'media.metadata.title'
+    libraryFilter:
+      description: The filter for the library.
+      type: string
+      example: 'media.metadata.title'
+    libraryCollapseSeries:
+      description: Whether to collapse series.
+      type: boolean
+      example: true
+      default: false
+    libraryInclude:
+      description: The fields to include in the response. The only current option is `rssfeed`.
+      type: string
+      example: 'rssfeed'
+  parameters:
+    limit:
+      in: query
+      name: limit
+      description: The number of items to return. This the size of a single page for the optional `page` query.
+      example: 10
+      schema:
+        type: integer
+        default: 0
+    page:
+      in: query
+      name: page
+      description: The page number (zero indexed) to return. If no limit is specified, then page will have no effect.
+      example: 0
+      schema:
+        type: integer
+        default: 0
+    desc:
+      in: query
+      name: desc
+      description: Return items in reversed order if true.
+      example: 0
+      schema:
+        type: integer
+        default: 0
+
+  responses:
+    library200:
+      description: Library found.
+      content:
+        application/json:
+          schema:
+            $ref: '../objects/Library.yaml#/components/schemas/library'
+    library404:
+      description: Library not found.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Library not found.
+paths:
+  /api/libraries:
+    get:
+      operationId: getLibraries
+      summary: Get all libraries on server
+      description: Get all libraries on server.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          description: getLibraries OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  libraries:
+                    type: array
+                    items:
+                      $ref: '../objects/Library.yaml#/components/schemas/library'
+    post:
+      operationId: createLibrary
+      summary: Create a new library on server
+      description: Create a new library on server.
+      tags:
+        - Libraries
+      requestBody:
+        description: The library object to create.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, folders]
+              properties:
+                name:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryName'
+                folders:
+                  $ref: '#/components/schemas/libraryFolders'
+                displayOrder:
+                  $ref: '#/components/schemas/libraryDisplayOrder'
+                icon:
+                  $ref: '#/components/schemas/libraryIcon'
+                mediaType:
+                  $ref: '#/components/schemas/libraryMediaType'
+                provider:
+                  $ref: '#/components/schemas/libraryProvider'
+                settings:
+                  $ref: '#/components/schemas/librarySettings'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryById
+      summary: Get a single library by ID on server
+      description: Get a single library by ID on server.
+      tags:
+        - Libraries
+      parameters:
+        - in: query
+          name: include
+          schema:
+            type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+    patch:
+      operationId: updateLibraryById
+      summary: Update a single library by ID on server
+      description: Update a single library by ID on server.
+      tags:
+        - Libraries
+      requestBody:
+        required: true
+        description: The library object to update.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryName'
+                folders:
+                  $ref: '#/components/schemas/libraryFolders'
+                displayOrder:
+                  $ref: '#/components/schemas/libraryDisplayOrder'
+                icon:
+                  $ref: '#/components/schemas/libraryIcon'
+                mediaType:
+                  $ref: '#/components/schemas/libraryMediaType'
+                provider:
+                  $ref: '#/components/schemas/libraryProvider'
+                settings:
+                  $ref: '#/components/schemas/librarySettings'
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+    delete:
+      operationId: deleteLibraryById
+      summary: Delete a single library by ID on server
+      description: Delete a single library by ID on server and return the deleted object.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          $ref: '#/components/responses/library200'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/issues:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    delete:
+      operationId: deleteLibraryIssues
+      summary: Delete items with issues in a library.
+      description: Delete all items with issues in a library by library ID on the server. This only removes the items from the ABS database and does not delete media files.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          description: deleteLibraryIssues OK
+          content:
+            application/json:
+              schema:
+                type: string
+                example: 'Issues deleted.'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/items:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryItems
+      summary: Get items in a library
+      description: Get items in a library by ID on server.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numBooks'
+          schema:
+            type: string
+            default: 'name'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+        - in: query
+          name: include
+          description: The fields to include in the response. The only current option is `rssfeed`.
+          allowReserved: true
+          example: 'rssfeed'
+          schema:
+            type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
+        - in: query
+          name: collapseSeries
+          description: Whether to collapse series into a single cover
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: getLibraryItems OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+                  mediaType:
+                    $ref: '../objects/mediaTypes/media.yaml#/components/schemas/mediaType'
+                  minified:
+                    $ref: '../schemas.yaml#/components/schemas/minified'
+                  collapseSeries:
+                    $ref: '#/components/schemas/collapseSeries'
+                  include:
+                    $ref: '#/components/schemas/libraryInclude'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/authors:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryAuthors
+      summary: Get all authors in a library
+      description: Get all authors in a library by ID on server.
+      tags:
+        - Libraries
+      responses:
+        '200':
+          description: getLibraryAuthors OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authors:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/Author.yaml#/components/schemas/authorExpanded'
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/series:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibrarySeries
+      summary: Get library series
+      description: Get series in a library. Filtering and sorting can be applied.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numBooks'
+          schema:
+            type: string
+            enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
+            default: 'name'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+        - in: query
+          name: include
+          description: The fields to include in the response. The only current option is `rssfeed`.
+          allowReserved: true
+          example: 'rssfeed'
+          schema:
+            type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
+      responses:
+        '200':
+          description: getLibrarySeries OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/Series.yaml#/components/schemas/seriesBooks'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+                  minified:
+                    $ref: '../schemas.yaml#/components/schemas/minified'
+                  include:
+                    $ref: '#/components/schemas/libraryInclude'
+
+        '404':
+          $ref: '#/components/responses/library404'
+  /api/libraries/{id}/series/{seriesId}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+      - name: seriesId
+        in: path
+        description: The ID of the series.
+        required: true
+        schema:
+          $ref: '../objects/entities/Series.yaml#/components/schemas/seriesId'
+    get:
+      operationId: getLibrarySeriesById
+      summary: Get single series in library
+      description: Get a single series in a library by ID on server. This endpoint is deprecated and `/api/series/{id}` should be used instead.
+      deprecated: true
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numBooks'
+          schema:
+            type: string
+            enum: ['name', 'numBooks', 'totalDuration', 'addedAt', 'lastBookAdded', 'lastBookUpdated']
+            default: 'name'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+        - $ref: '../schemas.yaml#/components/parameters/minified'
+        - in: query
+          name: include
+          description: The fields to include in the response. The only current option is `rssfeed`.
+          allowReserved: true
+          example: 'rssfeed'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: getLibrarySeriesById OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/Series.yaml#/components/schemas/seriesWithProgressAndRSS'
+        '404':
+          $ref: '#/components/responses/library404'

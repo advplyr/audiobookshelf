@@ -4,6 +4,8 @@ const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 const { asciiOnlyToLowerCase } = require('../index')
 
+const ShareManager = require('../../managers/ShareManager')
+
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
@@ -330,9 +332,9 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId
-   * @param {[oldUser]} user
-   * @param {[string]} filterGroup
-   * @param {[string]} filterValue
+   * @param {import('../../objects/user/User')} user
+   * @param {string|null} filterGroup
+   * @param {string|null} filterValue
    * @param {string} sortBy
    * @param {string} sortDesc
    * @param {boolean} collapseseries
@@ -354,6 +356,7 @@ module.exports = {
       sortBy = 'media.metadata.title'
     }
     const includeRSSFeed = include.includes('rssfeed')
+    const includeMediaItemShare = !!user?.isAdminOrUp && include.includes('share')
 
     // For sorting by author name an additional attribute must be added
     //   with author names concatenated
@@ -407,6 +410,11 @@ module.exports = {
     if (filterGroup === 'feed-open' && !includeRSSFeed) {
       libraryItemIncludes.push({
         model: Database.feedModel,
+        required: true
+      })
+    } else if (filterGroup === 'share-open') {
+      bookIncludes.push({
+        model: Database.mediaItemShareModel,
         required: true
       })
     } else if (filterGroup === 'ebooks' && filterValue === 'supplementary') {
@@ -603,6 +611,10 @@ module.exports = {
 
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
+      }
+
+      if (includeMediaItemShare) {
+        libraryItem.mediaItemShare = ShareManager.findByMediaItemId(libraryItem.mediaId)
       }
 
       libraryItem.media = book

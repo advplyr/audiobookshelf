@@ -1,125 +1,139 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: width + 'px', maxWidth: width + 'px', height: height + 'px' }" class="absolute rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <!-- When cover image does not fill -->
-    <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
-      <div class="absolute cover-bg" ref="coverBg" />
+  <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-sm z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
+      <!-- When cover image does not fill -->
+      <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+        <div class="absolute cover-bg" ref="coverBg" />
+      </div>
+
+      <div cy-id="seriesSequenceList" v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #78350f">
+        <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequenceList }}</p>
+      </div>
+      <div cy-id="booksInSeries" v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
+        <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
+      </div>
+
+      <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
+        <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: 0.5 + 'em' }">
+          <p :style="{ fontSize: 0.8 + 'em' }" class="text-gray-300 text-center">{{ title }}</p>
+        </div>
+
+        <!-- Cover Image -->
+        <img cy-id="coverImage" v-show="libraryItem" ref="cover" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+
+        <!-- Placeholder Cover Title & Author -->
+        <div cy-id="placeholderTitle" v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em' }">
+          <div>
+            <p cy-id="placeholderTitleText" class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'em' }">{{ titleCleaned }}</p>
+          </div>
+        </div>
+        <div cy-id="placeholderAuthor" v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em', bottom: authorBottom + 'em' }">
+          <p cy-id="placeholderAuthorText" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
+        </div>
+
+        <div v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #78350f">
+          <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequenceList }}</p>
+        </div>
+        <div v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #cd9d49dd">
+          <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
+        </div>
+
+        <!-- No progress shown for podcasts (unless showing podcast episode) -->
+        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
+
+        <!-- Overlay is not shown if collapsing series in library -->
+        <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded md:block" :class="overlayWrapperClasslist">
+          <div cy-id="playButton" v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
+            <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
+              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'em' }">play_circle_filled</span>
+            </div>
+          </div>
+
+          <div cy-id="readButton" v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
+            <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
+              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'em' }">auto_stories</span>
+            </div>
+          </div>
+
+          <div cy-id="editButton" v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0" :style="{ padding: 0.375 + 'em' }" @click.stop.prevent="editClick">
+            <span class="material-icons" :style="{ fontSize: 1 + 'em' }">edit</span>
+          </div>
+
+          <!-- Radio button -->
+          <div cy-id="selectedRadioButton" v-if="!isAuthorBookshelfView" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 + 'em', left: 0.375 + 'em' }" @click.stop.prevent="selectBtnClick">
+            <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 + 'em' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+          </div>
+
+          <!-- More Menu Icon -->
+          <div cy-id="moreButton" ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 + 'em', right: 0.375 + 'em' }" @click.stop.prevent="clickShowMore">
+            <span class="material-icons" :style="{ fontSize: 1.2 + 'em' }">more_vert</span>
+          </div>
+
+          <div cy-id="ebookFormat" v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 + 'em', left: 0.375 + 'em' }">
+            <span class="text-white/80" :style="{ fontSize: 0.8 + 'em' }">{{ ebookFormat }}</span>
+          </div>
+        </div>
+
+        <!-- Processing/loading spinner overlay -->
+        <div cy-id="loadingSpinner" v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
+          <widgets-loading-spinner size="la-lg" />
+        </div>
+
+        <!-- Series name overlay -->
+        <div cy-id="seriesNameOverlay" v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: 1 + 'em' }">
+          <p v-if="seriesName" class="text-gray-200 text-center" :style="{ fontSize: 1.1 + 'em' }">{{ seriesName }}</p>
+        </div>
+
+        <!-- Error widget -->
+        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
+          <div :style="{ height: 1.5 + 'em', width: 2.5 + 'em' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
+            <span class="material-icons text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
+          </div>
+        </ui-tooltip>
+
+        <!-- rss feed icon -->
+        <div cy-id="rssFeed" v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 + 'em' }">
+          <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">rss_feed</span>
+        </div>
+        <!-- media item shared icon -->
+        <div cy-id="mediaItemShare" v-if="mediaItemShare && !isSelectionMode && !isHovering" class="absolute text-success left-0 z-10" :style="{ padding: 0.375 + 'em', top: rssFeed ? '2em' : '0px' }">
+          <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">public</span>
+        </div>
+
+        <!-- Series sequence -->
+        <div cy-id="seriesSequence" v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
+          <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequence }}</p>
+        </div>
+
+        <!-- Podcast Episode # -->
+        <div cy-id="podcastEpisodeNumber" v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
+          <p :style="{ fontSize: 0.8 + 'em' }">
+            Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
+          </p>
+        </div>
+
+        <!-- Podcast Num Episodes -->
+        <div cy-id="numEpisodes" v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', width: 1.25 + 'em', height: 1.25 + 'em' }">
+          <p :style="{ fontSize: 0.8 + 'em' }">{{ numEpisodes }}</p>
+        </div>
+
+        <!-- Podcast Num Episodes -->
+        <div cy-id="numEpisodesIncomplete" v-else-if="numEpisodesIncomplete && !isHovering && !isSelectionMode" class="absolute rounded-full bg-yellow-400 text-black font-semibold box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', width: 1.25 + 'em', height: 1.25 + 'em' }">
+          <p :style="{ fontSize: 0.8 + 'em' }">{{ numEpisodesIncomplete }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- Alternative bookshelf title/author/sort -->
-    <div cy-id="detailBottom" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
-      <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+    <div cy-id="detailBottom" :id="`description-area-${index}`" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="relative mt-2e mb-2e left-0 z-50 w-full">
+      <div :style="{ fontSize: 0.9 + 'em' }">
         <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
           <p cy-id="title" ref="displayTitle" role="heading" aria-level="3" class="truncate">{{ displayTitle }}</p>
           <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
-      <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
-      <p cy-id="line3" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
-    </div>
-
-    <div cy-id="seriesSequenceList" v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }" style="background-color: #78350f">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequenceList }}</p>
-    </div>
-    <div cy-id="booksInSeries" v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }" style="background-color: #cd9d49dd">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ booksInSeries }}</p>
-    </div>
-
-    <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
-      <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
-        <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="text-gray-300 text-center">{{ title }}</p>
-      </div>
-
-      <!-- Cover Image -->
-      <img cy-id="coverImage" v-show="libraryItem" ref="cover" :src="bookCoverSrc" class="w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
-
-      <!-- Placeholder Cover Title & Author -->
-      <div cy-id="placeholderTitle" v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
-        <div>
-          <p cy-id="placeholderTitleText" class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
-        </div>
-      </div>
-      <div cy-id="placeholderAuthor" v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
-        <p cy-id="placeholderAuthorText" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
-      </div>
-    </div>
-
-    <!-- No progress shown for podcasts (unless showing podcast episode) -->
-    <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
-
-    <!-- Overlay is not shown if collapsing series in library -->
-    <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded md:block" :class="overlayWrapperClasslist">
-      <div cy-id="playButton" v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
-          <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
-        </div>
-      </div>
-
-      <div cy-id="readButton" v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
-          <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
-        </div>
-      </div>
-
-      <div cy-id="editButton" v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
-        <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
-      </div>
-
-      <!-- Radio button -->
-      <div cy-id="selectedRadioButton" v-if="!isAuthorBookshelfView" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
-        <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
-      </div>
-
-      <!-- More Menu Icon -->
-      <div cy-id="moreButton" ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
-        <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
-      </div>
-
-      <div cy-id="ebookFormat" v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }">
-        <span class="text-white/80" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ ebookFormat }}</span>
-      </div>
-    </div>
-
-    <!-- Processing/loading spinner overlay -->
-    <div cy-id="loadingSpinner" v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
-      <widgets-loading-spinner size="la-lg" />
-    </div>
-
-    <!-- Series name overlay -->
-    <div cy-id="seriesNameOverlay" v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
-      <p v-if="seriesName" class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ seriesName }}</p>
-    </div>
-
-    <!-- Error widget -->
-    <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
-      <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-        <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
-      </div>
-    </ui-tooltip>
-
-    <div cy-id="rssFeed" v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }">
-      <span class="material-icons" :style="{ fontSize: sizeMultiplier * 1.5 + 'rem' }">rss_feed</span>
-    </div>
-
-    <!-- Series sequence -->
-    <div cy-id="seriesSequence" v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
-    </div>
-
-    <!-- Podcast Episode # -->
-    <div cy-id="podcastEpisodeNumber" v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">
-        Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
-      </p>
-    </div>
-
-    <!-- Podcast Num Episodes -->
-    <div cy-id="numEpisodes" v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodes }}</p>
-    </div>
-
-    <!-- Podcast Num Episodes -->
-    <div cy-id="numEpisodesIncomplete" v-else-if="numEpisodesIncomplete && !isHovering && !isSelectionMode" class="absolute rounded-full bg-yellow-400 text-black font-semibold box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodesIncomplete }}</p>
+      <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displayLineTwo || '&nbsp;' }}</p>
+      <p cy-id="line3" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>
   </div>
 </template>
@@ -131,15 +145,11 @@ import MoreMenu from '@/components/widgets/MoreMenu'
 export default {
   props: {
     index: Number,
-    width: {
-      type: Number,
-      default: 120
-    },
+    width: Number,
     height: {
       type: Number,
       default: 192
     },
-    bookCoverAspectRatio: Number,
     bookshelfView: Number,
     bookMount: {
       // Book can be passed as prop or set with setEntity()
@@ -174,6 +184,39 @@ export default {
     }
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.store.getters['libraries/getBookCoverAspectRatio']
+    },
+    coverWidth() {
+      return this.width || this.coverHeight / this.bookCoverAspectRatio
+    },
+    coverHeight() {
+      return this.height * this.sizeMultiplier
+    },
+    cardWidth() {
+      // This method returns immediately without waiting for the DOM to update
+      return this.coverWidth
+    },
+    /*
+    cardHeight() {
+      // This method returns immediately without waiting for the DOM to update
+      return this.coverHeight + this.detailsHeight
+    },
+    detailsHeight() {
+      if (!this.isAlternativeBookshelfView) return 0
+      const lineHeight = 1.5
+      const remSize = 16
+      const baseHeight = this.sizeMultiplier * lineHeight * remSize
+      const titleHeight = 0.9 * baseHeight
+      const line2Height = 0.8 * baseHeight
+      const line3Height = this.displaySortLine ? 0.8 * baseHeight : 0
+      const marginHeight = 8 * 2 * this.sizeMultiplier // py-2
+      return titleHeight + line2Height + line3Height + marginHeight
+    },
+    */
+    sizeMultiplier() {
+      return this.store.getters['user/getSizeMultiplier']
+    },
     dateFormat() {
       return this.store.state.serverSettings.dateFormat
     },
@@ -273,10 +316,6 @@ export default {
     squareAspectRatio() {
       return this.bookCoverAspectRatio === 1
     },
-    sizeMultiplier() {
-      const baseSize = this.squareAspectRatio ? 192 : 120
-      return this.width / baseSize
-    },
     title() {
       return this.mediaMetadata.title || ''
     },
@@ -298,7 +337,7 @@ export default {
       if (this.recentEpisode) return this.recentEpisode.title
       const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
       if (this.collapsedSeries) return ignorePrefix ? this.collapsedSeries.nameIgnorePrefix : this.collapsedSeries.name
-      return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix : this.title
+      return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix || '\u00A0' : this.title || '\u00A0'
     },
     displayLineTwo() {
       if (this.recentEpisode) return this.title
@@ -319,7 +358,10 @@ export default {
       if (this.orderBy === 'media.duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
       if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
       if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} Episodes`
-      if (this.orderBy === 'media.metadata.publishedYear' && this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
+      if (this.orderBy === 'media.metadata.publishedYear') {
+        if (this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
+        return '\u00A0'
+      }
       return null
     },
     episodeProgress() {
@@ -486,6 +528,12 @@ export default {
             func: 'openPlaylists',
             text: this.$strings.LabelAddToPlaylist
           })
+          if (this.userIsAdminOrUp) {
+            items.push({
+              func: 'openShare',
+              text: this.$strings.LabelShare
+            })
+          }
         }
         if (this.ebookFormat && this.store.state.libraries.ereaderDevices?.length) {
           items.push({
@@ -557,16 +605,16 @@ export default {
       return this.$root.socket || this.$nuxt.$root.socket
     },
     titleFontSize() {
-      return 0.75 * this.sizeMultiplier
+      return 0.75
     },
     authorFontSize() {
-      return 0.6 * this.sizeMultiplier
+      return 0.6
     },
     placeholderCoverPadding() {
-      return 0.8 * this.sizeMultiplier
+      return 0.8
     },
     authorBottom() {
-      return 0.75 * this.sizeMultiplier
+      return 0.75
     },
     titleCleaned() {
       if (!this.title) return ''
@@ -590,14 +638,12 @@ export default {
       const constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.AUTHOR
     },
-    titleDisplayBottomOffset() {
-      if (!this.isAlternativeBookshelfView && !this.isAuthorBookshelfView) return 0
-      else if (!this.displaySortLine) return 3 * this.sizeMultiplier
-      return 4.25 * this.sizeMultiplier
-    },
     rssFeed() {
       if (this.booksInSeries) return null
       return this._libraryItem.rssFeed || null
+    },
+    mediaItemShare() {
+      return this._libraryItem.mediaItemShare || null
     }
   },
   methods: {
@@ -839,6 +885,10 @@ export default {
     openPlaylists() {
       this.store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode: this.recentEpisode }])
       this.store.commit('globals/setShowPlaylistsModal', true)
+    },
+    openShare() {
+      this.store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.store.commit('globals/setShareModal', this.mediaItemShare)
     },
     deleteLibraryItem() {
       const payload = {

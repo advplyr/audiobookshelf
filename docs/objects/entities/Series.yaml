@@ -9,3 +9,109 @@ components:
       description: The name of the series.
       type: string
       example: Sword of Truth
+    seriesDescription:
+      description: A description for the series. Will be null if there is none.
+      type: string
+      nullable: true
+      example: The Sword of Truth is a series of twenty one epic fantasy novels written by Terry Goodkind.
+    sequence:
+      description: The position in the series the book is.
+      type: string
+      nullable: true
+    seriesProgress:
+      type: object
+      description: The user's progress of a series.
+      properties:
+        libraryItemIds:
+          description: The IDs of the library items in the series.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        libraryItemIdsFinished:
+          description: The IDs of the library items in the series that are finished.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        isFinished:
+          description: Whether the series is finished.
+          type: boolean
+    series:
+      type: object
+      description: A series object which includes the name and description of the series.
+      properties:
+        id:
+          $ref: '#/components/schemas/seriesId'
+        name:
+          $ref: '#/components/schemas/seriesName'
+        description:
+          $ref: '#/components/schemas/seriesDescription'
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+    seriesNumBooks:
+      type: object
+      description: A series object which includes the name and number of books in the series.
+      properties:
+        id:
+          $ref: '#/components/schemas/seriesId'
+        name:
+          $ref: '#/components/schemas/seriesName'
+        numBooks:
+          description: The number of books in the series.
+          type: integer
+        libraryItemIds:
+          description: The IDs of the library items in the series.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+    seriesBooks:
+      type: object
+      description: A series object which includes the name and books in the series.
+      properties:
+        id:
+          $ref: '#/components/schemas/seriesId'
+        name:
+          $ref: '#/components/schemas/seriesName'
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        nameIgnorePrefix:
+          description: The name of the series with any prefix moved to the end.
+          type: string
+        nameIgnorePrefixSort:
+          description: The name of the series with any prefix removed.
+          type: string
+        type:
+          description: Will always be `series`.
+          type: string
+        books:
+          description: The library items that contain the books in the series. A sequence attribute that denotes the position in the series the book is in, is tacked on.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemSequence'
+        totalDuration:
+          description: The combined duration (in seconds) of all books in the series.
+          type: number
+    seriesSequence:
+      type: object
+      description: A series object which includes the name and sequence of the series.
+      properties:
+        id:
+          $ref: '#/components/schemas/seriesId'
+        name:
+          $ref: '#/components/schemas/seriesName'
+        sequence:
+          $ref: '#/components/schemas/sequence'
+    seriesWithProgressAndRSS:
+      type: object
+      description: A series object which includes the name and progress of the series.
+      oneOf:
+        - $ref: '#/components/schemas/series'
+        - type: object
+          properties:
+            progress:
+              $ref: '#/components/schemas/seriesProgress'
+            rssFeed:
+              description: The RSS feed for the series.
+              type: string
+              example: 'TBD'

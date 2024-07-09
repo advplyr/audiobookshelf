@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const Path = require('path')
 const serverVersion = require('../../package.json').version
 const Logger = require('../Logger')
@@ -21,28 +21,34 @@ class PlaybackSessionManager {
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
 
     this.oldPlaybackSessionMap = {} // TODO: Remove after updated mobile versions
+
+    /** @type {PlaybackSession[]} */
     this.sessions = []
   }
 
   getSession(sessionId) {
-    return this.sessions.find(s => s.id === sessionId)
+    return this.sessions.find((s) => s.id === sessionId)
   }
   getUserSession(userId) {
-    return this.sessions.find(s => s.userId === userId)
+    return this.sessions.find((s) => s.userId === userId)
   }
   getStream(sessionId) {
     const session = this.getSession(sessionId)
     return session?.stream || null
   }
 
-  async getDeviceInfo(req) {
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {Object} [clientDeviceInfo]
+   * @returns {Promise<DeviceInfo>}
+   */
+  async getDeviceInfo(req, clientDeviceInfo = null) {
     const ua = uaParserJs(req.headers['user-agent'])
     const ip = requestIp.getClientIp(req)
 
-    const clientDeviceInfo = req.body?.deviceInfo || null
-
     const deviceInfo = new DeviceInfo()
-    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user.id)
+    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
     if (clientDeviceInfo?.deviceId) {
       const existingDevice = await Database.getDeviceByDeviceId(clientDeviceInfo.deviceId)
@@ -59,8 +65,14 @@ class PlaybackSessionManager {
     return deviceInfo
   }
 
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {string} [episodeId]
+   */
   async startSessionRequest(req, res, episodeId) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
     const { user, libraryItem, body: options } = req
     const session = await this.startSession(user, deviceInfo, libraryItem, episodeId, options)
@@ -76,7 +88,7 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionsRequest(req, res) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const user = req.user
     const sessions = req.body.sessions || []
 
@@ -94,7 +106,7 @@ class PlaybackSessionManager {
 
   async syncLocalSession(user, sessionJson, deviceInfo) {
     const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
-    const episode = (sessionJson.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
+    const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
       return {
@@ -178,20 +190,22 @@ class PlaybackSessionManager {
     // Update user and emit socket event
     if (result.progressSynced) {
       const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      if (itemProgress) await Database.upsertMediaProgress(itemProgress)
-      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
-        id: itemProgress.id,
-        sessionId: session.id,
-        deviceDescription: session.deviceDescription,
-        data: itemProgress.toJSON()
-      })
+      if (itemProgress) {
+        await Database.upsertMediaProgress(itemProgress)
+        SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
+          id: itemProgress.id,
+          sessionId: session.id,
+          deviceDescription: session.deviceDescription,
+          data: itemProgress.toJSON()
+        })
+      }
     }
 
     return result
   }
 
   async syncLocalSessionRequest(req, res) {
-    const deviceInfo = await this.getDeviceInfo(req)
+    const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const user = req.user
     const sessionJson = req.body
     const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
@@ -207,9 +221,18 @@ class PlaybackSessionManager {
     res.sendStatus(200)
   }
 
+  /**
+   *
+   * @param {import('../objects/user/User')} user
+   * @param {DeviceInfo} deviceInfo
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {string|null} episodeId
+   * @param {{forceDirectPlay?:boolean, forceTranscode?:boolean, mediaPlayer:string, supportedMimeTypes?:string[]}} options
+   * @returns {Promise<PlaybackSession>}
+   */
   async startSession(user, deviceInfo, libraryItem, episodeId, options) {
     // Close any sessions already open for user and device
-    const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id && playbackSession.deviceId === deviceInfo.id)
+    const userSessions = this.sessions.filter((playbackSession) => playbackSession.userId === user.id && playbackSession.deviceId === deviceInfo.id)
     for (const session of userSessions) {
       Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}" (Device: ${session.deviceDescription})`)
       await this.closeSession(user, session, null)
@@ -229,7 +252,7 @@ class PlaybackSessionManager {
       }
     }
     const newPlaybackSession = new PlaybackSession()
-    newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, episodeId)
+    newPlaybackSession.setData(libraryItem, user.id, mediaPlayer, deviceInfo, userStartTime, episodeId)
 
     if (libraryItem.mediaType === 'video') {
       if (shouldDirectPlay) {
@@ -325,13 +348,17 @@ class PlaybackSessionManager {
     }
   }
 
+  /**
+   *
+   * @param {string} sessionId
+   */
   async removeSession(sessionId) {
-    const session = this.sessions.find(s => s.id === sessionId)
+    const session = this.sessions.find((s) => s.id === sessionId)
     if (!session) return
     if (session.stream) {
       await session.stream.close()
     }
-    this.sessions = this.sessions.filter(s => s.id !== sessionId)
+    this.sessions = this.sessions.filter((s) => s.id !== sessionId)
     Logger.debug(`[PlaybackSessionManager] Removed session "${sessionId}"`)
   }
 
@@ -343,8 +370,9 @@ class PlaybackSessionManager {
     try {
       const streamsInPath = await fs.readdir(this.StreamsPath)
       for (const streamId of streamsInPath) {
-        if (/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/.test(streamId)) { // Ensure is uuidv4
-          const session = this.sessions.find(se => se.id === streamId)
+        if (/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/.test(streamId)) {
+          // Ensure is uuidv4
+          const session = this.sessions.find((se) => se.id === streamId)
           if (!session) {
             const streamPath = Path.join(this.StreamsPath, streamId)
             Logger.debug(`[PlaybackSessionManager] Removing orphan stream "${streamPath}"`)
@@ -354,6 +382,19 @@ class PlaybackSessionManager {
       }
     } catch (error) {
       Logger.error(`[PlaybackSessionManager] cleanOrphanStreams failed`, error)
+    }
+  }
+
+  /**
+   * Close all open sessions that have not been updated in the last 36 hours
+   */
+  async closeStaleOpenSessions() {
+    const updatedAtTimeCutoff = Date.now() - 1000 * 60 * 60 * 36
+    const staleSessions = this.sessions.filter((session) => session.updatedAt < updatedAtTimeCutoff)
+    for (const session of staleSessions) {
+      const sessionLastUpdate = new Date(session.updatedAt)
+      Logger.info(`[PlaybackSessionManager] Closing stale session "${session.displayTitle}" (${session.id}) last updated at ${sessionLastUpdate}`)
+      await this.removeSession(session.id)
     }
   }
 }

@@ -160,7 +160,7 @@ export default {
     }
 
     // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -170,7 +170,8 @@ export default {
     }
     return {
       libraryItem: item,
-      rssFeed: item.rssFeed || null
+      rssFeed: item.rssFeed || null,
+      mediaItemShare: item.mediaItemShare || null
     }
   },
   data() {
@@ -437,6 +438,13 @@ export default {
         })
       }
 
+      if (this.userIsAdminOrUp && !this.isPodcast && this.tracks.length) {
+        items.push({
+          text: this.$strings.LabelShare,
+          action: 'share'
+        })
+      }
+
       if (this.userCanDelete) {
         items.push({
           text: this.$strings.ButtonDelete,
@@ -666,6 +674,16 @@ export default {
         this.rssFeed = null
       }
     },
+    shareOpen(mediaItemShare) {
+      if (mediaItemShare.mediaItemId === this.media.id) {
+        this.mediaItemShare = mediaItemShare
+      }
+    },
+    shareClosed(mediaItemShare) {
+      if (mediaItemShare.mediaItemId === this.media.id) {
+        this.mediaItemShare = null
+      }
+    },
     queueBtnClick() {
       if (this.isQueued) {
         // Remove from queue
@@ -761,6 +779,9 @@ export default {
         this.deleteLibraryItem()
       } else if (action === 'sendToDevice') {
         this.sendToDevice(data)
+      } else if (action === 'share') {
+        this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+        this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
     }
   },
@@ -778,6 +799,8 @@ export default {
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.on('share_open', this.shareOpen)
+    this.$root.socket.on('share_closed', this.shareClosed)
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
@@ -787,6 +810,8 @@ export default {
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
     this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
     this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.off('share_open', this.shareOpen)
+    this.$root.socket.off('share_closed', this.shareClosed)
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)

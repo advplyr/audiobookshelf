@@ -121,6 +121,50 @@ class Author extends Model {
   }
 
   /**
+   *
+   * @param {string} authorId
+   * @returns {Promise<import('./LibraryItem')[]>}
+   */
+  static async getAllLibraryItemsForAuthor(authorId) {
+    const author = await this.findByPk(authorId, {
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.libraryItem
+            },
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+    const libraryItems = []
+    if (author.books) {
+      for (const book of author.books) {
+        const libraryItem = book.libraryItem
+        libraryItem.media = book
+        delete book.libraryItem
+        libraryItems.push(libraryItem)
+      }
+    }
+
+    return libraryItems
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */

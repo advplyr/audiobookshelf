@@ -10,6 +10,7 @@ export const state = () => ({
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
   showRSSFeedOpenCloseModal: false,
+  showShareModal: false,
   showConfirmPrompt: false,
   showRawCoverPreviewModal: false,
   confirmPromptOptions: null,
@@ -22,6 +23,7 @@ export const state = () => ({
   selectedAuthor: null,
   selectedMediaItems: [],
   selectedRawCoverUrl: null,
+  selectedMediaItemShare: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
@@ -156,6 +158,13 @@ export const mutations = {
   setRSSFeedOpenCloseModal(state, entity) {
     state.rssFeedEntity = entity
     state.showRSSFeedOpenCloseModal = true
+  },
+  setShowShareModal(state, val) {
+    state.showShareModal = val
+  },
+  setShareModal(state, mediaItemShare) {
+    state.selectedMediaItemShare = mediaItemShare
+    state.showShareModal = true
   },
   setShowConfirmPrompt(state, val) {
     state.showConfirmPrompt = val

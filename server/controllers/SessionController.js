@@ -2,8 +2,10 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 const { toNumber, isUUID } = require('../utils/index')
 
+const ShareManager = require('../managers/ShareManager')
+
 class SessionController {
-  constructor() { }
+  constructor() {}
 
   async findOne(req, res) {
     return res.json(req.playbackSession)
@@ -12,9 +14,9 @@ class SessionController {
   /**
    * GET: /api/sessions
    * @this import('../routers/ApiRouter')
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async getAllWithUserData(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -68,15 +70,13 @@ class SessionController {
     const { rows, count } = await Database.playbackSessionModel.findAndCountAll({
       where,
       include,
-      order: [
-        [orderKey, orderDesc]
-      ],
+      order: [[orderKey, orderDesc]],
       limit: itemsPerPage,
       offset: itemsPerPage * page
     })
 
     // Map playback sessions to old playback sessions
-    const sessions = rows.map(session => {
+    const sessions = rows.map((session) => {
       const oldPlaybackSession = Database.playbackSessionModel.getOldPlaybackSession(session)
       if (session.user) {
         return {
@@ -112,15 +112,18 @@ class SessionController {
     }
 
     const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
-    const openSessions = this.playbackSessionManager.sessions.map(se => {
+    const openSessions = this.playbackSessionManager.sessions.map((se) => {
       return {
         ...se.toJSON(),
-        user: minifiedUserObjects.find(u => u.id === se.userId) || null
+        user: minifiedUserObjects.find((u) => u.id === se.userId) || null
       }
     })
 
+    const shareSessions = ShareManager.openSharePlaybackSessions.map((se) => se.toJSON())
+
     res.json({
-      sessions: openSessions
+      sessions: openSessions,
+      shareSessions
     })
   }
 
@@ -157,12 +160,12 @@ class SessionController {
   /**
    * POST: /api/sessions/batch/delete
    * @this import('../routers/ApiRouter')
-   * 
+   *
    * @typedef batchDeleteReqBody
    * @property {string[]} sessions
-   * 
-   * @param {import('express').Request<{}, {}, batchDeleteReqBody, {}>} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request<{}, {}, batchDeleteReqBody, {}>} req
+   * @param {import('express').Response} res
    */
   async batchDelete(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -170,7 +173,7 @@ class SessionController {
       return res.sendStatus(403)
     }
     // Validate session ids
-    if (!req.body.sessions?.length || !Array.isArray(req.body.sessions) || req.body.sessions.some(s => !isUUID(s))) {
+    if (!req.body.sessions?.length || !Array.isArray(req.body.sessions) || req.body.sessions.some((s) => !isUUID(s))) {
       Logger.error(`[SessionController] Invalid request body. "sessions" array is required`, req.body)
       return res.status(400).send('Invalid request body. "sessions" array of session id strings is required.')
     }

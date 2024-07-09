@@ -25,14 +25,14 @@ export const getters = {
   },
   getUserMediaProgress: (state) => (libraryItemId, episodeId = null) => {
     if (!state.user.mediaProgress) return null
-    return state.user.mediaProgress.find(li => {
+    return state.user.mediaProgress.find((li) => {
       if (episodeId && li.episodeId !== episodeId) return false
       return li.libraryItemId == libraryItemId
     })
   },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user.bookmarks) return []
-    return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId)
+    return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
   },
   getUserSetting: (state) => (key) => {
     return state.settings?.[key] || null
@@ -65,6 +65,9 @@ export const getters = {
   getIsSeriesRemovedFromContinueListening: (state) => (seriesId) => {
     if (!state.user || !state.user.seriesHideFromContinueListening || !state.user.seriesHideFromContinueListening.length) return false
     return state.user.seriesHideFromContinueListening.includes(seriesId)
+  },
+  getSizeMultiplier: (state) => {
+    return state.settings.bookshelfCoverSize / 120
   }
 }
 
@@ -152,9 +155,9 @@ export const mutations = {
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return
     if (!data) {
-      state.user.mediaProgress = state.user.mediaProgress.filter(lip => lip.id != id)
+      state.user.mediaProgress = state.user.mediaProgress.filter((lip) => lip.id != id)
     } else {
-      var indexOf = state.user.mediaProgress.findIndex(lip => lip.id == id)
+      var indexOf = state.user.mediaProgress.findIndex((lip) => lip.id == id)
       if (indexOf >= 0) {
         state.user.mediaProgress.splice(indexOf, 1, data)
       } else {

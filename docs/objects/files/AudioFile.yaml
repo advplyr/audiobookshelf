@@ -52,7 +52,7 @@ components:
           type: string
           example: MP2/3 (MPEG audio layer 2/3)
         duration:
-          $ref: '#/components/schemas/durationSec'
+          $ref: '../../schemas.yaml#/components/schemas/durationSec'
         bitRate:
           description: The bit rate (in bit/s) of the audio file.
           type: integer
