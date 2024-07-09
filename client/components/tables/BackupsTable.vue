@@ -171,7 +171,7 @@ export default {
       this.$axios
         .$get('/api/backups')
         .then((data) => {
-          this.$emit('loaded', data.backupLocation)
+          this.$emit('loaded', data)
           this.setBackups(data.backups || [])
         })
         .catch((error) => {

@@ -61,7 +61,7 @@ class AudioMetaTags {
 
     // Track ID3 tag might be "3/10" or just "3"
     if (this.tagTrack) {
-      const trackParts = this.tagTrack.split('/').map(part => Number(part))
+      const trackParts = this.tagTrack.split('/').map((part) => Number(part))
       if (trackParts.length > 0) {
         // Fractional track numbers not supported
         data.number = !isNaN(trackParts[0]) ? Math.trunc(trackParts[0]) : null
@@ -81,7 +81,7 @@ class AudioMetaTags {
     }
 
     if (this.tagDisc) {
-      const discParts = this.tagDisc.split('/').map(p => Number(p))
+      const discParts = this.tagDisc.split('/').map((p) => Number(p))
       if (discParts.length > 0) {
         data.number = !isNaN(discParts[0]) ? Math.trunc(discParts[0]) : null
       }
@@ -93,10 +93,18 @@ class AudioMetaTags {
     return data
   }
 
-  get discNumber() { return this.discNumAndTotal.number }
-  get discTotal() { return this.discNumAndTotal.total }
-  get trackNumber() { return this.trackNumAndTotal.number }
-  get trackTotal() { return this.trackNumAndTotal.total }
+  get discNumber() {
+    return this.discNumAndTotal.number
+  }
+  get discTotal() {
+    return this.discNumAndTotal.total
+  }
+  get trackNumber() {
+    return this.trackNumAndTotal.number
+  }
+  get trackTotal() {
+    return this.trackNumAndTotal.total
+  }
 
   construct(metadata) {
     this.tagAlbum = metadata.tagAlbum || null
@@ -175,10 +183,6 @@ class AudioMetaTags {
     this.tagMusicBrainzAlbumId = payload.file_tag_musicbrainz_albumid || null
     this.tagMusicBrainzAlbumArtistId = payload.file_tag_musicbrainz_albumartistid || null
     this.tagMusicBrainzArtistId = payload.file_tag_musicbrainz_artistid || null
-  }
-
-  setDataFromTone(tags) {
-    // TODO: Implement
   }
 
   updateData(payload) {

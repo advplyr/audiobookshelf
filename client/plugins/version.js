@@ -49,11 +49,11 @@ export async function checkForUpdate() {
         }
 
         if (verObj.version == currVerObj.version) {
+          currVerObj.pubdate = new Date(release.published_at)
           currVerObj.changelog = release.body
         }
       })
     }
-
   })
   if (!largestVer) {
     console.error('No valid version tags to compare with')
@@ -65,6 +65,8 @@ export async function checkForUpdate() {
     latestVersion: largestVer.version,
     githubTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${largestVer.version}`,
     currentVersion: currVerObj.version,
+    currentTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${currVerObj.version}`,
+    currentVersionPubDate: currVerObj.pubdate,
     currentVersionChangelog: currVerObj.changelog
   }
 }

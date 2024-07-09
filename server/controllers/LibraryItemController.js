@@ -43,7 +43,7 @@ class LibraryItemController {
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 
-      if (item.mediaType === 'book' && includeEntities.includes('share')) {
+      if (item.mediaType === 'book' && req.user.isAdminOrUp && includeEntities.includes('share')) {
         item.mediaItemShare = ShareManager.findByMediaItemId(item.media.id)
       }
 
@@ -559,9 +559,9 @@ class LibraryItemController {
     })
   }
 
-  getToneMetadataObject(req, res) {
+  getMetadataObject(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-admin user attempted to get tone metadata object`, req.user)
+      Logger.error(`[LibraryItemController] Non-admin user attempted to get metadata object`, req.user)
       return res.sendStatus(403)
     }
 
@@ -570,7 +570,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    res.json(this.audioMetadataManager.getToneMetadataObjectForApi(req.libraryItem))
+    res.json(this.audioMetadataManager.getMetadataObjectForApi(req.libraryItem))
   }
 
   // POST: api/items/:id/chapters

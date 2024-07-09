@@ -16,11 +16,11 @@
         </div>
         <div v-else>
           <form class="flex items-center w-full space-x-1" @submit.prevent="saveBackupPath">
-            <ui-text-input v-model="newBackupLocation" :disabled="savingBackupPath" class="w-full max-w-[calc(100%-50px)] text-sm h-8" />
-            <ui-btn small :loading="savingBackupPath" color="success" type="submit" class="h-8">{{ $strings.ButtonSave }}</ui-btn>
+            <ui-text-input v-model="newBackupLocation" :disabled="savingBackupPath || !canEditBackup" class="w-full max-w-[calc(100%-50px)] text-sm h-8" />
+            <ui-btn v-if="canEditBackup" small :loading="savingBackupPath" color="success" type="submit" class="h-8">{{ $strings.ButtonSave }}</ui-btn>
             <ui-btn small :disabled="savingBackupPath" type="button" class="h-8" @click="cancelEditBackupPath">{{ $strings.ButtonCancel }}</ui-btn>
           </form>
-          <p class="text-sm text-warning/80 pt-1">{{ $strings.MessageBackupsLocationEditNote }}</p>
+          <p class="text-sm text-warning/80 pt-1">{{ canEditBackup ? $strings.MessageBackupsLocationEditNote : $strings.MessageBackupsLocationNoEditNote }}</p>
         </div>
       </div>
 
@@ -92,6 +92,7 @@ export default {
       newServerSettings: {},
       showCronBuilder: false,
       showEditBackupPath: false,
+      backupPathEnvSet: false,
       backupLocation: '',
       newBackupLocation: '',
       savingBackupPath: false
@@ -115,6 +116,10 @@ export default {
     timeFormat() {
       return this.serverSettings.timeFormat
     },
+    canEditBackup() {
+      // Prevent editing of backup path if an environment variable is set
+      return !this.backupPathEnvSet
+    },
     scheduleDescription() {
       if (!this.cronExpression) return ''
       const parsed = this.$parseCronExpression(this.cronExpression)
@@ -127,9 +132,10 @@ export default {
     }
   },
   methods: {
-    backupsLoaded(backupLocation) {
-      this.backupLocation = backupLocation
-      this.newBackupLocation = backupLocation
+    backupsLoaded(data) {
+      this.backupLocation = data.backupLocation
+      this.newBackupLocation = data.backupLocation
+      this.backupPathEnvSet = data.backupPathEnvSet
     },
     cancelEditBackupPath() {
       this.newBackupLocation = this.backupLocation

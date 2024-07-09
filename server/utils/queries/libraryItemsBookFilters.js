@@ -332,9 +332,9 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId
-   * @param {[oldUser]} user
-   * @param {[string]} filterGroup
-   * @param {[string]} filterValue
+   * @param {import('../../objects/user/User')} user
+   * @param {string|null} filterGroup
+   * @param {string|null} filterValue
    * @param {string} sortBy
    * @param {string} sortDesc
    * @param {boolean} collapseseries
@@ -356,7 +356,7 @@ module.exports = {
       sortBy = 'media.metadata.title'
     }
     const includeRSSFeed = include.includes('rssfeed')
-    const includeMediaItemShare = include.includes('share')
+    const includeMediaItemShare = !!user?.isAdminOrUp && include.includes('share')
 
     // For sorting by author name an additional attribute must be added
     //   with author names concatenated

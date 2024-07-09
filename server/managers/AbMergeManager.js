@@ -1,4 +1,3 @@
-
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 
@@ -7,7 +6,7 @@ const Logger = require('../Logger')
 const TaskManager = require('./TaskManager')
 const Task = require('../objects/Task')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
-const toneHelpers = require('../utils/toneHelpers')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 class AbMergeManager {
   constructor() {
@@ -17,7 +16,7 @@ class AbMergeManager {
   }
 
   getPendingTaskByLibraryItemId(libraryItemId) {
-    return this.pendingTasks.find(t => t.task.data.libraryItemId === libraryItemId)
+    return this.pendingTasks.find((t) => t.task.data.libraryItemId === libraryItemId)
   }
 
   cancelEncode(task) {
@@ -31,23 +30,27 @@ class AbMergeManager {
     const targetFilename = audiobookDirname + '.m4b'
     const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
     const tempFilepath = Path.join(itemCachePath, targetFilename)
+    const ffmetadataPath = Path.join(itemCachePath, 'ffmetadata.txt')
     const taskData = {
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
       userId: user.id,
-      originalTrackPaths: libraryItem.media.tracks.map(t => t.metadata.path),
+      originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
       tempFilepath,
       targetFilename,
       targetFilepath: Path.join(libraryItem.path, targetFilename),
       itemCachePath,
-      toneJsonObject: null
+      ffmetadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, 1),
+      chapters: libraryItem.media.chapters?.map((c) => ({ ...c })),
+      coverPath: libraryItem.media.coverPath,
+      ffmetadataPath
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
     task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
     TaskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
-    if (!await fs.pathExists(taskData.itemCachePath)) {
+    if (!(await fs.pathExists(taskData.itemCachePath))) {
       await fs.mkdir(taskData.itemCachePath)
     }
 
@@ -55,6 +58,15 @@ class AbMergeManager {
   }
 
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
+    // Create ffmetadata file
+    const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, task.data.ffmetadataPath)
+    if (!success) {
+      Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
+      task.setFailed('Failed to write metadata file.')
+      this.removeTask(task, true)
+      return
+    }
+
     const audioBitrate = encodingOptions.bitrate || '128k'
     const audioCodec = encodingOptions.codec || 'aac'
     const audioChannels = encodingOptions.channels || 2
@@ -90,12 +102,7 @@ class AbMergeManager {
     const ffmpegOutputOptions = ['-f mp4']
 
     if (audioRequiresEncode) {
-      ffmpegOptions = ffmpegOptions.concat([
-        '-map 0:a',
-        `-acodec ${audioCodec}`,
-        `-ac ${audioChannels}`,
-        `-b:a ${audioBitrate}`
-      ])
+      ffmpegOptions = ffmpegOptions.concat(['-map 0:a', `-acodec ${audioCodec}`, `-ac ${audioChannels}`, `-b:a ${audioBitrate}`])
     } else {
       ffmpegOptions.push('-max_muxing_queue_size 1000')
 
@@ -104,24 +111,6 @@ class AbMergeManager {
       } else {
         ffmpegOptions.push('-c:a copy')
       }
-    }
-
-    let toneJsonPath = null
-    try {
-      toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1, 'audio/mp4')
-    } catch (error) {
-      Logger.error(`[AbMergeManager] Write metadata.json failed`, error)
-      toneJsonPath = null
-    }
-
-    task.data.toneJsonObject = {
-      'ToneJsonFile': toneJsonPath,
-      'TrackNumber': 1,
-    }
-
-    if (libraryItem.media.coverPath) {
-      task.data.toneJsonObject['CoverFile'] = libraryItem.media.coverPath
     }
 
     const workerData = {
@@ -162,7 +151,7 @@ class AbMergeManager {
 
   async sendResult(task, result) {
     // Remove pending task
-    this.pendingTasks = this.pendingTasks.filter(d => d.id !== task.id)
+    this.pendingTasks = this.pendingTasks.filter((d) => d.id !== task.id)
 
     if (result.isKilled) {
       task.setFailed('Ffmpeg task killed')
@@ -177,7 +166,7 @@ class AbMergeManager {
     }
 
     // Write metadata to merged file
-    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneJsonObject)
+    const success = await ffmpegHelpers.addCoverAndMetadataToFile(task.data.tempFilepath, task.data.coverPath, task.data.ffmetadataPath, 1, 'audio/mp4')
     if (!success) {
       Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
       task.setFailed('Failed to write metadata to m4b file')
@@ -199,6 +188,9 @@ class AbMergeManager {
     Logger.debug(`[AbMergeManager] Moving m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`)
     await fs.move(task.data.tempFilepath, task.data.targetFilepath)
 
+    // Remove ffmetadata file
+    await fs.remove(task.data.ffmetadataPath)
+
     task.setFinished()
     await this.removeTask(task, false)
     Logger.info(`[AbMergeManager] Ab task finished ${task.id}`)
@@ -207,9 +199,9 @@ class AbMergeManager {
   async removeTask(task, removeTempFilepath = false) {
     Logger.info('[AbMergeManager] Removing task ' + task.id)
 
-    const pendingDl = this.pendingTasks.find(d => d.id === task.id)
+    const pendingDl = this.pendingTasks.find((d) => d.id === task.id)
     if (pendingDl) {
-      this.pendingTasks = this.pendingTasks.filter(d => d.id !== task.id)
+      this.pendingTasks = this.pendingTasks.filter((d) => d.id !== task.id)
       if (pendingDl.worker) {
         Logger.warn(`[AbMergeManager] Removing download in progress - stopping worker`)
         try {
@@ -223,13 +215,27 @@ class AbMergeManager {
       }
     }
 
-    if (removeTempFilepath) { // On failed tasks remove the bad file if it exists
+    if (removeTempFilepath) {
+      // On failed tasks remove the bad file if it exists
       if (await fs.pathExists(task.data.tempFilepath)) {
-        await fs.remove(task.data.tempFilepath).then(() => {
-          Logger.info('[AbMergeManager] Deleted target file', task.data.tempFilepath)
-        }).catch((err) => {
-          Logger.error('[AbMergeManager] Failed to delete target file', err)
-        })
+        await fs
+          .remove(task.data.tempFilepath)
+          .then(() => {
+            Logger.info('[AbMergeManager] Deleted target file', task.data.tempFilepath)
+          })
+          .catch((err) => {
+            Logger.error('[AbMergeManager] Failed to delete target file', err)
+          })
+      }
+      if (await fs.pathExists(task.data.ffmetadataPath)) {
+        await fs
+          .remove(task.data.ffmetadataPath)
+          .then(() => {
+            Logger.info('[AbMergeManager] Deleted ffmetadata file', task.data.ffmetadataPath)
+          })
+          .catch((err) => {
+            Logger.error('[AbMergeManager] Failed to delete ffmetadata file', err)
+          })
       }
     }
 

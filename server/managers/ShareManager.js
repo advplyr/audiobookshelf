@@ -1,5 +1,6 @@
 const Database = require('../Database')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 
 /**
  * @typedef OpenMediaItemShareObject
@@ -136,6 +137,7 @@ class ShareManager {
     } else {
       this.openMediaItemShares.push({ id: mediaItemShare.id, mediaItemShare: mediaItemShare.toJSON() })
     }
+    SocketAuthority.adminEmitter('share_open', mediaItemShare.toJSONForClient())
   }
 
   /**
@@ -153,6 +155,12 @@ class ShareManager {
     this.openMediaItemShares = this.openMediaItemShares.filter((s) => s.id !== mediaItemShareId)
     this.openSharePlaybackSessions = this.openSharePlaybackSessions.filter((s) => s.mediaItemShareId !== mediaItemShareId)
     await this.destroyMediaItemShare(mediaItemShareId)
+
+    const mediaItemShareObjectForClient = { ...mediaItemShare.mediaItemShare }
+    delete mediaItemShareObjectForClient.pash
+    delete mediaItemShareObjectForClient.userId
+    delete mediaItemShareObjectForClient.extraData
+    SocketAuthority.adminEmitter('share_closed', mediaItemShareObjectForClient)
   }
 
   /**

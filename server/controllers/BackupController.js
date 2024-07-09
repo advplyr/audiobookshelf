@@ -10,7 +10,8 @@ class BackupController {
   getAll(req, res) {
     res.json({
       backups: this.backupManager.backups.map((b) => b.toJSON()),
-      backupLocation: this.backupManager.backupPath
+      backupLocation: this.backupManager.backupPath,
+      backupPathEnvSet: this.backupManager.backupPathEnvSet
     })
   }
 

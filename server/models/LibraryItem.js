@@ -567,8 +567,8 @@ class LibraryItem extends Model {
         if (li.numEpisodesIncomplete) {
           oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
         }
-        if (li.mediaType === 'book' && options.include?.includes?.('share')) {
-          oldLibraryItem.mediaItemShare = ShareManager.findByMediaItemId(li.mediaId)
+        if (li.mediaItemShare) {
+          oldLibraryItem.mediaItemShare = li.mediaItemShare
         }
 
         return oldLibraryItem

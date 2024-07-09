@@ -539,6 +539,12 @@ export default {
             func: 'openPlaylists',
             text: this.$strings.LabelAddToPlaylist
           })
+          if (this.userIsAdminOrUp) {
+            items.push({
+              func: 'openShare',
+              text: this.$strings.LabelShare
+            })
+          }
         }
         if (this.ebookFormat && this.store.state.libraries.ereaderDevices?.length) {
           items.push({
@@ -896,6 +902,10 @@ export default {
     openPlaylists() {
       this.store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode: this.recentEpisode }])
       this.store.commit('globals/setShowPlaylistsModal', true)
+    },
+    openShare() {
+      this.store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.store.commit('globals/setShareModal', this.mediaItemShare)
     },
     deleteLibraryItem() {
       const payload = {

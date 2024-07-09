@@ -6,7 +6,9 @@
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">
-      <p class="text-xl font-bold pb-4">Changelog v{{ currentVersionNumber }}</p>
+      <p class="text-xl font-bold pb-4">
+        Changelog <a :href="currentTagUrl" target="_blank" class="hover:underline">v{{ currentVersionNumber }}</a> ({{ currentVersionPubDate }})
+      </p>
       <div class="custom-text" v-html="compiledMarkedown" />
     </div>
   </modals-modal>
@@ -18,17 +20,9 @@ import { marked } from '@/static/libs/marked/index.js'
 export default {
   props: {
     value: Boolean,
-    changelog: String,
-    currentVersion: String
-  },
-  watch: {
-    show: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) {
-          this.init()
-        }
-      }
+    versionData: {
+      type: Object,
+      default: () => {}
     }
   },
   computed: {
@@ -40,16 +34,27 @@ export default {
         this.$emit('input', val)
       }
     },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    changelog() {
+      return this.versionData?.currentVersionChangelog || 'No Changelog Available'
+    },
     compiledMarkedown() {
       return marked.parse(this.changelog, { gfm: true, breaks: true })
     },
+    currentVersionPubDate() {
+      if (!this.versionData?.currentVersionPubDate) return 'Unknown release date'
+      return `${this.$formatDate(this.versionData.currentVersionPubDate, this.dateFormat)}`
+    },
+    currentTagUrl() {
+      return this.versionData?.currentTagUrl
+    },
     currentVersionNumber() {
-      return this.currentVersion
+      return this.$config.version
     }
   },
-  methods: {
-    init() {}
-  },
+  methods: {},
   mounted() {}
 }
 </script>
@@ -57,7 +62,7 @@ export default {
 <style scoped>
 /*
 1. we need to manually define styles to apply to the parsed markdown elements,
-since we don't have access to the actual elements in this component 
+since we don't have access to the actual elements in this component
 
 2. v-deep allows these to take effect on the content passed in to the v-html in the div above
 */
