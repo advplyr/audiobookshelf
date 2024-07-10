@@ -13,11 +13,11 @@
             <div class="absolute top-0 left-0 w-full h-full z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
               <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
                 <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="playItem">
-                  <span class="material-icons text-4xl">play_circle_filled</span>
+                  <span class="material-symbols fill text-4xl">play_arrow</span>
                 </div>
               </div>
 
-              <span class="absolute bottom-2.5 right-2.5 z-10 material-icons text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" @click="showEditCover">edit</span>
+              <span class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" @click="showEditCover">edit</span>
             </div>
           </div>
         </div>
@@ -60,7 +60,7 @@
             <div class="flex items-center">
               <p class="text-sm py-1">{{ $getString('MessageEpisodesQueuedForDownload', [episodeDownloadsQueued.length]) }}</p>
 
-              <span v-if="userIsAdminOrUp" class="material-icons hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
+              <span v-if="userIsAdminOrUp" class="material-symbols hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
             </div>
           </div>
 
@@ -80,19 +80,19 @@
             <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
-              <span class="material-icons text-sm">close</span>
+              <span class="material-symbols text-sm">close</span>
             </div>
           </div>
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
-              <span v-show="!isStreaming" class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
+              <span v-show="!isStreaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
               {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
-              <span v-show="!isStreaming" class="material-icons text-2xl -ml-2 pr-1 text-white">error</span>
+              <span v-show="!isStreaming" class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 
@@ -101,7 +101,7 @@
             </ui-tooltip>
 
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
-              <span class="material-icons text-2xl -ml-2 pr-2 text-white">auto_stories</span>
+              <span class="material-symbols text-2xl -ml-2 pr-2 text-white">auto_stories</span>
               {{ $strings.ButtonRead }}
             </ui-btn>
 
@@ -121,7 +121,7 @@
             <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
                 <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
-                  <span class="material-icons">more_horiz</span>
+                  <span class="material-symbols">more_horiz</span>
                 </button>
               </template>
             </ui-context-menu-dropdown>
@@ -130,7 +130,7 @@
           <div class="my-4 w-full">
             <p ref="description" id="item-description" dir="auto" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
-              {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-icons text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
+              {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
             </button>
           </div>
 

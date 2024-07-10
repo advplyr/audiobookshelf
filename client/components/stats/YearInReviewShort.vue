@@ -64,7 +64,7 @@ export default {
 
       const addIcon = (icon, color, fontSize, x, y) => {
         ctx.fillStyle = color
-        ctx.font = `${fontSize} Material Icons Outlined`
+        ctx.font = `${fontSize} Material Symbols Outlined`
         ctx.fillText(icon, x, y)
       }
 

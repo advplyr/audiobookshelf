@@ -44,10 +44,10 @@
       <div class="bookshelfDividerCategorized h-6e w-full absolute top-0 left-0 right-0 z-20"></div>
     </div>
     <div v-show="canScrollLeft && !isScrolling" class="hidden sm:flex absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-40" @click="scrollLeft">
-      <span class="material-icons text-white" :style="{ fontSize: 3.75 + 'em' }">chevron_left</span>
+      <span class="material-symbols text-white" :style="{ fontSize: 3.75 + 'em' }">chevron_left</span>
     </div>
     <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-40" @click="scrollRight">
-      <span class="material-icons text-white" :style="{ fontSize: 3.75 + 'em' }">chevron_right</span>
+      <span class="material-symbols text-white" :style="{ fontSize: 3.75 + 'em' }">chevron_right</span>
     </div>
   </div>
 </template>

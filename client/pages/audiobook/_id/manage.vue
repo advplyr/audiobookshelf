@@ -77,7 +77,7 @@
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
         <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-icons text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
+          <span class="material-symbols text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
         </button>
 
         <div class="flex-grow" />
@@ -104,36 +104,36 @@
 
       <div class="mb-4">
         <div v-if="isEmbedTool" class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Metadata will be embedded in the audio tracks inside your audiobook folder.</p>
         </div>
         <div v-else class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
             Finished M4B will be put into your audiobook folder at <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">.../{{ libraryItemRelPath }}/</span>.
           </p>
         </div>
 
         <div v-if="shouldBackupAudioFiles || isM4BTool" class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
             A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
           </p>
         </div>
         <div v-if="isEmbedTool && audioFiles.length > 1" class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Chapters are not embedded in multi-track audiobooks.</p>
         </div>
         <div v-if="isM4BTool" class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Encoding can take up to 30 minutes.</p>
         </div>
         <div v-if="isM4BTool" class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">If you have the watcher disabled you will need to re-scan this audiobook afterwards.</p>
         </div>
         <div class="flex items-start mb-2">
-          <span class="material-icons text-base text-warning pt-1">star</span>
+          <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Once the task is started you can navigate away from this page.</p>
         </div>
       </div>
@@ -159,7 +159,7 @@
             </div>
             <div class="w-24">
               <div class="flex justify-center">
-                <span v-if="audiofilesFinished[file.ino]" class="material-icons text-xl text-success leading-none">check_circle</span>
+                <span v-if="audiofilesFinished[file.ino]" class="material-symbols text-xl text-success leading-none">check_circle</span>
                 <div v-else-if="audiofilesEncoding[file.ino]">
                   <widgets-loading-spinner />
                 </div>

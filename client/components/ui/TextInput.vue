@@ -20,13 +20,13 @@
       @blur="blurred"
     />
     <div v-if="clearable && inputValue" class="absolute top-0 right-0 h-full px-2 flex items-center justify-center">
-      <span class="material-icons text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
+      <span class="material-symbols text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
     </div>
     <div v-if="type === 'password' && isHovering" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
-      <span class="material-icons-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
+      <span class="material-symbols-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
     </div>
     <div v-else-if="showCopy" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
-      <span class="material-icons-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
+      <span class="material-symbols-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
     </div>
   </div>
 </template>

@@ -3,7 +3,7 @@
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
 
     <button class="absolute top-4 right-4 landscape:top-4 landscape:right-4 md:portrait:top-5 md:portrait:right-5 lg:top-5 lg:right-5 inline-flex text-gray-200 hover:text-white" aria-label="Close modal" @click="clickClose">
-      <span class="material-icons text-2xl landscape:text-2xl md:portrait:text-4xl lg:text-4xl">close</span>
+      <span class="material-symbols text-2xl landscape:text-2xl md:portrait:text-4xl lg:text-4xl">close</span>
     </button>
     <slot name="outer" />
     <div ref="content" style="min-width: 380px; min-height: 200px; max-width: 100vw" class="relative text-white" aria-modal="true" :style="{ height: modalHeight, width: modalWidth, marginTop: contentMarginTop + 'px' }" @mousedown="mousedownModal" @mouseup="mouseupModal" v-click-outside="clickBg">

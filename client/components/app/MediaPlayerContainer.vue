@@ -13,7 +13,7 @@
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
-          <span class="material-icons text-sm">person</span>
+          <span class="material-symbols text-sm">person</span>
           <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
           <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
@@ -23,13 +23,13 @@
         </div>
 
         <div class="text-gray-400 flex items-center">
-          <span class="material-icons text-xs">schedule</span>
+          <span class="material-symbols text-xs">schedule</span>
           <p class="font-mono text-xs sm:text-sm pl-1 sm:pl-1.5 pb-px">{{ totalDurationPretty }}</p>
         </div>
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui

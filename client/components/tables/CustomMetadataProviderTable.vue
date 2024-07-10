@@ -15,7 +15,7 @@
         </td>
         <td class="py-0">
           <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="removeProvider(provider)">
-            <button type="button" :aria-label="$strings.ButtonDelete" class="material-icons text-base">delete</button>
+            <button type="button" :aria-label="$strings.ButtonDelete" class="material-symbols text-base">delete</button>
           </div>
         </td>
       </tr>

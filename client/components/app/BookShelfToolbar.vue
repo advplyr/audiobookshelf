@@ -24,11 +24,11 @@
       </nuxt-link>
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
-        <span v-else class="material-icons-outlined text-lg">queue_music</span>
+        <span v-else class="material-symbols-outlined text-lg">queue_music</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
-        <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
+        <span v-else class="material-symbols-outlined text-lg">collections_bookmark</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>

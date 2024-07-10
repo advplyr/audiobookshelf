@@ -1,7 +1,7 @@
 <template>
   <div class="relative" v-click-outside="clickOutside" @mouseover="mouseover" @mouseleave="mouseleave">
     <button :aria-label="$strings.LabelVolume" class="text-gray-300 hover:text-white" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
-      <span class="material-icons text-2xl sm:text-3xl">{{ volumeIcon }}</span>
+      <span class="material-symbols text-2xl sm:text-3xl">{{ volumeIcon }}</span>
     </button>
     <transition name="menux">
       <div v-show="isOpen" class="volumeMenu h-6 absolute bottom-2 w-28 px-2 bg-bg shadow-sm rounded-lg" style="left: -116px">

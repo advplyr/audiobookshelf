@@ -4,7 +4,7 @@
       <nuxt-link :to="`/config/users/${user.id}`" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
-            <span class="material-icons text-2xl">arrow_back</span>
+            <span class="material-symbols text-2xl">arrow_back</span>
           </div>
           <p class="pl-1">{{ $strings.LabelBackToUser }}</p>
         </div>

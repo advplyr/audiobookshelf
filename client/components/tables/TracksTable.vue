@@ -11,7 +11,7 @@
         <ui-btn small color="primary">{{ $strings.ButtonManageTracks }}</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
-        <span class="material-icons text-4xl">expand_more</span>
+        <span class="material-symbols text-4xl">expand_more</span>
       </div>
     </div>
     <transition name="slide">
