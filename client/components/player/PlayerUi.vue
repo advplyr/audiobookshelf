@@ -36,9 +36,9 @@
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
-          <button :aria-label="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack" class="text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
-            <span class="material-symbols text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
+        <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
+          <button :aria-label="$strings.LabelViewPlaerkSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerSettings')">
+            <span class="material-symbols text-2.5xl sm:text-3xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
       </div>
