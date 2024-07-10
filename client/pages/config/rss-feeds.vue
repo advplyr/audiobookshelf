@@ -4,7 +4,7 @@
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
           <a href="https://www.audiobookshelf.org/guides/rss_feeds" target="_blank" class="inline-flex">
-            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
       </template>
@@ -46,7 +46,7 @@
             <!--  -->
             <td class="text-center leading-none hidden lg:table-cell">
               <p v-if="feed.meta.preventIndexing" class="">
-                <span class="material-icons text-2xl">check</span>
+                <span class="material-symbols text-2xl">check</span>
               </p>
             </td>
             <!--  -->

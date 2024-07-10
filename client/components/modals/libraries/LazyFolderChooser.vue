@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full bg-bg absolute top-0 left-0 px-4 py-4 z-10">
     <div class="flex items-center py-1 mb-2">
-      <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
+      <span class="material-symbols text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
       <p class="px-4 text-xl">{{ $strings.HeaderChooseAFolder }}</p>
     </div>
     <div v-if="rootDirs.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
@@ -10,18 +10,18 @@
     <div v-if="rootDirs.length" class="relative flex bg-primary bg-opacity-50 p-4 folder-container">
       <div class="w-1/2 border-r border-bg h-full overflow-y-auto">
         <div v-if="level > 0" class="w-full p-1 cursor-pointer flex items-center hover:bg-white/10" @click="goBack">
-          <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2">..</p>
         </div>
         <div v-for="dir in _directories" :key="dir.path" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" :class="dir.className" @click="selectDir(dir)">
-          <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
-          <span v-if="dir.path === selectedPath" class="material-icons" style="font-size: 1.1rem">arrow_right</span>
+          <span v-if="dir.path === selectedPath" class="material-symbols" style="font-size: 1.1rem">arrow_right</span>
         </div>
       </div>
       <div class="w-1/2 h-full overflow-y-auto">
         <div v-for="dir in _subdirs" :key="dir.path" :class="dir.className" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" @click="selectSubDir(dir)">
-          <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
         </div>
       </div>

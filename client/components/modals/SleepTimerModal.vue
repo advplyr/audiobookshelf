@@ -21,7 +21,7 @@
       <div v-else class="w-full p-4">
         <div class="mb-4 flex items-center justify-center">
           <ui-btn :padding-x="2" small :disabled="remaining < 30 * 60" class="flex items-center mr-4" @click="decrement(30 * 60)">
-            <span class="material-icons text-lg">remove</span>
+            <span class="material-symbols text-lg">remove</span>
             <span class="pl-1 text-base font-mono">30m</span>
           </ui-btn>
 
@@ -32,7 +32,7 @@
           <ui-icon-btn icon="add" @click="increment(60 * 5)" />
 
           <ui-btn :padding-x="2" small class="flex items-center ml-4" @click="increment(30 * 60)">
-            <span class="material-icons text-lg">add</span>
+            <span class="material-symbols text-lg">add</span>
             <span class="pl-1 text-base font-mono">30m</span>
           </ui-btn>
         </div>

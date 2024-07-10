@@ -24,7 +24,7 @@
             <div class="flex-grow px-2">
               <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-icons text-2xl -mt-px">add</span></ui-btn>
+            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">add</span></ui-btn>
           </div>
         </form>
       </div>

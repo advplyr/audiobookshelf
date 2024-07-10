@@ -45,28 +45,28 @@
         <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded md:block" :class="overlayWrapperClasslist">
           <div cy-id="playButton" v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
             <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
-              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'em' }">play_circle_filled</span>
+              <span class="material-symbols fill" :style="{ fontSize: playIconFontSize + 'em' }">play_arrow</span>
             </div>
           </div>
 
           <div cy-id="readButton" v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
             <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
-              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'em' }">auto_stories</span>
+              <span class="material-symbols" :style="{ fontSize: playIconFontSize + 'em' }">auto_stories</span>
             </div>
           </div>
 
           <div cy-id="editButton" v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0" :style="{ padding: 0.375 + 'em' }" @click.stop.prevent="editClick">
-            <span class="material-icons" :style="{ fontSize: 1 + 'em' }">edit</span>
+            <span class="material-symbols" :style="{ fontSize: 1 + 'em' }">edit</span>
           </div>
 
           <!-- Radio button -->
           <div cy-id="selectedRadioButton" v-if="!isAuthorBookshelfView" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 + 'em', left: 0.375 + 'em' }" @click.stop.prevent="selectBtnClick">
-            <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 + 'em' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+            <span class="material-symbols" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 + 'em' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
           </div>
 
           <!-- More Menu Icon -->
           <div cy-id="moreButton" ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 + 'em', right: 0.375 + 'em' }" @click.stop.prevent="clickShowMore">
-            <span class="material-icons" :style="{ fontSize: 1.2 + 'em' }">more_vert</span>
+            <span class="material-symbols" :style="{ fontSize: 1.2 + 'em' }">more_vert</span>
           </div>
 
           <div cy-id="ebookFormat" v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 + 'em', left: 0.375 + 'em' }">
@@ -87,17 +87,17 @@
         <!-- Error widget -->
         <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
           <div :style="{ height: 1.5 + 'em', width: 2.5 + 'em' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-            <span class="material-icons text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
+            <span class="material-symbols text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
           </div>
         </ui-tooltip>
 
         <!-- rss feed icon -->
         <div cy-id="rssFeed" v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 + 'em' }">
-          <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">rss_feed</span>
+          <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">rss_feed</span>
         </div>
         <!-- media item shared icon -->
         <div cy-id="mediaItemShare" v-if="mediaItemShare && !isSelectionMode && !isHovering" class="absolute text-success left-0 z-10" :style="{ padding: 0.375 + 'em', top: rssFeed ? '2em' : '0px' }">
-          <span class="material-icons" :style="{ fontSize: 1.5 + 'em' }">public</span>
+          <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">public</span>
         </div>
 
         <!-- Series sequence -->
@@ -132,6 +132,9 @@
           <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
+      <ui-tooltip v-if="showSubtitles" :text="displaySubtitle" :disabled="!displaySubtitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+        <p cy-id="subtitle" class="truncate" ref="displaySubtitle" :style="{ fontSize: 0.6 + 'em' }">{{ displaySubtitle }}</p>
+      </ui-tooltip>
       <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p cy-id="line3" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>
@@ -171,6 +174,7 @@ export default {
       selected: false,
       isSelectionMode: false,
       displayTitleTruncated: false,
+      displaySubtitleTruncated: false,
       showCoverBg: false
     }
   },
@@ -237,7 +241,7 @@ export default {
       return this._libraryItem.mediaType
     },
     isPodcast() {
-      return this.mediaType === 'podcast'
+      return this.mediaType === 'podcast' || this.store.getters['libraries/getCurrentLibraryMediaType'] === 'podcast'
     },
     isMusic() {
       return this.mediaType === 'music'
@@ -338,6 +342,13 @@ export default {
       const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
       if (this.collapsedSeries) return ignorePrefix ? this.collapsedSeries.nameIgnorePrefix : this.collapsedSeries.name
       return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix || '\u00A0' : this.title || '\u00A0'
+    },
+    displaySubtitle() {
+      if (!this.libraryItem) return '\u00A0'
+      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
+      if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
+      if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
+      return ''
     },
     displayLineTwo() {
       if (this.recentEpisode) return this.title
@@ -644,6 +655,9 @@ export default {
     },
     mediaItemShare() {
       return this._libraryItem.mediaItemShare || null
+    },
+    showSubtitles() {
+      return !this.isPodcast && this.store.getters['user/getUserSetting']('showSubtitles')
     }
   },
   methods: {
@@ -684,6 +698,9 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.displayTitle) {
           this.displayTitleTruncated = this.$refs.displayTitle.scrollWidth > this.$refs.displayTitle.clientWidth
+        }
+        if (this.$refs.displaySubtitle) {
+          this.displaySubtitleTruncated = this.$refs.displaySubtitle.scrollWidth > this.$refs.displaySubtitle.clientWidth
         }
       })
     },

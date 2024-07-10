@@ -33,7 +33,7 @@
       </div>
 
       <div class="py-4 mt-8 flex">
-        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-icons mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
+        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
     </div>
   </div>

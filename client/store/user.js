@@ -8,6 +8,7 @@ export const state = () => ({
     bookshelfCoverSize: 120,
     collapseSeries: false,
     collapseBookSeries: false,
+    showSubtitles: false,
     useChapterTrack: false,
     seriesSortBy: 'name',
     seriesSortDesc: false,

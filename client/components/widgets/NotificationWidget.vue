@@ -6,7 +6,7 @@
           <widgets-loading-spinner />
         </ui-tooltip>
         <ui-tooltip v-else text="Activities" direction="bottom" class="flex items-center">
-          <span class="material-icons text-1.5xl" aria-label="Activities" role="button">notifications</span>
+          <span class="material-symbols text-1.5xl" aria-label="Activities" role="button">notifications</span>
         </ui-tooltip>
       </div>
       <div v-if="showUnseenSuccessIndicator" class="w-2 h-2 rounded-full bg-success pointer-events-none absolute -top-1 -right-0.5" />

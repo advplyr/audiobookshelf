@@ -28,7 +28,7 @@
       <template v-else>
         <div class="flex items-center mb-3">
           <div class="hover:bg-white hover:bg-opacity-10 cursor-pointer h-11 w-11 flex items-center justify-center rounded-full" @click="showImageUploader = false">
-            <span class="material-icons text-4xl">arrow_back</span>
+            <span class="material-symbols text-4xl">arrow_back</span>
           </div>
           <p class="ml-2 text-xl mb-1">Collection Cover Image</p>
         </div>

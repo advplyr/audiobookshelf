@@ -8,8 +8,8 @@
       <nuxt-link :to="`/playlist/${playlist.id}`" class="pl-2 pr-2 truncate hover:underline cursor-pointer" @click.native="clickNuxtLink">{{ playlist.name }}</nuxt-link>
     </div>
     <div class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
-      <ui-btn v-if="!isItemIncluded" color="success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-icons text-2xl pt-px">add</span></ui-btn>
-      <ui-btn v-else color="error" :padding-x="3" class="h-9" small @click.stop="clickRem"><span class="material-icons text-2xl pt-px">remove</span></ui-btn>
+      <ui-btn v-if="!isItemIncluded" color="success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-symbols text-2xl pt-px">add</span></ui-btn>
+      <ui-btn v-else color="error" :padding-x="3" class="h-9" small @click.stop="clickRem"><span class="material-symbols text-2xl pt-px">remove</span></ui-btn>
     </div>
   </div>
 </template>

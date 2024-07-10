@@ -5,7 +5,7 @@
       <ui-tooltip :text="$strings.LabelSettingsSquareBookCoversHelp">
         <p class="pl-4 text-base">
           {{ $strings.LabelSettingsSquareBookCovers }}
-          <span class="material-icons icon-text text-sm">info_outlined</span>
+          <span class="material-symbols icon-text text-sm">info</span>
         </p>
       </ui-tooltip>
     </div>
@@ -22,7 +22,7 @@
       <ui-tooltip :text="$strings.LabelSettingsAudiobooksOnlyHelp">
         <p class="pl-4 text-base">
           {{ $strings.LabelSettingsAudiobooksOnly }}
-          <span class="material-icons icon-text text-sm">info_outlined</span>
+          <span class="material-symbols icon-text text-sm">info</span>
         </p>
       </ui-tooltip>
     </div>
@@ -44,7 +44,7 @@
         <ui-tooltip :text="$strings.LabelSettingsHideSingleBookSeriesHelp">
           <p class="pl-4 text-base">
             {{ $strings.LabelSettingsHideSingleBookSeries }}
-            <span class="material-icons icon-text text-sm">info_outlined</span>
+            <span class="material-symbols icon-text text-sm">info</span>
           </p>
         </ui-tooltip>
       </div>
@@ -55,7 +55,7 @@
         <ui-tooltip :text="$strings.LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp">
           <p class="pl-4 text-base">
             {{ $strings.LabelSettingsOnlyShowLaterBooksInContinueSeries }}
-            <span class="material-icons icon-text text-sm">info_outlined</span>
+            <span class="material-symbols icon-text text-sm">info</span>
           </p>
         </ui-tooltip>
       </div>
@@ -66,7 +66,7 @@
         <ui-tooltip :text="$strings.LabelSettingsEpubsAllowScriptedContentHelp">
           <p class="pl-4 text-base">
             {{ $strings.LabelSettingsEpubsAllowScriptedContent }}
-            <span class="material-icons icon-text text-sm">info_outlined</span>
+            <span class="material-symbols icon-text text-sm">info</span>
           </p>
         </ui-tooltip>
       </div>
