@@ -41,6 +41,7 @@
       :bookmarks="bookmarks"
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
+      :sleep-timer-type="sleepTimerType"
       :is-podcast="isPodcast"
       @playPause="playPause"
       @jumpForward="jumpForward"
