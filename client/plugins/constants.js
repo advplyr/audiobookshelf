@@ -32,12 +32,18 @@ const PlayMethod = {
   LOCAL: 3
 }
 
+const SleepTimerTypes = {
+  COUNTDOWN: 'countdown',
+  CHAPTER: 'chapter'
+}
+
 const Constants = {
   SupportedFileTypes,
   DownloadStatus,
   BookCoverAspectRatio,
   BookshelfView,
-  PlayMethod
+  PlayMethod,
+  SleepTimerTypes
 }
 
 const KeyNames = {
