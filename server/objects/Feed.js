@@ -1,7 +1,9 @@
 const Path = require('path')
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const FeedMeta = require('./FeedMeta')
 const FeedEpisode = require('./FeedEpisode')
+
+const date = require('../libs/dateAndTime')
 const RSS = require('../libs/rss')
 const { createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
@@ -46,7 +48,7 @@ class Feed {
     this.serverAddress = feed.serverAddress
     this.feedUrl = feed.feedUrl
     this.meta = new FeedMeta(feed.meta)
-    this.episodes = feed.episodes.map(ep => new FeedEpisode(ep))
+    this.episodes = feed.episodes.map((ep) => new FeedEpisode(ep))
     this.createdAt = feed.createdAt
     this.updatedAt = feed.updatedAt
   }
@@ -62,7 +64,7 @@ class Feed {
       serverAddress: this.serverAddress,
       feedUrl: this.feedUrl,
       meta: this.meta.toJSON(),
-      episodes: this.episodes.map(ep => ep.toJSON()),
+      episodes: this.episodes.map((ep) => ep.toJSON()),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     }
@@ -74,20 +76,20 @@ class Feed {
       entityType: this.entityType,
       entityId: this.entityId,
       feedUrl: this.feedUrl,
-      meta: this.meta.toJSONMinified(),
+      meta: this.meta.toJSONMinified()
     }
   }
 
   getEpisodePath(id) {
-    var episode = this.episodes.find(ep => ep.id === id)
+    var episode = this.episodes.find((ep) => ep.id === id)
     if (!episode) return null
     return episode.fullPath
   }
 
   /**
    * If chapters for an audiobook match the audio tracks then use chapter titles instead of audio file names
-   * 
-   * @param {import('../objects/LibraryItem')} libraryItem 
+   *
+   * @param {import('../objects/LibraryItem')} libraryItem
    * @returns {boolean}
    */
   checkUseChapterTitlesForEpisodes(libraryItem) {
@@ -137,7 +139,8 @@ class Feed {
     this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
-    if (isPodcast) { // PODCAST EPISODES
+    if (isPodcast) {
+      // PODCAST EPISODES
       media.episodes.forEach((episode) => {
         if (episode.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = episode.updatedAt
 
@@ -145,7 +148,8 @@ class Feed {
         feedEpisode.setFromPodcastEpisode(libraryItem, serverAddress, slug, episode, this.meta)
         this.episodes.push(feedEpisode)
       })
-    } else { // AUDIOBOOK EPISODES
+    } else {
+      // AUDIOBOOK EPISODES
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItem)
       media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
@@ -178,7 +182,8 @@ class Feed {
     this.meta.language = mediaMetadata.language
 
     this.episodes = []
-    if (isPodcast) { // PODCAST EPISODES
+    if (isPodcast) {
+      // PODCAST EPISODES
       media.episodes.forEach((episode) => {
         if (episode.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = episode.updatedAt
 
@@ -186,7 +191,8 @@ class Feed {
         feedEpisode.setFromPodcastEpisode(libraryItem, this.serverAddress, this.slug, episode, this.meta)
         this.episodes.push(feedEpisode)
       })
-    } else { // AUDIOBOOK EPISODES
+    } else {
+      // AUDIOBOOK EPISODES
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItem)
       media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
@@ -202,8 +208,8 @@ class Feed {
   setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const feedUrl = `${serverAddress}/feed/${slug}`
 
-    const itemsWithTracks = collectionExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
-    const firstItemWithCover = itemsWithTracks.find(item => item.media.coverPath)
+    const itemsWithTracks = collectionExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
+    const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
 
     this.id = uuidv4()
     this.slug = slug
@@ -224,12 +230,15 @@ class Feed {
     this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/collection/${collectionExpanded.id}`
-    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
     this.meta.preventIndexing = preventIndexing
     this.meta.ownerName = ownerName
     this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
+
+    // Used for calculating pubdate
+    const earliestItemAddedAt = itemsWithTracks.reduce((earliest, item) => (item.addedAt < earliest ? item.addedAt : earliest), itemsWithTracks[0].addedAt)
 
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
@@ -237,7 +246,12 @@ class Feed {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, index)
+
+        // Offset pubdate to ensure correct order
+        let trackTimeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset track
+        trackTimeOffset += index * 1000 // Offset item
+        const episodePubDateOverride = date.format(new Date(earliestItemAddedAt + trackTimeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, episodePubDateOverride)
         this.episodes.push(feedEpisode)
       })
     })
@@ -247,8 +261,8 @@ class Feed {
   }
 
   updateFromCollection(collectionExpanded) {
-    const itemsWithTracks = collectionExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
-    const firstItemWithCover = itemsWithTracks.find(item => item.media.coverPath)
+    const itemsWithTracks = collectionExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
+    const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
 
     this.entityUpdatedAt = collectionExpanded.lastUpdate
     this.coverPath = firstItemWithCover?.coverPath || null
@@ -259,9 +273,12 @@ class Feed {
     this.meta.description = collectionExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
     this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
-    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
+
+    // Used for calculating pubdate
+    const earliestItemAddedAt = itemsWithTracks.reduce((earliest, item) => (item.addedAt < earliest ? item.addedAt : earliest), itemsWithTracks[0].addedAt)
 
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
@@ -269,7 +286,12 @@ class Feed {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, index)
+
+        // Offset pubdate to ensure correct order
+        let trackTimeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset track
+        trackTimeOffset += index * 1000 // Offset item
+        const episodePubDateOverride = date.format(new Date(earliestItemAddedAt + trackTimeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, episodePubDateOverride)
         this.episodes.push(feedEpisode)
       })
     })
@@ -281,12 +303,12 @@ class Feed {
   setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const feedUrl = `${serverAddress}/feed/${slug}`
 
-    let itemsWithTracks = seriesExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
+    let itemsWithTracks = seriesExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
     // Sort series items by series sequence
-    itemsWithTracks = naturalSort(itemsWithTracks).asc(li => li.media.metadata.getSeriesSequence(seriesExpanded.id))
+    itemsWithTracks = naturalSort(itemsWithTracks).asc((li) => li.media.metadata.getSeriesSequence(seriesExpanded.id))
 
     const libraryId = itemsWithTracks[0].libraryId
-    const firstItemWithCover = itemsWithTracks.find(li => li.media.coverPath)
+    const firstItemWithCover = itemsWithTracks.find((li) => li.media.coverPath)
 
     this.id = uuidv4()
     this.slug = slug
@@ -307,12 +329,15 @@ class Feed {
     this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/library/${libraryId}/series/${seriesExpanded.id}`
-    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
     this.meta.preventIndexing = preventIndexing
     this.meta.ownerName = ownerName
     this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
+
+    // Used for calculating pubdate
+    const earliestItemAddedAt = itemsWithTracks.reduce((earliest, item) => (item.addedAt < earliest ? item.addedAt : earliest), itemsWithTracks[0].addedAt)
 
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
@@ -320,7 +345,12 @@ class Feed {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, index)
+
+        // Offset pubdate to ensure correct order
+        let trackTimeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset track
+        trackTimeOffset += index * 1000 // Offset item
+        const episodePubDateOverride = date.format(new Date(earliestItemAddedAt + trackTimeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, episodePubDateOverride)
         this.episodes.push(feedEpisode)
       })
     })
@@ -330,11 +360,11 @@ class Feed {
   }
 
   updateFromSeries(seriesExpanded) {
-    let itemsWithTracks = seriesExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
+    let itemsWithTracks = seriesExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
     // Sort series items by series sequence
-    itemsWithTracks = naturalSort(itemsWithTracks).asc(li => li.media.metadata.getSeriesSequence(seriesExpanded.id))
+    itemsWithTracks = naturalSort(itemsWithTracks).asc((li) => li.media.metadata.getSeriesSequence(seriesExpanded.id))
 
-    const firstItemWithCover = itemsWithTracks.find(item => item.media.coverPath)
+    const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
 
     this.entityUpdatedAt = seriesExpanded.updatedAt
     this.coverPath = firstItemWithCover?.coverPath || null
@@ -345,9 +375,12 @@ class Feed {
     this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
     this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
-    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+    this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
+
+    // Used for calculating pubdate
+    const earliestItemAddedAt = itemsWithTracks.reduce((earliest, item) => (item.addedAt < earliest ? item.addedAt : earliest), itemsWithTracks[0].addedAt)
 
     itemsWithTracks.forEach((item, index) => {
       if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
@@ -355,7 +388,12 @@ class Feed {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, index)
+
+        // Offset pubdate to ensure correct order
+        let trackTimeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset track
+        trackTimeOffset += index * 1000 // Offset item
+        const episodePubDateOverride = date.format(new Date(earliestItemAddedAt + trackTimeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, useChapterTitles, episodePubDateOverride)
         this.episodes.push(feedEpisode)
       })
     })
@@ -377,7 +415,7 @@ class Feed {
 
   getAuthorsStringFromLibraryItems(libraryItems) {
     let itemAuthors = []
-    libraryItems.forEach((item) => itemAuthors.push(...item.media.metadata.authors.map(au => au.name)))
+    libraryItems.forEach((item) => itemAuthors.push(...item.media.metadata.authors.map((au) => au.name)))
     itemAuthors = [...new Set(itemAuthors)] // Filter out dupes
     let author = itemAuthors.slice(0, 3).join(', ')
     if (itemAuthors.length > 3) {
