@@ -244,9 +244,8 @@ export default {
     },
     checkChapterEnd(time) {
       const chapterEndTime = this.currentChapter.end
-      const tolerance = 0.5
+      const tolerance = 0.75
       if (time >= chapterEndTime - tolerance) {
-        console.log('Chapter end reached', time, chapterEndTime)
         this.sleepTimerEnd()
       }
     },
