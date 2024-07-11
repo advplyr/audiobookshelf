@@ -35,6 +35,7 @@
     <player-ui
       ref="audioPlayer"
       :chapters="chapters"
+      :current-chapter="currentChapter"
       :paused="!isPlaying"
       :loading="playerLoading"
       :bookmarks="bookmarks"
@@ -83,11 +84,19 @@ export default {
       sleepTimerSet: false,
       sleepTimerTime: 0,
       sleepTimerRemaining: 0,
+      sleepTimerType: null,
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
       syncFailedToast: null,
       coverAspectRatio: 1
+    }
+  },
+  watch: {
+    currentTime(newTime) {
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
+        this.checkChapterEnd(newTime)
+      }
     }
   },
   computed: {
@@ -149,6 +158,9 @@ export default {
       if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
     },
+    currentChapter() {
+      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
+    },
     title() {
       if (this.playerHandler.displayTitle) return this.playerHandler.displayTitle
       return this.mediaMetadata.title || 'No Title'
@@ -208,14 +220,19 @@ export default {
       this.$store.commit('setIsPlaying', isPlaying)
       this.updateMediaSessionPlaybackState()
     },
-    setSleepTimer(seconds) {
+    setSleepTimer(time) {
       this.sleepTimerSet = true
-      this.sleepTimerTime = seconds
-      this.sleepTimerRemaining = seconds
-      this.runSleepTimer()
       this.showSleepTimerModal = false
+
+      this.sleepTimerType = time.timerType
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.COUNTDOWN) {
+        this.runSleepTimer(time)
+      }
     },
-    runSleepTimer() {
+    runSleepTimer(time) {
+      this.sleepTimerTime = time.seconds
+      this.sleepTimerRemaining = time.seconds
+
       var lastTick = Date.now()
       clearInterval(this.sleepTimer)
       this.sleepTimer = setInterval(() => {
@@ -224,11 +241,22 @@ export default {
         this.sleepTimerRemaining -= elapsed / 1000
 
         if (this.sleepTimerRemaining <= 0) {
-          this.clearSleepTimer()
-          this.playerHandler.pause()
-          this.$toast.info('Sleep Timer Done.. zZzzZz')
+          this.sleepTimerEnd()
         }
       }, 1000)
+    },
+    checkChapterEnd(time) {
+      const chapterEndTime = this.currentChapter.end
+      const tolerance = 0.5
+      if (time >= chapterEndTime - tolerance) {
+        console.log('Chapter end reached', time, chapterEndTime)
+        this.sleepTimerEnd()
+      }
+    },
+    sleepTimerEnd() {
+      this.clearSleepTimer()
+      this.playerHandler.pause()
+      this.$toast.info('Sleep Timer Done.. zZzzZz')
     },
     cancelSleepTimer() {
       this.showSleepTimerModal = false
@@ -239,6 +267,7 @@ export default {
       this.sleepTimerRemaining = 0
       this.sleepTimer = null
       this.sleepTimerSet = false
+      this.sleepTimerType = null
     },
     incrementSleepTimer(amount) {
       if (!this.sleepTimerSet) return

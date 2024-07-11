@@ -9,7 +9,7 @@
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="!timerSet" class="w-full">
         <template v-for="time in sleepTimes">
-          <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-bg relative" @click="setTime(time.seconds)">
+          <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-bg relative" @click="setTime(time)">
             <p class="text-xl text-center">{{ time.text }}</p>
           </div>
         </template>
@@ -48,7 +48,8 @@ export default {
     value: Boolean,
     timerSet: Boolean,
     timerTime: Number,
-    remaining: Number
+    remaining: Number,
+    currentChapter: Object
   },
   data() {
     return {
@@ -56,36 +57,45 @@ export default {
       sleepTimes: [
         {
           seconds: 60 * 5,
-          text: '5 minutes'
+          text: '5 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 15,
-          text: '15 minutes'
+          text: '15 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 20,
-          text: '20 minutes'
+          text: '20 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 30,
-          text: '30 minutes'
+          text: '30 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 45,
-          text: '45 minutes'
+          text: '45 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 60,
-          text: '60 minutes'
+          text: '60 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 90,
-          text: '90 minutes'
+          text: '90 minutes',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
         },
         {
           seconds: 60 * 120,
-          text: '2 hours'
-        }
+          text: '2 hours',
+          timerType: this.$constants.SleepTimerTypes.COUNTDOWN
+        },
+        { seconds: -1, text: 'End of chapter', timerType: this.$constants.SleepTimerTypes.CHAPTER }
       ]
     }
   },
@@ -115,8 +125,8 @@ export default {
       const timeInSeconds = Math.round(Number(this.customTime) * 60)
       this.setTime(timeInSeconds)
     },
-    setTime(seconds) {
-      this.$emit('set', seconds)
+    setTime(time) {
+      this.$emit('set', time)
     },
     increment(amount) {
       this.$emit('increment', amount)
