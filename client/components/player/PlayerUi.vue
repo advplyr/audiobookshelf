@@ -79,6 +79,7 @@ export default {
     },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
+    sleepTimerType: String,
     isPodcast: Boolean,
     hideBookmarks: Boolean,
     hideSleepTimer: Boolean
@@ -102,16 +103,20 @@ export default {
   },
   computed: {
     sleepTimerRemainingString() {
-      var rounded = Math.round(this.sleepTimerRemaining)
-      if (rounded < 90) {
-        return `${rounded}s`
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
+        return this.$strings.LabelEndOfChapter
+      } else {
+        var rounded = Math.round(this.sleepTimerRemaining)
+        if (rounded < 90) {
+          return `${rounded}s`
+        }
+        var minutesRounded = Math.round(rounded / 60)
+        if (minutesRounded < 90) {
+          return `${minutesRounded}m`
+        }
+        var hoursRounded = Math.round(minutesRounded / 60)
+        return `${hoursRounded}h`
       }
-      var minutesRounded = Math.round(rounded / 60)
-      if (minutesRounded < 90) {
-        return `${minutesRounded}m`
-      }
-      var hoursRounded = Math.round(minutesRounded / 60)
-      return `${hoursRounded}h`
     },
     token() {
       return this.$store.getters['user/getToken']
