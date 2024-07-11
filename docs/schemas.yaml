@@ -20,6 +20,10 @@ components:
       description: The total length (in seconds) of the item or file.
       type: number
       example: 33854.905
+    duration:
+      description: The total length of the item or file.
+      type: string
+      example: '01:23:45'
     tags:
       description: Tags applied to items.
       type: array
