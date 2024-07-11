@@ -123,7 +123,11 @@ export default {
       }
 
       const timeInSeconds = Math.round(Number(this.customTime) * 60)
-      this.setTime(timeInSeconds)
+      const time = {
+        seconds: timeInSeconds,
+        timerType: this.$constants.SleepTimerTypes.COUNTDOWN
+      }
+      this.setTime(time)
     },
     setTime(time) {
       this.$emit('set', time)
