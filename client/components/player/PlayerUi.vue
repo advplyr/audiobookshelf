@@ -72,6 +72,7 @@ export default {
       type: Array,
       default: () => []
     },
+    currentChapter: Object,
     bookmarks: {
       type: Array,
       default: () => []
@@ -134,9 +135,6 @@ export default {
 
       if (!duration) return 0
       return Math.round((100 * time) / duration)
-    },
-    currentChapter() {
-      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     },
     currentChapterName() {
       return this.currentChapter ? this.currentChapter.title : ''
