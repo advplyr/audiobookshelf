@@ -7,10 +7,10 @@
         <div class="pl-4"><span>Use Chapter Track</span></div>
       </div>
       <div class="flex items-center mb-4">
-        <ui-dropdown v-model="jumpForwardAmount" :label="$strings.LabelJumpForwardAmount" :value="jumpForwardAmount" :items="jumpValues" @input="setJumpForwardAmount" />
+        <ui-select-input v-model="jumpForwardAmount" :label="$strings.LabelJumpForwardAmount" menuMaxHeight="250px" :items="jumpValues" @input="setJumpForwardAmount" />
       </div>
       <div class="flex items-center">
-        <ui-dropdown v-model="jumpBackwardAmount" :label="$strings.LabelJumpBackwardAmount" :value="jumpBackwardAmount" :items="jumpValues" @input="setJumpBackwardAmount" />
+        <ui-select-input v-model="jumpBackwardAmount" :label="$strings.LabelJumpBackwardAmount" menuMaxHeight="250px" :items="jumpValues" @input="setJumpBackwardAmount" />
       </div>
     </div>
   </modals-modal>
