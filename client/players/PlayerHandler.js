@@ -51,6 +51,12 @@ export default class PlayerHandler {
     if (!this.episodeId) return null
     return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
   }
+  get jumpForwardAmount() {
+    return this.ctx.$store.getters['user/getUserSetting']('jumpForwardAmount')
+  }
+  get jumpBackwardAmount() {
+    return this.ctx.$store.getters['user/getUserSetting']('jumpBackwardAmount')
+  }
 
   setSessionId(sessionId) {
     this.currentSessionId = sessionId
@@ -381,13 +387,15 @@ export default class PlayerHandler {
   jumpBackward() {
     if (!this.player) return
     var currentTime = this.getCurrentTime()
-    this.seek(Math.max(0, currentTime - 10))
+    const jumpAmount = this.jumpBackwardAmount
+    this.seek(Math.max(0, currentTime - jumpAmount))
   }
 
   jumpForward() {
     if (!this.player) return
     var currentTime = this.getCurrentTime()
-    this.seek(Math.min(currentTime + 10, this.getDuration()))
+    const jumpAmount = this.jumpForwardAmount
+    this.seek(Math.min(currentTime + jumpAmount, this.getDuration()))
   }
 
   setVolume(volume) {
