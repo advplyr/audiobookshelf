@@ -7,7 +7,7 @@
     </template>
 
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
-      <div v-if="!timerSet" class="w-full">
+      <div class="w-full">
         <template v-for="time in sleepTimes">
           <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-bg relative" @click="setTime(time)">
             <p class="text-xl text-center">{{ time.text }}</p>
@@ -18,8 +18,8 @@
           <ui-btn color="success" type="submit" :padding-x="0" class="h-9 w-12 flex items-center justify-center ml-1">Set</ui-btn>
         </form>
       </div>
-      <div v-else class="w-full p-4">
-        <div class="mb-4 flex items-center justify-center">
+      <div class="w-full p-4">
+        <div v-if="timerType === this.$constants.SleepTimerTypes.COUNTDOWN" class="mb-4 flex items-center justify-center">
           <ui-btn :padding-x="2" small :disabled="remaining < 30 * 60" class="flex items-center mr-4" @click="decrement(30 * 60)">
             <span class="material-symbols text-lg">remove</span>
             <span class="pl-1 text-base font-mono">30m</span>
@@ -36,7 +36,7 @@
             <span class="pl-1 text-base font-mono">30m</span>
           </ui-btn>
         </div>
-        <ui-btn class="w-full" @click="$emit('cancel')">{{ $strings.ButtonCancel }}</ui-btn>
+        <ui-btn v-if="timerSet" class="w-full" @click="$emit('cancel')">{{ $strings.ButtonCancel }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -48,6 +48,7 @@ export default {
     value: Boolean,
     timerSet: Boolean,
     timerTime: Number,
+    timerType: String,
     remaining: Number,
     currentChapter: Object
   },
