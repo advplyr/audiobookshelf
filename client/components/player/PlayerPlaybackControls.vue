@@ -58,10 +58,10 @@ export default {
       }
     },
     jumpForwardText() {
-      return this.getJumpText('jumpForwardAmount', 'Jump Forward')
+      return this.getJumpText('jumpForwardAmount', this.$strings.ButtonJumpForward)
     },
     jumpBackwardText() {
-      return this.getJumpText('jumpBackwardAmount', 'Jump Backward')
+      return this.getJumpText('jumpBackwardAmount', this.$strings.ButtonJumpBackward)
     }
   },
   methods: {
@@ -92,18 +92,17 @@ export default {
     },
     getJumpText(setting, prefix) {
       const amount = this.$store.getters['user/getUserSetting'](setting)
-      const minutes = Math.floor(amount / 60)
-      const seconds = amount % 60
+      if (!amount) return prefix
+
       let formattedTime = ''
-      if (minutes > 0) {
-        formattedTime += `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
+      if (amount <= 60) {
+        formattedTime = this.$getString('LabelJumpAmountSeconds', [amount])
+      } else {
+        const minutes = Math.floor(amount / 60)
+        formattedTime = this.$getString('LabelJumpAmountMinutes', [minutes])
       }
-      if (seconds > 0) {
-        formattedTime += ` ${seconds} seconds`
-      }
-      formattedTime = formattedTime.trim()
-      formattedTime = formattedTime.length > 0 ? `${prefix} - ${formattedTime}` : ''
-      return formattedTime
+
+      return `${prefix} - ${formattedTime}`
     }
   },
   mounted() {}

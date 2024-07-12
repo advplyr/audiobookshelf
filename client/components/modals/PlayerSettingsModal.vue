@@ -1,10 +1,12 @@
 <template>
   <modals-modal v-model="show" name="player-settings" :width="500" :height="'unset'">
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-4" style="max-height: 80vh; min-height: 40vh">
-      <h3 class="text-xl font-semibold mb-8">Player Settings</h3>
+      <h3 class="text-xl font-semibold mb-8">{{ $strings.HeaderPlayerSettings }}</h3>
       <div class="flex items-center mb-4">
         <ui-toggle-switch v-model="useChapterTrack" @input="setUseChapterTrack" />
-        <div class="pl-4"><span>Use Chapter Track</span></div>
+        <div class="pl-4">
+          <span>{{ $strings.LabelUseChapterTrack }}</span>
+        </div>
       </div>
       <div class="flex items-center mb-4">
         <ui-select-input v-model="jumpForwardAmount" :label="$strings.LabelJumpForwardAmount" menuMaxHeight="250px" :items="jumpValues" @input="setJumpForwardAmount" />
@@ -25,12 +27,12 @@ export default {
     return {
       useChapterTrack: false,
       jumpValues: [
-        { text: '10 seconds', value: 10 },
-        { text: '15 seconds', value: 15 },
-        { text: '30 seconds', value: 30 },
-        { text: '1 minute', value: 60 },
-        { text: '2 minutes', value: 120 },
-        { text: '5 minutes', value: 300 }
+        { text: this.$getString('LabelJumpAmountSeconds', ['10']), value: 10 },
+        { text: this.$getString('LabelJumpAmountSeconds', ['15']), value: 15 },
+        { text: this.$getString('LabelJumpAmountSeconds', ['30']), value: 30 },
+        { text: this.$getString('LabelJumpAmountSeconds', ['60']), value: 60 },
+        { text: this.$getString('LabelJumpAmountMinutes', ['2']), value: 120 },
+        { text: this.$getString('LabelJumpAmountMinutes', ['5']), value: 300 }
       ],
       jumpForwardAmount: 10,
       jumpBackwardAmount: 10
