@@ -345,8 +345,6 @@
   "LabelIntervalEveryHour": "Cada Hora",
   "LabelInvert": "Invertir",
   "LabelItem": "Elemento",
-  "LabelJumpAmountMinutes": "{0} minutos",
-  "LabelJumpAmountSeconds": "{0} segundos",
   "LabelJumpBackwardAmount": "Cantidad de saltos hacia atrás",
   "LabelJumpForwardAmount": "Cantidad de saltos hacia adelante",
   "LabelLanguage": "Idioma",
