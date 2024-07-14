@@ -27,12 +27,12 @@ export default {
     return {
       useChapterTrack: false,
       jumpValues: [
-        { text: this.$getString('LabelJumpAmountSeconds', ['10']), value: 10 },
-        { text: this.$getString('LabelJumpAmountSeconds', ['15']), value: 15 },
-        { text: this.$getString('LabelJumpAmountSeconds', ['30']), value: 30 },
-        { text: this.$getString('LabelJumpAmountSeconds', ['60']), value: 60 },
-        { text: this.$getString('LabelJumpAmountMinutes', ['2']), value: 120 },
-        { text: this.$getString('LabelJumpAmountMinutes', ['5']), value: 300 }
+        { text: this.$getString('LabelTimeDurationXSeconds', ['10']), value: 10 },
+        { text: this.$getString('LabelTimeDurationXSeconds', ['15']), value: 15 },
+        { text: this.$getString('LabelTimeDurationXSeconds', ['30']), value: 30 },
+        { text: this.$getString('LabelTimeDurationXSeconds', ['60']), value: 60 },
+        { text: this.$getString('LabelTimeDurationXMinutes', ['2']), value: 120 },
+        { text: this.$getString('LabelTimeDurationXMinutes', ['5']), value: 300 }
       ],
       jumpForwardAmount: 10,
       jumpBackwardAmount: 10

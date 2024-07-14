@@ -13,7 +13,7 @@
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
-              <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
+              <p class="text-sm sm:text-lg text-warning font-mono font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
             </div>
           </button>
         </ui-tooltip>
@@ -107,14 +107,14 @@ export default {
   computed: {
     sleepTimerRemainingString() {
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
-        return this.$strings.LabelEndOfChapter
+        return 'EoC'
       } else {
         var rounded = Math.round(this.sleepTimerRemaining)
         if (rounded < 90) {
           return `${rounded}s`
         }
         var minutesRounded = Math.round(rounded / 60)
-        if (minutesRounded < 90) {
+        if (minutesRounded <= 90) {
           return `${minutesRounded}m`
         }
         var hoursRounded = Math.round(minutesRounded / 60)
