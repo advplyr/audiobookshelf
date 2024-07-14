@@ -19,7 +19,7 @@
         </form>
       </div>
       <div class="w-full p-4">
-        <div v-if="timerType === this.$constants.SleepTimerTypes.COUNTDOWN" class="mb-4 flex items-center justify-center">
+        <div v-if="timerType === $constants.SleepTimerTypes.COUNTDOWN" class="mb-4 flex items-center justify-center">
           <ui-btn :padding-x="2" small :disabled="remaining < 30 * 60" class="flex items-center mr-4" @click="decrement(30 * 60)">
             <span class="material-symbols text-lg">remove</span>
             <span class="pl-1 text-base font-mono">30m</span>
@@ -47,10 +47,8 @@ export default {
   props: {
     value: Boolean,
     timerSet: Boolean,
-    timerTime: Number,
     timerType: String,
-    remaining: Number,
-    currentChapter: Object
+    remaining: Number
   },
   data() {
     return {
@@ -98,12 +96,6 @@ export default {
         },
         { seconds: -1, text: 'End of chapter', timerType: this.$constants.SleepTimerTypes.CHAPTER }
       ]
-    }
-  },
-  watch: {
-    show(newVal) {
-      if (newVal) {
-      }
     }
   },
   computed: {
