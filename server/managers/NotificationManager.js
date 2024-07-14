@@ -1,5 +1,5 @@
 const axios = require('axios')
-const Logger = require("../Logger")
+const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { notificationData } = require('../utils/notifications')
@@ -52,7 +52,8 @@ class NotificationManager {
       const success = intentionallyFail ? false : await this.sendNotification(notification, eventData)
 
       notification.updateNotificationFired(success)
-      if (!success) { // Failed notification
+      if (!success) {
+        // Failed notification
         if (notification.numConsecutiveFailedAttempts >= Database.notificationSettings.maxFailedAttempts) {
           Logger.error(`[NotificationManager] triggerNotification: ${notification.eventName}/${notification.id} reached max failed attempts`)
           notification.enabled = false
@@ -87,7 +88,8 @@ class NotificationManager {
     // Delay between events then run next notification in queue
     setTimeout(() => {
       this.sendingNotification = false
-      if (this.notificationQueue.length) { // Send next notification in queue
+      if (this.notificationQueue.length) {
+        // Send next notification in queue
         const nextNotificationEvent = this.notificationQueue.shift()
         this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
       }
@@ -95,7 +97,7 @@ class NotificationManager {
   }
 
   sendTestNotification(notification) {
-    const eventData = notificationData.events.find(e => e.name === notification.eventName)
+    const eventData = notificationData.events.find((e) => e.name === notification.eventName)
     if (!eventData) {
       Logger.error(`[NotificationManager] sendTestNotification: Event not found ${notification.eventName}`)
       return false
@@ -106,13 +108,16 @@ class NotificationManager {
 
   sendNotification(notification, eventData) {
     const payload = notification.getApprisePayload(eventData)
-    return axios.post(Database.notificationSettings.appriseApiUrl, payload, { timeout: 6000 }).then((response) => {
-      Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=`, response.data)
-      return true
-    }).catch((error) => {
-      Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)
-      return false
-    })
+    return axios
+      .post(Database.notificationSettings.appriseApiUrl, payload, { timeout: 6000 })
+      .then((response) => {
+        Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=`, response.data)
+        return true
+      })
+      .catch((error) => {
+        Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)
+        return false
+      })
   }
 }
 module.exports = NotificationManager
