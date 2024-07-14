@@ -36,6 +36,20 @@ class NotificationManager {
     this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
   }
 
+  async onBackupCompleted(backup, totalBackupCount, removedOldest) {
+    if (!Database.notificationSettings.isUseable) return
+
+    Logger.debug(`[NotificationManager] onBackupCompleted: Backup completed`)
+    const eventData = {
+      completionTime: backup.createdAt,
+      backupPath: backup.fullPath,
+      backupSize: backup.fileSize,
+      backupCount: totalBackupCount || 'Invalid',
+      removedOldest: removedOldest || 'false'
+    }
+    this.triggerNotification('onBackupCompleted', eventData)
+  }
+
   onTest() {
     this.triggerNotification('onTest')
   }

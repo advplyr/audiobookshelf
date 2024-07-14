@@ -68,7 +68,7 @@ class Server {
     // Managers
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
-    this.backupManager = new BackupManager()
+    this.backupManager = new BackupManager(this.notificationManager)
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)

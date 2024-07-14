@@ -28,6 +28,23 @@ module.exports.notificationData = {
       }
     },
     {
+      name: 'onBackupCompleted',
+      requiresLibrary: false,
+      description: 'Triggered when a backup is completed',
+      variables: ['completionTime', 'backupPath', 'backupSize', 'backupCount', 'removedOldest'],
+      defaults: {
+        title: 'Backup Completed',
+        body: 'Backup has been completed successfully.\n\nPath: {{backupPath}}\nSize: {{backupSize}}\nCount: {{backupCount}}\nRemoved Oldest: {{removedOldest}}'
+      },
+      testData: {
+        completionTime: '12:00 AM',
+        backupPath: 'path/to/backup',
+        backupSize: '1.23 MB',
+        backupCount: '1',
+        removedOldest: 'false'
+      }
+    },
+    {
       name: 'onTest',
       requiresLibrary: false,
       description: 'Event for testing the notification system',

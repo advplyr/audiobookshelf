@@ -16,9 +16,10 @@ const { getFileSize } = require('../utils/fileUtils')
 const Backup = require('../objects/Backup')
 
 class BackupManager {
-  constructor() {
+  constructor(notificationManager) {
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
     this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
+    this.notificationManager = notificationManager
 
     this.scheduleTask = null
 
@@ -322,13 +323,18 @@ class BackupManager {
     }
 
     // Check remove oldest backup
-    if (this.backups.length > this.backupsToKeep) {
+    const removeOldest = this.backups.length > this.backupsToKeep
+    if (removeOldest) {
       this.backups.sort((a, b) => a.createdAt - b.createdAt)
 
       const oldBackup = this.backups.shift()
       Logger.debug(`[BackupManager] Removing old backup ${oldBackup.id}`)
       this.removeBackup(oldBackup)
     }
+
+    // Notifications only for auto downloaded episodes
+    this.notificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
+
     return true
   }
 
