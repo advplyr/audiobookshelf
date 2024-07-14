@@ -96,10 +96,10 @@ export default {
 
       let formattedTime = ''
       if (amount <= 60) {
-        formattedTime = this.$getString('LabelJumpAmountSeconds', [amount])
+        formattedTime = this.$getString('LabelTimeDurationXSeconds', [amount])
       } else {
         const minutes = Math.floor(amount / 60)
-        formattedTime = this.$getString('LabelJumpAmountMinutes', [minutes])
+        formattedTime = this.$getString('LabelTimeDurationXMinutes', [minutes])
       }
 
       return `${prefix} - ${formattedTime}`
