@@ -354,9 +354,7 @@ class PodcastManager {
     var extractedFeeds = opmlParser.parse(opmlText)
     if (!extractedFeeds || !extractedFeeds.length) {
       Logger.error('[PodcastManager] getOPMLFeeds: No RSS feeds found in OPML')
-      return {
-        error: 'No RSS feeds found in OPML'
-      }
+      throw new Error('No RSS feeds found in OPML')
     }
 
     var rssFeedData = []
@@ -367,6 +365,11 @@ class PodcastManager {
         feedData.metadata.feedUrl = feed.feedUrl
         rssFeedData.push(feedData)
       }
+    }
+
+    if (!rssFeedData.length) {
+      Logger.error('[PodcastManager] getOPMLFeeds: No valid RSS feeds found in OPML')
+      throw new Error('No valid RSS feeds found in OPML')
     }
 
     return {

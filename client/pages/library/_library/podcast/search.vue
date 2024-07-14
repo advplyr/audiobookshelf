@@ -113,18 +113,25 @@ export default {
         return
       }
 
-      await this.$axios
-        .$post(`/api/podcasts/opml`, { opmlText: txt })
-        .then((data) => {
-          console.log(data)
+      try {
+        this.$root.socket.on('opml_feeds', (data) => {
+          this.$root.socket.off('opml_feeds')
+          this.processing = false
+          if (data.error) {
+            this.$toast.error(data.error)
+            return
+          }
           this.opmlFeeds = data.feeds || []
           this.showOPMLFeedsModal = true
         })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.$toast.error('Failed to parse OPML file')
-        })
-      this.processing = false
+        await this.$axios.$post(`/api/podcasts/opml`, { opmlText: txt })
+        console.log('OPML import started')
+      } catch (error) {
+        this.$root.socket.off('opml_feeds')
+        this.processing = false
+        console.error('/api/podcasts/opml failed:', error)
+        this.$toast.error('Failed to start OPML import: ' + error.message)
+      }
     },
     submit() {
       if (!this.searchInput) return
@@ -222,6 +229,9 @@ export default {
   },
   mounted() {
     this.fetchExistentPodcastsInYourLibrary()
+  },
+  beforeDestroy() {
+    this.$root.socket.off('opml_feeds')
   }
 }
 </script>

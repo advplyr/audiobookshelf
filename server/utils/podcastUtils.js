@@ -231,7 +231,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   return axios({
     url: feedUrl,
     method: 'GET',
-    timeout: 12000,
+    timeout: 5000,
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
@@ -266,7 +266,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       return payload.podcast
     })
     .catch((error) => {
-      Logger.error('[podcastUtils] getPodcastFeed Error', error)
+      Logger.error('[podcastUtils] getPodcastFeed Error:', error.message)
       return null
     })
 }

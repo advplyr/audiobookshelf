@@ -133,7 +133,7 @@ class PodcastController {
     res.json({ podcast })
   }
 
-  async getFeedsFromOPMLText(req, res) {
+  getFeedsFromOPMLText(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get feeds from opml`)
       return res.sendStatus(403)
@@ -143,8 +143,18 @@ class PodcastController {
       return res.sendStatus(400)
     }
 
-    const rssFeedsData = await this.podcastManager.getOPMLFeeds(req.body.opmlText)
-    res.json(rssFeedsData)
+    this.podcastManager
+      .getOPMLFeeds(req.body.opmlText)
+      .then((rssFeedsData) => {
+        Logger.info('[PodcastController] getOPMLFeeds finished successfully')
+        SocketAuthority.emitter('opml_feeds', rssFeedsData)
+      })
+      .catch((error) => {
+        Logger.error('[PodcastController] getOPMLFeeds error:', error)
+        SocketAuthority.emitter('opml_feeds', { error: error.message })
+      })
+    Logger.info('[PodcastController] getOPMLFeeds started')
+    res.sendStatus(200)
   }
 
   async checkNewEpisodes(req, res) {
