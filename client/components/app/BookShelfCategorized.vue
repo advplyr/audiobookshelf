@@ -170,7 +170,7 @@ export default {
       // Sets the limit for the number of items to be displayed based on the viewport width.
       const viewportWidth = window.innerWidth
       let limit
-      if (viewportWidth >= 3240 && viewportWidth <= 3440) {
+      if (viewportWidth >= 3240) {
         limit = 15
       } else if (viewportWidth >= 2880 && viewportWidth < 3240) {
         limit = 12
