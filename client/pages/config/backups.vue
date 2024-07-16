@@ -202,7 +202,7 @@ export default {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.enableBackups = !!this.newServerSettings.backupSchedule
-      this.maxBackupSize = this.newServerSettings.maxBackupSize || 0
+      this.maxBackupSize = this.newServerSettings.maxBackupSize === 0 ? 0 : this.newServerSettings.maxBackupSize || 1
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
     }
   },
