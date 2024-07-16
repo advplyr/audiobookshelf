@@ -229,7 +229,7 @@
   "LabelBackupLocation": "Backup Location",
   "LabelBackupsEnableAutomaticBackups": "Enable automatic backups",
   "LabelBackupsEnableAutomaticBackupsHelp": "Backups saved in /metadata/backups",
-  "LabelBackupsMaxBackupSize": "Maximum backup size (in GB)",
+  "LabelBackupsMaxBackupSize": "Maximum backup size (in GB) (0 for unlimited)",
   "LabelBackupsMaxBackupSizeHelp": "As a safeguard against misconfiguration, backups will fail if they exceed the configured size.",
   "LabelBackupsNumberToKeep": "Number of backups to keep",
   "LabelBackupsNumberToKeepHelp": "Only 1 backup will be removed at a time so if you already have more backups than this you should manually remove them.",

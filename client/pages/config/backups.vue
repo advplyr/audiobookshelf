@@ -64,7 +64,7 @@
         <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
         <ui-tooltip :text="$strings.LabelBackupsMaxBackupSizeHelp">
-          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} (0 for unlimited) <span class="material-symbols icon-text">info</span></p>
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} <span class="material-symbols icon-text">info</span></p>
         </ui-tooltip>
       </div>
 
