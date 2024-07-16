@@ -102,7 +102,7 @@ class ServerSettings {
     this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
-    this.maxBackupSize = settings.maxBackupSize || 1
+    this.maxBackupSize = settings.maxBackupSize === 0 ? 0 : settings.maxBackupSize || 1
 
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
