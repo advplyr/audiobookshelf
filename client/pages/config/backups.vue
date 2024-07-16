@@ -64,7 +64,7 @@
         <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
         <ui-tooltip :text="$strings.LabelBackupsMaxBackupSizeHelp">
-          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} <span class="material-symbols icon-text">info</span></p>
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} (0 for unlimited) <span class="material-symbols icon-text">info</span></p>
         </ui-tooltip>
       </div>
 
@@ -170,7 +170,7 @@ export default {
         })
     },
     updateBackupsSettings() {
-      if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
+      if (isNaN(this.maxBackupSize) || this.maxBackupSize < 0) {
         this.$toast.error('Invalid maximum backup size')
         return
       }
@@ -200,10 +200,9 @@ export default {
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
-
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.enableBackups = !!this.newServerSettings.backupSchedule
-      this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
+      this.maxBackupSize = this.newServerSettings.maxBackupSize || 0
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
     }
   },
