@@ -60,7 +60,7 @@ class Library extends Model {
   /**
    * Convert expanded Library to oldLibrary
    * @param {Library} libraryExpanded
-   * @returns {Promise<oldLibrary>}
+   * @returns {oldLibrary}
    */
   static getOldLibrary(libraryExpanded) {
     const folders = libraryExpanded.libraryFolders.map((folder) => {

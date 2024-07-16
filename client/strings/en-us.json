@@ -722,6 +722,7 @@
   "MessageNoUpdatesWereNecessary": "No updates were necessary",
   "MessageNoUserPlaylists": "You have no playlists",
   "MessageNotYetImplemented": "Not yet implemented",
+  "MessageOpmlPreviewNote": "Note: This is a preview of the parsed OPML file. The actual podcast title will be taken from the RSS feed.",
   "MessageOr": "or",
   "MessagePauseChapter": "Pause chapter playback",
   "MessagePlayChapter": "Listen to beginning of chapter",
