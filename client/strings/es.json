@@ -722,6 +722,7 @@
   "MessageNoUpdatesWereNecessary": "No fue necesario actualizar",
   "MessageNoUserPlaylists": "No tienes lista de reproducciones",
   "MessageNotYetImplemented": "Aun no implementado",
+  "MessageOpmlPreviewNote": "Nota: Esta es una vista previa del archivo OPML analizado. El título real del podcast se obtendrá del canal RSS.",
   "MessageOr": "o",
   "MessagePauseChapter": "Pausar la reproducción del capítulo",
   "MessagePlayChapter": "Escuchar el comienzo del capítulo",
