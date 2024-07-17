@@ -38,6 +38,10 @@ class NfoFileScanner {
               sequence: nfoMetadata.sequence || null
             }]
           }
+        } else if (key === 'language') {
+          if (nfoMetadata.language) {
+            bookMetadata.language = nfoMetadata.language
+          }
         } else if (nfoMetadata[key] && key !== 'sequence') {
           bookMetadata[key] = nfoMetadata[key]
         }
