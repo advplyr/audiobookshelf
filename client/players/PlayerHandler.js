@@ -36,10 +36,10 @@ export default class PlayerHandler {
     return this.libraryItem ? this.libraryItem.id : null
   }
   get isPlayingCastedItem() {
-    return this.libraryItem && (this.player instanceof CastPlayer)
+    return this.libraryItem && this.player instanceof CastPlayer
   }
   get isPlayingLocalItem() {
-    return this.libraryItem && (this.player instanceof LocalAudioPlayer)
+    return this.libraryItem && this.player instanceof LocalAudioPlayer
   }
   get userToken() {
     return this.ctx.$store.getters['user/getToken']
@@ -49,7 +49,7 @@ export default class PlayerHandler {
   }
   get episode() {
     if (!this.episodeId) return null
-    return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
+    return this.libraryItem.media.episodes.find((ep) => ep.id === this.episodeId)
   }
   get jumpForwardAmount() {
     return this.ctx.$store.getters['user/getUserSetting']('jumpForwardAmount')
@@ -72,7 +72,7 @@ export default class PlayerHandler {
     this.playWhenReady = playWhenReady
     this.initialPlaybackRate = this.isMusic ? 1 : playbackRate
 
-    this.startTimeOverride = (startTimeOverride == null || isNaN(startTimeOverride)) ? undefined : Number(startTimeOverride)
+    this.startTimeOverride = startTimeOverride == null || isNaN(startTimeOverride) ? undefined : Number(startTimeOverride)
 
     if (!this.player) this.switchPlayer(playWhenReady)
     else this.prepare()
@@ -133,7 +133,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && (this.player instanceof LocalAudioPlayer)) {
+    if (!this.isCasting && this.player instanceof LocalAudioPlayer) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -213,7 +213,8 @@ export default class PlayerHandler {
     this.prepareSession(session)
   }
 
-  prepareOpenSession(session, playbackRate) { // Session opened on init socket
+  prepareOpenSession(session, playbackRate) {
+    // Session opened on init socket
     if (!this.player) this.switchPlayer() // Must set player first for open sessions
 
     this.libraryItem = session.libraryItem
@@ -247,7 +248,7 @@ export default class PlayerHandler {
 
       this.player.set(this.libraryItem, videoTrack, this.isHlsTranscode, this.startTime, this.playWhenReady)
     } else {
-      var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
+      var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, this.userToken))
 
       this.ctx.playerLoading = true
       this.isHlsTranscode = true
@@ -301,7 +302,7 @@ export default class PlayerHandler {
       const currentTime = this.player.getCurrentTime()
       this.ctx.setCurrentTime(currentTime)
 
-      const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
+      const exactTimeElapsed = (Date.now() - lastTick) / 1000
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
       const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 10 : 20
@@ -326,7 +327,7 @@ export default class PlayerHandler {
     }
     this.listeningTimeSinceSync = 0
     this.lastSyncTime = 0
-    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 6000 }).catch((error) => {
+    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 6000, progress: false }).catch((error) => {
       console.error('Failed to close session', error)
     })
   }
@@ -346,17 +347,20 @@ export default class PlayerHandler {
     }
 
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000 }).then(() => {
-      this.failedProgressSyncs = 0
-    }).catch((error) => {
-      console.error('Failed to update session progress', error)
-      // After 4 failed sync attempts show an alert toast
-      this.failedProgressSyncs++
-      if (this.failedProgressSyncs >= 4) {
-        this.ctx.showFailedProgressSyncs()
+    this.ctx.$axios
+      .$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000, progress: false })
+      .then(() => {
         this.failedProgressSyncs = 0
-      }
-    })
+      })
+      .catch((error) => {
+        console.error('Failed to update session progress', error)
+        // After 4 failed sync attempts show an alert toast
+        this.failedProgressSyncs++
+        if (this.failedProgressSyncs >= 4) {
+          this.ctx.showFailedProgressSyncs()
+          this.failedProgressSyncs = 0
+        }
+      })
   }
 
   stopPlayInterval() {
