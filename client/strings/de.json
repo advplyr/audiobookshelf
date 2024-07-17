@@ -722,6 +722,7 @@
   "MessageNoUpdatesWereNecessary": "Keine Aktualisierungen waren notwendig",
   "MessageNoUserPlaylists": "Keine Wiedergabelisten vorhanden",
   "MessageNotYetImplemented": "Noch nicht implementiert",
+  "MessageOpmlPreviewNote": "Hinweis: Dies ist nur eine Vorschau der geparsten OPML Datei. Der eigentliche Podcast-Titel wird aus dem RSS-Feed übernommen.",
   "MessageOr": "Oder",
   "MessagePauseChapter": "Kapitelwiedergabe pausieren",
   "MessagePlayChapter": "Kapitelanfang anhören",
