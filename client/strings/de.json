@@ -229,7 +229,7 @@
   "LabelBackupLocation": "Backup-Ort",
   "LabelBackupsEnableAutomaticBackups": "Automatische Sicherung aktivieren",
   "LabelBackupsEnableAutomaticBackupsHelp": "Backups werden in /metadata/backups gespeichert",
-  "LabelBackupsMaxBackupSize": "Maximale Sicherungsgröße (in GB)",
+  "LabelBackupsMaxBackupSize": "Maximale Sicherungsgröße (in GB)(0 gleich ohne Begrenzung)",
   "LabelBackupsMaxBackupSizeHelp": "Zum Schutz vor Fehlkonfigurationen schlagen Sicherungen fehl, wenn sie die konfigurierte Größe überschreiten.",
   "LabelBackupsNumberToKeep": "Anzahl der aufzubewahrenden Sicherungen",
   "LabelBackupsNumberToKeepHelp": "Es wird immer nur 1 Sicherung auf einmal entfernt. Wenn du bereits mehrere Sicherungen als die definierte max. Anzahl hast, solltest du diese manuell entfernen.",
