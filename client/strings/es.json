@@ -229,7 +229,7 @@
   "LabelBackupLocation": "Ubicación del Respaldo",
   "LabelBackupsEnableAutomaticBackups": "Habilitar Respaldo Automático",
   "LabelBackupsEnableAutomaticBackupsHelp": "Respaldo Guardado en /metadata/backups",
-  "LabelBackupsMaxBackupSize": "Tamaño Máximo de Respaldos (en GB)",
+  "LabelBackupsMaxBackupSize": "Tamaño máximo de copia de seguridad (en GB) (0 para ilimitado)",
   "LabelBackupsMaxBackupSizeHelp": "Como protección contra una configuración errónea, los respaldos fallarán si se excede el tamaño configurado.",
   "LabelBackupsNumberToKeep": "Numero de respaldos para conservar",
   "LabelBackupsNumberToKeepHelp": "Solamente 1 respaldo se removerá a la vez. Si tiene mas respaldos guardados, debe removerlos manualmente.",
