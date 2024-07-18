@@ -159,6 +159,7 @@ export default {
       }
 
       this.addSubtitlesMenuItem(items)
+      this.addDetailsOnHoverMenuItem(items)
 
       return items
     },
@@ -329,6 +330,7 @@ export default {
 
       this.addSubtitlesMenuItem(items)
       this.addCollapseSeriesMenuItem(items)
+      this.addDetailsOnHoverMenuItem(items)
 
       return items
     },
@@ -367,6 +369,21 @@ export default {
         }
       }
     },
+    addDetailsOnHoverMenuItem(items) {
+      if (this.isBookLibrary && (!this.page || this.page === 'search')) {
+        if (this.settings.showDetailsOnHover) {
+          items.push({
+            text: this.$strings.LabelHideDetailsOnHover,
+            action: 'hide-details-on-hover'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelShowDetailsOnHover,
+            action: 'show-details-on-hover'
+          })
+        }
+      }
+    },
     handleSubtitlesAction(action) {
       if (action === 'show-subtitles') {
         this.settings.showSubtitles = true
@@ -393,6 +410,19 @@ export default {
       }
       return false
     },
+    handleDetailsOnHoverAction(action) {
+      if (action === 'show-details-on-hover') {
+        this.settings.showDetailsOnHover = true
+        this.updateShowDetailsOnHover()
+        return true
+      }
+      if (action === 'hide-details-on-hover') {
+        this.settings.showDetailsOnHover = false
+        this.updateShowDetailsOnHover()
+        return true
+      }
+      return false
+    },
     contextMenuAction({ action }) {
       if (action === 'export-opml') {
         this.exportOPML()
@@ -400,6 +430,8 @@ export default {
       } else if (this.handleSubtitlesAction(action)) {
         return
       } else if (this.handleCollapseSeriesAction(action)) {
+        return
+      } else if (this.handleDetailsOnHoverAction(action)) {
         return
       }
     },
@@ -422,6 +454,8 @@ export default {
         }
         this.markSeriesFinished()
       } else if (this.handleSubtitlesAction(action)) {
+        return
+      } else if (this.handleDetailsOnHoverAction(action)) {
         return
       }
     },
@@ -553,6 +587,9 @@ export default {
       this.saveSettings()
     },
     updateShowSubtitles() {
+      this.saveSettings()
+    },
+    updateShowDetailsOnHover() {
       this.saveSettings()
     },
     updateAuthorSort() {

@@ -1,6 +1,6 @@
 <template>
   <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-sm z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <ui-tooltip :direction="'top'" :text="getTooltipText()">
+    <ui-tooltip :disabled="!userShowDetailsOnHover" :direction="'bottom'" :delayOnShow="500" :text="getTooltipText()">
       <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
         <!-- When cover image does not fill -->
         <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
@@ -484,6 +484,9 @@ export default {
     },
     userIsAdminOrUp() {
       return this.store.getters['user/getIsAdminOrUp']
+    },
+    userShowDetailsOnHover() {
+      return this.store.getters['user/getUserSetting']('showDetailsOnHover')
     },
     moreMenuItems() {
       if (this.isMusic) return []
