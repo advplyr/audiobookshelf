@@ -1106,17 +1106,29 @@ export default {
       }
     },
     getTooltipText() {
-      const maxLength = 500
-      const truncatedSynopsis = this.description.length > maxLength ? this.description.substring(0, maxLength) + '...' : this.description
+      // Set the maximum length for the description
+      const maxLength = 250
+
+      // Truncate the description if it exceeds the maximum length
+      const truncatedDescription = this.description.length > maxLength ? this.description.substring(0, maxLength) + '...' : this.description
+
       const duration = this.media.duration ? this.$elapsedPrettyExtended(this.media.duration, false) : ''
-      let tooltipText = '<div style="text-align: left;">'
-      if (truncatedSynopsis) {
-        tooltipText += `<strong>Synopsis</strong> <br/>${truncatedSynopsis} <br/><br/>`
-      }
-      if (duration) {
-        tooltipText += `<strong>Duration</strong><br/>${duration}`
-      }
-      tooltipText += '</div>'
+
+      // Determine the vertical alignment of the duration based on the length of the description
+      const durationVerticalAlign = this.description.length < 200 ? 'top' : 'middle'
+
+      // Build the tooltip text using a table format
+      let tooltipText = '<table style="text-align: left; width: 100%;">'
+      tooltipText += '<tr>'
+      tooltipText += `<th style="padding-right: 10px;"><strong>${this.$strings.LabelDuration}</strong></th>`
+      tooltipText += `<th><strong>${this.$strings.LabelDescription}</strong></th>`
+      tooltipText += '</tr>'
+      tooltipText += '<tr>'
+      tooltipText += `<td style="padding-right: 10px; vertical-align: ${durationVerticalAlign}; white-space: nowrap;">${duration}</td>`
+      tooltipText += `<td>${truncatedDescription}</td>`
+      tooltipText += '</tr>'
+      tooltipText += '</table>'
+
       return tooltipText
     }
   },
