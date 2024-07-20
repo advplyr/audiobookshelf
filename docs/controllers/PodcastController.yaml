@@ -58,14 +58,12 @@ paths:
         404:
           description: Not found
 
-  /api/podcasts/opml:
+  /api/podcasts/opml/parse:
     post:
       summary: Get feeds from OPML text
+      description: Parse OPML text and return an array of feeds
       operationId: getFeedsFromOPMLText
-      tags:
-        - Podcasts
       requestBody:
-        required: true
         content:
           application/json:
             schema:
@@ -73,20 +71,56 @@ paths:
               properties:
                 opmlText:
                   type: string
-                  description: The OPML text containing podcast feeds
       responses:
-        200:
-          description: Successfully retrieved feeds from OPML text
+        '200':
+          description: Successfully parsed OPML text and returned feeds
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
-        400:
-          description: Bad request
-        403:
-          description: Forbidden
+                type: object
+                properties:
+                  feeds:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        feedUrl:
+                          type: string
+        '400':
+          description: Bad request, OPML text not provided
+        '403':
+          description: Forbidden, user is not admin
+  /api/podcasts/opml/create:
+    post:
+      summary: Bulk create podcasts from OPML feed URLs
+      operationId: bulkCreatePodcastsFromOpmlFeedUrls
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feeds:
+                  type: array
+                  items:
+                    type: string
+                libraryId:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+                folderId:
+                  $ref: '../objects/Folder.yaml#/components/schemas/folderId'
+                autoDownloadEpisodes:
+                  $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/autoDownloadEpisodes'
+      responses:
+        '200':
+          description: Successfully created podcasts from feed URLs
+        '400':
+          description: Bad request, invalid request body
+        '403':
+          description: Forbidden, user is not admin
+        '404':
+          description: Folder not found
 
   /api/podcasts/{id}/checknew:
     parameters:
