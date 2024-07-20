@@ -668,6 +668,7 @@
   "MessageConfirmSendEbookToDevice": "¿Está seguro de que enviar {0} ebook(s) \"{1}\" al dispositivo \"{2}\"?",
   "MessageDownloadingEpisode": "Descargando Capitulo",
   "MessageDragFilesIntoTrackOrder": "Arrastra los archivos al orden correcto de las pistas.",
+  "MessageEmbedFailed": "¡Error al insertar!",
   "MessageEmbedFinished": "Incrustación Terminada!",
   "MessageEpisodesQueuedForDownload": "{0} Episodio(s) en cola para descargar",
   "MessageEreaderDevices": "Para garantizar la entrega de libros electrónicos, es posible que tenga que agregar la dirección de correo electrónico anterior como remitente válido para cada dispositivo enumerado a continuación.",
