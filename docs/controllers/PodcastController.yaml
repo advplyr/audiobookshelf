@@ -63,6 +63,8 @@ paths:
       summary: Get feeds from OPML text
       description: Parse OPML text and return an array of feeds
       operationId: getFeedsFromOPMLText
+      tags:
+        - Podcasts
       requestBody:
         content:
           application/json:
@@ -96,6 +98,8 @@ paths:
     post:
       summary: Bulk create podcasts from OPML feed URLs
       operationId: bulkCreatePodcastsFromOpmlFeedUrls
+      tags:
+        - Podcasts
       requestBody:
         content:
           application/json:
