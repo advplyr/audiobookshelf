@@ -212,6 +212,16 @@ export default {
         this.libraryItemAdded(ab)
       })
     },
+    trackStarted(data) {
+      this.$store.commit('tasks/updateAudioFilesEncoding', { libraryItemId: data.libraryItemId, ino: data.ino, progress: '0%' })
+    },
+    trackProgress(data) {
+      this.$store.commit('tasks/updateAudioFilesEncoding', { libraryItemId: data.libraryItemId, ino: data.ino, progress: `${Math.round(data.progress)}%` })
+    },
+    trackFinished(data) {
+      this.$store.commit('tasks/updateAudioFilesEncoding', { libraryItemId: data.libraryItemId, ino: data.ino, progress: '100%' })
+      this.$store.commit('tasks/updateAudioFilesFinished', { libraryItemId: data.libraryItemId, ino: data.ino, finished: true })
+    },
     taskStarted(task) {
       console.log('Task started', task)
       this.$store.commit('tasks/addUpdateTask', task)
@@ -219,6 +229,9 @@ export default {
     taskFinished(task) {
       console.log('Task finished', task)
       this.$store.commit('tasks/addUpdateTask', task)
+    },
+    taskProgress(data) {
+      this.$store.commit('tasks/updateTaskProgress', { libraryItemId: data.libraryItemId, progress: `${Math.round(data.progress)}%` })
     },
     metadataEmbedQueueUpdate(data) {
       if (data.queued) {
@@ -406,6 +419,10 @@ export default {
       this.socket.on('task_started', this.taskStarted)
       this.socket.on('task_finished', this.taskFinished)
       this.socket.on('metadata_embed_queue_update', this.metadataEmbedQueueUpdate)
+      this.socket.on('track_started', this.trackStarted)
+      this.socket.on('track_finished', this.trackFinished)
+      this.socket.on('track_progress', this.trackProgress)
+      this.socket.on('task_progress', this.taskProgress)
 
       // EReader Device Listeners
       this.socket.on('ereader-devices-updated', this.ereaderDevicesUpdated)

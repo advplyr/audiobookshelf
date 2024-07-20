@@ -659,6 +659,7 @@
   "MessageDownloadingEpisode": "Downloading episode",
   "MessageDragFilesIntoTrackOrder": "Drag files into correct track order",
   "MessageEmbedFinished": "Embed Finished!",
+  "MessageEmbedFailed": "Embed Failed!",
   "MessageEpisodesQueuedForDownload": "{0} Episode(s) queued for download",
   "MessageEreaderDevices": "To ensure delivery of ebooks, you may need to add the above email address as a valid sender for each device listed below.",
   "MessageFeedURLWillBe": "Feed URL will be {0}",

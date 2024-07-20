@@ -1,7 +1,7 @@
 const axios = require('axios')
 const Ffmpeg = require('../libs/fluentFfmpeg')
+const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
-const os = require('os')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX } = require('./fileUtils')
@@ -251,9 +251,10 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
  * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
- * @returns {Promise<boolean>} A promise that resolves to true if the operation is successful, false otherwise.
+ * @param {function(number): void|null} progressCB - A callback function to report progress.
+ * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, ffmpeg = Ffmpeg()) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg()) {
   const isMp4 = mimeType === 'audio/mp4'
   const isMp3 = mimeType === 'audio/mpeg'
 
@@ -262,7 +263,7 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
   const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
   const tempFilePath = filePathToPOSIX(Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`))
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
       '-map 0:a', // map audio stream from input file
       '-map_metadata 1', // map metadata tags from metadata file first
@@ -302,21 +303,36 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
 
     ffmpeg
       .output(tempFilePath)
-      .on('start', function (commandLine) {
+      .on('start', (commandLine) => {
         Logger.debug('[ffmpegHelpers] Spawned Ffmpeg with command: ' + commandLine)
       })
-      .on('end', (stdout, stderr) => {
+      .on('progress', (progress) => {
+        if (!progressCB || !progress.percent) return
+        Logger.debug(`[ffmpegHelpers] Progress: ${progress.percent}%`)
+        progressCB(progress.percent)
+      })
+      .on('end', async (stdout, stderr) => {
         Logger.debug('[ffmpegHelpers] ffmpeg stdout:', stdout)
         Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
-        fs.copyFileSync(tempFilePath, audioFilePath)
-        fs.unlinkSync(tempFilePath)
-        resolve(true)
+        Logger.debug('[ffmpegHelpers] Moving temp file to audio file path:', `"${tempFilePath}"`, '->', `"${audioFilePath}"`)
+        try {
+          await fs.move(tempFilePath, audioFilePath, { overwrite: true })
+          resolve()
+        } catch (error) {
+          Logger.error(`[ffmpegHelpers] Failed to move temp file to audio file path: "${tempFilePath}" -> "${audioFilePath}"`, error)
+          reject(error)
+        }
       })
       .on('error', (err, stdout, stderr) => {
-        Logger.error('Error adding cover image and metadata:', err)
-        Logger.error('ffmpeg stdout:', stdout)
-        Logger.error('ffmpeg stderr:', stderr)
-        resolve(false)
+        if (err.message && err.message.includes('SIGKILL')) {
+          Logger.info(`[ffmpegHelpers] addCoverAndMetadataToFile Killed by User`)
+          reject(new Error('FFMPEG_CANCELED'))
+        } else {
+          Logger.error('Error adding cover image and metadata:', err)
+          Logger.error('ffmpeg stdout:', stdout)
+          Logger.error('ffmpeg stderr:', stderr)
+          reject(err)
+        }
       })
 
     ffmpeg.run()
@@ -366,3 +382,92 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
 }
 
 module.exports.getFFMetadataObject = getFFMetadataObject
+
+/**
+ * Merges audio files into a single output file using FFmpeg.
+ *
+ * @param {Array} audioTracks - The audio tracks to merge.
+ * @param {number} duration - The total duration of the audio tracks.
+ * @param {string} itemCachePath - The path to the item cache.
+ * @param {string} outputFilePath - The path to the output file.
+ * @param {Object} encodingOptions - The options for encoding the audio.
+ * @param {Function} [progressCB=null] - The callback function to track the progress of the merge.
+ * @param {Object} [ffmpeg=Ffmpeg()] - The FFmpeg instance to use for merging.
+ * @returns {Promise<void>} A promise that resolves when the audio files are merged successfully.
+ */
+async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFilePath, encodingOptions, progressCB = null, ffmpeg = Ffmpeg()) {
+  const audioBitrate = encodingOptions.bitrate || '128k'
+  const audioCodec = encodingOptions.codec || 'aac'
+  const audioChannels = encodingOptions.channels || 2
+
+  // TODO: Updated in 2.2.11 to always encode even if merging multiple m4b. This is because just using the file extension as was being done before is not enough. This can be an option or do more to check if a concat is possible.
+  // const audioRequiresEncode = audioTracks[0].metadata.ext !== '.m4b'
+  const audioRequiresEncode = true
+
+  const firstTrackIsM4b = audioTracks[0].metadata.ext.toLowerCase() === '.m4b'
+  const isOneTrack = audioTracks.length === 1
+
+  let concatFilePath = null
+  if (!isOneTrack) {
+    concatFilePath = Path.join(itemCachePath, 'files.txt')
+    if ((await writeConcatFile(audioTracks, concatFilePath)) == null) {
+      throw new Error('Failed to write concat file')
+    }
+    ffmpeg.input(concatFilePath).inputOptions(['-safe 0', '-f concat'])
+  } else {
+    ffmpeg.input(audioTracks[0].metadata.path).inputOptions(firstTrackIsM4b ? ['-f mp4'] : [])
+  }
+
+  //const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
+  ffmpeg.outputOptions(['-f mp4'])
+
+  if (audioRequiresEncode) {
+    ffmpeg.outputOptions(['-map 0:a', `-acodec ${audioCodec}`, `-ac ${audioChannels}`, `-b:a ${audioBitrate}`])
+  } else {
+    ffmpeg.outputOptions(['-max_muxing_queue_size 1000'])
+
+    if (isOneTrack && firstTrackIsM4b) {
+      ffmpeg.outputOptions(['-c copy'])
+    } else {
+      ffmpeg.outputOptions(['-c:a copy'])
+    }
+  }
+
+  ffmpeg.output(outputFilePath)
+
+  return new Promise((resolve, reject) => {
+    ffmpeg
+      .on('start', (cmd) => {
+        Logger.debug(`[ffmpegHelpers] Merge Audio Files ffmpeg command: ${cmd}`)
+      })
+      .on('progress', (progress) => {
+        if (!progressCB || !progress.timemark || !duration) return
+        // Cannot rely on progress.percent as it is not accurate for concat
+        const percent = (ffmpgegUtils.timemarkToSeconds(progress.timemark) / duration) * 100
+        progressCB(percent)
+      })
+      .on('end', async (stdout, stderr) => {
+        if (concatFilePath) await fs.remove(concatFilePath)
+        Logger.debug('[ffmpegHelpers] ffmpeg stdout:', stdout)
+        Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
+        Logger.debug(`[ffmpegHelpers] Audio Files Merged Successfully`)
+        resolve()
+      })
+      .on('error', async (err, stdout, stderr) => {
+        if (concatFilePath) await fs.remove(concatFilePath)
+        if (err.message && err.message.includes('SIGKILL')) {
+          Logger.info(`[ffmpegHelpers] Merge Audio Files Killed by User`)
+          reject(new Error('FFMPEG_CANCELED'))
+        } else {
+          Logger.error(`[ffmpegHelpers] Merge Audio Files Error ${err}`)
+          Logger.error('ffmpeg stdout:', stdout)
+          Logger.error('ffmpeg stderr:', stderr)
+          reject(err)
+        }
+      })
+
+    ffmpeg.run()
+  })
+}
+
+module.exports.mergeAudioFiles = mergeAudioFiles
