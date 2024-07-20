@@ -289,7 +289,6 @@ module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   const matches = []
   feed.episodes.forEach((ep) => {
     if (!ep.title) return
-
     const epTitle = ep.title.toLowerCase().trim()
     if (epTitle === searchTitle) {
       matches.push({

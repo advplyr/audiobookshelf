@@ -42,7 +42,7 @@ class BackupManager {
   }
 
   get maxBackupSize() {
-    return global.ServerSettings.maxBackupSize || 1
+    return global.ServerSettings.maxBackupSize || Infinity
   }
 
   async init() {
@@ -419,14 +419,16 @@ class BackupManager {
         reject(err)
       })
       archive.on('progress', ({ fs: fsobj }) => {
-        const maxBackupSizeInBytes = this.maxBackupSize * 1000 * 1000 * 1000
-        if (fsobj.processedBytes > maxBackupSizeInBytes) {
-          Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
-          archive.abort()
-          setTimeout(() => {
-            this.removeBackup(backup)
-            output.destroy('Backup too large') // Promise is reject in write stream error evt
-          }, 500)
+        if (this.maxBackupSize !== Infinity) {
+          const maxBackupSizeInBytes = this.maxBackupSize * 1000 * 1000 * 1000
+          if (fsobj.processedBytes > maxBackupSizeInBytes) {
+            Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
+            archive.abort()
+            setTimeout(() => {
+              this.removeBackup(backup)
+              output.destroy('Backup too large') // Promise is reject in write stream error evt
+            }, 500)
+          }
         }
       })
 

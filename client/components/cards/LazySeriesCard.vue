@@ -81,16 +81,16 @@ export default {
       return this.store.getters['user/getSizeMultiplier']
     },
     seriesId() {
-      return this.series ? this.series.id : ''
+      return this.series?.id || ''
     },
     title() {
-      return this.series ? this.series.name : ''
+      return this.series?.name || ''
     },
     nameIgnorePrefix() {
-      return this.series ? this.series.nameIgnorePrefix : ''
+      return this.series?.nameIgnorePrefix || ''
     },
     displayTitle() {
-      if (this.sortingIgnorePrefix) return this.nameIgnorePrefix || this.title
+      if (this.sortingIgnorePrefix) return this.nameIgnorePrefix || this.title || '\u00A0'
       return this.title || '\u00A0'
     },
     displaySortLine() {
@@ -110,13 +110,13 @@ export default {
       }
     },
     books() {
-      return this.series ? this.series.books || [] : []
+      return this.series?.books || []
     },
     addedAt() {
-      return this.series ? this.series.addedAt : 0
+      return this.series?.addedAt || 0
     },
     totalDuration() {
-      return this.series ? this.series.totalDuration : 0
+      return this.series?.totalDuration || 0
     },
     seriesBookProgress() {
       return this.books
@@ -161,7 +161,7 @@ export default {
       return this.bookshelfView == constants.BookshelfView.DETAIL
     },
     rssFeed() {
-      return this.series ? this.series.rssFeed : null
+      return this.series?.rssFeed
     }
   },
   methods: {

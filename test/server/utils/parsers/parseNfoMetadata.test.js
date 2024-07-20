@@ -103,6 +103,16 @@ describe('parseNfoMetadata', () => {
     expect(result.asin).to.equal('B08X5JZJLH')
   })
 
+  it('parses language', () => {
+    const nfoText = 'Language: eng'
+    const result = parseNfoMetadata(nfoText)
+    expect(result.language).to.equal('eng')
+
+    const nfoText2 = 'lang: deu'
+    const result2 = parseNfoMetadata(nfoText2)
+    expect(result2.language).to.equal('deu')
+  })
+
   it('parses description', () => {
     const nfoText = 'Book Description\n=========\nThis is a book.\n It\'s good'
     const result = parseNfoMetadata(nfoText)

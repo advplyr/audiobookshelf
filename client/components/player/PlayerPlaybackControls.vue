@@ -7,17 +7,17 @@
           <span class="material-symbols text-2xl sm:text-3xl">first_page</span>
         </button>
       </ui-tooltip>
-      <ui-tooltip direction="top" :text="$strings.ButtonJumpBackward">
-        <button :aria-label="$strings.ButtonJumpBackward" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
-          <span class="material-symbols text-2xl sm:text-3xl">replay_10</span>
+      <ui-tooltip direction="top" :text="jumpBackwardText">
+        <button :aria-label="jumpForwardText" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
+          <span class="material-symbols text-2xl sm:text-3xl">replay</span>
         </button>
       </ui-tooltip>
       <button :aria-label="paused ? $strings.ButtonPlay : $strings.ButtonPause" class="p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-4 lg:mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPause">
         <span class="material-symbols fill text-2xl">{{ seekLoading ? 'autorenew' : paused ? 'play_arrow' : 'pause' }}</span>
       </button>
-      <ui-tooltip direction="top" :text="$strings.ButtonJumpForward">
-        <button :aria-label="$strings.ButtonJumpForward" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpForward">
-          <span class="material-symbols text-2xl sm:text-3xl">forward_10</span>
+      <ui-tooltip direction="top" :text="jumpForwardText">
+        <button :aria-label="jumpForwardText" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpForward">
+          <span class="material-symbols text-2xl sm:text-3xl">forward_media</span>
         </button>
       </ui-tooltip>
       <ui-tooltip direction="top" :text="$strings.ButtonNextChapter" class="ml-4 lg:ml-8">
@@ -29,7 +29,7 @@
     </template>
     <template v-else>
       <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
-        <span class="material-symbols">autorenew</span>
+        <span class="material-symbols text-2xl">autorenew</span>
       </div>
     </template>
     <div class="flex-grow" />
@@ -56,6 +56,12 @@ export default {
       set(val) {
         this.$emit('update:playbackRate', val)
       }
+    },
+    jumpForwardText() {
+      return this.getJumpText('jumpForwardAmount', this.$strings.ButtonJumpForward)
+    },
+    jumpBackwardText() {
+      return this.getJumpText('jumpBackwardAmount', this.$strings.ButtonJumpBackward)
     }
   },
   methods: {
@@ -83,6 +89,20 @@ export default {
       this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
         console.error('Failed to update settings', err)
       })
+    },
+    getJumpText(setting, prefix) {
+      const amount = this.$store.getters['user/getUserSetting'](setting)
+      if (!amount) return prefix
+
+      let formattedTime = ''
+      if (amount <= 60) {
+        formattedTime = this.$getString('LabelTimeDurationXSeconds', [amount])
+      } else {
+        const minutes = Math.floor(amount / 60)
+        formattedTime = this.$getString('LabelTimeDurationXMinutes', [minutes])
+      }
+
+      return `${prefix} - ${formattedTime}`
     }
   },
   mounted() {}
