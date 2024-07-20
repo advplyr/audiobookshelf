@@ -229,7 +229,7 @@
   "LabelBackupLocation": "Розташування резервних копій",
   "LabelBackupsEnableAutomaticBackups": "Автоматичне резервне копіювання",
   "LabelBackupsEnableAutomaticBackupsHelp": "Резервні копії збережено у /metadata/backups",
-  "LabelBackupsMaxBackupSize": "Максимальний розмір резервної копії (у ГБ)",
+  "LabelBackupsMaxBackupSize": "Максимальний розмір резервної копії (у ГБ) (0 — необмежене)",
   "LabelBackupsMaxBackupSizeHelp": "У якості захисту від неправильного налаштування, резервну копію не буде збережено, якщо її розмір перевищуватиме вказаний.",
   "LabelBackupsNumberToKeep": "Кількість резервних копій",
   "LabelBackupsNumberToKeepHelp": "Лиш 1 резервну копію буде видалено за раз, тож якщо їх багато, то вам варто видалити їх вручну.",
