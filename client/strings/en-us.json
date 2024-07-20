@@ -668,6 +668,7 @@
   "MessageConfirmSendEbookToDevice": "Are you sure you want to send {0} ebook \"{1}\" to device \"{2}\"?",
   "MessageDownloadingEpisode": "Downloading episode",
   "MessageDragFilesIntoTrackOrder": "Drag files into correct track order",
+  "MessageEmbedFailed": "Embed Failed!",
   "MessageEmbedFinished": "Embed Finished!",
   "MessageEpisodesQueuedForDownload": "{0} Episode(s) queued for download",
   "MessageEreaderDevices": "To ensure delivery of ebooks, you may need to add the above email address as a valid sender for each device listed below.",

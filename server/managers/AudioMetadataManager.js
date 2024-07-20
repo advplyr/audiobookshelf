@@ -1,15 +1,11 @@
 const Path = require('path')
-
 const SocketAuthority = require('../SocketAuthority')
 const Logger = require('../Logger')
-
 const fs = require('../libs/fsExtra')
-
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
-
 const TaskManager = require('./TaskManager')
-
 const Task = require('../objects/Task')
+const fileUtils = require('../utils/fileUtils')
 
 class AudioMetadataMangaer {
   constructor() {
@@ -68,7 +64,8 @@ class AudioMetadataMangaer {
         ino: af.ino,
         filename: af.metadata.filename,
         path: af.metadata.path,
-        cachePath: Path.join(itemCachePath, af.metadata.filename)
+        cachePath: Path.join(itemCachePath, af.metadata.filename),
+        duration: af.duration
       })),
       coverPath: libraryItem.media.coverPath,
       metadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, audioFiles.length),
@@ -78,7 +75,8 @@ class AudioMetadataMangaer {
       options: {
         forceEmbedChapters,
         backupFiles
-      }
+      },
+      duration: libraryItem.media.duration
     }
     const taskDescription = `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`
     task.setData('embed-metadata', 'Embedding Metadata', taskDescription, false, taskData)
@@ -101,11 +99,40 @@ class AudioMetadataMangaer {
 
     Logger.info(`[AudioMetadataManager] Starting metadata embed task`, task.description)
 
+    // Ensure target directory is writable
+    const targetDirWritable = await fileUtils.isWritable(task.data.libraryItemPath)
+    Logger.debug(`[AudioMetadataManager] Target directory ${task.data.libraryItemPath} writable: ${targetDirWritable}`)
+    if (!targetDirWritable) {
+      Logger.error(`[AudioMetadataManager] Target directory is not writable: ${task.data.libraryItemPath}`)
+      task.setFailed('Target directory is not writable')
+      this.handleTaskFinished(task)
+      return
+    }
+
+    // Ensure target audio files are writable
+    for (const af of task.data.audioFiles) {
+      try {
+        await fs.access(af.path, fs.constants.W_OK)
+      } catch (err) {
+        Logger.error(`[AudioMetadataManager] Audio file is not writable: ${af.path}`)
+        task.setFailed(`Audio file "${Path.basename(af.path)}" is not writable`)
+        this.handleTaskFinished(task)
+        return
+      }
+    }
+
     // Ensure item cache dir exists
     let cacheDirCreated = false
     if (!(await fs.pathExists(task.data.itemCachePath))) {
-      await fs.mkdir(task.data.itemCachePath)
-      cacheDirCreated = true
+      try {
+        await fs.mkdir(task.data.itemCachePath)
+        cacheDirCreated = true
+      } catch (err) {
+        Logger.error(`[AudioMetadataManager] Failed to create cache directory ${task.data.itemCachePath}`, err)
+        task.setFailed('Failed to create cache directory')
+        this.handleTaskFinished(task)
+        return
+      }
     }
 
     // Create ffmetadata file
@@ -119,8 +146,10 @@ class AudioMetadataMangaer {
     }
 
     // Tag audio files
+    let cummulativeProgress = 0
     for (const af of task.data.audioFiles) {
-      SocketAuthority.adminEmitter('audiofile_metadata_started', {
+      const audioFileRelativeDuration = af.duration / task.data.duration
+      SocketAuthority.adminEmitter('track_started', {
         libraryItemId: task.data.libraryItemId,
         ino: af.ino
       })
@@ -133,18 +162,31 @@ class AudioMetadataMangaer {
           Logger.debug(`[AudioMetadataManager] Backed up audio file at "${backupFilePath}"`)
         } catch (err) {
           Logger.error(`[AudioMetadataManager] Failed to backup audio file "${af.path}"`, err)
+          task.setFailed(`Failed to backup audio file "${Path.basename(af.path)}"`)
+          this.handleTaskFinished(task)
+          return
         }
       }
 
-      const success = await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.index, task.data.mimeType)
-      if (success) {
+      try {
+        await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.index, task.data.mimeType, (progress) => {
+          SocketAuthority.adminEmitter('task_progress', { libraryItemId: task.data.libraryItemId, progress: cummulativeProgress + progress * audioFileRelativeDuration })
+          SocketAuthority.adminEmitter('track_progress', { libraryItemId: task.data.libraryItemId, ino: af.ino, progress })
+        })
         Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
+      } catch (err) {
+        Logger.error(`[AudioMetadataManager] Failed to tag audio file "${af.path}"`, err)
+        task.setFailed(`Failed to tag audio file "${Path.basename(af.path)}"`)
+        this.handleTaskFinished(task)
+        return
       }
 
-      SocketAuthority.adminEmitter('audiofile_metadata_finished', {
+      SocketAuthority.adminEmitter('track_finished', {
         libraryItemId: task.data.libraryItemId,
         ino: af.ino
       })
+
+      cummulativeProgress += audioFileRelativeDuration * 100
     }
 
     // Remove temp cache file/folder if not backing up
