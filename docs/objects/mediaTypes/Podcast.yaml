@@ -11,6 +11,9 @@ components:
       nullable: true
       format: 'pod_[a-z0-9]{18}'
       example: pod_o78uaoeuh78h6aoeif
+    autoDownloadEpisodes:
+      type: boolean
+      description: Whether episodes are automatically downloaded.
 
     Podcast:
       type: object
@@ -37,8 +40,7 @@ components:
           items:
             $ref: '../entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
         autoDownloadEpisodes:
-          type: boolean
-          description: Whether episodes are automatically downloaded.
+          $ref: '#/components/schemas/autoDownloadEpisodes'
         autoDownloadSchedule:
           type: string
           description: The schedule for automatic episode downloads, in cron format.
