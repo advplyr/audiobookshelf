@@ -6,8 +6,8 @@ class TrackProgressMonitor {
 
   /**
    * @callback ProgressCallback
-   * @param {number} trackIndex - The index of the track that is being updated.
-   * @param {number} progressInTrack - The progress of the track in percent.
+   * @param {number} trackIndex - The index of the current track.
+   * @param {number} progressInTrack - The current track progress in percent.
    * @param {number} totalProgress - The total progress in percent.
    */
 
@@ -59,9 +59,9 @@ class TrackProgressMonitor {
     this.trackStartedCallback(this.currentTrackIndex)
   }
 
-  #progressUpdated(progress) {
+  #progressUpdated(totalProgress) {
     const progressInTrack = (this.currentTrackProgress / this.currentTrackPercentage) * 100
-    this.progressCallback(this.currentTrackIndex, progressInTrack, progress)
+    this.progressCallback(this.currentTrackIndex, progressInTrack, totalProgress)
   }
 
   #trackFinished() {
@@ -69,12 +69,12 @@ class TrackProgressMonitor {
   }
 
   /**
-   * Updates the progress of the track.
-   * @param {number} progress - The progress of the track in percent.
+   * Updates the track progress based on the total progress.
+   * @param {number} totalProgress - The total progress in percent.
    */
-  update(progress) {
-    while (this.#outsideCurrentTrack(progress) && !this.allTracksFinished) this.#moveToNextTrack()
-    if (!this.allTracksFinished) this.#progressUpdated(progress)
+  update(totalProgress) {
+    while (this.#outsideCurrentTrack(totalProgress) && !this.allTracksFinished) this.#moveToNextTrack()
+    if (!this.allTracksFinished) this.#progressUpdated(totalProgress)
   }
 
   /**
