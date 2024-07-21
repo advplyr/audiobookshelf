@@ -59,9 +59,18 @@
 
           <p v-if="tagResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelTags }}</p>
           <template v-for="item in tagResults">
-            <li :key="item.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
+            <li :key="`tag.${item.name}`" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.name)}`">
                 <cards-tag-search-card :tag="item.name" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="genreResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelGenres }}</p>
+          <template v-for="item in genreResults">
+            <li :key="`genre.${item.name}`" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=genres.${$encode(item.name)}`">
+                <cards-genre-search-card :genre="item.name" />
               </nuxt-link>
             </li>
           </template>
@@ -95,6 +104,7 @@ export default {
       authorResults: [],
       seriesResults: [],
       tagResults: [],
+      genreResults: [],
       narratorResults: [],
       searchTimeout: null,
       lastSearch: null
@@ -105,7 +115,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.podcastResults.length + this.narratorResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.genreResults.length + this.podcastResults.length + this.narratorResults.length
     }
   },
   methods: {
@@ -126,6 +136,7 @@ export default {
       this.authorResults = []
       this.seriesResults = []
       this.tagResults = []
+      this.genreResults = []
       this.narratorResults = []
       this.showMenu = false
       this.isFetching = false
@@ -168,6 +179,7 @@ export default {
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []
       this.tagResults = searchResults.tags || []
+      this.genreResults = searchResults.genres || []
       this.narratorResults = searchResults.narrators || []
 
       this.isFetching = false
