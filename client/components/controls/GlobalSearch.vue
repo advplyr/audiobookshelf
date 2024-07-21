@@ -126,7 +126,7 @@ export default {
       if (!this.search) return
       var search = this.search
       this.clearResults()
-      this.$router.push(`/library/${this.currentLibraryId}/search?q=${search}`)
+      this.$router.push(`/library/${this.currentLibraryId}/search?q=${encodeURIComponent(search)}`)
     },
     clearResults() {
       this.search = null
@@ -166,7 +166,7 @@ export default {
       }
       this.isFetching = true
 
-      const searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}&limit=3`).catch((error) => {
+      const searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${encodeURIComponent(value)}&limit=3`).catch((error) => {
         console.error('Search error', error)
         return []
       })
