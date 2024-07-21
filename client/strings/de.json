@@ -668,6 +668,7 @@
   "MessageConfirmSendEbookToDevice": "{0} E-Book \"{1}\" wird auf das Gerät \"{2}\" gesendet! Bist du dir sicher?",
   "MessageDownloadingEpisode": "Episode wird heruntergeladen",
   "MessageDragFilesIntoTrackOrder": "Verschiebe die Dateien in die richtige Reihenfolge",
+  "MessageEmbedFailed": "Einbetten fehlgeschlagen!",
   "MessageEmbedFinished": "Einbettung abgeschlossen!",
   "MessageEpisodesQueuedForDownload": "{0} Episode(n) in der Warteschlange zum Herunterladen",
   "MessageEreaderDevices": "Um die Zustellung von E-Books sicherzustellen, musst du eventuell die oben genannte E-Mail-Adresse als gültigen Absender für jedes unten aufgeführte Gerät hinzufügen.",
