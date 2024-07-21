@@ -5,6 +5,7 @@
     </div>
     <div class="flex-grow px-2 tagSearchCardContent h-full">
       <p class="truncate text-sm">{{ tag }}</p>
+      <p class="text-xs text-gray-400">{{ $getString('LabelXItems', [numItems]) }}</p>
     </div>
   </div>
 </template>
@@ -12,7 +13,8 @@
 <script>
 export default {
   props: {
-    tag: String
+    tag: String,
+    numItems: Number
   },
   data() {
     return {}
@@ -26,7 +28,7 @@ export default {
 <style>
 .tagSearchCardContent {
   width: calc(100% - 40px);
-  height: 40px;
+  height: 44px;
   display: flex;
   flex-direction: column;
   justify-content: center;

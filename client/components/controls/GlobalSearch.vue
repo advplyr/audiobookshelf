@@ -61,7 +61,7 @@
           <template v-for="item in tagResults">
             <li :key="`tag.${item.name}`" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.name)}`">
-                <cards-tag-search-card :tag="item.name" />
+                <cards-tag-search-card :tag="item.name" :num-items="item.numItems" />
               </nuxt-link>
             </li>
           </template>
@@ -70,7 +70,7 @@
           <template v-for="item in genreResults">
             <li :key="`genre.${item.name}`" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=genres.${$encode(item.name)}`">
-                <cards-genre-search-card :genre="item.name" />
+                <cards-genre-search-card :genre="item.name" :num-items="item.numItems" />
               </nuxt-link>
             </li>
           </template>
@@ -79,7 +79,7 @@
           <template v-for="narrator in narratorResults">
             <li :key="narrator.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${$encode(narrator.name)}`">
-                <cards-narrator-search-card :narrator="narrator.name" />
+                <cards-narrator-search-card :narrator="narrator.name" :num-books="narrator.numBooks" />
               </nuxt-link>
             </li>
           </template>
