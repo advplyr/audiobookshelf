@@ -1,11 +1,11 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
     <div class="w-10 h-10 flex items-center justify-center">
-      <span class="material-symbols text-2xl text-gray-200">record_voice_over</span>
+      <span class="material-symbols text-2xl text-gray-200">category</span>
     </div>
-    <div class="flex-grow px-2 narratorSearchCardContent h-full">
-      <p class="truncate text-sm">{{ narrator }}</p>
-      <p class="text-xs text-gray-400">{{ $getString('LabelXBooks', [numBooks]) }}</p>
+    <div class="flex-grow px-2 tagSearchCardContent h-full">
+      <p class="truncate text-sm">{{ genre }}</p>
+      <p class="text-xs text-gray-400">{{ $getString('LabelXItems', [numItems]) }}</p>
     </div>
   </div>
 </template>
@@ -13,8 +13,8 @@
 <script>
 export default {
   props: {
-    narrator: String,
-    numBooks: Number
+    genre: String,
+    numItems: Number
   },
   data() {
     return {}
@@ -25,8 +25,8 @@ export default {
 }
 </script>
 
-<style scoped>
-.narratorSearchCardContent {
+<style>
+.tagSearchCardContent {
   width: calc(100% - 40px);
   height: 44px;
   display: flex;

@@ -1079,7 +1079,7 @@ module.exports = {
 
     // Search tags
     const tagMatches = []
-    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
         query: `%${query}%`,
         libraryId: oldLibrary.id,
@@ -1090,6 +1090,24 @@ module.exports = {
     })
     for (const row of tagResults) {
       tagMatches.push({
+        name: row.value,
+        numItems: row.numItems
+      })
+    }
+
+    // Search genres
+    const genreMatches = []
+    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+      replacements: {
+        query: `%${query}%`,
+        libraryId: oldLibrary.id,
+        limit,
+        offset
+      },
+      raw: true
+    })
+    for (const row of genreResults) {
+      genreMatches.push({
         name: row.value,
         numItems: row.numItems
       })
@@ -1140,6 +1158,7 @@ module.exports = {
       book: itemMatches,
       narrators: narratorMatches,
       tags: tagMatches,
+      genres: genreMatches,
       series: seriesMatches,
       authors: authorMatches
     }
