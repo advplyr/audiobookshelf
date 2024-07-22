@@ -272,7 +272,7 @@ class ShareController {
       })
       if (existingMediaItemShare) {
         if (existingMediaItemShare.mediaItemId === mediaItemId) {
-          return res.status(409).send('Item is already shared')
+          return res.status(200).json(existingMediaItemShare.?toJSONForClient())
         } else {
           return res.status(409).send('Slug is already in use')
         }
