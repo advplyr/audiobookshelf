@@ -238,10 +238,9 @@ class ShareController {
     res.sendStatus(204)
   }
   /**
-   * Public route
    * GET: /api/share/mediaitem/:id
    * get existing share from mediaItemId
-   *  (or would it be better to return just the slug?)
+   *  (or would it be better to return just the slug instead of whole share object?)
    * 
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -261,6 +260,7 @@ class ShareController {
 
       if (existingMediaItemShare) {
         return res.status(200).json(existingMediaItemShare.toJSONForClient()); // or would it be better to return just the slug?
+      //return res.status(200).json(existingMediaItemShare.slug.toJSONForClient());
       } else {
         return res.status(404).send('Share not found');
       }
