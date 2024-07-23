@@ -237,7 +237,41 @@ class ShareController {
     Logger.debug(`[ShareController] Update share playback session ${req.cookies.share_session_id} currentTime: ${playbackSession.currentTime}`)
     res.sendStatus(204)
   }
+  /**
+   * Public route - requires share_session_id cookie
+   * GET: /api/share/mediaitem/:id
+   * get existing share from mediaItemId
+   * 
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getMediaItemShare(req, res) {
+    if (!req.cookies.share_session_id) {
+      return res.status(404).send('Share session not set')
+    }
+    
+    const mediaItemId = req.params.id;
+    
+    if (!mediaItemId || typeof mediaItemId !== 'string') {
+      return res.status(400).send('Missing or invalid media item ID');
+    }
 
+    try {
+      // Check if the media item share exists by mediaItemId
+      const existingMediaItemShare = await Database.mediaItemShareModel.findOne({
+        where: { mediaItemId }
+      });
+
+      if (existingMediaItemShare) {
+        return res.status(200).json(existingMediaItemShare.toJSONForClient());
+      } else {
+        return res.status(404).send('Share not found');
+      }
+    } catch (error) {
+      Logger.error(`[ShareController] Failed to get media item share: ${error.message}`, error);
+      return res.status(500).send('Internal server error');
+    }
+  }
   /**
    * POST: /api/share/mediaitem
    * Create a new media item share
