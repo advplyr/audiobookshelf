@@ -238,18 +238,15 @@ class ShareController {
     res.sendStatus(204)
   }
   /**
-   * Public route - requires share_session_id cookie
+   * Public route
    * GET: /api/share/mediaitem/:id
    * get existing share from mediaItemId
+   *  (or would it be better to return just the slug?)
    * 
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
   async getMediaItemShare(req, res) {
-    if (!req.cookies.share_session_id) {
-      return res.status(404).send('Share session not set')
-    }
-    
     const mediaItemId = req.params.id;
     
     if (!mediaItemId || typeof mediaItemId !== 'string') {
@@ -263,7 +260,7 @@ class ShareController {
       });
 
       if (existingMediaItemShare) {
-        return res.status(200).json(existingMediaItemShare.toJSONForClient());
+        return res.status(200).json(existingMediaItemShare.toJSONForClient()); // or would it be better to return just the slug?
       } else {
         return res.status(404).send('Share not found');
       }
