@@ -1115,22 +1115,20 @@ export default {
       // Truncate the description if it exceeds the maximum length
       const truncatedDescription = this.description.length > maxLength ? this.description.substring(0, maxLength) + '...' : this.description
 
+      // Get the duration of the media
       const duration = this.media.duration ? this.$elapsedPrettyExtended(this.media.duration, false) : ''
-
-      // Determine the vertical alignment of the duration based on the length of the description
-      const durationVerticalAlign = this.description.length < 200 ? 'top' : 'middle'
+      // Get user progress
+      const elapsedPretty = this.userProgress ? this.$elapsedPrettyExtended(this.userProgress.currentTime, true) : ''
 
       // Build the tooltip text using a table format
-      let tooltipText = '<table style="text-align: left; width: 100%;">'
-      tooltipText += '<tr>'
-      tooltipText += `<th style="padding-right: 10px;"><strong>${this.$strings.LabelDuration}</strong></th>`
-      tooltipText += `<th><strong>${this.$strings.LabelDescription}</strong></th>`
-      tooltipText += '</tr>'
-      tooltipText += '<tr>'
-      tooltipText += `<td style="padding-right: 10px; vertical-align: ${durationVerticalAlign}; white-space: nowrap;">${duration}</td>`
-      tooltipText += `<td>${truncatedDescription}</td>`
-      tooltipText += '</tr>'
-      tooltipText += '</table>'
+      let tooltipText = '<div style="text-align: left; width: 100%;">'
+      if (elapsedPretty) {
+        tooltipText += `<div style="font-style: italic; margin-bottom: 5px;">${elapsedPretty} / ${duration}</div>`
+      } else {
+        tooltipText += `<div style="font-style: italic; margin-bottom: 5px;">${duration}</div>`
+      }
+      tooltipText += `<div>${truncatedDescription}</div>`
+      tooltipText += '</div>'
 
       return tooltipText
     }
