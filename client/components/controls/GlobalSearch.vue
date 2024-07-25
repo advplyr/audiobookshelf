@@ -25,7 +25,7 @@
           <template v-for="item in bookResults">
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/item/${item.libraryItem.id}`">
-                <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
+                <cards-item-search-card :library-item="item.libraryItem" />
               </nuxt-link>
             </li>
           </template>
@@ -34,7 +34,7 @@
           <template v-for="item in podcastResults">
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/item/${item.libraryItem.id}`">
-                <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
+                <cards-item-search-card :library-item="item.libraryItem" />
               </nuxt-link>
             </li>
           </template>
