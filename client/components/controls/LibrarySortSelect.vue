@@ -88,6 +88,10 @@ export default {
         {
           text: this.$strings.LabelFileModified,
           value: 'mtimeMs'
+        },
+        {
+          text: this.$strings.LabelRandomly,
+          value: 'random'
         }
       ]
     },
@@ -128,6 +132,10 @@ export default {
         {
           text: this.$strings.LabelFileModified,
           value: 'mtimeMs'
+        },
+        {
+          text: this.$strings.LabelRandomly,
+          value: 'random'
         }
       ]
     },

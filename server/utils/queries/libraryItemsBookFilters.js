@@ -2,7 +2,6 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
-const { asciiOnlyToLowerCase } = require('../index')
 
 const ShareManager = require('../../managers/ShareManager')
 
@@ -274,6 +273,8 @@ module.exports = {
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
+    } else if (sortBy === 'random') {
+      return [Database.sequelize.random()]
     }
     return []
   },

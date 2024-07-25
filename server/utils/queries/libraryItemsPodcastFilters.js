@@ -89,6 +89,8 @@ module.exports = {
       }
     } else if (sortBy === 'media.numTracks') {
       return [['numEpisodes', dir]]
+    } else if (sortBy === 'random') {
+      return [Database.sequelize.random()]
     }
     return []
   },
