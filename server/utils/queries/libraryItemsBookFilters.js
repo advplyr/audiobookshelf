@@ -1038,25 +1038,9 @@ module.exports = {
       const libraryItem = book.libraryItem
       delete book.libraryItem
       libraryItem.media = book
-
-      let matchText = null
-      let matchKey = null
-      for (const key of ['title', 'subtitle', 'asin', 'isbn']) {
-        const valueToLower = asciiOnlyToLowerCase(book[key])
-        if (valueToLower.includes(query)) {
-          matchText = book[key]
-          matchKey = key
-          break
-        }
-      }
-
-      if (matchKey) {
-        itemMatches.push({
-          matchText,
-          matchKey,
-          libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
-        })
-      }
+      itemMatches.push({
+        libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
+      })
     }
 
     // Search narrators
