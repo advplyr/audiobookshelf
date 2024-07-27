@@ -124,3 +124,17 @@ components:
           description: The title of the chapter.
           type: string
           example: Wizards First Rule 01 Chapter 1
+    bookMetadata:
+      allOf:
+        - $ref: '#/components/schemas/bookMetadataBase'
+        - type: object
+          properties:
+            authors:
+              type: array
+              items:
+                $ref: '../entities/Author.yaml#/components/schemas/author'
+            series:
+              type: array
+              items:
+                $ref: '../entities/Series.yaml#/components/schemas/series'
+

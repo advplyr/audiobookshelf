@@ -68,3 +68,11 @@ components:
           description: The format of ebook of the book. Will be null if the book is an audiobook.
           type: string
           nullable: true
+    book:
+      allOf:
+        - $ref: '#/components/schemas/bookBase'
+        - type: object
+          properties:
+            metadata:
+              $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookMetadata'
+
