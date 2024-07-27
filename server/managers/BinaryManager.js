@@ -249,7 +249,9 @@ class Binary {
 }
 
 const ffbinaries = new FFBinariesDownloader()
+module.exports.ffbinaries = ffbinaries // for testing
 const sqlean = new SQLeanDownloader()
+module.exports.sqlean = sqlean // for testing
 
 class BinaryManager {
   defaultRequiredBinaries = [
