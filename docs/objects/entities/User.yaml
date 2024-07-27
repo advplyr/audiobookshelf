@@ -79,8 +79,7 @@ components:
           type: array
           items:
             $ref: '../Library.yaml#/components/schemas/libraryId'
-        itemTags:
+        itemTagsSelected:
           $ref: '../../schemas.yaml#/components/schemas/tags'
-        
-        
-    
+
+

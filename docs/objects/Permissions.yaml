@@ -1,6 +1,6 @@
 components:
   schemas:
-    downloads:
+    download:
       type: boolean
       description: Whether the user has permission to download media.
       example: true
@@ -31,8 +31,8 @@ components:
     permissions:
       type: object
       properties:
-        downloads:
-          $ref: '#/components/schemas/downloads'
+        download:
+          $ref: '#/components/schemas/download'
         update:
           $ref: '#/components/schemas/update'
         delete:
@@ -46,7 +46,7 @@ components:
         accessExplicitContent:
           $ref: '#/components/schemas/accessExplicitContent'
       required:
-        - downloads
+        - download
         - update
         - delete
         - upload
