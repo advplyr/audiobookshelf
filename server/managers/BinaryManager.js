@@ -78,6 +78,12 @@ class GithubAssetDownloader {
       const outputPath = path.join(destDir, file.outputFileName)
       await zip.extract(file.pathInsideZip, outputPath)
       Logger.debug(`[GithubAssetDownloader] Extracted file ${file.pathInsideZip} to ${outputPath}`)
+
+      // Set executable permission for Linux
+      if (process.platform !== 'win32') {
+        await fs.chmod(outputPath, 0o755)
+        console.log(`Set executable permissions for ${outputPath}`)
+      }
     }
 
     await zip.close()
