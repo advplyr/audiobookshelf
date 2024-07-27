@@ -26,18 +26,14 @@ paths:
                 type: object
                 properties:
                   user:
-                    type: object
-                    properties:
-                     $ref: '../objects/entities/User.yaml#/components/schemas/user'
+                    $ref: '../objects/entities/User.yaml#/components/schemas/user'
         '401':
           description: Unauthorized - Invalid username or password.
           content:
-            application/json:
+            text/html:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                type: string
+                example: Unauthorized
   /logout:
     post:
       summary: Logout from the server
@@ -61,13 +57,11 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Successfully logged out.
+                    example: Success
         '401':
           description: Unauthorized
           content:
-            application/json:
+            text/html:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                type: string
+                example: Unauthorized

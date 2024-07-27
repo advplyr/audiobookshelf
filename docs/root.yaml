@@ -77,6 +77,10 @@ paths:
     $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1episode~1{episodeId}'
   /api/series/{id}:
     $ref: './controllers/SeriesController.yaml#/paths/~1api~1series~1{id}'
+  /login:
+    $ref: './controllers/AuthController.yaml#/paths/~1login'
+  /logout:
+    $ref: './controllers/AuthController.yaml#/paths/~1logout'
 tags:
   - name: Authors
     description: Author endpoints
