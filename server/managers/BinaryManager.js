@@ -82,7 +82,6 @@ class GithubAssetDownloader {
       // Set executable permission for Linux
       if (process.platform !== 'win32') {
         await fs.chmod(outputPath, 0o755)
-        console.log(`Set executable permissions for ${outputPath}`)
       }
     }
 
