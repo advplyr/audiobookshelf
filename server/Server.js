@@ -108,6 +108,8 @@ class Server {
 
     await this.playbackSessionManager.removeOrphanStreams()
 
+    await this.binaryManager.init()
+
     await Database.init(false)
 
     await Logger.logManager.init()
@@ -127,11 +129,6 @@ class Server {
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
     this.apiCacheManager.init()
-
-    // Download ffmpeg & ffprobe if not found (Currently only in use for Windows installs)
-    if (global.isWin || Logger.isDev) {
-      await this.binaryManager.init()
-    }
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
