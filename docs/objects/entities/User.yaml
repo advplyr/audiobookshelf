@@ -1,0 +1,86 @@
+components:
+  schemas:
+    username:
+      type: string
+      description: The username to log in with.
+      example: testuser
+    password:
+      type: string
+      description: The password of the user.
+      example: password
+    userId:
+      type: string
+      description: The ID of the user.
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+      format: uuid
+    userType:
+      type: string
+      description: The type of the user.
+      example: root
+    token:
+      type: string
+      description: The token of the user.
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.4k1jJ9
+    socketId:
+      type: string
+      description: The socket ID of the user.
+      example: AFcTcb7xBLsSPnIzAAAV
+    isActive:
+      type: boolean
+      description: Whether the user is active.
+      example: true
+    isLocked:
+      type: boolean
+      description: Whether the user is locked.
+      example: false
+    lastSeen:
+      type: integer
+      description: The time (in ms since POSIX epoch) when the user was last seen.
+      example: 1616239000
+    user:
+      type: object
+      description: A user object which includes the user's ID, username, type, token, and media progress.
+      properties:
+        id:
+          $ref: '#/components/schemas/userId'
+        username:
+          $ref: '#/components/schemas/username'
+        type:
+          $ref: '#/components/schemas/userType'
+        token:
+          $ref: '#/components/schemas/token'
+        mediaProgress:
+          description: The user's progress of media.
+          type: array
+          items:
+            $ref: '../Media.yaml#/components/schemas/mediaProgress'
+        seriesHideFromContinueListening:
+          description: The IDs of series to hide from the user's "Continue Series" shelf.
+          type: array
+          items:
+            $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        bookmarks:
+          description: The user's bookmarks.
+          type: array
+          items:
+            $ref: '../Bookmarks.yaml#/components/schemas/bookmark'
+        lastSeen:
+          $ref: '#/components/schemas/lastSeen'
+        isActive:
+          $ref: '#/components/schemas/isActive'
+        isLocked:
+          $ref: '#/components/schemas/isLocked'
+        createdAt:
+          $ref: '../../schemas.yaml#/components/schemas/createdAt'
+        permissions:
+          $ref: '../Permissions.yaml#/components/schemas/permissions'
+        librariesAccessible:
+          description: The IDs of libraries the user has access to.
+          type: array
+          items:
+            $ref: '../Library.yaml#/components/schemas/libraryId'
+        itemTags:
+          $ref: '../../schemas.yaml#/components/schemas/tags'
+        
+        
+    

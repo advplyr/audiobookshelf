@@ -1,0 +1,18 @@
+components:
+  schemas:
+    time:
+      type: integer
+      description: The time (in ms since POSIX epoch) when the bookmark was created.
+      example: 1616239000
+    bookmark:
+      properties:
+        libraryItemId:
+          $ref: 'LibraryItem.yaml#/components/schemas/libraryItemId'
+        title:
+          type: string
+          description: The title of the bookmark.
+          example: Chapter 1
+        time:
+          $ref: '#/components/schemas/time'
+        createdAt:
+          $ref: '../schemas.yaml#/components/schemas/createdAt'

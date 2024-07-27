@@ -1,0 +1,55 @@
+components:
+  schemas:
+    downloads:
+      type: boolean
+      description: Whether the user has permission to download media.
+      example: true
+    update:
+      type: boolean
+      description: Whether the user has permission to update media.
+      example: true
+    delete:
+      type: boolean
+      description: Whether the user has permission to delete media.
+      example: true
+    upload:
+      type: boolean
+      description: Whether the user has permission to upload media.
+      example: true
+    accessAllLibraries:
+      type: boolean
+      description: Whether the user has permission to access all libraries.
+      example: true
+    accessAllTags:
+      type: boolean
+      description: Whether the user has permission to access all tags.
+      example: true
+    accessExplicitContent:
+      type: boolean
+      description: Whether the user has permission to access explicit content.
+      example: true
+    permissions:
+      type: object
+      properties:
+        downloads:
+          $ref: '#/components/schemas/downloads'
+        update:
+          $ref: '#/components/schemas/update'
+        delete:
+          $ref: '#/components/schemas/delete'
+        upload:
+          $ref: '#/components/schemas/upload'
+        accessAllLibraries:
+          $ref: '#/components/schemas/accessAllLibraries'
+        accessAllTags:
+          $ref: '#/components/schemas/accessAllTags'
+        accessExplicitContent:
+          $ref: '#/components/schemas/accessExplicitContent'
+      required:
+        - downloads
+        - update
+        - delete
+        - upload
+        - accessAllLibraries
+        - accessAllTags
+        - accessExplicitContent
