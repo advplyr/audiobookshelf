@@ -207,11 +207,36 @@ class Database {
 
     try {
       await this.sequelize.authenticate()
+      await this.loadExtensions([process.env.SQLEAN_UNICODE_PATH])
       Logger.info(`[Database] Db connection was successful`)
       return true
     } catch (error) {
       Logger.error(`[Database] Failed to connect to db`, error)
       return false
+    }
+  }
+
+  async loadExtensions(extensions) {
+    // This is a hack to get the db connection for loading extensions.
+    // The proper way would be to use the 'afterConnect' hook, but that hook is never called for sqlite due to a bug in sequelize.
+    // See https://github.com/sequelize/sequelize/issues/12487
+    // This is not a public API and may break in the future.
+    const db = await this.sequelize.dialect.connectionManager.getConnection()
+    if (typeof db?.loadExtension !== 'function') throw new Error('Failed to get db connection for loading extensions')
+
+    for (const ext of extensions) {
+      Logger.info(`[Database] Loading extension ${ext}`)
+      await new Promise((resolve, reject) => {
+        db.loadExtension(ext, (err) => {
+          if (err) {
+            Logger.error(`[Database] Failed to load extension ${ext}`, err)
+            reject(err)
+            return
+          }
+          Logger.info(`[Database] Successfully loaded extension ${ext}`)
+          resolve()
+        })
+      })
     }
   }
 
@@ -800,6 +825,23 @@ class Database {
     if (badSessionsRemoved > 0) {
       Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
+  }
+
+  normalize(value) {
+    return `lower(unaccent(${value}))`
+  }
+
+  async getNormalizedQuery(query) {
+    const escapedQuery = this.sequelize.escape(query)
+    const normalizedQuery = this.normalize(escapedQuery)
+    const normalizedQueryResult = await this.sequelize.query(`SELECT ${normalizedQuery} as normalized_query`)
+    return normalizedQueryResult[0][0].normalized_query
+  }
+
+  matchExpression(column, normalizedQuery) {
+    const normalizedPattern = this.sequelize.escape(`%${normalizedQuery}%`)
+    const normalizedColumn = this.normalize(column)
+    return `${normalizedColumn} LIKE ${normalizedPattern}`
   }
 }
 

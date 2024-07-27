@@ -313,21 +313,18 @@ module.exports = {
    */
   async search(oldUser, oldLibrary, query, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+
+    const normalizedQuery = await Database.getNormalizedQuery(query)
+    const matchTitle = Database.matchExpression('title', normalizedQuery)
+    const matchAuthor = Database.matchExpression('author', normalizedQuery)
+
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
       where: [
         {
           [Sequelize.Op.or]: [
-            {
-              title: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              author: {
-                [Sequelize.Op.substring]: query
-              }
-            },
+            Sequelize.literal(matchTitle),
+            Sequelize.literal(matchAuthor),
             {
               itunesId: {
                 [Sequelize.Op.substring]: query
@@ -368,11 +365,12 @@ module.exports = {
       })
     }
 
+    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+
     // Search tags
     const tagMatches = []
-    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.tags) WHERE json_valid(p.tags) AND json_each.value LIKE :query AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.tags) WHERE json_valid(p.tags) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        query: `%${query}%`,
         libraryId: oldLibrary.id,
         limit,
         offset
@@ -388,9 +386,8 @@ module.exports = {
 
     // Search genres
     const genreMatches = []
-    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.genres) WHERE json_valid(p.genres) AND json_each.value LIKE :query AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.genres) WHERE json_valid(p.genres) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        query: `%${query}%`,
         libraryId: oldLibrary.id,
         limit,
         offset
