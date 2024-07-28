@@ -36,6 +36,6 @@ paths:
             content:
                 application/json:
                   schema:
+                      description: TODO - Add minified library item object
                       oneOf:
-                        - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
                         - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'
