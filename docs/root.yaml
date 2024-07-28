@@ -81,6 +81,8 @@ paths:
     $ref: './controllers/AuthController.yaml#/paths/~1login'
   /logout:
     $ref: './controllers/AuthController.yaml#/paths/~1logout'
+  /api/items/{id}:
+    $ref: './controllers/LibraryItemController.yaml#/paths/~1api~1items~1{id}'
 tags:
   - name: Authors
     description: Author endpoints

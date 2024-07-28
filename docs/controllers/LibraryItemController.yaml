@@ -1,0 +1,41 @@
+paths:
+  /api/items/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+    get:
+      operationId: getLibraryItem
+      summary: Get a single library item by ID on server.
+      description: Get a single library item by ID on server.
+      tags:
+        - LibraryItem
+      parameters:
+        - in: query
+          name: include
+          description: A comma separated list of what to include with the library item. The options are progress, rssfeed, authors (for books), and downloads (for podcasts). expanded must be 1 for include to have an effect.
+          schema:
+            type: string
+        - in: query
+          name: expanded
+          description: Whether to return Library Item Expanded instead. 0 for false, 1 for true.
+          schema:
+              type: integer
+              example: 1
+        - in: query
+          name: episode
+          description: If requesting progress for a podcast, the episode ID to get progress for.
+          schema:
+              $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                  schema:
+                      oneOf:
+                        - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
+                        - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'

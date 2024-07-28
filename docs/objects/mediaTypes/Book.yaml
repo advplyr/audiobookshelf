@@ -9,6 +9,8 @@ components:
       type: object
       description: Base book schema
       properties:
+        id:
+          description: TODO
         libraryItemId:
           $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
         coverPath:

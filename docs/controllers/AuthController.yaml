@@ -3,6 +3,7 @@ paths:
     post:
       summary: Login to the server
       description: Logs in a client to the server, returning information about the user and server.
+      operationId: login
       requestBody:
         required: true
         content:
@@ -38,6 +39,7 @@ paths:
     post:
       summary: Logout from the server
       description: Logs out a client from the server. If the socketId parameter is provided, the server removes the socket from the client list.
+      operationId: logout
       requestBody:
         required: true
         content:
