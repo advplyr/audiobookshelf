@@ -975,21 +975,18 @@ module.exports = {
   async search(oldUser, oldLibrary, query, limit, offset) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(oldUser)
 
+    const normalizedQuery = await Database.getNormalizedQuery(query)
+
+    const matchTitle = Database.matchExpression('title', normalizedQuery)
+    const matchSubtitle = Database.matchExpression('subtitle', normalizedQuery)
+
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
       where: [
         {
           [Sequelize.Op.or]: [
-            {
-              title: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              subtitle: {
-                [Sequelize.Op.substring]: query
-              }
-            },
+            Sequelize.literal(matchTitle),
+            Sequelize.literal(matchSubtitle),
             {
               asin: {
                 [Sequelize.Op.substring]: query
@@ -1044,11 +1041,12 @@ module.exports = {
       })
     }
 
+    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+
     // Search narrators
     const narratorMatches = []
-    const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+    const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        query: `%${query}%`,
         libraryId: oldLibrary.id,
         limit,
         offset
@@ -1064,9 +1062,8 @@ module.exports = {
 
     // Search tags
     const tagMatches = []
-    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        query: `%${query}%`,
         libraryId: oldLibrary.id,
         limit,
         offset
@@ -1082,9 +1079,8 @@ module.exports = {
 
     // Search genres
     const genreMatches = []
-    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND json_each.value LIKE :query AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        query: `%${query}%`,
         libraryId: oldLibrary.id,
         limit,
         offset
@@ -1099,12 +1095,15 @@ module.exports = {
     }
 
     // Search series
+    const matchName = Database.matchExpression('name', normalizedQuery)
     const allSeries = await Database.seriesModel.findAll({
       where: {
-        name: {
-          [Sequelize.Op.substring]: query
-        },
-        libraryId: oldLibrary.id
+        [Sequelize.Op.and]: [
+          Sequelize.literal(matchName),
+          {
+            libraryId: oldLibrary.id
+          }
+        ]
       },
       replacements: userPermissionBookWhere.replacements,
       include: {
@@ -1137,7 +1136,7 @@ module.exports = {
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(oldLibrary.id, query, limit, offset)
+    const authorMatches = await authorFilters.search(oldLibrary.id, normalizedQuery, limit, offset)
 
     return {
       book: itemMatches,

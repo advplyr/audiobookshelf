@@ -60,12 +60,10 @@ module.exports = {
    * @returns {Promise<Object[]>} oldAuthor with numBooks
    */
   async search(libraryId, query, limit, offset) {
+    const matchAuthor = Database.matchExpression('name', query)
     const authors = await Database.authorModel.findAll({
       where: {
-        name: {
-          [Sequelize.Op.substring]: query
-        },
-        libraryId
+        [Sequelize.Op.and]: [Sequelize.literal(matchAuthor), { libraryId }]
       },
       attributes: {
         include: [[Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'numBooks']]
