@@ -1,16 +1,31 @@
 const { xmlToJSON } = require('../index')
 const htmlSanitizer = require('../htmlSanitizer')
 
+/**
+ * @typedef MetadataCreatorObject
+ * @property {string} value
+ * @property {string} role
+ * @property {string} fileAs
+ *
+ * @example
+ * <dc:creator xmlns:ns0="http://www.idpf.org/2007/opf" ns0:role="aut" ns0:file-as="Steinbeck, John">John Steinbeck</dc:creator>
+ * <dc:creator opf:role="aut" opf:file-as="Orwell, George">George Orwell</dc:creator>
+ *
+ * @param {Object} metadata
+ * @returns {MetadataCreatorObject[]}
+ */
 function parseCreators(metadata) {
-  if (!metadata['dc:creator']) return null
-  const creators = metadata['dc:creator']
-  if (!creators.length) return null
-  return creators.map((c) => {
+  if (!metadata['dc:creator']?.length) return null
+  return metadata['dc:creator'].map((c) => {
     if (typeof c !== 'object' || !c['$'] || !c['_']) return false
+    const namespace =
+      Object.keys(c['$'])
+        .find((key) => key.startsWith('xmlns:'))
+        ?.split(':')[1] || 'opf'
     return {
       value: c['_'],
-      role: c['$']['opf:role'] || null,
-      fileAs: c['$']['opf:file-as'] || null
+      role: c['$'][`${namespace}:role`] || null,
+      fileAs: c['$'][`${namespace}:file-as`] || null
     }
   })
 }
@@ -59,18 +74,34 @@ function fetchPublisher(metadata) {
   return fetchTagString(metadata, 'dc:publisher')
 }
 
+/**
+ * @example
+ * <dc:identifier xmlns:ns4="http://www.idpf.org/2007/opf" ns4:scheme="ISBN">9781440633904</dc:identifier>
+ * <dc:identifier opf:scheme="ISBN">9780141187761</dc:identifier>
+ *
+ * @param {Object} metadata
+ * @param {string} scheme
+ * @returns {string}
+ */
+function fetchIdentifier(metadata, scheme) {
+  if (!metadata['dc:identifier']?.length) return null
+  const identifierObj = metadata['dc:identifier'].find((i) => {
+    if (!i['$']) return false
+    const namespace =
+      Object.keys(i['$'])
+        .find((key) => key.startsWith('xmlns:'))
+        ?.split(':')[1] || 'opf'
+    return i['$'][`${namespace}:scheme`] === scheme
+  })
+  return identifierObj?.['_'] || null
+}
+
 function fetchISBN(metadata) {
-  if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
-  const identifiers = metadata['dc:identifier']
-  const isbnObj = identifiers.find((i) => i['$'] && i['$']['opf:scheme'] === 'ISBN')
-  return isbnObj ? isbnObj['_'] || null : null
+  return fetchIdentifier(metadata, 'ISBN')
 }
 
 function fetchASIN(metadata) {
-  if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
-  const identifiers = metadata['dc:identifier']
-  const asinObj = identifiers.find((i) => i['$'] && i['$']['opf:scheme'] === 'ASIN')
-  return asinObj ? asinObj['_'] || null : null
+  return fetchIdentifier(metadata, 'ASIN')
 }
 
 function fetchTitle(metadata) {
