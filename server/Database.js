@@ -216,6 +216,10 @@ class Database {
     }
   }
 
+  /**
+   *
+   * @param {string[]} extensions paths to extension binaries
+   */
   async loadExtensions(extensions) {
     // This is a hack to get the db connection for loading extensions.
     // The proper way would be to use the 'afterConnect' hook, but that hook is never called for sqlite due to a bug in sequelize.
@@ -827,10 +831,20 @@ class Database {
     }
   }
 
+  /**
+   *
+   * @param {string} value
+   * @returns {string}
+   */
   normalize(value) {
     return `lower(unaccent(${value}))`
   }
 
+  /**
+   *
+   * @param {string} query
+   * @returns {Promise<string>}
+   */
   async getNormalizedQuery(query) {
     const escapedQuery = this.sequelize.escape(query)
     const normalizedQuery = this.normalize(escapedQuery)
@@ -838,6 +852,12 @@ class Database {
     return normalizedQueryResult[0][0].normalized_query
   }
 
+  /**
+   *
+   * @param {string} column
+   * @param {string} normalizedQuery
+   * @returns {string}
+   */
   matchExpression(column, normalizedQuery) {
     const normalizedPattern = this.sequelize.escape(`%${normalizedQuery}%`)
     const normalizedColumn = this.normalize(column)
