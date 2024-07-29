@@ -14,6 +14,15 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastController {
+  /**
+   * POST /api/podcasts
+   * Create podcast
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async create(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
@@ -133,6 +142,14 @@ class PodcastController {
     res.json({ podcast })
   }
 
+  /**
+   * POST: /api/podcasts/opml
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async getFeedsFromOPMLText(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get feeds from opml`)
@@ -143,8 +160,44 @@ class PodcastController {
       return res.sendStatus(400)
     }
 
-    const rssFeedsData = await this.podcastManager.getOPMLFeeds(req.body.opmlText)
-    res.json(rssFeedsData)
+    res.json({
+      feeds: this.podcastManager.getParsedOPMLFileFeeds(req.body.opmlText)
+    })
+  }
+
+  /**
+   * POST: /api/podcasts/opml/create
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async bulkCreatePodcastsFromOpmlFeedUrls(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to bulk create podcasts`)
+      return res.sendStatus(403)
+    }
+
+    const rssFeeds = req.body.feeds
+    if (!Array.isArray(rssFeeds) || !rssFeeds.length || rssFeeds.some((feed) => !validateUrl(feed))) {
+      return res.status(400).send('Invalid request body. "feeds" must be an array of RSS feed URLs')
+    }
+
+    const libraryId = req.body.libraryId
+    const folderId = req.body.folderId
+    if (!libraryId || !folderId) {
+      return res.status(400).send('Invalid request body. "libraryId" and "folderId" are required')
+    }
+
+    const folder = await Database.libraryFolderModel.findByPk(folderId)
+    if (!folder || folder.libraryId !== libraryId) {
+      return res.status(404).send('Folder not found')
+    }
+    const autoDownloadEpisodes = !!req.body.autoDownloadEpisodes
+    this.podcastManager.createPodcastsFromFeedUrls(rssFeeds, folder, autoDownloadEpisodes, this.cronManager)
+
+    res.sendStatus(200)
   }
 
   async checkNewEpisodes(req, res) {

@@ -71,7 +71,8 @@
 
         <div class="flex-grow" />
 
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageEmbedFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
       <!-- m4b embed action buttons -->
@@ -83,7 +84,7 @@
         <div class="flex-grow" />
 
         <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
@@ -159,9 +160,9 @@
             </div>
             <div class="w-24">
               <div class="flex justify-center">
-                <span v-if="audiofilesFinished[file.ino]" class="material-symbols text-xl text-success leading-none">check_circle</span>
-                <div v-else-if="audiofilesEncoding[file.ino]">
-                  <widgets-loading-spinner />
+                <span v-if="audioFilesFinished[file.ino]" class="material-symbols text-xl text-success leading-none">check_circle</span>
+                <div v-else-if="audioFilesEncoding[file.ino]">
+                  <span class="font-mono text-success leading-none">{{ audioFilesEncoding[file.ino] }}</span>
                 </div>
               </div>
             </div>
@@ -205,8 +206,6 @@ export default {
   data() {
     return {
       processing: false,
-      audiofilesEncoding: {},
-      audiofilesFinished: {},
       metadataObject: null,
       selectedTool: 'embed',
       isCancelingEncode: false,
@@ -229,6 +228,15 @@ export default {
     }
   },
   computed: {
+    audioFilesEncoding() {
+      return this.$store.getters['tasks/getAudioFilesEncoding'](this.libraryItemId) || {}
+    },
+    audioFilesFinished() {
+      return this.$store.getters['tasks/getAudioFilesFinished'](this.libraryItemId) || {}
+    },
+    progress() {
+      return this.$store.getters['tasks/getTaskProgress'](this.libraryItemId) || '0%'
+    },
     isEmbedTool() {
       return this.selectedTool === 'embed'
     },
@@ -372,15 +380,6 @@ export default {
           this.processing = false
         })
     },
-    audiofileMetadataStarted(data) {
-      if (data.libraryItemId !== this.libraryItemId) return
-      this.$set(this.audiofilesEncoding, data.ino, true)
-    },
-    audiofileMetadataFinished(data) {
-      if (data.libraryItemId !== this.libraryItemId) return
-      this.$set(this.audiofilesEncoding, data.ino, false)
-      this.$set(this.audiofilesFinished, data.ino, true)
-    },
     selectedToolUpdated() {
       let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + `?tool=${this.selectedTool}`
       window.history.replaceState({ path: newurl }, '', newurl)
@@ -416,12 +415,6 @@ export default {
   },
   mounted() {
     this.init()
-    this.$root.socket.on('audiofile_metadata_started', this.audiofileMetadataStarted)
-    this.$root.socket.on('audiofile_metadata_finished', this.audiofileMetadataFinished)
-  },
-  beforeDestroy() {
-    this.$root.socket.off('audiofile_metadata_started', this.audiofileMetadataStarted)
-    this.$root.socket.off('audiofile_metadata_finished', this.audiofileMetadataFinished)
   }
 }
 </script>

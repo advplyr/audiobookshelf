@@ -15,6 +15,7 @@
 /.nyc_output/
 /ffmpeg*
 /ffprobe*
+/unicode*
 
 sw.*
 .DS_STORE

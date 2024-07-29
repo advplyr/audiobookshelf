@@ -45,6 +45,7 @@ class ApiRouter {
     this.backupManager = Server.backupManager
     /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
+    /** @type {import('../managers/PodcastManager')} */
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager
     this.rssFeedManager = Server.rssFeedManager
@@ -239,7 +240,8 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
+    this.router.post('/podcasts/opml/parse', PodcastController.getFeedsFromOPMLText.bind(this))
+    this.router.post('/podcasts/opml/create', PodcastController.bulkCreatePodcastsFromOpmlFeedUrls.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))

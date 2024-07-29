@@ -4,12 +4,11 @@ const StreamZip = require('../../libs/nodeStreamZip')
 const parseOpfMetadata = require('./parseOpfMetadata')
 const { xmlToJSON } = require('../index')
 
-
 /**
  * Extract file from epub and return string content
- * 
- * @param {string} epubPath 
- * @param {string} filepath 
+ *
+ * @param {string} epubPath
+ * @param {string} filepath
  * @returns {Promise<string>}
  */
 async function extractFileFromEpub(epubPath, filepath) {
@@ -27,9 +26,9 @@ async function extractFileFromEpub(epubPath, filepath) {
 
 /**
  * Extract an XML file from epub and return JSON
- * 
- * @param {string} epubPath 
- * @param {string} xmlFilepath 
+ *
+ * @param {string} epubPath
+ * @param {string} xmlFilepath
  * @returns {Promise<Object>}
  */
 async function extractXmlToJson(epubPath, xmlFilepath) {
@@ -40,19 +39,22 @@ async function extractXmlToJson(epubPath, xmlFilepath) {
 
 /**
  * Extract cover image from epub return true if success
- * 
- * @param {string} epubPath 
- * @param {string} epubImageFilepath 
- * @param {string} outputCoverPath 
+ *
+ * @param {string} epubPath
+ * @param {string} epubImageFilepath
+ * @param {string} outputCoverPath
  * @returns {Promise<boolean>}
  */
 async function extractCoverImage(epubPath, epubImageFilepath, outputCoverPath) {
   const zip = new StreamZip.async({ file: epubPath })
 
-  const success = await zip.extract(epubImageFilepath, outputCoverPath).then(() => true).catch((error) => {
-    Logger.error(`[parseEpubMetadata] Failed to extract image ${epubImageFilepath} from epub at "${epubPath}"`, error)
-    return false
-  })
+  const success = await zip
+    .extract(epubImageFilepath, outputCoverPath)
+    .then(() => true)
+    .catch((error) => {
+      Logger.error(`[parseEpubMetadata] Failed to extract image ${epubImageFilepath} from epub at "${epubPath}"`, error)
+      return false
+    })
 
   await zip.close()
 
@@ -62,8 +64,8 @@ module.exports.extractCoverImage = extractCoverImage
 
 /**
  * Parse metadata from epub
- * 
- * @param {import('../../models/Book').EBookFileObject} ebookFile 
+ *
+ * @param {import('../../models/Book').EBookFileObject} ebookFile
  * @returns {Promise<import('./parseEbookMetadata').EBookFileScanData>}
  */
 async function parse(ebookFile) {
@@ -89,7 +91,7 @@ async function parse(ebookFile) {
   }
 
   // Parse metadata from package document opf file
-  const opfMetadata = parseOpfMetadata.parseOpfMetadataJson(packageJson)
+  const opfMetadata = parseOpfMetadata.parseOpfMetadataJson(structuredClone(packageJson))
   if (!opfMetadata) {
     Logger.error(`Unable to parse metadata in package doc with json`, JSON.stringify(packageJson, null, 2))
     return null
@@ -101,8 +103,23 @@ async function parse(ebookFile) {
     metadata: opfMetadata
   }
 
-  // Attempt to find filepath to cover image
-  const manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find(item => item.$?.['media-type']?.startsWith('image/'))
+  // Attempt to find filepath to cover image:
+  // Metadata may include <meta name="cover" content="id"/> where content is the id of the cover image in the manifest
+  //  Otherwise the first image in the manifest is used as the cover image
+  let packageMetadata = packageJson.package?.metadata
+  if (Array.isArray(packageMetadata)) {
+    packageMetadata = packageMetadata[0]
+  }
+  const metaCoverId = packageMetadata?.meta?.find?.((meta) => meta.$?.name === 'cover')?.$?.content
+
+  let manifestFirstImage = null
+  if (metaCoverId) {
+    manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find((item) => item.$?.id === metaCoverId)
+  }
+  if (!manifestFirstImage) {
+    manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find((item) => item.$?.['media-type']?.startsWith('image/'))
+  }
+
   let coverImagePath = manifestFirstImage?.$?.href
   if (coverImagePath) {
     const packageDirname = Path.dirname(packageDocPath)

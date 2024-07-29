@@ -29,7 +29,7 @@
     </template>
     <template v-else>
       <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
-        <span class="material-symbols">autorenew</span>
+        <span class="material-symbols text-2xl">autorenew</span>
       </div>
     </template>
     <div class="flex-grow" />

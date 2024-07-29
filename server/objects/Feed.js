@@ -217,11 +217,11 @@ class Feed {
     this.entityType = 'collection'
     this.entityId = collectionExpanded.id
     this.entityUpdatedAt = collectionExpanded.lastUpdate // This will be set to the most recently updated library item
-    this.coverPath = firstItemWithCover?.coverPath || null
+    this.coverPath = firstItemWithCover?.media.coverPath || null
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
 
-    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+    const coverFileExtension = this.coverPath ? Path.extname(this.coverPath) : null
 
     this.meta = new FeedMeta()
     this.meta.title = collectionExpanded.name
@@ -265,9 +265,9 @@ class Feed {
     const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
 
     this.entityUpdatedAt = collectionExpanded.lastUpdate
-    this.coverPath = firstItemWithCover?.coverPath || null
+    this.coverPath = firstItemWithCover?.media.coverPath || null
 
-    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+    const coverFileExtension = this.coverPath ? Path.extname(this.coverPath) : null
 
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
@@ -316,11 +316,11 @@ class Feed {
     this.entityType = 'series'
     this.entityId = seriesExpanded.id
     this.entityUpdatedAt = seriesExpanded.updatedAt // This will be set to the most recently updated library item
-    this.coverPath = firstItemWithCover?.coverPath || null
+    this.coverPath = firstItemWithCover?.media.coverPath || null
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
 
-    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+    const coverFileExtension = this.coverPath ? Path.extname(this.coverPath) : null
 
     this.meta = new FeedMeta()
     this.meta.title = seriesExpanded.name
@@ -367,9 +367,9 @@ class Feed {
     const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
 
     this.entityUpdatedAt = seriesExpanded.updatedAt
-    this.coverPath = firstItemWithCover?.coverPath || null
+    this.coverPath = firstItemWithCover?.media.coverPath || null
 
-    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
+    const coverFileExtension = this.coverPath ? Path.extname(this.coverPath) : null
 
     this.meta.title = seriesExpanded.name
     this.meta.description = seriesExpanded.description || ''

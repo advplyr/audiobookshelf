@@ -170,7 +170,7 @@ export default {
         })
     },
     updateBackupsSettings() {
-      if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
+      if (isNaN(this.maxBackupSize) || this.maxBackupSize < 0) {
         this.$toast.error('Invalid maximum backup size')
         return
       }
@@ -200,10 +200,9 @@ export default {
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
-
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.enableBackups = !!this.newServerSettings.backupSchedule
-      this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
+      this.maxBackupSize = this.newServerSettings.maxBackupSize === 0 ? 0 : this.newServerSettings.maxBackupSize || 1
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
     }
   },

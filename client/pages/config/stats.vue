@@ -13,7 +13,7 @@
             />
           </svg>
           <div class="px-3">
-            <p class="text-4xl md:text-5xl font-bold">{{ userItemsFinished.length }}</p>
+            <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(userItemsFinished.length) }}</p>
             <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsItemsFinished }}</p>
           </div>
         </div>
@@ -23,7 +23,7 @@
             <span class="hidden sm:block material-symbols-outlined text-5xl lg:text-6xl">event</span>
           </div>
           <div class="px-1">
-            <p class="text-4xl md:text-5xl font-bold">{{ totalDaysListened }}</p>
+            <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalDaysListened) }}</p>
             <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsDaysListened }}</p>
           </div>
         </div>
@@ -33,7 +33,7 @@
             <span class="material-symbols-outlined text-5xl lg:text-6xl">watch_later</span>
           </div>
           <div class="px-1">
-            <p class="text-4xl md:text-5xl font-bold">{{ totalMinutesListening }}</p>
+            <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalMinutesListening) }}</p>
             <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsMinutesListening }}</p>
           </div>
         </div>

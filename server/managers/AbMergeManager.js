@@ -1,12 +1,14 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
-
-const workerThreads = require('worker_threads')
 const Logger = require('../Logger')
 const TaskManager = require('./TaskManager')
 const Task = require('../objects/Task')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
+const Ffmpeg = require('../libs/fluentFfmpeg')
+const SocketAuthority = require('../SocketAuthority')
+const fileUtils = require('../utils/fileUtils')
+const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
 
 class AbMergeManager {
   constructor() {
@@ -20,6 +22,7 @@ class AbMergeManager {
   }
 
   cancelEncode(task) {
+    task.setFailed('Task canceled by user')
     return this.removeTask(task, true)
   }
 
@@ -36,6 +39,7 @@ class AbMergeManager {
       libraryItemPath: libraryItem.path,
       userId: user.id,
       originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
+      inos: libraryItem.media.includedAudioFiles.map((f) => f.ino),
       tempFilepath,
       targetFilename,
       targetFilepath: Path.join(libraryItem.path, targetFilename),
@@ -43,7 +47,8 @@ class AbMergeManager {
       ffmetadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, 1),
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })),
       coverPath: libraryItem.media.coverPath,
-      ffmetadataPath
+      ffmetadataPath,
+      duration: libraryItem.media.duration
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
     task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
@@ -58,119 +63,78 @@ class AbMergeManager {
   }
 
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
+    // Make sure the target directory is writable
+    if (!(await fileUtils.isWritable(libraryItem.path))) {
+      Logger.error(`[AbMergeManager] Target directory is not writable: ${libraryItem.path}`)
+      task.setFailed('Target directory is not writable')
+      this.removeTask(task, true)
+      return
+    }
+
     // Create ffmetadata file
-    const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, task.data.ffmetadataPath)
-    if (!success) {
+    if (!(await ffmpegHelpers.writeFFMetadataFile(task.data.ffmetadataObject, task.data.chapters, task.data.ffmetadataPath))) {
       Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
       task.setFailed('Failed to write metadata file.')
       this.removeTask(task, true)
       return
     }
 
-    const audioBitrate = encodingOptions.bitrate || '128k'
-    const audioCodec = encodingOptions.codec || 'aac'
-    const audioChannels = encodingOptions.channels || 2
-
-    // If changing audio file type then encoding is needed
-    const audioTracks = libraryItem.media.tracks
-
-    // TODO: Updated in 2.2.11 to always encode even if merging multiple m4b. This is because just using the file extension as was being done before is not enough. This can be an option or do more to check if a concat is possible.
-    // const audioRequiresEncode = audioTracks[0].metadata.ext !== '.m4b'
-    const audioRequiresEncode = true
-
-    const firstTrackIsM4b = audioTracks[0].metadata.ext.toLowerCase() === '.m4b'
-    const isOneTrack = audioTracks.length === 1
-
-    const ffmpegInputs = []
-
-    if (!isOneTrack) {
-      const concatFilePath = Path.join(task.data.itemCachePath, 'files.txt')
-      await writeConcatFile(audioTracks, concatFilePath)
-      ffmpegInputs.push({
-        input: concatFilePath,
-        options: ['-safe 0', '-f concat']
-      })
-    } else {
-      ffmpegInputs.push({
-        input: audioTracks[0].metadata.path,
-        options: firstTrackIsM4b ? ['-f mp4'] : []
-      })
-    }
-
-    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
-    let ffmpegOptions = [`-loglevel ${logLevel}`]
-    const ffmpegOutputOptions = ['-f mp4']
-
-    if (audioRequiresEncode) {
-      ffmpegOptions = ffmpegOptions.concat(['-map 0:a', `-acodec ${audioCodec}`, `-ac ${audioChannels}`, `-b:a ${audioBitrate}`])
-    } else {
-      ffmpegOptions.push('-max_muxing_queue_size 1000')
-
-      if (isOneTrack && firstTrackIsM4b) {
-        ffmpegOptions.push('-c copy')
-      } else {
-        ffmpegOptions.push('-c:a copy')
-      }
-    }
-
-    const workerData = {
-      inputs: ffmpegInputs,
-      options: ffmpegOptions,
-      outputOptions: ffmpegOutputOptions,
-      output: task.data.tempFilepath
-    }
-
-    let worker = null
-    try {
-      const workerPath = Path.join(global.appRoot, 'server/utils/downloadWorker.js')
-      worker = new workerThreads.Worker(workerPath, { workerData })
-    } catch (error) {
-      Logger.error(`[AbMergeManager] Start worker thread failed`, error)
-      task.setFailed('Failed to start worker thread')
-      this.removeTask(task, true)
-      return
-    }
-
-    worker.on('message', (message) => {
-      if (message != null && typeof message === 'object') {
-        if (message.type === 'RESULT') {
-          this.sendResult(task, message)
-        } else if (message.type === 'FFMPEG') {
-          if (Logger[message.level]) {
-            Logger[message.level](message.log)
-          }
-        }
-      }
-    })
     this.pendingTasks.push({
       id: task.id,
-      task,
-      worker
+      task
     })
-  }
 
-  async sendResult(task, result) {
-    // Remove pending task
-    this.pendingTasks = this.pendingTasks.filter((d) => d.id !== task.id)
-
-    if (result.isKilled) {
-      task.setFailed('Ffmpeg task killed')
-      this.removeTask(task, true)
-      return
-    }
-
-    if (!result.success) {
-      task.setFailed('Encoding failed')
-      this.removeTask(task, true)
+    const encodeFraction = 0.95
+    const embedFraction = 1 - encodeFraction
+    try {
+      const trackProgressMonitor = new TrackProgressMonitor(
+        libraryItem.media.tracks.map((t) => t.duration),
+        (trackIndex) => SocketAuthority.adminEmitter('track_started', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] }),
+        (trackIndex, progressInTrack, taskProgress) => {
+          SocketAuthority.adminEmitter('track_progress', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex], progress: progressInTrack })
+          SocketAuthority.adminEmitter('task_progress', { libraryItemId: libraryItem.id, progress: taskProgress * encodeFraction })
+        },
+        (trackIndex) => SocketAuthority.adminEmitter('track_finished', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] })
+      )
+      task.data.ffmpeg = new Ffmpeg()
+      await ffmpegHelpers.mergeAudioFiles(libraryItem.media.tracks, task.data.duration, task.data.itemCachePath, task.data.tempFilepath, encodingOptions, (progress) => trackProgressMonitor.update(progress), task.data.ffmpeg)
+      delete task.data.ffmpeg
+      trackProgressMonitor.finish()
+    } catch (error) {
+      if (error.message === 'FFMPEG_CANCELED') {
+        Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
+      } else {
+        Logger.error(`[AbMergeManager] mergeAudioFiles failed`, error)
+        task.setFailed('Failed to merge audio files')
+        this.removeTask(task, true)
+      }
       return
     }
 
     // Write metadata to merged file
-    const success = await ffmpegHelpers.addCoverAndMetadataToFile(task.data.tempFilepath, task.data.coverPath, task.data.ffmetadataPath, 1, 'audio/mp4')
-    if (!success) {
-      Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
-      task.setFailed('Failed to write metadata to m4b file')
-      this.removeTask(task, true)
+    try {
+      task.data.ffmpeg = new Ffmpeg()
+      await ffmpegHelpers.addCoverAndMetadataToFile(
+        task.data.tempFilepath,
+        task.data.coverPath,
+        task.data.ffmetadataPath,
+        1,
+        'audio/mp4',
+        (progress) => {
+          Logger.debug(`[AbMergeManager] Embedding metadata progress: ${100 * encodeFraction + progress * embedFraction}`)
+          SocketAuthority.adminEmitter('task_progress', { libraryItemId: libraryItem.id, progress: 100 * encodeFraction + progress * embedFraction })
+        },
+        task.data.ffmpeg
+      )
+      delete task.data.ffmpeg
+    } catch (error) {
+      if (error.message === 'FFMPEG_CANCELED') {
+        Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
+      } else {
+        Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
+        task.setFailed('Failed to write metadata to m4b file')
+        this.removeTask(task, true)
+      }
       return
     }
 
@@ -199,19 +163,14 @@ class AbMergeManager {
   async removeTask(task, removeTempFilepath = false) {
     Logger.info('[AbMergeManager] Removing task ' + task.id)
 
-    const pendingDl = this.pendingTasks.find((d) => d.id === task.id)
-    if (pendingDl) {
+    const pendingTask = this.pendingTasks.find((d) => d.id === task.id)
+    if (pendingTask) {
       this.pendingTasks = this.pendingTasks.filter((d) => d.id !== task.id)
-      if (pendingDl.worker) {
-        Logger.warn(`[AbMergeManager] Removing download in progress - stopping worker`)
-        try {
-          pendingDl.worker.postMessage('STOP')
-          return
-        } catch (error) {
-          Logger.error('[AbMergeManager] Error posting stop message to worker', error)
-        }
-      } else {
-        Logger.debug(`[AbMergeManager] Removing download in progress - no worker`)
+      if (task.data.ffmpeg) {
+        Logger.warn(`[AbMergeManager] Killing ffmpeg process for task ${task.id}`)
+        task.data.ffmpeg.kill()
+        // wait for ffmpeg to exit, so that the output file is unlocked
+        await new Promise((resolve) => setTimeout(resolve, 500))
       }
     }
 

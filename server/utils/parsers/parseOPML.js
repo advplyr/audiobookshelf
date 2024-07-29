@@ -1,17 +1,21 @@
 const h = require('htmlparser2')
 const Logger = require('../../Logger')
 
+/**
+ *
+ * @param {string} opmlText
+ * @returns {Array<{title: string, feedUrl: string}>
+ */
 function parse(opmlText) {
   var feeds = []
   var parser = new h.Parser({
     onopentag: (name, attribs) => {
-      if (name === "outline" && attribs.type === 'rss') {
+      if (name === 'outline' && attribs.type === 'rss') {
         if (!attribs.xmlurl) {
           Logger.error('[parseOPML] Invalid opml outline tag has no xmlurl attribute')
         } else {
           feeds.push({
-            title: attribs.title || 'No Title',
-            text: attribs.text || '',
+            title: attribs.title || attribs.text || '',
             feedUrl: attribs.xmlurl
           })
         }

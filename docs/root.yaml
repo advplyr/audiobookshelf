@@ -57,8 +57,10 @@ paths:
     $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts'
   /api/podcasts/feed:
     $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1feed'
-  /api/podcasts/opml:
-    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1opml'
+  /api/podcasts/opml/parse:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1opml~1parse'
+  /api/podcasts/opml/create:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1opml~1create'
   /api/podcasts/{id}/checknew:
     $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1checknew'
   /api/podcasts/{id}/clear-queue:
