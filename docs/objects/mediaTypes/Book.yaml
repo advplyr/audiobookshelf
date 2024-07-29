@@ -11,6 +11,9 @@ components:
       properties:
         id:
           description: TODO
+          type: string
+          format: uuid
+          example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
         libraryItemId:
           $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
         coverPath:
@@ -23,6 +26,7 @@ components:
             $ref: '../files/AudioFile.yaml#/components/schemas/audioFile'
         chapters:
           type: array
+          nullable: true
           items:
             $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
         missingParts:

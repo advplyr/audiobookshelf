@@ -78,6 +78,10 @@ components:
           description: Whether the book has been marked as explicit.
           type: boolean
           example: false
+        abridged:
+            description: Whether the book is abridged.
+            type: boolean
+            example: false
     bookMetadataMinified:
       type: object
       description: The minified metadata for a book in the database.
@@ -107,6 +111,7 @@ components:
     bookChapter:
       type: object
       description: A book chapter. Includes the title and timestamps.
+      nullable: true
       properties:
         id:
           description: The ID of the book chapter.
@@ -114,7 +119,7 @@ components:
           example: 0
         start:
           description: When in the book (in seconds) the chapter starts.
-          type: integer
+          type: number
           example: 0
         end:
           description: When in the book (in seconds) the chapter ends.
@@ -132,9 +137,14 @@ components:
             authors:
               type: array
               items:
-                $ref: '../entities/Author.yaml#/components/schemas/author'
+                $ref: '../entities/Author.yaml#/components/schemas/authorMinified'
+            narrators:
+              type: array
+              items:
+                  type: string
+                  example: Sam Tsoutsouvas
             series:
               type: array
               items:
-                $ref: '../entities/Series.yaml#/components/schemas/series'
+                $ref: '../entities/Series.yaml#/components/schemas/seriesSequence'
 
