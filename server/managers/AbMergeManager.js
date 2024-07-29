@@ -7,7 +7,7 @@ const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const SocketAuthority = require('../SocketAuthority')
-const fileUtils = require('../utils/fileUtils')
+const { isWritable, copyToExisting } = require('../utils/fileUtils')
 const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
 
 class AbMergeManager {
@@ -64,7 +64,7 @@ class AbMergeManager {
 
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
     // Make sure the target directory is writable
-    if (!(await fileUtils.isWritable(libraryItem.path))) {
+    if (!(await isWritable(libraryItem.path))) {
       Logger.error(`[AbMergeManager] Target directory is not writable: ${libraryItem.path}`)
       task.setFailed('Target directory is not writable')
       this.removeTask(task, true)
@@ -139,18 +139,35 @@ class AbMergeManager {
     }
 
     // Move library item tracks to cache
-    for (const trackPath of task.data.originalTrackPaths) {
+    for (const [index, trackPath] of task.data.originalTrackPaths.entries()) {
       const trackFilename = Path.basename(trackPath)
       const moveToPath = Path.join(task.data.itemCachePath, trackFilename)
       Logger.debug(`[AbMergeManager] Backing up original track "${trackPath}" to ${moveToPath}`)
-      await fs.move(trackPath, moveToPath, { overwrite: true }).catch((err) => {
-        Logger.error(`[AbMergeManager] Failed to move track "${trackPath}" to "${moveToPath}"`, err)
-      })
+      if (index === 0) {
+        // copy the first track to the cache directory
+        await fs.copy(trackPath, moveToPath).catch((err) => {
+          Logger.error(`[AbMergeManager] Failed to copy track "${trackPath}" to "${moveToPath}"`, err)
+        })
+      } else {
+        // move the rest of the tracks to the cache directory
+        await fs.move(trackPath, moveToPath, { overwrite: true }).catch((err) => {
+          Logger.error(`[AbMergeManager] Failed to move track "${trackPath}" to "${moveToPath}"`, err)
+        })
+      }
     }
 
-    // Move m4b to target
+    // Move m4b to target, preserving the original track's permissions
     Logger.debug(`[AbMergeManager] Moving m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`)
-    await fs.move(task.data.tempFilepath, task.data.targetFilepath)
+    try {
+      await copyToExisting(task.data.tempFilepath, task.data.originalTrackPaths[0])
+      await fs.rename(task.data.originalTrackPaths[0], task.data.targetFilepath)
+      await fs.remove(task.data.tempFilepath)
+    } catch (err) {
+      Logger.error(`[AbMergeManager] Failed to move m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`, err)
+      task.setFailed('Failed to move m4b file')
+      this.removeTask(task, true)
+      return
+    }
 
     // Remove ffmetadata file
     await fs.remove(task.data.ffmetadataPath)
