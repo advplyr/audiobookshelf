@@ -4,7 +4,7 @@ const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
-const { filePathToPOSIX } = require('./fileUtils')
+const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
 const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
@@ -250,11 +250,12 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @param {string} metadataFilePath - Path to the ffmetadata file.
  * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
- * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
  * @param {function(number): void|null} progressCB - A callback function to report progress.
+ * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
+ * @param {function(string, string): Promise<void>} copyFunc - The function to use for copying files (optional). Used for dependency injection in tests.
  * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg()) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg(), copyFunc = copyToExisting) {
   const isMp4 = mimeType === 'audio/mp4'
   const isMp3 = mimeType === 'audio/mpeg'
 
@@ -316,7 +317,8 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
         Logger.debug('[ffmpegHelpers] Moving temp file to audio file path:', `"${tempFilePath}"`, '->', `"${audioFilePath}"`)
         try {
-          await fs.move(tempFilePath, audioFilePath, { overwrite: true })
+          await copyFunc(tempFilePath, audioFilePath)
+          await fs.remove(tempFilePath)
           resolve()
         } catch (error) {
           Logger.error(`[ffmpegHelpers] Failed to move temp file to audio file path: "${tempFilePath}" -> "${audioFilePath}"`, error)
