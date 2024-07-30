@@ -794,10 +794,6 @@ export default {
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
-    // use this items library id as the current
-    if (this.libraryId) {
-      this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
-    }
     this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
