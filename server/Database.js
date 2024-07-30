@@ -228,6 +228,8 @@ class Database {
     const db = await this.sequelize.dialect.connectionManager.getConnection()
     if (typeof db?.loadExtension !== 'function') throw new Error('Failed to get db connection for loading extensions')
 
+    extensions = extensions.filter(ext => ext !== undefined)
+
     for (const ext of extensions) {
       Logger.info(`[Database] Loading extension ${ext}`)
       await new Promise((resolve, reject) => {
