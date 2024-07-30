@@ -166,22 +166,6 @@ export const actions = {
         commit('set', [])
       })
     return true
-  },
-  loadLibraryFilterData({ state, commit, rootState }) {
-    if (!rootState.user || !rootState.user.user) {
-      console.error('libraries/loadLibraryFilterData - User not set')
-      return false
-    }
-
-    this.$axios
-      .$get(`/api/libraries/${state.currentLibraryId}/filterdata`)
-      .then((data) => {
-        commit('setLibraryFilterData', data)
-      })
-      .catch((error) => {
-        console.error('Failed', error)
-        commit('setLibraryFilterData', null)
-      })
   }
 }
 
