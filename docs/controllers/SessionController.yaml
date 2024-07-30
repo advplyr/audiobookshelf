@@ -1,0 +1,55 @@
+paths:
+  /api/session/{id}/sync:
+    post:
+      operationId: syncOpenSession
+      summary: Sync an open session.
+      description: Sync an open session.
+      tags:
+        - Session
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the session.
+          required: true
+          schema:
+            $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionId'
+        - name: currentTime
+          in: query
+          description: The current time of the session.
+          required: true
+          schema:
+              $ref: '../schemas.yaml#/components/schemas/durationSec'
+        - name: timeListened
+          in: query
+          description: The time listened to the session.
+          required: true
+          schema:
+              $ref: '../schemas.yaml#/components/schemas/durationSec'
+        - name: duration
+          in: query
+          description: The duration of the session.
+          required: true
+          schema:
+              $ref: '../schemas.yaml#/components/schemas/durationSec'
+      responses:
+        '200':
+            description: OK
+            content:
+                html/text:
+                  schema:
+                      type: string
+                      example: OK
+        '404':
+            description: No listening session with the provided ID is open, or the session belongs to another user.
+            content:
+                html/text:
+                  schema:
+                      type: string
+                      example: Not Found
+        '500':
+            description: There was an error syncing the session.
+            content:
+                html/text:
+                  schema:
+                      type: string
+                      example: Internal Server Error

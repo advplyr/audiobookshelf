@@ -91,6 +91,8 @@ paths:
     $ref: './controllers/MeController.yaml#/paths/~1api~1me~1progress~1{libraryItemId}~1{episodeId}'
   /api/me/progress/{mediaId}:
     $ref: './controllers/MeController.yaml#/paths/~1api~1me~1progress~1{mediaId}'
+  /api/session/{id}/sync:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1session~1{id}~1sync'
 tags:
   - name: Authors
     description: Author endpoints
