@@ -40,7 +40,7 @@ paths:
                       description: TODO
                       oneOf:
                         - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
-  /api/items/{id}/play:
+  /api/items/{id}/play/{episodeId}:
     parameters:
       - name: id
         in: path
@@ -48,6 +48,12 @@ paths:
         required: true
         schema:
           $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+      - name: episodeId
+        in: path
+        description: The ID of the episode to play.
+        required: false
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
     post:
       operationId: playLibraryItem
       summary: Play a library item.
