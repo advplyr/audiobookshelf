@@ -13,3 +13,65 @@ paths:
                 application/json:
                   schema:
                       $ref: '../objects/entities/User.yaml#/components/schemas/user'
+  /api/me/progress/{libraryItemId}/{episodeId}:
+    parameters:
+      - name: libraryItemId
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+      - name: episodeId
+        in: path
+        description: The ID of the episode to get progress for.
+        required: false
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+    get:
+      operationId: getProgress
+      summary: Get the user's progress for a library item.
+      description: Get the user's progress for a library item.
+      tags:
+        - Me
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                  schema:
+                      $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
+        '404':
+            description: Not Found
+            content:
+                html/text:
+                  schema:
+                      type: string
+                      example: Not Found
+  /api/me/progress/{mediaId}:
+    parameters:
+      - name: mediaId
+        in: path
+        description: The ID of the media progress.
+        required: true
+        schema:
+          $ref: '../objects/Media.yaml#/components/schemas/mediaProgressId'
+    get:
+      operationId: getProgressById
+      summary: Get the user's progress for a media item.
+      description: Get the user's progress for a media item.
+      tags:
+        - Me
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                  schema:
+                      $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
+        '404':
+            description: Not Found
+            content:
+                html/text:
+                  schema:
+                      type: string
+                      example: Not Found
