@@ -1,0 +1,82 @@
+components:
+  schemas:
+    playbackSessionId:
+      description: The playback session identifier.
+      type: string
+      format: uuid
+    playbackSession:
+      id:
+        $ref: '#/components/schemas/playbackSessionId'
+      userId:
+        $ref: './User.yaml#/components/schemas/userId'
+      libraryId:
+        $ref: '../Library.yaml#/components/schemas/libraryId'
+      libraryItemId:
+        $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+      episodeId:
+        $ref: '../mediaTypes/Podcast.yaml#/components/schemas/episodeId'
+        nullable: true
+      mediaType:
+        $ref: '../../controllers/LibraryItemController.yaml#/components/schemas/libraryMediaType'
+      mediaMetadata:
+        description: The metadata of the media.
+        oneOf:
+          - $ref: '../mediaTypes/Book.yaml#/components/schemas/bookMinified'
+          - $ref: '../mediaTypes/Podcast.yaml#/components/schemas/podcastMinified'
+      chapters:
+        description: The chapters of the media.
+        type: array
+        items:
+          $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
+      displayTitle:
+        description: The display title of the media.
+        type: string
+      displayAuthor:
+        description: The display author of the media.
+        type: string
+      coverPath:
+        $ref: '../Book.yaml#/components/schemas/bookCoverPath'
+      duration:
+        $ref: '../schemas.yaml#/components/schemas/durationSec'
+      playMethod:
+        type: integer
+        description: The method used to play the media. 0 = Direct play, 1 = Direct Stream, 2 = Transcode, 3 = Local
+      mediaPlayer:
+        type: string
+        description: The media player used to play the media.
+      deviceInfo:
+        $ref: './Device.yaml#/components/schemas/deviceInfo'
+      serverVersion:
+        $ref: '../schemas.yaml#/components/schemas/serverVersion'
+      date:
+        description: TODO
+        type: String
+      dayOfWeek:
+        description: TODO
+        type: String
+      timeListening:
+        $ref: '../schemas.yaml#/components/schemas/durationSec'
+      startTime:
+        $ref: '../schemas.yaml#/components/schemas/durationSec'
+      currentTime:
+        $ref: '../schemas.yaml#/components/schemas/durationSec'
+      createdAt:
+        $ref: '../schemas.yaml#/components/schemas/createdAt'
+      updatedAt:
+        $ref: '../schemas.yaml#/components/schemas/updatedAt'
+    playbackSessionExpanded:
+      description: Expanded playback session schema.
+      allOf:
+        - $ref: '#/components/schemas/playbackSession'
+        - properties:
+            audioTracks:
+              description: The audio tracks of the media.
+              type: array
+              items:
+                  $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
+            videoTrack:
+              description: The video track of the media. TODO
+              type: object
+              nullable: true
+            libraryItem:
+                $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'

@@ -40,3 +40,62 @@ paths:
                       description: TODO
                       oneOf:
                         - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+  /api/items/{id}/play:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+    post:
+      operationId: playLibraryItem
+      summary: Play a library item.
+      description: Play a library item.
+      tags:
+        - LibraryItem
+      parameters:
+        - in: query
+          name: deviceInfo
+          description: The device information to send to the server.
+          schema:
+              $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+        - in: query
+          name: forceDirectPlay
+          description: Whether to force direct play of the library item.
+          schema:
+              type: boolean
+              example: false
+        - in: query
+          name: forceTranscode
+          description: Whether to force transcoding of the library item.
+          schema:
+              type: boolean
+              example: false
+        - in: query
+          name: supportedMimeTypes
+          description: The supported mime types for the device.
+          schema:
+                type: array
+                items:
+                    type: string
+        - in: query
+          name: mediaPlayer
+          description: The media player to use.
+          schema:
+              type: string
+      responses:
+        '200':
+            description: OK
+            content:
+                application/json:
+                  schema:
+                      $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
+        '404':
+            description: Not Found
+            content:
+                text/html:
+                  schema:
+                      type: string
+                      description: The library item does not have any audio tracks to play.
+                      example: Not Found

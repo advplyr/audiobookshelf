@@ -1,0 +1,42 @@
+components:
+  schemas:
+    deviceId:
+      description: The client device identifier.
+      type: string
+      example: 1
+    clientVersion:
+      description: The client version.
+      type: string
+      example: 1.0.0
+    clientName:
+      description: The client name.
+      type: string
+      example: "Audible"
+    manufacturer:
+      description: The manufacturer of the device.
+      type: string
+      example: "Apple"
+    model:
+        description: The model of the device.
+        type: string
+        example: "iPhone 12"
+    sdkVersion:
+      description: For an Android client, the Android SDK version of the client.
+      type: integer
+      example: 49
+    deviceInfo:
+        description: The device information to send to the server.
+        type: object
+        properties:
+            deviceId:
+              $ref: '#/components/schemas/deviceId'
+            clientVersion:
+              $ref: '#/components/schemas/clientVersion'
+            clientName:
+              $ref: '#/components/schemas/clientName'
+            manufacturer:
+              $ref: '#/components/schemas/manufacturer'
+            model:
+              $ref: '#/components/schemas/model'
+            sdkVersion:
+              $ref: '#/components/schemas/sdkVersion'
