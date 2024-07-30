@@ -56,8 +56,8 @@ export default {
       return redirect(`/library/${store.state.libraries.currentLibraryId}/authors`)
     }
 
-    if (query.library) {
-      store.commit('libraries/setCurrentLibrary', query.library)
+    if (store.state.libraries.currentLibraryId !== author.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', author.libraryId)
     }
 
     return {

@@ -168,6 +168,9 @@ export default {
       console.error('No item...', params.id)
       return redirect('/')
     }
+    if (store.state.libraries.currentLibraryId !== item.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', item.libraryId)
+    }
     return {
       libraryItem: item,
       rssFeed: item.rssFeed || null,
@@ -791,10 +794,6 @@ export default {
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
-    // use this items library id as the current
-    if (this.libraryId) {
-      this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
-    }
     this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
