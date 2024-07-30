@@ -168,6 +168,9 @@ export default {
       console.error('No item...', params.id)
       return redirect('/')
     }
+    if (store.state.libraries.currentLibraryId !== item.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', item.libraryId)
+    }
     return {
       libraryItem: item,
       rssFeed: item.rssFeed || null,
