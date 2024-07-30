@@ -1,2 +1,15 @@
 paths:
-
+  /api/me:
+    get:
+      operationId: getMe
+      summary: Get the current user.
+      description: Get the current user.
+      tags:
+        - Me
+      responses:
+        '200':
+            description: Success
+            content:
+                application/json:
+                  schema:
+                      $ref: '../objects/entities/User.yaml#/components/schemas/user'
