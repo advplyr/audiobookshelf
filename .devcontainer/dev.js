@@ -5,6 +5,5 @@ module.exports.config = {
   ConfigPath: Path.resolve('config'),
   MetadataPath: Path.resolve('metadata'),
   FFmpegPath: '/usr/bin/ffmpeg',
-  FFProbePath: '/usr/bin/ffprobe',
-  SkipBinariesCheck: true
+  FFProbePath: '/usr/bin/ffprobe'
 }

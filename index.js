@@ -9,7 +9,6 @@ if (isDev) {
   if (devEnv.MetadataPath) process.env.METADATA_PATH = devEnv.MetadataPath
   if (devEnv.FFmpegPath) process.env.FFMPEG_PATH = devEnv.FFmpegPath
   if (devEnv.FFProbePath) process.env.FFPROBE_PATH = devEnv.FFProbePath
-  if (devEnv.SkipBinariesCheck) process.env.SKIP_BINARIES_CHECK = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
