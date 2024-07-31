@@ -78,7 +78,7 @@
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
         <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-symbols text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
+          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
         </button>
 
         <div class="flex-grow" />
@@ -92,11 +92,11 @@
       <!-- advanced encoding options -->
       <div v-if="isM4BTool" class="overflow-hidden">
         <transition name="slide">
-          <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
+          <div v-if="showEncodeOptions || usingCustomEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
             <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" />
-              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" />
-              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" />
+              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" @input="bitrateChanged" />
+              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" @input="channelsChanged" />
+              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" @input="codecChanged" />
             </div>
             <p class="text-sm text-warning">Warning: Do not update these settings unless you are familiar with ffmpeg encoding options.</p>
           </div>
@@ -308,11 +308,23 @@ export default {
     },
     isMetadataEmbedQueued() {
       return this.queuedEmbedLIds.some((lid) => lid === this.libraryItemId)
+    },
+    usingCustomEncodeOptions() {
+      return this.isM4BTool && this.encodeTask && this.encodeTask.data.encodeOptions && Object.keys(this.encodeTask.data.encodeOptions).length > 0
     }
   },
   methods: {
     toggleBackupAudioFiles(val) {
       localStorage.setItem('embedMetadataShouldBackup', val ? 1 : 0)
+    },
+    bitrateChanged(val) {
+      localStorage.setItem('embedMetadataBitrate', val)
+    },
+    channelsChanged(val) {
+      localStorage.setItem('embedMetadataChannels', val)
+    },
+    codecChanged(val) {
+      localStorage.setItem('embedMetadataCodec', val)
     },
     cancelEncodeClick() {
       this.isCancelingEncode = true
@@ -398,6 +410,16 @@ export default {
 
       const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
       this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
+
+      if (this.usingCustomEncodeOptions) {
+        if (this.encodeTask.data.encodeOptions.bitrate) this.encodingOptions.bitrate = this.encodeTask.data.encodeOptions.bitrate
+        if (this.encodeTask.data.encodeOptions.channels) this.encodingOptions.channels = this.encodeTask.data.encodeOptions.channels
+        if (this.encodeTask.data.encodeOptions.codec) this.encodingOptions.codec = this.encodeTask.data.encodeOptions.codec
+      } else {
+        this.encodingOptions.bitrate = localStorage.getItem('embedMetadataBitrate') || '128k'
+        this.encodingOptions.channels = localStorage.getItem('embedMetadataChannels') || '2'
+        this.encodingOptions.codec = localStorage.getItem('embedMetadataCodec') || 'aac'
+      }
     },
     fetchMetadataEmbedObject() {
       this.$axios

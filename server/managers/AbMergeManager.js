@@ -48,7 +48,8 @@ class AbMergeManager {
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })),
       coverPath: libraryItem.media.coverPath,
       ffmetadataPath,
-      duration: libraryItem.media.duration
+      duration: libraryItem.media.duration,
+      encodeOptions: options
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
     task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
