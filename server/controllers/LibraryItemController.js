@@ -738,7 +738,9 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
     const ebookFilePath = ebookFile.metadata.path
-
+    
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${ebookFile.metadata.title}" at "${ebookFilePath}"`)
+    
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + ebookFilePath)
       Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
