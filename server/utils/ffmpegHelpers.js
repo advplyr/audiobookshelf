@@ -53,6 +53,7 @@ async function extractCoverArt(filepath, outputpath) {
   await fs.ensureDir(dirname)
 
   return new Promise((resolve) => {
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     var ffmpeg = Ffmpeg(filepath)
     ffmpeg.addOption(['-map 0:v', '-frames:v 1'])
     ffmpeg.output(outputpath)
@@ -76,6 +77,7 @@ module.exports.extractCoverArt = extractCoverArt
 //This should convert based on the output file extension as well
 async function resizeImage(filePath, outputPath, width, height) {
   return new Promise((resolve) => {
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     var ffmpeg = Ffmpeg(filePath)
     ffmpeg.addOption(['-vf', `scale=${width || -1}:${height || -1}`])
     ffmpeg.addOutput(outputPath)
@@ -111,6 +113,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
     if (!response) return resolve(false)
 
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
@@ -251,7 +254,7 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
  * @param {function(number): void|null} progressCB - A callback function to report progress.
- * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
+ * @param {import('../libs/fluentFfmpeg/index').FfmpegCommand} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
  * @param {function(string, string): Promise<void>} copyFunc - The function to use for copying files (optional). Used for dependency injection in tests.
  * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
@@ -392,9 +395,9 @@ module.exports.getFFMetadataObject = getFFMetadataObject
  * @param {number} duration - The total duration of the audio tracks.
  * @param {string} itemCachePath - The path to the item cache.
  * @param {string} outputFilePath - The path to the output file.
- * @param {Object} encodingOptions - The options for encoding the audio.
+ * @param {import('../managers/AbMergeManager').AbMergeEncodeOptions} encodingOptions - The options for encoding the audio.
  * @param {Function} [progressCB=null] - The callback function to track the progress of the merge.
- * @param {Object} [ffmpeg=Ffmpeg()] - The FFmpeg instance to use for merging.
+ * @param {import('../libs/fluentFfmpeg/index').FfmpegCommand} [ffmpeg=Ffmpeg()] - The FFmpeg instance to use for merging.
  * @returns {Promise<void>} A promise that resolves when the audio files are merged successfully.
  */
 async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFilePath, encodingOptions, progressCB = null, ffmpeg = Ffmpeg()) {

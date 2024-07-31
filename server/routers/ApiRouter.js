@@ -40,6 +40,7 @@ class ApiRouter {
     /** @type {import('../Auth')} */
     this.auth = Server.auth
     this.playbackSessionManager = Server.playbackSessionManager
+    /** @type {import('../managers/AbMergeManager')} */
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
@@ -47,6 +48,7 @@ class ApiRouter {
     this.watcher = Server.watcher
     /** @type {import('../managers/PodcastManager')} */
     this.podcastManager = Server.podcastManager
+    /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager

@@ -3,29 +3,53 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const TaskManager = require('./TaskManager')
 const Task = require('../objects/Task')
-const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const SocketAuthority = require('../SocketAuthority')
 const { isWritable, copyToExisting } = require('../utils/fileUtils')
 const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
 
+/**
+ * @typedef AbMergeEncodeOptions
+ * @property {string} codec
+ * @property {string} channels
+ * @property {string} bitrate
+ */
+
 class AbMergeManager {
   constructor() {
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
 
+    /** @type {Task[]} */
     this.pendingTasks = []
   }
 
+  /**
+   *
+   * @param {string} libraryItemId
+   * @returns {Task|null}
+   */
   getPendingTaskByLibraryItemId(libraryItemId) {
     return this.pendingTasks.find((t) => t.task.data.libraryItemId === libraryItemId)
   }
 
+  /**
+   * Cancel and fail running task
+   *
+   * @param {Task} task
+   * @returns {Promise<void>}
+   */
   cancelEncode(task) {
     task.setFailed('Task canceled by user')
     return this.removeTask(task, true)
   }
 
+  /**
+   *
+   * @param {import('../objects/user/User')} user
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {AbMergeEncodeOptions} [options={}]
+   */
   async startAudiobookMerge(user, libraryItem, options = {}) {
     const task = new Task()
 
@@ -63,6 +87,12 @@ class AbMergeManager {
     this.runAudiobookMerge(libraryItem, task, options || {})
   }
 
+  /**
+   *
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {Task} task
+   * @param {AbMergeEncodeOptions} encodingOptions
+   */
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
     // Make sure the target directory is writable
     if (!(await isWritable(libraryItem.path))) {
@@ -178,6 +208,12 @@ class AbMergeManager {
     Logger.info(`[AbMergeManager] Ab task finished ${task.id}`)
   }
 
+  /**
+   * Remove ab merge task
+   *
+   * @param {Task} task
+   * @param {boolean} [removeTempFilepath=false]
+   */
   async removeTask(task, removeTempFilepath = false) {
     Logger.info('[AbMergeManager] Removing task ' + task.id)
 

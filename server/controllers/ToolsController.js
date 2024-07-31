@@ -2,9 +2,17 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 
 class ToolsController {
-  constructor() { }
+  constructor() {}
 
-  // POST: api/tools/item/:id/encode-m4b
+  /**
+   * POST: /api/tools/item/:id/encode-m4b
+   * Start an audiobook merge to m4b task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async encodeM4b(req, res) {
     if (req.libraryItem.isMissing || req.libraryItem.isInvalid) {
       Logger.error(`[MiscController] encodeM4b: library item not found or invalid ${req.params.id}`)
@@ -27,7 +35,15 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-  // DELETE: api/tools/item/:id/encode-m4b
+  /**
+   * DELETE: /api/tools/item/:id/encode-m4b
+   * Cancel a running m4b merge task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async cancelM4bEncode(req, res) {
     const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
     if (!workerTask) return res.sendStatus(404)
@@ -37,7 +53,15 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-  // POST: api/tools/item/:id/embed-metadata
+  /**
+   * POST: /api/tools/item/:id/embed-metadata
+   * Start audiobook embed task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async embedAudioFileMetadata(req, res) {
     if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
       Logger.error(`[ToolsController] Invalid library item`)
@@ -57,7 +81,15 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-  // POST: api/tools/batch/embed-metadata
+  /**
+   * POST: /api/tools/batch/embed-metadata
+   * Start batch audiobook embed task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async batchEmbedMetadata(req, res) {
     const libraryItemIds = req.body.libraryItemIds || []
     if (!libraryItemIds.length) {
@@ -99,6 +131,12 @@ class ToolsController {
     res.sendStatus(200)
   }
 
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
   async middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-root user attempted to access tools route`, req.user)
