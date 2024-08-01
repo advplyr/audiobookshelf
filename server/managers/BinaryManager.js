@@ -275,6 +275,12 @@ class BinaryManager {
   async init() {
     // Optional skip binaries check
     if (process.env.SKIP_BINARIES_CHECK === '1') {
+      for (const binary of this.requiredBinaries) {
+        if (!process.env[binary.envVariable]) {
+          await Logger.fatal(`[BinaryManager] Environment variable ${binary.envVariable} must be set`)
+          process.exit(1)
+        }
+      }
       Logger.info('[BinaryManager] Skipping check for binaries')
       return
     }
