@@ -93,6 +93,18 @@ paths:
     $ref: './controllers/MeController.yaml#/paths/~1api~1me~1progress~1{mediaId}'
   /api/session/{id}/sync:
     $ref: './controllers/SessionController.yaml#/paths/~1api~1session~1{id}~1sync'
+  /api/sessions/{id}:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1sessions~1{id}'
+  /api/session/{id}/close:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1session~1{id}~1close'
+  /api/session/{id}:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1session~1{id}'
+  /api/sessions:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1sessions'
+  /api/me/listening-sessions:
+    $ref: './controllers/MeController.yaml#/paths/~1api~1me~1listening-sessions'
+  /api/me/listening-stats:
+    $ref: './controllers/MeController.yaml#/paths/~1api~1me~1listening-stats'
 tags:
   - name: Authors
     description: Author endpoints
@@ -106,3 +118,9 @@ tags:
     description: Notifications endpoints
   - name: Podcasts
     description: Podcast endpoints
+  - name: Auth
+    description: Authentication endpoints
+  - name: Me
+    description: User endpoints
+  - name: Session
+    description: Session endpoints
