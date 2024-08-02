@@ -739,7 +739,7 @@ class LibraryItemController {
     }
     const ebookFilePath = ebookFile.metadata.path
     
-    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${ebookFile.metadata.title}" at "${ebookFilePath}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" ebook at "${ebookFilePath}"`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + ebookFilePath)
