@@ -3165,6 +3165,8 @@
         "description": "The name of the event the notification will fire on.",
         "enum": [
           "onPodcastEpisodeDownloaded",
+          "onBackupCompleted",
+          "onBackupFailed",
           "onTest"
         ]
       },

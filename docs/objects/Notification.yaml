@@ -22,7 +22,7 @@ components:
     notificationEventName:
       type: string
       description: The name of the event the notification will fire on.
-      enum: ['onPodcastEpisodeDownloaded', 'onTest']
+      enum: ['onPodcastEpisodeDownloaded', 'onBackupCompleted', 'onBackupFailed', 'onTest']
     urls:
       type: array
       items:
