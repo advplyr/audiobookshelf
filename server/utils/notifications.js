@@ -34,7 +34,7 @@ module.exports.notificationData = {
       variables: ['completionTime', 'backupPath', 'backupSize', 'backupCount', 'removedOldest'],
       defaults: {
         title: 'Backup Completed',
-        body: 'Backup has been completed successfully.\n\nPath: {{backupPath}}\nSize: {{backupSize}}\nCount: {{backupCount}}\nRemoved Oldest: {{removedOldest}}'
+        body: 'Backup has been completed successfully.\n\nPath: {{backupPath}}\nSize: {{backupSize}} bytes\nCount: {{backupCount}}\nRemoved Oldest: {{removedOldest}}'
       },
       testData: {
         completionTime: '12:00 AM',
