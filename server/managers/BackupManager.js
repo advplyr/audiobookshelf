@@ -332,7 +332,7 @@ class BackupManager {
       this.removeBackup(oldBackup)
     }
 
-    // Notifications only for auto downloaded episodes
+    // Notification for backup successfully completed
     this.notificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
 
     return true
