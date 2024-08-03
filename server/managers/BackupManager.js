@@ -293,6 +293,7 @@ class BackupManager {
     // Create backup sqlite file
     const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
       Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
+      this.notificationManager.onBackupFailed(error)
       return false
     })
 
@@ -303,6 +304,7 @@ class BackupManager {
     // Zip sqlite file, /metadata/items, and /metadata/authors folders
     const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
+      this.notificationManager.onBackupFailed(error)
       return false
     })
 
