@@ -311,6 +311,7 @@
   "LabelFilterByUser": "Filter by User",
   "LabelFindEpisodes": "Find Episodes",
   "LabelFinished": "Finished",
+  "LabelRemaining": "Remaining",
   "LabelFolder": "Folder",
   "LabelFolders": "Folders",
   "LabelFontBold": "Bold",
@@ -851,5 +852,7 @@
   "ToastSortingPrefixesUpdateFailed": "Failed to update sorting prefixes",
   "ToastSortingPrefixesUpdateSuccess": "Sorting prefixes updated ({0} items)",
   "ToastUserDeleteFailed": "Failed to delete user",
-  "ToastUserDeleteSuccess": "User deleted"
+  "ToastUserDeleteSuccess": "User deleted",
+  "ResetProgressQuestion": "Are you sure you want to reset your progress?",
+  "ResetProgressSuccess": "Your progress was reset"
 }

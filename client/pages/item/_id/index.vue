@@ -72,18 +72,6 @@
             </div>
           </div>
 
-          <!-- Progress -->
-          <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
-            <p v-if="progressPercent < 1" class="leading-6">{{ $strings.LabelYourProgress }}: {{ Math.round(progressPercent * 100) }}%</p>
-            <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
-            <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
-            <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
-
-            <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
-              <span class="material-symbols text-sm">close</span>
-            </div>
-          </div>
-
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
@@ -132,6 +120,32 @@
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
               {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
             </button>
+          </div>
+
+          <!-- progress table -->
+          <div class="my-4 w-full" v-if="!isPodcast && progressPercent > 0">
+            <table class="text-sm tracksTable">
+              <tr>
+                <th class="text-left">{{ $strings.LabelProgress }}</th>
+                <th class="text-left" v-if="progressPercent < 1">{{ $strings.LabelCurrent }}</th>
+                <th class="text-left" v-if="progressPercent < 1">{{ $strings.LabelRemaining }}</th>
+                <th class="text-left">{{ $strings.LabelStarted }}</th>
+                <th class="text-left" v-if="progressPercent == 1">{{ $strings.LabelFinished }}</th>
+                <th class="text-left"></th>
+              </tr>
+              <tr>
+                <td>{{ Math.round(progressPercent * 100) }}%</td>
+                <td v-if="progressPercent < 1">{{ $elapsedPretty(userCurrentTime) }}</td>
+                <td v-if="progressPercent < 1">{{ $elapsedPretty(userTimeRemaining) }}</td>
+                <td class="px-4">{{ $formatDate(userProgressStartedAt, dateFormat) }} {{ $formatDate(userProgressStartedAt, timeFormat) }}</td>
+                <td v-if="progressPercent == 1" class="px-4">{{ $formatDate(userProgressFinishedAt, dateFormat) }} {{ $formatDate(userProgressFinishedAt, timeFormat) }}</td>
+                <td>
+                  <div v-if="!resettingProgress" class="p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
+                    <span class="material-symbols">close</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
           </div>
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
@@ -200,6 +214,9 @@ export default {
     },
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
@@ -344,6 +361,9 @@ export default {
       if (!this.userMediaProgress) return 0
       const duration = this.userMediaProgress.duration || this.duration
       return duration - this.userMediaProgress.currentTime
+    },
+    userCurrentTime() {
+      return this.userMediaProgress ? this.userMediaProgress.currentTime : 0
     },
     useEBookProgress() {
       if (!this.userMediaProgress || this.userMediaProgress.progress) return false
@@ -624,20 +644,27 @@ export default {
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-      if (confirm(`Are you sure you want to reset your progress?`)) {
-        this.resettingProgress = true
-        this.$axios
-          .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
-          .then(() => {
-            console.log('Progress reset complete')
-            this.$toast.success(`Your progress was reset`)
-            this.resettingProgress = false
-          })
-          .catch((error) => {
-            console.error('Progress reset failed', error)
-            this.resettingProgress = false
-          })
+      const payload = {
+        message: this.$strings.ResetProgressQuestion,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.resettingProgress = true
+            this.$axios
+              .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
+              .then(() => {
+                console.log('Progress reset complete')
+                this.$toast.success(this.$strings.ResetProgressSuccess)
+                this.resettingProgress = false
+              })
+              .catch((error) => {
+                console.error('Progress reset failed', error)
+                this.resettingProgress = false
+              })
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     clickRSSFeed() {
       this.$store.commit('globals/setRSSFeedOpenCloseModal', {
