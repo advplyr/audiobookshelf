@@ -17,6 +17,17 @@ export const state = () => ({
     authorSortDesc: false,
     jumpForwardAmount: 10,
     jumpBackwardAmount: 10,
+    fieldVisibility: {
+      narrators: true,
+      publishYear: true,
+      publisher: true,
+      genres: true,
+      tags: true,
+      language: true,
+      duration: true,
+      releaseDate: true,
+      size: true
+    }
   }
 })
 
