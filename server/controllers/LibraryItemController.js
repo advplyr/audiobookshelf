@@ -76,10 +76,21 @@ class LibraryItemController {
     res.json(libraryItem.toJSON())
   }
 
+  /**
+   * DELETE: /api/items/:id
+   * Delete library item. Will delete from database and file system if hard delete is requested.
+   * Optional query params:
+   * ?hard=1
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async delete(req, res) {
     const hardDelete = req.query.hard == 1 // Delete from file system
     const libraryItemPath = req.libraryItem.path
-    await this.handleDeleteLibraryItem(req.libraryItem.mediaType, req.libraryItem.id, [req.libraryItem.media.id])
+
+    const mediaItemIds = req.libraryItem.mediaType === 'podcast' ? req.libraryItem.media.episodes.map((ep) => ep.id) : [req.libraryItem.media.id]
+    await this.handleDeleteLibraryItem(req.libraryItem.mediaType, req.libraryItem.id, mediaItemIds)
     if (hardDelete) {
       Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
       await fs.remove(libraryItemPath).catch((error) => {
@@ -366,7 +377,15 @@ class LibraryItemController {
     res.json(matchResult)
   }
 
-  // POST: api/items/batch/delete
+  /**
+   * POST: /api/items/batch/delete
+   * Batch delete library items. Will delete from database and file system if hard delete is requested.
+   * Optional query params:
+   * ?hard=1
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
   async batchDelete(req, res) {
     if (!req.user.canDelete) {
       Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
@@ -391,7 +410,8 @@ class LibraryItemController {
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
       Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
-      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, [libraryItem.media.id])
+      const mediaItemIds = libraryItem.mediaType === 'podcast' ? libraryItem.media.episodes.map((ep) => ep.id) : [libraryItem.media.id]
+      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
@@ -738,7 +758,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
     const ebookFilePath = ebookFile.metadata.path
-    
+
     Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" ebook at "${ebookFilePath}"`)
 
     if (global.XAccel) {
@@ -781,6 +801,12 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
+  /**
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
   async middleware(req, res, next) {
     req.libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)

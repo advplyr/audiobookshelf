@@ -469,11 +469,6 @@ class Database {
     return updated
   }
 
-  async removeLibraryItem(libraryItemId) {
-    if (!this.sequelize) return false
-    await this.models.libraryItem.removeById(libraryItemId)
-  }
-
   async createFeed(oldFeed) {
     if (!this.sequelize) return false
     await this.models.feed.fullCreateFromOld(oldFeed)

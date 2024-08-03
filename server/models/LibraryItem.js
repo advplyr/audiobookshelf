@@ -427,6 +427,12 @@ class LibraryItem extends Model {
     }
   }
 
+  /**
+   * Remove library item by id
+   *
+   * @param {string} libraryItemId
+   * @returns {Promise<number>} The number of destroyed rows
+   */
   static removeById(libraryItemId) {
     return this.destroy({
       where: {

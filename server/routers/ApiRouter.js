@@ -353,12 +353,13 @@ class ApiRouter {
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
    */
   async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
-    // Remove media progress for this library item from all users
-    const users = await Database.userModel.getOldUsers()
-    for (const user of users) {
-      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
-        await Database.removeMediaProgress(mediaProgress.id)
+    const numProgressRemoved = await Database.mediaProgressModel.destroy({
+      where: {
+        mediaItemId: mediaItemIds
       }
+    })
+    if (numProgressRemoved > 0) {
+      Logger.info(`[ApiRouter] Removed ${numProgressRemoved} media progress entries for library item "${libraryItemId}"`)
     }
 
     // TODO: Remove open sessions for library item
@@ -424,11 +425,11 @@ class ApiRouter {
 
     const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
     if (await fs.pathExists(itemMetadataPath)) {
-      Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
+      Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
       await fs.remove(itemMetadataPath)
     }
 
-    await Database.removeLibraryItem(libraryItemId)
+    await Database.libraryItemModel.removeById(libraryItemId)
 
     SocketAuthority.emitter('item_removed', {
       id: libraryItemId
