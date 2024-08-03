@@ -50,6 +50,16 @@ class NotificationManager {
     this.triggerNotification('onBackupCompleted', eventData)
   }
 
+  async onBackupFailed(errorMsg) {
+    if (!Database.notificationSettings.isUseable) return
+
+    Logger.debug(`[NotificationManager] onBackupFailed: Backup failed`)
+    const eventData = {
+      errorMsg: errorMsg || 'Backup failed'
+    }
+    this.triggerNotification('onBackupFailed', eventData)
+  }
+
   onTest() {
     this.triggerNotification('onTest')
   }

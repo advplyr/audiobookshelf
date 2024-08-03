@@ -45,6 +45,19 @@ module.exports.notificationData = {
       }
     },
     {
+      name: 'onBackupFailed',
+      requiresLibrary: false,
+      description: 'Triggered when a backup fails',
+      variables: ['errorMsg'],
+      defaults: {
+        title: 'Backup Failed',
+        body: 'Backup failed, check ABS logs for more information.\nError message: {{errorMsg}}'
+      },
+      testData: {
+        errorMsg: 'Example error message'
+      }
+    },
+    {
       name: 'onTest',
       requiresLibrary: false,
       description: 'Event for testing the notification system',
