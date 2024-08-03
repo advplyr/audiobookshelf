@@ -311,7 +311,6 @@
   "LabelFilterByUser": "Filter by User",
   "LabelFindEpisodes": "Find Episodes",
   "LabelFinished": "Finished",
-  "LabelRemaining": "Remaining",
   "LabelFolder": "Folder",
   "LabelFolders": "Folders",
   "LabelFontBold": "Bold",
@@ -467,6 +466,7 @@
   "LabelRedo": "Redo",
   "LabelRegion": "Region",
   "LabelReleaseDate": "Release Date",
+  "LabelRemaining": "Remaining",
   "LabelRemoveCover": "Remove cover",
   "LabelRowsPerPage": "Rows per page",
   "LabelSearchTerm": "Search Term",
@@ -772,6 +772,8 @@
   "PlaceholderNewPlaylist": "New playlist name",
   "PlaceholderSearch": "Search..",
   "PlaceholderSearchEpisode": "Search episode..",
+  "ResetProgressQuestion": "Are you sure you want to reset your progress?",
+  "ResetProgressSuccess": "Your progress was reset",
   "ToastAccountUpdateFailed": "Failed to update account",
   "ToastAccountUpdateSuccess": "Account updated",
   "ToastAuthorImageRemoveFailed": "Failed to remove image",
@@ -852,7 +854,5 @@
   "ToastSortingPrefixesUpdateFailed": "Failed to update sorting prefixes",
   "ToastSortingPrefixesUpdateSuccess": "Sorting prefixes updated ({0} items)",
   "ToastUserDeleteFailed": "Failed to delete user",
-  "ToastUserDeleteSuccess": "User deleted",
-  "ResetProgressQuestion": "Are you sure you want to reset your progress?",
-  "ResetProgressSuccess": "Your progress was reset"
+  "ToastUserDeleteSuccess": "User deleted"
 }
