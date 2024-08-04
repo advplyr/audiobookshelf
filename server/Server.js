@@ -231,7 +231,7 @@ class Server {
               validate: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v.toString())
             }
           ],
-          unknownFormats: ['li_[a-z0-9]{18}', '[0-9]*'],
+          unknownFormats: ['li_[a-z0-9]{18}', 'pod_[a-z0-9]{18}', '[0-9]*'],
           ignoreUndocumented: true
         })
       )
