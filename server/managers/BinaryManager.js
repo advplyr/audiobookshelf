@@ -224,10 +224,12 @@ class Binary {
   }
 
   getFileName() {
+    const platform = process.platform
+
     if (this.type === 'executable') {
-      return this.name + (process.platform == 'win32' ? '.exe' : '')
+      return this.name + (platform == 'win32' ? '.exe' : '')
     } else if (this.type === 'library') {
-      return this.name + (process.platform == 'win32' ? '.dll' : '.so')
+      return this.name + (platform == 'win32' ? '.dll' : platform == 'darwin' ? '.dylib' : '.so')
     } else {
       return this.name
     }
