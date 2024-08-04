@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -7,18 +7,32 @@ const User = require('../objects/user/User')
 
 const { toNumber } = require('../utils/index')
 
-class UserController {
-  constructor() { }
+/**
+ * @typedef UserControllerRequestProps
+ * @property {import('../objects/user/User')} user - User that made the request
+ * @property {import('../objects/user/User')} [reqUser] - User for req param id
+ *
+ * @typedef {import('express').Request & UserControllerRequestProps} UserControllerRequest
+ * @typedef {import('express').Response} UserControllerResponse
+ */
 
+class UserController {
+  constructor() {}
+
+  /**
+   *
+   * @param {UserControllerRequest} req
+   * @param {UserControllerResponse} res
+   */
   async findAll(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
 
-    const includes = (req.query.include || '').split(',').map(i => i.trim())
+    const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
     const allUsers = await Database.userModel.getOldUsers()
-    const users = allUsers.map(u => u.toJSONForBrowser(hideRootToken, true))
+    const users = allUsers.map((u) => u.toJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
@@ -36,9 +50,9 @@ class UserController {
    * GET: /api/users/:id
    * Get a single user toJSONForBrowser
    * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   * 
-   * @param {import("express").Request} req 
-   * @param {import("express").Response} res 
+   *
+   * @param {UserControllerRequest} req
+   * @param {UserControllerResponse} res
    */
   async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -67,7 +81,7 @@ class UserController {
       ]
     })
 
-    const oldMediaProgresses = mediaProgresses.map(mp => {
+    const oldMediaProgresses = mediaProgresses.map((mp) => {
       const oldMediaProgress = mp.getOldMediaProgress()
       oldMediaProgress.displayTitle = mp.mediaItem?.title
       if (mp.mediaItem?.podcast) {
@@ -118,9 +132,9 @@ class UserController {
   /**
    * PATCH: /api/users/:id
    * Update user
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {UserControllerRequest} req
+   * @param {UserControllerResponse} res
    */
   async update(req, res) {
     const user = req.reqUser
@@ -196,9 +210,9 @@ class UserController {
 
   /**
    * PATCH: /api/users/:id/openid-unlink
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {UserControllerRequest} req
+   * @param {UserControllerResponse} res
    */
   async unlinkFromOpenID(req, res) {
     Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)

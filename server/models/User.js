@@ -19,6 +19,8 @@ class User extends Model {
     this.pash
     /** @type {string} */
     this.type
+    /** @type {string} */
+    this.token
     /** @type {boolean} */
     this.isActive
     /** @type {boolean} */
@@ -35,6 +37,8 @@ class User extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {import('./MediaProgress')[]?} - Only included when extended */
+    this.mediaProgresses
   }
 
   /**
