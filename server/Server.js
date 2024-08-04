@@ -205,12 +205,15 @@ class Server {
     })
 
     // Install the OpenApiValidator middleware if using a dev environment
-    if (Logger.isDev) {
-      // If you do not want to use this, you can comment out the entire section
-      // or only certain parts.
+    if (Logger.isDev && false) {
+      // This is a solution to validate the API responses, but is a work in progress.
+      // By default, this is disabled because invalide API requests or responses can cause
+      // crashes in the web client while developing other parts of the application.
       //
-      // The default value of `validateResponses` is false, so it can be safely commented
-      // out if the validation is causing problems.
+      // The OpenAPI spec is still a work in progress.
+      //
+      // If you would like to only validate responses or requests, you can adjust the
+      // `validateRequests` and `validateResponses` options accordingly.
       const apiSpec = Path.join(__dirname, '..', 'docs', 'openapi.json')
       app.use(
         OpenApiValidator.middleware({
