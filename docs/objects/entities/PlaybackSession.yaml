@@ -7,6 +7,17 @@ components:
     playbackSession:
       type: object
       description: A playback session object.
+      oneOf:
+        - $ref: '#/components/schemas/playbackSessionBook'
+        - $ref: '#/components/schemas/playbackSessionPodcast'
+      discriminator:
+        propertyName: mediaType
+        mapping:
+          book: '#/components/schemas/playbackSessionBook'
+          podcast: '#/components/schemas/playbackSessionPodcast'
+    playbackSessionBase:
+      type: object
+      description: Base playback session object.
       properties:
         id:
           $ref: '#/components/schemas/playbackSessionId'
@@ -16,20 +27,8 @@ components:
           $ref: '../Library.yaml#/components/schemas/libraryId'
         libraryItemId:
           $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
-        episodeId:
-          $ref: '../mediaTypes/Podcast.yaml#/components/schemas/podcastId'
         mediaType:
           $ref: '../mediaTypes/media.yaml#/components/schemas/mediaType'
-        mediaMetadata:
-          description: The metadata of the media.
-          oneOf:
-            - $ref: '../mediaTypes/Book.yaml#/components/schemas/bookMinified'
-            - $ref: '../mediaTypes/Podcast.yaml#/components/schemas/Podcast'
-        chapters:
-          description: The chapters of the media.
-          type: array
-          items:
-            $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
         displayTitle:
           description: The display title of the media.
           type: string
@@ -66,19 +65,67 @@ components:
           $ref: '../../schemas.yaml#/components/schemas/createdAt'
         updatedAt:
           $ref: '../../schemas.yaml#/components/schemas/updatedAt'
-    playbackSessionExpanded:
-      description: Expanded playback session schema.
+    playbackSessionBook:
+      description: Book playback session schema.
       allOf:
-        - $ref: '#/components/schemas/playbackSession'
+        - $ref: '#/components/schemas/playbackSessionBase'
+        - properties:
+            mediaMetadata:
+              $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookMetadata'
+            chapters:
+              description: The chapters of the media.
+              type: array
+              items:
+                $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
+    playbackSessionPodcast:
+      description: Podcast playback session schema.
+      allOf:
+        - $ref: '#/components/schemas/playbackSessionBase'
+        - properties:
+            mediaMetadata:
+              $ref: '../metadata/PodcastMetadata.yaml#/components/schemas/PodcastMetadata'
+            episodeId:
+              $ref: '../mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+    playbackSessionExpanded:
+      type: object
+      description: A playback session object.
+      oneOf:
+        - $ref: '#/components/schemas/playbackSessionBookExpanded'
+        - $ref: '#/components/schemas/playbackSessionPodcastExpanded'
+      discriminator:
+        propertyName: mediaType
+        mapping:
+          book: '#/components/schemas/playbackSessionBookExpanded'
+          podcast: '#/components/schemas/playbackSessionPodcastExpanded'
+    playbackSessionBookExpanded:
+      description: Expanded book playback session schema.
+      allOf:
+        - $ref: '#/components/schemas/playbackSessionBook'
         - properties:
             audioTracks:
               description: The audio tracks of the media.
               type: array
               items:
-                  $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
+                $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
             videoTrack:
               description: The video track of the media. TODO
               type: object
               nullable: true
             libraryItem:
-                $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'
+              $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'
+    playbackSessionPodcastExpanded:
+      description: Expanded podcast playback session schema.
+      allOf:
+        - $ref: '#/components/schemas/playbackSessionPodcast'
+        - properties:
+            audioTracks:
+              description: The audio tracks of the media.
+              type: array
+              items:
+                $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
+            videoTrack:
+              description: The video track of the media. TODO
+              type: object
+              nullable: true
+            libraryItem:
+              $ref: '../LibraryItem.yaml#/components/schemas/libraryItem'

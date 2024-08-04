@@ -18,41 +18,41 @@ paths:
           description: The current time of the session.
           required: true
           schema:
-              $ref: '../schemas.yaml#/components/schemas/durationSec'
+            $ref: '../schemas.yaml#/components/schemas/durationSec'
         - name: timeListened
           in: query
           description: The time listened to the session.
           required: true
           schema:
-              $ref: '../schemas.yaml#/components/schemas/durationSec'
+            $ref: '../schemas.yaml#/components/schemas/durationSec'
         - name: duration
           in: query
           description: The duration of the session.
           required: true
           schema:
-              $ref: '../schemas.yaml#/components/schemas/durationSec'
+            $ref: '../schemas.yaml#/components/schemas/durationSec'
       responses:
         '200':
-            description: OK
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: OK
+          description: OK
+          content:
+            html/text:
+              schema:
+                type: string
+                example: OK
         '404':
-            description: No listening session with the provided ID is open, or the session belongs to another user.
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Not Found
+          description: No listening session with the provided ID is open, or the session belongs to another user.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Not Found
         '500':
-            description: There was an error syncing the session.
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Internal Server Error
+          description: There was an error syncing the session.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Internal Server Error
   /api/sessions/{id}:
     delete:
       operationId: deleteSession
@@ -69,26 +69,26 @@ paths:
             $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionId'
       responses:
         '200':
-            description: OK
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: OK
+          description: OK
+          content:
+            html/text:
+              schema:
+                type: string
+                example: OK
         '403':
-            description: A user with delete permissions is required to delete sessions.
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Forbidden
+          description: A user with delete permissions is required to delete sessions.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Forbidden
         '404':
-            description: No listening session with the provided ID was found.
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Not Found
+          description: No listening session with the provided ID was found.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Not Found
   /api/session/{id}/close:
     post:
       operationId: closeSession
@@ -123,103 +123,103 @@ paths:
             $ref: '../schemas.yaml#/components/schemas/durationSec'
       responses:
         '200':
-            description: OK
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: OK
+          description: OK
+          content:
+            html/text:
+              schema:
+                type: string
+                example: OK
         '404':
-            description: No listening session with the provided ID is open, or the session belongs to another user.
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Not Found
+          description: No listening session with the provided ID is open, or the session belongs to another user.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Not Found
   /api/session/{id}:
     get:
-        operationId: getSession
-        summary: Get a listening session.
-        description: Get a listening session.
-        tags:
-            - Session
-        parameters:
-            - name: id
-              in: path
-              description: The ID of the session.
-              required: true
+      operationId: getSession
+      summary: Get a listening session.
+      description: Get a listening session.
+      tags:
+        - Session
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the session.
+          required: true
+          schema:
+            $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
               schema:
-                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionId'
-        responses:
-            '200':
-                description: OK
-                content:
-                    application/json:
-                      schema:
-                        $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
-            '404':
-                description: No listening session with the provided ID was found.
-                content:
-                    html/text:
-                      schema:
-                          type: string
-                          example: Not Found
+                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
+        '404':
+          description: No listening session with the provided ID was found.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Not Found
   /api/sessions:
     get:
-        operationId: getSessions
-        summary: Get all listening sessions.
-        description: Get all listening sessions.
-        tags:
-            - Session
-        parameters:
-          - name: user
-            in: query
-            description: The ID of the user to filter listening sessions by.
-            required: false
-            schema:
-                $ref: '../objects/entities/User.yaml#/components/schemas/userId'
-          - name: itemsPerPage
-            in: query
-            description: The number of items to return.
-            required: false
-            schema:
-                $ref: '../schemas.yaml#/components/schemas/limit'
-          - name: page
-            in: query
-            description: The page number (zero indexed) to return.
-            required: false
-            schema:
-                $ref: '../schemas.yaml#/components/schemas/page'
-        responses:
-            '200':
-                description: OK
-                content:
-                    application/json:
-                      schema:
-                        type: object
-                        properties:
-                          results:
-                            type: array
-                            items:
-                              $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'
-                          total:
-                            $ref: '../schemas.yaml#/components/schemas/total'
-                          itemsPerPage:
-                            $ref: '../schemas.yaml#/components/schemas/limit'
-                          numPages:
-                            description: The number of pages.
-                            type: integer
-                            example: 10
-                          userFilter:
-                            description: If provided, the `user` parameter.
-                          sessions:
-                            type: array
-                            items:
-                              $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'
-            '404':
-                description: No listening sessions were found.
-                content:
-                    html/text:
-                      schema:
-                          type: string
-                          example: Not Found
+      operationId: getSessions
+      summary: Get all listening sessions.
+      description: Get all listening sessions.
+      tags:
+        - Session
+      parameters:
+        - name: user
+          in: query
+          description: The ID of the user to filter listening sessions by.
+          required: false
+          schema:
+            $ref: '../objects/entities/User.yaml#/components/schemas/userId'
+        - name: itemsPerPage
+          in: query
+          description: The number of items to return.
+          required: false
+          schema:
+            $ref: '../schemas.yaml#/components/schemas/limit'
+        - name: page
+          in: query
+          description: The page number (zero indexed) to return.
+          required: false
+          schema:
+            $ref: '../schemas.yaml#/components/schemas/page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemBase'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  itemsPerPage:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  numPages:
+                    description: The number of pages.
+                    type: integer
+                    example: 10
+                  userFilter:
+                    description: If provided, the `user` parameter.
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'
+        '404':
+          description: No listening sessions were found.
+          content:
+            html/text:
+              schema:
+                type: string
+                example: Not Found

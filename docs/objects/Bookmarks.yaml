@@ -7,7 +7,7 @@ components:
     bookmark:
       properties:
         libraryItemId:
-          $ref: 'LibraryItem.yaml#/components/schemas/libraryItemId'
+          $ref: './LibraryItem.yaml#/components/schemas/libraryItemId'
         title:
           type: string
           description: The title of the bookmark.

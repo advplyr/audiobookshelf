@@ -4,6 +4,14 @@ components:
       description: The total time listened in seconds.
       type: integer
       example: 123456
+  responses:
+    me404:
+      description: Not Found
+      content:
+        html/text:
+          schema:
+            type: string
+            example: Not Found
 paths:
   /api/me:
     get:
@@ -14,11 +22,34 @@ paths:
         - Me
       responses:
         '200':
-            description: Success
-            content:
-                application/json:
-                  schema:
-                      $ref: '../objects/entities/User.yaml#/components/schemas/user'
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/User.yaml#/components/schemas/user'
+  /api/me/progress/{libraryItemId}:
+    parameters:
+      - name: libraryItemId
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+    get:
+      operationId: getProgressLibraryItem
+      summary: Get the user's progress for a library item.
+      description: Get the user's progress for a library item.
+      tags:
+        - Me
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
+        '404':
+          $ref: '#/components/responses/me404'
   /api/me/progress/{libraryItemId}/{episodeId}:
     parameters:
       - name: libraryItemId
@@ -30,57 +61,24 @@ paths:
       - name: episodeId
         in: path
         description: The ID of the episode to get progress for.
-        required: false
+        required: true
         schema:
           $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
     get:
-      operationId: getProgress
-      summary: Get the user's progress for a library item.
-      description: Get the user's progress for a library item.
+      operationId: getProgressPodcastEpisode
+      summary: Get the user's progress for a podcast episode.
+      description: Get the user's progress for a podcast episode.
       tags:
         - Me
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/Media.yaml#/components/schemas/mediaProgressPodcastEpisode'
         '404':
-            description: Not Found
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Not Found
-  /api/me/progress/{mediaId}:
-    parameters:
-      - name: mediaId
-        in: path
-        description: The ID of the media progress.
-        required: true
-        schema:
-          $ref: '../objects/Media.yaml#/components/schemas/mediaProgressId'
-    get:
-      operationId: getProgressById
-      summary: Get the user's progress for a media item.
-      description: Get the user's progress for a media item.
-      tags:
-        - Me
-      responses:
-        '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      $ref: '../objects/Media.yaml#/components/schemas/mediaProgress'
-        '404':
-            description: Not Found
-            content:
-                html/text:
-                  schema:
-                      type: string
-                      example: Not Found
+          $ref: '#/components/responses/me404'
   /api/me/listening-sessions:
     get:
       operationId: getListeningSessions
@@ -94,32 +92,32 @@ paths:
           description: The number of items per page.
           required: true
           schema:
-              $ref: '../schemas.yaml#/components/schemas/limit'
+            $ref: '../schemas.yaml#/components/schemas/limit'
         - name: page
           in: query
           description: The page number (zero indexed) to return.
           required: true
           schema:
-              $ref: '../schemas.yaml#/components/schemas/page'
+            $ref: '../schemas.yaml#/components/schemas/page'
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      type: object
-                      properties:
-                          total:
-                              $ref: '../schemas.yaml#/components/schemas/total'
-                          numPages:
-                              description: The number of pages.
-                              type: integer
-                          itemsPerPage:
-                            $ref: '../schemas.yaml#/components/schemas/limit'
-                          sessions:
-                              type: array
-                              items:
-                                  $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  numPages:
+                    description: The number of pages.
+                    type: integer
+                  itemsPerPage:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'
   /api/me/items-in-progress:
     get:
       operationId: getItemsInProgress
@@ -133,26 +131,26 @@ paths:
           description: The number of items to return.
           required: false
           schema:
-              $ref: '../schemas.yaml#/components/schemas/limit'
+            $ref: '../schemas.yaml#/components/schemas/limit'
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
-                      type: object
-                      properties:
-                          total:
-                              $ref: '../schemas.yaml#/components/schemas/total'
-                          numPages:
-                              description: The number of pages.
-                              type: integer
-                          itemsPerPage:
-                            $ref: '../schemas.yaml#/components/schemas/limit'
-                          items:
-                              type: array
-                              items:
-                                  $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  numPages:
+                    description: The number of pages.
+                    type: integer
+                  itemsPerPage:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  items:
+                    type: array
+                    items:
+                      $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
   /api/me/listening-stats:
     get:
       operationId: getListeningStats
@@ -162,46 +160,46 @@ paths:
         - Me
       responses:
         '200':
-            description: OK
-            content:
-                application/json:
-                  schema:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalTime:
+                    $ref: '#/components/schemas/totalTime'
+                  items:
+                    type: object
+                    description: A list of library items the user has listened to, keyed by their item IDs.
+                    additionalProperties:
                       type: object
                       properties:
-                          totalTime:
-                              $ref: '#/components/schemas/totalTime'
-                          items:
-                            type: object
-                            description: A list of library items the user has listened to, keyed by their item IDs.
-                            additionalProperties:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  description: The ID of the library item.
-                                timeListening:
-                                  type: integer
-                                  description: The time (in seconds) the user listened to this library item.
-                                mediaMetadata:
-                                  oneOf:
-                                    - $ref: '../objects/metadata/BookMetadata.yaml#/components/schemas/bookMetadata'
-                                    - $ref: '../objects/metadata/PodcastMetadata.yaml#/components/schemas/PodcastMetadata'
-                          days:
-                            type: object
-                            description: A mapping of days to total listening times.
-                            additionalProperties:
-                              type: integer
-                              description: The total time (in seconds) listened to on that day.
-                          dayOfWeek:
-                            type: object
-                            description: A mapping of days of the week to total listening times.
-                            additionalProperties:
-                              type: integer
-                              description: The total time (in seconds) listened to on that day of the week.
-                          today:
-                            type: integer
-                            description: The time (in seconds) the user has listened to library items today.
-                          recentSessions:
-                            type: array
-                            items:
-                                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'
+                        id:
+                          type: string
+                          description: The ID of the library item.
+                        timeListening:
+                          type: integer
+                          description: The time (in seconds) the user listened to this library item.
+                        mediaMetadata:
+                          oneOf:
+                            - $ref: '../objects/metadata/BookMetadata.yaml#/components/schemas/bookMetadata'
+                            - $ref: '../objects/metadata/PodcastMetadata.yaml#/components/schemas/PodcastMetadata'
+                  days:
+                    type: object
+                    description: A mapping of days to total listening times.
+                    additionalProperties:
+                      type: integer
+                      description: The total time (in seconds) listened to on that day.
+                  dayOfWeek:
+                    type: object
+                    description: A mapping of days of the week to total listening times.
+                    additionalProperties:
+                      type: integer
+                      description: The total time (in seconds) listened to on that day of the week.
+                  today:
+                    type: integer
+                    description: The time (in seconds) the user has listened to library items today.
+                  recentSessions:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSession'

@@ -93,19 +93,18 @@ components:
           type: string
           example: audio/mpeg
     libraryFile:
-        type: object
-        description: A library file. Includes the path and metadata of the file.
-        properties:
-            ino:
-              $ref: '../../schemas.yaml#/components/schemas/inode'
-            addedAt:
-              $ref: '../../schemas.yaml#/components/schemas/addedAt'
-            updatedAt:
-              $ref: '../../schemas.yaml#/components/schemas/updatedAt'
-            fileType:
-              description: The type of file.
-              type: string
-              example: audio
-            metadata:
-              $ref: '../metadata/FileMetadata.yaml#/components/schemas/fileMetadata'
-
+      type: object
+      description: A library file. Includes the path and metadata of the file.
+      properties:
+        ino:
+          $ref: '../../schemas.yaml#/components/schemas/inode'
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+        fileType:
+          description: The type of file.
+          type: string
+          example: audio
+        metadata:
+          $ref: '../metadata/FileMetadata.yaml#/components/schemas/fileMetadata'

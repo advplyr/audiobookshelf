@@ -4,6 +4,8 @@ paths:
       summary: Login to the server
       description: Logs in a client to the server, returning information about the user and server.
       operationId: login
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -15,9 +17,6 @@ paths:
                   $ref: '../objects/entities/User.yaml#/components/schemas/username'
                 password:
                   $ref: '../objects/entities/User.yaml#/components/schemas/password'
-              required:
-                - username
-                - password
       responses:
         '200':
           description: Success
@@ -40,6 +39,8 @@ paths:
       summary: Logout from the server
       description: Logs out a client from the server. If the socketId parameter is provided, the server removes the socket from the client list.
       operationId: logout
+      tags:
+        - Auth
       requestBody:
         required: true
         content:

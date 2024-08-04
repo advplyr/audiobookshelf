@@ -5,38 +5,72 @@ components:
       description: The ID of the media progress.
       example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
       format: uuid
+    progress:
+      type: number
+      description: The user's progress in the media item.
+      example: 0.5
+    currentTime:
+      type: number
+      description: The user's current time in the media item.
+      example: 0.5
+    isFinished:
+      type: boolean
+      description: Whether the user has finished the media item.
+      example: false
+    hideFromContinueListening:
+      type: boolean
+      description: Whether the media item should be hidden from the continue listening section.
+      example: false
+    finishedAt:
+      type: integer
+      nullable: true
+      description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
+      example: 1616239000
     mediaProgress:
       type: object
       properties:
         id:
           $ref: '#/components/schemas/mediaProgressId'
         libraryItemId:
-          $ref: 'LibraryItem.yaml#/components/schemas/libraryItemId'
-        episodeId:
-          $ref: 'mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+          $ref: './LibraryItem.yaml#/components/schemas/libraryItemId'
         duration:
           $ref: '../schemas.yaml#/components/schemas/durationSec'
         progress:
-          type: number
-          description: The user's progress in the media item.
-          example: 0.5
+          $ref: '#/components/schemas/progress'
         currentTime:
-          type: number
-          description: The user's current time in the media item.
-          example: 0.5
+          $ref: '#/components/schemas/currentTime'
         isFinished:
-          type: boolean
-          description: Whether the user has finished the media item.
-          example: false
+          $ref: '#/components/schemas/isFinished'
         hideFromContinueListening:
-          type: boolean
-          description: Whether the media item should be hidden from the continue listening section.
-          example: false
+          $ref: '#/components/schemas/hideFromContinueListening'
         lastUpdate:
           $ref: '../schemas.yaml#/components/schemas/updatedAt'
         startedAt:
           $ref: '../schemas.yaml#/components/schemas/createdAt'
         finishedAt:
-          type: integer
-          description: The time (in ms since POSIX epoch) when the media was finished. Will be null if the media has is not finished.
-          example: 1616239000
+          $ref: '#/components/schemas/finishedAt'
+    mediaProgressPodcastEpisode:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/mediaProgressId'
+        libraryItemId:
+          $ref: './LibraryItem.yaml#/components/schemas/libraryItemId'
+        episodeId:
+          $ref: './mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+        duration:
+          $ref: '../schemas.yaml#/components/schemas/durationSec'
+        progress:
+          $ref: '#/components/schemas/progress'
+        currentTime:
+          $ref: '#/components/schemas/currentTime'
+        isFinished:
+          $ref: '#/components/schemas/isFinished'
+        hideFromContinueListening:
+          $ref: '#/components/schemas/hideFromContinueListening'
+        lastUpdate:
+          $ref: '../schemas.yaml#/components/schemas/updatedAt'
+        startedAt:
+          $ref: '../schemas.yaml#/components/schemas/createdAt'
+        finishedAt:
+          $ref: '#/components/schemas/finishedAt'
