@@ -10,7 +10,7 @@
         <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
+      <modals-changelog-view-modal v-model="showChangelogModal" :versionData="versionData" />
     </div>
 
     <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
@@ -19,7 +19,7 @@
 
         <p class="text-xs text-gray-300 italic">{{ Source }}</p>
       </div>
-      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
+      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ $config.version }}</a>
     </div>
   </div>
 </template>
@@ -156,14 +156,8 @@ export default {
     hasUpdate() {
       return !!this.versionData.hasUpdate
     },
-    latestVersion() {
-      return this.versionData.latestVersion
-    },
     githubTagUrl() {
       return this.versionData.githubTagUrl
-    },
-    currentVersionChangelog() {
-      return this.versionData.currentVersionChangelog || 'No Changelog Available'
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
