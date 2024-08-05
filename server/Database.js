@@ -17,6 +17,14 @@ class Database {
 
     this.settings = []
 
+    this.loadUnicodeExtionsion = process.platform === 'linux' && process.arch === 'arm64' ? false : true
+
+    if (this.loadUnicodeExtionsion) {
+      this.normalize = (value) => `lower(unaccent(${value}))`
+    } else {
+      this.normalize = (value) => value
+    }
+
     // Cached library filter data
     this.libraryFilterData = {}
 
@@ -205,9 +213,11 @@ class Database {
     // Helper function
     this.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
 
+    const extensions = this.loadUnicodeExtionsion ? [process.env.SQLEAN_UNICODE_PATH] : []
+
     try {
       await this.sequelize.authenticate()
-      await this.loadExtensions([process.env.SQLEAN_UNICODE_PATH])
+      await this.loadExtensions(extensions)
       Logger.info(`[Database] Db connection was successful`)
       return true
     } catch (error) {
@@ -824,15 +834,6 @@ class Database {
     if (badSessionsRemoved > 0) {
       Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
-  }
-
-  /**
-   *
-   * @param {string} value
-   * @returns {string}
-   */
-  normalize(value) {
-    return `lower(unaccent(${value}))`
   }
 
   /**
