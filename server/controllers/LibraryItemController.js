@@ -109,6 +109,9 @@ class LibraryItemController {
    * @param {import('express').Response} res
    */
   download(req, res) {
+    const libraryItemPath = req.libraryItem.path
+    const itemTitle = req.libraryItem.media.metadata.title
+    
     if (!req.user.canDownload) {
       Logger.warn('User attempted to download without permission', req.user)
       return res.sendStatus(403)
@@ -117,17 +120,15 @@ class LibraryItemController {
     // If library item is a single file in root dir then no need to zip
     if (req.libraryItem.isFile) {
       // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(req.libraryItem.path))
+      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
       if (audioMimeType) {
         res.setHeader('Content-Type', audioMimeType)
       }
-
+      Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
       res.download(req.libraryItem.path, req.libraryItem.relPath)
       return
     }
 
-    const libraryItemPath = req.libraryItem.path
-    const itemTitle = req.libraryItem.media.metadata.title
     Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
     const filename = `${itemTitle}.zip`
     zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
