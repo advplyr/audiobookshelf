@@ -16,6 +16,7 @@ RUN apk update && \
     tzdata \
     ffmpeg \
     make \
+    gcompat \
     python3 \
     g++ \
     tini
