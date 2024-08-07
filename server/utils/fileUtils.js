@@ -15,7 +15,7 @@ const { AudioMimeType } = require('./constants')
  */
 const filePathToPOSIX = (path) => {
   if (!global.isWin || !path) return path
-  return path.replace(/\\/g, '/')
+  return path.startsWith('\\\\') ? '\\\\' + path.slice(2).replace(/\\/g, '/') : path.replace(/\\/g, '/')
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
@@ -169,7 +169,7 @@ async function recurseFiles(path, relPathToReplace = null) {
     extensions: true,
     deep: true,
     realPath: true,
-    normalizePath: true
+    normalizePath: false
   }
   let list = await rra.list(path, options)
   if (list.error) {
@@ -186,6 +186,8 @@ async function recurseFiles(path, relPathToReplace = null) {
         return false
       }
 
+      item.fullname = filePathToPOSIX(item.fullname)
+      item.path = filePathToPOSIX(item.path)
       const relpath = item.fullname.replace(relPathToReplace, '')
       let reldirname = Path.dirname(relpath)
       if (reldirname === '.') reldirname = ''
