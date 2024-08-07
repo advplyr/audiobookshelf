@@ -6,10 +6,15 @@
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">
-      <p class="text-xl font-bold pb-4">
-        Changelog <a :href="currentTagUrl" target="_blank" class="hover:underline">v{{ currentVersionNumber }}</a> ({{ currentVersionPubDate }})
-      </p>
-      <div class="custom-text" v-html="compiledMarkedown" />
+      <template v-for="release in releasesToShow">
+        <div :key="release.name">
+          <p class="text-xl font-bold pb-4">
+            Changelog <a :href="`https://github.com/advplyr/audiobookshelf/releases/tag/${release.name}`" target="_blank" class="hover:underline">{{ release.name }}</a> ({{ $formatDate(release.pubdate, dateFormat) }})
+          </p>
+          <div class="custom-text" v-html="getChangelog(release)" />
+        </div>
+        <div v-if="release !== releasesToShow[releasesToShow.length - 1]" class="border-b border-black-300 my-8" />
+      </template>
     </div>
   </modals-modal>
 </template>
@@ -37,24 +42,15 @@ export default {
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },
-    changelog() {
-      return this.versionData?.currentVersionChangelog || 'No Changelog Available'
-    },
-    compiledMarkedown() {
-      return marked.parse(this.changelog, { gfm: true, breaks: true })
-    },
-    currentVersionPubDate() {
-      if (!this.versionData?.currentVersionPubDate) return 'Unknown release date'
-      return `${this.$formatDate(this.versionData.currentVersionPubDate, this.dateFormat)}`
-    },
-    currentTagUrl() {
-      return this.versionData?.currentTagUrl
-    },
-    currentVersionNumber() {
-      return this.$config.version
+    releasesToShow() {
+      return this.versionData?.releasesToShow || []
     }
   },
-  methods: {},
+  methods: {
+    getChangelog(release) {
+      return marked.parse(release.changelog || 'No Changelog Available', { gfm: true, breaks: true })
+    }
+  },
   mounted() {}
 }
 </script>

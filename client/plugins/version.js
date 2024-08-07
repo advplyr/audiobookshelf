@@ -11,6 +11,7 @@ function parseSemver(ver) {
       return null
     }
     return {
+      name: ver,
       total,
       version: groups[2],
       major: Number(groups[3]),
@@ -24,49 +25,60 @@ function parseSemver(ver) {
   return null
 }
 
+function getReleases() {
+  return axios
+    .get(`https://api.github.com/repos/advplyr/audiobookshelf/releases`)
+    .then((res) => {
+      return res.data
+        .map((release) => {
+          const tagName = release.tag_name
+          const verObj = parseSemver(tagName)
+          if (verObj) {
+            verObj.pubdate = new Date(release.published_at)
+            verObj.changelog = release.body
+            return verObj
+          }
+          return null
+        })
+        .filter((verObj) => verObj)
+    })
+    .catch((error) => {
+      console.error('Failed to get releases', error)
+      return []
+    })
+}
+
 export const currentVersion = packagejson.version
 
 export async function checkForUpdate() {
   if (!packagejson.version) {
     return null
   }
-  var currVerObj = parseSemver('v' + packagejson.version)
-  if (!currVerObj) {
-    console.error('Invalid version', packagejson.version)
-    return null
-  }
-  var largestVer = null
-  await axios.get(`https://api.github.com/repos/advplyr/audiobookshelf/releases`).then((res) => {
-    var releases = res.data
-    if (releases && releases.length) {
-      releases.forEach((release) => {
-        var tagName = release.tag_name
-        var verObj = parseSemver(tagName)
-        if (verObj) {
-          if (!largestVer || largestVer.total < verObj.total) {
-            largestVer = verObj
-          }
-        }
 
-        if (verObj.version == currVerObj.version) {
-          currVerObj.pubdate = new Date(release.published_at)
-          currVerObj.changelog = release.body
-        }
-      })
-    }
-  })
-  if (!largestVer) {
-    console.error('No valid version tags to compare with')
+  const releases = await getReleases()
+  if (!releases.length) {
+    console.error('No releases found')
     return null
   }
+
+  const currentVersion = releases.find((release) => release.version == packagejson.version)
+  if (!currentVersion) {
+    console.error('Current version not found in releases')
+    return null
+  }
+
+  const latestVersion = releases[0]
+  const currentVersionMinor = currentVersion.minor
+  // Show all releases with the same minor version and lower or equal total version
+  const releasesToShow = releases.filter((release) => {
+    return release.minor == currentVersionMinor && release.total <= currentVersion.total
+  })
 
   return {
-    hasUpdate: largestVer.total > currVerObj.total,
-    latestVersion: largestVer.version,
-    githubTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${largestVer.version}`,
-    currentVersion: currVerObj.version,
-    currentTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${currVerObj.version}`,
-    currentVersionPubDate: currVerObj.pubdate,
-    currentVersionChangelog: currVerObj.changelog
+    hasUpdate: latestVersion.total > currentVersion.total,
+    latestVersion: latestVersion.version,
+    githubTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${latestVersion.version}`,
+    currentVersion: currentVersion.version,
+    releasesToShow
   }
 }
