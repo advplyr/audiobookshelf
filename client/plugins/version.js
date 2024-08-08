@@ -69,9 +69,10 @@ export async function checkForUpdate() {
 
   const latestVersion = releases[0]
   const currentVersionMinor = currentVersion.minor
+  const currentVersionMajor = currentVersion.major
   // Show all releases with the same minor version and lower or equal total version
   const releasesToShow = releases.filter((release) => {
-    return release.minor == currentVersionMinor && release.total <= currentVersion.total
+    return release.major == currentVersionMajor && release.minor == currentVersionMinor && release.total <= currentVersion.total
   })
 
   return {
