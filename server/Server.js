@@ -41,7 +41,6 @@ const LibraryScanner = require('./scanner/LibraryScanner')
 //Import the main Passport and Express-Session library
 const passport = require('passport')
 const expressSession = require('express-session')
-const MemoryStore = require('./libs/memorystore')(expressSession)
 
 class Server {
   constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -219,12 +218,7 @@ class Server {
         cookie: {
           // also send the cookie if were are not on https (not every use has https)
           secure: false
-        },
-        store: new MemoryStore({
-          checkPeriod: 86400000, // prune expired entries every 24h
-          ttl: 86400000, // 24h
-          max: 1000
-        })
+        }
       })
     )
     // init passport.js
