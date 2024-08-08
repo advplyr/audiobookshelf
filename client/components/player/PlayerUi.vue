@@ -43,7 +43,21 @@
         </ui-tooltip>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls
+        :loading="loading"
+        :seek-loading="seekLoading"
+        :playback-rate.sync="playbackRate"
+        :paused="paused"
+        :has-next-chapter="hasNextChapter"
+        :has-next-audiobook="hasNextAudiobook"
+        @prevChapter="prevChapter"
+        @nextChapter="nextChapter"
+        @nextAudiobook="nextAudiobook"
+        @jumpForward="jumpForward"
+        @jumpBackward="jumpBackward"
+        @setPlaybackRate="setPlaybackRate"
+        @playPause="playPause"
+      />
     </div>
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
@@ -166,6 +180,9 @@ export default {
       if (!this.chapters.length) return false
       return this.currentChapterIndex < this.chapters.length - 1
     },
+    hasNextAudiobook() {
+      return this.playerQueueItems.length > 1
+    },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
     },
@@ -282,6 +299,15 @@ export default {
       if (!this.currentChapter || !this.hasNextChapter) return
       var nextChapter = this.chapters[this.currentChapterIndex + 1]
       this.seek(nextChapter.start)
+    },
+    nextAudiobook() {
+      let nextBook = this.playerQueueItems[1]
+
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: nextBook.libraryItemId,
+        episodeId: nextBook.episodeId || null,
+        queueItems: this.playerQueueItems
+      })
     },
     setStreamReady() {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)

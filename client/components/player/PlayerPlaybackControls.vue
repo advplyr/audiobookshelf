@@ -20,8 +20,8 @@
           <span class="material-symbols text-2xl sm:text-3xl">forward_media</span>
         </button>
       </ui-tooltip>
-      <ui-tooltip direction="top" :text="$strings.ButtonNextChapter" class="ml-4 lg:ml-8">
-        <button :aria-label="$strings.ButtonNextChapter" :disabled="!hasNextChapter" :class="hasNextChapter ? 'text-gray-300' : 'text-gray-500'" @mousedown.prevent @mouseup.prevent @click.stop="nextChapter">
+      <ui-tooltip direction="top" :text="nextLabel()" class="ml-4 lg:ml-8">
+        <button :aria-label="nextLabel()" :disabled="!hasNextChapter && !hasNextAudiobook" :class="hasNextChapter || hasNextAudiobook ? 'text-gray-300' : 'text-gray-500'" @mousedown.prevent @mouseup.prevent @click.stop="nextChapter">
           <span class="material-symbols text-2xl sm:text-3xl">last_page</span>
         </button>
       </ui-tooltip>
@@ -43,7 +43,8 @@ export default {
     seekLoading: Boolean,
     playbackRate: Number,
     paused: Boolean,
-    hasNextChapter: Boolean
+    hasNextChapter: Boolean,
+    hasNextAudiobook: Boolean
   },
   data() {
     return {}
@@ -72,8 +73,18 @@ export default {
       this.$emit('prevChapter')
     },
     nextChapter() {
-      if (!this.hasNextChapter) return
-      this.$emit('nextChapter')
+      if (this.hasNextChapter) {
+        this.$emit('nextChapter')
+        return
+      }
+      if (this.hasNextAudiobook) {
+        this.$emit('nextAudiobook')
+        return
+      }
+    },
+    nextLabel() {
+      if (this.hasNextChapter) return this.$strings.ButtonNextChapter
+      return this.$strings.ButtonNextAudiobook
     },
     jumpBackward() {
       this.$emit('jumpBackward')
