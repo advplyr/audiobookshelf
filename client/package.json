@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "2.12.1",
+  "version": "2.12.2",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
