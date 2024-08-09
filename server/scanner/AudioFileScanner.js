@@ -529,7 +529,7 @@ class AudioFileScanner {
    */
   parseGenresString(genreTag) {
     if (!genreTag?.length) return []
-    const separators = ['/', '//', ';']
+    const separators = ['/', '//', ';', ',']
     for (let i = 0; i < separators.length; i++) {
       if (genreTag.includes(separators[i])) {
         return genreTag
