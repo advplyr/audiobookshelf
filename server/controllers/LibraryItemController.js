@@ -109,13 +109,12 @@ class LibraryItemController {
    * @param {import('express').Response} res
    */
   download(req, res) {
-    const libraryItemPath = req.libraryItem.path
-    const itemTitle = req.libraryItem.media.metadata.title
-    
     if (!req.user.canDownload) {
       Logger.warn('User attempted to download without permission', req.user)
       return res.sendStatus(403)
     }
+    const libraryItemPath = req.libraryItem.path
+    const itemTitle = req.libraryItem.media.metadata.title
 
     // If library item is a single file in root dir then no need to zip
     if (req.libraryItem.isFile) {
@@ -125,7 +124,7 @@ class LibraryItemController {
         res.setHeader('Content-Type', audioMimeType)
       }
       Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
-      res.download(req.libraryItem.path, req.libraryItem.relPath)
+      res.download(libraryItemPath, req.libraryItem.relPath)
       return
     }
 
@@ -716,7 +715,7 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
-    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" at "${libraryFile.metadata.path}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" file at "${libraryFile.metadata.path}"`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
