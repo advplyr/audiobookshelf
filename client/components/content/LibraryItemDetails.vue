@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="narrators?.length" class="flex py-0.5 mt-4">
+    <div v-if="narrators?.length && fieldVisibility.narrators" class="flex py-0.5 mt-4">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
       </div>
@@ -11,7 +11,7 @@
         </template>
       </div>
     </div>
-    <div v-if="publishedYear" class="flex py-0.5">
+    <div v-if="publishedYear && fieldVisibility.publishYear" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
       </div>
@@ -19,7 +19,7 @@
         {{ publishedYear }}
       </div>
     </div>
-    <div v-if="publisher" class="flex py-0.5">
+    <div v-if="publisher && fieldVisibility.publisher" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
@@ -67,7 +67,7 @@
         {{ podcastType }}
       </div>
     </div>
-    <div class="flex py-0.5" v-if="genres.length">
+    <div class="flex py-0.5" v-if="genres.length && fieldVisibility.genres">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
       </div>
@@ -78,7 +78,7 @@
         </template>
       </div>
     </div>
-    <div class="flex py-0.5" v-if="tags.length">
+    <div class="flex py-0.5" v-if="tags.length && fieldVisibility.tags">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelTags }}</span>
       </div>
@@ -89,7 +89,7 @@
         </template>
       </div>
     </div>
-    <div v-if="language" class="flex py-0.5">
+    <div v-if="language && fieldVisibility.language" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelLanguage }}</span>
       </div>
@@ -97,7 +97,7 @@
         <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=languages.${$encode(language)}`" class="hover:underline">{{ language }}</nuxt-link>
       </div>
     </div>
-    <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
+    <div v-if="(tracks.length || audioFile || (isPodcast && totalPodcastDuration)) && fieldVisibility.duration" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
       </div>
@@ -105,7 +105,7 @@
         {{ durationPretty }}
       </div>
     </div>
-    <div class="flex py-0.5">
+    <div v-if="fieldVisibility.size" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
       </div>
@@ -215,6 +215,9 @@ export default {
     },
     podcastType() {
       return this.mediaMetadata.type
+    },
+    fieldVisibility() {
+      return this.$store.getters['user/getUserSetting']('fieldVisibility')
     }
   },
   methods: {},

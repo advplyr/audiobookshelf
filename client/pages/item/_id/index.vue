@@ -1,5 +1,10 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
+    <div class="w-full h-10 relative">
+      <div id="toolbar" class="absolute md:top-0 left-0 w-full h-10 md:h-full z-40 flex items-center justify-end px-2 md:px-8">
+        <ui-context-menu-dropdown v-if="globalItemSettingsContextMenuItems.length" :items="globalItemSettingsContextMenuItems" :menu-width="110" class="ml-2" @action="globalItemSettingsContextMenuAction" />
+      </div>
+    </div>
     <div id="item-page-wrapper" class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
       <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
@@ -149,6 +154,7 @@
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
+    <modals-item-field-visibility-modal v-model="showFieldVisibilityModal" />
   </div>
 </template>
 
@@ -187,6 +193,7 @@ export default {
       episodesDownloading: [],
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
+      showFieldVisibilityModal: false,
       isDescriptionClamped: false,
       showFullDescription: false
     }
@@ -454,6 +461,12 @@ export default {
           action: 'delete'
         })
       }
+
+      return items
+    },
+    globalItemSettingsContextMenuItems() {
+      const items = []
+      items.push({ text: this.$strings.LabelFieldVisibility, action: 'fieldVisibility' })
 
       return items
     }
@@ -785,6 +798,11 @@ export default {
       } else if (action === 'share') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
+      }
+    },
+    globalItemSettingsContextMenuAction({ action, data }) {
+      if (action === 'fieldVisibility') {
+        this.showFieldVisibilityModal = true
       }
     }
   },
