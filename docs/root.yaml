@@ -107,6 +107,10 @@ paths:
     $ref: './controllers/MeController.yaml#/paths/~1api~1me~1listening-sessions'
   /api/me/listening-stats:
     $ref: './controllers/MeController.yaml#/paths/~1api~1me~1listening-stats'
+  /api/session/local:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1session~1local'
+  /api/local/session/local-all:
+    $ref: './controllers/SessionController.yaml#/paths/~1api~1local~1session~1local-all'
 tags:
   - name: Authors
     description: Author endpoints

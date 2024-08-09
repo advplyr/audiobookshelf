@@ -21,40 +21,22 @@ components:
         description: If requesting progress for a podcast, the episode ID to get progress for.
         schema:
           $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
-      deviceInfo:
-        in: query
-        name: deviceInfo
-        description: The device information to send to the server.
-        schema:
-          $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
-      forceDirectPlay:
-        in: query
-        name: forceDirectPlay
-        description: Whether to force direct play of the library item.
-        schema:
-          type: boolean
-          example: false
-      forceTranscode:
-        in: query
-        name: forceTranscode
-        description: Whether to force transcoding of the library item.
-        schema:
-          type: boolean
-          example: false
-      supportedMimeTypes:
-        in: query
-        name: supportedMimeTypes
-        description: The supported mime types for the device.
-        schema:
-          type: array
-          items:
-            type: string
-      mediaPlayer:
-        in: query
-        name: mediaPlayer
-        description: The media player to use.
-        schema:
+    forceDirectPlay:
+      description: Whether to force direct play of the library item.
+      type: boolean
+      example: false
+    forceTranscode:
+      description: Whether to force transcoding of the library item.
+      type: boolean
+      example: false
+    supportedMimeTypes:
+      description: The supported mime types for the device.
+      type: array
+      items:
           type: string
+    mediaPlayer:
+      description: The media player to use.
+      type: string
   responses:
     libraryItem404:
       description: Not Found
@@ -109,12 +91,22 @@ paths:
       description: Play a library item by ID.
       tags:
         - LibraryItem
-      parameters:
-        - $ref: '#/components/schemas/parameters/deviceInfo'
-        - $ref: '#/components/schemas/parameters/forceDirectPlay'
-        - $ref: '#/components/schemas/parameters/forceTranscode'
-        - $ref: '#/components/schemas/parameters/supportedMimeTypes'
-        - $ref: '#/components/schemas/parameters/mediaPlayer'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                deviceInfo:
+                  $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+                forceDirectPlay:
+                    $ref: '#/components/schemas/forceDirectPlay'
+                forceTranscode:
+                    $ref: '#/components/schemas/forceTranscode'
+                supportedMimeTypes:
+                    $ref: '#/components/schemas/supportedMimeTypes'
+                mediaPlayer:
+                    $ref: '#/components/schemas/mediaPlayer'
       responses:
         '200':
           description: OK
@@ -144,12 +136,22 @@ paths:
       description: Play a podcast by library item ID and episode ID.
       tags:
         - LibraryItem
-      parameters:
-        - $ref: '#/components/schemas/parameters/deviceInfo'
-        - $ref: '#/components/schemas/parameters/forceDirectPlay'
-        - $ref: '#/components/schemas/parameters/forceTranscode'
-        - $ref: '#/components/schemas/parameters/supportedMimeTypes'
-        - $ref: '#/components/schemas/parameters/mediaPlayer'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                deviceInfo:
+                  $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+                forceDirectPlay:
+                  $ref: '#/components/schemas/forceDirectPlay'
+                forceTranscode:
+                  $ref: '#/components/schemas/forceTranscode'
+                supportedMimeTypes:
+                  $ref: '#/components/schemas/supportedMimeTypes'
+                mediaPlayer:
+                  $ref: '#/components/schemas/mediaPlayer'
       responses:
         '200':
           description: OK

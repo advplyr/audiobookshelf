@@ -22,7 +22,7 @@ components:
       example: 'iPhone 12'
     sdkVersion:
       description: For an Android client, the Android SDK version of the client.
-      type: integer
+      type: string
       example: 49
     deviceInfo:
       description: The device information to send to the server.

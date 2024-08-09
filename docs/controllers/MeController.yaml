@@ -2,7 +2,7 @@ components:
   schemas:
     totalTime:
       description: The total time listened in seconds.
-      type: integer
+      type: number
       example: 123456
   responses:
     me404:
@@ -178,26 +178,26 @@ paths:
                           type: string
                           description: The ID of the library item.
                         timeListening:
-                          type: integer
+                          type: number
                           description: The time (in seconds) the user listened to this library item.
                         mediaMetadata:
                           oneOf:
                             - $ref: '../objects/metadata/BookMetadata.yaml#/components/schemas/bookMetadata'
-                            - $ref: '../objects/metadata/PodcastMetadata.yaml#/components/schemas/PodcastMetadata'
+
                   days:
                     type: object
                     description: A mapping of days to total listening times.
                     additionalProperties:
-                      type: integer
+                      type: number
                       description: The total time (in seconds) listened to on that day.
                   dayOfWeek:
                     type: object
                     description: A mapping of days of the week to total listening times.
                     additionalProperties:
-                      type: integer
+                      type: number
                       description: The total time (in seconds) listened to on that day of the week.
                   today:
-                    type: integer
+                    type: number
                     description: The time (in seconds) the user has listened to library items today.
                   recentSessions:
                     type: array
