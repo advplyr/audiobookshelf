@@ -132,6 +132,8 @@ export default {
         ctx.restore()
       }
 
+      const twoColumnWidth = 210
+
       ctx.globalAlpha = 1
       ctx.textBaseline = 'middle'
 
@@ -150,12 +152,12 @@ export default {
 
       // Top text
       addText('audiobookshelf', '28px', 'normal', tanColor, '0px', 65, 28)
-      addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51)
+      addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51,)
 
       // Top left box
       createRoundedRect(50, 100, 340, 160)
       addText(this.yearStats.numBooksFinished, '64px', 'bold', 'white', '0px', 160, 165)
-      addText(this.$strings.StatsBooksFinished, '28px', 'normal', tanColor, '0px', 160, 210)
+      addText(this.$strings.StatsBooksFinished, '28px', 'normal', tanColor, '0px', 160, 210, twoColumnWidth)
       const readIconPath = new Path2D()
       readIconPath.addPath(new Path2D('M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z'), { a: 2, d: 2, e: 100, f: 160 })
       ctx.fillStyle = '#ffffff'
@@ -164,40 +166,40 @@ export default {
       // Box top right
       createRoundedRect(410, 100, 340, 160)
       addText(this.$elapsedPrettyExtended(this.yearStats.totalListeningTime, true, false), '40px', 'bold', 'white', '0px', 500, 165)
-      addText(this.$strings.StatsSpentListening, '28px', 'normal', tanColor, '0px', 500, 205)
+      addText(this.$strings.StatsSpentListening, '28px', 'normal', tanColor, '0px', 500, 205, twoColumnWidth)
       addIcon('watch_later', 'white', '52px', 440, 180)
 
       // Box bottom left
       createRoundedRect(50, 280, 340, 160)
       addText(this.yearStats.totalListeningSessions, '64px', 'bold', 'white', '0px', 160, 345)
-      addText(this.$strings.StatsSessions, '28px', 'normal', tanColor, '1px', 160, 390)
+      addText(this.$strings.StatsSessions, '28px', 'normal', tanColor, '1px', 160, 390, twoColumnWidth)
       addIcon('headphones', 'white', '52px', 95, 360)
 
       // Box bottom right
       createRoundedRect(410, 280, 340, 160)
       addText(this.yearStats.numBooksListened, '64px', 'bold', 'white', '0px', 500, 345)
-      addText(this.$strings.StatsBooksListenedTo, '28px', 'normal', tanColor, '0px', 500, 390)
+      addText(this.$strings.StatsBooksListenedTo, '28px', 'normal', tanColor, '0px', 500, 390, twoColumnWidth)
       addIcon('local_library', 'white', '52px', 440, 360)
 
       if (!this.variant) {
         // Text stats
         const topNarrator = this.yearStats.mostListenedNarrator
         if (topNarrator) {
-          addText(this.$strings.StatsTopNarrator, '24px', 'normal', tanColor, '1px', 70, 520)
+          addText(this.$strings.StatsTopNarrator, '24px', 'normal', tanColor, '1px', 70, 520, 330)
           addText(topNarrator.name, '36px', 'bolder', 'white', '0px', 70, 564, 330)
           addText(this.$elapsedPrettyExtended(topNarrator.time, true, false), '24px', 'lighter', 'white', '1px', 70, 599)
         }
 
         const topGenre = this.yearStats.topGenres[0]
         if (topGenre) {
-          addText(this.$strings.StatsTopGenre, '24px', 'normal', tanColor, '1px', 430, 520)
+          addText(this.$strings.StatsTopGenre, '24px', 'normal', tanColor, '1px', 430, 520, 330)
           addText(topGenre.genre, '36px', 'bolder', 'white', '0px', 430, 564, 330)
           addText(this.$elapsedPrettyExtended(topGenre.time, true, false), '24px', 'lighter', 'white', '1px', 430, 599)
         }
 
         const topAuthor = this.yearStats.topAuthors[0]
         if (topAuthor) {
-          addText(this.$strings.StatsTopAuthor, '24px', 'normal', tanColor, '1px', 70, 670)
+          addText(this.$strings.StatsTopAuthor, '24px', 'normal', tanColor, '1px', 70, 670, 330)
           addText(topAuthor.name, '36px', 'bolder', 'white', '0px', 70, 714, 330)
           addText(this.$elapsedPrettyExtended(topAuthor.time, true, false), '24px', 'lighter', 'white', '1px', 70, 749)
         }
@@ -205,7 +207,7 @@ export default {
         if (this.yearStats.mostListenedMonth?.time) {
           const jsdate = new Date(this.year, this.yearStats.mostListenedMonth.month, 1)
           const monthName = this.$formatJsDate(jsdate, 'LLLL')
-          addText(this.$strings.StatsTopMonth, '24px', 'normal', tanColor, '1px', 430, 670)
+          addText(this.$strings.StatsTopMonth, '24px', 'normal', tanColor, '1px', 430, 670, 330)
           addText(monthName, '36px', 'bolder', 'white', '0px', 430, 714, 330)
           addText(this.$elapsedPrettyExtended(this.yearStats.mostListenedMonth.time, true, false), '24px', 'lighter', 'white', '1px', 430, 749)
         }

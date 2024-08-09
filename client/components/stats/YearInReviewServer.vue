@@ -123,6 +123,8 @@ export default {
         ctx.restore()
       }
 
+      const threeColumnTextWidth = 200
+
       ctx.globalAlpha = 1
       ctx.textBaseline = 'middle'
 
@@ -147,17 +149,17 @@ export default {
       createRoundedRect(40, 100, 230, 100)
       ctx.textAlign = 'center'
       addText(this.yearStats.numBooksAdded, '48px', 'bold', 'white', '0px', 155, 140)
-      addText(this.$strings.StatsBooksAdded, '18px', 'normal', tanColor, '0px', 155, 170)
+      addText(this.$strings.StatsBooksAdded, '18px', 'normal', tanColor, '0px', 155, 170, threeColumnTextWidth)
 
       // Box top right
       createRoundedRect(285, 100, 230, 100)
       addText(this.yearStats.numAuthorsAdded, '48px', 'bold', 'white', '0px', 400, 140)
-      addText(this.$strings.StatsAuthorsAdded, '18px', 'normal', tanColor, '0px', 400, 170)
+      addText(this.$strings.StatsAuthorsAdded, '18px', 'normal', tanColor, '0px', 400, 170, threeColumnTextWidth)
 
       // Box bottom left
       createRoundedRect(530, 100, 230, 100)
       addText(this.yearStats.numListeningSessions, '48px', 'bold', 'white', '0px', 645, 140)
-      addText(this.$strings.StatsSessions, '18px', 'normal', tanColor, '1px', 645, 170)
+      addText(this.$strings.StatsSessions, '18px', 'normal', tanColor, '1px', 645, 170, threeColumnTextWidth)
 
       // Text stats
       if (this.yearStats.totalBooksAddedSize) {
@@ -187,7 +189,7 @@ export default {
         // Text stats
         ctx.textAlign = 'left'
         if (this.yearStats.topAuthors.length) {
-          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549)
+          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549, 330)
           for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
             addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
           }
@@ -203,7 +205,7 @@ export default {
         // Text stats
         ctx.textAlign = 'left'
         if (this.yearStats.topAuthors.length) {
-          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549)
+          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549, 330)
           for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
             addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
           }
