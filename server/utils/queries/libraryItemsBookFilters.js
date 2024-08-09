@@ -975,7 +975,7 @@ module.exports = {
   async search(oldUser, oldLibrary, query, limit, offset) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(oldUser)
 
-    const normalizedQuery = await Database.getNormalizedQuery(query)
+    const normalizedQuery = query
 
     const matchTitle = Database.matchExpression('title', normalizedQuery)
     const matchSubtitle = Database.matchExpression('subtitle', normalizedQuery)

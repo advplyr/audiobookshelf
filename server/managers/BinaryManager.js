@@ -263,8 +263,9 @@ module.exports.sqlean = sqlean // for testing
 class BinaryManager {
   defaultRequiredBinaries = [
     new Binary('ffmpeg', 'executable', 'FFMPEG_PATH', ['5.1'], ffbinaries), // ffmpeg executable
-    new Binary('ffprobe', 'executable', 'FFPROBE_PATH', ['5.1'], ffbinaries), // ffprobe executable
-    new Binary('unicode', 'library', 'SQLEAN_UNICODE_PATH', ['0.24.2'], sqlean) // sqlean unicode extension
+    new Binary('ffprobe', 'executable', 'FFPROBE_PATH', ['5.1'], ffbinaries) // ffprobe executable
+    // TODO: Temporarily disabled due to db corruption issues
+    // new Binary('unicode', 'library', 'SQLEAN_UNICODE_PATH', ['0.24.2'], sqlean) // sqlean unicode extension
   ]
 
   constructor(requiredBinaries = this.defaultRequiredBinaries) {

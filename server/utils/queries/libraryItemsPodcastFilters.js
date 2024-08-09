@@ -314,7 +314,7 @@ module.exports = {
   async search(oldUser, oldLibrary, query, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
 
-    const normalizedQuery = await Database.getNormalizedQuery(query)
+    const normalizedQuery = query
     const matchTitle = Database.matchExpression('title', normalizedQuery)
     const matchAuthor = Database.matchExpression('author', normalizedQuery)
 

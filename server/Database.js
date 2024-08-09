@@ -207,7 +207,6 @@ class Database {
 
     try {
       await this.sequelize.authenticate()
-      await this.loadExtensions([process.env.SQLEAN_UNICODE_PATH])
       Logger.info(`[Database] Db connection was successful`)
       return true
     } catch (error) {
@@ -217,7 +216,7 @@ class Database {
   }
 
   /**
-   *
+   * TODO: Temporarily disabled
    * @param {string[]} extensions paths to extension binaries
    */
   async loadExtensions(extensions) {
@@ -827,7 +826,7 @@ class Database {
   }
 
   /**
-   *
+   * TODO: Temporarily unused
    * @param {string} value
    * @returns {string}
    */
@@ -836,7 +835,7 @@ class Database {
   }
 
   /**
-   *
+   * TODO: Temporarily unused
    * @param {string} query
    * @returns {Promise<string>}
    */
@@ -855,7 +854,7 @@ class Database {
    */
   matchExpression(column, normalizedQuery) {
     const normalizedPattern = this.sequelize.escape(`%${normalizedQuery}%`)
-    const normalizedColumn = this.normalize(column)
+    const normalizedColumn = column
     return `${normalizedColumn} LIKE ${normalizedPattern}`
   }
 }
