@@ -141,33 +141,33 @@ export default {
 
       // Top text
       addText('audiobookshelf', '28px', 'normal', tanColor, '0px', 65, 28)
-      addText(`${this.year} YEAR IN REVIEW`, '18px', 'bold', 'white', '1px', 65, 51)
+      addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51)
 
       // Top left box
       createRoundedRect(40, 100, 230, 100)
       ctx.textAlign = 'center'
       addText(this.yearStats.numBooksAdded, '48px', 'bold', 'white', '0px', 155, 140)
-      addText('books added', '18px', 'normal', tanColor, '0px', 155, 170)
+      addText(this.$strings.StatsBooksAdded, '18px', 'normal', tanColor, '0px', 155, 170)
 
       // Box top right
       createRoundedRect(285, 100, 230, 100)
       addText(this.yearStats.numAuthorsAdded, '48px', 'bold', 'white', '0px', 400, 140)
-      addText('authors added', '18px', 'normal', tanColor, '0px', 400, 170)
+      addText(this.$strings.StatsAuthorsAdded, '18px', 'normal', tanColor, '0px', 400, 170)
 
       // Box bottom left
       createRoundedRect(530, 100, 230, 100)
       addText(this.yearStats.numListeningSessions, '48px', 'bold', 'white', '0px', 645, 140)
-      addText('sessions', '18px', 'normal', tanColor, '1px', 645, 170)
+      addText(this.$strings.StatsSessions, '18px', 'normal', tanColor, '1px', 645, 170)
 
       // Text stats
       if (this.yearStats.totalBooksAddedSize) {
-        addText('Your book collection grew to...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 260)
+        addText(this.$strings.StatsCollectionGrewTo, '24px', 'normal', tanColor, '0px', canvas.width / 2, 260)
         addText(this.$bytesPretty(this.yearStats.totalBooksSize), '36px', 'bolder', 'white', '0px', canvas.width / 2, 300)
         addText('+' + this.$bytesPretty(this.yearStats.totalBooksAddedSize), '20px', 'lighter', 'white', '0px', canvas.width / 2, 330)
       }
 
       if (this.yearStats.totalBooksAddedDuration) {
-        addText('With a total duration of...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 400)
+        addText(this.$strings.StatsTotalDuration, '24px', 'normal', tanColor, '0px', canvas.width / 2, 400)
         addText(this.$elapsedPrettyExtended(this.yearStats.totalBooksDuration, true, false), '36px', 'bolder', 'white', '0px', canvas.width / 2, 440)
         addText('+' + this.$elapsedPrettyExtended(this.yearStats.totalBooksAddedDuration, true, false), '20px', 'lighter', 'white', '0px', canvas.width / 2, 470)
       }
@@ -176,7 +176,7 @@ export default {
         // Bottom images
         imgsToAdd = Object.values(imgsToAdd)
         if (imgsToAdd.length > 0) {
-          addText('Some additions include...', '24px', 'normal', tanColor, '0px', canvas.width / 2, 540)
+          addText(this.$strings.StatsBooksAdditional, '24px', 'normal', tanColor, '0px', canvas.width / 2, 540)
 
           for (let i = 0; i < Math.min(5, imgsToAdd.length); i++) {
             let imgToAdd = imgsToAdd[i]
@@ -187,14 +187,14 @@ export default {
         // Text stats
         ctx.textAlign = 'left'
         if (this.yearStats.topAuthors.length) {
-          addText('TOP AUTHORS', '24px', 'normal', tanColor, '1px', 70, 549)
+          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549)
           for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
             addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
           }
         }
 
         if (this.yearStats.topNarrators.length) {
-          addText('TOP NARRATORS', '24px', 'normal', tanColor, '1px', 430, 549)
+          addText(this.$strings.StatsTopNarrators, '24px', 'normal', tanColor, '1px', 430, 549)
           for (let i = 0; i < this.yearStats.topNarrators.length; i++) {
             addText(this.yearStats.topNarrators[i].name, '36px', 'bolder', 'white', '0px', 430, 609 + i * 60, 330)
           }
@@ -203,14 +203,14 @@ export default {
         // Text stats
         ctx.textAlign = 'left'
         if (this.yearStats.topAuthors.length) {
-          addText('TOP AUTHORS', '24px', 'normal', tanColor, '1px', 70, 549)
+          addText(this.$strings.StatsTopAuthors, '24px', 'normal', tanColor, '1px', 70, 549)
           for (let i = 0; i < this.yearStats.topAuthors.length; i++) {
             addText(this.yearStats.topAuthors[i].name, '36px', 'bolder', 'white', '0px', 70, 609 + i * 60, 330)
           }
         }
 
         if (this.yearStats.topGenres.length) {
-          addText('TOP GENRES', '24px', 'normal', tanColor, '1px', 430, 549)
+          addText(this.$strings.StatsTopGenres, '24px', 'normal', tanColor, '1px', 430, 549)
           for (let i = 0; i < this.yearStats.topGenres.length; i++) {
             addText(this.yearStats.topGenres[i].genre, '36px', 'bolder', 'white', '0px', 430, 609 + i * 60, 330)
           }
@@ -239,7 +239,7 @@ export default {
               }
             })
         } else {
-          this.$toast.error('Cannot share natively on this device')
+          this.$toast.error(this.$strings.ToastErrorCannotShare)
         }
       })
     },
