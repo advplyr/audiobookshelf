@@ -1,0 +1,163 @@
+components:
+  schemas:
+    parameters:
+      include:
+        in: query
+        name: include
+        description: A comma separated list of what to include with the library item. The options are progress, rssfeed, authors (for books), and downloads (for podcasts). expanded must be 1 for include to have an effect.
+        allowReserved: true
+        schema:
+          type: string
+      expanded:
+        in: query
+        name: expanded
+        description: Whether to return Library Item Expanded instead. 0 for false, 1 for true.
+        schema:
+          type: integer
+          example: 1
+      episode:
+        in: query
+        name: episode
+        description: If requesting progress for a podcast, the episode ID to get progress for.
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+    forceDirectPlay:
+      description: Whether to force direct play of the library item.
+      type: boolean
+      example: false
+    forceTranscode:
+      description: Whether to force transcoding of the library item.
+      type: boolean
+      example: false
+    supportedMimeTypes:
+      description: The supported mime types for the device.
+      type: array
+      items:
+          type: string
+    mediaPlayer:
+      description: The media player to use.
+      type: string
+  responses:
+    libraryItem404:
+      description: Not Found
+      content:
+        text/html:
+          schema:
+            type: string
+            description: The library item does not exist.
+            example: Not Found
+paths:
+  /api/items/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+    get:
+      operationId: getLibraryItem
+      summary: Get a single library item by ID on server.
+      description: Get a single library item by ID on server.
+      tags:
+        - LibraryItem
+      parameters:
+        - $ref: '#/components/schemas/parameters/include'
+        - $ref: '#/components/schemas/parameters/expanded'
+        - $ref: '#/components/schemas/parameters/episode'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: TODO
+                oneOf:
+                  - $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItem'
+        '404':
+          $ref: '#/components/responses/libraryItem404'
+  /api/items/{id}/play:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+    post:
+      operationId: playLibraryItem
+      summary: Play a library item
+      description: Play a library item by ID.
+      tags:
+        - LibraryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                deviceInfo:
+                  $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+                forceDirectPlay:
+                    $ref: '#/components/schemas/forceDirectPlay'
+                forceTranscode:
+                    $ref: '#/components/schemas/forceTranscode'
+                supportedMimeTypes:
+                    $ref: '#/components/schemas/supportedMimeTypes'
+                mediaPlayer:
+                    $ref: '#/components/schemas/mediaPlayer'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
+        '404':
+          $ref: '#/components/responses/libraryItem404'
+  /api/items/{id}/play/{episodeId}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library item.
+        required: true
+        schema:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+      - name: episodeId
+        in: path
+        description: The ID of the episode to play.
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+    post:
+      operationId: playLibraryItemPodcastEpisode
+      summary: Play a podcast episode
+      description: Play a podcast by library item ID and episode ID.
+      tags:
+        - LibraryItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                deviceInfo:
+                  $ref: '../objects/entities/Device.yaml#/components/schemas/deviceInfo'
+                forceDirectPlay:
+                  $ref: '#/components/schemas/forceDirectPlay'
+                forceTranscode:
+                  $ref: '#/components/schemas/forceTranscode'
+                supportedMimeTypes:
+                  $ref: '#/components/schemas/supportedMimeTypes'
+                mediaPlayer:
+                  $ref: '#/components/schemas/mediaPlayer'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/PlaybackSession.yaml#/components/schemas/playbackSessionExpanded'
+        '404':
+          $ref: '#/components/responses/libraryItem404'

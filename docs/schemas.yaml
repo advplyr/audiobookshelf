@@ -59,6 +59,9 @@ components:
       type: boolean
       example: true
       default: false
+    serverVersion:
+      type: string
+      description: The server version
     region:
       description: The region used to search.
       type: string

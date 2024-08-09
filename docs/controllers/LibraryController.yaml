@@ -167,6 +167,7 @@ paths:
       parameters:
         - in: query
           name: include
+          description: A comma separated list of what to include with the library item. The only current option is filterdata.
           schema:
             type: string
         - $ref: '../schemas.yaml#/components/parameters/minified'
