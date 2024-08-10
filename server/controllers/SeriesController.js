@@ -4,33 +4,36 @@ const Database = require('../Database')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class SeriesController {
-  constructor() { }
+  constructor() {}
 
   /**
    * @deprecated
    * /api/series/:id
-   * 
+   *
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
    * Series are not library specific so we need to know what the library id is
-   * 
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {*} req
+   * @param {*} res
    */
   async findOne(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => !!v)
 
     const seriesJson = req.series.toJSON()
 
     // Add progress map with isFinished flag
     if (include.includes('progress')) {
       const libraryItemsInSeries = req.libraryItemsInSeries
-      const libraryItemsFinished = libraryItemsInSeries.filter(li => {
+      const libraryItemsFinished = libraryItemsInSeries.filter((li) => {
         const mediaProgress = req.user.getMediaProgress(li.id)
         return mediaProgress?.isFinished
       })
       seriesJson.progress = {
-        libraryItemIds: libraryItemsInSeries.map(li => li.id),
-        libraryItemIdsFinished: libraryItemsFinished.map(li => li.id),
+        libraryItemIds: libraryItemsInSeries.map((li) => li.id),
+        libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
         isFinished: libraryItemsFinished.length === libraryItemsInSeries.length
       }
     }
@@ -59,7 +62,7 @@ class SeriesController {
     /**
      * Filter out any library items not accessible to user
      */
-    const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
+    const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.userNew)
     if (!libraryItems.length) {
       Logger.warn(`[SeriesController] User attempted to access series "${series.id}" with no accessible books`, req.user)
       return res.sendStatus(404)

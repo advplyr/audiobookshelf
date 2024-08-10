@@ -1,11 +1,11 @@
 const CacheManager = require('../managers/CacheManager')
 
 class CacheController {
-  constructor() { }
+  constructor() {}
 
   // POST: api/cache/purge
   async purgeCache(req, res) {
-    if (!req.user.isAdminOrUp) {
+    if (!req.userNew.isAdminOrUp) {
       return res.sendStatus(403)
     }
     await CacheManager.purgeAll()
@@ -14,7 +14,7 @@ class CacheController {
 
   // POST: api/cache/items/purge
   async purgeItemsCache(req, res) {
-    if (!req.user.isAdminOrUp) {
+    if (!req.userNew.isAdminOrUp) {
       return res.sendStatus(403)
     }
     await CacheManager.purgeItems()

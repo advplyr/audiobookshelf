@@ -16,7 +16,7 @@ module.exports = {
   /**
    * Get library items using filter and sort
    * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {object} options
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
@@ -42,7 +42,7 @@ module.exports = {
   /**
    * Get library items for continue listening & continue reading shelves
    * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {Promise<{ items:import('../../models/LibraryItem')[], count:number }>}
@@ -79,7 +79,7 @@ module.exports = {
   /**
    * Get library items for most recently added shelf
    * @param {import('../../objects/Library')} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} { libraryItems:LibraryItem[], count:number }
@@ -127,7 +127,7 @@ module.exports = {
   /**
    * Get library items for continue series shelf
    * @param {import('../../objects/Library')} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} { libraryItems:LibraryItem[], count:number }
@@ -155,7 +155,7 @@ module.exports = {
   /**
    * Get library items or podcast episodes for the "Listen Again" and "Read Again" shelf
    * @param {import('../../objects/Library')} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} { items:object[], count:number }
@@ -192,7 +192,7 @@ module.exports = {
   /**
    * Get series for recent series shelf
    * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {{ series:import('../../objects/entities/Series')[], count:number}}
@@ -235,7 +235,7 @@ module.exports = {
       if (!user.canAccessExplicitContent) {
         attrQuery += ' AND b.explicit = 0'
       }
-      if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
+      if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
         } else {
@@ -317,7 +317,7 @@ module.exports = {
    * Get most recently created authors for "Newest Authors" shelf
    * Author must be linked to at least 1 book
    * @param {oldLibrary} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {number} limit
    * @returns {object} { authors:oldAuthor[], count:number }
    */
@@ -360,7 +360,7 @@ module.exports = {
   /**
    * Get book library items for the "Discover" shelf
    * @param {oldLibrary} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} {libraryItems:oldLibraryItem[], count:number}
@@ -387,7 +387,7 @@ module.exports = {
   /**
    * Get podcast episodes most recently added
    * @param {oldLibrary} library
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {number} limit
    * @returns {object} {libraryItems:oldLibraryItem[], count:number}
    */
@@ -408,7 +408,7 @@ module.exports = {
   /**
    * Get library items for an author, optional use user permissions
    * @param {oldAuthor} author
-   * @param {[oldUser]} user
+   * @param {import('../../models/User')} user
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<object>} { libraryItems:LibraryItem[], count:number }

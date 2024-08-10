@@ -11,7 +11,7 @@ module.exports = {
     const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
       // get all book series for item that is not already filtered out
-      const bookSeries = (libraryItem.media.metadata.series || []).filter(se => !seriesToFilterOut[se.id])
+      const bookSeries = (libraryItem.media.metadata.series || []).filter((se) => !seriesToFilterOut[se.id])
       if (!bookSeries.length) return
 
       bookSeries.forEach((bookSeriesObj) => {
@@ -43,11 +43,11 @@ module.exports = {
 
     // Library setting to hide series with only 1 book
     if (hideSingleBookSeries) {
-      seriesItems = seriesItems.filter(se => se.books.length > 1)
+      seriesItems = seriesItems.filter((se) => se.books.length > 1)
     }
 
     return seriesItems.map((series) => {
-      series.books = naturalSort(series.books).asc(li => li.sequence)
+      series.books = naturalSort(series.books).asc((li) => li.sequence)
       return series
     })
   },
@@ -55,9 +55,7 @@ module.exports = {
   collapseBookSeries(libraryItems, filterSeries, hideSingleBookSeries) {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
-    const seriesObjects = this
-      .getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries)
-      .filter(s => s.id != filterSeries)
+    const seriesObjects = this.getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries).filter((s) => s.id != filterSeries)
 
     const filteredLibraryItems = []
 
@@ -65,22 +63,29 @@ module.exports = {
       if (li.mediaType != 'book') return
 
       // Handle when this is the first book in a series
-      seriesObjects.filter(s => s.books[0].id == li.id).forEach(series => {
-        // Clone the library item as we need to attach data to it, but don't
-        // want to change the global copy of the library item
-        filteredLibraryItems.push(Object.assign(
-          Object.create(Object.getPrototypeOf(li)),
-          li, { collapsedSeries: series }))
-      })
+      seriesObjects
+        .filter((s) => s.books[0].id == li.id)
+        .forEach((series) => {
+          // Clone the library item as we need to attach data to it, but don't
+          // want to change the global copy of the library item
+          filteredLibraryItems.push(Object.assign(Object.create(Object.getPrototypeOf(li)), li, { collapsedSeries: series }))
+        })
 
       // Only included books not contained in series
-      if (!seriesObjects.some(s => s.books.some(b => b.id == li.id)))
-        filteredLibraryItems.push(li)
+      if (!seriesObjects.some((s) => s.books.some((b) => b.id == li.id))) filteredLibraryItems.push(li)
     })
 
     return filteredLibraryItems
   },
 
+  /**
+   *
+   * @param {*} payload
+   * @param {string} seriesId
+   * @param {import('../models/User')} user
+   * @param {import('../objects/Library')} library
+   * @returns {Object[]}
+   */
   async handleCollapseSubseries(payload, seriesId, user, library) {
     const seriesWithBooks = await Database.seriesModel.findByPk(seriesId, {
       include: {
@@ -112,17 +117,18 @@ module.exports = {
       return []
     }
 
-
     const books = seriesWithBooks.books
     payload.total = books.length
 
-    let libraryItems = books.map((book) => {
-      const libraryItem = book.libraryItem
-      libraryItem.media = book
-      return Database.libraryItemModel.getOldLibraryItem(libraryItem)
-    }).filter(li => {
-      return user.checkCanAccessLibraryItem(li)
-    })
+    let libraryItems = books
+      .map((book) => {
+        const libraryItem = book.libraryItem
+        libraryItem.media = book
+        return Database.libraryItemModel.getOldLibraryItem(libraryItem)
+      })
+      .filter((li) => {
+        return user.checkCanAccessLibraryItem(li)
+      })
 
     const collapsedItems = this.collapseBookSeries(libraryItems, seriesId, library.settings.hideSingleBookSeries)
     if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
@@ -139,7 +145,8 @@ module.exports = {
         {
           [direction]: (li) => li.media.metadata.getSeries(seriesId).sequence
         },
-        { // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
+        {
+          // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
           [direction]: (li) => {
             if (sortingIgnorePrefix) {
               return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
@@ -150,7 +157,7 @@ module.exports = {
         }
       ]
     } else {
-      // If series are collapsed and not sorting by title or sequence, 
+      // If series are collapsed and not sorting by title or sequence,
       // sort all collapsed series to the end in alphabetical order
       if (payload.sortBy !== 'media.metadata.title') {
         sortArray.push({
@@ -185,47 +192,48 @@ module.exports = {
       libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
     }
 
-    return Promise.all(libraryItems.map(async li => {
-      const filteredSeries = li.media.metadata.getSeries(seriesId)
-      const json = li.toJSONMinified()
-      json.media.metadata.series = {
-        id: filteredSeries.id,
-        name: filteredSeries.name,
-        sequence: filteredSeries.sequence
-      }
-
-      if (li.collapsedSeries) {
-        json.collapsedSeries = {
-          id: li.collapsedSeries.id,
-          name: li.collapsedSeries.name,
-          nameIgnorePrefix: li.collapsedSeries.nameIgnorePrefix,
-          libraryItemIds: li.collapsedSeries.books.map(b => b.id),
-          numBooks: li.collapsedSeries.books.length
+    return Promise.all(
+      libraryItems.map(async (li) => {
+        const filteredSeries = li.media.metadata.getSeries(seriesId)
+        const json = li.toJSONMinified()
+        json.media.metadata.series = {
+          id: filteredSeries.id,
+          name: filteredSeries.name,
+          sequence: filteredSeries.sequence
         }
 
-        // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
-        // series represents in the filtered series
-        json.collapsedSeries.seriesSequenceList =
-          naturalSort(li.collapsedSeries.books.filter(b => b.filterSeriesSequence).map(b => b.filterSeriesSequence)).asc()
+        if (li.collapsedSeries) {
+          json.collapsedSeries = {
+            id: li.collapsedSeries.id,
+            name: li.collapsedSeries.name,
+            nameIgnorePrefix: li.collapsedSeries.nameIgnorePrefix,
+            libraryItemIds: li.collapsedSeries.books.map((b) => b.id),
+            numBooks: li.collapsedSeries.books.length
+          }
+
+          // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
+          // series represents in the filtered series
+          json.collapsedSeries.seriesSequenceList = naturalSort(li.collapsedSeries.books.filter((b) => b.filterSeriesSequence).map((b) => b.filterSeriesSequence))
+            .asc()
             .reduce((ranges, currentSequence) => {
               let lastRange = ranges.at(-1)
               let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
               if (isNumber) currentSequence = parseFloat(currentSequence)
 
-              if (lastRange && isNumber && lastRange.isNumber && ((lastRange.end + 1) == currentSequence)) {
+              if (lastRange && isNumber && lastRange.isNumber && lastRange.end + 1 == currentSequence) {
                 lastRange.end = currentSequence
-              }
-              else {
+              } else {
                 ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNumber })
               }
 
               return ranges
             }, [])
-            .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
+            .map((r) => (r.start == r.end ? r.start : `${r.start}-${r.end}`))
             .join(', ')
-      }
+        }
 
-      return json
-    }))
+        return json
+      })
+    )
   }
 }

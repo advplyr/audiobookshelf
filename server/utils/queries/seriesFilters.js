@@ -12,7 +12,7 @@ module.exports = {
    * Get series filtered and sorted
    *
    * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string} filterBy
    * @param {string} sortBy
    * @param {boolean} sortDesc
@@ -93,7 +93,7 @@ module.exports = {
       if (!user.canAccessExplicitContent) {
         attrQuery += ' AND b.explicit = 0'
       }
-      if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
+      if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
         } else {

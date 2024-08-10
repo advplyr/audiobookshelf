@@ -8,7 +8,7 @@ const { validateUrl } = require('../utils/index')
 // This is a controller for routes that don't have a home yet :(
 //
 class CustomMetadataProviderController {
-  constructor() { }
+  constructor() {}
 
   /**
    * GET: /api/custom-metadata-providers
@@ -47,7 +47,7 @@ class CustomMetadataProviderController {
       name,
       mediaType,
       url,
-      authHeaderValue: !authHeaderValue ? null : authHeaderValue,
+      authHeaderValue: !authHeaderValue ? null : authHeaderValue
     })
 
     // TODO: Necessary to emit to all clients?
@@ -60,7 +60,7 @@ class CustomMetadataProviderController {
 
   /**
    * DELETE: /api/custom-metadata-providers/:id
-   * 
+   *
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    */
@@ -76,13 +76,16 @@ class CustomMetadataProviderController {
     await provider.destroy()
 
     // Libraries using this provider fallback to default provider
-    await Database.libraryModel.update({
-      provider: fallbackProvider
-    }, {
-      where: {
-        provider: slug
+    await Database.libraryModel.update(
+      {
+        provider: fallbackProvider
+      },
+      {
+        where: {
+          provider: slug
+        }
       }
-    })
+    )
 
     // TODO: Necessary to emit to all clients?
     SocketAuthority.emitter('custom_metadata_provider_removed', providerClientJson)
@@ -92,14 +95,14 @@ class CustomMetadataProviderController {
 
   /**
    * Middleware that requires admin or up
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
-   * @param {import('express').NextFunction} next 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.user.isAdminOrUp) {
-      Logger.warn(`[CustomMetadataProviderController] Non-admin user "${req.user.username}" attempted access route "${req.path}"`)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.warn(`[CustomMetadataProviderController] Non-admin user "${req.userNew.username}" attempted access route "${req.path}"`)
       return res.sendStatus(403)
     }
 

@@ -1,12 +1,11 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
-const { asciiOnlyToLowerCase } = require('../index')
 
 module.exports = {
   /**
    * User permissions to restrict podcasts for explicit content & tags
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {{ podcastWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionPodcastWhereQuery(user) {
@@ -17,18 +16,20 @@ module.exports = {
         explicit: false
       })
     }
-    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
-      replacements['userTagsSelected'] = user.itemTagsSelected
+
+    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
       if (user.permissions.selectedTagsNotAccessible) {
-        podcastWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
+        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
       } else {
-        podcastWhere.push(
+        bookWhere.push(
           Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
             [Sequelize.Op.gte]: 1
           })
         )
       }
     }
+
     return {
       podcastWhere,
       replacements
@@ -98,7 +99,7 @@ module.exports = {
   /**
    * Get library items for podcast media type using filter and sort
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {[string]} filterGroup
    * @param {[string]} filterValue
    * @param {string} sortBy
@@ -200,7 +201,7 @@ module.exports = {
   /**
    * Get podcast episodes filtered and sorted
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {[string]} filterGroup
    * @param {[string]} filterValue
    * @param {string} sortBy
@@ -304,15 +305,15 @@ module.exports = {
 
   /**
    * Search podcasts
-   * @param {import('../../objects/user/User')} oldUser
+   * @param {import('../../models/User')} user
    * @param {import('../../objects/Library')} oldLibrary
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{podcast:object[], tags:object[]}}
    */
-  async search(oldUser, oldLibrary, query, limit, offset) {
-    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+  async search(user, oldLibrary, query, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
     const normalizedQuery = query
     const matchTitle = Database.matchExpression('title', normalizedQuery)
@@ -410,14 +411,14 @@ module.exports = {
 
   /**
    * Most recent podcast episodes not finished
-   * @param {import('../../objects/user/User')} oldUser
+   * @param {import('../../models/User')} user
    * @param {import('../../objects/Library')} oldLibrary
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<object[]>}
    */
-  async getRecentEpisodes(oldUser, oldLibrary, limit, offset) {
-    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+  async getRecentEpisodes(user, oldLibrary, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
     const episodes = await Database.podcastEpisodeModel.findAll({
       where: {
@@ -441,7 +442,7 @@ module.exports = {
         {
           model: Database.mediaProgressModel,
           where: {
-            userId: oldUser.id
+            userId: user.id
           },
           required: false
         }

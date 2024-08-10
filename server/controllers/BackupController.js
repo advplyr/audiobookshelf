@@ -113,8 +113,8 @@ class BackupController {
   }
 
   middleware(req, res, next) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to access backups`, req.user)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user "${req.userNew.username}" attempting to access backups`)
       return res.sendStatus(403)
     }
 

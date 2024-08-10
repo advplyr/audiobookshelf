@@ -6,17 +6,17 @@ const Database = require('../Database')
 const Collection = require('../objects/Collection')
 
 class CollectionController {
-  constructor() { }
+  constructor() {}
 
   /**
    * POST: /api/collections
    * Create new collection
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async create(req, res) {
     const newCollection = new Collection()
-    req.body.userId = req.user.id
+    req.body.userId = req.userNew.id
     if (!newCollection.setData(req.body)) {
       return res.status(400).send('Invalid collection data')
     }
@@ -31,7 +31,7 @@ class CollectionController {
     let order = 1
     const collectionBooksToAdd = []
     for (const libraryItemId of newCollection.books) {
-      const libraryItem = libraryItemsInCollection.find(li => li.id === libraryItemId)
+      const libraryItem = libraryItemsInCollection.find((li) => li.id === libraryItemId)
       if (libraryItem) {
         collectionBooksToAdd.push({
           collectionId: newCollection.id,
@@ -50,7 +50,7 @@ class CollectionController {
   }
 
   async findAll(req, res) {
-    const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
+    const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.userNew)
     res.json({
       collections: collectionsExpanded
     })
@@ -59,7 +59,7 @@ class CollectionController {
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
 
-    const collectionExpanded = await req.collection.getOldJsonExpanded(req.user, includeEntities)
+    const collectionExpanded = await req.collection.getOldJsonExpanded(req.userNew, includeEntities)
     if (!collectionExpanded) {
       // This may happen if the user is restricted from all books
       return res.sendStatus(404)
@@ -71,8 +71,8 @@ class CollectionController {
   /**
    * PATCH: /api/collections/:id
    * Update collection
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async update(req, res) {
     let wasUpdated = false
@@ -102,8 +102,8 @@ class CollectionController {
         order: [['order', 'ASC']]
       })
       collectionBooks.sort((a, b) => {
-        const aIndex = req.body.books.findIndex(lid => lid === a.book.libraryItem.id)
-        const bIndex = req.body.books.findIndex(lid => lid === b.book.libraryItem.id)
+        const aIndex = req.body.books.findIndex((lid) => lid === a.book.libraryItem.id)
+        const bIndex = req.body.books.findIndex((lid) => lid === b.book.libraryItem.id)
         return aIndex - bIndex
       })
       for (let i = 0; i < collectionBooks.length; i++) {
@@ -139,8 +139,8 @@ class CollectionController {
    * POST: /api/collections/:id/book
    * Add a single book to a collection
    * Req.body { id: <library item id> }
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async addBook(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.body.id)
@@ -153,7 +153,7 @@ class CollectionController {
 
     // Check if book is already in collection
     const collectionBooks = await req.collection.getCollectionBooks()
-    if (collectionBooks.some(cb => cb.bookId === libraryItem.media.id)) {
+    if (collectionBooks.some((cb) => cb.bookId === libraryItem.media.id)) {
       return res.status(400).send('Book already in collection')
     }
 
@@ -172,8 +172,8 @@ class CollectionController {
    * DELETE: /api/collections/:id/book/:bookId
    * Remove a single book from a collection. Re-order books
    * TODO: bookId is actually libraryItemId. Clients need updating to use bookId
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async removeBook(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.params.bookId)
@@ -187,7 +187,7 @@ class CollectionController {
     })
 
     let jsonExpanded = null
-    const collectionBookToRemove = collectionBooks.find(cb => cb.bookId === libraryItem.media.id)
+    const collectionBookToRemove = collectionBooks.find((cb) => cb.bookId === libraryItem.media.id)
     if (collectionBookToRemove) {
       // Remove collection book record
       await collectionBookToRemove.destroy()
@@ -216,12 +216,12 @@ class CollectionController {
    * POST: /api/collections/:id/batch/add
    * Add multiple books to collection
    * Req.body { books: <Array of library item ids> }
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async addBatch(req, res) {
     // filter out invalid libraryItemIds
-    const bookIdsToAdd = (req.body.books || []).filter(b => !!b && typeof b == 'string')
+    const bookIdsToAdd = (req.body.books || []).filter((b) => !!b && typeof b == 'string')
     if (!bookIdsToAdd.length) {
       return res.status(500).send('Invalid request body')
     }
@@ -247,7 +247,7 @@ class CollectionController {
 
     // Check and set new collection books to add
     for (const libraryItem of libraryItems) {
-      if (!collectionBooks.some(cb => cb.bookId === libraryItem.media.id)) {
+      if (!collectionBooks.some((cb) => cb.bookId === libraryItem.media.id)) {
         collectionBooksToAdd.push({
           collectionId: req.collection.id,
           bookId: libraryItem.media.id,
@@ -274,12 +274,12 @@ class CollectionController {
    * POST: /api/collections/:id/batch/remove
    * Remove multiple books from collection
    * Req.body { books: <Array of library item ids> }
-   * @param {*} req 
-   * @param {*} res 
+   * @param {*} req
+   * @param {*} res
    */
   async removeBatch(req, res) {
     // filter out invalid libraryItemIds
-    const bookIdsToRemove = (req.body.books || []).filter(b => !!b && typeof b == 'string')
+    const bookIdsToRemove = (req.body.books || []).filter((b) => !!b && typeof b == 'string')
     if (!bookIdsToRemove.length) {
       return res.status(500).send('Invalid request body')
     }
@@ -305,7 +305,7 @@ class CollectionController {
     let order = 1
     let hasUpdated = false
     for (const collectionBook of collectionBooks) {
-      if (libraryItems.some(li => li.media.id === collectionBook.bookId)) {
+      if (libraryItems.some((li) => li.media.id === collectionBook.bookId)) {
         await collectionBook.destroy()
         hasUpdated = true
         continue
@@ -334,11 +334,11 @@ class CollectionController {
       req.collection = collection
     }
 
-    if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[CollectionController] User attempted to delete without permission`, req.user.username)
+    if (req.method == 'DELETE' && !req.userNew.canDelete) {
+      Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[CollectionController] User attempted to update without permission', req.user.username)
+      Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

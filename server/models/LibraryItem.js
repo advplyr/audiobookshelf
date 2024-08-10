@@ -543,7 +543,7 @@ class LibraryItem extends Model {
   /**
    * Get library items using filter and sort
    * @param {oldLibrary} library
-   * @param {oldUser} user
+   * @param {import('./User')} user
    * @param {object} options
    * @returns {{ libraryItems:oldLibraryItem[], count:number }}
    */
@@ -586,7 +586,7 @@ class LibraryItem extends Model {
   /**
    * Get home page data personalized shelves
    * @param {oldLibrary} library
-   * @param {oldUser} user
+   * @param {import('./User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object[]} array of shelf objects
@@ -759,7 +759,7 @@ class LibraryItem extends Model {
   /**
    * Get book library items for author, optional use user permissions
    * @param {oldAuthor} author
-   * @param {[oldUser]} user
+   * @param {import('./User')} user
    * @returns {Promise<oldLibraryItem[]>}
    */
   static async getForAuthor(author, user = null) {

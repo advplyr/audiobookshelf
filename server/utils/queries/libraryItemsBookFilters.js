@@ -8,7 +8,7 @@ const ShareManager = require('../../managers/ShareManager')
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
@@ -21,8 +21,8 @@ module.exports = {
         explicit: false
       })
     }
-    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
-      replacements['userTagsSelected'] = user.itemTagsSelected
+    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
       if (user.permissions.selectedTagsNotAccessible) {
         bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
       } else {
@@ -333,7 +333,7 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string|null} filterGroup
    * @param {string|null} filterValue
    * @param {string} sortBy
@@ -637,7 +637,7 @@ module.exports = {
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
    * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @param {number} offset
@@ -672,7 +672,7 @@ module.exports = {
       where: [
         {
           id: {
-            [Sequelize.Op.notIn]: user.seriesHideFromContinueListening
+            [Sequelize.Op.notIn]: user.extraData?.seriesHideFromContinueListening || []
           },
           libraryId
         },
@@ -780,7 +780,7 @@ module.exports = {
    * Random selection of books that are not started
    *  - only includes the first book of a not-started series
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} {libraryItems:LibraryItem, count:number}
@@ -955,25 +955,25 @@ module.exports = {
   /**
    * Get library items for series
    * @param {import('../../objects/entities/Series')} oldSeries
-   * @param {import('../../objects/user/User')} [oldUser]
+   * @param {import('../../models/User')} [user]
    * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
-  async getLibraryItemsForSeries(oldSeries, oldUser) {
-    const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
+  async getLibraryItemsForSeries(oldSeries, user) {
+    const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, user, 'series', oldSeries.id, null, null, false, [], null, null)
     return libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
   },
 
   /**
    * Search books, authors, series
-   * @param {import('../../objects/user/User')} oldUser
+   * @param {import('../../models/User')} user
    * @param {import('../../objects/Library')} oldLibrary
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
-  async search(oldUser, oldLibrary, query, limit, offset) {
-    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(oldUser)
+  async search(user, oldLibrary, query, limit, offset) {
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
     const normalizedQuery = query
 

@@ -414,6 +414,21 @@ class User extends Model {
   get isUser() {
     return this.type === 'user'
   }
+  get canAccessExplicitContent() {
+    return !!this.permissions?.accessExplicitContent && this.isActive
+  }
+  get canDelete() {
+    return !!this.permissions?.delete && this.isActive
+  }
+  get canUpdate() {
+    return !!this.permissions?.update && this.isActive
+  }
+  get canDownload() {
+    return !!this.permissions?.download && this.isActive
+  }
+  get canUpload() {
+    return !!this.permissions?.upload && this.isActive
+  }
   /** @type {string|null} */
   get authOpenIDSub() {
     return this.extraData?.authOpenIDSub || null
@@ -491,6 +506,40 @@ class User extends Model {
   }
 
   /**
+   * Check user has access to library item with tags
+   *
+   * @param {string[]} tags
+   * @returns {boolean}
+   */
+  checkCanAccessLibraryItemWithTags(tags) {
+    if (this.permissions.accessAllTags) return true
+    const itemTagsSelected = this.permissions?.itemTagsSelected || []
+    if (this.permissions.selectedTagsNotAccessible) {
+      if (!tags?.length) return true
+      return tags.every((tag) => !itemTagsSelected?.includes(tag))
+    }
+    if (!tags?.length) return false
+    return itemTagsSelected.some((tag) => tags.includes(tag))
+  }
+
+  /**
+   * Check user can access library item
+   * TODO: Currently supports both old and new library item models
+   *
+   * @param {import('../objects/LibraryItem')|import('./LibraryItem')} libraryItem
+   * @returns {boolean}
+   */
+  checkCanAccessLibraryItem(libraryItem) {
+    if (!this.checkCanAccessLibrary(libraryItem.libraryId)) return false
+
+    const libraryItemExplicit = !!libraryItem.media.explicit || !!libraryItem.media.metadata?.explicit
+
+    if (libraryItemExplicit && !this.canAccessExplicitContent) return false
+
+    return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
+  }
+
+  /**
    * Get first available library id for user
    *
    * @param {string[]} libraryIds
@@ -499,6 +548,34 @@ class User extends Model {
   getDefaultLibraryId(libraryIds) {
     // Libraries should already be in ascending display order, find first accessible
     return libraryIds.find((lid) => this.checkCanAccessLibrary(lid)) || null
+  }
+
+  /**
+   * Get media progress by media item id
+   *
+   * @param {string} libraryItemId
+   * @param {string|null} [episodeId]
+   * @returns {import('./MediaProgress')|null}
+   */
+  getMediaProgress(mediaItemId) {
+    if (!this.mediaProgresses?.length) return null
+    return this.mediaProgresses.find((mp) => mp.mediaItemId === mediaItemId)
+  }
+
+  /**
+   * Get old media progress
+   * TODO: Update to new model
+   *
+   * @param {string} libraryItemId
+   * @param {string} [episodeId]
+   * @returns
+   */
+  getOldMediaProgress(libraryItemId, episodeId = null) {
+    const mediaProgress = this.mediaProgresses?.find((mp) => {
+      if (episodeId && mp.mediaItemId === episodeId) return true
+      return mp.extraData?.libraryItemId === libraryItemId
+    })
+    return mediaProgress?.getOldMediaProgress() || null
   }
 }
 

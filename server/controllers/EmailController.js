@@ -3,7 +3,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 class EmailController {
-  constructor() { }
+  constructor() {}
 
   getSettings(req, res) {
     res.json({
@@ -54,12 +54,12 @@ class EmailController {
   /**
    * Send ebook to device
    * User must have access to device and library item
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
    */
   async sendEBookToDevice(req, res) {
-    Logger.debug(`[EmailController] Send ebook to device requested by user "${req.user.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
+    Logger.debug(`[EmailController] Send ebook to device requested by user "${req.userNew.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
 
     const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
     if (!device) {
@@ -67,7 +67,7 @@ class EmailController {
     }
 
     // Check user has access to device
-    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.user)) {
+    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.userNew)) {
       return res.sendStatus(403)
     }
 
@@ -77,7 +77,7 @@ class EmailController {
     }
 
     // Check user has access to library item
-    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+    if (!req.userNew.checkCanAccessLibraryItem(libraryItem)) {
       return res.sendStatus(403)
     }
 
@@ -90,7 +90,7 @@ class EmailController {
   }
 
   adminMiddleware(req, res, next) {
-    if (!req.user.isAdminOrUp) {
+    if (!req.userNew.isAdminOrUp) {
       return res.sendStatus(404)
     }
 
