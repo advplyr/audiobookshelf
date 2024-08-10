@@ -110,7 +110,14 @@ class Server {
 
     await this.playbackSessionManager.removeOrphanStreams()
 
-    await this.binaryManager.init()
+    /**
+     * Docker container ffmpeg/ffprobe binaries are included in the image.
+     * Docker is currently using ffmpeg/ffprobe v6.1 instead of v5.1 so skipping the check
+     * TODO: Support binary check for all sources
+     */
+    if (global.Source !== 'docker') {
+      await this.binaryManager.init()
+    }
 
     await Database.init(false)
 
