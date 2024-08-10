@@ -223,7 +223,7 @@ class LibraryController {
 
       // Only emit to users with access to library
       const userFilter = (user) => {
-        return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
+        return user.checkCanAccessLibrary?.(library.id)
       }
       SocketAuthority.emitter('library_updated', library.toJSON(), userFilter)
 

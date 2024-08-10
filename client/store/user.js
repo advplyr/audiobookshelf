@@ -16,7 +16,7 @@ export const state = () => ({
     authorSortBy: 'name',
     authorSortDesc: false,
     jumpForwardAmount: 10,
-    jumpBackwardAmount: 10,
+    jumpBackwardAmount: 10
   }
 })
 
@@ -26,13 +26,15 @@ export const getters = {
   getToken: (state) => {
     return state.user?.token || null
   },
-  getUserMediaProgress: (state) => (libraryItemId, episodeId = null) => {
-    if (!state.user.mediaProgress) return null
-    return state.user.mediaProgress.find((li) => {
-      if (episodeId && li.episodeId !== episodeId) return false
-      return li.libraryItemId == libraryItemId
-    })
-  },
+  getUserMediaProgress:
+    (state) =>
+    (libraryItemId, episodeId = null) => {
+      if (!state.user.mediaProgress) return null
+      return state.user.mediaProgress.find((li) => {
+        if (episodeId && li.episodeId !== episodeId) return false
+        return li.libraryItemId == libraryItemId
+      })
+    },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user.bookmarks) return []
     return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
@@ -153,7 +155,7 @@ export const mutations = {
   },
   setUserToken(state, token) {
     state.user.token = token
-    localStorage.setItem('token', user.token)
+    localStorage.setItem('token', token)
   },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return

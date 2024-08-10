@@ -363,7 +363,7 @@ class Database {
    */
   async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
-    await this.models.user.createRootUser(username, pash, auth)
+    await this.userModel.createRootUser(username, pash, auth)
     this.hasRootUser = true
     return true
   }
@@ -388,11 +388,6 @@ class Database {
   updateUser(oldUser) {
     if (!this.sequelize) return false
     return this.models.user.updateFromOld(oldUser)
-  }
-
-  updateBulkUsers(oldUsers) {
-    if (!this.sequelize) return false
-    return Promise.all(oldUsers.map((u) => this.updateUser(u)))
   }
 
   removeUser(userId) {

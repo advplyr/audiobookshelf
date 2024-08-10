@@ -157,10 +157,6 @@ export default {
     this.init()
   },
   beforeDestroy() {
-    if (this.$refs.accountModal) {
-      this.$refs.accountModal.close()
-    }
-
     if (this.$root.socket) {
       this.$root.socket.off('user_added', this.addUpdateUser)
       this.$root.socket.off('user_updated', this.addUpdateUser)

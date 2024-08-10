@@ -34,29 +34,6 @@ class MediaProgress extends Model {
     this.createdAt
   }
 
-  getOldMediaProgress() {
-    const isPodcastEpisode = this.mediaItemType === 'podcastEpisode'
-
-    return {
-      id: this.id,
-      userId: this.userId,
-      libraryItemId: this.extraData?.libraryItemId || null,
-      episodeId: isPodcastEpisode ? this.mediaItemId : null,
-      mediaItemId: this.mediaItemId,
-      mediaItemType: this.mediaItemType,
-      duration: this.duration,
-      progress: this.extraData?.progress || 0,
-      currentTime: this.currentTime,
-      isFinished: !!this.isFinished,
-      hideFromContinueListening: !!this.hideFromContinueListening,
-      ebookLocation: this.ebookLocation,
-      ebookProgress: this.ebookProgress,
-      lastUpdate: this.updatedAt.valueOf(),
-      startedAt: this.createdAt.valueOf(),
-      finishedAt: this.finishedAt?.valueOf() || null
-    }
-  }
-
   static upsertFromOld(oldMediaProgress) {
     const mediaProgress = this.getFromOld(oldMediaProgress)
     return this.upsert(mediaProgress)
@@ -181,6 +158,29 @@ class MediaProgress extends Model {
       onDelete: 'CASCADE'
     })
     MediaProgress.belongsTo(user)
+  }
+
+  getOldMediaProgress() {
+    const isPodcastEpisode = this.mediaItemType === 'podcastEpisode'
+
+    return {
+      id: this.id,
+      userId: this.userId,
+      libraryItemId: this.extraData?.libraryItemId || null,
+      episodeId: isPodcastEpisode ? this.mediaItemId : null,
+      mediaItemId: this.mediaItemId,
+      mediaItemType: this.mediaItemType,
+      duration: this.duration,
+      progress: this.extraData?.progress || 0,
+      currentTime: this.currentTime,
+      isFinished: !!this.isFinished,
+      hideFromContinueListening: !!this.hideFromContinueListening,
+      ebookLocation: this.ebookLocation,
+      ebookProgress: this.ebookProgress,
+      lastUpdate: this.updatedAt.valueOf(),
+      startedAt: this.createdAt.valueOf(),
+      finishedAt: this.finishedAt?.valueOf() || null
+    }
   }
 }
 

@@ -213,8 +213,11 @@ class Auth {
         return null
       }
 
-      user.authOpenIDSub = userinfo.sub
-      await Database.userModel.updateFromOld(user)
+      // Update user with OpenID sub
+      if (!user.extraData) user.extraData = {}
+      user.extraData.authOpenIDSub = userinfo.sub
+      user.changed('extraData', true)
+      await user.save()
 
       Logger.debug(`[Auth] openid: User found by email/username`)
       return user
@@ -788,12 +791,14 @@ class Auth {
     await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    const users = await Database.userModel.getOldUsers()
+    const users = await Database.userModel.findAll({
+      attributes: ['id', 'username', 'token']
+    })
     if (users.length) {
       for (const user of users) {
         user.token = await this.generateAccessToken(user)
+        await user.save({ hooks: false })
       }
-      await Database.updateBulkUsers(users)
     }
   }
 
@@ -879,13 +884,13 @@ class Auth {
   /**
    * Return the login info payload for a user
    *
-   * @param {Object} user
+   * @param {import('./models/User')} user
    * @returns {Promise<Object>} jsonPayload
    */
   async getUserLoginResponsePayload(user) {
     const libraryIds = await Database.libraryModel.getAllLibraryIds()
     return {
-      user: user.toJSONForBrowser(),
+      user: user.toOldJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
@@ -907,6 +912,7 @@ class Auth {
 
   /**
    * User changes their password from request
+   * TODO: Update responses to use error status codes
    *
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -941,19 +947,27 @@ class Auth {
       }
     }
 
-    matchingUser.pash = pw
-
-    const success = await Database.updateUser(matchingUser)
-    if (success) {
-      Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
-      res.json({
-        success: true
+    Database.userModel
+      .update(
+        {
+          pash: pw
+        },
+        {
+          where: { id: matchingUser.id }
+        }
+      )
+      .then(() => {
+        Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
+        res.json({
+          success: true
+        })
       })
-    } else {
-      res.json({
-        error: 'Unknown error'
+      .catch((error) => {
+        Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
+        res.json({
+          error: 'Unknown error'
+        })
       })
-    }
   }
 }
 

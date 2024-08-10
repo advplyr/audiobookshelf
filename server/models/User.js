@@ -42,30 +42,40 @@ class User extends Model {
   }
 
   /**
-   * Get all oldUsers
-   * @returns {Promise<oldUser>}
+   *
+   * @param {string} type
+   * @returns
    */
-  static async getOldUsers() {
-    const users = await this.findAll({
-      include: this.sequelize.models.mediaProgress
-    })
-    return users.map((u) => this.getOldUser(u))
+  static getDefaultPermissionsForUserType(type) {
+    return {
+      download: true,
+      update: type === 'root' || type === 'admin',
+      delete: type === 'root',
+      upload: type === 'root' || type === 'admin',
+      accessAllLibraries: true,
+      accessAllTags: true,
+      accessExplicitContent: true,
+      librariesAccessible: [],
+      itemTagsSelected: []
+    }
   }
 
   /**
    * Get old user model from new
    *
-   * @param {Object} userExpanded
+   * @param {User} userExpanded
    * @returns {oldUser}
    */
   static getOldUser(userExpanded) {
     const mediaProgress = userExpanded.mediaProgresses.map((mp) => mp.getOldMediaProgress())
 
-    const librariesAccessible = userExpanded.permissions?.librariesAccessible || []
-    const itemTagsSelected = userExpanded.permissions?.itemTagsSelected || []
-    const permissions = userExpanded.permissions || {}
+    const librariesAccessible = [...(userExpanded.permissions?.librariesAccessible || [])]
+    const itemTagsSelected = [...(userExpanded.permissions?.itemTagsSelected || [])]
+    const permissions = { ...(userExpanded.permissions || {}) }
     delete permissions.librariesAccessible
     delete permissions.itemTagsSelected
+
+    const seriesHideFromContinueListening = userExpanded.extraData?.seriesHideFromContinueListening || []
 
     return new oldUser({
       id: userExpanded.id,
@@ -76,7 +86,7 @@ class User extends Model {
       type: userExpanded.type,
       token: userExpanded.token,
       mediaProgress,
-      seriesHideFromContinueListening: userExpanded.extraData?.seriesHideFromContinueListening || [],
+      seriesHideFromContinueListening: [...seriesHideFromContinueListening],
       bookmarks: userExpanded.bookmarks,
       isActive: userExpanded.isActive,
       isLocked: userExpanded.isLocked,
@@ -168,32 +178,35 @@ class User extends Model {
    * Create root user
    * @param {string} username
    * @param {string} pash
-   * @param {Auth} auth
-   * @returns {Promise<oldUser>}
+   * @param {import('../Auth')} auth
+   * @returns {Promise<User>}
    */
   static async createRootUser(username, pash, auth) {
     const userId = uuidv4()
 
     const token = await auth.generateAccessToken({ id: userId, username })
 
-    const newRoot = new oldUser({
+    const newUser = {
       id: userId,
       type: 'root',
       username,
       pash,
       token,
       isActive: true,
-      createdAt: Date.now()
-    })
-    await this.createFromOld(newRoot)
-    return newRoot
+      permissions: this.getDefaultPermissionsForUserType('root'),
+      bookmarks: [],
+      extraData: {
+        seriesHideFromContinueListening: []
+      }
+    }
+    return this.create(newUser)
   }
 
   /**
    * Create user from openid userinfo
    * @param {Object} userinfo
-   * @param {Auth} auth
-   * @returns {Promise<oldUser>}
+   * @param {import('../Auth')} auth
+   * @returns {Promise<User>}
    */
   static async createUserFromOpenIdUserInfo(userinfo, auth) {
     const userId = uuidv4()
@@ -203,7 +216,7 @@ class User extends Model {
 
     const token = await auth.generateAccessToken({ id: userId, username })
 
-    const newUser = new oldUser({
+    const newUser = {
       id: userId,
       type: 'user',
       username,
@@ -211,51 +224,30 @@ class User extends Model {
       pash: null,
       token,
       isActive: true,
-      authOpenIDSub: userinfo.sub,
-      createdAt: Date.now()
-    })
-    if (await this.createFromOld(newUser)) {
-      SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
-      return newUser
+      permissions: this.getDefaultPermissionsForUserType('user'),
+      bookmarks: [],
+      extraData: {
+        authOpenIDSub: userinfo.sub,
+        seriesHideFromContinueListening: []
+      }
+    }
+    const user = await this.create(newUser)
+
+    if (user) {
+      SocketAuthority.adminEmitter('user_added', user.toOldJSONForBrowser())
+      return user
     }
     return null
   }
 
   /**
-   * Get a user by id or by the old database id
-   * @temp User ids were updated in v2.3.0 migration and old API tokens may still use that id
-   * @param {string} userId
-   * @returns {Promise<oldUser|null>} null if not found
-   */
-  static async getUserByIdOrOldId(userId) {
-    if (!userId) return null
-    const user = await this.findOne({
-      where: {
-        [sequelize.Op.or]: [
-          {
-            id: userId
-          },
-          {
-            extraData: {
-              [sequelize.Op.substring]: userId
-            }
-          }
-        ]
-      },
-      include: this.sequelize.models.mediaProgress
-    })
-    if (!user) return null
-    return this.getOldUser(user)
-  }
-
-  /**
    * Get user by username case insensitive
    * @param {string} username
-   * @returns {Promise<oldUser|null>} returns null if not found
+   * @returns {Promise<User>}
    */
   static async getUserByUsername(username) {
     if (!username) return null
-    const user = await this.findOne({
+    return this.findOne({
       where: {
         username: {
           [sequelize.Op.like]: username
@@ -263,18 +255,16 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
-    if (!user) return null
-    return this.getOldUser(user)
   }
 
   /**
    * Get user by email case insensitive
-   * @param {string} username
-   * @returns {Promise<oldUser|null>} returns null if not found
+   * @param {string} email
+   * @returns {Promise<User>}
    */
   static async getUserByEmail(email) {
     if (!email) return null
-    const user = await this.findOne({
+    return this.findOne({
       where: {
         email: {
           [sequelize.Op.like]: email
@@ -282,20 +272,45 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
-    if (!user) return null
-    return this.getOldUser(user)
   }
 
   /**
    * Get user by id
    * @param {string} userId
-   * @returns {Promise<oldUser|null>} returns null if not found
+   * @returns {Promise<User>}
    */
   static async getUserById(userId) {
     if (!userId) return null
-    const user = await this.findByPk(userId, {
+    return this.findByPk(userId, {
       include: this.sequelize.models.mediaProgress
     })
+  }
+
+  /**
+   * Get user by id or old id
+   * JWT tokens generated before 2.3.0 used old user ids
+   *
+   * @param {string} userId
+   * @returns {Promise<User>}
+   */
+  static async getUserByIdOrOldId(userId) {
+    if (!userId) return null
+    return this.findOne({
+      where: {
+        [sequelize.Op.or]: [{ id: userId }, { 'extraData.oldUserId': userId }]
+      },
+      include: this.sequelize.models.mediaProgress
+    })
+  }
+
+  /**
+   * @deprecated
+   * Get old user by id
+   * @param {string} userId
+   * @returns {Promise<oldUser|null>} returns null if not found
+   */
+  static async getOldUserById(userId) {
+    const user = await this.getUserById(userId)
     if (!user) return null
     return this.getOldUser(user)
   }
@@ -303,16 +318,14 @@ class User extends Model {
   /**
    * Get user by openid sub
    * @param {string} sub
-   * @returns {Promise<oldUser|null>} returns null if not found
+   * @returns {Promise<User>}
    */
   static async getUserByOpenIDSub(sub) {
     if (!sub) return null
-    const user = await this.findOne({
+    return this.findOne({
       where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
       include: this.sequelize.models.mediaProgress
     })
-    if (!user) return null
-    return this.getOldUser(user)
   }
 
   /**
@@ -339,6 +352,20 @@ class User extends Model {
     const count = await this.count({
       where: {
         type: 'root'
+      }
+    })
+    return count > 0
+  }
+
+  /**
+   * Check if user exists with username
+   * @param {string} username
+   * @returns {boolean}
+   */
+  static async checkUserExistsWithUsername(username) {
+    const count = await this.count({
+      where: {
+        username
       }
     })
     return count > 0
@@ -379,6 +406,99 @@ class User extends Model {
         modelName: 'user'
       }
     )
+  }
+
+  get isAdminOrUp() {
+    return this.type === 'root' || this.type === 'admin'
+  }
+  get isUser() {
+    return this.type === 'user'
+  }
+  /** @type {string|null} */
+  get authOpenIDSub() {
+    return this.extraData?.authOpenIDSub || null
+  }
+
+  /**
+   * User data for clients
+   * Emitted on socket events user_online, user_offline and user_stream_update
+   *
+   * @param {import('../objects/PlaybackSession')[]} sessions
+   * @returns
+   */
+  toJSONForPublic(sessions) {
+    const session = sessions?.find((s) => s.userId === this.id)?.toJSONForClient() || null
+    return {
+      id: this.id,
+      username: this.username,
+      type: this.type,
+      session,
+      lastSeen: this.lastSeen?.valueOf() || null,
+      createdAt: this.createdAt.valueOf()
+    }
+  }
+
+  /**
+   * User data for browser using old model
+   *
+   * @param {boolean} [hideRootToken=false]
+   * @param {boolean} [minimal=false]
+   * @returns
+   */
+  toOldJSONForBrowser(hideRootToken = false, minimal = false) {
+    const seriesHideFromContinueListening = this.extraData?.seriesHideFromContinueListening || []
+    const librariesAccessible = this.permissions?.librariesAccessible || []
+    const itemTagsSelected = this.permissions?.itemTagsSelected || []
+    const permissions = { ...this.permissions }
+    delete permissions.librariesAccessible
+    delete permissions.itemTagsSelected
+
+    const json = {
+      id: this.id,
+      username: this.username,
+      email: this.email,
+      type: this.type,
+      token: this.type === 'root' && hideRootToken ? '' : this.token,
+      mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
+      seriesHideFromContinueListening: [...seriesHideFromContinueListening],
+      bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],
+      isActive: this.isActive,
+      isLocked: this.isLocked,
+      lastSeen: this.lastSeen?.valueOf() || null,
+      createdAt: this.createdAt.valueOf(),
+      permissions: permissions,
+      librariesAccessible: [...librariesAccessible],
+      itemTagsSelected: [...itemTagsSelected],
+      hasOpenIDLink: !!this.authOpenIDSub
+    }
+    if (minimal) {
+      delete json.mediaProgress
+      delete json.bookmarks
+    }
+    return json
+  }
+
+  /**
+   * Check user has access to library
+   *
+   * @param {string} libraryId
+   * @returns {boolean}
+   */
+  checkCanAccessLibrary(libraryId) {
+    if (this.permissions?.accessAllLibraries) return true
+    if (!this.permissions?.librariesAccessible) return false
+    return this.permissions.librariesAccessible.includes(libraryId)
+  }
+
+  /**
+   * Get first available library id for user
+   *
+   * @param {string[]} libraryIds
+   * @returns {string|null}
+   */
+  getDefaultLibraryId(libraryIds) {
+    // Libraries should already be in ascending display order, find first accessible
+    return libraryIds.find((lid) => this.checkCanAccessLibrary(lid)) || null
   }
 }
 

@@ -140,7 +140,7 @@ class EmailSettings {
   /**
    *
    * @param {EreaderDeviceObject} device
-   * @param {import('../user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {boolean}
    */
   checkUserCanAccessDevice(device, user) {
@@ -158,7 +158,7 @@ class EmailSettings {
   /**
    * Get ereader devices accessible to user
    *
-   * @param {import('../user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {EreaderDeviceObject[]}
    */
   getEReaderDevices(user) {

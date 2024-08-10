@@ -39,6 +39,11 @@ export default {
       this.showAccountModal = true
     }
   },
-  mounted() {}
+  mounted() {},
+  beforeDestroy() {
+    if (this.$refs.accountModal) {
+      this.$refs.accountModal.close()
+    }
+  }
 }
 </script>

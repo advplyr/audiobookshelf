@@ -31,8 +31,8 @@ class UserController {
     const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-    const allUsers = await Database.userModel.getOldUsers()
-    const users = allUsers.map((u) => u.toJSONForBrowser(hideRootToken, true))
+    const allUsers = await Database.userModel.findAll()
+    const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
@@ -106,7 +106,7 @@ class UserController {
     const account = req.body
     const username = account.username
 
-    const usernameExists = await Database.userModel.getUserByUsername(username)
+    const usernameExists = await Database.userModel.checkUserExistsWithUsername(username)
     if (usernameExists) {
       return res.status(500).send('Username already taken')
     }
@@ -149,7 +149,7 @@ class UserController {
 
     // When changing username create a new API token
     if (account.username !== undefined && account.username !== user.username) {
-      const usernameExists = await Database.userModel.getUserByUsername(account.username)
+      const usernameExists = await Database.userModel.checkUserExistsWithUsername(account.username)
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -272,7 +272,8 @@ class UserController {
     }
 
     if (req.params.id) {
-      req.reqUser = await Database.userModel.getUserById(req.params.id)
+      // TODO: Update to use new user model
+      req.reqUser = await Database.userModel.getOldUserById(req.params.id)
       if (!req.reqUser) {
         return res.sendStatus(404)
       }
