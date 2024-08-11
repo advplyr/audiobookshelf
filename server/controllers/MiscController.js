@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize')
 const Path = require('path')
+const { Request, Response } = require('express')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
@@ -13,21 +14,27 @@ const { sanitizeFilename } = require('../utils/fileUtils')
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
 
-//
-// This is a controller for routes that don't have a home yet :(
-//
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ */
+
 class MiscController {
   constructor() {}
 
   /**
    * POST: /api/upload
    * Update library item
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async handleUpload(req, res) {
-    if (!req.user.canUpload) {
-      Logger.warn('User attempted to upload without permission', req.user)
+    if (!req.userNew.canUpload) {
+      Logger.warn(`User "${req.userNew.username}" attempted to upload without permission`)
       return res.sendStatus(403)
     }
     if (!req.files) {
@@ -83,8 +90,9 @@ class MiscController {
   /**
    * GET: /api/tasks
    * Get tasks for task manager
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   getTasks(req, res) {
     const includeArray = (req.query.include || '').split(',')
@@ -106,12 +114,12 @@ class MiscController {
    * PATCH: /api/settings
    * Update server settings
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateServerSettings(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to update server settings', req.user)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`User "${req.userNew.username}" other than admin attempting to update server settings`)
       return res.sendStatus(403)
     }
     const settingsUpdate = req.body
@@ -137,12 +145,12 @@ class MiscController {
   /**
    * PATCH: /api/sorting-prefixes
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateSortingPrefixes(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to update server sorting prefixes', req.user)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`User "${req.userNew.username}" other than admin attempting to update server sorting prefixes`)
       return res.sendStatus(403)
     }
     let sortingPrefixes = req.body.sortingPrefixes
@@ -237,14 +245,10 @@ class MiscController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async authorize(req, res) {
-    if (!req.user) {
-      Logger.error('Invalid user in authorize')
-      return res.sendStatus(401)
-    }
     const userResponse = await this.auth.getUserLoginResponsePayload(req.userNew)
     res.json(userResponse)
   }
@@ -252,13 +256,14 @@ class MiscController {
   /**
    * GET: /api/tags
    * Get all tags
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllTags(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to getAllTags`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to getAllTags`)
+      return res.sendStatus(403)
     }
 
     const tags = []
@@ -295,13 +300,14 @@ class MiscController {
    * POST: /api/tags/rename
    * Rename tag
    * Req.body { tag, newTag }
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async renameTag(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to renameTag`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to renameTag`)
+      return res.sendStatus(403)
     }
 
     const tag = req.body.tag
@@ -349,13 +355,14 @@ class MiscController {
    * DELETE: /api/tags/:tag
    * Remove a tag
    * :tag param is base64 encoded
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteTag(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to deleteTag`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to deleteTag`)
+      return res.sendStatus(403)
     }
 
     const tag = Buffer.from(decodeURIComponent(req.params.tag), 'base64').toString()
@@ -388,13 +395,14 @@ class MiscController {
   /**
    * GET: /api/genres
    * Get all genres
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllGenres(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to getAllGenres`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to getAllGenres`)
+      return res.sendStatus(403)
     }
     const genres = []
     const books = await Database.bookModel.findAll({
@@ -430,13 +438,14 @@ class MiscController {
    * POST: /api/genres/rename
    * Rename genres
    * Req.body { genre, newGenre }
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async renameGenre(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to renameGenre`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to renameGenre`)
+      return res.sendStatus(403)
     }
 
     const genre = req.body.genre
@@ -484,13 +493,14 @@ class MiscController {
    * DELETE: /api/genres/:genre
    * Remove a genre
    * :genre param is base64 encoded
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteGenre(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to deleteGenre`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to deleteGenre`)
+      return res.sendStatus(403)
     }
 
     const genre = Buffer.from(decodeURIComponent(req.params.genre), 'base64').toString()
@@ -526,15 +536,16 @@ class MiscController {
    * Req.body { libraryId, path, type, [oldPath] }
    * type = add, unlink, rename
    * oldPath = required only for rename
+   *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   updateWatchedPath(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to updateWatchedPath`)
-      return res.sendStatus(404)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to updateWatchedPath`)
+      return res.sendStatus(403)
     }
 
     const libraryId = req.body.libraryId
@@ -586,12 +597,12 @@ class MiscController {
   /**
    * GET: api/auth-settings (admin only)
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   getAuthSettings(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get auth settings`)
       return res.sendStatus(403)
     }
     return res.json(Database.serverSettings.authenticationSettings)
@@ -601,12 +612,12 @@ class MiscController {
    * PATCH: api/auth-settings
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateAuthSettings(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to update auth settings`)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to update auth settings`)
       return res.sendStatus(403)
     }
 
@@ -706,12 +717,12 @@ class MiscController {
   /**
    * GET: /api/stats/year/:year
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAdminStatsForYear(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin stats for year`)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get admin stats for year`)
       return res.sendStatus(403)
     }
     const year = Number(req.params.year)
@@ -727,12 +738,12 @@ class MiscController {
    * GET: /api/logger-data
    * admin or up
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getLoggerData(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get logger data`)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get logger data`)
       return res.sendStatus(403)
     }
 

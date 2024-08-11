@@ -1,5 +1,14 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
+
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ */
 
 class ToolsController {
   constructor() {}
@@ -10,8 +19,8 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async encodeM4b(req, res) {
     if (req.libraryItem.isMissing || req.libraryItem.isInvalid) {
@@ -30,7 +39,7 @@ class ToolsController {
     }
 
     const options = req.query || {}
-    this.abMergeManager.startAudiobookMerge(req.user, req.libraryItem, options)
+    this.abMergeManager.startAudiobookMerge(req.userNew.id, req.libraryItem, options)
 
     res.sendStatus(200)
   }
@@ -41,8 +50,8 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async cancelM4bEncode(req, res) {
     const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
@@ -59,8 +68,8 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async embedAudioFileMetadata(req, res) {
     if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
@@ -77,7 +86,7 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, options)
+    this.audioMetadataManager.updateMetadataForItem(req.userNew.id, req.libraryItem, options)
     res.sendStatus(200)
   }
 
@@ -87,8 +96,8 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async batchEmbedMetadata(req, res) {
     const libraryItemIds = req.body.libraryItemIds || []
@@ -105,8 +114,8 @@ class ToolsController {
       }
 
       // Check user can access this library item
-      if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
-        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user`, req.user)
+      if (!req.userNew.checkCanAccessLibraryItem(libraryItem)) {
+        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user "${req.userNew.username}"`)
         return res.sendStatus(403)
       }
 
@@ -127,19 +136,19 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.handleBatchEmbed(req.user, libraryItems, options)
+    this.audioMetadataManager.handleBatchEmbed(req.userNew.id, libraryItems, options)
     res.sendStatus(200)
   }
 
   /**
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to access tools route`, req.user)
+    if (!req.userNew.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-root user "${req.userNew.username}" attempted to access tools route`)
       return res.sendStatus(403)
     }
 
@@ -148,7 +157,7 @@ class ToolsController {
       if (!item?.media) return res.sendStatus(404)
 
       // Check user can access this library item
-      if (!req.user.checkCanAccessLibraryItem(item)) {
+      if (!req.userNew.checkCanAccessLibraryItem(item)) {
         return res.sendStatus(403)
       }
 

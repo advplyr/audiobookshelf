@@ -39,6 +39,7 @@ class ApiRouter {
   constructor(Server) {
     /** @type {import('../Auth')} */
     this.auth = Server.auth
+    /** @type {import('../managers/PlaybackSessionManager')} */
     this.playbackSessionManager = Server.playbackSessionManager
     /** @type {import('../managers/AbMergeManager')} */
     this.abMergeManager = Server.abMergeManager
@@ -50,8 +51,10 @@ class ApiRouter {
     this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
+    /** @type {import('../managers/RssFeedManager')} */
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager
+    /** @type {import('../managers/NotificationManager')} */
     this.notificationManager = Server.notificationManager
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
@@ -281,7 +284,6 @@ class ApiRouter {
     this.router.get('/search/podcast', SearchController.findPodcasts.bind(this))
     this.router.get('/search/authors', SearchController.findAuthor.bind(this))
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
-    this.router.get('/search/tracks', SearchController.findMusicTrack.bind(this))
 
     //
     // Cache Routes (Admin and up)

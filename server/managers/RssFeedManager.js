@@ -9,7 +9,7 @@ const Feed = require('../objects/Feed')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RssFeedManager {
-  constructor() { }
+  constructor() {}
 
   async validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
@@ -44,7 +44,7 @@ class RssFeedManager {
     const feeds = await Database.feedModel.getOldFeeds()
     for (const feed of feeds) {
       // Remove invalid feeds
-      if (!await this.validateFeedEntity(feed)) {
+      if (!(await this.validateFeedEntity(feed))) {
         await Database.removeFeed(feed.id)
       }
     }
@@ -138,7 +138,7 @@ class RssFeedManager {
         const seriesJson = series.toJSON()
 
         // Get books in series that have audio tracks
-        seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter(li => li.media.numTracks)
+        seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)
 
         // Find most recently updated item in series
         let mostRecentlyUpdatedAt = seriesJson.updatedAt
@@ -202,7 +202,14 @@ class RssFeedManager {
     readStream.pipe(res)
   }
 
-  async openFeedForItem(user, libraryItem, options) {
+  /**
+   *
+   * @param {string} userId
+   * @param {*} libraryItem
+   * @param {*} options
+   * @returns
+   */
+  async openFeedForItem(userId, libraryItem, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
     const preventIndexing = options.metadataDetails?.preventIndexing ?? true
@@ -210,7 +217,7 @@ class RssFeedManager {
     const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromItem(user.id, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
+    feed.setFromItem(userId, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
 
     Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)
@@ -218,7 +225,14 @@ class RssFeedManager {
     return feed
   }
 
-  async openFeedForCollection(user, collectionExpanded, options) {
+  /**
+   *
+   * @param {string} userId
+   * @param {*} collectionExpanded
+   * @param {*} options
+   * @returns
+   */
+  async openFeedForCollection(userId, collectionExpanded, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
     const preventIndexing = options.metadataDetails?.preventIndexing ?? true
@@ -226,7 +240,7 @@ class RssFeedManager {
     const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
+    feed.setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
 
     Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)
@@ -234,7 +248,14 @@ class RssFeedManager {
     return feed
   }
 
-  async openFeedForSeries(user, seriesExpanded, options) {
+  /**
+   *
+   * @param {string} userId
+   * @param {*} seriesExpanded
+   * @param {*} options
+   * @returns
+   */
+  async openFeedForSeries(userId, seriesExpanded, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
     const preventIndexing = options.metadataDetails?.preventIndexing ?? true
@@ -242,7 +263,7 @@ class RssFeedManager {
     const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
+    feed.setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
 
     Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)

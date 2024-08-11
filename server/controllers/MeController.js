@@ -12,7 +12,6 @@ const userStats = require('../utils/queries/userStats')
  * @property {import('../objects/user/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
- *
  */
 
 class MeController {

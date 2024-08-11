@@ -1,3 +1,4 @@
+const { Request, Response, NextFunction } = require('express')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
@@ -14,6 +15,14 @@ const Scanner = require('../scanner/Scanner')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const ShareManager = require('../managers/ShareManager')
+
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ */
 
 class LibraryItemController {
   constructor() {}
@@ -328,7 +337,14 @@ class LibraryItemController {
     return CacheManager.handleCoverCache(res, libraryItem.id, libraryItem.media.coverPath, options)
   }
 
-  // POST: api/items/:id/play
+  /**
+   * POST: /api/items/:id/play
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   startPlaybackSession(req, res) {
     if (!req.libraryItem.media.numTracks && req.libraryItem.mediaType !== 'video') {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
@@ -338,7 +354,14 @@ class LibraryItemController {
     this.playbackSessionManager.startSessionRequest(req, res, null)
   }
 
-  // POST: api/items/:id/play/:episodeId
+  /**
+   * POST: /api/items/:id/play/:episodeId
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   startEpisodePlaybackSession(req, res) {
     var libraryItem = req.libraryItem
     if (!libraryItem.media.numTracks) {
@@ -830,7 +853,7 @@ class LibraryItemController {
     } else if (req.method == 'DELETE' && !req.userNew.canDelete) {
       Logger.warn(`[LibraryItemController] User "${req.userNew.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
       Logger.warn(`[LibraryItemController] User "${req.userNew.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }

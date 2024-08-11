@@ -42,7 +42,7 @@ class ApiCacheManager {
         Logger.debug(`[ApiCacheManager] Skipping cache for random sort`)
         return next()
       }
-      const key = { user: req.user.username, url: req.url }
+      const key = { user: req.userNew.username, url: req.url }
       const stringifiedKey = JSON.stringify(key)
       Logger.debug(`[ApiCacheManager] count: ${this.cache.size} size: ${this.cache.calculatedSize}`)
       const cached = this.cache.get(stringifiedKey)

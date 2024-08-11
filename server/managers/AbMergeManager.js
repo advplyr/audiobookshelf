@@ -46,11 +46,11 @@ class AbMergeManager {
 
   /**
    *
-   * @param {import('../objects/user/User')} user
+   * @param {string} userId
    * @param {import('../objects/LibraryItem')} libraryItem
    * @param {AbMergeEncodeOptions} [options={}]
    */
-  async startAudiobookMerge(user, libraryItem, options = {}) {
+  async startAudiobookMerge(userId, libraryItem, options = {}) {
     const task = new Task()
 
     const audiobookDirname = Path.basename(libraryItem.path)
@@ -61,7 +61,7 @@ class AbMergeManager {
     const taskData = {
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
-      userId: user.id,
+      userId,
       originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
       inos: libraryItem.media.includedAudioFiles.map((f) => f.ino),
       tempFilepath,

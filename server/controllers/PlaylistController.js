@@ -1,8 +1,17 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const Playlist = require('../objects/Playlist')
+
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ */
 
 class PlaylistController {
   constructor() {}
@@ -10,12 +19,13 @@ class PlaylistController {
   /**
    * POST: /api/playlists
    * Create playlist
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async create(req, res) {
     const oldPlaylist = new Playlist()
-    req.body.userId = req.user.id
+    req.body.userId = req.userNew.id
     const success = oldPlaylist.setData(req.body)
     if (!success) {
       return res.status(400).send('Invalid playlist request data')
@@ -58,13 +68,14 @@ class PlaylistController {
   /**
    * GET: /api/playlists
    * Get all playlists for user
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findAllForUser(req, res) {
     const playlistsForUser = await Database.playlistModel.findAll({
       where: {
-        userId: req.user.id
+        userId: req.userNew.id
       }
     })
     const playlists = []
@@ -79,8 +90,9 @@ class PlaylistController {
 
   /**
    * GET: /api/playlists/:id
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findOne(req, res) {
     const jsonExpanded = await req.playlist.getOldJsonExpanded()
@@ -90,8 +102,9 @@ class PlaylistController {
   /**
    * PATCH: /api/playlists/:id
    * Update playlist
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async update(req, res) {
     const updatedPlaylist = req.playlist.set(req.body)
@@ -156,8 +169,9 @@ class PlaylistController {
   /**
    * DELETE: /api/playlists/:id
    * Remove playlist
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async delete(req, res) {
     const jsonExpanded = await req.playlist.getOldJsonExpanded()
@@ -169,8 +183,9 @@ class PlaylistController {
   /**
    * POST: /api/playlists/:id/item
    * Add item to playlist
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async addItem(req, res) {
     const oldPlaylist = await Database.playlistModel.getById(req.playlist.id)
@@ -213,8 +228,9 @@ class PlaylistController {
   /**
    * DELETE: /api/playlists/:id/item/:libraryItemId/:episodeId?
    * Remove item from playlist
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async removeItem(req, res) {
     const oldLibraryItem = await Database.libraryItemModel.getOldById(req.params.libraryItemId)
@@ -266,8 +282,9 @@ class PlaylistController {
   /**
    * POST: /api/playlists/:id/batch/add
    * Batch add playlist items
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async addBatch(req, res) {
     if (!req.body.items?.length) {
@@ -330,8 +347,9 @@ class PlaylistController {
   /**
    * POST: /api/playlists/:id/batch/remove
    * Batch remove playlist items
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async removeBatch(req, res) {
     if (!req.body.items?.length) {
@@ -387,8 +405,9 @@ class PlaylistController {
   /**
    * POST: /api/playlists/collection/:collectionId
    * Create a playlist from a collection
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async createFromCollection(req, res) {
     const collection = await Database.collectionModel.findByPk(req.params.collectionId)
@@ -409,7 +428,7 @@ class PlaylistController {
 
     const oldPlaylist = new Playlist()
     oldPlaylist.setData({
-      userId: req.user.id,
+      userId: req.userNew.id,
       libraryId: collection.libraryId,
       name: collection.name,
       description: collection.description || null
@@ -436,14 +455,20 @@ class PlaylistController {
     res.json(jsonExpanded)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     if (req.params.id) {
       const playlist = await Database.playlistModel.findByPk(req.params.id)
       if (!playlist) {
         return res.status(404).send('Playlist not found')
       }
-      if (playlist.userId !== req.user.id) {
-        Logger.warn(`[PlaylistController] Playlist ${req.params.id} requested by user ${req.user.id} that is not the owner`)
+      if (playlist.userId !== req.userNew.id) {
+        Logger.warn(`[PlaylistController] Playlist ${req.params.id} requested by user ${req.userNew.id} that is not the owner`)
         return res.sendStatus(403)
       }
       req.playlist = playlist

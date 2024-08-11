@@ -32,13 +32,25 @@ class AudioMetadataMangaer {
     return ffmpegHelpers.getFFMetadataObject(libraryItem, libraryItem.media.includedAudioFiles.length)
   }
 
-  handleBatchEmbed(user, libraryItems, options = {}) {
+  /**
+   *
+   * @param {string} userId
+   * @param {*} libraryItems
+   * @param {*} options
+   */
+  handleBatchEmbed(userId, libraryItems, options = {}) {
     libraryItems.forEach((li) => {
-      this.updateMetadataForItem(user, li, options)
+      this.updateMetadataForItem(userId, li, options)
     })
   }
 
-  async updateMetadataForItem(user, libraryItem, options = {}) {
+  /**
+   *
+   * @param {string} userId
+   * @param {*} libraryItem
+   * @param {*} options
+   */
+  async updateMetadataForItem(userId, libraryItem, options = {}) {
     const forceEmbedChapters = !!options.forceEmbedChapters
     const backupFiles = !!options.backup
 
@@ -58,7 +70,7 @@ class AudioMetadataMangaer {
     const taskData = {
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
-      userId: user.id,
+      userId,
       audioFiles: audioFiles.map((af) => ({
         index: af.index,
         ino: af.ino,

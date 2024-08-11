@@ -337,7 +337,7 @@ class CollectionController {
     if (req.method == 'DELETE' && !req.userNew.canDelete) {
       Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
       Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }

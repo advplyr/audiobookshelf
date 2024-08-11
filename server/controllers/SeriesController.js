@@ -1,7 +1,16 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ */
 
 class SeriesController {
   constructor() {}
@@ -13,8 +22,8 @@ class SeriesController {
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
    * Series are not library specific so we need to know what the library id is
    *
-   * @param {*} req
-   * @param {*} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findOne(req, res) {
     const include = (req.query.include || '')
@@ -28,8 +37,7 @@ class SeriesController {
     if (include.includes('progress')) {
       const libraryItemsInSeries = req.libraryItemsInSeries
       const libraryItemsFinished = libraryItemsInSeries.filter((li) => {
-        const mediaProgress = req.user.getMediaProgress(li.id)
-        return mediaProgress?.isFinished
+        return req.userNew.getMediaProgress(li.media.id)?.isFinished
       })
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
@@ -46,6 +54,11 @@ class SeriesController {
     res.json(seriesJson)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async update(req, res) {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
@@ -55,6 +68,12 @@ class SeriesController {
     res.json(req.series.toJSON())
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) return res.sendStatus(404)
@@ -64,15 +83,15 @@ class SeriesController {
      */
     const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.userNew)
     if (!libraryItems.length) {
-      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" with no accessible books`, req.user)
+      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to access series "${series.id}" with no accessible books`)
       return res.sendStatus(404)
     }
 
-    if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[SeriesController] User attempted to delete without permission`, req.user)
+    if (req.method == 'DELETE' && !req.userNew.canDelete) {
+      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[SeriesController] User attempted to update without permission', req.user)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
+      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

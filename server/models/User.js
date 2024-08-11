@@ -419,8 +419,11 @@ class User extends Model {
     )
   }
 
+  get isRoot() {
+    return this.type === 'root'
+  }
   get isAdminOrUp() {
-    return this.type === 'root' || this.type === 'admin'
+    return this.isRoot || this.type === 'admin'
   }
   get isUser() {
     return this.type === 'user'

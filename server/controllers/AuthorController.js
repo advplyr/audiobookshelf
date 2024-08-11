@@ -365,7 +365,7 @@ class AuthorController {
     if (req.method == 'DELETE' && !req.userNew.canDelete) {
       Logger.warn(`[AuthorController] User "${req.userNew.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
       Logger.warn(`[AuthorController] User "${req.userNew.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
