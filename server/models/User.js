@@ -217,14 +217,6 @@ class User extends Model {
     }
   }
 
-  static removeById(userId) {
-    return this.destroy({
-      where: {
-        id: userId
-      }
-    })
-  }
-
   /**
    * Create root user
    * @param {string} username

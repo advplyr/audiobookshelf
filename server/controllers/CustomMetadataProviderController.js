@@ -1,20 +1,25 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const { validateUrl } = require('../utils/index')
 
-//
-// This is a controller for routes that don't have a home yet :(
-//
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class CustomMetadataProviderController {
   constructor() {}
 
   /**
    * GET: /api/custom-metadata-providers
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAll(req, res) {
     const providers = await Database.customMetadataProviderModel.findAll()
@@ -27,8 +32,8 @@ class CustomMetadataProviderController {
   /**
    * POST: /api/custom-metadata-providers
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async create(req, res) {
     const { name, url, mediaType, authHeaderValue } = req.body
@@ -61,8 +66,8 @@ class CustomMetadataProviderController {
   /**
    * DELETE: /api/custom-metadata-providers/:id
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async delete(req, res) {
     const slug = `custom-${req.params.id}`
@@ -96,9 +101,9 @@ class CustomMetadataProviderController {
   /**
    * Middleware that requires admin or up
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
    */
   async middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {

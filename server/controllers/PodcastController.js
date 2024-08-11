@@ -15,10 +15,10 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryItem = require('../objects/LibraryItem')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class PodcastController {
@@ -129,7 +129,7 @@ class PodcastController {
    * @typedef getPodcastFeedReqBody
    * @property {string} rssFeed
    *
-   * @param {Request<{}, {}, getPodcastFeedReqBody, {}> & RequestUserObjects} req
+   * @param {Request<{}, {}, getPodcastFeedReqBody, {}> & RequestUserObject} req
    * @param {Response} res
    */
   async getPodcastFeed(req, res) {

@@ -3,10 +3,10 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class ToolsController {

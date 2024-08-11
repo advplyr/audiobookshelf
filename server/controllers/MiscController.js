@@ -15,10 +15,10 @@ const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class MiscController {

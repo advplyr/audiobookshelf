@@ -1,16 +1,24 @@
+const { Request, Response } = require('express')
 const Path = require('path')
 const Logger = require('../Logger')
 const fs = require('../libs/fsExtra')
 const { toNumber } = require('../utils/index')
 const fileUtils = require('../utils/fileUtils')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class FileSystemController {
   constructor() {}
 
   /**
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getPaths(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -67,7 +75,12 @@ class FileSystemController {
     })
   }
 
-  // POST: api/filesystem/pathexists
+  /**
+   * POST: /api/filesystem/pathexists
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async checkPathExists(req, res) {
     if (!req.user.canUpload) {
       Logger.error(`[FileSystemController] Non-admin user "${req.user.username}" attempting to check path exists`)

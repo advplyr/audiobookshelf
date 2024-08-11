@@ -390,16 +390,6 @@ class Database {
     return this.models.user.updateFromOld(oldUser)
   }
 
-  removeUser(userId) {
-    if (!this.sequelize) return false
-    return this.models.user.removeById(userId)
-  }
-
-  upsertMediaProgress(oldMediaProgress) {
-    if (!this.sequelize) return false
-    return this.models.mediaProgress.upsertFromOld(oldMediaProgress)
-  }
-
   updateBulkBooks(oldBooks) {
     if (!this.sequelize) return false
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))

@@ -9,16 +9,15 @@ const User = require('../objects/user/User')
 const { toNumber } = require('../utils/index')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  *
- * @typedef UserControllerRequestProps
- * @property {import('../models/User')} user - User that made the request
- * @property {import('../objects/user/User')} [reqUser] - User for req param id
+ * @typedef RequestEntityObject
+ * @property {import('../models/User')} reqUser
  *
- * @typedef {Request & UserControllerRequestProps} UserControllerRequest
+ * @typedef {RequestWithUser & RequestEntityObject} UserControllerRequest
  */
 
 class UserController {
@@ -26,7 +25,7 @@ class UserController {
 
   /**
    *
-   * @param {UserControllerRequest} req
+   * @param {RequestWithUser} req
    * @param {Response} res
    */
   async findAll(req, res) {
@@ -100,7 +99,7 @@ class UserController {
       return oldMediaProgress
     })
 
-    const userJson = req.reqUser.toJSONForBrowser(!req.user.isRoot)
+    const userJson = req.reqUser.toOldJSONForBrowser(!req.user.isRoot)
 
     userJson.mediaProgress = oldMediaProgresses
 
@@ -122,7 +121,7 @@ class UserController {
 
     const usernameExists = await Database.userModel.checkUserExistsWithUsername(username)
     if (usernameExists) {
-      return res.status(500).send('Username already taken')
+      return res.status(400).send('Username already taken')
     }
 
     account.id = uuidv4()
@@ -132,6 +131,7 @@ class UserController {
     account.createdAt = Date.now()
     const newUser = new User(account)
 
+    // TODO: Create with new User model
     const success = await Database.createUser(newUser)
     if (success) {
       SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
@@ -147,6 +147,8 @@ class UserController {
    * PATCH: /api/users/:id
    * Update user
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {UserControllerRequest} req
    * @param {Response} res
    */
@@ -158,12 +160,12 @@ class UserController {
       return res.sendStatus(403)
     }
 
-    var account = req.body
-    var shouldUpdateToken = false
+    const updatePayload = req.body
+    let shouldUpdateToken = false
 
     // When changing username create a new API token
-    if (account.username !== undefined && account.username !== user.username) {
-      const usernameExists = await Database.userModel.checkUserExistsWithUsername(account.username)
+    if (updatePayload.username !== undefined && updatePayload.username !== user.username) {
+      const usernameExists = await Database.userModel.checkUserExistsWithUsername(updatePayload.username)
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -171,23 +173,25 @@ class UserController {
     }
 
     // Updating password
-    if (account.password) {
-      account.pash = await this.auth.hashPass(account.password)
-      delete account.password
+    if (updatePayload.password) {
+      updatePayload.pash = await this.auth.hashPass(updatePayload.password)
+      delete updatePayload.password
     }
 
-    if (user.update(account)) {
+    // TODO: Update with new User model
+    const oldUser = Database.userModel.getOldUser(user)
+    if (oldUser.update(updatePayload)) {
       if (shouldUpdateToken) {
-        user.token = await this.auth.generateAccessToken(user)
-        Logger.info(`[UserController] User ${user.username} was generated a new api token`)
+        oldUser.token = await this.auth.generateAccessToken(oldUser)
+        Logger.info(`[UserController] User ${oldUser.username} has generated a new api token`)
       }
-      await Database.updateUser(user)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+      await Database.updateUser(oldUser)
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', oldUser.toJSONForBrowser())
     }
 
     res.json({
       success: true,
-      user: user.toJSONForBrowser()
+      user: oldUser.toJSONForBrowser()
     })
   }
 
@@ -221,8 +225,8 @@ class UserController {
       await playlist.destroy()
     }
 
-    const userJson = user.toJSONForBrowser()
-    await Database.removeUser(user.id)
+    const userJson = user.toOldJSONForBrowser()
+    await user.destroy()
     SocketAuthority.adminEmitter('user_removed', userJson)
     res.json({
       success: true
@@ -237,13 +241,16 @@ class UserController {
    */
   async unlinkFromOpenID(req, res) {
     Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
-    req.reqUser.authOpenIDSub = null
-    if (await Database.userModel.updateFromOld(req.reqUser)) {
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toJSONForBrowser())
-      res.sendStatus(200)
-    } else {
-      res.sendStatus(500)
+
+    if (!req.reqUser.authOpenIDSub) {
+      return res.sendStatus(200)
     }
+
+    req.reqUser.extraData.authOpenIDSub = null
+    req.reqUser.changed('extraData', true)
+    await req.reqUser.save()
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toOldJSONForBrowser())
+    res.sendStatus(200)
   }
 
   /**
@@ -318,8 +325,7 @@ class UserController {
     }
 
     if (req.params.id) {
-      // TODO: Update to use new user model
-      req.reqUser = await Database.userModel.getOldUserById(req.params.id)
+      req.reqUser = await Database.userModel.getUserById(req.params.id)
       if (!req.reqUser) {
         return res.sendStatus(404)
       }

@@ -5,10 +5,10 @@ const Database = require('../Database')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class SeriesController {

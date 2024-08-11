@@ -6,10 +6,10 @@ const Database = require('../Database')
 const Playlist = require('../objects/Playlist')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class PlaylistController {

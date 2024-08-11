@@ -6,10 +6,10 @@ const { toNumber, isUUID } = require('../utils/index')
 const ShareManager = require('../managers/ShareManager')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class SessionController {
@@ -206,7 +206,7 @@ class SessionController {
    * @typedef batchDeleteReqBody
    * @property {string[]} sessions
    *
-   * @param {Request<{}, {}, batchDeleteReqBody, {}> & RequestUserObjects} req
+   * @param {Request<{}, {}, batchDeleteReqBody, {}> & RequestUserObject} req
    * @param {Response} res
    */
   async batchDelete(req, res) {

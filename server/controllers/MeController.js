@@ -7,10 +7,10 @@ const { toNumber, isNullOrNaN } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
 
 /**
- * @typedef RequestUserObjects
+ * @typedef RequestUserObject
  * @property {import('../models/User')} user
  *
- * @typedef {Request & RequestUserObjects} RequestWithUser
+ * @typedef {Request & RequestUserObject} RequestWithUser
  */
 
 class MeController {

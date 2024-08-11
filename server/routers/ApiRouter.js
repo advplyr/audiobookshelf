@@ -56,6 +56,7 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     /** @type {import('../managers/NotificationManager')} */
     this.notificationManager = Server.notificationManager
+    /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
 
