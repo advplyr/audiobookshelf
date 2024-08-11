@@ -11,6 +11,7 @@ const Book = require('./Book')
 const Podcast = require('./Podcast')
 
 const ShareManager = require('../managers/ShareManager')
+const { LogLevel } = require('../utils/constants')
 
 /**
  * @typedef LibraryFileObject
@@ -301,8 +302,16 @@ class LibraryItem extends Model {
               let existingValue = existingEpisodeMatch[key]
               if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
+              // Avoid `[object Object]` logs when troubleshooting.
+              let existingToLog = existingValue
+              let updatedToLog = updatedEpisodeCleaned[key]
+              if (Logger.logLevel <= LogLevel.DEBUG && typeof existingToLog === "object") {
+                existingToLog = JSON.stringify(existingToLog)
+                updatedToLog = JSON.stringify(updatedToLog)
+              }
+
               if (!areEquivalent(updatedEpisodeCleaned[key], existingValue, true)) {
-                Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
+                Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingToLog}" to "${updatedToLog}"`)
                 episodeHasUpdates = true
               }
             }
