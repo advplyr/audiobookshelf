@@ -2,7 +2,6 @@ const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
-const AudioBookmark = require('../objects/user/AudioBookmark')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
 
@@ -50,6 +49,47 @@ class User extends Model {
     this.updatedAt
     /** @type {import('./MediaProgress')[]?} - Only included when extended */
     this.mediaProgresses
+  }
+
+  /**
+   * List of expected permission properties from the client
+   * Only used for OpenID
+   */
+  static permissionMapping = {
+    canDownload: 'download',
+    canUpload: 'upload',
+    canDelete: 'delete',
+    canUpdate: 'update',
+    canAccessExplicitContent: 'accessExplicitContent',
+    canAccessAllLibraries: 'accessAllLibraries',
+    canAccessAllTags: 'accessAllTags',
+    tagsAreDenylist: 'selectedTagsNotAccessible',
+    // Direct mapping for array-based permissions
+    allowedLibraries: 'librariesAccessible',
+    allowedTags: 'itemTagsSelected'
+  }
+
+  /**
+   * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like
+   * Only used for OpenID
+   *
+   * @returns {string} JSON string
+   */
+  static getSampleAbsPermissions() {
+    // Start with a template object where all permissions are false for simplicity
+    const samplePermissions = Object.keys(User.permissionMapping).reduce((acc, key) => {
+      // For array-based permissions, provide a sample array
+      if (key === 'allowedLibraries') {
+        acc[key] = [`5406ba8a-16e1-451d-96d7-4931b0a0d966`, `918fd848-7c1d-4a02-818a-847435a879ca`]
+      } else if (key === 'allowedTags') {
+        acc[key] = [`ExampleTag`, `AnotherTag`, `ThirdTag`]
+      } else {
+        acc[key] = false
+      }
+      return acc
+    }, {})
+
+    return JSON.stringify(samplePermissions, null, 2) // Pretty print the JSON
   }
 
   /**
@@ -817,6 +857,69 @@ class User extends Model {
     this.changed('extraData', true)
     await this.save()
     return true
+  }
+
+  /**
+   * Update user permissions from external JSON
+   *
+   * @param {Object} absPermissions JSON containing user permissions
+   * @returns {Promise<boolean>} true if updates were made
+   */
+  async updatePermissionsFromExternalJSON(absPermissions) {
+    if (!this.permissions) this.permissions = {}
+    let hasUpdates = false
+
+    // Map the boolean permissions from absPermissions
+    Object.keys(absPermissions).forEach((absKey) => {
+      const userPermKey = User.permissionMapping[absKey]
+      if (!userPermKey) {
+        throw new Error(`Unexpected permission property: ${absKey}`)
+      }
+
+      if (!['librariesAccessible', 'itemTagsSelected'].includes(userPermKey)) {
+        if (this.permissions[userPermKey] !== !!absPermissions[absKey]) {
+          this.permissions[userPermKey] = !!absPermissions[absKey]
+          hasUpdates = true
+        }
+      }
+    })
+
+    // Handle allowedLibraries
+    const librariesAccessible = this.permissions.librariesAccessible || []
+    if (this.permissions.accessAllLibraries) {
+      if (librariesAccessible.length) {
+        this.permissions.librariesAccessible = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedLibraries?.length && absPermissions.allowedLibraries.join(',') !== librariesAccessible.join(',')) {
+      if (absPermissions.allowedLibraries.some((lid) => typeof lid !== 'string')) {
+        throw new Error('Invalid permission property "allowedLibraries", expecting array of strings')
+      }
+      this.permissions.librariesAccessible = absPermissions.allowedLibraries
+      hasUpdates = true
+    }
+
+    // Handle allowedTags
+    const itemTagsSelected = this.permissions.itemTagsSelected || []
+    if (this.permissions.accessAllTags) {
+      if (itemTagsSelected.length) {
+        this.permissions.itemTagsSelected = []
+        hasUpdates = true
+      }
+    } else if (absPermissions.allowedTags?.length && absPermissions.allowedTags.join(',') !== itemTagsSelected.join(',')) {
+      if (absPermissions.allowedTags.some((tag) => typeof tag !== 'string')) {
+        throw new Error('Invalid permission property "allowedTags", expecting array of strings')
+      }
+      this.permissions.itemTagsSelected = absPermissions.allowedTags
+      hasUpdates = true
+    }
+
+    if (hasUpdates) {
+      this.changed('permissions', true)
+      await this.save()
+    }
+
+    return hasUpdates
   }
 }
 

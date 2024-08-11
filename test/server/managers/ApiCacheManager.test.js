@@ -12,7 +12,7 @@ describe('ApiCacheManager', () => {
 
   beforeEach(() => {
     cache = { get: sinon.stub(), set: sinon.spy() }
-    req = { user: { username: 'testUser' }, userNew: { username: 'testUser' }, url: '/test-url', query: {} }
+    req = { user: { username: 'testUser' }, url: '/test-url', query: {} }
     res = { send: sinon.spy(), getHeaders: sinon.stub(), statusCode: 200, status: sinon.spy(), set: sinon.spy() }
     next = sinon.spy()
   })

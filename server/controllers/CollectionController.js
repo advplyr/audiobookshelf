@@ -16,7 +16,7 @@ class CollectionController {
    */
   async create(req, res) {
     const newCollection = new Collection()
-    req.body.userId = req.userNew.id
+    req.body.userId = req.user.id
     if (!newCollection.setData(req.body)) {
       return res.status(400).send('Invalid collection data')
     }
@@ -50,7 +50,7 @@ class CollectionController {
   }
 
   async findAll(req, res) {
-    const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.userNew)
+    const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
     res.json({
       collections: collectionsExpanded
     })
@@ -59,7 +59,7 @@ class CollectionController {
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
 
-    const collectionExpanded = await req.collection.getOldJsonExpanded(req.userNew, includeEntities)
+    const collectionExpanded = await req.collection.getOldJsonExpanded(req.user, includeEntities)
     if (!collectionExpanded) {
       // This may happen if the user is restricted from all books
       return res.sendStatus(404)
@@ -334,11 +334,11 @@ class CollectionController {
       req.collection = collection
     }
 
-    if (req.method == 'DELETE' && !req.userNew.canDelete) {
-      Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to delete without permission`)
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[CollectionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
-      Logger.warn(`[CollectionController] User "${req.userNew.username}" attempted to update without permission`)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn(`[CollectionController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

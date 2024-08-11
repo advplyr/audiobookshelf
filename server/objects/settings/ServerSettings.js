@@ -2,7 +2,7 @@ const Path = require('path')
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
-const User = require('../user/User')
+const User = require('../../models/User')
 
 class ServerSettings {
   constructor(settings) {

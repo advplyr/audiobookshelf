@@ -18,8 +18,7 @@ const ShareManager = require('../managers/ShareManager')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -33,8 +32,8 @@ class LibraryItemController {
    * ?include=progress,rssfeed,downloads,share
    * ?expanded=1
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
@@ -44,7 +43,7 @@ class LibraryItemController {
       // Include users media progress
       if (includeEntities.includes('progress')) {
         var episodeId = req.query.episode || null
-        item.userMediaProgress = req.userNew.getOldMediaProgress(item.id, episodeId)
+        item.userMediaProgress = req.user.getOldMediaProgress(item.id, episodeId)
       }
 
       if (includeEntities.includes('rssfeed')) {
@@ -52,7 +51,7 @@ class LibraryItemController {
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 
-      if (item.mediaType === 'book' && req.userNew.isAdminOrUp && includeEntities.includes('share')) {
+      if (item.mediaType === 'book' && req.user.isAdminOrUp && includeEntities.includes('share')) {
         item.mediaItemShare = ShareManager.findByMediaItemId(item.media.id)
       }
 
@@ -69,6 +68,11 @@ class LibraryItemController {
     res.json(req.libraryItem)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async update(req, res) {
     var libraryItem = req.libraryItem
     // Item has cover and update is removing cover so purge it from cache
@@ -91,8 +95,8 @@ class LibraryItemController {
    * Optional query params:
    * ?hard=1
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async delete(req, res) {
     const hardDelete = req.query.hard == 1 // Delete from file system
@@ -114,12 +118,12 @@ class LibraryItemController {
    * GET: /api/items/:id/download
    * Download library item. Zip file if multiple files.
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   download(req, res) {
-    if (!req.userNew.canDownload) {
-      Logger.warn(`User "${req.userNew.username}" attempted to download without permission`)
+    if (!req.user.canDownload) {
+      Logger.warn(`User "${req.user.username}" attempted to download without permission`)
       return res.sendStatus(403)
     }
     const libraryItemPath = req.libraryItem.path
@@ -132,12 +136,12 @@ class LibraryItemController {
       if (audioMimeType) {
         res.setHeader('Content-Type', audioMimeType)
       }
-      Logger.info(`[LibraryItemController] User "${req.userNew.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
+      Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
       res.download(libraryItemPath, req.libraryItem.relPath)
       return
     }
 
-    Logger.info(`[LibraryItemController] User "${req.userNew.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
     const filename = `${itemTitle}.zip`
     zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
@@ -146,8 +150,8 @@ class LibraryItemController {
    * PATCH: /items/:id/media
    * Update media for a library item. Will create new authors & series when necessary
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateMedia(req, res) {
     const libraryItem = req.libraryItem
@@ -207,10 +211,16 @@ class LibraryItemController {
     })
   }
 
-  // POST: api/items/:id/cover
+  /**
+   * POST: /api/items/:id/cover
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {boolean} [updateAndReturnJson=true]
+   */
   async uploadCover(req, res, updateAndReturnJson = true) {
-    if (!req.userNew.canUpload) {
-      Logger.warn(`User "${req.userNew.username}" attempted to upload a cover without permission`)
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload a cover without permission`)
       return res.sendStatus(403)
     }
 
@@ -243,7 +253,12 @@ class LibraryItemController {
     }
   }
 
-  // PATCH: api/items/:id/cover
+  /**
+   * PATCH: /api/items/:id/cover
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async updateCover(req, res) {
     const libraryItem = req.libraryItem
     if (!req.body.cover) {
@@ -264,7 +279,12 @@ class LibraryItemController {
     })
   }
 
-  // DELETE: api/items/:id/cover
+  /**
+   * DELETE: /api/items/:id/cover
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async removeCover(req, res) {
     var libraryItem = req.libraryItem
 
@@ -279,10 +299,10 @@ class LibraryItemController {
   }
 
   /**
-   * GET: api/items/:id/cover
+   * GET: /api/items/:id/cover
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getCover(req, res) {
     const {
@@ -308,7 +328,7 @@ class LibraryItemController {
     }
 
     // Check if user can access this library item
-    if (!req.userNew.checkCanAccessLibraryItem(libraryItem)) {
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
       return res.sendStatus(403)
     }
 
@@ -377,7 +397,12 @@ class LibraryItemController {
     this.playbackSessionManager.startSessionRequest(req, res, episodeId)
   }
 
-  // PATCH: api/items/:id/tracks
+  /**
+   * PATCH: /api/items/:id/tracks
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async updateTracks(req, res) {
     var libraryItem = req.libraryItem
     var orderedFileData = req.body.orderedFileData
@@ -391,7 +416,12 @@ class LibraryItemController {
     res.json(libraryItem.toJSON())
   }
 
-  // POST api/items/:id/match
+  /**
+   * POST /api/items/:id/match
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async match(req, res) {
     var libraryItem = req.libraryItem
 
@@ -406,12 +436,12 @@ class LibraryItemController {
    * Optional query params:
    * ?hard=1
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async batchDelete(req, res) {
-    if (!req.userNew.canDelete) {
-      Logger.warn(`[LibraryItemController] User "${req.userNew.username}" attempted to delete without permission`)
+    if (!req.user.canDelete) {
+      Logger.warn(`[LibraryItemController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     }
     const hardDelete = req.query.hard == 1 // Delete files from filesystem
@@ -447,7 +477,12 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
-  // POST: api/items/batch/update
+  /**
+   * POST: /api/items/batch/update
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchUpdate(req, res) {
     const updatePayloads = req.body
     if (!updatePayloads?.length) {
@@ -493,7 +528,12 @@ class LibraryItemController {
     })
   }
 
-  // POST: api/items/batch/get
+  /**
+   * POST: /api/items/batch/get
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchGet(req, res) {
     const libraryItemIds = req.body.libraryItemIds || []
     if (!libraryItemIds.length) {
@@ -507,10 +547,15 @@ class LibraryItemController {
     })
   }
 
-  // POST: api/items/batch/quickmatch
+  /**
+   * POST: /api/items/batch/quickmatch
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchQuickMatch(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.warn(`Non-admin user "${req.userNew.username}" other than admin attempted to batch quick match library items`)
+    if (!req.user.isAdminOrUp) {
+      Logger.warn(`Non-admin user "${req.user.username}" other than admin attempted to batch quick match library items`)
       return res.sendStatus(403)
     }
 
@@ -545,13 +590,18 @@ class LibraryItemController {
       updates: itemsUpdated,
       unmatched: itemsUnmatched
     }
-    SocketAuthority.clientEmitter(req.userNew.id, 'batch_quickmatch_complete', result)
+    SocketAuthority.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
   }
 
-  // POST: api/items/batch/scan
+  /**
+   * POST: /api/items/batch/scan
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchScan(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.warn(`Non-admin user "${req.userNew.username}" other than admin attempted to batch scan library items`)
+    if (!req.user.isAdminOrUp) {
+      Logger.warn(`Non-admin user "${req.user.username}" other than admin attempted to batch scan library items`)
       return res.sendStatus(403)
     }
 
@@ -583,10 +633,15 @@ class LibraryItemController {
     await Database.resetLibraryIssuesFilterData(libraryId)
   }
 
-  // POST: api/items/:id/scan
+  /**
+   * POST: /api/items/:id/scan
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async scan(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-admin user "${req.userNew.username}" attempted to scan library item`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user "${req.user.username}" attempted to scan library item`)
       return res.sendStatus(403)
     }
 
@@ -602,9 +657,15 @@ class LibraryItemController {
     })
   }
 
+  /**
+   * GET: /api/items/:id/metadata-object
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   getMetadataObject(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-admin user "${req.userNew.username}" attempted to get metadata object`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user "${req.user.username}" attempted to get metadata object`)
       return res.sendStatus(403)
     }
 
@@ -616,10 +677,15 @@ class LibraryItemController {
     res.json(this.audioMetadataManager.getMetadataObjectForApi(req.libraryItem))
   }
 
-  // POST: api/items/:id/chapters
+  /**
+   * POST: /api/items/:id/chapters
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async updateMediaChapters(req, res) {
-    if (!req.userNew.canUpdate) {
-      Logger.error(`[LibraryItemController] User "${req.userNew.username}" attempted to update chapters with invalid permissions`)
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryItemController] User "${req.user.username}" attempted to update chapters with invalid permissions`)
       return res.sendStatus(403)
     }
 
@@ -647,15 +713,15 @@ class LibraryItemController {
   }
 
   /**
-   * GET api/items/:id/ffprobe/:fileid
+   * GET: /api/items/:id/ffprobe/:fileid
    * FFProbe JSON result from audio file
    *
-   * @param {express.Request} req
-   * @param {express.Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getFFprobeData(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-admin user "${req.userNew.username}" attempted to get ffprobe data`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user "${req.user.username}" attempted to get ffprobe data`)
       return res.sendStatus(403)
     }
     if (req.libraryFile.fileType !== 'audio') {
@@ -676,8 +742,8 @@ class LibraryItemController {
   /**
    * GET api/items/:id/file/:fileid
    *
-   * @param {express.Request} req
-   * @param {express.Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getLibraryFile(req, res) {
     const libraryFile = req.libraryFile
@@ -699,13 +765,13 @@ class LibraryItemController {
   /**
    * DELETE api/items/:id/file/:fileid
    *
-   * @param {express.Request} req
-   * @param {express.Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteLibraryFile(req, res) {
     const libraryFile = req.libraryFile
 
-    Logger.info(`[LibraryItemController] User "${req.userNew.username}" requested file delete at "${libraryFile.metadata.path}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested file delete at "${libraryFile.metadata.path}"`)
 
     await fs.remove(libraryFile.metadata.path).catch((error) => {
       Logger.error(`[LibraryItemController] Failed to delete library file at "${libraryFile.metadata.path}"`, error)
@@ -727,18 +793,19 @@ class LibraryItemController {
   /**
    * GET api/items/:id/file/:fileid/download
    * Same as GET api/items/:id/file/:fileid but allows logging and restricting downloads
-   * @param {express.Request} req
-   * @param {express.Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async downloadLibraryFile(req, res) {
     const libraryFile = req.libraryFile
 
-    if (!req.userNew.canDownload) {
-      Logger.error(`[LibraryItemController] User "${req.userNew.username}" without download permission attempted to download file "${libraryFile.metadata.path}"`)
+    if (!req.user.canDownload) {
+      Logger.error(`[LibraryItemController] User "${req.user.username}" without download permission attempted to download file "${libraryFile.metadata.path}"`)
       return res.sendStatus(403)
     }
 
-    Logger.info(`[LibraryItemController] User "${req.userNew.username}" requested download for item "${req.libraryItem.media.metadata.title}" file at "${libraryFile.metadata.path}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" file at "${libraryFile.metadata.path}"`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + libraryFile.metadata.path)
@@ -761,8 +828,8 @@ class LibraryItemController {
    * fileid is only required when reading a supplementary ebook
    * when no fileid is passed in the primary ebook will be returned
    *
-   * @param {express.Request} req
-   * @param {express.Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getEBookFile(req, res) {
     let ebookFile = null
@@ -782,7 +849,7 @@ class LibraryItemController {
     }
     const ebookFilePath = ebookFile.metadata.path
 
-    Logger.info(`[LibraryItemController] User "${req.userNew.username}" requested download for item "${req.libraryItem.media.metadata.title}" ebook at "${ebookFilePath}"`)
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${req.libraryItem.media.metadata.title}" ebook at "${ebookFilePath}"`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + ebookFilePath)
@@ -799,8 +866,8 @@ class LibraryItemController {
    * if an ebook file is the primary ebook, then it will be changed to supplementary
    * if an ebook file is supplementary, then it will be changed to primary
    *
-   * @param {express.Request} req
-   * @param {express.Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateEbookFileStatus(req, res) {
     const ebookLibraryFile = req.libraryItem.libraryFiles.find((lf) => lf.ino === req.params.fileid)
@@ -826,16 +893,16 @@ class LibraryItemController {
 
   /**
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
    */
   async middleware(req, res, next) {
     req.libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item
-    if (!req.userNew.checkCanAccessLibraryItem(req.libraryItem)) {
+    if (!req.user.checkCanAccessLibraryItem(req.libraryItem)) {
       return res.sendStatus(403)
     }
 
@@ -850,11 +917,11 @@ class LibraryItemController {
 
     if (req.path.includes('/play')) {
       // allow POST requests using /play and /play/:episodeId
-    } else if (req.method == 'DELETE' && !req.userNew.canDelete) {
-      Logger.warn(`[LibraryItemController] User "${req.userNew.username}" attempted to delete without permission`)
+    } else if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[LibraryItemController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
-      Logger.warn(`[LibraryItemController] User "${req.userNew.username}" attempted to update without permission`)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn(`[LibraryItemController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

@@ -9,8 +9,7 @@ const { isValidASIN } = require('../utils')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */

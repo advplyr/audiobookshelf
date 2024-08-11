@@ -24,7 +24,7 @@ class AuthorController {
 
     // Used on author landing page to include library items and items grouped in series
     if (include.includes('items')) {
-      authorJson.libraryItems = await Database.libraryItemModel.getForAuthor(req.author, req.userNew)
+      authorJson.libraryItems = await Database.libraryItemModel.getForAuthor(req.author, req.user)
 
       if (include.includes('series')) {
         const seriesMap = {}
@@ -222,8 +222,8 @@ class AuthorController {
    * @param {import('express').Response} res
    */
   async uploadImage(req, res) {
-    if (!req.userNew.canUpload) {
-      Logger.warn(`User "${req.userNew.username}" attempted to upload an image without permission`)
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload an image without permission`)
       return res.sendStatus(403)
     }
     if (!req.body.url) {
@@ -362,11 +362,11 @@ class AuthorController {
     const author = await Database.authorModel.getOldById(req.params.id)
     if (!author) return res.sendStatus(404)
 
-    if (req.method == 'DELETE' && !req.userNew.canDelete) {
-      Logger.warn(`[AuthorController] User "${req.userNew.username}" attempted to delete without permission`)
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[AuthorController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
-      Logger.warn(`[AuthorController] User "${req.userNew.username}" attempted to update without permission`)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn(`[AuthorController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

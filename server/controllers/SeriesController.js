@@ -6,8 +6,7 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -37,7 +36,7 @@ class SeriesController {
     if (include.includes('progress')) {
       const libraryItemsInSeries = req.libraryItemsInSeries
       const libraryItemsFinished = libraryItemsInSeries.filter((li) => {
-        return req.userNew.getMediaProgress(li.media.id)?.isFinished
+        return req.user.getMediaProgress(li.media.id)?.isFinished
       })
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
@@ -81,17 +80,17 @@ class SeriesController {
     /**
      * Filter out any library items not accessible to user
      */
-    const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.userNew)
+    const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
     if (!libraryItems.length) {
-      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to access series "${series.id}" with no accessible books`)
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to access series "${series.id}" with no accessible books`)
       return res.sendStatus(404)
     }
 
-    if (req.method == 'DELETE' && !req.userNew.canDelete) {
-      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to delete without permission`)
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
-      Logger.warn(`[SeriesController] User "${req.userNew.username}" attempted to update without permission`)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

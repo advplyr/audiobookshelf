@@ -152,6 +152,8 @@ class Auth {
   /**
    * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
    * or creates a new user if configured to do so.
+   *
+   * @returns {import('./models/User')|null}
    */
   async findOrCreateUser(userinfo) {
     let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
@@ -307,9 +309,8 @@ class Auth {
     const absPermissions = userinfo[absPermissionsClaim]
     if (!absPermissions) throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
 
-    if (user.updatePermissionsFromExternalJSON(absPermissions)) {
+    if (await user.updatePermissionsFromExternalJSON(absPermissions)) {
       Logger.info(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
-      await Database.userModel.updateFromOld(user)
     }
   }
 
@@ -921,7 +922,7 @@ class Auth {
   async userChangePassword(req, res) {
     let { password, newPassword } = req.body
     newPassword = newPassword || ''
-    const matchingUser = req.userNew
+    const matchingUser = req.user
 
     // Only root can have an empty password
     if (matchingUser.type !== 'root' && !newPassword) {

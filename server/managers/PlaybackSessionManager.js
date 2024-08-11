@@ -48,7 +48,7 @@ class PlaybackSessionManager {
     const ip = requestIp.getClientIp(req)
 
     const deviceInfo = new DeviceInfo()
-    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.userNew?.id)
+    deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
     if (clientDeviceInfo?.deviceId) {
       const existingDevice = await Database.getDeviceByDeviceId(clientDeviceInfo.deviceId)
@@ -75,7 +75,7 @@ class PlaybackSessionManager {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
     const { libraryItem, body: options } = req
-    const session = await this.startSession(req.userNew, deviceInfo, libraryItem, episodeId, options)
+    const session = await this.startSession(req.user, deviceInfo, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
   }
 
@@ -96,7 +96,7 @@ class PlaybackSessionManager {
 
   async syncLocalSessionsRequest(req, res) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
-    const user = req.userNew
+    const user = req.user
     const sessions = req.body.sessions || []
 
     const syncResults = []
@@ -239,7 +239,7 @@ class PlaybackSessionManager {
   async syncLocalSessionRequest(req, res) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const sessionJson = req.body
-    const result = await this.syncLocalSession(req.userNew, sessionJson, deviceInfo)
+    const result = await this.syncLocalSession(req.user, sessionJson, deviceInfo)
     if (result.error) {
       res.status(500).send(result.error)
     } else {

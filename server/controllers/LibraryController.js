@@ -83,7 +83,7 @@ class LibraryController {
   async findAll(req, res) {
     const libraries = await Database.libraryModel.getAllOldLibraries()
 
-    const librariesAccessible = req.userNew.permissions?.librariesAccessible || []
+    const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
       return res.json({
         libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toJSON())
@@ -110,7 +110,7 @@ class LibraryController {
       return res.json({
         filterdata,
         issues: filterdata.numIssues,
-        numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.userNew.id, req.library.id),
+        numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         customMetadataProviders,
         library: req.library
       })
@@ -327,9 +327,9 @@ class LibraryController {
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
-      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.userNew, req.library)
+      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
     } else {
-      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.userNew, payload)
+      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
       payload.results = libraryItems
       payload.total = count
     }
@@ -420,7 +420,7 @@ class LibraryController {
     }
 
     const offset = payload.page * payload.limit
-    const { series, count } = await seriesFilters.getFilteredSeries(req.library, req.userNew, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
+    const { series, count } = await seriesFilters.getFilteredSeries(req.library, req.user, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
 
     payload.total = count
     payload.results = series
@@ -447,11 +447,11 @@ class LibraryController {
     if (!series) return res.sendStatus(404)
     const oldSeries = series.getOldSeries()
 
-    const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(oldSeries, req.userNew)
+    const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(oldSeries, req.user)
 
     const seriesJson = oldSeries.toJSON()
     if (include.includes('progress')) {
-      const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.userNew.getMediaProgress(li.media.id)?.isFinished)
+      const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.media.id)?.isFinished)
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
         libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
@@ -492,7 +492,7 @@ class LibraryController {
     }
 
     // TODO: Create paginated queries
-    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.userNew, req.library.id, include)
+    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
 
     payload.total = collections.length
 
@@ -512,7 +512,7 @@ class LibraryController {
    * @param {*} res
    */
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.userNew.id, req.library.id)
+    let playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id, req.library.id)
 
     const payload = {
       results: [],
@@ -552,7 +552,7 @@ class LibraryController {
       .split(',')
       .map((v) => v.trim().toLowerCase())
       .filter((v) => !!v)
-    const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.userNew, include, limitPerShelf)
+    const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
     res.json(shelves)
   }
 
@@ -563,8 +563,8 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async reorder(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-admin user "${req.userNew}" attempted to reorder libraries`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user}" attempted to reorder libraries`)
       return res.sendStatus(403)
     }
     const libraries = await Database.libraryModel.getAllOldLibraries()
@@ -609,7 +609,7 @@ class LibraryController {
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     const query = asciiOnlyToLowerCase(req.query.q.trim())
 
-    const matches = await libraryItemFilters.search(req.userNew, req.library, query, limit)
+    const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)
   }
 
@@ -662,7 +662,7 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async getAuthors(req, res) {
-    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.userNew)
+    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
     const authors = await Database.authorModel.findAll({
       where: {
         libraryId: req.library.id
@@ -672,7 +672,7 @@ class LibraryController {
         model: Database.bookModel,
         attributes: ['id', 'tags', 'explicit'],
         where: bookWhere,
-        required: !req.userNew.isAdminOrUp, // Only show authors with 0 books for admin users or up
+        required: !req.user.isAdminOrUp, // Only show authors with 0 books for admin users or up
         through: {
           attributes: []
         }
@@ -746,8 +746,8 @@ class LibraryController {
    * @param {*} res
    */
   async updateNarrator(req, res) {
-    if (!req.userNew.canUpdate) {
-      Logger.error(`[LibraryController] Unauthorized user "${req.userNew.username}" attempted to update narrator`)
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to update narrator`)
       return res.sendStatus(403)
     }
 
@@ -796,8 +796,8 @@ class LibraryController {
    * @param {*} res
    */
   async removeNarrator(req, res) {
-    if (!req.userNew.canUpdate) {
-      Logger.error(`[LibraryController] Unauthorized user "${req.userNew.username}" attempted to remove narrator`)
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to remove narrator`)
       return res.sendStatus(403)
     }
 
@@ -839,8 +839,8 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async matchAll(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-root user "${req.userNew.username}" attempted to match library items`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
     Scanner.matchLibraryItems(req.library)
@@ -856,8 +856,8 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async scan(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-admin user "${req.userNew.username}" attempted to scan library`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to scan library`)
       return res.sendStatus(403)
     }
     res.sendStatus(200)
@@ -887,7 +887,7 @@ class LibraryController {
     }
 
     const offset = payload.page * payload.limit
-    payload.episodes = await libraryItemsPodcastFilters.getRecentEpisodes(req.userNew, req.library, payload.limit, offset)
+    payload.episodes = await libraryItemsPodcastFilters.getRecentEpisodes(req.user, req.library, payload.limit, offset)
     res.json(payload)
   }
 
@@ -898,7 +898,7 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async getOPMLFile(req, res) {
-    const userPermissionPodcastWhere = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(req.userNew)
+    const userPermissionPodcastWhere = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(req.user)
     const podcasts = await Database.podcastModel.findAll({
       attributes: ['id', 'feedURL', 'title', 'description', 'itunesPageURL', 'language'],
       where: userPermissionPodcastWhere.podcastWhere,
@@ -924,8 +924,8 @@ class LibraryController {
    * @param {import('express').Response} res
    */
   async removeAllMetadataFiles(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-admin user "${req.userNew.username}" attempted to remove all metadata files`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to remove all metadata files`)
       return res.sendStatus(403)
     }
 
@@ -974,8 +974,8 @@ class LibraryController {
    * @param {import('express').NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.userNew.checkCanAccessLibrary(req.params.id)) {
-      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.userNew.username}`)
+    if (!req.user.checkCanAccessLibrary(req.params.id)) {
+      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(403)
     }
 

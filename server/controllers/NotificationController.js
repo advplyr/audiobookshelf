@@ -4,8 +4,7 @@ const { version } = require('../../package.json')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -135,7 +134,7 @@ class NotificationController {
    * @param {NextFunction} next
    */
   middleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
 

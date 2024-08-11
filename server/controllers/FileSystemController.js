@@ -13,8 +13,8 @@ class FileSystemController {
    * @param {import('express').Response} res
    */
   async getPaths(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[FileSystemController] Non-admin user "${req.userNew.username}" attempting to get filesystem paths`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[FileSystemController] Non-admin user "${req.user.username}" attempting to get filesystem paths`)
       return res.sendStatus(403)
     }
 
@@ -69,8 +69,8 @@ class FileSystemController {
 
   // POST: api/filesystem/pathexists
   async checkPathExists(req, res) {
-    if (!req.userNew.canUpload) {
-      Logger.error(`[FileSystemController] Non-admin user "${req.userNew.username}" attempting to check path exists`)
+    if (!req.user.canUpload) {
+      Logger.error(`[FileSystemController] Non-admin user "${req.user.username}" attempting to check path exists`)
       return res.sendStatus(403)
     }
 

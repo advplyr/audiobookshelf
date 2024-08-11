@@ -16,8 +16,7 @@ const adminStats = require('../utils/queries/adminStats')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -33,8 +32,8 @@ class MiscController {
    * @param {Response} res
    */
   async handleUpload(req, res) {
-    if (!req.userNew.canUpload) {
-      Logger.warn(`User "${req.userNew.username}" attempted to upload without permission`)
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
       return res.sendStatus(403)
     }
     if (!req.files) {
@@ -118,8 +117,8 @@ class MiscController {
    * @param {Response} res
    */
   async updateServerSettings(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`User "${req.userNew.username}" other than admin attempting to update server settings`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`User "${req.user.username}" other than admin attempting to update server settings`)
       return res.sendStatus(403)
     }
     const settingsUpdate = req.body
@@ -149,8 +148,8 @@ class MiscController {
    * @param {Response} res
    */
   async updateSortingPrefixes(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`User "${req.userNew.username}" other than admin attempting to update server sorting prefixes`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`User "${req.user.username}" other than admin attempting to update server sorting prefixes`)
       return res.sendStatus(403)
     }
     let sortingPrefixes = req.body.sortingPrefixes
@@ -249,7 +248,7 @@ class MiscController {
    * @param {Response} res
    */
   async authorize(req, res) {
-    const userResponse = await this.auth.getUserLoginResponsePayload(req.userNew)
+    const userResponse = await this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
 
@@ -261,8 +260,8 @@ class MiscController {
    * @param {Response} res
    */
   async getAllTags(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to getAllTags`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllTags`)
       return res.sendStatus(403)
     }
 
@@ -305,8 +304,8 @@ class MiscController {
    * @param {Response} res
    */
   async renameTag(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to renameTag`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameTag`)
       return res.sendStatus(403)
     }
 
@@ -360,8 +359,8 @@ class MiscController {
    * @param {Response} res
    */
   async deleteTag(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to deleteTag`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteTag`)
       return res.sendStatus(403)
     }
 
@@ -400,8 +399,8 @@ class MiscController {
    * @param {Response} res
    */
   async getAllGenres(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to getAllGenres`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllGenres`)
       return res.sendStatus(403)
     }
     const genres = []
@@ -443,8 +442,8 @@ class MiscController {
    * @param {Response} res
    */
   async renameGenre(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to renameGenre`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameGenre`)
       return res.sendStatus(403)
     }
 
@@ -498,8 +497,8 @@ class MiscController {
    * @param {Response} res
    */
   async deleteGenre(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to deleteGenre`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteGenre`)
       return res.sendStatus(403)
     }
 
@@ -543,8 +542,8 @@ class MiscController {
    * @param {Response} res
    */
   updateWatchedPath(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to updateWatchedPath`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to updateWatchedPath`)
       return res.sendStatus(403)
     }
 
@@ -601,8 +600,8 @@ class MiscController {
    * @param {Response} res
    */
   getAuthSettings(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get auth settings`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
       return res.sendStatus(403)
     }
     return res.json(Database.serverSettings.authenticationSettings)
@@ -616,8 +615,8 @@ class MiscController {
    * @param {Response} res
    */
   async updateAuthSettings(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to update auth settings`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to update auth settings`)
       return res.sendStatus(403)
     }
 
@@ -721,8 +720,8 @@ class MiscController {
    * @param {Response} res
    */
   async getAdminStatsForYear(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get admin stats for year`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin stats for year`)
       return res.sendStatus(403)
     }
     const year = Number(req.params.year)
@@ -742,8 +741,8 @@ class MiscController {
    * @param {Response} res
    */
   async getLoggerData(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user "${req.userNew.username}" attempted to get logger data`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get logger data`)
       return res.sendStatus(403)
     }
 

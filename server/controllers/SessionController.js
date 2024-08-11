@@ -7,8 +7,7 @@ const ShareManager = require('../managers/ShareManager')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -25,8 +24,8 @@ class SessionController {
    * @param {Response} res
    */
   async getAllWithUserData(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[SessionController] getAllWithUserData: Non-admin user "${req.userNew.username}" requested all session data`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] getAllWithUserData: Non-admin user "${req.user.username}" requested all session data`)
       return res.sendStatus(404)
     }
     // Validate "user" query
@@ -120,8 +119,8 @@ class SessionController {
    * @param {Response} res
    */
   async getOpenSessions(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[SessionController] getOpenSessions: Non-admin user "${req.userNew.username}" requested open session data`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] getOpenSessions: Non-admin user "${req.user.username}" requested open session data`)
       return res.sendStatus(404)
     }
 
@@ -164,7 +163,7 @@ class SessionController {
    * @param {Response} res
    */
   sync(req, res) {
-    this.playbackSessionManager.syncSessionRequest(req.userNew, req.playbackSession, req.body, res)
+    this.playbackSessionManager.syncSessionRequest(req.user, req.playbackSession, req.body, res)
   }
 
   /**
@@ -178,7 +177,7 @@ class SessionController {
   close(req, res) {
     let syncData = req.body
     if (syncData && !Object.keys(syncData).length) syncData = null
-    this.playbackSessionManager.closeSessionRequest(req.userNew, req.playbackSession, syncData, res)
+    this.playbackSessionManager.closeSessionRequest(req.user, req.playbackSession, syncData, res)
   }
 
   /**
@@ -211,8 +210,8 @@ class SessionController {
    * @param {Response} res
    */
   async batchDelete(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[SessionController] Non-admin user "${req.userNew.username}" attempted to batch delete sessions`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] Non-admin user "${req.user.username}" attempted to batch delete sessions`)
       return res.sendStatus(403)
     }
     // Validate session ids
@@ -235,7 +234,7 @@ class SessionController {
           id: req.body.sessions
         }
       })
-      Logger.info(`[SessionController] ${sessionsRemoved} playback sessions removed by "${req.userNew.username}"`)
+      Logger.info(`[SessionController] ${sessionsRemoved} playback sessions removed by "${req.user.username}"`)
       res.sendStatus(200)
     } catch (error) {
       Logger.error(`[SessionController] Failed to remove playback sessions`, error)
@@ -277,8 +276,8 @@ class SessionController {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)
 
-    if (playbackSession.userId !== req.userNew.id) {
-      Logger.error(`[SessionController] User "${req.userNew.username}" attempting to access session belonging to another user "${req.params.id}"`)
+    if (playbackSession.userId !== req.user.id) {
+      Logger.error(`[SessionController] User "${req.user.username}" attempting to access session belonging to another user "${req.params.id}"`)
       return res.sendStatus(404)
     }
 
@@ -299,11 +298,11 @@ class SessionController {
       return res.sendStatus(404)
     }
 
-    if (req.method == 'DELETE' && !req.userNew.canDelete) {
-      Logger.warn(`[SessionController] User "${req.userNew.username}" attempted to delete without permission`)
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[SessionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.userNew.canUpdate) {
-      Logger.warn(`[SessionController] User "${req.userNew.username}" attempted to update without permission`)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn(`[SessionController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

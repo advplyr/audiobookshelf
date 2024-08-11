@@ -4,8 +4,7 @@ const Database = require('../Database')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -39,7 +38,7 @@ class ToolsController {
     }
 
     const options = req.query || {}
-    this.abMergeManager.startAudiobookMerge(req.userNew.id, req.libraryItem, options)
+    this.abMergeManager.startAudiobookMerge(req.user.id, req.libraryItem, options)
 
     res.sendStatus(200)
   }
@@ -86,7 +85,7 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.updateMetadataForItem(req.userNew.id, req.libraryItem, options)
+    this.audioMetadataManager.updateMetadataForItem(req.user.id, req.libraryItem, options)
     res.sendStatus(200)
   }
 
@@ -114,8 +113,8 @@ class ToolsController {
       }
 
       // Check user can access this library item
-      if (!req.userNew.checkCanAccessLibraryItem(libraryItem)) {
-        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user "${req.userNew.username}"`)
+      if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user "${req.user.username}"`)
         return res.sendStatus(403)
       }
 
@@ -136,7 +135,7 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.handleBatchEmbed(req.userNew.id, libraryItems, options)
+    this.audioMetadataManager.handleBatchEmbed(req.user.id, libraryItems, options)
     res.sendStatus(200)
   }
 
@@ -147,8 +146,8 @@ class ToolsController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user "${req.userNew.username}" attempted to access tools route`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-root user "${req.user.username}" attempted to access tools route`)
       return res.sendStatus(403)
     }
 
@@ -157,7 +156,7 @@ class ToolsController {
       if (!item?.media) return res.sendStatus(404)
 
       // Check user can access this library item
-      if (!req.userNew.checkCanAccessLibraryItem(item)) {
+      if (!req.user.checkCanAccessLibraryItem(item)) {
         return res.sendStatus(403)
       }
 

@@ -5,8 +5,7 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -45,8 +44,8 @@ class RSSFeedController {
     if (!item) return res.sendStatus(404)
 
     // Check user can access this library item
-    if (!req.userNew.checkCanAccessLibraryItem(item)) {
-      Logger.error(`[RSSFeedController] User "${req.userNew.username}" attempted to open an RSS feed for item "${item.media.metadata.title}" that they don\'t have access to`)
+    if (!req.user.checkCanAccessLibraryItem(item)) {
+      Logger.error(`[RSSFeedController] User "${req.user.username}" attempted to open an RSS feed for item "${item.media.metadata.title}" that they don\'t have access to`)
       return res.sendStatus(403)
     }
 
@@ -68,7 +67,7 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    const feed = await this.rssFeedManager.openFeedForItem(req.userNew.id, item, req.body)
+    const feed = await this.rssFeedManager.openFeedForItem(req.user.id, item, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
@@ -109,7 +108,7 @@ class RSSFeedController {
       return res.status(400).send('Collection has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForCollection(req.userNew.id, collectionExpanded, req.body)
+    const feed = await this.rssFeedManager.openFeedForCollection(req.user.id, collectionExpanded, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
@@ -152,7 +151,7 @@ class RSSFeedController {
       return res.status(400).send('Series has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForSeries(req.userNew.id, seriesJson, req.body)
+    const feed = await this.rssFeedManager.openFeedForSeries(req.user.id, seriesJson, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
@@ -177,9 +176,9 @@ class RSSFeedController {
    * @param {NextFunction} next
    */
   middleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       // Only admins can manage rss feeds
-      Logger.error(`[RSSFeedController] Non-admin user "${req.userNew.username}" attempted to make a request to an RSS feed route`)
+      Logger.error(`[RSSFeedController] Non-admin user "${req.user.username}" attempted to make a request to an RSS feed route`)
       return res.sendStatus(403)
     }
 

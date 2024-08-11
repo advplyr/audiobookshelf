@@ -5,7 +5,7 @@ class CacheController {
 
   // POST: api/cache/purge
   async purgeCache(req, res) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
     await CacheManager.purgeAll()
@@ -14,7 +14,7 @@ class CacheController {
 
   // POST: api/cache/items/purge
   async purgeItemsCache(req, res) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
     await CacheManager.purgeItems()

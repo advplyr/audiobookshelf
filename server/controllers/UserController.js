@@ -10,14 +10,12 @@ const { toNumber } = require('../utils/index')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  *
  * @typedef UserControllerRequestProps
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user - User that made the request
+ * @property {import('../models/User')} user - User that made the request
  * @property {import('../objects/user/User')} [reqUser] - User for req param id
  *
  * @typedef {Request & UserControllerRequestProps} UserControllerRequest
@@ -32,8 +30,8 @@ class UserController {
    * @param {Response} res
    */
   async findAll(req, res) {
-    if (!req.userNew.isAdminOrUp) return res.sendStatus(403)
-    const hideRootToken = !req.userNew.isRoot
+    if (!req.user.isAdminOrUp) return res.sendStatus(403)
+    const hideRootToken = !req.user.isRoot
 
     const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
@@ -62,8 +60,8 @@ class UserController {
    * @param {Response} res
    */
   async findOne(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`Non-admin user "${req.userNew.username}" attempted to get user`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`Non-admin user "${req.user.username}" attempted to get user`)
       return res.sendStatus(403)
     }
 
@@ -102,7 +100,7 @@ class UserController {
       return oldMediaProgress
     })
 
-    const userJson = req.reqUser.toJSONForBrowser(!req.userNew.isRoot)
+    const userJson = req.reqUser.toJSONForBrowser(!req.user.isRoot)
 
     userJson.mediaProgress = oldMediaProgresses
 
@@ -155,8 +153,8 @@ class UserController {
   async update(req, res) {
     const user = req.reqUser
 
-    if (user.type === 'root' && !req.userNew.isRoot) {
-      Logger.error(`[UserController] Admin user "${req.userNew.username}" attempted to update root user`)
+    if (user.type === 'root' && !req.user.isRoot) {
+      Logger.error(`[UserController] Admin user "${req.user.username}" attempted to update root user`)
       return res.sendStatus(403)
     }
 
@@ -184,7 +182,7 @@ class UserController {
         Logger.info(`[UserController] User ${user.username} was generated a new api token`)
       }
       await Database.updateUser(user)
-      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     }
 
     res.json({
@@ -205,8 +203,8 @@ class UserController {
       Logger.error('[UserController] Attempt to delete root user. Root user cannot be deleted')
       return res.sendStatus(400)
     }
-    if (req.userNew.id === req.params.id) {
-      Logger.error(`[UserController] User ${req.userNew.username} is attempting to delete self`)
+    if (req.user.id === req.params.id) {
+      Logger.error(`[UserController] User ${req.user.username} is attempting to delete self`)
       return res.sendStatus(400)
     }
     const user = req.reqUser
@@ -241,7 +239,7 @@ class UserController {
     Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
     req.reqUser.authOpenIDSub = null
     if (await Database.userModel.updateFromOld(req.reqUser)) {
-      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.reqUser.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toJSONForBrowser())
       res.sendStatus(200)
     } else {
       res.sendStatus(500)
@@ -296,7 +294,7 @@ class UserController {
    * @param {Response} res
    */
   async getOnlineUsers(req, res) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
 
@@ -313,9 +311,9 @@ class UserController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp && req.userNew.id !== req.params.id) {
+    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.userNew.isAdminOrUp) {
+    } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
 

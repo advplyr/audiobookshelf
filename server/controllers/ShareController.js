@@ -13,8 +13,7 @@ const ShareManager = require('../managers/ShareManager')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -255,8 +254,8 @@ class ShareController {
    * @param {Response} res
    */
   async createMediaItemShare(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[ShareController] Non-admin user "${req.userNew.username}" attempted to create item share`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[ShareController] Non-admin user "${req.user.username}" attempted to create item share`)
       return res.sendStatus(403)
     }
 
@@ -299,7 +298,7 @@ class ShareController {
         expiresAt: expiresAt || null,
         mediaItemId,
         mediaItemType,
-        userId: req.userNew.id
+        userId: req.user.id
       })
 
       ShareManager.openMediaItemShare(mediaItemShare)
@@ -319,8 +318,8 @@ class ShareController {
    * @param {Response} res
    */
   async deleteMediaItemShare(req, res) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.error(`[ShareController] Non-admin user "${req.userNew.username}" attempted to delete item share`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[ShareController] Non-admin user "${req.user.username}" attempted to delete item share`)
       return res.sendStatus(403)
     }
 

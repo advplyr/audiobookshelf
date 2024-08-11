@@ -8,8 +8,7 @@ const userStats = require('../utils/queries/userStats')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -24,7 +23,7 @@ class MeController {
    * @param {Response} res
    */
   getCurrentUser(req, res) {
-    res.json(req.userNew.toOldJSONForBrowser())
+    res.json(req.user.toOldJSONForBrowser())
   }
 
   /**
@@ -36,7 +35,7 @@ class MeController {
    * @param {Response} res
    */
   async getListeningSessions(req, res) {
-    const listeningSessions = await this.getUserListeningSessionsHelper(req.userNew.id)
+    const listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
@@ -73,7 +72,7 @@ class MeController {
     }
 
     const mediaItemId = episode?.id || libraryItem.mediaId
-    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.userNew.id, mediaItemId)
+    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
@@ -101,7 +100,7 @@ class MeController {
    * @param {Response} res
    */
   async getListeningStats(req, res) {
-    const listeningStats = await this.getUserListeningStatsHelpers(req.userNew.id)
+    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
     res.json(listeningStats)
   }
 
@@ -112,7 +111,7 @@ class MeController {
    * @param {Response} res
    */
   async getMediaProgress(req, res) {
-    const mediaProgress = req.userNew.getOldMediaProgress(req.params.id, req.params.episodeId || null)
+    const mediaProgress = req.user.getOldMediaProgress(req.params.id, req.params.episodeId || null)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
@@ -127,9 +126,9 @@ class MeController {
    */
   async removeMediaProgress(req, res) {
     await Database.mediaProgressModel.removeById(req.params.id)
-    req.userNew.mediaProgresses = req.userNew.mediaProgresses.filter((mp) => mp.id !== req.params.id)
+    req.user.mediaProgresses = req.user.mediaProgresses.filter((mp) => mp.id !== req.params.id)
 
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
@@ -146,12 +145,12 @@ class MeController {
       libraryItemId: req.params.libraryItemId,
       episodeId: req.params.episodeId
     }
-    const mediaProgressResponse = await req.userNew.createUpdateMediaProgressFromPayload(progressUpdatePayload)
+    const mediaProgressResponse = await req.user.createUpdateMediaProgressFromPayload(progressUpdatePayload)
     if (mediaProgressResponse.error) {
       return res.status(mediaProgressResponse.statusCode || 400).send(mediaProgressResponse.error)
     }
 
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
@@ -170,7 +169,7 @@ class MeController {
 
     let hasUpdated = false
     for (const itemProgress of itemProgressPayloads) {
-      const mediaProgressResponse = await req.userNew.createUpdateMediaProgressFromPayload(itemProgress)
+      const mediaProgressResponse = await req.user.createUpdateMediaProgressFromPayload(itemProgress)
       if (mediaProgressResponse.error) {
         Logger.error(`[MeController] batchUpdateMediaProgress: ${mediaProgressResponse.error}`)
         continue
@@ -180,7 +179,7 @@ class MeController {
     }
 
     if (hasUpdated) {
-      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     }
 
     res.sendStatus(200)
@@ -205,8 +204,8 @@ class MeController {
       return res.status(400).send('Invalid title')
     }
 
-    const bookmark = await req.userNew.createBookmark(req.params.id, time, title)
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    const bookmark = await req.user.createBookmark(req.params.id, time, title)
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.json(bookmark)
   }
 
@@ -229,13 +228,13 @@ class MeController {
       return res.status(400).send('Invalid title')
     }
 
-    const bookmark = await req.userNew.updateBookmark(req.params.id, time, title)
+    const bookmark = await req.user.updateBookmark(req.params.id, time, title)
     if (!bookmark) {
       Logger.error(`[MeController] updateBookmark not found for library item id "${req.params.id}" and time "${time}"`)
       return res.sendStatus(404)
     }
 
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.json(bookmark)
   }
 
@@ -253,14 +252,14 @@ class MeController {
       return res.status(400).send('Invalid time')
     }
 
-    if (!req.userNew.findBookmark(req.params.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
 
-    await req.userNew.removeBookmark(req.params.id, time)
+    await req.user.removeBookmark(req.params.id, time)
 
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
@@ -275,8 +274,8 @@ class MeController {
    * @param {Response} res
    */
   updatePassword(req, res) {
-    if (req.userNew.isGuest) {
-      Logger.error(`[MeController] Guest user "${req.userNew.username}" attempted to change password`)
+    if (req.user.isGuest) {
+      Logger.error(`[MeController] Guest user "${req.user.username}" attempted to change password`)
       return res.sendStatus(500)
     }
     this.auth.userChangePassword(req, res)
@@ -294,7 +293,7 @@ class MeController {
   async getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
-    const mediaProgressesInProgress = req.userNew.mediaProgresses.filter((mp) => !mp.isFinished && (mp.currentTime > 0 || mp.ebookProgress > 0))
+    const mediaProgressesInProgress = req.user.mediaProgresses.filter((mp) => !mp.isFinished && (mp.currentTime > 0 || mp.ebookProgress > 0))
 
     const libraryItemsIds = [...new Set(mediaProgressesInProgress.map((mp) => mp.extraData?.libraryItemId).filter((id) => id))]
     const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({ id: libraryItemsIds })
@@ -344,11 +343,11 @@ class MeController {
       return res.sendStatus(404)
     }
 
-    const hasUpdated = await req.userNew.addSeriesToHideFromContinueListening(req.params.id)
+    const hasUpdated = await req.user.addSeriesToHideFromContinueListening(req.params.id)
     if (hasUpdated) {
-      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     }
-    res.json(req.userNew.toOldJSONForBrowser())
+    res.json(req.user.toOldJSONForBrowser())
   }
 
   /**
@@ -363,11 +362,11 @@ class MeController {
       return res.sendStatus(404)
     }
 
-    const hasUpdated = await req.userNew.removeSeriesFromHideFromContinueListening(req.params.id)
+    const hasUpdated = await req.user.removeSeriesFromHideFromContinueListening(req.params.id)
     if (hasUpdated) {
-      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     }
-    res.json(req.userNew.toOldJSONForBrowser())
+    res.json(req.user.toOldJSONForBrowser())
   }
 
   /**
@@ -377,22 +376,22 @@ class MeController {
    * @param {Response} res
    */
   async removeItemFromContinueListening(req, res) {
-    const mediaProgress = req.userNew.mediaProgresses.find((mp) => mp.id === req.params.id)
+    const mediaProgress = req.user.mediaProgresses.find((mp) => mp.id === req.params.id)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
 
     // Already hidden
     if (mediaProgress.hideFromContinueListening) {
-      return res.json(req.userNew.toOldJSONForBrowser())
+      return res.json(req.user.toOldJSONForBrowser())
     }
 
     mediaProgress.hideFromContinueListening = true
     await mediaProgress.save()
 
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
 
-    res.json(req.userNew.toOldJSONForBrowser())
+    res.json(req.user.toOldJSONForBrowser())
   }
 
   /**
@@ -407,7 +406,7 @@ class MeController {
       Logger.error(`[MeController] Invalid year "${year}"`)
       return res.status(400).send('Invalid year')
     }
-    const data = await userStats.getStatsForYear(req.userNew.id, year)
+    const data = await userStats.getStatsForYear(req.user.id, year)
     res.json(data)
   }
 }

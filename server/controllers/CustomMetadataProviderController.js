@@ -101,8 +101,8 @@ class CustomMetadataProviderController {
    * @param {import('express').NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp) {
-      Logger.warn(`[CustomMetadataProviderController] Non-admin user "${req.userNew.username}" attempted access route "${req.path}"`)
+    if (!req.user.isAdminOrUp) {
+      Logger.warn(`[CustomMetadataProviderController] Non-admin user "${req.user.username}" attempted access route "${req.path}"`)
       return res.sendStatus(403)
     }
 

@@ -7,8 +7,7 @@ const Playlist = require('../objects/Playlist')
 
 /**
  * @typedef RequestUserObjects
- * @property {import('../models/User')} userNew
- * @property {import('../objects/user/User')} user
+ * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObjects} RequestWithUser
  */
@@ -25,7 +24,7 @@ class PlaylistController {
    */
   async create(req, res) {
     const oldPlaylist = new Playlist()
-    req.body.userId = req.userNew.id
+    req.body.userId = req.user.id
     const success = oldPlaylist.setData(req.body)
     if (!success) {
       return res.status(400).send('Invalid playlist request data')
@@ -75,7 +74,7 @@ class PlaylistController {
   async findAllForUser(req, res) {
     const playlistsForUser = await Database.playlistModel.findAll({
       where: {
-        userId: req.userNew.id
+        userId: req.user.id
       }
     })
     const playlists = []
@@ -415,7 +414,7 @@ class PlaylistController {
       return res.status(404).send('Collection not found')
     }
     // Expand collection to get library items
-    const collectionExpanded = await collection.getOldJsonExpanded(req.userNew)
+    const collectionExpanded = await collection.getOldJsonExpanded(req.user)
     if (!collectionExpanded) {
       // This can happen if the user has no access to all items in collection
       return res.status(404).send('Collection not found')
@@ -428,7 +427,7 @@ class PlaylistController {
 
     const oldPlaylist = new Playlist()
     oldPlaylist.setData({
-      userId: req.userNew.id,
+      userId: req.user.id,
       libraryId: collection.libraryId,
       name: collection.name,
       description: collection.description || null
@@ -467,8 +466,8 @@ class PlaylistController {
       if (!playlist) {
         return res.status(404).send('Playlist not found')
       }
-      if (playlist.userId !== req.userNew.id) {
-        Logger.warn(`[PlaylistController] Playlist ${req.params.id} requested by user ${req.userNew.id} that is not the owner`)
+      if (playlist.userId !== req.user.id) {
+        Logger.warn(`[PlaylistController] Playlist ${req.params.id} requested by user ${req.user.id} that is not the owner`)
         return res.sendStatus(403)
       }
       req.playlist = playlist

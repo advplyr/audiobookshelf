@@ -59,7 +59,7 @@ class EmailController {
    * @param {import('express').Response} res
    */
   async sendEBookToDevice(req, res) {
-    Logger.debug(`[EmailController] Send ebook to device requested by user "${req.userNew.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
+    Logger.debug(`[EmailController] Send ebook to device requested by user "${req.user.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
 
     const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
     if (!device) {
@@ -67,7 +67,7 @@ class EmailController {
     }
 
     // Check user has access to device
-    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.userNew)) {
+    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.user)) {
       return res.sendStatus(403)
     }
 
@@ -77,7 +77,7 @@ class EmailController {
     }
 
     // Check user has access to library item
-    if (!req.userNew.checkCanAccessLibraryItem(libraryItem)) {
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
       return res.sendStatus(403)
     }
 
@@ -90,7 +90,7 @@ class EmailController {
   }
 
   adminMiddleware(req, res, next) {
-    if (!req.userNew.isAdminOrUp) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(404)
     }
 
