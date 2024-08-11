@@ -2,10 +2,19 @@ const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
+const AudioBookmark = require('../objects/user/AudioBookmark')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
 
 const { DataTypes, Model } = sequelize
+
+/**
+ * @typedef AudioBookmarkObject
+ * @property {string} libraryItemId
+ * @property {string} title
+ * @property {number} time
+ * @property {number} createdAt
+ */
 
 class User extends Model {
   constructor(values, options) {
@@ -31,7 +40,7 @@ class User extends Model {
     this.lastSeen
     /** @type {Object} */
     this.permissions
-    /** @type {Object} */
+    /** @type {AudioBookmarkObject[]} */
     this.bookmarks
     /** @type {Object} */
     this.extraData
@@ -688,6 +697,88 @@ class User extends Model {
     return {
       mediaProgress
     }
+  }
+
+  /**
+   * Find bookmark
+   * TODO: Bookmarks should use mediaItemId instead of libraryItemId to support podcast episodes
+   *
+   * @param {string} libraryItemId
+   * @param {number} time
+   * @returns {AudioBookmarkObject|null}
+   */
+  findBookmark(libraryItemId, time) {
+    return this.bookmarks.find((bm) => bm.libraryItemId === libraryItemId && bm.time == time)
+  }
+
+  /**
+   * Create bookmark
+   *
+   * @param {string} libraryItemId
+   * @param {number} time
+   * @param {string} title
+   * @returns {Promise<AudioBookmarkObject>}
+   */
+  async createBookmark(libraryItemId, time, title) {
+    const existingBookmark = this.findBookmark(libraryItemId, time)
+    if (existingBookmark) {
+      Logger.warn('[User] Create Bookmark already exists for this time')
+      if (existingBookmark.title !== title) {
+        existingBookmark.title = title
+        this.changed('bookmarks', true)
+        await this.save()
+      }
+      return existingBookmark
+    }
+
+    const newBookmark = {
+      libraryItemId,
+      time,
+      title,
+      createdAt: Date.now()
+    }
+    this.bookmarks.push(newBookmark)
+    this.changed('bookmarks', true)
+    await this.save()
+    return newBookmark
+  }
+
+  /**
+   * Update bookmark
+   *
+   * @param {string} libraryItemId
+   * @param {number} time
+   * @param {string} title
+   * @returns {Promise<AudioBookmarkObject>}
+   */
+  async updateBookmark(libraryItemId, time, title) {
+    const bookmark = this.findBookmark(libraryItemId, time)
+    if (!bookmark) {
+      Logger.error(`[User] updateBookmark not found`)
+      return null
+    }
+    bookmark.title = title
+    this.changed('bookmarks', true)
+    await this.save()
+    return bookmark
+  }
+
+  /**
+   * Remove bookmark
+   *
+   * @param {string} libraryItemId
+   * @param {number} time
+   * @returns {Promise<boolean>} - true if bookmark was removed
+   */
+  async removeBookmark(libraryItemId, time) {
+    if (!this.findBookmark(libraryItemId, time)) {
+      Logger.error(`[User] removeBookmark not found`)
+      return false
+    }
+    this.bookmarks = this.bookmarks.filter((bm) => bm.libraryItemId !== libraryItemId || bm.time !== time)
+    this.changed('bookmarks', true)
+    await this.save()
+    return true
   }
 }
 

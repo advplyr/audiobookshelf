@@ -450,37 +450,6 @@ class User {
     return this.checkCanAccessLibraryItemWithTags(tags)
   }
 
-  findBookmark(libraryItemId, time) {
-    return this.bookmarks.find((bm) => bm.libraryItemId === libraryItemId && bm.time == time)
-  }
-
-  createBookmark(libraryItemId, time, title) {
-    var existingBookmark = this.findBookmark(libraryItemId, time)
-    if (existingBookmark) {
-      Logger.warn('[User] Create Bookmark already exists for this time')
-      existingBookmark.title = title
-      return existingBookmark
-    }
-    var newBookmark = new AudioBookmark()
-    newBookmark.setData(libraryItemId, time, title)
-    this.bookmarks.push(newBookmark)
-    return newBookmark
-  }
-
-  updateBookmark(libraryItemId, time, title) {
-    var bookmark = this.findBookmark(libraryItemId, time)
-    if (!bookmark) {
-      Logger.error(`[User] updateBookmark not found`)
-      return null
-    }
-    bookmark.title = title
-    return bookmark
-  }
-
-  removeBookmark(libraryItemId, time) {
-    this.bookmarks = this.bookmarks.filter((bm) => bm.libraryItemId !== libraryItemId || bm.time !== time)
-  }
-
   checkShouldHideSeriesFromContinueListening(seriesId) {
     return this.seriesHideFromContinueListening.includes(seriesId)
   }

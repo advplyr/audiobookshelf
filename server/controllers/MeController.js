@@ -3,7 +3,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
-const { toNumber } = require('../utils/index')
+const { toNumber, isNullOrNaN } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
 
 /**
@@ -193,45 +193,71 @@ class MeController {
     if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const { time, title } = req.body
-    const bookmark = req.user.createBookmark(req.params.id, time, title)
-    await Database.updateUser(req.user)
-    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.user.toJSONForBrowser())
+    if (isNullOrNaN(time)) {
+      Logger.error(`[MeController] createBookmark invalid time`, time)
+      return res.status(400).send('Invalid time')
+    }
+    if (!title || typeof title !== 'string') {
+      Logger.error(`[MeController] createBookmark invalid title`, title)
+      return res.status(400).send('Invalid title')
+    }
+
+    const bookmark = await req.userNew.createBookmark(req.params.id, time, title)
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     res.json(bookmark)
   }
 
-  // PATCH: api/me/item/:id/bookmark
+  /**
+   * PATCH: /api/me/item/:id/bookmark
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async updateBookmark(req, res) {
     if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const { time, title } = req.body
-    if (!req.user.findBookmark(req.params.id, time)) {
-      Logger.error(`[MeController] updateBookmark not found`)
+    if (isNullOrNaN(time)) {
+      Logger.error(`[MeController] updateBookmark invalid time`, time)
+      return res.status(400).send('Invalid time')
+    }
+    if (!title || typeof title !== 'string') {
+      Logger.error(`[MeController] updateBookmark invalid title`, title)
+      return res.status(400).send('Invalid title')
+    }
+
+    const bookmark = await req.userNew.updateBookmark(req.params.id, time, title)
+    if (!bookmark) {
+      Logger.error(`[MeController] updateBookmark not found for library item id "${req.params.id}" and time "${time}"`)
       return res.sendStatus(404)
     }
 
-    const bookmark = req.user.updateBookmark(req.params.id, time, title)
-    if (!bookmark) return res.sendStatus(500)
-
-    await Database.updateUser(req.user)
-    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     res.json(bookmark)
   }
 
-  // DELETE: api/me/item/:id/bookmark/:time
+  /**
+   * DELETE: /api/me/item/:id/bookmark/:time
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async removeBookmark(req, res) {
     if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const time = Number(req.params.time)
-    if (isNaN(time)) return res.sendStatus(500)
+    if (isNaN(time)) {
+      return res.status(400).send('Invalid time')
+    }
 
-    if (!req.user.findBookmark(req.params.id, time)) {
+    if (!req.userNew.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
 
-    req.user.removeBookmark(req.params.id, time)
-    await Database.updateUser(req.user)
-    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    await req.userNew.removeBookmark(req.params.id, time)
+
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
