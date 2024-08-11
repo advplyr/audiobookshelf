@@ -425,6 +425,9 @@ class User extends Model {
   get isUser() {
     return this.type === 'user'
   }
+  get isGuest() {
+    return this.type === 'guest'
+  }
   get canAccessExplicitContent() {
     return !!this.permissions?.accessExplicitContent && this.isActive
   }
@@ -777,6 +780,38 @@ class User extends Model {
     }
     this.bookmarks = this.bookmarks.filter((bm) => bm.libraryItemId !== libraryItemId || bm.time !== time)
     this.changed('bookmarks', true)
+    await this.save()
+    return true
+  }
+
+  /**
+   *
+   * @param {string} seriesId
+   * @returns {Promise<boolean>}
+   */
+  async addSeriesToHideFromContinueListening(seriesId) {
+    if (!this.extraData) this.extraData = {}
+    const seriesHideFromContinueListening = this.extraData.seriesHideFromContinueListening || []
+    if (seriesHideFromContinueListening.includes(seriesId)) return false
+    seriesHideFromContinueListening.push(seriesId)
+    this.extraData.seriesHideFromContinueListening = seriesHideFromContinueListening
+    this.changed('extraData', true)
+    await this.save()
+    return true
+  }
+
+  /**
+   *
+   * @param {string} seriesId
+   * @returns {Promise<boolean>}
+   */
+  async removeSeriesFromHideFromContinueListening(seriesId) {
+    if (!this.extraData) this.extraData = {}
+    let seriesHideFromContinueListening = this.extraData.seriesHideFromContinueListening || []
+    if (!seriesHideFromContinueListening.includes(seriesId)) return false
+    seriesHideFromContinueListening = seriesHideFromContinueListening.filter((sid) => sid !== seriesId)
+    this.extraData.seriesHideFromContinueListening = seriesHideFromContinueListening
+    this.changed('extraData', true)
     await this.save()
     return true
   }

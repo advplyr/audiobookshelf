@@ -439,40 +439,6 @@ class User {
   }
 
   /**
-   * Checks if a user can access a library item
-   * @param {string} libraryId
-   * @param {boolean} explicit
-   * @param {string[]} tags
-   */
-  checkCanAccessLibraryItemWithData(libraryId, explicit, tags) {
-    if (!this.checkCanAccessLibrary(libraryId)) return false
-    if (explicit && !this.canAccessExplicitContent) return false
-    return this.checkCanAccessLibraryItemWithTags(tags)
-  }
-
-  checkShouldHideSeriesFromContinueListening(seriesId) {
-    return this.seriesHideFromContinueListening.includes(seriesId)
-  }
-
-  addSeriesToHideFromContinueListening(seriesId) {
-    if (this.seriesHideFromContinueListening.includes(seriesId)) return false
-    this.seriesHideFromContinueListening.push(seriesId)
-    return true
-  }
-
-  removeSeriesFromHideFromContinueListening(seriesId) {
-    if (!this.seriesHideFromContinueListening.includes(seriesId)) return false
-    this.seriesHideFromContinueListening = this.seriesHideFromContinueListening.filter((sid) => sid !== seriesId)
-    return true
-  }
-
-  removeProgressFromContinueListening(progressId) {
-    const progress = this.mediaProgress.find((mp) => mp.id === progressId)
-    if (!progress) return false
-    return progress.removeFromContinueListening()
-  }
-
-  /**
    * Number of podcast episodes not finished for library item
    * Note: libraryItem passed in from libraryHelpers is not a LibraryItem class instance
    * @param {LibraryItem|object} libraryItem

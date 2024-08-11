@@ -1,5 +1,6 @@
 const axios = require('axios')
 const passport = require('passport')
+const { Request, Response, NextFunction } = require('express')
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
 const LocalStrategy = require('./libs/passportLocal')
@@ -355,8 +356,8 @@ class Auth {
    * - 'openid': OpenID authentication directly over web
    * - 'openid-mobile': OpenID authentication, but done via an mobile device
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    * @param {string} authMethod - The authentication method, default is 'local'.
    */
   paramsToCookies(req, res, authMethod = 'local') {
@@ -385,8 +386,8 @@ class Auth {
    * Informs the client in the right mode about a successfull login and the token
    * (clients choise is restored from cookies).
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    */
   async handleLoginSuccessBasedOnCookie(req, res) {
     // get userLogin json (information about the user, server and the session)
@@ -740,9 +741,9 @@ class Auth {
 
   /**
    * middleware to use in express to only allow authenticated users.
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
+   * @param {Request} req
+   * @param {Response} res
+   * @param {NextFunction} next
    */
   isAuthenticated(req, res, next) {
     // check if session cookie says that we are authenticated
@@ -914,13 +915,13 @@ class Auth {
    * User changes their password from request
    * TODO: Update responses to use error status codes
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {import('./controllers/MeController').RequestWithUser} req
+   * @param {Response} res
    */
   async userChangePassword(req, res) {
     let { password, newPassword } = req.body
     newPassword = newPassword || ''
-    const matchingUser = req.user
+    const matchingUser = req.userNew
 
     // Only root can have an empty password
     if (matchingUser.type !== 'root' && !newPassword) {

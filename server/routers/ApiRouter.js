@@ -182,7 +182,6 @@ class ApiRouter {
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
-    this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this)) // TODO: Deprecated. Removed from Android. Only used in iOS app now.
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))

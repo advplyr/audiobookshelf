@@ -31,6 +31,8 @@ class MeController {
   /**
    * GET: /api/me/listening-sessions
    *
+   * @this import('../routers/ApiRouter')
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -93,6 +95,8 @@ class MeController {
 
   /**
    * GET: /api/me/listening-stats
+   *
+   * @this import('../routers/ApiRouter')
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -261,110 +265,62 @@ class MeController {
     res.sendStatus(200)
   }
 
-  // PATCH: api/me/password
+  /**
+   * PATCH: /api/me/password
+   * User change password. Requires current password.
+   * Guest users cannot change password.
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   updatePassword(req, res) {
-    if (req.user.isGuest) {
-      Logger.error(`[MeController] Guest user attempted to change password`, req.user.username)
+    if (req.userNew.isGuest) {
+      Logger.error(`[MeController] Guest user "${req.userNew.username}" attempted to change password`)
       return res.sendStatus(500)
     }
     this.auth.userChangePassword(req, res)
   }
 
-  // TODO: Deprecated. Removed from Android. Only used in iOS app now.
-  // POST: api/me/sync-local-progress
-  async syncLocalMediaProgress(req, res) {
-    if (!req.body.localMediaProgress) {
-      Logger.error(`[MeController] syncLocalMediaProgress invalid post body`)
-      return res.sendStatus(500)
-    }
-    const updatedLocalMediaProgress = []
-    let numServerProgressUpdates = 0
-    const updatedServerMediaProgress = []
-    const localMediaProgress = req.body.localMediaProgress || []
-
-    for (const localProgress of localMediaProgress) {
-      if (!localProgress.libraryItemId) {
-        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
-        continue
-      }
-
-      const libraryItem = await Database.libraryItemModel.getOldById(localProgress.libraryItemId)
-      if (!libraryItem) {
-        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item with id "${localProgress.libraryItemId}"`, localProgress)
-        continue
-      }
-
-      let mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
-      if (!mediaProgress) {
-        // New media progress from mobile
-        Logger.debug(`[MeController] syncLocalMediaProgress local progress is new - creating ${localProgress.id}`)
-        req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
-        mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
-        if (mediaProgress) await Database.upsertMediaProgress(mediaProgress)
-        updatedServerMediaProgress.push(mediaProgress)
-        numServerProgressUpdates++
-      } else if (mediaProgress.lastUpdate < localProgress.lastUpdate) {
-        Logger.debug(`[MeController] syncLocalMediaProgress local progress is more recent - updating ${mediaProgress.id}`)
-        req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
-        mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
-        if (mediaProgress) await Database.upsertMediaProgress(mediaProgress)
-        updatedServerMediaProgress.push(mediaProgress)
-        numServerProgressUpdates++
-      } else if (mediaProgress.lastUpdate > localProgress.lastUpdate) {
-        const updateTimeDifference = mediaProgress.lastUpdate - localProgress.lastUpdate
-        Logger.debug(`[MeController] syncLocalMediaProgress server progress is more recent by ${updateTimeDifference}ms - ${mediaProgress.id}`)
-
-        for (const key in localProgress) {
-          // Local media progress ID uses the local library item id and server media progress uses the library item id
-          if (key !== 'id' && mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
-            // Logger.debug(`[MeController] syncLocalMediaProgress key ${key} changed from ${localProgress[key]} to ${mediaProgress[key]} - ${mediaProgress.id}`)
-            localProgress[key] = mediaProgress[key]
-          }
-        }
-        updatedLocalMediaProgress.push(localProgress)
-      } else {
-        Logger.debug(`[MeController] syncLocalMediaProgress server and local are in sync - ${mediaProgress.id}`)
-      }
-    }
-
-    Logger.debug(`[MeController] syncLocalMediaProgress server updates = ${numServerProgressUpdates}, local updates = ${updatedLocalMediaProgress.length}`)
-    if (numServerProgressUpdates > 0) {
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
-    }
-
-    res.json({
-      numServerProgressUpdates,
-      localProgressUpdates: updatedLocalMediaProgress, // Array of LocalMediaProgress that were updated from server (server more recent)
-      serverProgressUpdates: updatedServerMediaProgress // Array of MediaProgress that made updates to server (local more recent)
-    })
-  }
-
-  // GET: api/me/items-in-progress
+  /**
+   * GET: /api/me/items-in-progress
+   * Pull items in progress for all libraries
+   * Used in Android Auto in progress list since there is no easy library selection
+   * TODO: Update to use mediaItemId and mediaItemType. Use sort & limit in query
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
+    const mediaProgressesInProgress = req.userNew.mediaProgresses.filter((mp) => !mp.isFinished && (mp.currentTime > 0 || mp.ebookProgress > 0))
+
+    const libraryItemsIds = [...new Set(mediaProgressesInProgress.map((mp) => mp.extraData?.libraryItemId).filter((id) => id))]
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({ id: libraryItemsIds })
+
     let itemsInProgress = []
-    // TODO: More efficient to do this in a single query
-    for (const mediaProgress of req.user.mediaProgress) {
-      if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || mediaProgress.ebookProgress > 0)) {
-        const libraryItem = await Database.libraryItemModel.getOldById(mediaProgress.libraryItemId)
-        if (libraryItem) {
-          if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
-            const episode = libraryItem.media.episodes.find((ep) => ep.id === mediaProgress.episodeId)
-            if (episode) {
-              const libraryItemWithEpisode = {
-                ...libraryItem.toJSONMinified(),
-                recentEpisode: episode.toJSON(),
-                progressLastUpdate: mediaProgress.lastUpdate
-              }
-              itemsInProgress.push(libraryItemWithEpisode)
-            }
-          } else if (!mediaProgress.episodeId) {
-            itemsInProgress.push({
+
+    for (const mediaProgress of mediaProgressesInProgress) {
+      const oldMediaProgress = mediaProgress.getOldMediaProgress()
+      const libraryItem = libraryItems.find((li) => li.id === oldMediaProgress.libraryItemId)
+      if (libraryItem) {
+        if (oldMediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
+          const episode = libraryItem.media.episodes.find((ep) => ep.id === oldMediaProgress.episodeId)
+          if (episode) {
+            const libraryItemWithEpisode = {
               ...libraryItem.toJSONMinified(),
-              progressLastUpdate: mediaProgress.lastUpdate
-            })
+              recentEpisode: episode.toJSON(),
+              progressLastUpdate: oldMediaProgress.lastUpdate
+            }
+            itemsInProgress.push(libraryItemWithEpisode)
           }
+        } else if (!oldMediaProgress.episodeId) {
+          itemsInProgress.push({
+            ...libraryItem.toJSONMinified(),
+            progressLastUpdate: oldMediaProgress.lastUpdate
+          })
         }
       }
     }
@@ -377,59 +333,67 @@ class MeController {
     })
   }
 
-  // GET: api/me/series/:id/remove-from-continue-listening
+  /**
+   * GET: /api/me/series/:id/remove-from-continue-listening
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async removeSeriesFromContinueListening(req, res) {
-    const series = await Database.seriesModel.getOldById(req.params.id)
-    if (!series) {
+    if (!(await Database.seriesModel.checkExistsById(req.params.id))) {
       Logger.error(`[MeController] removeSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)
     }
 
-    const hasUpdated = req.user.addSeriesToHideFromContinueListening(req.params.id)
+    const hasUpdated = await req.userNew.addSeriesToHideFromContinueListening(req.params.id)
     if (hasUpdated) {
-      await Database.updateUser(req.user)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     }
-    res.json(req.user.toJSONForBrowser())
+    res.json(req.userNew.toOldJSONForBrowser())
   }
 
-  // GET: api/me/series/:id/readd-to-continue-listening
+  /**
+   * GET: api/me/series/:id/readd-to-continue-listening
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async readdSeriesFromContinueListening(req, res) {
-    const series = await Database.seriesModel.getOldById(req.params.id)
-    if (!series) {
+    if (!(await Database.seriesModel.checkExistsById(req.params.id))) {
       Logger.error(`[MeController] readdSeriesFromContinueListening: Series ${req.params.id} not found`)
       return res.sendStatus(404)
     }
 
-    const hasUpdated = req.user.removeSeriesFromHideFromContinueListening(req.params.id)
+    const hasUpdated = await req.userNew.removeSeriesFromHideFromContinueListening(req.params.id)
     if (hasUpdated) {
-      await Database.updateUser(req.user)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     }
-    res.json(req.user.toJSONForBrowser())
+    res.json(req.userNew.toOldJSONForBrowser())
   }
 
-  // GET: api/me/progress/:id/remove-from-continue-listening
+  /**
+   * GET: api/me/progress/:id/remove-from-continue-listening
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async removeItemFromContinueListening(req, res) {
-    const mediaProgress = req.user.mediaProgress.find((mp) => mp.id === req.params.id)
+    const mediaProgress = req.userNew.mediaProgresses.find((mp) => mp.id === req.params.id)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
-    const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
-    if (hasUpdated) {
-      await Database.mediaProgressModel.update(
-        {
-          hideFromContinueListening: true
-        },
-        {
-          where: {
-            id: mediaProgress.id
-          }
-        }
-      )
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+
+    // Already hidden
+    if (mediaProgress.hideFromContinueListening) {
+      return res.json(req.userNew.toOldJSONForBrowser())
     }
-    res.json(req.user.toJSONForBrowser())
+
+    mediaProgress.hideFromContinueListening = true
+    await mediaProgress.save()
+
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
+
+    res.json(req.userNew.toOldJSONForBrowser())
   }
 
   /**
@@ -444,7 +408,7 @@ class MeController {
       Logger.error(`[MeController] Invalid year "${year}"`)
       return res.status(400).send('Invalid year')
     }
-    const data = await userStats.getStatsForYear(req.user, year)
+    const data = await userStats.getStatsForYear(req.userNew.id, year)
     res.json(data)
   }
 }
