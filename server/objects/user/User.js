@@ -86,9 +86,9 @@ class User {
       pash: this.pash,
       type: this.type,
       token: this.token,
-      mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
+      mediaProgress: this.mediaProgress ? this.mediaProgress.map((li) => li.toJSON()) : [],
       seriesHideFromContinueListening: [...this.seriesHideFromContinueListening],
-      bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
+      bookmarks: this.bookmarks ? this.bookmarks.map((b) => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
@@ -107,10 +107,10 @@ class User {
       username: this.username,
       email: this.email,
       type: this.type,
-      token: (this.type === 'root' && hideRootToken) ? '' : this.token,
-      mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
+      token: this.type === 'root' && hideRootToken ? '' : this.token,
+      mediaProgress: this.mediaProgress ? this.mediaProgress.map((li) => li.toJSON()) : [],
       seriesHideFromContinueListening: [...this.seriesHideFromContinueListening],
-      bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
+      bookmarks: this.bookmarks ? this.bookmarks.map((b) => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
@@ -133,7 +133,7 @@ class User {
    * @returns {object}
    */
   toJSONForPublic(sessions) {
-    const userSession = sessions?.find(s => s.userId === this.id) || null
+    const userSession = sessions?.find((s) => s.userId === this.id) || null
     const session = userSession?.toJSONForClient() || null
     return {
       id: this.id,
@@ -157,18 +157,18 @@ class User {
 
     this.mediaProgress = []
     if (user.mediaProgress) {
-      this.mediaProgress = user.mediaProgress.map(li => new MediaProgress(li)).filter(lip => lip.id)
+      this.mediaProgress = user.mediaProgress.map((li) => new MediaProgress(li)).filter((lip) => lip.id)
     }
 
     this.bookmarks = []
     if (user.bookmarks) {
-      this.bookmarks = user.bookmarks.filter(bm => typeof bm.libraryItemId == 'string').map(bm => new AudioBookmark(bm))
+      this.bookmarks = user.bookmarks.filter((bm) => typeof bm.libraryItemId == 'string').map((bm) => new AudioBookmark(bm))
     }
 
     this.seriesHideFromContinueListening = []
     if (user.seriesHideFromContinueListening) this.seriesHideFromContinueListening = [...user.seriesHideFromContinueListening]
 
-    this.isActive = (user.isActive === undefined || user.type === 'root') ? true : !!user.isActive
+    this.isActive = user.isActive === undefined || user.type === 'root' ? true : !!user.isActive
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
@@ -200,7 +200,8 @@ class User {
     const keysToCheck = ['pash', 'type', 'username', 'email', 'isActive']
     keysToCheck.forEach((key) => {
       if (payload[key] !== undefined) {
-        if (key === 'isActive' || payload[key]) { // pash, type, username must evaluate to true (cannot be null or empty)
+        if (key === 'isActive' || payload[key]) {
+          // pash, type, username must evaluate to true (cannot be null or empty)
           if (payload[key] !== this[key]) {
             hasUpdates = true
             this[key] = payload[key]
@@ -285,7 +286,7 @@ class User {
 
   /**
    * Update user permissions from external JSON
-   * 
+   *
    * @param {Object} absPermissions JSON containing user permissions
    * @returns {boolean} true if updates were made
    */
@@ -294,7 +295,7 @@ class User {
     let updatedUserPermissions = {}
 
     // Initialize all permissions to false first
-    Object.keys(User.permissionMapping).forEach(mappingKey => {
+    Object.keys(User.permissionMapping).forEach((mappingKey) => {
       const userPermKey = User.permissionMapping[mappingKey]
       if (typeof this.permissions[userPermKey] === 'boolean') {
         updatedUserPermissions[userPermKey] = false // Default to false for boolean permissions
@@ -302,7 +303,7 @@ class User {
     })
 
     // Map the boolean permissions from absPermissions
-    Object.keys(absPermissions).forEach(absKey => {
+    Object.keys(absPermissions).forEach((absKey) => {
       const userPermKey = User.permissionMapping[absKey]
       if (!userPermKey) {
         throw new Error(`Unexpected permission property: ${absKey}`)
@@ -326,7 +327,7 @@ class User {
         hasUpdates = true
       }
     } else if (absPermissions.allowedLibraries?.length && absPermissions.allowedLibraries.join(',') !== this.librariesAccessible.join(',')) {
-      if (absPermissions.allowedLibraries.some(lid => typeof lid !== 'string')) {
+      if (absPermissions.allowedLibraries.some((lid) => typeof lid !== 'string')) {
         throw new Error('Invalid permission property "allowedLibraries", expecting array of strings')
       }
       this.librariesAccessible = absPermissions.allowedLibraries
@@ -340,7 +341,7 @@ class User {
         hasUpdates = true
       }
     } else if (absPermissions.allowedTags?.length && absPermissions.allowedTags.join(',') !== this.itemTagsSelected.join(',')) {
-      if (absPermissions.allowedTags.some(tag => typeof tag !== 'string')) {
+      if (absPermissions.allowedTags.some((tag) => typeof tag !== 'string')) {
         throw new Error('Invalid permission property "allowedTags", expecting array of strings')
       }
       this.itemTagsSelected = absPermissions.allowedTags
@@ -350,10 +351,9 @@ class User {
     return hasUpdates
   }
 
-
   /**
-   * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like 
-   * 
+   * Get a sample to show how a JSON for updatePermissionsFromExternalJSON should look like
+   *
    * @returns {string} JSON string
    */
   static getSampleAbsPermissions() {
@@ -375,18 +375,18 @@ class User {
 
   /**
    * Get first available library id for user
-   * 
+   *
    * @param {string[]} libraryIds
    * @returns {string|null}
    */
   getDefaultLibraryId(libraryIds) {
     // Libraries should already be in ascending display order, find first accessible
-    return libraryIds.find(lid => this.checkCanAccessLibrary(lid)) || null
+    return libraryIds.find((lid) => this.checkCanAccessLibrary(lid)) || null
   }
 
   getMediaProgress(libraryItemId, episodeId = null) {
     if (!this.mediaProgress) return null
-    return this.mediaProgress.find(lip => {
+    return this.mediaProgress.find((lip) => {
       if (episodeId && lip.episodeId !== episodeId) return false
       return lip.libraryItemId === libraryItemId
     })
@@ -394,11 +394,11 @@ class User {
 
   getAllMediaProgressForLibraryItem(libraryItemId) {
     if (!this.mediaProgress) return []
-    return this.mediaProgress.filter(li => li.libraryItemId === libraryItemId)
+    return this.mediaProgress.filter((li) => li.libraryItemId === libraryItemId)
   }
 
   createUpdateMediaProgress(libraryItem, updatePayload, episodeId = null) {
-    const itemProgress = this.mediaProgress.find(li => {
+    const itemProgress = this.mediaProgress.find((li) => {
       if (episodeId && li.episodeId !== episodeId) return false
       return li.libraryItemId === libraryItem.id
     })
@@ -415,12 +415,6 @@ class User {
     return wasUpdated
   }
 
-  removeMediaProgress(id) {
-    if (!this.mediaProgress.some(mp => mp.id === id)) return false
-    this.mediaProgress = this.mediaProgress.filter(mp => mp.id !== id)
-    return true
-  }
-
   checkCanAccessLibrary(libraryId) {
     if (this.permissions.accessAllLibraries) return true
     if (!this.librariesAccessible) return false
@@ -431,10 +425,10 @@ class User {
     if (this.permissions.accessAllTags) return true
     if (this.permissions.selectedTagsNotAccessible) {
       if (!tags?.length) return true
-      return tags.every(tag => !this.itemTagsSelected.includes(tag))
+      return tags.every((tag) => !this.itemTagsSelected.includes(tag))
     }
     if (!tags?.length) return false
-    return this.itemTagsSelected.some(tag => tags.includes(tag))
+    return this.itemTagsSelected.some((tag) => tags.includes(tag))
   }
 
   checkCanAccessLibraryItem(libraryItem) {
@@ -446,9 +440,9 @@ class User {
 
   /**
    * Checks if a user can access a library item
-   * @param {string} libraryId 
-   * @param {boolean} explicit 
-   * @param {string[]} tags 
+   * @param {string} libraryId
+   * @param {boolean} explicit
+   * @param {string[]} tags
    */
   checkCanAccessLibraryItemWithData(libraryId, explicit, tags) {
     if (!this.checkCanAccessLibrary(libraryId)) return false
@@ -457,7 +451,7 @@ class User {
   }
 
   findBookmark(libraryItemId, time) {
-    return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time)
+    return this.bookmarks.find((bm) => bm.libraryItemId === libraryItemId && bm.time == time)
   }
 
   createBookmark(libraryItemId, time, title) {
@@ -484,7 +478,7 @@ class User {
   }
 
   removeBookmark(libraryItemId, time) {
-    this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time))
+    this.bookmarks = this.bookmarks.filter((bm) => bm.libraryItemId !== libraryItemId || bm.time !== time)
   }
 
   checkShouldHideSeriesFromContinueListening(seriesId) {
@@ -499,12 +493,12 @@ class User {
 
   removeSeriesFromHideFromContinueListening(seriesId) {
     if (!this.seriesHideFromContinueListening.includes(seriesId)) return false
-    this.seriesHideFromContinueListening = this.seriesHideFromContinueListening.filter(sid => sid !== seriesId)
+    this.seriesHideFromContinueListening = this.seriesHideFromContinueListening.filter((sid) => sid !== seriesId)
     return true
   }
 
   removeProgressFromContinueListening(progressId) {
-    const progress = this.mediaProgress.find(mp => mp.id === progressId)
+    const progress = this.mediaProgress.find((mp) => mp.id === progressId)
     if (!progress) return false
     return progress.removeFromContinueListening()
   }
@@ -512,7 +506,7 @@ class User {
   /**
    * Number of podcast episodes not finished for library item
    * Note: libraryItem passed in from libraryHelpers is not a LibraryItem class instance
-   * @param {LibraryItem|object} libraryItem 
+   * @param {LibraryItem|object} libraryItem
    * @returns {number}
    */
   getNumEpisodesIncompleteForPodcast(libraryItem) {

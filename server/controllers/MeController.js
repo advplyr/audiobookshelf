@@ -1,3 +1,4 @@
+const { Request, Response } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -5,16 +6,36 @@ const { sort } = require('../libs/fastSort')
 const { toNumber } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
 
+/**
+ * @typedef RequestUserObjects
+ * @property {import('../models/User')} userNew
+ * @property {import('../objects/user/User')} user
+ *
+ * @typedef {Request & RequestUserObjects} RequestWithUser
+ *
+ */
+
 class MeController {
   constructor() {}
 
+  /**
+   * GET: /api/me
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   getCurrentUser(req, res) {
-    res.json(req.user.toJSONForBrowser())
+    res.json(req.userNew.toOldJSONForBrowser())
   }
 
-  // GET: api/me/listening-sessions
+  /**
+   * GET: /api/me/listening-sessions
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getListeningSessions(req, res) {
-    var listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
+    const listeningSessions = await this.getUserListeningSessionsHelper(req.userNew.id)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
@@ -38,8 +59,8 @@ class MeController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getItemListeningSessions(req, res) {
     const libraryItem = await Database.libraryItemModel.findByPk(req.params.libraryItemId)
@@ -51,7 +72,7 @@ class MeController {
     }
 
     const mediaItemId = episode?.id || libraryItem.mediaId
-    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
+    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.userNew.id, mediaItemId)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
@@ -70,102 +91,111 @@ class MeController {
     res.json(payload)
   }
 
-  // GET: api/me/listening-stats
+  /**
+   * GET: /api/me/listening-stats
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getListeningStats(req, res) {
-    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
+    const listeningStats = await this.getUserListeningStatsHelpers(req.userNew.id)
     res.json(listeningStats)
   }
 
-  // GET: api/me/progress/:id/:episodeId?
+  /**
+   * GET: /api/me/progress/:id/:episodeId?
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getMediaProgress(req, res) {
-    const mediaProgress = req.user.getMediaProgress(req.params.id, req.params.episodeId || null)
+    const mediaProgress = req.userNew.getOldMediaProgress(req.params.id, req.params.episodeId || null)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
     res.json(mediaProgress)
   }
 
-  // DELETE: api/me/progress/:id
+  /**
+   * DELETE: /api/me/progress/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async removeMediaProgress(req, res) {
-    if (!req.user.removeMediaProgress(req.params.id)) {
-      return res.sendStatus(200)
-    }
-    await Database.removeMediaProgress(req.params.id)
-    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    await Database.mediaProgressModel.removeById(req.params.id)
+    req.userNew.mediaProgresses = req.userNew.mediaProgresses.filter((mp) => mp.id !== req.params.id)
+
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
-  // PATCH: api/me/progress/:id
+  /**
+   * PATCH: /api/me/progress/:libraryItemId/:episodeId?
+   * TODO: Update to use mediaItemId and mediaItemType
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async createUpdateMediaProgress(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
-    if (!libraryItem) {
-      return res.status(404).send('Item not found')
+    const progressUpdatePayload = {
+      ...req.body,
+      libraryItemId: req.params.libraryItemId,
+      episodeId: req.params.episodeId
+    }
+    const mediaProgressResponse = await req.userNew.createUpdateMediaProgressFromPayload(progressUpdatePayload)
+    if (mediaProgressResponse.error) {
+      return res.status(mediaProgressResponse.statusCode || 400).send(mediaProgressResponse.error)
     }
 
-    if (req.user.createUpdateMediaProgress(libraryItem, req.body)) {
-      const mediaProgress = req.user.getMediaProgress(libraryItem.id)
-      if (mediaProgress) await Database.upsertMediaProgress(mediaProgress)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
-    }
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     res.sendStatus(200)
   }
 
-  // PATCH: api/me/progress/:id/:episodeId
-  async createUpdateEpisodeMediaProgress(req, res) {
-    const episodeId = req.params.episodeId
-    const libraryItem = await Database.libraryItemModel.getOldById(req.params.id)
-    if (!libraryItem) {
-      return res.status(404).send('Item not found')
-    }
-    if (!libraryItem.media.episodes.find((ep) => ep.id === episodeId)) {
-      Logger.error(`[MeController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
-      return res.status(404).send('Episode not found')
-    }
-
-    if (req.user.createUpdateMediaProgress(libraryItem, req.body, episodeId)) {
-      const mediaProgress = req.user.getMediaProgress(libraryItem.id, episodeId)
-      if (mediaProgress) await Database.upsertMediaProgress(mediaProgress)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
-    }
-    res.sendStatus(200)
-  }
-
-  // PATCH: api/me/progress/batch/update
+  /**
+   * PATCH: /api/me/progress/batch/update
+   * TODO: Update to use mediaItemId and mediaItemType
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchUpdateMediaProgress(req, res) {
     const itemProgressPayloads = req.body
     if (!itemProgressPayloads?.length) {
       return res.status(400).send('Missing request payload')
     }
 
-    let shouldUpdate = false
+    let hasUpdated = false
     for (const itemProgress of itemProgressPayloads) {
-      const libraryItem = await Database.libraryItemModel.getOldById(itemProgress.libraryItemId)
-      if (libraryItem) {
-        if (req.user.createUpdateMediaProgress(libraryItem, itemProgress, itemProgress.episodeId)) {
-          const mediaProgress = req.user.getMediaProgress(libraryItem.id, itemProgress.episodeId)
-          if (mediaProgress) await Database.upsertMediaProgress(mediaProgress)
-          shouldUpdate = true
-        }
+      const mediaProgressResponse = await req.userNew.createUpdateMediaProgressFromPayload(itemProgress)
+      if (mediaProgressResponse.error) {
+        Logger.error(`[MeController] batchUpdateMediaProgress: ${mediaProgressResponse.error}`)
+        continue
       } else {
-        Logger.error(`[MeController] batchUpdateMediaProgress: Library Item does not exist ${itemProgress.id}`)
+        hasUpdated = true
       }
     }
 
-    if (shouldUpdate) {
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    if (hasUpdated) {
+      SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.userNew.toOldJSONForBrowser())
     }
 
     res.sendStatus(200)
   }
 
-  // POST: api/me/item/:id/bookmark
+  /**
+   * POST: /api/me/item/:id/bookmark
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async createBookmark(req, res) {
     if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
 
     const { time, title } = req.body
     const bookmark = req.user.createBookmark(req.params.id, time, title)
     await Database.updateUser(req.user)
-    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.userNew.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
   }
 

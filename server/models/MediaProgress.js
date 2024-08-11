@@ -182,6 +182,61 @@ class MediaProgress extends Model {
       finishedAt: this.finishedAt?.valueOf() || null
     }
   }
+
+  /**
+   * Apply update to media progress
+   *
+   * @param {Object} progress
+   * @returns {Promise<MediaProgress>}
+   */
+  applyProgressUpdate(progressPayload) {
+    if (!this.extraData) this.extraData = {}
+    if (progressPayload.isFinished !== undefined) {
+      if (progressPayload.isFinished && !this.isFinished) {
+        this.finishedAt = Date.now()
+        this.extraData.progress = 1
+        this.changed('extraData', true)
+        delete progressPayload.finishedAt
+      } else if (!progressPayload.isFinished && this.isFinished) {
+        this.finishedAt = null
+        this.extraData.progress = 0
+        this.currentTime = 0
+        this.changed('extraData', true)
+        delete progressPayload.finishedAt
+        delete progressPayload.currentTime
+      }
+    } else if (!isNaN(progressPayload.progress) && progressPayload.progress !== this.progress) {
+      // Old model stored progress on object
+      this.extraData.progress = Math.min(1, Math.max(0, progressPayload.progress))
+      this.changed('extraData', true)
+    }
+
+    this.set(progressPayload)
+
+    // Reset hideFromContinueListening if the progress has changed
+    if (this.changed('currentTime') && !progressPayload.hideFromContinueListening) {
+      this.hideFromContinueListening = false
+    }
+
+    const timeRemaining = this.duration - this.currentTime
+    // Set to finished if time remaining is less than 5 seconds
+    if (!this.isFinished && this.duration && timeRemaining < 5) {
+      this.isFinished = true
+      this.finishedAt = this.finishedAt || Date.now()
+      this.extraData.progress = 1
+      this.changed('extraData', true)
+    } else if (this.isFinished && this.changed('currentTime') && this.currentTime < this.duration) {
+      this.isFinished = false
+      this.finishedAt = null
+    }
+
+    // For local sync
+    if (progressPayload.lastUpdate) {
+      this.updatedAt = progressPayload.lastUpdate
+    }
+
+    return this.save()
+  }
 }
 
 module.exports = MediaProgress

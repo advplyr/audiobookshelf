@@ -246,7 +246,7 @@ export default {
         message: newIsFinished ? this.$strings.MessageConfirmMarkAllEpisodesFinished : this.$strings.MessageConfirmMarkAllEpisodesNotFinished,
         callback: (confirmed) => {
           if (confirmed) {
-            this.batchUpdateEpisodesFinished(this.episodesSorted, newIsFinished)
+            this.batchUpdateEpisodesFinished(this.episodesCopy, newIsFinished)
           }
         },
         type: 'yesNo'
@@ -305,6 +305,7 @@ export default {
       this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)
     },
     batchUpdateEpisodesFinished(episodes, newIsFinished) {
+      if (!episodes.length) return
       this.processing = true
 
       const updateProgressPayloads = episodes.map((episode) => {

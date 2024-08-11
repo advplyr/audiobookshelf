@@ -182,7 +182,7 @@ export default {
     toggleFinished(confirmed = false) {
       if (!this.userIsFinished && this.itemProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${this.title}" as finished?`,
+          message: `Are you sure you want to mark "${this.episodeTitle}" as finished?`,
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleFinished(true)

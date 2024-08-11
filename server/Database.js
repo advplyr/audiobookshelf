@@ -400,11 +400,6 @@ class Database {
     return this.models.mediaProgress.upsertFromOld(oldMediaProgress)
   }
 
-  removeMediaProgress(mediaProgressId) {
-    if (!this.sequelize) return false
-    return this.models.mediaProgress.removeById(mediaProgressId)
-  }
-
   updateBulkBooks(oldBooks) {
     if (!this.sequelize) return false
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
