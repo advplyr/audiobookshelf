@@ -18,6 +18,7 @@ paths:
   /api/notifications:
     get:
       operationId: getNotifications
+      summary: Get notification settings
       description: Get all Apprise notification events and notification settings for server.
       tags:
         - Notification
@@ -41,8 +42,9 @@ paths:
         '404':
           $ref: '#/components/responses/notification404'
     patch:
-      operationId: updateNotificationSettings
-      description: Update Notification settings.
+      operationId: configureNotificationSettings
+      summary: Update select notification settings
+      description: Update the URL, max failed attempts, and maximum notifications that can be queued for Apprise.
       tags:
         - Notification
       requestBody:
@@ -64,7 +66,8 @@ paths:
           $ref: '#/components/responses/notification404'
     post:
       operationId: createNotification
-      description: Update Notification settings.
+      summary: Create notification settings
+      description: Create or update Notification settings.
       tags:
         - Notification
       requestBody:
@@ -107,6 +110,7 @@ paths:
   /api/notificationdata:
     get:
       operationId: getNotificationEventData
+      summary: Get notification event data
       description: Get all Apprise notification event data for the server.
       tags:
         - Notification
@@ -127,6 +131,7 @@ paths:
   /api/notifications/test:
     get:
       operationId: sendDefaultTestNotification
+      summary: Send general test notification
       description: Send a test notification.
       tags:
         - Notification
@@ -151,6 +156,7 @@ paths:
           $ref: '../objects/Notification.yaml#/components/schemas/notificationId'
     delete:
       operationId: deleteNotification
+      summary: Delete a notification
       description: Delete the notification by ID and return the notification settings.
       tags:
         - Notification
@@ -168,7 +174,8 @@ paths:
           $ref: '#/components/responses/notification404'
     patch:
       operationId: updateNotification
-      description: Update individual Notification
+      summary: Update a notification
+      description: Update an individual Notification by ID
       tags:
         - Notification
       requestBody:
@@ -213,7 +220,8 @@ paths:
           $ref: '../objects/Notification.yaml#/components/schemas/notificationId'
     get:
       operationId: sendTestNotification
-      description: Send a test to the given notification.
+      summary: Send a test notification
+      description: Send a test to the given notification by ID.
       tags:
         - Notification
       responses:

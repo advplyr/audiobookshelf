@@ -6,8 +6,8 @@ const fsExtra = require('../../libs/fsExtra')
 
 module.exports = {
   /**
-   * 
-   * @param {string} userId 
+   *
+   * @param {string} userId
    * @param {number} year YYYY
    * @returns {Promise<PlaybackSession[]>}
    */
@@ -35,8 +35,8 @@ module.exports = {
   },
 
   /**
-   * 
-   * @param {string} userId 
+   *
+   * @param {string} userId
    * @param {number} year YYYY
    * @returns {Promise<MediaProgress[]>}
    */
@@ -65,11 +65,10 @@ module.exports = {
   },
 
   /**
-   * @param {import('../../objects/user/User')} user
+   * @param {string} userId
    * @param {number} year YYYY
    */
-  async getStatsForYear(user, year) {
-    const userId = user.id
+  async getStatsForYear(userId, year) {
     const listeningSessions = await this.getUserListeningSessionsForYear(userId, year)
     const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
 
@@ -91,7 +90,7 @@ module.exports = {
     let longestAudiobookFinished = null
     for (const mediaProgress of bookProgressesFinished) {
       // Grab first 5 that have a cover
-      if (mediaProgress.mediaItem?.coverPath && !finishedBooksWithCovers.includes(mediaProgress.mediaItem.libraryItem.id) && finishedBooksWithCovers.length < 5 && await fsExtra.pathExists(mediaProgress.mediaItem.coverPath)) {
+      if (mediaProgress.mediaItem?.coverPath && !finishedBooksWithCovers.includes(mediaProgress.mediaItem.libraryItem.id) && finishedBooksWithCovers.length < 5 && (await fsExtra.pathExists(mediaProgress.mediaItem.coverPath))) {
         finishedBooksWithCovers.push(mediaProgress.mediaItem.libraryItem.id)
       }
 
@@ -108,7 +107,7 @@ module.exports = {
     // Get listening session stats
     for (const ls of listeningSessions) {
       // Grab first 25 that have a cover
-      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && !finishedBooksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && await fsExtra.pathExists(ls.mediaItem.coverPath)) {
+      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && !finishedBooksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && (await fsExtra.pathExists(ls.mediaItem.coverPath))) {
         booksWithCovers.push(ls.mediaItem.libraryItem.id)
       }
 
@@ -141,7 +140,7 @@ module.exports = {
         })
 
         // Filter out bad genres like "audiobook" and "audio book"
-        const genres = (ls.mediaMetadata.genres || []).filter(g => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
+        const genres = (ls.mediaMetadata.genres || []).filter((g) => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
         genres.forEach((genre) => {
           if (!genreListeningMap[genre]) genreListeningMap[genre] = 0
           genreListeningMap[genre] += listeningSessionListeningTime
@@ -156,10 +155,13 @@ module.exports = {
     totalPodcastListeningTime = Math.round(totalPodcastListeningTime)
 
     let topAuthors = null
-    topAuthors = Object.keys(authorListeningMap).map(authorName => ({
-      name: authorName,
-      time: Math.round(authorListeningMap[authorName])
-    })).sort((a, b) => b.time - a.time).slice(0, 3)
+    topAuthors = Object.keys(authorListeningMap)
+      .map((authorName) => ({
+        name: authorName,
+        time: Math.round(authorListeningMap[authorName])
+      }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 3)
 
     let mostListenedNarrator = null
     for (const narrator in narratorListeningMap) {
@@ -172,10 +174,13 @@ module.exports = {
     }
 
     let topGenres = null
-    topGenres = Object.keys(genreListeningMap).map(genre => ({
-      genre,
-      time: Math.round(genreListeningMap[genre])
-    })).sort((a, b) => b.time - a.time).slice(0, 3)
+    topGenres = Object.keys(genreListeningMap)
+      .map((genre) => ({
+        genre,
+        time: Math.round(genreListeningMap[genre])
+      }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 3)
 
     let mostListenedMonth = null
     for (const month in monthListeningMap) {

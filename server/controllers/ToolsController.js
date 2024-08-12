@@ -1,10 +1,26 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
 
-class ToolsController {
-  constructor() { }
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
 
-  // POST: api/tools/item/:id/encode-m4b
+class ToolsController {
+  constructor() {}
+
+  /**
+   * POST: /api/tools/item/:id/encode-m4b
+   * Start an audiobook merge to m4b task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async encodeM4b(req, res) {
     if (req.libraryItem.isMissing || req.libraryItem.isInvalid) {
       Logger.error(`[MiscController] encodeM4b: library item not found or invalid ${req.params.id}`)
@@ -22,12 +38,20 @@ class ToolsController {
     }
 
     const options = req.query || {}
-    this.abMergeManager.startAudiobookMerge(req.user, req.libraryItem, options)
+    this.abMergeManager.startAudiobookMerge(req.user.id, req.libraryItem, options)
 
     res.sendStatus(200)
   }
 
-  // DELETE: api/tools/item/:id/encode-m4b
+  /**
+   * DELETE: /api/tools/item/:id/encode-m4b
+   * Cancel a running m4b merge task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async cancelM4bEncode(req, res) {
     const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
     if (!workerTask) return res.sendStatus(404)
@@ -37,7 +61,15 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-  // POST: api/tools/item/:id/embed-metadata
+  /**
+   * POST: /api/tools/item/:id/embed-metadata
+   * Start audiobook embed task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async embedAudioFileMetadata(req, res) {
     if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
       Logger.error(`[ToolsController] Invalid library item`)
@@ -53,11 +85,19 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, options)
+    this.audioMetadataManager.updateMetadataForItem(req.user.id, req.libraryItem, options)
     res.sendStatus(200)
   }
 
-  // POST: api/tools/batch/embed-metadata
+  /**
+   * POST: /api/tools/batch/embed-metadata
+   * Start batch audiobook embed task
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async batchEmbedMetadata(req, res) {
     const libraryItemIds = req.body.libraryItemIds || []
     if (!libraryItemIds.length) {
@@ -74,7 +114,7 @@ class ToolsController {
 
       // Check user can access this library item
       if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
-        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user`, req.user)
+        Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not accessible to user "${req.user.username}"`)
         return res.sendStatus(403)
       }
 
@@ -95,13 +135,19 @@ class ToolsController {
       forceEmbedChapters: req.query.forceEmbedChapters === '1',
       backup: req.query.backup === '1'
     }
-    this.audioMetadataManager.handleBatchEmbed(req.user, libraryItems, options)
+    this.audioMetadataManager.handleBatchEmbed(req.user.id, libraryItems, options)
     res.sendStatus(200)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to access tools route`, req.user)
+      Logger.error(`[LibraryItemController] Non-root user "${req.user.username}" attempted to access tools route`)
       return res.sendStatus(403)
     }
 

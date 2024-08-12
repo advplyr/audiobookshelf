@@ -1,3 +1,4 @@
+const { Request, Response, NextFunction } = require('express')
 const sequelize = require('sequelize')
 const fs = require('../libs/fsExtra')
 const { createNewSortInstance } = require('../libs/fastSort')
@@ -14,9 +15,23 @@ const { reqSupportsWebp, isValidASIN } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
+
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class AuthorController {
   constructor() {}
 
+  /**
+   * GET: /api/authors/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async findOne(req, res) {
     const include = (req.query.include || '').split(',')
 
@@ -63,9 +78,10 @@ class AuthorController {
   }
 
   /**
+   * PATCH: /api/authors/:id
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async update(req, res) {
     const payload = req.body
@@ -194,8 +210,8 @@ class AuthorController {
    * DELETE: /api/authors/:id
    * Remove author from all books and delete
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async delete(req, res) {
     Logger.info(`[AuthorController] Removing author "${req.author.name}"`)
@@ -218,12 +234,12 @@ class AuthorController {
    * POST: /api/authors/:id/image
    * Upload author image from web URL
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async uploadImage(req, res) {
     if (!req.user.canUpload) {
-      Logger.warn('User attempted to upload an image without permission', req.user)
+      Logger.warn(`User "${req.user.username}" attempted to upload an image without permission`)
       return res.sendStatus(403)
     }
     if (!req.body.url) {
@@ -263,8 +279,8 @@ class AuthorController {
    * DELETE: /api/authors/:id/image
    * Remove author image & delete image file
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteImage(req, res) {
     if (!req.author.imagePath) {
@@ -284,6 +300,12 @@ class AuthorController {
     })
   }
 
+  /**
+   * POST: /api/authors/:id/match
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async match(req, res) {
     let authorData = null
     const region = req.body.region || 'us'
@@ -334,7 +356,12 @@ class AuthorController {
     })
   }
 
-  // GET api/authors/:id/image
+  /**
+   * GET: /api/authors/:id/image
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getImage(req, res) {
     const {
       query: { width, height, format, raw },
@@ -358,15 +385,21 @@ class AuthorController {
     return CacheManager.handleAuthorCache(res, author, options)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     const author = await Database.authorModel.getOldById(req.params.id)
     if (!author) return res.sendStatus(404)
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[AuthorController] User attempted to delete without permission`, req.user)
+      Logger.warn(`[AuthorController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[AuthorController] User attempted to update without permission', req.user)
+      Logger.warn(`[AuthorController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

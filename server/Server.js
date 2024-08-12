@@ -89,6 +89,13 @@ class Server {
     this.io = null
   }
 
+  /**
+   * Middleware to check if the current request is authenticated
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
   authMiddleware(req, res, next) {
     // ask passportjs if the current request is authenticated
     this.auth.isAuthenticated(req, res, next)
@@ -105,8 +112,19 @@ class Server {
   async init() {
     Logger.info('[Server] Init v' + version)
     Logger.info('[Server] Node.js Version:', process.version)
+    Logger.info('[Server] Platform:', process.platform)
+    Logger.info('[Server] Arch:', process.arch)
 
     await this.playbackSessionManager.removeOrphanStreams()
+
+    /**
+     * Docker container ffmpeg/ffprobe binaries are included in the image.
+     * Docker is currently using ffmpeg/ffprobe v6.1 instead of v5.1 so skipping the check
+     * TODO: Support binary check for all sources
+     */
+    if (global.Source !== 'docker') {
+      await this.binaryManager.init()
+    }
 
     await Database.init(false)
 
@@ -127,11 +145,6 @@ class Server {
     const libraries = await Database.libraryModel.getAllOldLibraries()
     await this.cronManager.init(libraries)
     this.apiCacheManager.init()
-
-    // Download ffmpeg & ffprobe if not found (Currently only in use for Windows installs)
-    if (global.isWin || Logger.isDev) {
-      await this.binaryManager.init()
-    }
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -285,6 +298,7 @@ class Server {
       '/library/:library/bookshelf/:id?',
       '/library/:library/authors',
       '/library/:library/narrators',
+      '/library/:library/stats',
       '/library/:library/series/:id?',
       '/library/:library/podcast/search',
       '/library/:library/podcast/latest',
@@ -385,31 +399,24 @@ class Server {
     }
 
     // Remove series from hide from continue listening that no longer exist
-    const users = await Database.userModel.getOldUsers()
-    for (const _user of users) {
-      let hasUpdated = false
-      if (_user.seriesHideFromContinueListening.length) {
-        const seriesHiding = (
-          await Database.seriesModel.findAll({
-            where: {
-              id: _user.seriesHideFromContinueListening
-            },
-            attributes: ['id'],
-            raw: true
-          })
-        ).map((se) => se.id)
-        _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter((seriesId) => {
-          if (!seriesHiding.includes(seriesId)) {
-            // Series removed
-            hasUpdated = true
-            return false
-          }
-          return true
-        })
+    try {
+      const users = await Database.sequelize.query(`SELECT u.id, u.username, u.extraData, json_group_array(value) AS seriesIdsToRemove FROM users u, json_each(u.extraData->"seriesHideFromContinueListening") LEFT JOIN series se ON se.id = value WHERE se.id IS NULL GROUP BY u.id;`, {
+        model: Database.userModel,
+        type: Sequelize.QueryTypes.SELECT
+      })
+      for (const user of users) {
+        const extraData = JSON.parse(user.extraData)
+        const existingSeriesIds = extraData.seriesHideFromContinueListening
+        const seriesIdsToRemove = JSON.parse(user.dataValues.seriesIdsToRemove)
+        Logger.info(`[Server] Found ${seriesIdsToRemove.length} non-existent series in seriesHideFromContinueListening for user "${user.username}" - Removing (${seriesIdsToRemove.join(',')})`)
+        const newExtraData = {
+          ...extraData,
+          seriesHideFromContinueListening: existingSeriesIds.filter((s) => !seriesIdsToRemove.includes(s))
+        }
+        await user.update({ extraData: newExtraData })
       }
-      if (hasUpdated) {
-        await Database.updateUser(_user)
-      }
+    } catch (error) {
+      Logger.error(`[Server] Failed to cleanup users seriesHideFromContinueListening`, error)
     }
   }
 

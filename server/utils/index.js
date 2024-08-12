@@ -66,6 +66,11 @@ module.exports.getId = (prepend = '') => {
   return _id
 }
 
+/**
+ *
+ * @param {number} seconds
+ * @returns {string}
+ */
 function elapsedPretty(seconds) {
   if (seconds > 0 && seconds < 1) {
     return `${Math.floor(seconds * 1000)} ms`
@@ -73,16 +78,27 @@ function elapsedPretty(seconds) {
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec`
   }
-  var minutes = Math.floor(seconds / 60)
+  let minutes = Math.floor(seconds / 60)
   if (minutes < 70) {
     return `${minutes} min`
   }
-  var hours = Math.floor(minutes / 60)
+  let hours = Math.floor(minutes / 60)
   minutes -= hours * 60
-  if (!minutes) {
-    return `${hours} hr`
+
+  let days = Math.floor(hours / 24)
+  hours -= days * 24
+
+  const timeParts = []
+  if (days) {
+    timeParts.push(`${days} d`)
   }
-  return `${hours} hr ${minutes} min`
+  if (hours || (days && minutes)) {
+    timeParts.push(`${hours} hr`)
+  }
+  if (minutes) {
+    timeParts.push(`${minutes} min`)
+  }
+  return timeParts.join(' ')
 }
 module.exports.elapsedPretty = elapsedPretty
 

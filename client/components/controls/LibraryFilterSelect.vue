@@ -10,7 +10,7 @@
         </svg>
       </span>
       <div v-else class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-gray-400 hover:text-gray-200" @mousedown.stop @mouseup.stop @click.stop.prevent="clearSelected">
-        <span class="material-icons" style="font-size: 1.1rem">close</span>
+        <span class="material-symbols" style="font-size: 1.1rem">close</span>
       </div>
     </button>
 
@@ -22,11 +22,11 @@
               <span class="font-normal ml-3 block truncate text-sm">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
-              <span class="material-icons text-2xl">arrow_right</span>
+              <span class="material-symbols text-2xl">arrow_right</span>
             </div>
             <!-- selected checkmark icon -->
             <div v-if="item.value === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
-              <span class="material-icons text-base text-yellow-400">check</span>
+              <span class="material-symbols text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>
@@ -34,7 +34,7 @@
       <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-white/5" role="option" @click="sublist = null">
           <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
-            <span class="material-icons text-2xl">arrow_left</span>
+            <span class="material-symbols text-2xl">arrow_left</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="font-normal block truncate">{{ $strings.ButtonBack }}</span>
@@ -52,7 +52,7 @@
             </div>
             <!-- selected checkmark icon -->
             <div v-if="`${sublist}.${item.value}` === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
-              <span class="material-icons text-base text-yellow-400">check</span>
+              <span class="material-symbols text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>

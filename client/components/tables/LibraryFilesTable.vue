@@ -8,7 +8,7 @@
       <div class="flex-grow" />
       <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
-        <span class="material-icons text-4xl">expand_more</span>
+        <span class="material-symbols text-4xl">expand_more</span>
       </div>
     </div>
     <transition name="slide">

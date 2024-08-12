@@ -6,8 +6,8 @@
         <div ref="inputWrapper" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-1" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
           <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 mx-0.5 my-0.5 text-xs bg-bg flex flex-nowrap break-all items-center relative">
             <div v-if="!disabled" class="w-full h-full rounded-full absolute top-0 left-0 px-1 bg-bg bg-opacity-75 flex items-center justify-end opacity-0 hover:opacity-100">
-              <span v-if="showEdit" class="material-icons text-white hover:text-warning cursor-pointer" style="font-size: 1.1rem" @click.stop="editItem(item)">edit</span>
-              <span class="material-icons text-white hover:text-error cursor-pointer" style="font-size: 1.1rem" @click.stop="removeItem(item)">close</span>
+              <span v-if="showEdit" class="material-symbols text-white hover:text-warning cursor-pointer" style="font-size: 1.1rem" @click.stop="editItem(item)">edit</span>
+              <span class="material-symbols text-white hover:text-error cursor-pointer" style="font-size: 1.1rem" @click.stop="removeItem(item)">close</span>
             </div>
             {{ item }}
           </div>
@@ -22,7 +22,7 @@
               <span class="font-normal ml-3 block truncate">{{ item }}</span>
             </div>
             <span v-if="selected.includes(item)" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
-              <span class="material-icons text-xl">checkmark</span>
+              <span class="material-symbols text-xl">check</span>
             </span>
           </li>
         </template>

@@ -167,8 +167,19 @@ export default {
       this.loaded = true
     },
     async fetchCategories() {
+      // Sets the limit for the number of items to be displayed based on the viewport width.
+      const viewportWidth = window.innerWidth
+      let limit
+      if (viewportWidth >= 3240) {
+        limit = 15
+      } else if (viewportWidth >= 2880 && viewportWidth < 3240) {
+        limit = 12
+      }
+
+      const limitQuery = limit ? `&limit=${limit}` : ''
+
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete,share`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete,share${limitQuery}`)
         .then((data) => {
           return data
         })

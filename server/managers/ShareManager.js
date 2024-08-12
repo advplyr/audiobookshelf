@@ -1,12 +1,14 @@
 const Database = require('../Database')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const LongTimeout = require('../utils/longTimeout')
+const { elapsedPretty } = require('../utils/index')
 
 /**
  * @typedef OpenMediaItemShareObject
  * @property {string} id
  * @property {import('../models/MediaItemShare').MediaItemShareObject} mediaItemShare
- * @property {NodeJS.Timeout} timeout
+ * @property {LongTimeout} timeout
  */
 
 class ShareManager {
@@ -118,13 +120,13 @@ class ShareManager {
       this.destroyMediaItemShare(mediaItemShare.id)
       return
     }
-
-    const timeout = setTimeout(() => {
+    const timeout = new LongTimeout()
+    timeout.set(() => {
       Logger.info(`[ShareManager] Removing expired media item share "${mediaItemShare.id}"`)
       this.removeMediaItemShare(mediaItemShare.id)
     }, expiresAtDuration)
     this.openMediaItemShares.push({ id: mediaItemShare.id, mediaItemShare: mediaItemShare.toJSON(), timeout })
-    Logger.info(`[ShareManager] Scheduled media item share "${mediaItemShare.id}" to expire in ${expiresAtDuration}ms`)
+    Logger.info(`[ShareManager] Scheduled media item share "${mediaItemShare.id}" to expire in ${elapsedPretty(expiresAtDuration / 1000)}`)
   }
 
   /**
@@ -149,7 +151,7 @@ class ShareManager {
     if (!mediaItemShare) return
 
     if (mediaItemShare.timeout) {
-      clearTimeout(mediaItemShare.timeout)
+      mediaItemShare.timeout.clear()
     }
 
     this.openMediaItemShares = this.openMediaItemShares.filter((s) => s.id !== mediaItemShareId)

@@ -216,6 +216,34 @@ class Database {
   }
 
   /**
+   * TODO: Temporarily disabled
+   * @param {string[]} extensions paths to extension binaries
+   */
+  async loadExtensions(extensions) {
+    // This is a hack to get the db connection for loading extensions.
+    // The proper way would be to use the 'afterConnect' hook, but that hook is never called for sqlite due to a bug in sequelize.
+    // See https://github.com/sequelize/sequelize/issues/12487
+    // This is not a public API and may break in the future.
+    const db = await this.sequelize.dialect.connectionManager.getConnection()
+    if (typeof db?.loadExtension !== 'function') throw new Error('Failed to get db connection for loading extensions')
+
+    for (const ext of extensions) {
+      Logger.info(`[Database] Loading extension ${ext}`)
+      await new Promise((resolve, reject) => {
+        db.loadExtension(ext, (err) => {
+          if (err) {
+            Logger.error(`[Database] Failed to load extension ${ext}`, err)
+            reject(err)
+            return
+          }
+          Logger.info(`[Database] Successfully loaded extension ${ext}`)
+          resolve()
+        })
+      })
+    }
+  }
+
+  /**
    * Disconnect from db
    */
   async disconnect() {
@@ -335,7 +363,7 @@ class Database {
    */
   async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
-    await this.models.user.createRootUser(username, pash, auth)
+    await this.userModel.createRootUser(username, pash, auth)
     this.hasRootUser = true
     return true
   }
@@ -360,26 +388,6 @@ class Database {
   updateUser(oldUser) {
     if (!this.sequelize) return false
     return this.models.user.updateFromOld(oldUser)
-  }
-
-  updateBulkUsers(oldUsers) {
-    if (!this.sequelize) return false
-    return Promise.all(oldUsers.map((u) => this.updateUser(u)))
-  }
-
-  removeUser(userId) {
-    if (!this.sequelize) return false
-    return this.models.user.removeById(userId)
-  }
-
-  upsertMediaProgress(oldMediaProgress) {
-    if (!this.sequelize) return false
-    return this.models.mediaProgress.upsertFromOld(oldMediaProgress)
-  }
-
-  removeMediaProgress(mediaProgressId) {
-    if (!this.sequelize) return false
-    return this.models.mediaProgress.removeById(mediaProgressId)
   }
 
   updateBulkBooks(oldBooks) {
@@ -438,11 +446,6 @@ class Database {
       delete this.libraryFilterData[oldLibraryItem.libraryId]
     }
     return updated
-  }
-
-  async removeLibraryItem(libraryItemId) {
-    if (!this.sequelize) return false
-    await this.models.libraryItem.removeById(libraryItemId)
   }
 
   async createFeed(oldFeed) {
@@ -800,6 +803,39 @@ class Database {
     if (badSessionsRemoved > 0) {
       Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
+  }
+
+  /**
+   * TODO: Temporarily unused
+   * @param {string} value
+   * @returns {string}
+   */
+  normalize(value) {
+    return `lower(unaccent(${value}))`
+  }
+
+  /**
+   * TODO: Temporarily unused
+   * @param {string} query
+   * @returns {Promise<string>}
+   */
+  async getNormalizedQuery(query) {
+    const escapedQuery = this.sequelize.escape(query)
+    const normalizedQuery = this.normalize(escapedQuery)
+    const normalizedQueryResult = await this.sequelize.query(`SELECT ${normalizedQuery} as normalized_query`)
+    return normalizedQueryResult[0][0].normalized_query
+  }
+
+  /**
+   *
+   * @param {string} column
+   * @param {string} normalizedQuery
+   * @returns {string}
+   */
+  matchExpression(column, normalizedQuery) {
+    const normalizedPattern = this.sequelize.escape(`%${normalizedQuery}%`)
+    const normalizedColumn = column
+    return `${normalizedColumn} LIKE ${normalizedPattern}`
   }
 }
 

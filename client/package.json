@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "2.11.0",
+  "version": "2.12.3",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
@@ -37,8 +37,10 @@
   "devDependencies": {
     "@nuxtjs/pwa": "^3.3.5",
     "autoprefixer": "^10.4.7",
-    "cypress": "^13.7.3",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.4.1"
+  },
+  "optionalDependencies": {
+    "cypress": "^13.7.3"
   }
 }

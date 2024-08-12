@@ -36,6 +36,10 @@
     {
       "name": "Notification",
       "description": "Notifications endpoints"
+    },
+    {
+      "name": "Podcasts",
+      "description": "Podcast endpoints"
     }
   ],
   "paths": {
@@ -422,7 +426,8 @@
     },
     "/api/emails/settings": {
       "get": {
-        "description": "Get email settings",
+        "summary": "Get email settings",
+        "description": "Get email settings for sending e-books to e-readers.",
         "operationId": "getEmailSettings",
         "tags": [
           "Email"
@@ -1162,6 +1167,7 @@
     "/api/notifications": {
       "get": {
         "operationId": "getNotifications",
+        "summary": "Get notification settings",
         "description": "Get all Apprise notification events and notification settings for server.",
         "tags": [
           "Notification"
@@ -1199,8 +1205,9 @@
         }
       },
       "patch": {
-        "operationId": "updateNotificationSettings",
-        "description": "Update Notification settings.",
+        "operationId": "configureNotificationSettings",
+        "summary": "Update select notification settings",
+        "description": "Update the URL, max failed attempts, and maximum notifications that can be queued for Apprise.",
         "tags": [
           "Notification"
         ],
@@ -1235,7 +1242,8 @@
       },
       "post": {
         "operationId": "createNotification",
-        "description": "Update Notification settings.",
+        "summary": "Create notification settings",
+        "description": "Create or update Notification settings.",
         "tags": [
           "Notification"
         ],
@@ -1302,6 +1310,7 @@
     "/api/notificationdata": {
       "get": {
         "operationId": "getNotificationEventData",
+        "summary": "Get notification event data",
         "description": "Get all Apprise notification event data for the server.",
         "tags": [
           "Notification"
@@ -1334,6 +1343,7 @@
     "/api/notifications/test": {
       "get": {
         "operationId": "sendDefaultTestNotification",
+        "summary": "Send general test notification",
         "description": "Send a test notification.",
         "tags": [
           "Notification"
@@ -1372,6 +1382,7 @@
       ],
       "delete": {
         "operationId": "deleteNotification",
+        "summary": "Delete a notification",
         "description": "Delete the notification by ID and return the notification settings.",
         "tags": [
           "Notification"
@@ -1399,7 +1410,8 @@
       },
       "patch": {
         "operationId": "updateNotification",
-        "description": "Update individual Notification",
+        "summary": "Update a notification",
+        "description": "Update an individual Notification by ID",
         "tags": [
           "Notification"
         ],
@@ -1471,7 +1483,8 @@
       ],
       "get": {
         "operationId": "sendTestNotification",
-        "description": "Send a test to the given notification.",
+        "summary": "Send a test notification",
+        "description": "Send a test to the given notification by ID.",
         "tags": [
           "Notification"
         ],
@@ -1481,6 +1494,599 @@
           },
           "404": {
             "$ref": "#/components/responses/notification404"
+          }
+        }
+      }
+    },
+    "/api/podcasts": {
+      "post": {
+        "summary": "Create a new podcast",
+        "operationId": "createPodcast",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Podcast"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created a podcast",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Podcast"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/podcasts/feed": {
+      "post": {
+        "summary": "Get podcast feed",
+        "operationId": "getPodcastFeed",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rssFeed": {
+                    "type": "string",
+                    "description": "The RSS feed URL of the podcast"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved podcast feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "podcast": {
+                      "$ref": "#/components/schemas/Podcast"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/podcasts/opml/parse": {
+      "post": {
+        "summary": "Get feeds from OPML text",
+        "description": "Parse OPML text and return an array of feeds",
+        "operationId": "getFeedsFromOPMLText",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "opmlText": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully parsed OPML text and returned feeds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "feeds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string"
+                          },
+                          "feedUrl": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request, OPML text not provided"
+          },
+          "403": {
+            "description": "Forbidden, user is not admin"
+          }
+        }
+      }
+    },
+    "/api/podcasts/opml/create": {
+      "post": {
+        "summary": "Bulk create podcasts from OPML feed URLs",
+        "operationId": "bulkCreatePodcastsFromOpmlFeedUrls",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "feeds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "libraryId": {
+                    "$ref": "#/components/schemas/libraryId"
+                  },
+                  "folderId": {
+                    "$ref": "#/components/schemas/folderId"
+                  },
+                  "autoDownloadEpisodes": {
+                    "$ref": "#/components/schemas/autoDownloadEpisodes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully created podcasts from feed URLs"
+          },
+          "400": {
+            "description": "Bad request, invalid request body"
+          },
+          "403": {
+            "description": "Forbidden, user is not admin"
+          },
+          "404": {
+            "description": "Folder not found"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/checknew": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Check and download new episodes",
+        "operationId": "checkNewEpisodes",
+        "tags": [
+          "Podcasts"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of episodes to download",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully checked and downloaded new episodes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "episodes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PodcastEpisode"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/clear-queue": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Clear episode download queue",
+        "operationId": "clearEpisodeDownloadQueue",
+        "tags": [
+          "Podcasts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully cleared download queue"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/downloads": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Get episode downloads",
+        "operationId": "getEpisodeDownloads",
+        "tags": [
+          "Podcasts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved episode downloads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "downloads": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PodcastEpisode"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/search-episode": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Find episode by title",
+        "operationId": "findEpisode",
+        "tags": [
+          "Podcasts"
+        ],
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "description": "Title of the episode to search for",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully found episodes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "episodes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PodcastEpisode"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/download-episodes": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Download podcast episodes",
+        "operationId": "downloadEpisodes",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully started episode download"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/match-episodes": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Quick match podcast episodes",
+        "operationId": "quickMatchEpisodes",
+        "tags": [
+          "Podcasts"
+        ],
+        "parameters": [
+          {
+            "name": "override",
+            "in": "query",
+            "description": "Override existing details if set to 1",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully matched episodes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "numEpisodesUpdated": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/podcasts/{id}/episode/{episodeId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Podcast ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        },
+        {
+          "name": "episodeId",
+          "in": "path",
+          "description": "Episode ID",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/podcastId"
+          }
+        }
+      ],
+      "patch": {
+        "summary": "Update a podcast episode",
+        "operationId": "updateEpisode",
+        "tags": [
+          "Podcasts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated episode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Podcast"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a specific podcast episode",
+        "operationId": "getEpisode",
+        "tags": [
+          "Podcasts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved episode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PodcastEpisode"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove a podcast episode",
+        "operationId": "removeEpisode",
+        "tags": [
+          "Podcasts"
+        ],
+        "parameters": [
+          {
+            "name": "hard",
+            "in": "query",
+            "description": "Hard delete the episode if set to 1",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully removed episode",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Podcast"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Server error"
           }
         }
       }
@@ -2748,6 +3354,650 @@
           "notificationDelay": {
             "type": "integer",
             "description": "The time (in ms) between notification pushes."
+          }
+        }
+      },
+      "podcastId": {
+        "type": "string",
+        "description": "The ID of podcasts and podcast episodes after 2.3.0.",
+        "format": "uuid",
+        "example": "e4bb1afb-4a4f-4dd6-8be0-e615d233185b"
+      },
+      "PodcastMetadata": {
+        "type": "object",
+        "description": "Metadata for a podcast.",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the podcast.",
+            "nullable": true
+          },
+          "author": {
+            "type": "string",
+            "description": "The author of the podcast.",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the podcast.",
+            "nullable": true
+          },
+          "releaseDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The release date of the podcast.",
+            "nullable": true
+          },
+          "genres": {
+            "type": "array",
+            "description": "The genres of the podcast.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "feedUrl": {
+            "type": "string",
+            "description": "The URL of the podcast feed.",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "The URL of the podcast's image.",
+            "nullable": true
+          },
+          "itunesPageUrl": {
+            "type": "string",
+            "description": "The URL of the podcast's iTunes page.",
+            "nullable": true
+          },
+          "itunesId": {
+            "type": "string",
+            "description": "The iTunes ID of the podcast.",
+            "nullable": true
+          },
+          "itunesArtistId": {
+            "type": "string",
+            "description": "The iTunes artist ID of the podcast.",
+            "nullable": true
+          },
+          "explicit": {
+            "type": "boolean",
+            "description": "Whether the podcast contains explicit content."
+          },
+          "language": {
+            "type": "string",
+            "description": "The language of the podcast.",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of podcast (e.g., episodic, serial).",
+            "nullable": true
+          }
+        }
+      },
+      "oldPodcastId": {
+        "description": "The ID of podcasts on server version 2.2.23 and before.",
+        "type": "string",
+        "nullable": true,
+        "format": "pod_[a-z0-9]{18}",
+        "example": "pod_o78uaoeuh78h6aoeif"
+      },
+      "fileMetadata": {
+        "type": "object",
+        "description": "The metadata for a file, including the path, size, and unix timestamps of the file.",
+        "nullable": true,
+        "properties": {
+          "filename": {
+            "description": "The filename of the file.",
+            "type": "string",
+            "example": "Wizards First Rule 01.mp3"
+          },
+          "ext": {
+            "description": "The file extension of the file.",
+            "type": "string",
+            "example": ".mp3"
+          },
+          "path": {
+            "description": "The absolute path on the server of the file.",
+            "type": "string",
+            "example": "/audiobooks/Terry Goodkind/Sword of Truth/Wizards First Rule/Terry Goodkind - SOT Bk01 - Wizards First Rule 01.mp3"
+          },
+          "relPath": {
+            "description": "The path of the file, relative to the book's or podcast's folder.",
+            "type": "string",
+            "example": "Wizards First Rule 01.mp3"
+          },
+          "size": {
+            "$ref": "#/components/schemas/size"
+          },
+          "mtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file was last modified on disk.",
+            "type": "integer",
+            "example": 1632223180278
+          },
+          "ctimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file status was changed on disk.",
+            "type": "integer",
+            "example": 1645978261001
+          },
+          "birthtimeMs": {
+            "description": "The time (in ms since POSIX epoch) when the file was created on disk. Will be 0 if unknown.",
+            "type": "integer",
+            "example": 0
+          }
+        }
+      },
+      "bookChapter": {
+        "type": "object",
+        "description": "A book chapter. Includes the title and timestamps.",
+        "properties": {
+          "id": {
+            "description": "The ID of the book chapter.",
+            "type": "integer",
+            "example": 0
+          },
+          "start": {
+            "description": "When in the book (in seconds) the chapter starts.",
+            "type": "integer",
+            "example": 0
+          },
+          "end": {
+            "description": "When in the book (in seconds) the chapter ends.",
+            "type": "number",
+            "example": 6004.6675
+          },
+          "title": {
+            "description": "The title of the chapter.",
+            "type": "string",
+            "example": "Wizards First Rule 01 Chapter 1"
+          }
+        }
+      },
+      "audioMetaTags": {
+        "description": "ID3 metadata tags pulled from the audio file on import. Only non-null tags will be returned in requests.",
+        "type": "object",
+        "properties": {
+          "tagAlbum": {
+            "type": "string",
+            "nullable": true,
+            "example": "SOT Bk01"
+          },
+          "tagArtist": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagGenre": {
+            "type": "string",
+            "nullable": true,
+            "example": "Audiobook Fantasy"
+          },
+          "tagTitle": {
+            "type": "string",
+            "nullable": true,
+            "example": "Wizards First Rule 01"
+          },
+          "tagSeries": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagSeriesPart": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagTrack": {
+            "type": "string",
+            "nullable": true,
+            "example": "01/20"
+          },
+          "tagDisc": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagSubtitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagAlbumArtist": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagComposer": {
+            "type": "string",
+            "nullable": true,
+            "example": "Terry Goodkind"
+          },
+          "tagPublisher": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagComment": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagEncoder": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagEncodedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagIsbn": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagASIN": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagOverdriveMediaMarker": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagOriginalYear": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseCountry": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseType": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagReleaseStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagISRC": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzTrackId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzAlbumId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzAlbumArtistId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagMusicBrainzArtistId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "audioFile": {
+        "type": "object",
+        "description": "An audio file for a book. Includes audio metadata and track numbers.",
+        "properties": {
+          "index": {
+            "description": "The index of the audio file.",
+            "type": "integer",
+            "example": 1
+          },
+          "ino": {
+            "$ref": "#/components/schemas/inode"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/fileMetadata"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "trackNumFromMeta": {
+            "description": "The track number of the audio file as pulled from the file's metadata. Will be null if unknown.",
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "discNumFromMeta": {
+            "description": "The disc number of the audio file as pulled from the file's metadata. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "trackNumFromFilename": {
+            "description": "The track number of the audio file as determined from the file's name. Will be null if unknown.",
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "discNumFromFilename": {
+            "description": "The disc number of the audio file as determined from the file's name. Will be null if unknown.",
+            "type": "string",
+            "nullable": true
+          },
+          "manuallyVerified": {
+            "description": "Whether the audio file has been manually verified by a user.",
+            "type": "boolean"
+          },
+          "invalid": {
+            "description": "Whether the audio file is missing from the server.",
+            "type": "boolean"
+          },
+          "exclude": {
+            "description": "Whether the audio file has been marked for exclusion.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "Any error with the audio file. Will be null if there is none.",
+            "type": "string",
+            "nullable": true
+          },
+          "format": {
+            "description": "The format of the audio file.",
+            "type": "string",
+            "example": "MP2/3 (MPEG audio layer 2/3)"
+          },
+          "duration": {
+            "$ref": "#/components/schemas/durationSec"
+          },
+          "bitRate": {
+            "description": "The bit rate (in bit/s) of the audio file.",
+            "type": "integer",
+            "example": 64000
+          },
+          "language": {
+            "description": "The language of the audio file.",
+            "type": "string",
+            "nullable": true
+          },
+          "codec": {
+            "description": "The codec of the audio file.",
+            "type": "string",
+            "example": "mp3"
+          },
+          "timeBase": {
+            "description": "The time base of the audio file.",
+            "type": "string",
+            "example": "1/14112000"
+          },
+          "channels": {
+            "description": "The number of channels the audio file has.",
+            "type": "integer",
+            "example": 2
+          },
+          "channelLayout": {
+            "description": "The layout of the audio file's channels.",
+            "type": "string",
+            "example": "stereo"
+          },
+          "chapters": {
+            "description": "If the audio file is part of an audiobook, the chapters the file contains.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/bookChapter"
+            }
+          },
+          "embeddedCoverArt": {
+            "description": "The type of embedded cover art in the audio file. Will be null if none exists.",
+            "type": "string",
+            "nullable": true
+          },
+          "metaTags": {
+            "$ref": "#/components/schemas/audioMetaTags"
+          },
+          "mimeType": {
+            "description": "The MIME type of the audio file.",
+            "type": "string",
+            "example": "audio/mpeg"
+          }
+        }
+      },
+      "AudioTrack": {
+        "type": "object",
+        "description": "Represents an audio track with various properties.",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The index of the audio track.",
+            "example": null
+          },
+          "startOffset": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "description": "The start offset of the audio track in seconds.",
+            "example": null
+          },
+          "duration": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "description": "The duration of the audio track in seconds.",
+            "example": null
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The title of the audio track.",
+            "example": null
+          },
+          "contentUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The URL where the audio track content is located.",
+            "example": "`/api/items/${itemId}/file/${audioFile.ino}`"
+          },
+          "mimeType": {
+            "type": "string",
+            "nullable": true,
+            "description": "The MIME type of the audio track.",
+            "example": null
+          },
+          "codec": {
+            "type": "string",
+            "nullable": true,
+            "description": "The codec used for the audio track.",
+            "example": "aac"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/fileMetadata"
+          }
+        }
+      },
+      "PodcastEpisode": {
+        "type": "object",
+        "description": "A single episode of a podcast.",
+        "properties": {
+          "libraryItemId": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "podcastId": {
+            "$ref": "#/components/schemas/podcastId"
+          },
+          "id": {
+            "$ref": "#/components/schemas/podcastId"
+          },
+          "oldEpisodeId": {
+            "$ref": "#/components/schemas/oldPodcastId"
+          },
+          "index": {
+            "type": "integer",
+            "description": "The index of the episode within the podcast.",
+            "nullable": true
+          },
+          "season": {
+            "type": "string",
+            "description": "The season number of the episode.",
+            "nullable": true
+          },
+          "episode": {
+            "type": "string",
+            "description": "The episode number within the season.",
+            "nullable": true
+          },
+          "episodeType": {
+            "type": "string",
+            "description": "The type of episode (e.g., full, trailer).",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the episode.",
+            "nullable": true
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "The subtitle of the episode.",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the episode.",
+            "nullable": true
+          },
+          "enclosure": {
+            "type": "object",
+            "description": "The enclosure object containing additional episode data.",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "guid": {
+            "type": "string",
+            "description": "The globally unique identifier for the episode.",
+            "nullable": true
+          },
+          "pubDate": {
+            "type": "string",
+            "description": "The publication date of the episode.",
+            "nullable": true
+          },
+          "chapters": {
+            "type": "array",
+            "description": "The chapters within the episode.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "audioFile": {
+            "$ref": "#/components/schemas/audioFile"
+          },
+          "publishedAt": {
+            "$ref": "#/components/schemas/createdAt"
+          },
+          "addedAt": {
+            "$ref": "#/components/schemas/addedAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          },
+          "audioTrack": {
+            "$ref": "#/components/schemas/AudioTrack"
+          },
+          "duration": {
+            "$ref": "#/components/schemas/durationSec"
+          },
+          "size": {
+            "$ref": "#/components/schemas/size"
+          }
+        }
+      },
+      "autoDownloadEpisodes": {
+        "type": "boolean",
+        "description": "Whether episodes are automatically downloaded."
+      },
+      "Podcast": {
+        "type": "object",
+        "description": "A podcast containing multiple episodes.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/podcastId"
+          },
+          "libraryItemId": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PodcastMetadata"
+          },
+          "coverPath": {
+            "type": "string",
+            "description": "The file path to the podcast's cover image.",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "description": "The tags associated with the podcast.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "episodes": {
+            "type": "array",
+            "description": "The episodes of the podcast.",
+            "items": {
+              "$ref": "#/components/schemas/PodcastEpisode"
+            }
+          },
+          "autoDownloadEpisodes": {
+            "$ref": "#/components/schemas/autoDownloadEpisodes"
+          },
+          "autoDownloadSchedule": {
+            "type": "string",
+            "description": "The schedule for automatic episode downloads, in cron format.",
+            "nullable": true
+          },
+          "lastEpisodeCheck": {
+            "type": "integer",
+            "description": "The timestamp of the last episode check."
+          },
+          "maxEpisodesToKeep": {
+            "type": "integer",
+            "description": "The maximum number of episodes to keep."
+          },
+          "maxNewEpisodesToDownload": {
+            "type": "integer",
+            "description": "The maximum number of new episodes to download when automatically downloading epsiodes."
+          },
+          "lastCoverSearch": {
+            "type": "integer",
+            "description": "The timestamp of the last cover search.",
+            "nullable": true
+          },
+          "lastCoverSearchQuery": {
+            "type": "string",
+            "description": "The query used for the last cover search.",
+            "nullable": true
+          },
+          "size": {
+            "type": "integer",
+            "description": "The total size of all episodes in bytes."
+          },
+          "duration": {
+            "type": "integer",
+            "description": "The total duration of all episodes in seconds."
+          },
+          "numTracks": {
+            "type": "integer",
+            "description": "The number of tracks (episodes) in the podcast."
+          },
+          "latestEpisodePublished": {
+            "type": "integer",
+            "description": "The timestamp of the most recently published episode."
           }
         }
       }

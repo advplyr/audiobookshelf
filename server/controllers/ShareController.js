@@ -1,3 +1,4 @@
+const { Request, Response } = require('express')
 const uuid = require('uuid')
 const Path = require('path')
 const { Op } = require('sequelize')
@@ -10,6 +11,13 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const PlaybackSession = require('../objects/PlaybackSession')
 const ShareManager = require('../managers/ShareManager')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class ShareController {
   constructor() {}
 
@@ -20,8 +28,8 @@ class ShareController {
    *
    * @this {import('../routers/PublicRouter')}
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    */
   async getMediaItemShareBySlug(req, res) {
     const { slug } = req.params
@@ -122,8 +130,8 @@ class ShareController {
    * GET: /api/share/:slug/cover
    * Get media item share cover image
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    */
   async getMediaItemShareCoverImage(req, res) {
     if (!req.cookies.share_session_id) {
@@ -162,8 +170,8 @@ class ShareController {
    * GET: /api/share/:slug/track/:index
    * Get media item share audio track
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    */
   async getMediaItemShareAudioTrack(req, res) {
     if (!req.cookies.share_session_id) {
@@ -208,8 +216,8 @@ class ShareController {
    * PATCH: /api/share/:slug/progress
    * Update media item share progress
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {Request} req
+   * @param {Response} res
    */
   async updateMediaItemShareProgress(req, res) {
     if (!req.cookies.share_session_id) {
@@ -242,8 +250,8 @@ class ShareController {
    * POST: /api/share/mediaitem
    * Create a new media item share
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async createMediaItemShare(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -306,8 +314,8 @@ class ShareController {
    * DELETE: /api/share/mediaitem/:id
    * Delete media item share
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteMediaItemShare(req, res) {
     if (!req.user.isAdminOrUp) {

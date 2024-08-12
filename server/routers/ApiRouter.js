@@ -39,17 +39,24 @@ class ApiRouter {
   constructor(Server) {
     /** @type {import('../Auth')} */
     this.auth = Server.auth
+    /** @type {import('../managers/PlaybackSessionManager')} */
     this.playbackSessionManager = Server.playbackSessionManager
+    /** @type {import('../managers/AbMergeManager')} */
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
     /** @type {import('../Watcher')} */
     this.watcher = Server.watcher
+    /** @type {import('../managers/PodcastManager')} */
     this.podcastManager = Server.podcastManager
+    /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
+    /** @type {import('../managers/RssFeedManager')} */
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager
+    /** @type {import('../managers/NotificationManager')} */
     this.notificationManager = Server.notificationManager
+    /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
 
@@ -173,14 +180,12 @@ class ApiRouter {
     this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
-    this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
+    this.router.patch('/me/progress/:libraryItemId/:episodeId?', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
-    this.router.patch('/me/progress/:id/:episodeId', MeController.createUpdateEpisodeMediaProgress.bind(this))
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
-    this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this)) // TODO: Deprecated. Removed from Android. Only used in iOS app now.
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
@@ -239,7 +244,8 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
+    this.router.post('/podcasts/opml/parse', PodcastController.getFeedsFromOPMLText.bind(this))
+    this.router.post('/podcasts/opml/create', PodcastController.bulkCreatePodcastsFromOpmlFeedUrls.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
@@ -279,7 +285,6 @@ class ApiRouter {
     this.router.get('/search/podcast', SearchController.findPodcasts.bind(this))
     this.router.get('/search/authors', SearchController.findAuthor.bind(this))
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
-    this.router.get('/search/tracks', SearchController.findMusicTrack.bind(this))
 
     //
     // Cache Routes (Admin and up)
@@ -349,12 +354,13 @@ class ApiRouter {
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
    */
   async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
-    // Remove media progress for this library item from all users
-    const users = await Database.userModel.getOldUsers()
-    for (const user of users) {
-      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
-        await Database.removeMediaProgress(mediaProgress.id)
+    const numProgressRemoved = await Database.mediaProgressModel.destroy({
+      where: {
+        mediaItemId: mediaItemIds
       }
+    })
+    if (numProgressRemoved > 0) {
+      Logger.info(`[ApiRouter] Removed ${numProgressRemoved} media progress entries for library item "${libraryItemId}"`)
     }
 
     // TODO: Remove open sessions for library item
@@ -420,11 +426,11 @@ class ApiRouter {
 
     const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
     if (await fs.pathExists(itemMetadataPath)) {
-      Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
+      Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
       await fs.remove(itemMetadataPath)
     }
 
-    await Database.removeLibraryItem(libraryItemId)
+    await Database.libraryItemModel.removeById(libraryItemId)
 
     SocketAuthority.emitter('item_removed', {
       id: libraryItemId

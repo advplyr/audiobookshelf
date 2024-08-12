@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize')
 const Path = require('path')
+const { Request, Response } = require('express')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
@@ -13,21 +14,26 @@ const { sanitizeFilename } = require('../utils/fileUtils')
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
 
-//
-// This is a controller for routes that don't have a home yet :(
-//
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class MiscController {
-  constructor() { }
+  constructor() {}
 
   /**
    * POST: /api/upload
    * Update library item
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async handleUpload(req, res) {
     if (!req.user.canUpload) {
-      Logger.warn('User attempted to upload without permission', req.user)
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
       return res.sendStatus(403)
     }
     if (!req.files) {
@@ -42,7 +48,7 @@ class MiscController {
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
-    const folder = library.folders.find(fold => fold.id === folderId)
+    const folder = library.folders.find((fold) => fold.id === folderId)
     if (!folder) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
@@ -56,7 +62,7 @@ class MiscController {
     // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
     // before sanitizing all the directory parts to remove illegal chars and finally prepending
     // the base folder path
-    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map(part => sanitizeFilename(part))
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.fullPath, ...cleanedOutputDirectoryParts])
 
     await fs.ensureDir(outputDirectory)
@@ -66,7 +72,8 @@ class MiscController {
     for (const file of files) {
       const path = Path.join(outputDirectory, sanitizeFilename(file.name))
 
-      await file.mv(path)
+      await file
+        .mv(path)
         .then(() => {
           return true
         })
@@ -82,14 +89,15 @@ class MiscController {
   /**
    * GET: /api/tasks
    * Get tasks for task manager
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   getTasks(req, res) {
     const includeArray = (req.query.include || '').split(',')
 
     const data = {
-      tasks: TaskManager.tasks.map(t => t.toJSON())
+      tasks: TaskManager.tasks.map((t) => t.toJSON())
     }
 
     if (includeArray.includes('queue')) {
@@ -104,13 +112,13 @@ class MiscController {
   /**
    * PATCH: /api/settings
    * Update server settings
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateServerSettings(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to update server settings', req.user)
+      Logger.error(`User "${req.user.username}" other than admin attempting to update server settings`)
       return res.sendStatus(403)
     }
     const settingsUpdate = req.body
@@ -135,20 +143,20 @@ class MiscController {
 
   /**
    * PATCH: /api/sorting-prefixes
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateSortingPrefixes(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to update server sorting prefixes', req.user)
+      Logger.error(`User "${req.user.username}" other than admin attempting to update server sorting prefixes`)
       return res.sendStatus(403)
     }
     let sortingPrefixes = req.body.sortingPrefixes
     if (!sortingPrefixes?.length || !Array.isArray(sortingPrefixes)) {
       return res.status(400).send('Invalid request body')
     }
-    sortingPrefixes = [...new Set(sortingPrefixes.map(p => p?.trim?.().toLowerCase()).filter(p => p))]
+    sortingPrefixes = [...new Set(sortingPrefixes.map((p) => p?.trim?.().toLowerCase()).filter((p) => p))]
     if (!sortingPrefixes.length) {
       return res.status(400).send('Invalid sortingPrefixes in request body')
     }
@@ -233,15 +241,13 @@ class MiscController {
   /**
    * POST: /api/authorize
    * Used to authorize an API token
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async authorize(req, res) {
-    if (!req.user) {
-      Logger.error('Invalid user in authorize')
-      return res.sendStatus(401)
-    }
     const userResponse = await this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
@@ -249,13 +255,14 @@ class MiscController {
   /**
    * GET: /api/tags
    * Get all tags
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllTags(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to getAllTags`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllTags`)
+      return res.sendStatus(403)
     }
 
     const tags = []
@@ -292,13 +299,14 @@ class MiscController {
    * POST: /api/tags/rename
    * Rename tag
    * Req.body { tag, newTag }
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async renameTag(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to renameTag`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameTag`)
+      return res.sendStatus(403)
     }
 
     const tag = req.body.tag
@@ -321,7 +329,7 @@ class MiscController {
       }
 
       if (libraryItem.media.tags.includes(tag)) {
-        libraryItem.media.tags = libraryItem.media.tags.filter(t => t !== tag) // Remove old tag
+        libraryItem.media.tags = libraryItem.media.tags.filter((t) => t !== tag) // Remove old tag
         if (!libraryItem.media.tags.includes(newTag)) {
           libraryItem.media.tags.push(newTag)
         }
@@ -346,13 +354,14 @@ class MiscController {
    * DELETE: /api/tags/:tag
    * Remove a tag
    * :tag param is base64 encoded
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteTag(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to deleteTag`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteTag`)
+      return res.sendStatus(403)
     }
 
     const tag = Buffer.from(decodeURIComponent(req.params.tag), 'base64').toString()
@@ -367,7 +376,7 @@ class MiscController {
     // Remove tag from items
     for (const libraryItem of libraryItemsWithTag) {
       Logger.debug(`[MiscController] Remove tag "${tag}" from item "${libraryItem.media.title}"`)
-      libraryItem.media.tags = libraryItem.media.tags.filter(t => t !== tag)
+      libraryItem.media.tags = libraryItem.media.tags.filter((t) => t !== tag)
       await libraryItem.media.update({
         tags: libraryItem.media.tags
       })
@@ -385,13 +394,14 @@ class MiscController {
   /**
    * GET: /api/genres
    * Get all genres
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllGenres(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to getAllGenres`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllGenres`)
+      return res.sendStatus(403)
     }
     const genres = []
     const books = await Database.bookModel.findAll({
@@ -427,13 +437,14 @@ class MiscController {
    * POST: /api/genres/rename
    * Rename genres
    * Req.body { genre, newGenre }
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async renameGenre(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to renameGenre`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameGenre`)
+      return res.sendStatus(403)
     }
 
     const genre = req.body.genre
@@ -456,7 +467,7 @@ class MiscController {
       }
 
       if (libraryItem.media.genres.includes(genre)) {
-        libraryItem.media.genres = libraryItem.media.genres.filter(t => t !== genre) // Remove old genre
+        libraryItem.media.genres = libraryItem.media.genres.filter((t) => t !== genre) // Remove old genre
         if (!libraryItem.media.genres.includes(newGenre)) {
           libraryItem.media.genres.push(newGenre)
         }
@@ -481,13 +492,14 @@ class MiscController {
    * DELETE: /api/genres/:genre
    * Remove a genre
    * :genre param is base64 encoded
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async deleteGenre(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to deleteGenre`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteGenre`)
+      return res.sendStatus(403)
     }
 
     const genre = Buffer.from(decodeURIComponent(req.params.genre), 'base64').toString()
@@ -502,7 +514,7 @@ class MiscController {
     // Remove genre from items
     for (const libraryItem of libraryItemsWithGenre) {
       Logger.debug(`[MiscController] Remove genre "${genre}" from item "${libraryItem.media.title}"`)
-      libraryItem.media.genres = libraryItem.media.genres.filter(g => g !== genre)
+      libraryItem.media.genres = libraryItem.media.genres.filter((g) => g !== genre)
       await libraryItem.media.update({
         genres: libraryItem.media.genres
       })
@@ -520,18 +532,19 @@ class MiscController {
   /**
    * POST: /api/watcher/update
    * Update a watch path
-   * Req.body { libraryId, path, type, [oldPath] } 
+   * Req.body { libraryId, path, type, [oldPath] }
    * type = add, unlink, rename
    * oldPath = required only for rename
+   *
    * @this import('../routers/ApiRouter')
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   updateWatchedPath(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[MiscController] Non-admin user attempted to updateWatchedPath`)
-      return res.sendStatus(404)
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to updateWatchedPath`)
+      return res.sendStatus(403)
     }
 
     const libraryId = req.body.libraryId
@@ -582,9 +595,9 @@ class MiscController {
 
   /**
    * GET: api/auth-settings (admin only)
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   getAuthSettings(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -597,9 +610,9 @@ class MiscController {
   /**
    * PATCH: api/auth-settings
    * @this import('../routers/ApiRouter')
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateAuthSettings(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -642,15 +655,13 @@ class MiscController {
         }
 
         const uris = settingsUpdate[key]
-        if (!Array.isArray(uris) ||
-          (uris.includes('*') && uris.length > 1) ||
-          uris.some(uri => uri !== '*' && !isValidRedirectURI(uri))) {
+        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidRedirectURI(uri))) {
           Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
           continue
         }
 
         // Update the URIs
-        if (Database.serverSettings[key].some(uri => !uris.includes(uri)) || uris.some(uri => !Database.serverSettings[key].includes(uri))) {
+        if (Database.serverSettings[key].some((uri) => !uris.includes(uri)) || uris.some((uri) => !Database.serverSettings[key].includes(uri))) {
           Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${Database.serverSettings[key]}" to "${uris}"`)
           Database.serverSettings[key] = uris
           hasUpdates = true
@@ -704,9 +715,9 @@ class MiscController {
 
   /**
    * GET: /api/stats/year/:year
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAdminStatsForYear(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -725,9 +736,9 @@ class MiscController {
   /**
    * GET: /api/logger-data
    * admin or up
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getLoggerData(req, res) {
     if (!req.user.isAdminOrUp) {

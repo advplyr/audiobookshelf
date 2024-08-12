@@ -132,7 +132,7 @@ export default {
       this.searchedTitle = this.episodeTitle
       this.isProcessing = true
       this.$axios
-        .$get(`/api/podcasts/${this.libraryItem.id}/search-episode?title=${this.$encodeUriPath(this.episodeTitle)}`)
+        .$get(`/api/podcasts/${this.libraryItem.id}/search-episode?title=${encodeURIComponent(this.episodeTitle)}`)
         .then((results) => {
           this.episodesFound = results.episodes.map((ep) => ep.episode)
           console.log('Episodes found', this.episodesFound)

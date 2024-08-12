@@ -39,7 +39,7 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
-Join us on [Discord](https://discord.gg/HQgCbd6E75) or [Matrix](https://matrix.to/#/#audiobookshelf:matrix.org)
+Join us on [Discord](https://discord.gg/HQgCbd6E75)
 
 ### Android App (beta)
 
@@ -47,7 +47,7 @@ Try it out on the [Google Play Store](https://play.google.com/store/apps/details
 
 ### iOS App (beta)
 
-**Beta is currently full. Apple has a hard limit of 10k beta testers. Updates will be posted in Discord/Matrix.**
+**Beta is currently full. Apple has a hard limit of 10k beta testers. Updates will be posted in Discord.**
 
 Using Test Flight: https://testflight.apple.com/join/wiic7QIW **_(beta is full)_**
 

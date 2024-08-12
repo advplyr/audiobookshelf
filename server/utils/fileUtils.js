@@ -15,7 +15,7 @@ const { AudioMimeType } = require('./constants')
  */
 const filePathToPOSIX = (path) => {
   if (!global.isWin || !path) return path
-  return path.replace(/\\/g, '/')
+  return path.startsWith('\\\\') ? '\\\\' + path.slice(2).replace(/\\/g, '/') : path.replace(/\\/g, '/')
 }
 module.exports.filePathToPOSIX = filePathToPOSIX
 
@@ -169,7 +169,7 @@ async function recurseFiles(path, relPathToReplace = null) {
     extensions: true,
     deep: true,
     realPath: true,
-    normalizePath: true
+    normalizePath: false
   }
   let list = await rra.list(path, options)
   if (list.error) {
@@ -186,6 +186,8 @@ async function recurseFiles(path, relPathToReplace = null) {
         return false
       }
 
+      item.fullname = filePathToPOSIX(item.fullname)
+      item.path = filePathToPOSIX(item.path)
       const relpath = item.fullname.replace(relPathToReplace, '')
       let reldirname = Path.dirname(relpath)
       if (reldirname === '.') reldirname = ''
@@ -464,3 +466,46 @@ module.exports.getDirectoriesInPath = async (dirPath, level) => {
     return []
   }
 }
+
+/**
+ * Copies a file from the source path to an existing destination path, preserving the destination's permissions.
+ *
+ * @param {string} srcPath - The path of the source file.
+ * @param {string} destPath - The path of the existing destination file.
+ * @returns {Promise<void>} A promise that resolves when the file has been successfully copied.
+ * @throws {Error} If there is an error reading the source file or writing the destination file.
+ */
+async function copyToExisting(srcPath, destPath) {
+  return new Promise((resolve, reject) => {
+    // Create a readable stream from the source file
+    const readStream = fs.createReadStream(srcPath)
+
+    // Create a writable stream to the destination file
+    const writeStream = fs.createWriteStream(destPath, { flags: 'w' })
+
+    // Pipe the read stream to the write stream
+    readStream.pipe(writeStream)
+
+    // Handle the end of the stream
+    writeStream.on('finish', () => {
+      Logger.debug(`[copyToExisting] Successfully copied file from ${srcPath} to ${destPath}`)
+      resolve()
+    })
+
+    // Handle errors
+    readStream.on('error', (error) => {
+      Logger.error(`[copyToExisting] Error reading from source file ${srcPath}: ${error.message}`)
+      readStream.close()
+      writeStream.close()
+      reject(error)
+    })
+
+    writeStream.on('error', (error) => {
+      Logger.error(`[copyToExisting] Error writing to destination file ${destPath}: ${error.message}`)
+      readStream.close()
+      writeStream.close()
+      reject(error)
+    })
+  })
+}
+module.exports.copyToExisting = copyToExisting

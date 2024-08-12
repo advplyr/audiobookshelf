@@ -1,36 +1,46 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class SeriesController {
-  constructor() { }
+  constructor() {}
 
   /**
    * @deprecated
    * /api/series/:id
-   * 
+   *
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
    * Series are not library specific so we need to know what the library id is
-   * 
-   * @param {*} req 
-   * @param {*} res 
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findOne(req, res) {
-    const include = (req.query.include || '').split(',').map(v => v.trim()).filter(v => !!v)
+    const include = (req.query.include || '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => !!v)
 
     const seriesJson = req.series.toJSON()
 
     // Add progress map with isFinished flag
     if (include.includes('progress')) {
       const libraryItemsInSeries = req.libraryItemsInSeries
-      const libraryItemsFinished = libraryItemsInSeries.filter(li => {
-        const mediaProgress = req.user.getMediaProgress(li.id)
-        return mediaProgress?.isFinished
+      const libraryItemsFinished = libraryItemsInSeries.filter((li) => {
+        return req.user.getMediaProgress(li.media.id)?.isFinished
       })
       seriesJson.progress = {
-        libraryItemIds: libraryItemsInSeries.map(li => li.id),
-        libraryItemIdsFinished: libraryItemsFinished.map(li => li.id),
+        libraryItemIds: libraryItemsInSeries.map((li) => li.id),
+        libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
         isFinished: libraryItemsFinished.length === libraryItemsInSeries.length
       }
     }
@@ -43,6 +53,11 @@ class SeriesController {
     res.json(seriesJson)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async update(req, res) {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
@@ -52,6 +67,12 @@ class SeriesController {
     res.json(req.series.toJSON())
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     const series = await Database.seriesModel.getOldById(req.params.id)
     if (!series) return res.sendStatus(404)
@@ -61,15 +82,15 @@ class SeriesController {
      */
     const libraryItems = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
     if (!libraryItems.length) {
-      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" with no accessible books`, req.user)
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to access series "${series.id}" with no accessible books`)
       return res.sendStatus(404)
     }
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[SeriesController] User attempted to delete without permission`, req.user)
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[SeriesController] User attempted to update without permission', req.user)
+      Logger.warn(`[SeriesController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

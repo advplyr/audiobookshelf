@@ -7,11 +7,11 @@
       </div>
       <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
         <div class="absolute pointer-events-auto" :style="{ top: 0.5 + 'em', right: 0.5 + 'em' }" @click.stop.prevent="clickEdit">
-          <span class="material-icons text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
+          <span class="material-symbols text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
         </div>
       </div>
 
-      <span v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 + 'em', left: 0.5 + 'em', fontSize: 1.5 + 'em' }">rss_feed</span>
+      <span v-if="!isHovering && rssFeed" class="absolute z-10 material-symbols text-success" :style="{ top: 0.5 + 'em', left: 0.5 + 'em', fontSize: 1.5 + 'em' }">rss_feed</span>
     </div>
 
     <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">

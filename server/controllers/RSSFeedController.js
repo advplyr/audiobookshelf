@@ -1,19 +1,42 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
-class RSSFeedController {
-  constructor() { }
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
 
+class RSSFeedController {
+  constructor() {}
+
+  /**
+   * GET: /api/feeds
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getAll(req, res) {
     const feeds = await this.rssFeedManager.getFeeds()
     res.json({
-      feeds: feeds.map(f => f.toJSON()),
-      minified: feeds.map(f => f.toJSONMinified())
+      feeds: feeds.map((f) => f.toJSON()),
+      minified: feeds.map((f) => f.toJSONMinified())
     })
   }
 
-  // POST: api/feeds/item/:itemId/open
+  /**
+   * POST: /api/feeds/item/:itemId/open
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async openRSSFeedForItem(req, res) {
     const options = req.body || {}
 
@@ -44,13 +67,20 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    const feed = await this.rssFeedManager.openFeedForItem(req.user, item, req.body)
+    const feed = await this.rssFeedManager.openFeedForItem(req.user.id, item, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
   }
 
-  // POST: api/feeds/collection/:collectionId/open
+  /**
+   * POST: /api/feeds/collection/:collectionId/open
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async openRSSFeedForCollection(req, res) {
     const options = req.body || {}
 
@@ -70,7 +100,7 @@ class RSSFeedController {
     }
 
     const collectionExpanded = await collection.getOldJsonExpanded()
-    const collectionItemsWithTracks = collectionExpanded.books.filter(li => li.media.tracks.length)
+    const collectionItemsWithTracks = collectionExpanded.books.filter((li) => li.media.tracks.length)
 
     // Check collection has audio tracks
     if (!collectionItemsWithTracks.length) {
@@ -78,13 +108,20 @@ class RSSFeedController {
       return res.status(400).send('Collection has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForCollection(req.user, collectionExpanded, req.body)
+    const feed = await this.rssFeedManager.openFeedForCollection(req.user.id, collectionExpanded, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
   }
 
-  // POST: api/feeds/series/:seriesId/open
+  /**
+   * POST: /api/feeds/series/:seriesId/open
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async openRSSFeedForSeries(req, res) {
     const options = req.body || {}
 
@@ -106,7 +143,7 @@ class RSSFeedController {
     const seriesJson = series.toJSON()
 
     // Get books in series that have audio tracks
-    seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter(li => li.media.numTracks)
+    seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)
 
     // Check series has audio tracks
     if (!seriesJson.books.length) {
@@ -114,20 +151,34 @@ class RSSFeedController {
       return res.status(400).send('Series has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForSeries(req.user, seriesJson, req.body)
+    const feed = await this.rssFeedManager.openFeedForSeries(req.user.id, seriesJson, req.body)
     res.json({
       feed: feed.toJSONMinified()
     })
   }
 
-  // POST: api/feeds/:id/close
+  /**
+   * POST: /api/feeds/:id/close
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   closeRSSFeed(req, res) {
     this.rssFeedManager.closeRssFeed(req, res)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   middleware(req, res, next) {
-    if (!req.user.isAdminOrUp) { // Only admins can manage rss feeds
-      Logger.error(`[RSSFeedController] Non-admin user attempted to make a request to an RSS feed route`, req.user.username)
+    if (!req.user.isAdminOrUp) {
+      // Only admins can manage rss feeds
+      Logger.error(`[RSSFeedController] Non-admin user "${req.user.username}" attempted to make a request to an RSS feed route`)
       return res.sendStatus(403)
     }
 

@@ -2,7 +2,6 @@
 set -e
 set -o pipefail
 
-FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg"
 DEFAULT_DATA_DIR="/usr/share/audiobookshelf"
 CONFIG_PATH="/etc/default/audiobookshelf"
 DEFAULT_PORT=13378
@@ -46,25 +45,6 @@ add_group() {
   fi
 }
 
-install_ffmpeg() {
-  echo "Starting FFMPEG Install"
-
-  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz --output-document=ffmpeg-git-amd64-static.tar.xz"
-
-  if ! cd "$FFMPEG_INSTALL_DIR"; then
-    echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
-    mkdir "$FFMPEG_INSTALL_DIR"
-    chown -R 'audiobookshelf:audiobookshelf' "$FFMPEG_INSTALL_DIR"
-    cd "$FFMPEG_INSTALL_DIR"
-  fi
-
-  $WGET
-  tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1 --no-same-owner
-  rm ffmpeg-git-amd64-static.tar.xz
-
-  echo "Good to go on Ffmpeg... hopefully"
-}
-
 setup_config() {
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
@@ -83,8 +63,6 @@ setup_config() {
 
     config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata
 CONFIG_PATH=$DEFAULT_DATA_DIR/config
-FFMPEG_PATH=$FFMPEG_INSTALL_DIR/ffmpeg
-FFPROBE_PATH=$FFMPEG_INSTALL_DIR/ffprobe
 PORT=$DEFAULT_PORT
 HOST=$DEFAULT_HOST"
 
@@ -101,5 +79,3 @@ add_group 'audiobookshelf' ''
 add_user 'audiobookshelf' '' 'audiobookshelf' 'audiobookshelf user-daemon' '/bin/false'
 
 setup_config
-
-install_ffmpeg

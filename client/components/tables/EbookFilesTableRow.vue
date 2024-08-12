@@ -1,7 +1,7 @@
 <template>
   <tr>
     <td class="px-4">
-      {{ showFullPath ? file.metadata.path : file.metadata.relPath }} <ui-tooltip :text="$strings.LabelPrimaryEbook" class="inline-block"><span v-if="isPrimary" class="material-icons-outlined text-success align-text-bottom">check_circle</span></ui-tooltip>
+      {{ showFullPath ? file.metadata.path : file.metadata.relPath }} <ui-tooltip :text="$strings.LabelPrimaryEbook" class="inline-block"><span v-if="isPrimary" class="material-symbols-outlined text-success align-text-bottom">check_circle</span></ui-tooltip>
     </td>
     <td>
       {{ $bytesPretty(file.metadata.size) }}

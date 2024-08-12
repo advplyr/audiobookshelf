@@ -13,7 +13,7 @@
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=m4b`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
-            <span class="material-icons text-lg ml-2">launch</span>
+            <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
         </div>
       </div>
@@ -30,7 +30,7 @@
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
-            <span class="material-icons text-lg ml-2">launch</span>
+            <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
 
           <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">Quick Embed</ui-btn>

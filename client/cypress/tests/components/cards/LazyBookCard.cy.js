@@ -11,7 +11,7 @@ function createMountOptions() {
     mediaType: 'book',
     media: {
       id: 'book1',
-      metadata: { title: 'The Fellowship of the Ring', titleIgnorePrefix: 'Fellowship of the Ring', authorName: 'J. R. R. Tolkien' },
+      metadata: { title: 'The Fellowship of the Ring', titleIgnorePrefix: 'Fellowship of the Ring', authorName: 'J. R. R. Tolkien', subtitle: 'The Lord of the Rings, Book 1' },
       numTracks: 1
     }
   }
@@ -136,6 +136,16 @@ describe('LazyBookCard', () => {
       expect(width).to.be.closeTo(defaultWidth, 0.01)
       expect(height).to.be.closeTo(defaultHeight, 0.01)
     })
+  })
+
+  it('shows subtitle when showSubtitles settings is true', () => {
+    mountOptions.mocks.$store.getters['user/getUserSetting'] = (settingName) => {
+      if (settingName === 'showSubtitles') return true
+    }
+    cy.mount(LazyBookCard, mountOptions)
+
+    cy.get('&titleImageNotReady').should('be.hidden')
+    cy.get('&subtitle').should('be.visible').and('have.text', 'The Lord of the Rings, Book 1')
   })
 
   it('shows overlay on mouseover', () => {

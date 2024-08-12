@@ -13,7 +13,7 @@
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
-          <span class="material-icons text-sm">person</span>
+          <span class="material-symbols text-sm">person</span>
           <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
           <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
@@ -23,23 +23,25 @@
         </div>
 
         <div class="text-gray-400 flex items-center">
-          <span class="material-icons text-xs">schedule</span>
+          <span class="material-symbols text-xs">schedule</span>
           <p class="font-mono text-xs sm:text-sm pl-1 sm:pl-1.5 pb-px">{{ totalDurationPretty }}</p>
         </div>
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
       ref="audioPlayer"
       :chapters="chapters"
+      :current-chapter="currentChapter"
       :paused="!isPlaying"
       :loading="playerLoading"
       :bookmarks="bookmarks"
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
+      :sleep-timer-type="sleepTimerType"
       :is-podcast="isPodcast"
       @playPause="playPause"
       @jumpForward="jumpForward"
@@ -51,13 +53,16 @@
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
+      @showPlayerSettings="showPlayerSettingsModal = true"
     />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
 
-    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-time="sleepTimerTime" :remaining="sleepTimerRemaining" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
+    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
     <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :library-item-id="libraryItemId" />
+
+    <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
 </template>
 
@@ -76,9 +81,10 @@ export default {
       currentTime: 0,
       showSleepTimerModal: false,
       showPlayerQueueItemsModal: false,
+      showPlayerSettingsModal: false,
       sleepTimerSet: false,
-      sleepTimerTime: 0,
       sleepTimerRemaining: 0,
+      sleepTimerType: null,
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
@@ -145,6 +151,9 @@ export default {
       if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
     },
+    currentChapter() {
+      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
+    },
     title() {
       if (this.playerHandler.displayTitle) return this.playerHandler.displayTitle
       return this.mediaMetadata.title || 'No Title'
@@ -204,14 +213,18 @@ export default {
       this.$store.commit('setIsPlaying', isPlaying)
       this.updateMediaSessionPlaybackState()
     },
-    setSleepTimer(seconds) {
+    setSleepTimer(time) {
       this.sleepTimerSet = true
-      this.sleepTimerTime = seconds
-      this.sleepTimerRemaining = seconds
-      this.runSleepTimer()
       this.showSleepTimerModal = false
+
+      this.sleepTimerType = time.timerType
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.COUNTDOWN) {
+        this.runSleepTimer(time)
+      }
     },
-    runSleepTimer() {
+    runSleepTimer(time) {
+      this.sleepTimerRemaining = time.seconds
+
       var lastTick = Date.now()
       clearInterval(this.sleepTimer)
       this.sleepTimer = setInterval(() => {
@@ -220,11 +233,22 @@ export default {
         this.sleepTimerRemaining -= elapsed / 1000
 
         if (this.sleepTimerRemaining <= 0) {
-          this.clearSleepTimer()
-          this.playerHandler.pause()
-          this.$toast.info('Sleep Timer Done.. zZzzZz')
+          this.sleepTimerEnd()
         }
       }, 1000)
+    },
+    checkChapterEnd(time) {
+      if (!this.currentChapter) return
+      const chapterEndTime = this.currentChapter.end
+      const tolerance = 0.75
+      if (time >= chapterEndTime - tolerance) {
+        this.sleepTimerEnd()
+      }
+    },
+    sleepTimerEnd() {
+      this.clearSleepTimer()
+      this.playerHandler.pause()
+      this.$toast.info('Sleep Timer Done.. zZzzZz')
     },
     cancelSleepTimer() {
       this.showSleepTimerModal = false
@@ -235,6 +259,7 @@ export default {
       this.sleepTimerRemaining = 0
       this.sleepTimer = null
       this.sleepTimerSet = false
+      this.sleepTimerType = null
     },
     incrementSleepTimer(amount) {
       if (!this.sleepTimerSet) return
@@ -274,6 +299,10 @@ export default {
       this.currentTime = time
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setCurrentTime(time)
+      }
+
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
+        this.checkChapterEnd(time)
       }
     },
     setDuration(duration) {

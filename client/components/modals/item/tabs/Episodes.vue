@@ -7,7 +7,7 @@
           <div class="flex -mb-0.5">
             <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">{{ $strings.LabelLimit }}</p>
             <ui-tooltip direction="top" text="Max # of episodes to download. Use 0 for unlimited.">
-              <span class="material-icons text-base">info_outlined</span>
+              <span class="material-symbols text-base">info</span>
             </ui-tooltip>
           </div>
         </ui-text-input-with-label>

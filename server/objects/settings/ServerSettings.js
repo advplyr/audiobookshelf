@@ -2,7 +2,7 @@ const Path = require('path')
 const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
-const User = require('../user/User')
+const User = require('../../models/User')
 
 class ServerSettings {
   constructor(settings) {
@@ -102,7 +102,7 @@ class ServerSettings {
     this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
-    this.maxBackupSize = settings.maxBackupSize || 1
+    this.maxBackupSize = settings.maxBackupSize === 0 ? 0 : settings.maxBackupSize || 1
 
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2

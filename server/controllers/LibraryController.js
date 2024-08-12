@@ -1,3 +1,4 @@
+const { Request, Response, NextFunction } = require('express')
 const Sequelize = require('sequelize')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
@@ -22,9 +23,23 @@ const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class LibraryController {
   constructor() {}
 
+  /**
+   * POST: /api/libraries
+   * Create a new library
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async create(req, res) {
     const newLibraryPayload = {
       ...req.body
@@ -83,7 +98,7 @@ class LibraryController {
   async findAll(req, res) {
     const libraries = await Database.libraryModel.getAllOldLibraries()
 
-    const librariesAccessible = req.user.librariesAccessible || []
+    const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
       return res.json({
         libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toJSON())
@@ -98,8 +113,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
@@ -121,8 +136,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/episode-downloads
    * Get podcast episodes in download queue
-   * @param {*} req
-   * @param {*} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getEpisodeDownloadQueue(req, res) {
     const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
@@ -132,8 +147,8 @@ class LibraryController {
   /**
    * PATCH: /api/libraries/:id
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async update(req, res) {
     /** @type {import('../objects/Library')} */
@@ -223,7 +238,7 @@ class LibraryController {
 
       // Only emit to users with access to library
       const userFilter = (user) => {
-        return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
+        return user.checkCanAccessLibrary?.(library.id)
       }
       SocketAuthority.emitter('library_updated', library.toJSON(), userFilter)
 
@@ -235,8 +250,9 @@ class LibraryController {
   /**
    * DELETE: /api/libraries/:id
    * Delete a library
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async delete(req, res) {
     const library = req.library
@@ -298,8 +314,8 @@ class LibraryController {
   /**
    * GET /api/libraries/:id/items
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getLibraryItems(req, res) {
     const include = (req.query.include || '')
@@ -340,8 +356,8 @@ class LibraryController {
   /**
    * DELETE: /libraries/:id/issues
    * Remove all library items missing or invalid
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async removeLibraryItemsWithIssues(req, res) {
     const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
@@ -398,8 +414,8 @@ class LibraryController {
    * GET: /api/libraries/:id/series
    * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllSeriesForLibrary(req, res) {
     const include = (req.query.include || '')
@@ -434,8 +450,8 @@ class LibraryController {
    * rssfeed: adds `rssFeed` to series object if a feed is open
    * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res - Series
+   * @param {RequestWithUser} req
+   * @param {Response} res - Series
    */
   async getSeriesForLibrary(req, res) {
     const include = (req.query.include || '')
@@ -451,7 +467,7 @@ class LibraryController {
 
     const seriesJson = oldSeries.toJSON()
     if (include.includes('progress')) {
-      const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.id)?.isFinished)
+      const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.media.id)?.isFinished)
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
         libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
@@ -470,8 +486,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/collections
    * Get all collections for library
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getCollectionsForLibrary(req, res) {
     const include = (req.query.include || '')
@@ -508,8 +525,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/playlists
    * Get playlists for user in library
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getUserPlaylistsForLibrary(req, res) {
     let playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id, req.library.id)
@@ -532,8 +550,9 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/filterdata
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getLibraryFilterData(req, res) {
     const filterData = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
@@ -543,8 +562,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/personalized
    * Home page shelves
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getUserPersonalizedShelves(req, res) {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
@@ -559,12 +579,13 @@ class LibraryController {
   /**
    * POST: /api/libraries/order
    * Change the display order of libraries
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async reorder(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error('[LibraryController] ReorderLibraries invalid user', req.user)
+      Logger.error(`[LibraryController] Non-admin user "${req.user}" attempted to reorder libraries`)
       return res.sendStatus(403)
     }
     const libraries = await Database.libraryModel.getAllOldLibraries()
@@ -598,9 +619,10 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/search
    * Search library items with query
+   *
    * ?q=search
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async search(req, res) {
     if (!req.query.q || typeof req.query.q !== 'string') {
@@ -616,8 +638,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/stats
    * Get stats for library
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async stats(req, res) {
     const stats = {
@@ -658,8 +681,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/authors
    * Get authors for library
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAuthors(req, res) {
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
@@ -696,8 +720,9 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/narrators
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getNarrators(req, res) {
     // Get all books with narrators
@@ -742,8 +767,9 @@ class LibraryController {
    * Update narrator name
    * :narratorId is base64 encoded name
    * req.body { name }
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updateNarrator(req, res) {
     if (!req.user.canUpdate) {
@@ -792,8 +818,9 @@ class LibraryController {
    * DELETE: /api/libraries/:id/narrators/:narratorId
    * Remove narrator
    * :narratorId is base64 encoded name
-   * @param {*} req
-   * @param {*} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async removeNarrator(req, res) {
     if (!req.user.canUpdate) {
@@ -835,12 +862,12 @@ class LibraryController {
    * GET: /api/libraries/:id/matchall
    * Quick match all library items. Book libraries only.
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async matchAll(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)
+      Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
     Scanner.matchLibraryItems(req.library)
@@ -852,12 +879,12 @@ class LibraryController {
    * Optional query:
    * ?force=1
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to scan library`)
       return res.sendStatus(403)
     }
     res.sendStatus(200)
@@ -872,8 +899,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/recent-episodes
    * Used for latest page
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getRecentEpisodes(req, res) {
     if (!req.library.isPodcast) {
@@ -894,8 +922,9 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/opml
    * Get OPML file for a podcast library
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getOPMLFile(req, res) {
     const userPermissionPodcastWhere = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(req.user)
@@ -920,12 +949,12 @@ class LibraryController {
   /**
    * Remove all metadata.json or metadata.abs files in library item folders
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async removeAllMetadataFiles(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryController] Non-admin user attempted to remove all metadata files`, req.user)
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to remove all metadata files`)
       return res.sendStatus(403)
     }
 
@@ -968,10 +997,10 @@ class LibraryController {
   }
 
   /**
-   * Middleware that is not using libraryItems from memory
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
    */
   async middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {

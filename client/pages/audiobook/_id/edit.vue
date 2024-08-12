@@ -12,21 +12,21 @@
         <div class="text-center px-4 w-12">{{ $strings.LabelNew }}</div>
         <div class="text-center px-4 w-24 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByCurrent" @mousedown.prevent>
           <span class="text-white">{{ $strings.LabelCurrent }}</span>
-          <span class="material-icons ml-1" :class="currentSort === 'current' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'current' ? 'expand_more' : 'unfold_more' }}</span>
+          <span class="material-symbols ml-1" :class="currentSort === 'current' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'current' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
         <div class="text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByFilenameTrack" @mousedown.prevent>
           <span class="text-white">{{ $strings.LabelTrackFromFilename }}</span>
-          <span class="material-icons ml-1" :class="currentSort === 'track-filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'track-filename' ? 'expand_more' : 'unfold_more' }}</span>
+          <span class="material-symbols ml-1" :class="currentSort === 'track-filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'track-filename' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
         <div class="text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByMetadataTrack" @mousedown.prevent>
           <span class="text-white">{{ $strings.LabelTrackFromMetadata }}</span>
-          <span class="material-icons ml-1" :class="currentSort === 'metadata' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'metadata' ? 'expand_more' : 'unfold_more' }}</span>
+          <span class="material-symbols ml-1" :class="currentSort === 'metadata' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'metadata' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
         <div class="w-20 text-center">{{ $strings.LabelDiscFromFilename }}</div>
         <div class="w-20 text-center">{{ $strings.LabelDiscFromMetadata }}</div>
         <div class="text-center px-4 flex-grow flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByFilename" @mousedown.prevent>
           <span class="text-white">{{ $strings.LabelFilename }}</span>
-          <span class="material-icons ml-1" :class="currentSort === 'filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'filename' ? 'expand_more' : 'unfold_more' }}</span>
+          <span class="material-symbols ml-1" :class="currentSort === 'filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'filename' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
 
         <div class="w-20 text-center">{{ $strings.LabelSize }}</div>

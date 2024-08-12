@@ -42,10 +42,10 @@
             <div class="w-full flex justify-left">
               <!-- Dont show edit for non-root users -->
               <div v-if="user.type !== 'root' || userIsRoot" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-opacity-100 cursor-pointer" @click.stop="editUser(user)">
-                <button type="button" :aria-label="$getString('ButtonUserEdit', [user.username])" class="material-icons text-base">edit</button>
+                <button type="button" :aria-label="$getString('ButtonUserEdit', [user.username])" class="material-symbols text-base">edit</button>
               </div>
               <div v-show="user.type !== 'root'" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="deleteUserClick(user)">
-                <button type="button" :aria-label="$getString('ButtonUserDelete', [user.username])" class="material-icons text-base">delete</button>
+                <button type="button" :aria-label="$getString('ButtonUserDelete', [user.username])" class="material-symbols text-base">delete</button>
               </div>
             </div>
           </td>
@@ -157,10 +157,6 @@ export default {
     this.init()
   },
   beforeDestroy() {
-    if (this.$refs.accountModal) {
-      this.$refs.accountModal.close()
-    }
-
     if (this.$root.socket) {
       this.$root.socket.off('user_added', this.addUpdateUser)
       this.$root.socket.off('user_updated', this.addUpdateUser)

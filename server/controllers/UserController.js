@@ -1,4 +1,5 @@
-const uuidv4 = require("uuid").v4
+const { Request, Response, NextFunction } = require('express')
+const uuidv4 = require('uuid').v4
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -7,18 +8,35 @@ const User = require('../objects/user/User')
 
 const { toNumber } = require('../utils/index')
 
-class UserController {
-  constructor() { }
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ *
+ * @typedef RequestEntityObject
+ * @property {import('../models/User')} reqUser
+ *
+ * @typedef {RequestWithUser & RequestEntityObject} UserControllerRequest
+ */
 
+class UserController {
+  constructor() {}
+
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async findAll(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
 
-    const includes = (req.query.include || '').split(',').map(i => i.trim())
+    const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-    const allUsers = await Database.userModel.getOldUsers()
-    const users = allUsers.map(u => u.toJSONForBrowser(hideRootToken, true))
+    const allUsers = await Database.userModel.findAll()
+    const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
@@ -36,13 +54,13 @@ class UserController {
    * GET: /api/users/:id
    * Get a single user toJSONForBrowser
    * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   * 
-   * @param {import("express").Request} req 
-   * @param {import("express").Response} res 
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
    */
   async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to get user', req.user)
+      Logger.error(`Non-admin user "${req.user.username}" attempted to get user`)
       return res.sendStatus(403)
     }
 
@@ -67,7 +85,7 @@ class UserController {
       ]
     })
 
-    const oldMediaProgresses = mediaProgresses.map(mp => {
+    const oldMediaProgresses = mediaProgresses.map((mp) => {
       const oldMediaProgress = mp.getOldMediaProgress()
       oldMediaProgress.displayTitle = mp.mediaItem?.title
       if (mp.mediaItem?.podcast) {
@@ -81,20 +99,29 @@ class UserController {
       return oldMediaProgress
     })
 
-    const userJson = req.reqUser.toJSONForBrowser(!req.user.isRoot)
+    const userJson = req.reqUser.toOldJSONForBrowser(!req.user.isRoot)
 
     userJson.mediaProgress = oldMediaProgresses
 
     res.json(userJson)
   }
 
+  /**
+   * POST: /api/users
+   * Create a new user
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async create(req, res) {
     const account = req.body
     const username = account.username
 
-    const usernameExists = await Database.userModel.getUserByUsername(username)
+    const usernameExists = await Database.userModel.checkUserExistsWithUsername(username)
     if (usernameExists) {
-      return res.status(500).send('Username already taken')
+      return res.status(400).send('Username already taken')
     }
 
     account.id = uuidv4()
@@ -104,6 +131,7 @@ class UserController {
     account.createdAt = Date.now()
     const newUser = new User(account)
 
+    // TODO: Create with new User model
     const success = await Database.createUser(newUser)
     if (success) {
       SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
@@ -118,24 +146,26 @@ class UserController {
   /**
    * PATCH: /api/users/:id
    * Update user
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
    */
   async update(req, res) {
     const user = req.reqUser
 
     if (user.type === 'root' && !req.user.isRoot) {
-      Logger.error(`[UserController] Admin user attempted to update root user`, req.user.username)
+      Logger.error(`[UserController] Admin user "${req.user.username}" attempted to update root user`)
       return res.sendStatus(403)
     }
 
-    var account = req.body
-    var shouldUpdateToken = false
+    const updatePayload = req.body
+    let shouldUpdateToken = false
 
     // When changing username create a new API token
-    if (account.username !== undefined && account.username !== user.username) {
-      const usernameExists = await Database.userModel.getUserByUsername(account.username)
+    if (updatePayload.username !== undefined && updatePayload.username !== user.username) {
+      const usernameExists = await Database.userModel.checkUserExistsWithUsername(updatePayload.username)
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -143,34 +173,43 @@ class UserController {
     }
 
     // Updating password
-    if (account.password) {
-      account.pash = await this.auth.hashPass(account.password)
-      delete account.password
+    if (updatePayload.password) {
+      updatePayload.pash = await this.auth.hashPass(updatePayload.password)
+      delete updatePayload.password
     }
 
-    if (user.update(account)) {
+    // TODO: Update with new User model
+    const oldUser = Database.userModel.getOldUser(user)
+    if (oldUser.update(updatePayload)) {
       if (shouldUpdateToken) {
-        user.token = await this.auth.generateAccessToken(user)
-        Logger.info(`[UserController] User ${user.username} was generated a new api token`)
+        oldUser.token = await this.auth.generateAccessToken(oldUser)
+        Logger.info(`[UserController] User ${oldUser.username} has generated a new api token`)
       }
-      await Database.updateUser(user)
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+      await Database.updateUser(oldUser)
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', oldUser.toJSONForBrowser())
     }
 
     res.json({
       success: true,
-      user: user.toJSONForBrowser()
+      user: oldUser.toJSONForBrowser()
     })
   }
 
+  /**
+   * DELETE: /api/users/:id
+   * Delete a user
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
+   */
   async delete(req, res) {
     if (req.params.id === 'root') {
       Logger.error('[UserController] Attempt to delete root user. Root user cannot be deleted')
-      return res.sendStatus(500)
+      return res.sendStatus(400)
     }
     if (req.user.id === req.params.id) {
-      Logger.error(`[UserController] ${req.user.username} is attempting to delete themselves... why? WHY?`)
-      return res.sendStatus(500)
+      Logger.error(`[UserController] User ${req.user.username} is attempting to delete self`)
+      return res.sendStatus(400)
     }
     const user = req.reqUser
 
@@ -186,8 +225,8 @@ class UserController {
       await playlist.destroy()
     }
 
-    const userJson = user.toJSONForBrowser()
-    await Database.removeUser(user.id)
+    const userJson = user.toOldJSONForBrowser()
+    await user.destroy()
     SocketAuthority.adminEmitter('user_removed', userJson)
     res.json({
       success: true
@@ -196,22 +235,30 @@ class UserController {
 
   /**
    * PATCH: /api/users/:id/openid-unlink
-   * 
-   * @param {import('express').Request} req 
-   * @param {import('express').Response} res 
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
    */
   async unlinkFromOpenID(req, res) {
     Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
-    req.reqUser.authOpenIDSub = null
-    if (await Database.userModel.updateFromOld(req.reqUser)) {
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toJSONForBrowser())
-      res.sendStatus(200)
-    } else {
-      res.sendStatus(500)
+
+    if (!req.reqUser.authOpenIDSub) {
+      return res.sendStatus(200)
     }
+
+    req.reqUser.extraData.authOpenIDSub = null
+    req.reqUser.changed('extraData', true)
+    await req.reqUser.save()
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toOldJSONForBrowser())
+    res.sendStatus(200)
   }
 
-  // GET: api/users/:id/listening-sessions
+  /**
+   * GET: /api/users/:id/listening-sessions
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
+   */
   async getListeningSessions(req, res) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
 
@@ -232,13 +279,27 @@ class UserController {
     res.json(payload)
   }
 
-  // GET: api/users/:id/listening-stats
+  /**
+   * GET: /api/users/:id/listening-stats
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {UserControllerRequest} req
+   * @param {Response} res
+   */
   async getListeningStats(req, res) {
     var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
     res.json(listeningStats)
   }
 
-  // POST: api/users/online (admin)
+  /**
+   * GET: /api/users/online
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getOnlineUsers(req, res) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
@@ -250,6 +311,12 @@ class UserController {
     })
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)

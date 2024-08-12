@@ -10,15 +10,15 @@ module.exports = {
 
   /**
    * Get series filtered and sorted
-   * 
-   * @param {import('../../objects/Library')} library 
-   * @param {import('../../objects/user/User')} user 
-   * @param {string} filterBy 
-   * @param {string} sortBy 
-   * @param {boolean} sortDesc 
-   * @param {string[]} include 
-   * @param {number} limit 
-   * @param {number} offset 
+   *
+   * @param {import('../../objects/Library')} library
+   * @param {import('../../models/User')} user
+   * @param {string} filterBy
+   * @param {string} sortBy
+   * @param {boolean} sortDesc
+   * @param {string[]} include
+   * @param {number} limit
+   * @param {number} offset
    * @returns {Promise<{ series:object[], count:number }>}
    */
   async getFilteredSeries(library, user, filterBy, sortBy, sortDesc, include, limit, offset) {
@@ -26,7 +26,7 @@ module.exports = {
     let filterGroup = null
     if (filterBy) {
       const searchGroups = ['genres', 'tags', 'authors', 'progress', 'narrators', 'publishers', 'languages']
-      const group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+      const group = searchGroups.find((_group) => filterBy.startsWith(_group + '.'))
       filterGroup = group || filterBy
       filterValue = group ? this.decode(filterBy.replace(`${group}.`, '')) : null
     }
@@ -49,9 +49,11 @@ module.exports = {
     // Handle library setting to hide single book series
     // TODO: Merge with existing query
     if (library.settings.hideSingleBookSeries) {
-      seriesWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id)`), {
-        [Sequelize.Op.gt]: 1
-      }))
+      seriesWhere.push(
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id)`), {
+          [Sequelize.Op.gt]: 1
+        })
+      )
     }
 
     // Handle filters
@@ -91,7 +93,7 @@ module.exports = {
       if (!user.canAccessExplicitContent) {
         attrQuery += ' AND b.explicit = 0'
       }
-      if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
+      if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
         } else {
@@ -101,9 +103,11 @@ module.exports = {
     }
 
     if (attrQuery) {
-      seriesWhere.push(Sequelize.where(Sequelize.literal(`(${attrQuery})`), {
-        [Sequelize.Op.gt]: 0
-      }))
+      seriesWhere.push(
+        Sequelize.where(Sequelize.literal(`(${attrQuery})`), {
+          [Sequelize.Op.gt]: 0
+        })
+      )
     }
 
     const order = []
@@ -133,6 +137,8 @@ module.exports = {
     } else if (sortBy === 'lastBookUpdated') {
       seriesAttributes.include.push([Sequelize.literal('(SELECT MAX(b.updatedAt) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND b.id = bs.bookId)'), 'mostRecentBookUpdated'])
       order.push(['mostRecentBookUpdated', dir])
+    } else if (sortBy === 'random') {
+      order.push(Database.sequelize.random())
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -184,7 +190,7 @@ module.exports = {
           sensitivity: 'base'
         })
       })
-      oldSeries.books = s.bookSeries.map(bs => {
+      oldSeries.books = s.bookSeries.map((bs) => {
         const libraryItem = bs.book.libraryItem.toJSON()
         delete bs.book.libraryItem
         libraryItem.media = bs.book

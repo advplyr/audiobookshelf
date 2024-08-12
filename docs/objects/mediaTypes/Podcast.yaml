@@ -1,0 +1,76 @@
+components:
+  schemas:
+    podcastId:
+      type: string
+      description: The ID of podcasts and podcast episodes after 2.3.0.
+      format: uuid
+      example: e4bb1afb-4a4f-4dd6-8be0-e615d233185b
+    oldPodcastId:
+      description: The ID of podcasts on server version 2.2.23 and before.
+      type: string
+      nullable: true
+      format: 'pod_[a-z0-9]{18}'
+      example: pod_o78uaoeuh78h6aoeif
+    autoDownloadEpisodes:
+      type: boolean
+      description: Whether episodes are automatically downloaded.
+
+    Podcast:
+      type: object
+      description: A podcast containing multiple episodes.
+      properties:
+        id:
+          $ref: '#/components/schemas/podcastId'
+        libraryItemId:
+          $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        metadata:
+          $ref: '../metadata/PodcastMetadata.yaml#/components/schemas/PodcastMetadata'
+        coverPath:
+          type: string
+          description: The file path to the podcast's cover image.
+          nullable: true
+        tags:
+          type: array
+          description: The tags associated with the podcast.
+          items:
+            type: string
+        episodes:
+          type: array
+          description: The episodes of the podcast.
+          items:
+            $ref: '../entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
+        autoDownloadEpisodes:
+          $ref: '#/components/schemas/autoDownloadEpisodes'
+        autoDownloadSchedule:
+          type: string
+          description: The schedule for automatic episode downloads, in cron format.
+          nullable: true
+        lastEpisodeCheck:
+          type: integer
+          description: The timestamp of the last episode check.
+        maxEpisodesToKeep:
+          type: integer
+          description: The maximum number of episodes to keep.
+        maxNewEpisodesToDownload:
+          type: integer
+          description: The maximum number of new episodes to download when automatically downloading epsiodes.
+        lastCoverSearch:
+          type: integer
+          description: The timestamp of the last cover search.
+          nullable: true
+        lastCoverSearchQuery:
+          type: string
+          description: The query used for the last cover search.
+          nullable: true
+        size:
+          type: integer
+          description: The total size of all episodes in bytes.
+        duration:
+          type: integer
+          description: The total duration of all episodes in seconds.
+        numTracks:
+          type: integer
+          description: The number of tracks (episodes) in the podcast.
+        latestEpisodePublished:
+          type: integer
+          description: The timestamp of the most recently published episode.

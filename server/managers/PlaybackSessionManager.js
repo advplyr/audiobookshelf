@@ -39,7 +39,7 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('express').Request} req
+   * @param {import('../controllers/SessionController').RequestWithUser} req
    * @param {Object} [clientDeviceInfo]
    * @returns {Promise<DeviceInfo>}
    */
@@ -67,18 +67,25 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('express').Request} req
+   * @param {import('../controllers/SessionController').RequestWithUser} req
    * @param {import('express').Response} res
    * @param {string} [episodeId]
    */
   async startSessionRequest(req, res, episodeId) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
-    const { user, libraryItem, body: options } = req
-    const session = await this.startSession(user, deviceInfo, libraryItem, episodeId, options)
+    const { libraryItem, body: options } = req
+    const session = await this.startSession(req.user, deviceInfo, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
   }
 
+  /**
+   *
+   * @param {import('../models/User')} user
+   * @param {*} session
+   * @param {*} payload
+   * @param {import('express').Response} res
+   */
   async syncSessionRequest(user, session, payload, res) {
     if (await this.syncSession(user, session, payload)) {
       res.sendStatus(200)
@@ -104,6 +111,13 @@ class PlaybackSessionManager {
     })
   }
 
+  /**
+   *
+   * @param {import('../models/User')} user
+   * @param {*} sessionJson
+   * @param {*} deviceInfo
+   * @returns
+   */
   async syncLocalSession(user, sessionJson, deviceInfo) {
     const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
     const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
@@ -174,41 +188,58 @@ class PlaybackSessionManager {
       progressSynced: false
     }
 
-    const userProgressForItem = user.getMediaProgress(session.libraryItemId, session.episodeId)
+    const mediaItemId = session.episodeId || libraryItem.media.id
+    let userProgressForItem = user.getMediaProgress(mediaItemId)
     if (userProgressForItem) {
-      if (userProgressForItem.lastUpdate > session.updatedAt) {
+      if (userProgressForItem.updatedAt.valueOf() > session.updatedAt) {
         Logger.debug(`[PlaybackSessionManager] Not updating progress for "${session.displayTitle}" because it has been updated more recently`)
       } else {
         Logger.debug(`[PlaybackSessionManager] Updating progress for "${session.displayTitle}" with current time ${session.currentTime} (previously ${userProgressForItem.currentTime})`)
-        result.progressSynced = user.createUpdateMediaProgress(libraryItem, session.mediaProgressObject, session.episodeId)
+        const updateResponse = await user.createUpdateMediaProgressFromPayload({
+          libraryItemId: libraryItem.id,
+          episodeId: session.episodeId,
+          ...session.mediaProgressObject
+        })
+        result.progressSynced = !!updateResponse.mediaProgress
+        if (result.progressSynced) {
+          userProgressForItem = updateResponse.mediaProgress
+        }
       }
     } else {
       Logger.debug(`[PlaybackSessionManager] Creating new media progress for media item "${session.displayTitle}"`)
-      result.progressSynced = user.createUpdateMediaProgress(libraryItem, session.mediaProgressObject, session.episodeId)
+      const updateResponse = await user.createUpdateMediaProgressFromPayload({
+        libraryItemId: libraryItem.id,
+        episodeId: session.episodeId,
+        ...session.mediaProgressObject
+      })
+      result.progressSynced = !!updateResponse.mediaProgress
+      if (result.progressSynced) {
+        userProgressForItem = updateResponse.mediaProgress
+      }
     }
 
     // Update user and emit socket event
     if (result.progressSynced) {
-      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      if (itemProgress) {
-        await Database.upsertMediaProgress(itemProgress)
-        SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
-          id: itemProgress.id,
-          sessionId: session.id,
-          deviceDescription: session.deviceDescription,
-          data: itemProgress.toJSON()
-        })
-      }
+      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
+        id: userProgressForItem.id,
+        sessionId: session.id,
+        deviceDescription: session.deviceDescription,
+        data: userProgressForItem.getOldMediaProgress()
+      })
     }
 
     return result
   }
 
+  /**
+   *
+   * @param {import('../controllers/SessionController').RequestWithUser} req
+   * @param {*} res
+   */
   async syncLocalSessionRequest(req, res) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
-    const user = req.user
     const sessionJson = req.body
-    const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
+    const result = await this.syncLocalSession(req.user, sessionJson, deviceInfo)
     if (result.error) {
       res.status(500).send(result.error)
     } else {
@@ -216,6 +247,13 @@ class PlaybackSessionManager {
     }
   }
 
+  /**
+   *
+   * @param {import('../models/User')} user
+   * @param {*} session
+   * @param {*} syncData
+   * @param {import('express').Response} res
+   */
   async closeSessionRequest(user, session, syncData, res) {
     await this.closeSession(user, session, syncData)
     res.sendStatus(200)
@@ -223,7 +261,7 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('../objects/user/User')} user
+   * @param {import('../models/User')} user
    * @param {DeviceInfo} deviceInfo
    * @param {import('../objects/LibraryItem')} libraryItem
    * @param {string|null} episodeId
@@ -241,7 +279,8 @@ class PlaybackSessionManager {
     const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
     const mediaPlayer = options.mediaPlayer || 'unknown'
 
-    const userProgress = libraryItem.isMusic ? null : user.getMediaProgress(libraryItem.id, episodeId)
+    const mediaItemId = episodeId || libraryItem.media.id
+    const userProgress = user.getMediaProgress(mediaItemId)
     let userStartTime = 0
     if (userProgress) {
       if (userProgress.isFinished) {
@@ -292,6 +331,13 @@ class PlaybackSessionManager {
     return newPlaybackSession
   }
 
+  /**
+   *
+   * @param {import('../models/User')} user
+   * @param {*} session
+   * @param {*} syncData
+   * @returns
+   */
   async syncSession(user, session, syncData) {
     const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
     if (!libraryItem) {
@@ -303,20 +349,19 @@ class PlaybackSessionManager {
     session.addListeningTime(syncData.timeListened)
     Logger.debug(`[PlaybackSessionManager] syncSession "${session.id}" (Device: ${session.deviceDescription}) | Total Time Listened: ${session.timeListening}`)
 
-    const itemProgressUpdate = {
+    const updateResponse = await user.createUpdateMediaProgressFromPayload({
+      libraryItemId: libraryItem.id,
+      episodeId: session.episodeId,
       duration: syncData.duration,
       currentTime: syncData.currentTime,
       progress: session.progress
-    }
-    const wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
-    if (wasUpdated) {
-      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      if (itemProgress) await Database.upsertMediaProgress(itemProgress)
+    })
+    if (updateResponse.mediaProgress) {
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
-        id: itemProgress.id,
+        id: updateResponse.mediaProgress.id,
         sessionId: session.id,
         deviceDescription: session.deviceDescription,
-        data: itemProgress.toJSON()
+        data: updateResponse.mediaProgress.getOldMediaProgress()
       })
     }
     this.saveSession(session)
@@ -325,6 +370,13 @@ class PlaybackSessionManager {
     }
   }
 
+  /**
+   *
+   * @param {import('../models/User')} user
+   * @param {*} session
+   * @param {*} syncData
+   * @returns
+   */
   async closeSession(user, session, syncData = null) {
     if (syncData) {
       await this.syncSession(user, session, syncData)

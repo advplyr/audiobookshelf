@@ -91,7 +91,7 @@
           <ui-textarea-with-label :value="prettyFfprobeData" readonly :rows="30" class="text-xs" />
 
           <button class="absolute top-4 right-4" :class="copiedToClipboard ? 'text-success' : 'text-white/50 hover:text-white/80'" @click.stop="copyFfprobeData">
-            <span class="material-icons">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
+            <span class="material-symbols">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
           </button>
         </div>
       </div>

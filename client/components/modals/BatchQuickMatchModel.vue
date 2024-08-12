@@ -19,7 +19,7 @@
             <ui-tooltip :text="$strings.LabelUpdateCoverHelp">
               <p class="pl-4">
                 {{ $strings.LabelUpdateCover }}
-                <span class="material-icons icon-text">info_outlined</span>
+                <span class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
           </div>
@@ -28,7 +28,7 @@
             <ui-tooltip :text="$strings.LabelUpdateDetailsHelp">
               <p class="pl-4">
                 {{ $strings.LabelUpdateDetails }}
-                <span class="material-icons icon-text">info_outlined</span>
+                <span class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
           </div>

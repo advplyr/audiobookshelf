@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center px-1 overflow-hidden">
     <div class="w-8 flex items-center justify-center">
-      <span v-if="isFinished" :class="taskIconStatus" class="material-icons text-base">{{ actionIcon }}</span>
+      <span v-if="isFinished" :class="taskIconStatus" class="material-symbols text-base">{{ actionIcon }}</span>
       <widgets-loading-spinner v-else />
     </div>
     <div class="flex-grow px-2 taskRunningCardContent">

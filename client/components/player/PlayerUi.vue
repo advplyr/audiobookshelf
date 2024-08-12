@@ -2,7 +2,7 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
+        <!-- <span class="material-symbols text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
@@ -10,35 +10,35 @@
 
         <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings.LabelSleepTimer">
           <button :aria-label="$strings.LabelSleepTimer" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
-            <span v-if="!sleepTimerSet" class="material-icons text-2xl">snooze</span>
+            <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
-              <span class="material-icons text-lg text-warning">snooze</span>
-              <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
+              <span class="material-symbols text-lg text-warning">snooze</span>
+              <p class="text-sm sm:text-lg text-warning font-mono font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
             </div>
           </button>
         </ui-tooltip>
 
         <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
           <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
-            <span class="material-icons text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+            <span class="material-symbols text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip v-if="chapters.length" direction="top" :text="$strings.LabelViewChapters">
           <button :aria-label="$strings.LabelViewChapters" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
-            <span class="material-icons text-2xl">format_list_bulleted</span>
+            <span class="material-symbols text-2xl">format_list_bulleted</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings.LabelViewQueue">
           <button :aria-label="$strings.LabelViewQueue" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
-            <span class="material-icons text-2.5xl sm:text-3xl">playlist_play</span>
+            <span class="material-symbols text-2.5xl sm:text-3xl">playlist_play</span>
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
-          <button :aria-label="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack" class="text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
-            <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
+        <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
+          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerSettings')">
+            <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
       </div>
@@ -72,12 +72,14 @@ export default {
       type: Array,
       default: () => []
     },
+    currentChapter: Object,
     bookmarks: {
       type: Array,
       default: () => []
     },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
+    sleepTimerType: String,
     isPodcast: Boolean,
     hideBookmarks: Boolean,
     hideSleepTimer: Boolean
@@ -90,27 +92,34 @@ export default {
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
-      duration: 0,
-      useChapterTrack: false
+      duration: 0
     }
   },
   watch: {
     playbackRate() {
       this.updateTimestamp()
+    },
+    useChapterTrack() {
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
+      this.updateTimestamp()
     }
   },
   computed: {
     sleepTimerRemainingString() {
-      var rounded = Math.round(this.sleepTimerRemaining)
-      if (rounded < 90) {
-        return `${rounded}s`
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
+        return 'EoC'
+      } else {
+        var rounded = Math.round(this.sleepTimerRemaining)
+        if (rounded < 90) {
+          return `${rounded}s`
+        }
+        var minutesRounded = Math.round(rounded / 60)
+        if (minutesRounded <= 90) {
+          return `${minutesRounded}m`
+        }
+        var hoursRounded = Math.round(minutesRounded / 60)
+        return `${hoursRounded}h`
       }
-      var minutesRounded = Math.round(rounded / 60)
-      if (minutesRounded < 90) {
-        return `${minutesRounded}m`
-      }
-      var hoursRounded = Math.round(minutesRounded / 60)
-      return `${hoursRounded}h`
     },
     token() {
       return this.$store.getters['user/getToken']
@@ -134,9 +143,6 @@ export default {
 
       if (!duration) return 0
       return Math.round((100 * time) / duration)
-    },
-    currentChapter() {
-      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     },
     currentChapterName() {
       return this.currentChapter ? this.currentChapter.title : ''
@@ -162,6 +168,10 @@ export default {
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
+    },
+    useChapterTrack() {
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      return this.chapters.length ? _useChapterTrack : false
     }
   },
   methods: {
@@ -309,9 +319,6 @@ export default {
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
-
-      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
-      this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.setPlaybackRate(this.playbackRate)

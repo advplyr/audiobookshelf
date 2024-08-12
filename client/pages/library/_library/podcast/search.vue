@@ -113,18 +113,23 @@ export default {
         return
       }
 
-      await this.$axios
-        .$post(`/api/podcasts/opml`, { opmlText: txt })
+      this.$axios
+        .$post(`/api/podcasts/opml/parse`, { opmlText: txt })
         .then((data) => {
-          console.log(data)
-          this.opmlFeeds = data.feeds || []
-          this.showOPMLFeedsModal = true
+          if (!data.feeds?.length) {
+            this.$toast.error('No feeds found in OPML file')
+          } else {
+            this.opmlFeeds = data.feeds || []
+            this.showOPMLFeedsModal = true
+          }
         })
         .catch((error) => {
           console.error('Failed', error)
           this.$toast.error('Failed to parse OPML file')
         })
-      this.processing = false
+        .finally(() => {
+          this.processing = false
+        })
     },
     submit() {
       if (!this.searchInput) return

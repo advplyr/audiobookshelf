@@ -22,7 +22,8 @@ class Collection extends Model {
 
   /**
    * Get all old collections toJSONExpanded, items filtered for user permissions
-   * @param {oldUser} [user]
+   *
+   * @param {import('./User')} user
    * @param {string} [libraryId]
    * @param {string[]} [include]
    * @returns {Promise<oldCollection[]>} oldCollection.toJSONExpanded
@@ -116,7 +117,8 @@ class Collection extends Model {
 
   /**
    * Get old collection toJSONExpanded, items filtered for user permissions
-   * @param {oldUser} [user]
+   *
+   * @param {import('./User')|null} user
    * @param {string[]} [include]
    * @returns {Promise<oldCollection>} oldCollection.toJSONExpanded
    */

@@ -15,7 +15,7 @@
           <ui-tooltip text="Value of 0 sets no max limit. After a new episode is auto-downloaded this will delete the oldest episode if you have more than X episodes. <br>This will only delete 1 episode per new download.">
             <p class="pl-4 text-base">
               Max episodes to keep
-              <span class="material-icons icon-text">info_outlined</span>
+              <span class="material-symbols icon-text">info</span>
             </p>
           </ui-tooltip>
         </div>
@@ -24,7 +24,7 @@
           <ui-tooltip text="Value of 0 sets no max limit. When checking for new episodes this is the max number of episodes that will be downloaded.">
             <p class="pl-4 text-base">
               Max new episodes to download per check
-              <span class="material-icons icon-text">info_outlined</span>
+              <span class="material-symbols icon-text">info</span>
             </p>
           </ui-tooltip>
         </div>

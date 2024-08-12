@@ -15,7 +15,7 @@
               <span class="font-normal ml-3 block truncate">{{ item }}</span>
             </div>
             <span v-if="input === item" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
-              <span class="material-icons text-xl">checkmark</span>
+              <span class="material-symbols text-xl">check</span>
             </span>
           </li>
         </template>

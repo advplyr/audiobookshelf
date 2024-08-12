@@ -53,6 +53,28 @@ paths:
     $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications~1{id}'
   /api/notifications/{id}/test:
     $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications~1{id}~1test'
+  /api/podcasts:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts'
+  /api/podcasts/feed:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1feed'
+  /api/podcasts/opml/parse:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1opml~1parse'
+  /api/podcasts/opml/create:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1opml~1create'
+  /api/podcasts/{id}/checknew:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1checknew'
+  /api/podcasts/{id}/clear-queue:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1clear-queue'
+  /api/podcasts/{id}/downloads:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1downloads'
+  /api/podcasts/{id}/search-episode:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1search-episode'
+  /api/podcasts/{id}/download-episodes:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1download-episodes'
+  /api/podcasts/{id}/match-episodes:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1match-episodes'
+  /api/podcasts/{id}/episode/{episodeId}:
+    $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1episode~1{episodeId}'
   /api/series/{id}:
     $ref: './controllers/SeriesController.yaml#/paths/~1api~1series~1{id}'
 tags:
@@ -66,3 +88,5 @@ tags:
     description: Email endpoints
   - name: Notification
     description: Notifications endpoints
+  - name: Podcasts
+    description: Podcast endpoints

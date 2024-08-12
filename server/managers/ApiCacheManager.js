@@ -3,8 +3,7 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 
 class ApiCacheManager {
-
-  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: item => (item.body.length + JSON.stringify(item.headers).length) }
+  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: (item) => item.body.length + JSON.stringify(item.headers).length }
   defaultTtlOptions = { ttl: 30 * 60 * 1000 }
 
   constructor(cache = new LRUCache(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
@@ -14,7 +13,7 @@ class ApiCacheManager {
 
   init(database = Database) {
     let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy', 'afterUpsert']
-    hooks.forEach(hook => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
+    hooks.forEach((hook) => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
   }
 
   clear(model, hook) {
@@ -33,7 +32,16 @@ class ApiCacheManager {
   }
 
   get middleware() {
+    /**
+     * @param {import('express').Request} req
+     * @param {import('express').Response} res
+     * @param {import('express').NextFunction} next
+     */
     return (req, res, next) => {
+      if (req.query.sort === 'random') {
+        Logger.debug(`[ApiCacheManager] Skipping cache for random sort`)
+        return next()
+      }
       const key = { user: req.user.username, url: req.url }
       const stringifiedKey = JSON.stringify(key)
       Logger.debug(`[ApiCacheManager] count: ${this.cache.size} size: ${this.cache.calculatedSize}`)

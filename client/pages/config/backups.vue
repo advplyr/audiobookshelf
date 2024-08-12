@@ -3,14 +3,14 @@
     <app-settings-content :header-text="$strings.HeaderBackups" :description="$strings.MessageBackupsDescription">
       <div v-if="backupLocation" class="mb-4 max-w-full overflow-hidden">
         <div class="flex items-center mb-0.5">
-          <span class="material-icons-outlined text-2xl text-black-50 mr-2">folder</span>
+          <span class="material-symbols-outlined text-2xl text-black-50 mr-2">folder</span>
           <span class="text-white text-opacity-60 uppercase text-sm whitespace-nowrap">{{ $strings.LabelBackupLocation }}:</span>
         </div>
         <div v-if="!showEditBackupPath" class="inline-flex items-center w-full overflow-hidden">
           <p class="text-gray-100 max-w-[calc(100%-40px)] text-sm sm:text-base break-words">{{ backupLocation }}</p>
           <div class="w-10 min-w-10 flex items-center justify-center">
             <button class="text-black-50 hover:text-yellow-500 inline-flex" type="button" @click="showEditBackupPath = !showEditBackupPath">
-              <span class="material-icons text-lg">edit</span>
+              <span class="material-symbols text-lg">edit</span>
             </button>
           </div>
         </div>
@@ -27,24 +27,24 @@
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="enableBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
         <ui-tooltip :text="$strings.LabelBackupsEnableAutomaticBackupsHelp">
-          <p class="pl-4 text-lg">{{ $strings.LabelBackupsEnableAutomaticBackups }} <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsEnableAutomaticBackups }} <span class="material-symbols icon-text">info</span></p>
         </ui-tooltip>
       </div>
 
       <div v-if="enableBackups" class="mb-6">
         <div class="flex items-center pl-0 sm:pl-6 mb-2">
-          <span class="material-icons-outlined text-xl sm:text-2xl text-black-50 mr-2">schedule</span>
+          <span class="material-symbols-outlined text-xl sm:text-2xl text-black-50 mr-2">schedule</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span>
           </div>
           <div class="text-gray-100 text-sm sm:text-base">{{ scheduleDescription }}</div>
           <button class="ml-2 text-black-50 hover:text-yellow-500 inline-flex" type="button" @click="showCronBuilder = !showCronBuilder">
-            <span class="material-icons text-lg">edit</span>
+            <span class="material-symbols text-lg">edit</span>
           </button>
         </div>
 
         <div v-if="nextBackupDate" class="flex items-center pl-0 sm:pl-6 py-0.5">
-          <span class="material-icons-outlined text-xl sm:text-2xl text-black-50 mr-2">event</span>
+          <span class="material-symbols-outlined text-xl sm:text-2xl text-black-50 mr-2">event</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
           </div>
@@ -56,7 +56,7 @@
         <ui-text-input type="number" v-model="backupsToKeep" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
         <ui-tooltip :text="$strings.LabelBackupsNumberToKeepHelp">
-          <p class="pl-4 text-lg">{{ $strings.LabelBackupsNumberToKeep }} <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsNumberToKeep }} <span class="material-symbols icon-text">info</span></p>
         </ui-tooltip>
       </div>
 
@@ -64,7 +64,7 @@
         <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
         <ui-tooltip :text="$strings.LabelBackupsMaxBackupSizeHelp">
-          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} <span class="material-symbols icon-text">info</span></p>
         </ui-tooltip>
       </div>
 
@@ -170,7 +170,7 @@ export default {
         })
     },
     updateBackupsSettings() {
-      if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
+      if (isNaN(this.maxBackupSize) || this.maxBackupSize < 0) {
         this.$toast.error('Invalid maximum backup size')
         return
       }
@@ -200,10 +200,9 @@ export default {
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
-
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.enableBackups = !!this.newServerSettings.backupSchedule
-      this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
+      this.maxBackupSize = this.newServerSettings.maxBackupSize === 0 ? 0 : this.newServerSettings.maxBackupSize || 1
       this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
     }
   },
