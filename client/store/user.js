@@ -9,6 +9,7 @@ export const state = () => ({
     collapseSeries: false,
     collapseBookSeries: false,
     showSubtitles: false,
+    showDetailsOnHover: false,
     useChapterTrack: false,
     seriesSortBy: 'name',
     seriesSortDesc: false,
