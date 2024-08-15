@@ -2,14 +2,14 @@
   font-family: 'Material Symbols Rounded';
   font-style: normal;
   font-weight: 400;
-  src: url(~static/fonts/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2) format('woff2');
+  src: url(~static/fonts/MaterialSymbolsRounded-lite.woff2) format('woff2');
 }
 
 @font-face {
   font-family: 'Material Symbols Outlined';
   font-style: normal;
   font-weight: 400;
-  src: url(~static/fonts/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2) format('woff2');
+  src: url(~static/fonts/MaterialSymbolsOutlined-lite.woff2) format('woff2');
 }
 
 .material-symbols {
