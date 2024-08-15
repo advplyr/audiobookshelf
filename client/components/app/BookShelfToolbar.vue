@@ -159,6 +159,7 @@ export default {
       }
 
       this.addSubtitlesMenuItem(items)
+      this.addCollapseSubSeriesMenuItem(items)
 
       return items
     },
@@ -371,6 +372,21 @@ export default {
         }
       }
     },
+    addCollapseSubSeriesMenuItem(items) {
+      if (this.selectedSeries && this.isBookLibrary && !this.isBatchSelecting) {
+        if (this.settings.collapseBookSeries) {
+          items.push({
+            text: this.$strings.LabelExpandSubSeries,
+            action: 'expand-sub-series'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelCollapseSubSeries,
+            action: 'collapse-sub-series'
+          })
+        }
+      }
+    },
     handleSubtitlesAction(action) {
       if (action === 'show-subtitles') {
         this.settings.showSubtitles = true
@@ -393,6 +409,19 @@ export default {
       if (action === 'expand-series') {
         this.settings.collapseSeries = false
         this.updateCollapseSeries()
+        return true
+      }
+      return false
+    },
+    handleCollapseSubSeriesAction(action) {
+      if (action === 'collapse-sub-series') {
+        this.settings.collapseBookSeries = true
+        this.updateCollapseSubSeries()
+        return true
+      }
+      if (action === 'expand-sub-series') {
+        this.settings.collapseBookSeries = false
+        this.updateCollapseSubSeries()
         return true
       }
       return false
@@ -426,6 +455,8 @@ export default {
         }
         this.markSeriesFinished()
       } else if (this.handleSubtitlesAction(action)) {
+        return
+      } else if (this.handleCollapseSubSeriesAction(action)) {
         return
       }
     },
@@ -553,7 +584,7 @@ export default {
     updateCollapseSeries() {
       this.saveSettings()
     },
-    updateCollapseBookSeries() {
+    updateCollapseSubSeries() {
       this.saveSettings()
     },
     updateShowSubtitles() {
