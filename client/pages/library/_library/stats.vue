@@ -75,7 +75,7 @@
                     <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.size) / largestItemSize) + '%' }" />
                   </div>
                   <div class="w-4 ml-3">
-                    <p class="text-sm font-bold">{{ $bytesPretty(ab.size) }}</p>
+                    <p class="text-sm font-bold whitespace-nowrap">{{ $bytesPretty(ab.size) }}</p>
                   </div>
                 </div>
               </div>
