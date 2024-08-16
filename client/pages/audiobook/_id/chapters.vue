@@ -71,7 +71,7 @@
               <div class="flex items-center">
                 <ui-tooltip :text="$strings.MessageRemoveChapter" direction="bottom">
                   <button v-if="newChapters.length > 1" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-error transform hover:scale-110 duration-150" @click="removeChapter(chapter)">
-                    <span class="material-symbols-outlined text-base">remove</span>
+                    <span class="material-symbols text-base">remove</span>
                   </button>
                 </ui-tooltip>
 
@@ -84,14 +84,14 @@
                 <ui-tooltip :text="selectedChapterId === chapter.id && isPlayingChapter ? $strings.MessagePauseChapter : $strings.MessagePlayChapter" direction="bottom">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
                     <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
-                    <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-symbols-outlined text-base">pause</span>
-                    <span v-else class="material-symbols-outlined text-base">play_arrow</span>
+                    <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-symbols text-base">pause</span>
+                    <span v-else class="material-symbols text-base">play_arrow</span>
                   </button>
                 </ui-tooltip>
 
                 <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
-                    <span class="material-symbols-outlined text-lg">error_outline</span>
+                    <span class="material-symbols text-lg">error_outline</span>
                   </button>
                 </ui-tooltip>
               </div>
@@ -106,7 +106,7 @@
           <div class="flex-grow" />
           <ui-btn small @click="setChaptersFromTracks">{{ $strings.ButtonSetChaptersFromTracks }}</ui-btn>
           <ui-tooltip :text="$strings.MessageSetChaptersFromTracksDescription" direction="top" class="flex items-center mx-1 cursor-default">
-            <span class="material-symbols-outlined text-xl text-gray-200">info</span>
+            <span class="material-symbols text-xl text-gray-200">info</span>
           </ui-tooltip>
         </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
@@ -189,7 +189,7 @@
           <div class="flex items-center pt-2">
             <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
             <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
-              <span class="material-symbols-outlined text-xl text-gray-200">info</span>
+              <span class="material-symbols text-xl text-gray-200">info</span>
             </ui-tooltip>
             <div class="flex-grow" />
             <ui-btn small color="success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>

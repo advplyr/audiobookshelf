@@ -2,7 +2,7 @@
   <div class="relative h-9 w-9" v-click-outside="clickOutsideObj">
     <slot :disabled="disabled" :showMenu="showMenu" :clickShowMenu="clickShowMenu" :processing="processing">
       <button v-if="!processing" type="button" :disabled="disabled" class="relative h-full w-full flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
-        <span class="material-symbols text-2xl" :class="iconClass">more_vert</span>
+        <span class="material-symbols text-2xl" :class="iconClass">&#xe5d4;</span>
       </button>
       <div v-else class="h-full w-full flex items-center justify-center">
         <widgets-loading-spinner />

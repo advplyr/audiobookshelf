@@ -20,7 +20,7 @@
 
         <div class="flex p-2">
           <div class="hidden sm:block">
-            <span class="hidden sm:block material-symbols-outlined text-5xl lg:text-6xl">event</span>
+            <span class="hidden sm:block material-symbols text-5xl lg:text-6xl">event</span>
           </div>
           <div class="px-1">
             <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalDaysListened) }}</p>
@@ -30,7 +30,7 @@
 
         <div class="flex p-2">
           <div class="hidden sm:block">
-            <span class="material-symbols-outlined text-5xl lg:text-6xl">watch_later</span>
+            <span class="material-symbols text-5xl lg:text-6xl">watch_later</span>
           </div>
           <div class="px-1">
             <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalMinutesListening) }}</p>

@@ -5,7 +5,7 @@
         <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
       </form>
       <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
-        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">search</span>
+        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">&#xe8b6;</span>
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
       </div>
     </div>

@@ -73,7 +73,7 @@ export default {
 
       const addIcon = (icon, color, fontSize, x, y) => {
         ctx.fillStyle = color
-        ctx.font = `${fontSize} Material Symbols Outlined`
+        ctx.font = `${fontSize} Material Symbols Rounded`
         ctx.fillText(icon, x, y)
       }
 
@@ -152,7 +152,7 @@ export default {
 
       // Top text
       addText('audiobookshelf', '28px', 'normal', tanColor, '0px', 65, 28)
-      addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51,)
+      addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51)
 
       // Top left box
       createRoundedRect(50, 100, 340, 160)

@@ -15,7 +15,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-2xl">format_list_bulleted</span>
+        <span class="material-symbols text-2xl">&#xe241;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
 
@@ -43,7 +43,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols-outlined text-2xl">collections_bookmark</span>
+        <span class="material-symbols text-2xl">&#xe431;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
 
@@ -51,7 +51,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-2.5xl">queue_music</span>
+        <span class="material-symbols text-2.5xl">&#xe03d;</span>
 
         <p class="pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
 
@@ -72,7 +72,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/narrators`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isNarratorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-2xl">record_voice_over</span>
+        <span class="material-symbols text-2xl">&#xe91f;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.LabelNarrators }}</p>
 
@@ -80,7 +80,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/stats`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isStatsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-2xl">monitoring</span>
+        <span class="material-symbols text-2xl">&#xf190;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonStats }}</p>
 
@@ -96,7 +96,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isMusicLibrary" :to="`/library/${currentLibraryId}/bookshelf/albums`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isMusicAlbumsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols-outlined text-xl">album</span>
+        <span class="material-symbols text-xl">album</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">Albums</p>
 
@@ -104,7 +104,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastDownloadQueuePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-2xl">file_download</span>
+        <span class="material-symbols text-2xl">&#xf090;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonDownloadQueue }}</p>
 
