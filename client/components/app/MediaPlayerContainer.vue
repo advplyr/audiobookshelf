@@ -43,12 +43,14 @@
       :sleep-timer-remaining="sleepTimerRemaining"
       :sleep-timer-type="sleepTimerType"
       :is-podcast="isPodcast"
+      :hasNextItemInQueue="hasNextItemInQueue"
       @playPause="playPause"
       @jumpForward="jumpForward"
       @jumpBackward="jumpBackward"
       @setVolume="setVolume"
       @setPlaybackRate="setPlaybackRate"
       @seek="seek"
+      @nextItemInQueue="playNextItemInQueue"
       @close="closePlayer"
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
@@ -60,7 +62,7 @@
 
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
-    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :library-item-id="libraryItemId" />
+    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" />
 
     <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
@@ -175,6 +177,16 @@ export default {
     musicArtists() {
       if (!this.isMusic) return null
       return this.mediaMetadata.artists.join(', ')
+    },
+    hasNextItemInQueue() {
+      return this.currentPlayerQueueIndex < this.playerQueueItems.length - 1
+    },
+    currentPlayerQueueIndex() {
+      if (!this.libraryItemId) return -1
+      return this.playerQueueItems.findIndex((i) => {
+        if (this.streamEpisode?.id) return i.episodeId === this.streamEpisode.id
+        return i.libraryItemId === this.libraryItemId
+      })
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
@@ -460,6 +472,30 @@ export default {
         this.playerHandler.switchPlayer()
       }
     },
+    playNextItemInQueue() {
+      if (this.hasNextItemInQueue) {
+        this.playQueueItem({ index: this.currentPlayerQueueIndex + 1 })
+      }
+    },
+    /**
+     * @param {{ index: number }} payload
+     */
+    playQueueItem(payload) {
+      if (payload?.index === undefined) {
+        console.error('playQueueItem: No index provided')
+        return
+      }
+      if (!this.playerQueueItems[payload.index]) {
+        console.error('playQueueItem: No item found at index', payload.index)
+        return
+      }
+      const item = this.playerQueueItems[payload.index]
+      this.playLibraryItem({
+        libraryItemId: item.libraryItemId,
+        episodeId: item.episodeId || null,
+        queueItems: this.playerQueueItems
+      })
+    },
     async playLibraryItem(payload) {
       const libraryItemId = payload.libraryItemId
       const episodeId = payload.episodeId || null
@@ -512,6 +548,7 @@ export default {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
     this.$eventBus.$on('playback-seek', this.seek)
     this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
+    this.$eventBus.$on('play-queue-item', this.playQueueItem)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
@@ -519,6 +556,7 @@ export default {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
     this.$eventBus.$off('playback-seek', this.seek)
     this.$eventBus.$off('playback-time-update', this.playbackTimeUpdate)
+    this.$eventBus.$off('play-queue-item', this.playQueueItem)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }

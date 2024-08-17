@@ -43,7 +43,7 @@
         </ui-tooltip>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :hasNextChapter="hasNextChapter" :hasNextItemInQueue="hasNextItemInQueue" @prevChapter="prevChapter" @next="goToNext" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
@@ -82,7 +82,8 @@ export default {
     sleepTimerType: String,
     isPodcast: Boolean,
     hideBookmarks: Boolean,
-    hideSleepTimer: Boolean
+    hideSleepTimer: Boolean,
+    hasNextItemInQueue: Boolean
   },
   data() {
     return {
@@ -145,7 +146,7 @@ export default {
       return Math.round((100 * time) / duration)
     },
     currentChapterName() {
-      return this.currentChapter ? this.currentChapter.title : ''
+      return this.currentChapter?.title || ''
     },
     currentChapterDuration() {
       if (!this.currentChapter) return 0
@@ -278,10 +279,13 @@ export default {
         this.seek(this.currentChapter.start)
       }
     },
-    nextChapter() {
-      if (!this.currentChapter || !this.hasNextChapter) return
-      var nextChapter = this.chapters[this.currentChapterIndex + 1]
-      this.seek(nextChapter.start)
+    goToNext() {
+      if (this.hasNextChapter) {
+        const nextChapter = this.chapters[this.currentChapterIndex + 1]
+        this.seek(nextChapter.start)
+      } else if (this.hasNextItemInQueue) {
+        this.$emit('nextItemInQueue')
+      }
     },
     setStreamReady() {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)
