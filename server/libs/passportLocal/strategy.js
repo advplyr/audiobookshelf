@@ -3,7 +3,8 @@
  */
 const passport = require('passport-strategy')
 const util = require('util')
-
+const Logger = require('../../Logger')
+const requestIp = require('../../libs/requestIp')
 
 function lookup(obj, field) {
   if (!obj) { return null; }
@@ -96,8 +97,14 @@ Strategy.prototype.authenticate = function (req, options) {
   var self = this;
 
   function verified(err, user, info) {
-    if (err) { return self.error(err); }
-    if (!user) { return self.fail(info); }
+    if (err) {
+      return self.error(err);
+    }
+    if (!user) {
+      const clientIp = requestIp.getClientIp(req);
+      Logger.error(`[Auth] User:(${username}) attempted login FAILED from IP:(${clientIp})`);
+      return self.fail(info);
+    }
     self.success(user, info);
   }
 
