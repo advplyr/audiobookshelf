@@ -351,6 +351,7 @@ export default {
         update: type === 'admin',
         delete: type === 'admin',
         upload: type === 'admin',
+        accessExplicitContent: true,
         accessAllLibraries: true,
         accessAllTags: true,
         selectedTagsNotAccessible: false
@@ -385,6 +386,7 @@ export default {
             upload: false,
             accessAllLibraries: true,
             accessAllTags: true,
+            accessExplicitContent: true,
             selectedTagsNotAccessible: false
           },
           librariesAccessible: [],

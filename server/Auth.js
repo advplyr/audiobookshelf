@@ -154,7 +154,7 @@ class Auth {
    * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
    * or creates a new user if configured to do so.
    *
-   * @returns {import('./models/User')|null}
+   * @returns {Promise<import('./models/User')|null>}
    */
   async findOrCreateUser(userinfo) {
     let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
@@ -257,7 +257,7 @@ class Auth {
   /**
    * Sets the user group based on group claim in userinfo.
    *
-   * @param {import('./objects/user/User')} user
+   * @param {import('./models/User')} user
    * @param {Object} userinfo
    */
   async setUserGroup(user, userinfo) {
@@ -286,7 +286,7 @@ class Auth {
       if (user.type !== userType) {
         Logger.info(`[Auth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
         user.type = userType
-        await Database.userModel.updateFromOld(user)
+        await user.save()
       }
     } else {
       throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
@@ -296,7 +296,7 @@ class Auth {
   /**
    * Updates user permissions based on the advanced permissions claim.
    *
-   * @param {import('./objects/user/User')} user
+   * @param {import('./models/User')} user
    * @param {Object} userinfo
    */
   async updateUserPermissions(user, userinfo) {

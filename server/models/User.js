@@ -51,6 +51,9 @@ class User extends Model {
     this.mediaProgresses
   }
 
+  // Excludes "root" since their can only be 1 root user
+  static accountTypes = ['admin', 'user', 'guest']
+
   /**
    * List of expected permission properties from the client
    * Only used for OpenID
@@ -112,7 +115,9 @@ class User extends Model {
   }
 
   /**
+   * @deprecated
    * Get old user model from new
+   * TODO: Currently only used in dbMigration, replace
    *
    * @param {User} userExpanded
    * @returns {oldUser}
@@ -151,26 +156,16 @@ class User extends Model {
   }
 
   /**
-   *
-   * @param {oldUser} oldUser
-   * @returns {Promise<User>}
-   */
-  static createFromOld(oldUser) {
-    const user = this.getFromOld(oldUser)
-    return this.create(user)
-  }
-
-  /**
+   * @deprecated
    * Update User from old user model
+   * TODO: Currently only used in dbMigration, replace
    *
    * @param {oldUser} oldUser
-   * @param {boolean} [hooks=true] Run before / after bulk update hooks?
    * @returns {Promise<boolean>}
    */
-  static updateFromOld(oldUser, hooks = true) {
+  static updateFromOld(oldUser) {
     const user = this.getFromOld(oldUser)
     return this.update(user, {
-      hooks: !!hooks,
       where: {
         id: user.id
       }
@@ -344,18 +339,6 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
-  }
-
-  /**
-   * @deprecated
-   * Get old user by id
-   * @param {string} userId
-   * @returns {Promise<oldUser|null>} returns null if not found
-   */
-  static async getOldUserById(userId) {
-    const user = await this.getUserById(userId)
-    if (!user) return null
-    return this.getOldUser(user)
   }
 
   /**

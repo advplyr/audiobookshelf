@@ -359,7 +359,7 @@ class Database {
    * @param {string} username
    * @param {string} pash
    * @param {Auth} auth
-   * @returns {boolean} true if created
+   * @returns {Promise<boolean>} true if created
    */
   async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
@@ -377,17 +377,6 @@ class Database {
   updateSetting(settings) {
     if (!this.sequelize) return false
     return this.models.setting.updateSettingObj(settings.toJSON())
-  }
-
-  async createUser(oldUser) {
-    if (!this.sequelize) return false
-    await this.models.user.createFromOld(oldUser)
-    return true
-  }
-
-  updateUser(oldUser) {
-    if (!this.sequelize) return false
-    return this.models.user.updateFromOld(oldUser)
   }
 
   updateBulkBooks(oldBooks) {
