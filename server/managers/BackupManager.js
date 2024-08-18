@@ -19,6 +19,7 @@ class BackupManager {
   constructor(notificationManager) {
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
     this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
+    /** @type {import('./NotificationManager')} */
     this.notificationManager = notificationManager
 
     this.scheduleTask = null
@@ -293,7 +294,8 @@ class BackupManager {
     // Create backup sqlite file
     const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
       Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
-      this.notificationManager.onBackupFailed(error)
+      const errorMsg = error?.message || error || 'Unknown Error'
+      this.notificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -304,7 +306,8 @@ class BackupManager {
     // Zip sqlite file, /metadata/items, and /metadata/authors folders
     const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
-      this.notificationManager.onBackupFailed(error)
+      const errorMsg = error?.message || error || 'Unknown Error'
+      this.notificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -354,7 +357,6 @@ class BackupManager {
   /**
    * @see https://github.com/TryGhost/node-sqlite3/pull/1116
    * @param {Backup} backup
-   * @promise
    */
   backupSqliteDb(backup) {
     const db = new sqlite3.Database(Database.dbPath)

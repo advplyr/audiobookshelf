@@ -17,6 +17,11 @@ class NotificationManager {
   async onPodcastEpisodeDownloaded(libraryItem, episode) {
     if (!Database.notificationSettings.isUseable) return
 
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onPodcastEpisodeDownloaded')) {
+      Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: No active notifications`)
+      return
+    }
+
     Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.metadata.title}`)
     const library = await Database.libraryModel.getOldById(libraryItem.libraryId)
     const eventData = {
@@ -36,8 +41,19 @@ class NotificationManager {
     this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
   }
 
+  /**
+   *
+   * @param {import('../objects/Backup')} backup
+   * @param {number} totalBackupCount
+   * @param {boolean} removedOldest - If oldest backup was removed
+   */
   async onBackupCompleted(backup, totalBackupCount, removedOldest) {
     if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onBackupCompleted')) {
+      Logger.debug(`[NotificationManager] onBackupCompleted: No active notifications`)
+      return
+    }
 
     Logger.debug(`[NotificationManager] onBackupCompleted: Backup completed`)
     const eventData = {
@@ -50,10 +66,19 @@ class NotificationManager {
     this.triggerNotification('onBackupCompleted', eventData)
   }
 
+  /**
+   *
+   * @param {string} errorMsg
+   */
   async onBackupFailed(errorMsg) {
     if (!Database.notificationSettings.isUseable) return
 
-    Logger.debug(`[NotificationManager] onBackupFailed: Backup failed`)
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onBackupFailed')) {
+      Logger.debug(`[NotificationManager] onBackupFailed: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onBackupFailed: Backup failed (${errorMsg})`)
     const eventData = {
       errorMsg: errorMsg || 'Backup failed'
     }
@@ -64,6 +89,12 @@ class NotificationManager {
     this.triggerNotification('onTest')
   }
 
+  /**
+   *
+   * @param {string} eventName
+   * @param {any} eventData
+   * @param {boolean} [intentionallyFail=false] - If true, will intentionally fail the notification
+   */
   async triggerNotification(eventName, eventData, intentionallyFail = false) {
     if (!Database.notificationSettings.isUseable) return
 
@@ -93,7 +124,12 @@ class NotificationManager {
     this.notificationFinished()
   }
 
-  // Return TRUE if notification should be triggered now
+  /**
+   *
+   * @param {string} eventName
+   * @param {any} eventData
+   * @returns {boolean} - TRUE if notification should be triggered now
+   */
   checkTriggerNotification(eventName, eventData) {
     if (this.sendingNotification) {
       if (this.notificationQueue.length >= Database.notificationSettings.maxNotificationQueue) {
