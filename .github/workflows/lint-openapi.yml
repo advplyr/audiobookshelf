@@ -1,13 +1,11 @@
 name: API linting
 
-# Run on pull requests or pushes when there is a change to the OpenAPI file
+# Run on pull requests or pushes when there is a change to any OpenAPI files in docs/
 on:
+  pull_request:
   push:
     paths:
-      - docs/
-  pull_request:
-    paths:
-      - docs/
+      - 'docs/**'
 
 jobs:
   build:
