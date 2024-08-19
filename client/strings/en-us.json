@@ -836,6 +836,7 @@
   "ToastEpisodeDownloadQueueClearSuccess": "Episode download queue cleared",
   "ToastFailedToLoadData": "Failed to load data",
   "ToastFailedToUpdateAccount": "Failed to update account",
+  "ToastFfprobeFailed": "FFprobe failed",
   "ToastItemCoverUpdateFailed": "Failed to update item cover",
   "ToastItemCoverUpdateSuccess": "Item cover updated",
   "ToastItemDeletedFailed": "Failed to delete item",
