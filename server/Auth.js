@@ -10,7 +10,8 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
-const { ipInRange, ForwardStrategy } = require('./utils/ForwardStrategy')
+const ForwardStrategy = require('./utils/ForwardStrategy')
+const ip = require('ip')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -77,18 +78,22 @@ class Auth {
     )
   }
 
-  async forwardAuthCheck(_req, user, ip, done) {
+  async forwardAuthCheck(_req, user, ipAddress, done) {
     const ipPattern = Database.serverSettings.authForwardAuthPattern
     if (!Database.serverSettings.authForwardAuthEnabled) {
       // silently deny access via forward strategy
       return done(null, null)
     }
     if (!ipPattern) {
-      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ip}`)
+      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ipAddress} User: ${user} Reason: No IP pattern`)
       return done(null, null)
     }
-    if (!ipInRange(ip, ipPattern)) {
-      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ip}`)
+    if (!ip.isPrivate(ipAddress)) {
+      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ipAddress} User: ${user} Reason: IP not private`)
+      return done(null, null)
+    }
+    if (!ip.cidrSubnet(ipPattern).contains(ipAddress)) {
+      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ipAddress} User: ${user} Reason: IP not in range`)
       return done(null, null)
     }
 

@@ -128,6 +128,10 @@
 </template>
 
 <script>
+import { isPrivate } from 'ip'
+import { isV4Format, isV6Format } from 'ip'
+
+
 export default {
   async asyncData({ store, redirect, app }) {
     if (!store.getters['user/getIsAdminOrUp']) {
@@ -300,11 +304,43 @@ export default {
       return isValid
     },
 
-    validateForwardAuth(){
-      // Checks for input in the format of:
-      // 255.255.255.255[/32] (IPv4 address with optional CIDR notation)
-      const pattern = new RegExp('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([0-9]|[1-2][0-9]|3[0-2]))?$')
-      return pattern.test(this.newAuthSettings.authForwardAuthPattern)
+    validateForwardAuth(input){
+      let cidr = '';
+      let address = input;
+      let message = undefined;
+      console.log(input)
+      // Check to see if a cidr is included
+      if(input.includes('/')){
+        [address, cidr] = input.split('/');
+      }
+      if(isV4Format(address)) {
+        if(cidr && (cidr < 0 || cidr > 32)){
+          message = `'${cidr}' is an invalid CIDR range for ipv4, a valid range is between 0 and 32`;
+        }
+        else if (!cidr) {
+          // default to 32 if no cidr is provided
+          cidr = 32;
+        }
+      } else if (isV6Format(address)) {
+        if(cidr && (cidr < 0 || cidr > 128)){
+          message = `'${cidr}' is an invalid CIDR range for ipv6, a valid range is between 0 and 128`;
+        }else if (!cidr) {
+          // default to 128 if no cidr is provided
+          cidr = 128;
+        }
+      } else {
+        message = 'Address is not a valid ipv4 or ipv6 address';
+      }
+
+      if(!message && !isPrivate(address)){
+        message = `Address '${address}' is not a private address. For security reasons, only private addresses are allowed.`;
+      }
+      
+      return {
+        message,
+        address,
+        cidr
+        };
     },
 
     async saveSettings() {
@@ -317,9 +353,16 @@ export default {
         return
       }
 
-      if(this.newAuthSettings.authForwardAuthEnabled && !this.validateForwardAuth()){
-        this.$toast.error('Invalid forward auth pattern')
-        return
+      if(this.newAuthSettings.authForwardAuthEnabled){
+        const validationResults = this.validateForwardAuth(this.newAuthSettings.authForwardAuthPattern);
+        console.log(validationResults);
+        // if there is a message, then there was an error
+        if(validationResults.message){
+          this.$toast.error(validationResults.message);
+          return;
+        }
+        // ensure the address is in IP/CIDR format
+        this.newAuthSettings.authForwardAuthPattern = `${validationResults.address}/${validationResults.cidr}`;
       }
 
       if (!this.showCustomLoginMessage || !this.newAuthSettings.authLoginCustomMessage?.trim()) {

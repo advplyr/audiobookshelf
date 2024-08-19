@@ -80,7 +80,7 @@ class ServerSettings {
     this.authOpenIDAdvancedPermsClaim = ''
 
     // Forward Auth
-    this.authForwardAuthPattern = '127.0.0.1/0' // default to exact localhost
+    this.authForwardAuthPattern = '127.0.0.1/32' // default to exact localhost
     this.authForwardAuthPath = ''
     this.authForwardAuthEnabled = false
 
