@@ -1,7 +1,6 @@
 const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const Logger = require('../Logger')
-const oldUser = require('../objects/user/User')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
 
