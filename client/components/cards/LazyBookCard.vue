@@ -779,7 +779,7 @@ export default {
           } else if (result === 'UPTODATE') {
             this.$toast.success(this.$strings.ToastRescanUpToDate)
           } else if (result === 'REMOVED') {
-            this.$toast.error(this.$strings.ToastRescanRemoved
+            this.$toast.error(this.$strings.ToastRescanRemoved)
           }
         })
         .catch((error) => {
