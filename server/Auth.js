@@ -10,6 +10,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
+const { ipInRange, ForwardStrategy } = require('./utils/ForwardStrategy')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -33,6 +34,9 @@ class Auth {
     if (global.ServerSettings.authActiveAuthMethods.includes('openid')) {
       this.initAuthStrategyOpenID()
     }
+
+    // Always load the forward strategy
+    passport.use('forward', new ForwardStrategy(this.forwardAuthCheck.bind(this)))
 
     // Load the JwtStrategy (always) -> for bearer token auth
     passport.use(
@@ -71,6 +75,31 @@ class Auth {
         )
       }.bind(this)
     )
+  }
+
+  async forwardAuthCheck(_req, user, ip, done) {
+    const ipPattern = Database.serverSettings.authForwardAuthPattern
+    if (!Database.serverSettings.authForwardAuthEnabled) {
+      // silently deny access via forward strategy
+      return done(null, null)
+    }
+    if (!ipPattern) {
+      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ip}`)
+      return done(null, null)
+    }
+    if (!ipInRange(ip, ipPattern)) {
+      Logger.warn(`[Auth] Forward strategy: Unauthorized access from ${ip}`)
+      return done(null, null)
+    }
+
+    const userObj = await Database.userModel.getUserByUsername(user.toLowerCase())
+
+    if (!userObj) {
+      Logger.info(`[Auth] Forward strategy: User not found: ${user}`)
+      return done(null, null)
+    }
+    Logger.debug(`[Auth] Forward strategy: User found: ${user}`)
+    return done(null, userObj)
   }
 
   /**
@@ -699,6 +728,11 @@ class Auth {
 
           let logoutUrl = null
 
+          if (Database.serverSettings.authForwardAuthEnabled && Database.serverSettings.authForwardAuthPath) {
+            // Forward auth logout redirect
+            logoutUrl = Database.serverSettings.authForwardAuthPath
+          }
+
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
             // If we are using openid, we need to redirect to the logout endpoint
             // node-openid-client does not support doing it over passport
@@ -713,7 +747,7 @@ class Auth {
                 const host = req.get('host')
                 // TODO: ABS does currently not support subfolders for installation
                 // If we want to support it we need to include a config for the serverurl
-                postLogoutRedirectUri = `${protocol}://${host}/login`
+                postLogoutRedirectUri = logoutUrl || `${protocol}://${host}/login`
               }
               // else for openid-mobile we keep postLogoutRedirectUri on null
               //  nice would be to redirect to the app here, but for example Authentik does not implement
@@ -752,8 +786,8 @@ class Auth {
     if (req.isAuthenticated()) {
       next()
     } else {
-      // try JWT to authenticate
-      passport.authenticate('jwt')(req, res, next)
+      // try JWT and forward to authenticate
+      passport.authenticate(['jwt', 'forward'])(req, res, next)
     }
   }
 

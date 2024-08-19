@@ -155,6 +155,7 @@
   "HeaderOpenRSSFeed": "Open RSS Feed",
   "HeaderOtherFiles": "Other Files",
   "HeaderPasswordAuthentication": "Password Authentication",
+  "HeaderForwardAuthentication": "Forward Authentication",
   "HeaderPermissions": "Permissions",
   "HeaderPlayerQueue": "Player Queue",
   "HeaderPlayerSettings": "Player Settings",

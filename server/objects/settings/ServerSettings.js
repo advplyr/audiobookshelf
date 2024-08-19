@@ -79,6 +79,11 @@ class ServerSettings {
     this.authOpenIDGroupClaim = ''
     this.authOpenIDAdvancedPermsClaim = ''
 
+    // Forward Auth
+    this.authForwardAuthPattern = '127.0.0.1/0' // default to exact localhost
+    this.authForwardAuthPath = ''
+    this.authForwardAuthEnabled = false
+
     if (settings) {
       this.construct(settings)
     }
@@ -153,6 +158,18 @@ class ServerSettings {
     // fallback to local
     if (!Array.isArray(this.authActiveAuthMethods) || this.authActiveAuthMethods.length == 0) {
       this.authActiveAuthMethods = ['local']
+    }
+
+    if (settings.authForwardAuthPattern != undefined) {
+      this.authForwardAuthPattern = settings.authForwardAuthPattern
+    }
+
+    if (settings.authForwardAuthEnabled != undefined) {
+      this.authForwardAuthEnabled = settings.authForwardAuthEnabled
+    }
+
+    if (settings.authForwardAuthPath != undefined) {
+      this.authForwardAuthPath = settings.authForwardAuthPath
     }
 
     // Migrations
@@ -240,7 +257,10 @@ class ServerSettings {
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authForwardAuthPattern: this.authForwardAuthPattern,
+      authForwardAuthPath: this.authForwardAuthPath,
+      authForwardAuthEnabled: this.authForwardAuthEnabled
     }
   }
 
@@ -286,6 +306,10 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+
+      authForwardAuthPattern: this.authForwardAuthPattern,
+      authForwardAuthPath: this.authForwardAuthPath,
+      authForwardAuthEnabled: this.authForwardAuthEnabled,
 
       authOpenIDSamplePermissions: User.getSampleAbsPermissions()
     }

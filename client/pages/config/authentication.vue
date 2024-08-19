@@ -108,6 +108,18 @@
           </div>
         </transition>
       </div>
+      <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
+        <div class="flex items-center">
+          <ui-checkbox v-model="newAuthSettings.authForwardAuthEnabled" checkbox-bg="bg" />
+          <p class="text-lg pl-4">{{ $strings.HeaderForwardAuthentication }}</p>
+        </div>
+        <transition name="slide">
+          <div v-if="newAuthSettings.authForwardAuthEnabled" class="flex flex-wrap pt-4">
+            <ui-text-input-with-label ref="forwardAuthPattern" v-model="newAuthSettings.authForwardAuthPattern" :disabled="savingSettings" :label="'IP Pattern'" class="mb-2" />
+            <ui-text-input-with-label ref="forwardAuthPath" v-model="newAuthSettings.authForwardAuthPath" :disabled="savingSettings" :label="'Logout Path'" class="mb-2" />
+          </div>
+        </transition>
+      </div>
       <div class="w-full flex items-center justify-end p-4">
         <ui-btn color="success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
       </div>
@@ -139,6 +151,7 @@ export default {
     return {
       enableLocalAuth: false,
       enableOpenIDAuth: false,
+      enableForwardAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
       openIdSigningAlgorithmsSupportedByIssuer: [],
@@ -286,13 +299,26 @@ export default {
 
       return isValid
     },
+
+    validateForwardAuth(){
+      // Checks for input in the format of:
+      // 255.255.255.255[/32] (IPv4 address with optional CIDR notation)
+      const pattern = new RegExp('^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([0-9]|[1-2][0-9]|3[0-2]))?$')
+      return pattern.test(this.newAuthSettings.authForwardAuthPattern)
+    },
+
     async saveSettings() {
-      if (!this.enableLocalAuth && !this.enableOpenIDAuth) {
+      if (!this.enableLocalAuth && !this.enableOpenIDAuth && !this.enableForwardAuth) {
         this.$toast.error('Must have at least one authentication method enabled')
         return
       }
 
       if (this.enableOpenIDAuth && !this.validateOpenID()) {
+        return
+      }
+
+      if(this.newAuthSettings.authForwardAuthEnabled && !this.validateForwardAuth()){
+        this.$toast.error('Invalid forward auth pattern')
         return
       }
 
