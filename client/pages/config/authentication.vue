@@ -115,8 +115,11 @@
         </div>
         <transition name="slide">
           <div v-if="newAuthSettings.authForwardAuthEnabled" class="flex flex-wrap pt-4">
+            <p class="text-lg text-gray-300 mb-2">{{ $strings.LabelForwardAuthenticationWarning }}</p>
             <ui-text-input-with-label ref="forwardAuthPattern" v-model="newAuthSettings.authForwardAuthPattern" :disabled="savingSettings" :label="'IP Pattern'" class="mb-2" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelForwardAuthenticationPatternDescription" />
             <ui-text-input-with-label ref="forwardAuthPath" v-model="newAuthSettings.authForwardAuthPath" :disabled="savingSettings" :label="'Logout Path'" class="mb-2" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2">{{ $strings.LabelForwardAuthenticationLogoutDescription }}</p>
           </div>
         </transition>
       </div>
