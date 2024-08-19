@@ -363,14 +363,14 @@ export default {
     },
     displaySortLine() {
       if (this.collapsedSeries) return null
-      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
-      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
-      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
-      if (this.orderBy === 'media.duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
-      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
-      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} Episodes`
+      if (this.orderBy === 'mtimeMs') return this.$strings.LabelModified + ': ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
+      if (this.orderBy === 'birthtimeMs') return this.$strings.LabelBorn + ': ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
+      if (this.orderBy === 'addedAt') return this.$strings.LabelAdded + ': ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
+      if (this.orderBy === 'media.duration') return this.$strings.LabelDuration + ': ' + this.$elapsedPrettyExtended(this.media.duration, false)
+      if (this.orderBy === 'size') return this.$strings.LabelSize + ': ' + this.$bytesPretty(this._libraryItem.size)
+      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} ` + this.$strings.LabelEpisodes
       if (this.orderBy === 'media.metadata.publishedYear') {
-        if (this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
+        if (this.mediaMetadata.publishedYear) return this.$strings.LabelPublished + ': ' + this.mediaMetadata.publishedYear
         return '\u00A0'
       }
       return null
@@ -728,6 +728,7 @@ export default {
       if (!this.itemIsFinished && this.userProgressPercent > 0 && !confirmed) {
         const payload = {
           message: `Are you sure you want to mark "${this.displayTitle}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [this.displayTitle]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleFinished(true)
@@ -772,18 +773,18 @@ export default {
         .then((data) => {
           var result = data.result
           if (!result) {
-            this.$toast.error(`Re-Scan Failed for "${this.title}"`)
+            this.$toast.error(this.$getString('ToastRescanFailed', [this.displayTitle]))
           } else if (result === 'UPDATED') {
-            this.$toast.success(`Re-Scan complete item was updated`)
+            this.$toast.success(this.$strings.ToastRescanUpdated)
           } else if (result === 'UPTODATE') {
-            this.$toast.success(`Re-Scan complete item was up to date`)
+            this.$toast.success(this.$strings.ToastRescanUpToDate)
           } else if (result === 'REMOVED') {
-            this.$toast.error(`Re-Scan complete item was removed`)
+            this.$toast.error(this.$strings.ToastRescanRemoved
           }
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
-          this.$toast.error('Failed to scan library item')
+          this.$toast.error(this.$strings.ToastScanFailed)
         })
         .finally(() => {
           this.processing = false
@@ -840,7 +841,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove series from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
         })
         .finally(() => {
           this.processing = false
@@ -858,7 +859,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to hide item from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
         })
         .finally(() => {
           this.processing = false
@@ -873,7 +874,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: this.recentEpisode.publishedAt ? this.$strings.LabelPublished + ` ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : this.$strings.LabelUnknownPublishDate,
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -923,11 +924,11 @@ export default {
             axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeletedFailed)
               })
               .finally(() => {
                 this.processing = false
