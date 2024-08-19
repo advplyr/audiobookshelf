@@ -7,6 +7,10 @@ on:
     paths:
       - 'docs/**'
 
+# This action only needs read permissions
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
