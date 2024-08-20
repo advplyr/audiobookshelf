@@ -16,7 +16,8 @@ class CacheManager {
   /**
    * Create cache directory paths if they dont exist
    */
-  async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
+  async ensureCachePaths() {
+    // Creates cache paths if necessary and sets owner and permissions
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
@@ -89,23 +90,28 @@ class CacheManager {
   }
 
   async purgeEntityCache(entityId, cachePath) {
-    return Promise.all((await fs.readdir(cachePath)).reduce((promises, file) => {
-      if (file.startsWith(entityId)) {
-        Logger.debug(`[CacheManager] Going to purge ${file}`);
-        promises.push(this.removeCache(Path.join(cachePath, file)))
-      }
-      return promises
-    }, []))
+    return Promise.all(
+      (await fs.readdir(cachePath)).reduce((promises, file) => {
+        if (file.startsWith(entityId)) {
+          Logger.debug(`[CacheManager] Going to purge ${file}`)
+          promises.push(this.removeCache(Path.join(cachePath, file)))
+        }
+        return promises
+      }, [])
+    )
   }
 
   removeCache(path) {
     if (!path) return false
     return fs.pathExists(path).then((exists) => {
       if (!exists) return false
-      return fs.unlink(path).then(() => true).catch((err) => {
-        Logger.error(`[CacheManager] Failed to remove cache "${path}"`, err)
-        return false
-      })
+      return fs
+        .unlink(path)
+        .then(() => true)
+        .catch((err) => {
+          Logger.error(`[CacheManager] Failed to remove cache "${path}"`, err)
+          return false
+        })
     })
   }
 
