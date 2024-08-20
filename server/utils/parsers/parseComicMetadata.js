@@ -50,6 +50,9 @@ async function extractCoverImage(comicPath, comicImageFilepath, outputCoverPath)
   } catch (error) {
     Logger.error(`[parseComicMetadata] Failed to extract image from comicPath "${comicPath}"`, error)
     return false
+  } finally {
+    // Ensure we free the memory
+    archive.close()
   }
 }
 module.exports.extractCoverImage = extractCoverImage
@@ -103,6 +106,9 @@ async function parse(ebookFile) {
   } else {
     Logger.warn(`Cover image not found in comic at "${comicPath}"`)
   }
+
+  // Ensure we close the archive to free memory
+  archive.close()
 
   return payload
 }
