@@ -326,7 +326,8 @@ class AudioFileScanner {
         key: 'title'
       },
       {
-        tag: 'tagArtist',
+        tag: 'tagAlbumArtist',
+        altTag: 'tagArtist',
         key: 'author'
       },
       {
