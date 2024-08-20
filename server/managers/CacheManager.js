@@ -23,21 +23,10 @@ class CacheManager {
     this.ImageCachePath = Path.join(this.CachePath, 'images')
     this.ItemCachePath = Path.join(this.CachePath, 'items')
 
-    if (!(await fs.pathExists(this.CachePath))) {
-      await fs.mkdir(this.CachePath)
-    }
-
-    if (!(await fs.pathExists(this.CoverCachePath))) {
-      await fs.mkdir(this.CoverCachePath)
-    }
-
-    if (!(await fs.pathExists(this.ImageCachePath))) {
-      await fs.mkdir(this.ImageCachePath)
-    }
-
-    if (!(await fs.pathExists(this.ItemCachePath))) {
-      await fs.mkdir(this.ItemCachePath)
-    }
+    await fs.ensureDir(this.CachePath)
+    await fs.ensureDir(this.CoverCachePath)
+    await fs.ensureDir(this.ImageCachePath)
+    await fs.ensureDir(this.ItemCachePath)
   }
 
   async handleCoverCache(res, libraryItemId, coverPath, options = {}) {
