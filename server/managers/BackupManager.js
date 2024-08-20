@@ -14,6 +14,7 @@ const fileUtils = require('../utils/fileUtils')
 const { getFileSize } = require('../utils/fileUtils')
 
 const Backup = require('../objects/Backup')
+const CacheManager = require('./CacheManager')
 
 class BackupManager {
   constructor(notificationManager) {
@@ -229,6 +230,9 @@ class BackupManager {
 
     // Reset api cache, set hooks again
     await apiCacheManager.reset()
+
+    // Clear metadata cache
+    await CacheManager.purgeAll()
 
     res.sendStatus(200)
 
