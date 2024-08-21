@@ -7,12 +7,12 @@ const { xmlToJSON } = require('../index')
 const parseComicInfoMetadata = require('./parseComicInfoMetadata')
 
 /**
- * 
- * @param {string} filepath 
+ *
+ * @param {string} filepath
  * @returns {Promise<Buffer>}
  */
 async function getComicFileBuffer(filepath) {
-  if (!await fs.pathExists(filepath)) {
+  if (!(await fs.pathExists(filepath))) {
     Logger.error(`Comic path does not exist "${filepath}"`)
     return null
   }
@@ -26,10 +26,10 @@ async function getComicFileBuffer(filepath) {
 
 /**
  * Extract cover image from comic return true if success
- * 
- * @param {string} comicPath 
- * @param {string} comicImageFilepath 
- * @param {string} outputCoverPath 
+ *
+ * @param {string} comicPath
+ * @param {string} comicImageFilepath
+ * @param {string} outputCoverPath
  * @returns {Promise<boolean>}
  */
 async function extractCoverImage(comicPath, comicImageFilepath, outputCoverPath) {
@@ -50,14 +50,17 @@ async function extractCoverImage(comicPath, comicImageFilepath, outputCoverPath)
   } catch (error) {
     Logger.error(`[parseComicMetadata] Failed to extract image from comicPath "${comicPath}"`, error)
     return false
+  } finally {
+    // Ensure we free the memory
+    archive.close()
   }
 }
 module.exports.extractCoverImage = extractCoverImage
 
 /**
  * Parse metadata from comic
- * 
- * @param {import('../../models/Book').EBookFileObject} ebookFile 
+ *
+ * @param {import('../../models/Book').EBookFileObject} ebookFile
  * @returns {Promise<import('./parseEbookMetadata').EBookFileScanData>}
  */
 async function parse(ebookFile) {
@@ -79,7 +82,7 @@ async function parse(ebookFile) {
   })
 
   let metadata = null
-  const comicInfo = fileObjects.find(fo => fo.file.name === 'ComicInfo.xml')
+  const comicInfo = fileObjects.find((fo) => fo.file.name === 'ComicInfo.xml')
   if (comicInfo) {
     const comicInfoEntry = await comicInfo.file.extract()
     if (comicInfoEntry?.fileData) {
@@ -97,12 +100,15 @@ async function parse(ebookFile) {
     metadata
   }
 
-  const firstImage = fileObjects.find(fo => globals.SupportedImageTypes.includes(Path.extname(fo.file.name).toLowerCase().slice(1)))
+  const firstImage = fileObjects.find((fo) => globals.SupportedImageTypes.includes(Path.extname(fo.file.name).toLowerCase().slice(1)))
   if (firstImage?.file?._path) {
     payload.ebookCoverPath = firstImage.file._path
   } else {
     Logger.warn(`Cover image not found in comic at "${comicPath}"`)
   }
+
+  // Ensure we close the archive to free memory
+  archive.close()
 
   return payload
 }
