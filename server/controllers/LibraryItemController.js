@@ -1,13 +1,14 @@
 const { Request, Response, NextFunction } = require('express')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
+const uaParserJs = require('../libs/uaParser')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
-const { ScanResult } = require('../utils/constants')
+const { ScanResult, AudioMimeType } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
@@ -799,6 +800,7 @@ class LibraryItemController {
    */
   async downloadLibraryFile(req, res) {
     const libraryFile = req.libraryFile
+    const ua = uaParserJs(req.headers['user-agent'])
 
     if (!req.user.canDownload) {
       Logger.error(`[LibraryItemController] User "${req.user.username}" without download permission attempted to download file "${libraryFile.metadata.path}"`)
@@ -814,8 +816,15 @@ class LibraryItemController {
     }
 
     // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
+    let audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
     if (audioMimeType) {
+      // Work-around for Apple devices mishandling Content-Type on mobile browsers:
+      // https://github.com/advplyr/audiobookshelf/issues/3310
+      // We actually need to check for Webkit on Apple mobile devices because this issue impacts all browsers on iOS/iPadOS/etc, not just Safari.
+      const isAppleMobileBrowser = ua.device.vendor === 'Apple' && ua.device.type === 'mobile' && ua.engine.name === 'WebKit'
+      if (isAppleMobileBrowser && audioMimeType === AudioMimeType.M4B) {
+          audioMimeType = 'audio/m4b'
+      }
       res.setHeader('Content-Type', audioMimeType)
     }
 
