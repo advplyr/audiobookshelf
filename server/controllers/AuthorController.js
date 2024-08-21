@@ -368,12 +368,12 @@ class AuthorController {
       author
     } = req
 
-    if (raw) {
-      // any value
-      if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
-        return res.sendStatus(404)
-      }
+    if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
+      Logger.warn(`[AuthorController] Author "${author.name}" has invalid imagePath: ${author.imagePath}`)
+      return res.sendStatus(404)
+    }
 
+    if (raw) {
       return res.sendFile(author.imagePath)
     }
 
