@@ -41,58 +41,126 @@ class LibraryController {
    * @param {Response} res
    */
   async create(req, res) {
-    const newLibraryPayload = {
-      ...req.body
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to create library`)
+      return res.sendStatus(403)
     }
-    if (!newLibraryPayload.name || !newLibraryPayload.folders || !newLibraryPayload.folders.length) {
-      return res.status(500).send('Invalid request')
+
+    // Validation
+    if (!req.body.name || typeof req.body.name !== 'string') {
+      return res.status(400).send('Invalid request. Name must be a string')
+    }
+    if (
+      !Array.isArray(req.body.folders) ||
+      req.body.folders.some((f) => {
+        // Old model uses fullPath and new model will use path. Support both for now
+        const path = f?.fullPath || f?.path
+        return !path || typeof path !== 'string'
+      })
+    ) {
+      return res.status(400).send('Invalid request. Folders must be a non-empty array of objects with path string')
+    }
+    const optionalStringFields = ['mediaType', 'icon', 'provider']
+    for (const field of optionalStringFields) {
+      if (req.body[field] && typeof req.body[field] !== 'string') {
+        return res.status(400).send(`Invalid request. ${field} must be a string`)
+      }
+    }
+    if (req.body.settings && (typeof req.body.settings !== 'object' || Array.isArray(req.body.settings))) {
+      return res.status(400).send('Invalid request. Settings must be an object')
+    }
+
+    const mediaType = req.body.mediaType || 'book'
+    const newLibraryPayload = {
+      name: req.body.name,
+      provider: req.body.provider || 'google',
+      mediaType,
+      icon: req.body.icon || 'database',
+      settings: Database.libraryModel.getDefaultLibrarySettingsForMediaType(mediaType)
+    }
+
+    // Validate settings
+    if (req.body.settings) {
+      for (const key in req.body.settings) {
+        if (newLibraryPayload.settings[key] !== undefined) {
+          if (key === 'metadataPrecedence') {
+            if (!Array.isArray(req.body.settings[key])) {
+              return res.status(400).send('Invalid request. Settings "metadataPrecedence" must be an array')
+            }
+            newLibraryPayload.settings[key] = [...req.body.settings[key]]
+          } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
+            if (!req.body.settings[key]) continue
+            if (typeof req.body.settings[key] !== 'string') {
+              return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
+            }
+            newLibraryPayload.settings[key] = req.body.settings[key]
+          } else {
+            if (typeof req.body.settings[key] !== typeof newLibraryPayload.settings[key]) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof newLibraryPayload.settings[key]}`)
+            }
+            newLibraryPayload.settings[key] = req.body.settings[key]
+          }
+        }
+      }
     }
 
     // Validate that the custom provider exists if given any
-    if (newLibraryPayload.provider?.startsWith('custom-')) {
+    if (newLibraryPayload.provider.startsWith('custom-')) {
       if (!(await Database.customMetadataProviderModel.checkExistsBySlug(newLibraryPayload.provider))) {
         Logger.error(`[LibraryController] Custom metadata provider "${newLibraryPayload.provider}" does not exist`)
-        return res.status(400).send('Custom metadata provider does not exist')
+        return res.status(400).send('Invalid request. Custom metadata provider does not exist')
       }
     }
 
     // Validate folder paths exist or can be created & resolve rel paths
     //   returns 400 if a folder fails to access
-    newLibraryPayload.folders = newLibraryPayload.folders.map((f) => {
-      f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
+    newLibraryPayload.libraryFolders = req.body.folders.map((f) => {
+      const fpath = f.fullPath || f.path
+      f.path = fileUtils.filePathToPOSIX(Path.resolve(fpath))
       return f
     })
-    for (const folder of newLibraryPayload.folders) {
+    for (const folder of newLibraryPayload.libraryFolders) {
       try {
-        const direxists = await fs.pathExists(folder.fullPath)
-        if (!direxists) {
-          // If folder does not exist try to make it and set file permissions/owner
-          await fs.mkdir(folder.fullPath)
-        }
+        // Create folder if it doesn't exist
+        await fs.ensureDir(folder.path)
       } catch (error) {
-        Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.fullPath}"`, error)
-        return res.status(400).send(`Invalid folder directory "${folder.fullPath}"`)
+        Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.path}"`, error)
+        return res.status(400).send(`Invalid request. Invalid folder directory "${folder.path}"`)
       }
     }
 
-    const library = new Library()
-
+    // Set display order
     let currentLargestDisplayOrder = await Database.libraryModel.getMaxDisplayOrder()
     if (isNaN(currentLargestDisplayOrder)) currentLargestDisplayOrder = 0
     newLibraryPayload.displayOrder = currentLargestDisplayOrder + 1
-    library.setData(newLibraryPayload)
-    await Database.createLibrary(library)
+
+    // Create library with libraryFolders
+    const library = await Database.libraryModel
+      .create(newLibraryPayload, {
+        include: Database.libraryFolderModel
+      })
+      .catch((error) => {
+        Logger.error(`[LibraryController] Failed to create library "${newLibraryPayload.name}"`, error)
+      })
+    if (!library) {
+      return res.status(500).send('Failed to create library')
+    }
+
+    library.libraryFolders = await library.getLibraryFolders()
+
+    // TODO: Migrate to new library model
+    const oldLibrary = Database.libraryModel.getOldLibrary(library)
 
     // Only emit to users with access to library
     const userFilter = (user) => {
-      return user.checkCanAccessLibrary?.(library.id)
+      return user.checkCanAccessLibrary?.(oldLibrary.id)
     }
-    SocketAuthority.emitter('library_added', library.toJSON(), userFilter)
+    SocketAuthority.emitter('library_added', oldLibrary.toJSON(), userFilter)
 
     // Add library watcher
-    this.watcher.addLibrary(library)
+    this.watcher.addLibrary(oldLibrary)
 
-    res.json(library)
+    res.json(oldLibrary)
   }
 
   async findAll(req, res) {

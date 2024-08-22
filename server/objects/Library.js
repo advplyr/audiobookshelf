@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
 const { filePathToPOSIX } = require('../utils/fileUtils')
@@ -29,7 +29,7 @@ class Library {
   }
 
   get folderPaths() {
-    return this.folders.map(f => f.fullPath)
+    return this.folders.map((f) => f.fullPath)
   }
   get isPodcast() {
     return this.mediaType === 'podcast'
@@ -45,14 +45,15 @@ class Library {
     this.id = library.id
     this.oldLibraryId = library.oldLibraryId
     this.name = library.name
-    this.folders = (library.folders || []).map(f => new Folder(f))
+    this.folders = (library.folders || []).map((f) => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
     this.mediaType = library.mediaType
     this.provider = library.provider || 'google'
 
     this.settings = new LibrarySettings(library.settings)
-    if (library.settings === undefined) { // LibrarySettings added in v2, migrate settings
+    if (library.settings === undefined) {
+      // LibrarySettings added in v2, migrate settings
       this.settings.disableWatcher = !!library.disableWatcher
     }
 
@@ -85,7 +86,7 @@ class Library {
       id: this.id,
       oldLibraryId: this.oldLibraryId,
       name: this.name,
-      folders: (this.folders || []).map(f => f.toJSON()),
+      folders: (this.folders || []).map((f) => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
       mediaType: this.mediaType,
@@ -96,32 +97,6 @@ class Library {
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
-  }
-
-  setData(data) {
-    this.id = data.id || uuidv4()
-    this.name = data.name
-    if (data.folder) {
-      this.folders = [
-        new Folder(data.folder)
-      ]
-    } else if (data.folders) {
-      this.folders = data.folders.map(folder => {
-        var newFolder = new Folder()
-        newFolder.setData({
-          fullPath: folder.fullPath,
-          libraryId: this.id
-        })
-        return newFolder
-      })
-    }
-    this.displayOrder = data.displayOrder || 1
-    this.icon = data.icon || 'database'
-    this.mediaType = data.mediaType || 'book'
-    this.provider = data.provider || 'google'
-    this.settings = new LibrarySettings(data.settings)
-    this.createdAt = Date.now()
-    this.lastUpdate = Date.now()
   }
 
   update(payload) {
@@ -144,12 +119,12 @@ class Library {
       hasUpdates = true
     }
     if (payload.folders) {
-      const newFolders = payload.folders.filter(f => !f.id)
-      const removedFolders = this.folders.filter(f => !payload.folders.some(_f => _f.id === f.id))
+      const newFolders = payload.folders.filter((f) => !f.id)
+      const removedFolders = this.folders.filter((f) => !payload.folders.some((_f) => _f.id === f.id))
 
       if (removedFolders.length) {
-        const removedFolderIds = removedFolders.map(f => f.id)
-        this.folders = this.folders.filter(f => !removedFolderIds.includes(f.id))
+        const removedFolderIds = removedFolders.map((f) => f.id)
+        this.folders = this.folders.filter((f) => !removedFolderIds.includes(f.id))
       }
 
       if (newFolders.length) {
@@ -173,11 +148,11 @@ class Library {
 
   checkFullPathInLibrary(fullPath) {
     fullPath = filePathToPOSIX(fullPath)
-    return this.folders.find(folder => fullPath.startsWith(filePathToPOSIX(folder.fullPath)))
+    return this.folders.find((folder) => fullPath.startsWith(filePathToPOSIX(folder.fullPath)))
   }
 
   getFolderById(id) {
-    return this.folders.find(folder => folder.id === id)
+    return this.folders.find((folder) => folder.id === id)
   }
 }
 module.exports = Library

@@ -384,11 +384,6 @@ class Database {
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
   }
 
-  createLibrary(oldLibrary) {
-    if (!this.sequelize) return false
-    return this.models.library.createFromOld(oldLibrary)
-  }
-
   updateLibrary(oldLibrary) {
     if (!this.sequelize) return false
     return this.models.library.updateFromOld(oldLibrary)

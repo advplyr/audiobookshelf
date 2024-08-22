@@ -46,6 +46,35 @@ class Library extends Model {
   }
 
   /**
+   *
+   * @param {string} mediaType
+   * @returns
+   */
+  static getDefaultLibrarySettingsForMediaType(mediaType) {
+    if (mediaType === 'podcast') {
+      return {
+        coverAspectRatio: 1, // Square
+        disableWatcher: false,
+        autoScanCronExpression: null,
+        podcastSearchRegion: 'us'
+      }
+    } else {
+      return {
+        coverAspectRatio: 1, // Square
+        disableWatcher: false,
+        autoScanCronExpression: null,
+        skipMatchingMediaWithAsin: false,
+        skipMatchingMediaWithIsbn: false,
+        audiobooksOnly: false,
+        epubsAllowScriptedContent: false,
+        hideSingleBookSeries: false,
+        onlyShowLaterBooksInContinueSeries: false,
+        metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+      }
+    }
+  }
+
+  /**
    * Get all old libraries
    * @returns {Promise<oldLibrary[]>}
    */
@@ -86,28 +115,6 @@ class Library extends Model {
       lastScanMetadataPrecedence: libraryExpanded.extraData?.lastScanMetadataPrecedence || null,
       createdAt: libraryExpanded.createdAt.valueOf(),
       lastUpdate: libraryExpanded.updatedAt.valueOf()
-    })
-  }
-
-  /**
-   * @param {object} oldLibrary
-   * @returns {Library|null}
-   */
-  static async createFromOld(oldLibrary) {
-    const library = this.getFromOld(oldLibrary)
-
-    library.libraryFolders = oldLibrary.folders.map((folder) => {
-      return {
-        id: folder.id,
-        path: folder.fullPath
-      }
-    })
-
-    return this.create(library, {
-      include: this.sequelize.models.libraryFolder
-    }).catch((error) => {
-      Logger.error(`[Library] Failed to create library ${library.id}`, error)
-      return null
     })
   }
 
