@@ -43,6 +43,8 @@ class Library extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {import('./LibraryFolder')[]|undefined} */
+    this.libraryFolders
   }
 
   /**
@@ -72,6 +74,28 @@ class Library extends Model {
         metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
       }
     }
+  }
+
+  /**
+   *
+   * @returns {Promise<Library[]>}
+   */
+  static getAllWithFolders() {
+    return this.findAll({
+      include: this.sequelize.models.libraryFolder,
+      order: [['displayOrder', 'ASC']]
+    })
+  }
+
+  /**
+   *
+   * @param {string} libraryId
+   * @returns {Promise<Library>}
+   */
+  static findByIdWithFolders(libraryId) {
+    return this.findByPk(libraryId, {
+      include: this.sequelize.models.libraryFolder
+    })
   }
 
   /**
@@ -121,7 +145,7 @@ class Library extends Model {
   /**
    * Update library and library folders
    * @param {object} oldLibrary
-   * @returns
+   * @returns {Promise<Library|null>}
    */
   static async updateFromOld(oldLibrary) {
     const existingLibrary = await this.findByPk(oldLibrary.id, {
