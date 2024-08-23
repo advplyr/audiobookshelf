@@ -458,12 +458,16 @@ class Server {
           }
         )
 
-        // Step 4: Delete all older series
-        await Database.seriesModel.destroy({
+        // Step 4: Delete all older series and report how many were deleted
+
+        const seriesRemoved = await Database.seriesModel.destroy({
           where: {
             id: { [Sequelize.Op.in]: seriesIdsToUpdate }
           }
         })
+        if (seriesRemoved) {
+          Logger.info(`[Server] Deduplicated series "${duplicate.name}" in library ${duplicate.libraryId} - Removed ${seriesRemoved} series`)
+        }
       } catch (error) {
         Logger.error(`[Server] Failed to deduplicate series "${duplicate.name}" in library ${duplicate.libraryId}`, error)
       }
