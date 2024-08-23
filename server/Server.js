@@ -422,21 +422,23 @@ class Server {
   }
 
   /**
-   * Deduplicate series by name, keeping the most recent series and updating references from deleted series
+   * Deduplicate series by name and libraryId, keeping the most recent series and
+   * updating references from deleted series
    */
   async deduplicateSeries() {
-    // Step 1: Find duplicate series by name
+    // Step 1: Find duplicate series by name and libraryId
     const duplicates = await Database.seriesModel.findAll({
-      attributes: ['name', [Sequelize.fn('MAX', Sequelize.col('updatedAt')), 'latestUpdatedAt']],
-      group: ['name'],
+      attributes: ['name', 'libraryId', [Sequelize.fn('MAX', Sequelize.col('updatedAt')), 'latestUpdatedAt']],
+      group: ['name', 'libraryId'],
       having: Sequelize.literal('COUNT(name) > 1')
     })
 
     for (const duplicate of duplicates) {
-      // Step 2: Find all series with the same name
+      // Step 2: Find all series with the same name and libraryId
       const allSeries = await Database.seriesModel.findAll({
         where: {
-          name: duplicate.name
+          name: duplicate.name,
+          libraryId: duplicate.libraryId
         },
         order: [['updatedAt', 'DESC']]
       })
@@ -463,7 +465,7 @@ class Server {
           }
         })
       } catch (error) {
-        Logger.error(`[Server] Failed to deduplicate series with name "${duplicate.name}"`, error)
+        Logger.error(`[Server] Failed to deduplicate series "${duplicate.name}" in library ${duplicate.libraryId}`, error)
       }
     }
   }
