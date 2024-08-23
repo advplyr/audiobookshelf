@@ -136,6 +136,7 @@ class Server {
     }
 
     await this.cleanUserData() // Remove invalid user item progress
+    await this.deduplicateSeries() // Deduplicate series by name
     await CacheManager.ensureCachePaths()
 
     await ShareManager.init()
@@ -417,6 +418,53 @@ class Server {
       }
     } catch (error) {
       Logger.error(`[Server] Failed to cleanup users seriesHideFromContinueListening`, error)
+    }
+  }
+
+  /**
+   * Deduplicate series by name, keeping the most recent series and updating references from deleted series
+   */
+  async deduplicateSeries() {
+    // Step 1: Find duplicate series by name
+    const duplicates = await Database.seriesModel.findAll({
+      attributes: ['name', [Sequelize.fn('MAX', Sequelize.col('updatedAt')), 'latestUpdatedAt']],
+      group: ['name'],
+      having: Sequelize.literal('COUNT(name) > 1')
+    })
+
+    for (const duplicate of duplicates) {
+      // Step 2: Find all series with the same name
+      const allSeries = await Database.seriesModel.findAll({
+        where: {
+          name: duplicate.name
+        },
+        order: [['updatedAt', 'DESC']]
+      })
+
+      // The first one in the ordered list is the most recent
+      const mostRecentSeries = allSeries[0]
+
+      try {
+        // Step 3: Update BookSeries to map to the most recent series
+        const seriesIdsToUpdate = allSeries.slice(1).map((s) => s.id)
+        await Database.bookSeriesModel.update(
+          { seriesId: mostRecentSeries.id },
+          {
+            where: {
+              seriesId: { [Sequelize.Op.in]: seriesIdsToUpdate }
+            }
+          }
+        )
+
+        // Step 4: Delete all older series
+        await Database.seriesModel.destroy({
+          where: {
+            id: { [Sequelize.Op.in]: seriesIdsToUpdate }
+          }
+        })
+      } catch (error) {
+        Logger.error(`[Server] Failed to deduplicate series with name "${duplicate.name}"`, error)
+      }
     }
   }
 
