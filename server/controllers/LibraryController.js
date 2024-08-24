@@ -46,7 +46,7 @@ class LibraryController {
       for (let i = 0; i < allLibrariesIds.length; i++) {
         req.library = {
           id: allLibrariesIds[i],
-          isBook: await Database.libraryModel.getOldById(allLibrariesIds[i]),
+          mediaType: (await Database.libraryModel.getOldById(allLibrariesIds[i])).mediaType,
         };
         const libraryStats = await libraryHelpers.getLibraryStats(req);
         allStats.push({ libraryId: req.library.id, stats: libraryStats });
