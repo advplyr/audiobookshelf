@@ -459,7 +459,6 @@ class Server {
         )
 
         // Step 4: Delete all older series and report how many were deleted
-
         const seriesRemoved = await Database.seriesModel.destroy({
           where: {
             id: { [Sequelize.Op.in]: seriesIdsToUpdate }
