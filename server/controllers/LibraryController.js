@@ -44,12 +44,10 @@ class LibraryController {
       const allStats = [];
 
       for (let i = 0; i < allLibrariesIds.length; i++) {
-        req.library = {
-          id: allLibrariesIds[i],
-          mediaType: (await Database.libraryModel.getOldById(allLibrariesIds[i])).mediaType,
-        };
+        const library = await Database.libraryModel.getOldById(allLibrariesIds[i]);
+        req.library = library
         const libraryStats = await libraryHelpers.getLibraryStats(req);
-        allStats.push({ libraryId: req.library.id, stats: libraryStats });
+        allStats.push({ library: library, stats: libraryStats });
       }
 
       res.json(allStats);
