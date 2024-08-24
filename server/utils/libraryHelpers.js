@@ -1,6 +1,10 @@
 const { createNewSortInstance } = require('../libs/fastSort')
 const Database = require('../Database')
 const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
+const { getLargestItems } = require('./queries/libraryItemFilters')
+const { getAuthorsWithCount, getAuthorsTotalCount } = require('./queries/authorFilters')
+const { getGenresWithCount, getBookLibraryStats, getLongestBooks } = require('./queries/libraryItemsBookFilters')
+const { getPodcastLibraryStats, getLongestPodcasts } = require('./queries/libraryItemsPodcastFilters')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -76,6 +80,48 @@ module.exports = {
     })
 
     return filteredLibraryItems
+  },
+
+  /**
+   * Helper method to get stats for a specific library
+   * @param {import('express').Request} req
+   * @returns {Promise<Object>} stats
+   */
+  async getLibraryStats(req) {
+    const stats = {
+      largestItems: await getLargestItems(req.library.id, 10),
+    };
+
+    if (req.library.isBook) {
+      const authors = await getAuthorsWithCount(req.library.id, 10);
+      const genres = getGenresWithCount(req.library.id);
+      const bookStats = await getBookLibraryStats(req.library.id);
+      const longestBooks = await getLongestBooks(req.library.id, 10);
+
+      stats.totalAuthors = await getAuthorsTotalCount(req.library.id);
+      stats.authorsWithCount = authors;
+      stats.totalGenres = genres.length;
+      stats.genresWithCount = genres;
+      stats.totalItems = bookStats.totalItems;
+      stats.longestItems = longestBooks;
+      stats.totalSize = bookStats.totalSize;
+      stats.totalDuration = bookStats.totalDuration;
+      stats.numAudioTracks = bookStats.numAudioFiles;
+    } else {
+      const genres = getGenresWithCount(req.library.id);
+      const podcastStats = await getPodcastLibraryStats(req.library.id);
+      const longestPodcasts = await getLongestPodcasts(req.library.id, 10);
+
+      stats.totalGenres = genres.length;
+      stats.genresWithCount = genres;
+      stats.totalItems = podcastStats.totalItems;
+      stats.longestItems = longestPodcasts;
+      stats.totalSize = podcastStats.totalSize;
+      stats.totalDuration = podcastStats.totalDuration;
+      stats.numAudioTracks = podcastStats.numAudioFiles;
+    }
+
+    return stats;
   },
 
   /**

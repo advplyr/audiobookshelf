@@ -33,6 +33,32 @@ class LibraryController {
   constructor() {}
 
   /**
+   * GET: /api/libraries/stats
+   * Get stats for all libraries and respond with JSON
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async allStats(req, res) {
+    try {
+      const allLibrariesIds = await Database.libraryModel.getAllLibraryIds();
+      const allStats = [];
+
+      for (let i = 0; i < allLibrariesIds.length; i++) {
+        req.library = {
+          id: allLibrariesIds[i],
+          isBook: await Database.libraryModel.getOldById(allLibrariesIds[i]),
+        };
+        const libraryStats = await libraryHelpers.getLibraryStats(req);
+        allStats.push({ libraryId: req.library.id, stats: libraryStats });
+      }
+
+      res.json(allStats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
    * POST: /api/libraries
    * Create a new library
    *
@@ -718,39 +744,12 @@ class LibraryController {
    * @param {Response} res
    */
   async stats(req, res) {
-    const stats = {
-      largestItems: await libraryItemFilters.getLargestItems(req.library.id, 10)
+    try {
+      const stats = await libraryHelpers.getLibraryStats(req);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-
-    if (req.library.mediaType === 'book') {
-      const authors = await authorFilters.getAuthorsWithCount(req.library.id, 10)
-      const genres = await libraryItemsBookFilters.getGenresWithCount(req.library.id)
-      const bookStats = await libraryItemsBookFilters.getBookLibraryStats(req.library.id)
-      const longestBooks = await libraryItemsBookFilters.getLongestBooks(req.library.id, 10)
-
-      stats.totalAuthors = await authorFilters.getAuthorsTotalCount(req.library.id)
-      stats.authorsWithCount = authors
-      stats.totalGenres = genres.length
-      stats.genresWithCount = genres
-      stats.totalItems = bookStats.totalItems
-      stats.longestItems = longestBooks
-      stats.totalSize = bookStats.totalSize
-      stats.totalDuration = bookStats.totalDuration
-      stats.numAudioTracks = bookStats.numAudioFiles
-    } else {
-      const genres = await libraryItemsPodcastFilters.getGenresWithCount(req.library.id)
-      const podcastStats = await libraryItemsPodcastFilters.getPodcastLibraryStats(req.library.id)
-      const longestPodcasts = await libraryItemsPodcastFilters.getLongestPodcasts(req.library.id, 10)
-
-      stats.totalGenres = genres.length
-      stats.genresWithCount = genres
-      stats.totalItems = podcastStats.totalItems
-      stats.longestItems = longestPodcasts
-      stats.totalSize = podcastStats.totalSize
-      stats.totalDuration = podcastStats.totalDuration
-      stats.numAudioTracks = podcastStats.numAudioFiles
-    }
-    res.json(stats)
   }
 
   /**
