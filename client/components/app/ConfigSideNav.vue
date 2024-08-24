@@ -109,6 +109,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'all-libraries-stats',
+          title: this.$strings.HeaderAllLibrariesStats,
+          path: '/libraries/stats'
         }
       ]
 
