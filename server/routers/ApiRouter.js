@@ -53,6 +53,7 @@ class ApiRouter {
     this.audioMetadataManager = Server.audioMetadataManager
     /** @type {import('../managers/RssFeedManager')} */
     this.rssFeedManager = Server.rssFeedManager
+    /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
     /** @type {import('../managers/NotificationManager')} */
     this.notificationManager = Server.notificationManager

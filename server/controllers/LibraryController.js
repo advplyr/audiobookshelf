@@ -27,6 +27,11 @@ const authorFilters = require('../utils/queries/authorFilters')
  * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObject} RequestWithUser
+ *
+ * @typedef RequestEntityObject
+ * @property {import('../models/Library')} library
+ *
+ * @typedef {RequestWithUser & RequestEntityObject} LibraryControllerRequest
  */
 
 class LibraryController {
@@ -147,21 +152,25 @@ class LibraryController {
 
     library.libraryFolders = await library.getLibraryFolders()
 
-    // TODO: Migrate to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(library)
-
     // Only emit to users with access to library
     const userFilter = (user) => {
-      return user.checkCanAccessLibrary?.(oldLibrary.id)
+      return user.checkCanAccessLibrary?.(library.id)
     }
-    SocketAuthority.emitter('library_added', oldLibrary.toJSON(), userFilter)
+    SocketAuthority.emitter('library_added', library.toOldJSON(), userFilter)
 
     // Add library watcher
     this.watcher.addLibrary(library)
 
-    res.json(oldLibrary)
+    res.json(library.toOldJSON())
   }
 
+  /**
+   * GET: /api/libraries
+   * Get all libraries
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async findAll(req, res) {
     const libraries = await Database.libraryModel.getAllOldLibraries()
 
@@ -180,7 +189,7 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async findOne(req, res) {
@@ -204,7 +213,8 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/episode-downloads
    * Get podcast episodes in download queue
-   * @param {RequestWithUser} req
+   *
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getEpisodeDownloadQueue(req, res) {
@@ -215,12 +225,28 @@ class LibraryController {
   /**
    * PATCH: /api/libraries/:id
    *
-   * @param {RequestWithUser} req
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async update(req, res) {
-    /** @type {import('../objects/Library')} */
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
+    // Validation
+    const updatePayload = {}
+    const keysToCheck = ['name', 'provider', 'mediaType', 'icon']
+    for (const key of keysToCheck) {
+      if (!req.body[key]) continue
+      if (typeof req.body[key] !== 'string') {
+        return res.status(400).send(`Invalid request. ${key} must be a string`)
+      }
+      updatePayload[key] = req.body[key]
+    }
+    if (req.body.displayOrder !== undefined) {
+      if (isNaN(req.body.displayOrder)) {
+        return res.status(400).send('Invalid request. displayOrder must be a number')
+      }
+      updatePayload.displayOrder = req.body.displayOrder
+    }
 
     // Validate that the custom provider exists if given any
     if (req.body.provider?.startsWith('custom-')) {
@@ -230,21 +256,72 @@ class LibraryController {
       }
     }
 
+    // Validate settings
+    const updatedSettings = {
+      ...(req.library.settings || Database.libraryModel.getDefaultLibrarySettingsForMediaType(req.library.mediaType))
+    }
+    let hasUpdates = false
+    let hasUpdatedDisableWatcher = false
+    let hasUpdatedScanCron = false
+    if (req.body.settings) {
+      for (const key in req.body.settings) {
+        if (updatedSettings[key] === undefined) continue
+
+        if (key === 'metadataPrecedence') {
+          if (!Array.isArray(req.body.settings[key])) {
+            return res.status(400).send('Invalid request. Settings "metadataPrecedence" must be an array')
+          }
+          if (JSON.stringify(req.body.settings[key]) !== JSON.stringify(updatedSettings[key])) {
+            hasUpdates = true
+            updatedSettings[key] = [...req.body.settings[key]]
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
+        } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
+          if (req.body.settings[key] !== null && typeof req.body.settings[key] !== 'string') {
+            return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            if (key === 'autoScanCronExpression') hasUpdatedScanCron = true
+
+            hasUpdates = true
+            updatedSettings[key] = req.body.settings[key]
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
+        } else {
+          if (typeof req.body.settings[key] !== typeof updatedSettings[key]) {
+            return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            if (key === 'disableWatcher') hasUpdatedDisableWatcher = true
+
+            hasUpdates = true
+            updatedSettings[key] = req.body.settings[key]
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
+        }
+      }
+      if (hasUpdates) {
+        updatePayload.settings = updatedSettings
+        req.library.changed('settings', true)
+      }
+    }
+
+    let hasFolderUpdates = false
     // Validate new folder paths exist or can be created & resolve rel paths
     //   returns 400 if a new folder fails to access
-    if (req.body.folders) {
+    if (Array.isArray(req.body.folders)) {
       const newFolderPaths = []
       req.body.folders = req.body.folders.map((f) => {
         if (!f.id) {
-          f.fullPath = fileUtils.filePathToPOSIX(Path.resolve(f.fullPath))
-          newFolderPaths.push(f.fullPath)
+          const path = f.fullPath || f.path
+          f.path = fileUtils.filePathToPOSIX(Path.resolve(path))
+          newFolderPaths.push(f.path)
         }
         return f
       })
       for (const path of newFolderPaths) {
         const pathExists = await fs.pathExists(path)
         if (!pathExists) {
-          // Ensure dir will recursively create directories which might be preferred over mkdir
           const success = await fs
             .ensureDir(path)
             .then(() => true)
@@ -256,10 +333,17 @@ class LibraryController {
             return res.status(400).send(`Invalid folder directory "${path}"`)
           }
         }
+        // Create folder
+        const libraryFolder = await Database.libraryFolderModel.create({
+          path,
+          libraryId: req.library.id
+        })
+        Logger.info(`[LibraryController] Created folder "${libraryFolder.path}" for library "${req.library.name}"`)
+        hasFolderUpdates = true
       }
 
       // Handle removing folders
-      for (const folder of oldLibrary.folders) {
+      for (const folder of req.library.libraryFolders) {
         if (!req.body.folders.some((f) => f.id === folder.id)) {
           // Remove library items in folder
           const libraryItemsInFolder = await Database.libraryItemModel.findAll({
@@ -278,67 +362,82 @@ class LibraryController {
               }
             ]
           })
-          Logger.info(`[LibraryController] Removed folder "${folder.fullPath}" from library "${oldLibrary.name}" with ${libraryItemsInFolder.length} library items`)
+          Logger.info(`[LibraryController] Removed folder "${folder.path}" from library "${req.library.name}" with ${libraryItemsInFolder.length} library items`)
           for (const libraryItem of libraryItemsInFolder) {
             let mediaItemIds = []
-            if (oldLibrary.isPodcast) {
+            if (req.library.isPodcast) {
               mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
             } else {
               mediaItemIds.push(libraryItem.mediaId)
             }
-            Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.fullPath}"`)
+            Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.path}"`)
             await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
           }
+
+          // Remove folder
+          await folder.destroy()
+          hasFolderUpdates = true
         }
       }
     }
 
-    const hasUpdates = oldLibrary.update(req.body)
-    // TODO: Should check if this is an update to folder paths or name only
-    if (hasUpdates) {
-      // Update auto scan cron
-      this.cronManager.updateLibraryScanCron(oldLibrary)
+    if (Object.keys(updatePayload).length) {
+      req.library.set(updatePayload)
+      if (req.library.changed()) {
+        Logger.debug(`[LibraryController] Updated library "${req.library.name}" with changed keys ${req.library.changed()}`)
+        hasUpdates = true
+        await req.library.save()
+      }
+    }
 
-      const updatedLibrary = await Database.libraryModel.updateFromOld(oldLibrary)
-      updatedLibrary.libraryFolders = await updatedLibrary.getLibraryFolders()
+    if (hasUpdatedScanCron) {
+      Logger.debug(`[LibraryController] Updated library "${req.library.name}" auto scan cron`)
+      // Update auto scan cron
+      this.cronManager.updateLibraryScanCron(req.library)
+    }
+
+    if (hasFolderUpdates || hasUpdatedDisableWatcher) {
+      req.library.libraryFolders = await req.library.getLibraryFolders()
 
       // Update watcher
-      this.watcher.updateLibrary(updatedLibrary)
+      this.watcher.updateLibrary(req.library)
 
+      hasUpdates = true
+    }
+
+    if (hasUpdates) {
       // Only emit to users with access to library
       const userFilter = (user) => {
-        return user.checkCanAccessLibrary?.(oldLibrary.id)
+        return user.checkCanAccessLibrary?.(req.library.id)
       }
-      SocketAuthority.emitter('library_updated', oldLibrary.toJSON(), userFilter)
+      SocketAuthority.emitter('library_updated', req.library.toOldJSON(), userFilter)
 
-      await Database.resetLibraryIssuesFilterData(oldLibrary.id)
+      await Database.resetLibraryIssuesFilterData(req.library.id)
     }
-    return res.json(oldLibrary.toJSON())
+    return res.json(req.library.toOldJSON())
   }
 
   /**
    * DELETE: /api/libraries/:id
    * Delete a library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async delete(req, res) {
-    const library = Database.libraryModel.getOldLibrary(req.library)
-
     // Remove library watcher
     this.watcher.removeLibrary(req.library)
 
     // Remove collections for library
-    const numCollectionsRemoved = await Database.collectionModel.removeAllForLibrary(library.id)
+    const numCollectionsRemoved = await Database.collectionModel.removeAllForLibrary(req.library.id)
     if (numCollectionsRemoved) {
-      Logger.info(`[Server] Removed ${numCollectionsRemoved} collections for library "${library.name}"`)
+      Logger.info(`[Server] Removed ${numCollectionsRemoved} collections for library "${req.library.name}"`)
     }
 
     // Remove items in this library
     const libraryItemsInLibrary = await Database.libraryItemModel.findAll({
       where: {
-        libraryId: library.id
+        libraryId: req.library.id
       },
       attributes: ['id', 'mediaId', 'mediaType'],
       include: [
@@ -352,20 +451,20 @@ class LibraryController {
         }
       ]
     })
-    Logger.info(`[LibraryController] Removing ${libraryItemsInLibrary.length} library items in library "${library.name}"`)
+    Logger.info(`[LibraryController] Removing ${libraryItemsInLibrary.length} library items in library "${req.library.name}"`)
     for (const libraryItem of libraryItemsInLibrary) {
       let mediaItemIds = []
-      if (library.isPodcast) {
+      if (req.library.isPodcast) {
         mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
       }
-      Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${library.name}"`)
+      Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${req.library.name}"`)
       await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
     }
 
-    const libraryJson = library.toJSON()
-    await Database.removeLibrary(library.id)
+    const libraryJson = req.library.toOldJSON()
+    await Database.removeLibrary(req.library.id)
 
     // Re-order libraries
     await Database.libraryModel.resetDisplayOrder()
@@ -373,8 +472,8 @@ class LibraryController {
     SocketAuthority.emitter('library_removed', libraryJson)
 
     // Remove library filter data
-    if (Database.libraryFilterData[library.id]) {
-      delete Database.libraryFilterData[library.id]
+    if (Database.libraryFilterData[req.library.id]) {
+      delete Database.libraryFilterData[req.library.id]
     }
 
     return res.json(libraryJson)
@@ -383,12 +482,10 @@ class LibraryController {
   /**
    * GET /api/libraries/:id/items
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getLibraryItems(req, res) {
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
-
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
@@ -410,6 +507,8 @@ class LibraryController {
     payload.offset = payload.page * payload.limit
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
+    // TODO: Update to new library model
+    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const filterByGroup = payload.filterBy?.split('.').shift()
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
@@ -425,9 +524,10 @@ class LibraryController {
   }
 
   /**
-   * DELETE: /libraries/:id/issues
+   * DELETE: /api/libraries/:id/issues
    * Remove all library items missing or invalid
-   * @param {RequestWithUser} req
+   *
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async removeLibraryItemsWithIssues(req, res) {
@@ -464,7 +564,7 @@ class LibraryController {
     Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
     for (const libraryItem of libraryItemsWithIssues) {
       let mediaItemIds = []
-      if (req.library.mediaType === 'podcast') {
+      if (req.library.isPodcast) {
         mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
@@ -485,10 +585,11 @@ class LibraryController {
    * GET: /api/libraries/:id/series
    * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getAllSeriesForLibrary(req, res) {
+    // TODO: Update to new library model
     const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
 
     const include = (req.query.include || '')
@@ -523,7 +624,7 @@ class LibraryController {
    * rssfeed: adds `rssFeed` to series object if a feed is open
    * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res - Series
    */
   async getSeriesForLibrary(req, res) {
@@ -560,7 +661,7 @@ class LibraryController {
    * GET: /api/libraries/:id/collections
    * Get all collections for library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getCollectionsForLibrary(req, res) {
@@ -599,7 +700,7 @@ class LibraryController {
    * GET: /api/libraries/:id/playlists
    * Get playlists for user in library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getUserPlaylistsForLibrary(req, res) {
@@ -624,7 +725,7 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/filterdata
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getLibraryFilterData(req, res) {
@@ -636,10 +737,11 @@ class LibraryController {
    * GET: /api/libraries/:id/personalized
    * Home page shelves
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getUserPersonalizedShelves(req, res) {
+    // TODO: Update to new library model
     const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '')
@@ -654,7 +756,13 @@ class LibraryController {
    * POST: /api/libraries/order
    * Change the display order of libraries
    *
-   * @param {RequestWithUser} req
+   * @typedef LibraryReorderObj
+   * @property {string} id
+   * @property {number} newOrder
+   *
+   * @typedef {Request<{}, {}, LibraryReorderObj[], {}> & RequestUserObject} LibraryReorderRequest
+   *
+   * @param {LibraryReorderRequest} req
    * @param {Response} res
    */
   async reorder(req, res) {
@@ -662,20 +770,25 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-admin user "${req.user}" attempted to reorder libraries`)
       return res.sendStatus(403)
     }
-    const libraries = await Database.libraryModel.getAllOldLibraries()
+
+    const libraries = await Database.libraryModel.getAllWithFolders()
 
     const orderdata = req.body
+    if (!Array.isArray(orderdata) || orderdata.some((o) => typeof o?.id !== 'string' || typeof o?.newOrder !== 'number')) {
+      return res.status(400).send('Invalid request. Request body must be an array of objects')
+    }
+
     let hasUpdates = false
     for (let i = 0; i < orderdata.length; i++) {
       const library = libraries.find((lib) => lib.id === orderdata[i].id)
       if (!library) {
         Logger.error(`[LibraryController] Invalid library not found in reorder ${orderdata[i].id}`)
-        return res.sendStatus(500)
+        return res.status(400).send(`Library not found with id ${orderdata[i].id}`)
       }
-      if (library.update({ displayOrder: orderdata[i].newOrder })) {
-        hasUpdates = true
-        await Database.libraryModel.updateFromOld(library)
-      }
+      if (library.displayOrder === orderdata[i].newOrder) continue
+      library.displayOrder = orderdata[i].newOrder
+      await library.save()
+      hasUpdates = true
     }
 
     if (hasUpdates) {
@@ -686,7 +799,7 @@ class LibraryController {
     }
 
     res.json({
-      libraries: libraries.map((lib) => lib.toJSON())
+      libraries: libraries.map((lib) => lib.toOldJSON())
     })
   }
 
@@ -695,18 +808,18 @@ class LibraryController {
    * Search library items with query
    *
    * ?q=search
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async search(req, res) {
     if (!req.query.q || typeof req.query.q !== 'string') {
       return res.status(400).send('Invalid request. Query param "q" must be a string')
     }
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
+
     const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     const query = asciiOnlyToLowerCase(req.query.q.trim())
 
-    const matches = await libraryItemFilters.search(req.user, oldLibrary, query, limit)
+    const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)
   }
 
@@ -714,7 +827,7 @@ class LibraryController {
    * GET: /api/libraries/:id/stats
    * Get stats for library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async stats(req, res) {
@@ -757,7 +870,7 @@ class LibraryController {
    * GET: /api/libraries/:id/authors
    * Get authors for library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getAuthors(req, res) {
@@ -796,7 +909,7 @@ class LibraryController {
   /**
    * GET: /api/libraries/:id/narrators
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getNarrators(req, res) {
@@ -843,7 +956,7 @@ class LibraryController {
    * :narratorId is base64 encoded name
    * req.body { name }
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async updateNarrator(req, res) {
@@ -894,7 +1007,7 @@ class LibraryController {
    * Remove narrator
    * :narratorId is base64 encoded name
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async removeNarrator(req, res) {
@@ -937,7 +1050,7 @@ class LibraryController {
    * GET: /api/libraries/:id/matchall
    * Quick match all library items. Book libraries only.
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async matchAll(req, res) {
@@ -945,6 +1058,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
+    // TODO: Update to new library model
     const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     Scanner.matchLibraryItems(oldLibrary)
     res.sendStatus(200)
@@ -955,7 +1069,7 @@ class LibraryController {
    * Optional query:
    * ?force=1
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async scan(req, res) {
@@ -964,6 +1078,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
     res.sendStatus(200)
+    // TODO: Update to new library model
     const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const forceRescan = req.query.force === '1'
     await LibraryScanner.scan(oldLibrary, forceRescan)
@@ -976,13 +1091,14 @@ class LibraryController {
    * GET: /api/libraries/:id/recent-episodes
    * Used for latest page
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getRecentEpisodes(req, res) {
     if (req.library.mediaType !== 'podcast') {
       return res.sendStatus(404)
     }
+    // TODO: Update to new library model
     const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const payload = {
       episodes: [],
@@ -999,7 +1115,7 @@ class LibraryController {
    * GET: /api/libraries/:id/opml
    * Get OPML file for a podcast library
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async getOPMLFile(req, res) {
@@ -1023,9 +1139,10 @@ class LibraryController {
   }
 
   /**
+   * POST: /api/libraries/:id/remove-metadata
    * Remove all metadata.json or metadata.abs files in library item folders
    *
-   * @param {RequestWithUser} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async removeAllMetadataFiles(req, res) {
@@ -1084,7 +1201,6 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    // const library = await Database.libraryModel.getOldById(req.params.id)
     const library = await Database.libraryModel.findByIdWithFolders(req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')

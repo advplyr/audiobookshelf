@@ -301,6 +301,35 @@ class Library extends Model {
       }
     )
   }
+
+  get isPodcast() {
+    return this.mediaType === 'podcast'
+  }
+  get isBook() {
+    return this.mediaType === 'book'
+  }
+
+  /**
+   * TODO: Update to use new model
+   */
+  toOldJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      folders: (this.libraryFolders || []).map((f) => f.toOldJSON()),
+      displayOrder: this.displayOrder,
+      icon: this.icon,
+      mediaType: this.mediaType,
+      provider: this.provider,
+      settings: {
+        ...this.settings
+      },
+      lastScan: this.lastScan?.valueOf() || null,
+      lastScanVersion: this.lastScanVersion,
+      createdAt: this.createdAt.valueOf(),
+      lastUpdate: this.updatedAt.valueOf()
+    }
+  }
 }
 
 module.exports = Library
