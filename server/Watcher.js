@@ -122,9 +122,8 @@ class FolderWatcher extends EventEmitter {
   }
 
   /**
-   * TODO: Update to new library model
    *
-   * @param {import('./objects/Library')} library
+   * @param {import('./models/Library')} library
    */
   updateLibrary(library) {
     if (this.disabled) return

@@ -1268,7 +1268,7 @@ async function handleOldLibraries(ctx) {
         return false
       }
       const folderPaths = ol.folders?.map((f) => f.fullPath) || []
-      return folderPaths.join(',') === library.folderPaths.join(',')
+      return folderPaths.join(',') === library.folders.map((f) => f.fullPath).join(',')
     })
 
     if (matchingOldLibrary) {

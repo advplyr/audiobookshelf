@@ -966,13 +966,13 @@ module.exports = {
   /**
    * Search books, authors, series
    * @param {import('../../models/User')} user
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/Library')} library
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
-  async search(user, oldLibrary, query, limit, offset) {
+  async search(user, library, query, limit, offset) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
     const normalizedQuery = query
@@ -1006,7 +1006,7 @@ module.exports = {
         {
           model: Database.libraryItemModel,
           where: {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         },
         {
@@ -1047,7 +1047,7 @@ module.exports = {
     const narratorMatches = []
     const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1064,7 +1064,7 @@ module.exports = {
     const tagMatches = []
     const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1081,7 +1081,7 @@ module.exports = {
     const genreMatches = []
     const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1101,7 +1101,7 @@ module.exports = {
         [Sequelize.Op.and]: [
           Sequelize.literal(matchName),
           {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         ]
       },
@@ -1136,7 +1136,7 @@ module.exports = {
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(oldLibrary.id, normalizedQuery, limit, offset)
+    const authorMatches = await authorFilters.search(library.id, normalizedQuery, limit, offset)
 
     return {
       book: itemMatches,

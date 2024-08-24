@@ -81,9 +81,8 @@ class CronManager {
   }
 
   /**
-   * TODO: Update to new library model
    *
-   * @param {*} library
+   * @param {import('../models/Library')} library
    */
   removeCronForLibrary(library) {
     Logger.debug(`[CronManager] Removing library scan cron for ${library.name}`)
@@ -91,9 +90,8 @@ class CronManager {
   }
 
   /**
-   * TODO: Update to new library model
    *
-   * @param {*} library
+   * @param {import('../models/Library')} library
    */
   updateLibraryScanCron(library) {
     const expression = library.settings.autoScanCronExpression

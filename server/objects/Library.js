@@ -1,4 +1,3 @@
-const uuidv4 = require('uuid').v4
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
 const { filePathToPOSIX } = require('../utils/fileUtils')
@@ -28,14 +27,8 @@ class Library {
     }
   }
 
-  get folderPaths() {
-    return this.folders.map((f) => f.fullPath)
-  }
   get isPodcast() {
     return this.mediaType === 'podcast'
-  }
-  get isMusic() {
-    return this.mediaType === 'music'
   }
   get isBook() {
     return this.mediaType === 'book'
@@ -97,62 +90,6 @@ class Library {
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
-  }
-
-  update(payload) {
-    let hasUpdates = false
-
-    const keysToCheck = ['name', 'provider', 'mediaType', 'icon']
-    keysToCheck.forEach((key) => {
-      if (payload[key] && payload[key] !== this[key]) {
-        this[key] = payload[key]
-        hasUpdates = true
-      }
-    })
-
-    if (payload.settings && this.settings.update(payload.settings)) {
-      hasUpdates = true
-    }
-
-    if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {
-      this.displayOrder = Number(payload.displayOrder)
-      hasUpdates = true
-    }
-    if (payload.folders) {
-      const newFolders = payload.folders.filter((f) => !f.id)
-      const removedFolders = this.folders.filter((f) => !payload.folders.some((_f) => _f.id === f.id))
-
-      if (removedFolders.length) {
-        const removedFolderIds = removedFolders.map((f) => f.id)
-        this.folders = this.folders.filter((f) => !removedFolderIds.includes(f.id))
-      }
-
-      if (newFolders.length) {
-        newFolders.forEach((folderData) => {
-          folderData.libraryId = this.id
-          const newFolder = new Folder()
-          newFolder.setData(folderData)
-          this.folders.push(newFolder)
-        })
-      }
-
-      if (newFolders.length || removedFolders.length) {
-        hasUpdates = true
-      }
-    }
-    if (hasUpdates) {
-      this.lastUpdate = Date.now()
-    }
-    return hasUpdates
-  }
-
-  checkFullPathInLibrary(fullPath) {
-    fullPath = filePathToPOSIX(fullPath)
-    return this.folders.find((folder) => fullPath.startsWith(filePathToPOSIX(folder.fullPath)))
-  }
-
-  getFolderById(id) {
-    return this.folders.find((folder) => folder.id === id)
   }
 }
 module.exports = Library
