@@ -636,7 +636,7 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {import('../../objects/Library')} library
+   * @param {import('../../models/Library')} library
    * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
@@ -911,7 +911,7 @@ module.exports = {
   /**
    * Get book library items in a collection
    * @param {oldCollection} collection
-   * @returns {Promise<LibraryItem[]>}
+   * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
   async getLibraryItemsForCollection(collection) {
     if (!collection?.books?.length) {

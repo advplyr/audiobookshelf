@@ -412,12 +412,12 @@ module.exports = {
   /**
    * Most recent podcast episodes not finished
    * @param {import('../../models/User')} user
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/Library')} library
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<object[]>}
    */
-  async getRecentEpisodes(user, oldLibrary, limit, offset) {
+  async getRecentEpisodes(user, library, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
     const episodes = await Database.podcastEpisodeModel.findAll({
@@ -435,7 +435,7 @@ module.exports = {
           include: {
             model: Database.libraryItemModel,
             where: {
-              libraryId: oldLibrary.id
+              libraryId: library.id
             }
           }
         },

@@ -11,8 +11,6 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
 
-const ShareManager = require('../managers/ShareManager')
-
 /**
  * @typedef LibraryFileObject
  * @property {string} ino
@@ -559,14 +557,14 @@ class LibraryItem extends Model {
 
   /**
    * Get library items using filter and sort
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {object} options
    * @returns {{ libraryItems:oldLibraryItem[], count:number }}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
-    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, user, options)
+    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     return {
@@ -602,7 +600,7 @@ class LibraryItem extends Model {
 
   /**
    * Get home page data personalized shelves
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {string[]} include
    * @param {number} limit
