@@ -201,23 +201,6 @@ export default {
       // This method returns immediately without waiting for the DOM to update
       return this.coverWidth
     },
-    /*
-    cardHeight() {
-      // This method returns immediately without waiting for the DOM to update
-      return this.coverHeight + this.detailsHeight
-    },
-    detailsHeight() {
-      if (!this.isAlternativeBookshelfView) return 0
-      const lineHeight = 1.5
-      const remSize = 16
-      const baseHeight = this.sizeMultiplier * lineHeight * remSize
-      const titleHeight = 0.9 * baseHeight
-      const line2Height = 0.8 * baseHeight
-      const line3Height = this.displaySortLine ? 0.8 * baseHeight : 0
-      const marginHeight = 8 * 2 * this.sizeMultiplier // py-2
-      return titleHeight + line2Height + line3Height + marginHeight
-    },
-    */
     sizeMultiplier() {
       return this.store.getters['user/getSizeMultiplier']
     },
