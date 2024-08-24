@@ -23,7 +23,7 @@ class NotificationManager {
     }
 
     Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.metadata.title}`)
-    const library = await Database.libraryModel.getOldById(libraryItem.libraryId)
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
     const eventData = {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,

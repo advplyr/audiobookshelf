@@ -11,7 +11,7 @@ module.exports = {
   /**
    * Get series filtered and sorted
    *
-   * @param {import('../../objects/Library')} library
+   * @param {import('../../models/Library')} library
    * @param {import('../../models/User')} user
    * @param {string} filterBy
    * @param {string} sortBy

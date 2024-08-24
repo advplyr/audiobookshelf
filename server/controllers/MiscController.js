@@ -44,11 +44,11 @@ class MiscController {
     const files = Object.values(req.files)
     const { title, author, series, folder: folderId, library: libraryId } = req.body
 
-    const library = await Database.libraryModel.getOldById(libraryId)
+    const library = await Database.libraryModel.findByPk(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
-    const folder = library.folders.find((fold) => fold.id === folderId)
+    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
     if (!folder) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
@@ -63,7 +63,7 @@ class MiscController {
     // before sanitizing all the directory parts to remove illegal chars and finally prepending
     // the base folder path
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
-    const outputDirectory = Path.join(...[folder.fullPath, ...cleanedOutputDirectoryParts])
+    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
     await fs.ensureDir(outputDirectory)
 

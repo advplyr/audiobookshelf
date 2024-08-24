@@ -507,15 +507,13 @@ class LibraryController {
     payload.offset = payload.page * payload.limit
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const filterByGroup = payload.filterBy?.split('.').shift()
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
-      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, oldLibrary)
+      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
     } else {
-      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(oldLibrary, req.user, payload)
+      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
       payload.results = libraryItems
       payload.total = count
     }
@@ -589,9 +587,6 @@ class LibraryController {
    * @param {Response} res
    */
   async getAllSeriesForLibrary(req, res) {
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
-
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
@@ -610,7 +605,7 @@ class LibraryController {
     }
 
     const offset = payload.page * payload.limit
-    const { series, count } = await seriesFilters.getFilteredSeries(oldLibrary, req.user, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
+    const { series, count } = await seriesFilters.getFilteredSeries(req.library, req.user, payload.filterBy, payload.sortBy, payload.sortDesc, include, payload.limit, offset)
 
     payload.total = count
     payload.results = series
@@ -741,14 +736,12 @@ class LibraryController {
    * @param {Response} res
    */
   async getUserPersonalizedShelves(req, res) {
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
       .filter((v) => !!v)
-    const shelves = await Database.libraryItemModel.getPersonalizedShelves(oldLibrary, req.user, include, limitPerShelf)
+    const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
     res.json(shelves)
   }
 
@@ -1098,8 +1091,7 @@ class LibraryController {
     if (req.library.mediaType !== 'podcast') {
       return res.sendStatus(404)
     }
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
+
     const payload = {
       episodes: [],
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
@@ -1107,7 +1099,7 @@ class LibraryController {
     }
 
     const offset = payload.page * payload.limit
-    payload.episodes = await libraryItemsPodcastFilters.getRecentEpisodes(req.user, oldLibrary, payload.limit, offset)
+    payload.episodes = await libraryItemsPodcastFilters.getRecentEpisodes(req.user, req.library, payload.limit, offset)
     res.json(payload)
   }
 
