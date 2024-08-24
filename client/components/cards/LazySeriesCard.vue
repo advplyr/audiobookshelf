@@ -65,7 +65,7 @@ export default {
       return this.store.getters['libraries/getBookCoverAspectRatio']
     },
     cardWidth() {
-      return this.width || this.coverHeight * 2
+      return this.width || (this.coverHeight / this.bookCoverAspectRatio) * 2
     },
     coverHeight() {
       return this.height * this.sizeMultiplier
