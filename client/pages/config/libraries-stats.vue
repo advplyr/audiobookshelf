@@ -91,10 +91,6 @@ export default {
       redirect('/')
       return
     }
-
-    if (!store.state.libraries.currentLibraryId) {
-      return redirect('/config')
-    }
     return {}
   },
   data() {
