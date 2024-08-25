@@ -1,7 +1,6 @@
 <template>
   <app-settings-content :header-text="$strings.HeaderToGo" class="!mb-4">
     <div class="max-w-3xl w-full my-6 mx-auto">
-      <h2 class="text-2xl"> {{ $strings.HeaderCurrentProgress }} </h2>
       <div class="mb-8">
         <div v-if="libraryStats" class="flex lg:flex-row flex-wrap justify-between flex-col mt-4">
           <div class="w-full my-2">
