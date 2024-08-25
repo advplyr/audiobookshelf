@@ -305,7 +305,7 @@ export default {
         })
       }
     },
-    initEpub() {
+    async initEpub() {
       /** @type {EpubReader} */
       const reader = this
 
@@ -330,8 +330,26 @@ export default {
         flow: 'paginated'
       })
 
-      // load saved progress
-      reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
+      await reader.book.ready
+      // load saved progress or initial chapter
+      var initialLocation = this.savedEbookLocation || this.initialChapterHref || reader.book.locations.start
+      try {
+        const initialChapterTitle = this.getCurrentAudioChapter()
+        if (initialChapterTitle) {
+          const href = this.findChapterHref(initialChapterTitle)
+          if (href) {
+            try {
+              initialLocation = 'text/' + href
+            } catch (error) {
+              console.error('Failed to navigate to chapter:', error)
+            }
+          }
+        }
+      } catch (error) {
+        return
+      }
+
+      reader.rendition.display(initialLocation)
 
       reader.rendition.on('rendered', () => {
         this.applyTheme()
@@ -439,13 +457,38 @@ export default {
       this.rendition.getContents().forEach((c) => {
         c.addStylesheetRules(this.themeRules)
       })
+    },
+    getCurrentAudioChapter() {
+      try {
+        var currentTime = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId).currentTime
+        var audioBookChapters = this.$store.state.streamLibraryItem.media.chapters
+      } catch (error) {
+        return null
+      }
+      if (!audioBookChapters) return null
+      const chapter = audioBookChapters.find((chapter) => chapter.start <= currentTime && currentTime < chapter.end)
+      return chapter.title || audioBookChapters[audioBookChapters.length - 1].title
+    },
+    findChapterHref(title) {
+      const findInToc = (items) => {
+        for (let item of items) {
+          if (item.label.trim() === title) return item.href
+          if (item.subitems) {
+            const result = findInToc(item.subitems)
+            if (result) return result
+          }
+        }
+        return null
+      }
+      return findInToc(this.rendition.book.navigation.toc)
     }
   },
-  mounted() {
+  async mounted() {
     this.windowWidth = window.innerWidth
     this.windowHeight = window.innerHeight
     window.addEventListener('resize', this.resize)
-    this.initEpub()
+
+    await this.initEpub()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)

@@ -36,6 +36,7 @@
       ref="audioPlayer"
       :chapters="chapters"
       :current-chapter="currentChapter"
+      :libraryItem="streamLibraryItem"
       :paused="!isPlaying"
       :loading="playerLoading"
       :bookmarks="bookmarks"

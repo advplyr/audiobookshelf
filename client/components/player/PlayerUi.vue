@@ -7,7 +7,11 @@
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
-
+        <ui-tooltip v-if="hasEbookFile" direction="top" :text="$strings.ButtonOpenCurrentChapter">
+          <button :aria-label="$strings.ButtonOpenCurrentChapter" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="openEbook">
+            <span class="material-symbols text-2xl">auto_stories</span>
+          </button>
+        </ui-tooltip>
         <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings.LabelSleepTimer">
           <button :aria-label="$strings.LabelSleepTimer" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
@@ -77,6 +81,7 @@ export default {
       type: Array,
       default: () => []
     },
+    libraryItem: Object,
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
     sleepTimerType: String,
@@ -173,6 +178,9 @@ export default {
     useChapterTrack() {
       const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       return this.chapters.length ? _useChapterTrack : false
+    },
+    hasEbookFile() {
+      return this.libraryItem.media && this.libraryItem.media.ebookFile
     }
   },
   methods: {
@@ -352,6 +360,9 @@ export default {
       else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE) this.increasePlaybackRate()
       else if (action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE) this.decreasePlaybackRate()
       else if (action === this.$hotkeys.AudioPlayer.CLOSE) this.closePlayer()
+    },
+    openEbook() {
+      this.$store.commit('showEReader', { libraryItem: this.libraryItem, keepProgress: true })
     }
   },
   mounted() {
