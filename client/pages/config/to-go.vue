@@ -116,8 +116,13 @@
 </template>
 
 
-<script>
-export default {
+<script>export default {
+  asyncData({ redirect, store }) {
+    if(store.getters['libraries/getCurrentLibraryMediaType'] !== 'book') {
+      redirect(`/library/${store.state.libraries.currentLibraryId}`)
+    }
+    return {}
+  },
   data() {
     return {
       items: null,
@@ -132,6 +137,9 @@ export default {
       if (newVal) {
         this.init()
         this.resetValues()
+        if(this.getCurrentLibraryMediaType !== 'book') {
+          this.$router.push(`/config`)
+        }
       }
     }
   },
@@ -147,6 +155,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    getCurrentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
     mediaProgress() {
       return [...this.user.mediaProgress].sort((a, b) => b.lastUpdate - a.lastUpdate);
@@ -176,15 +187,6 @@ export default {
       }
     },
     unfinishedStartedItems() {
-      console.log(
-        this.currentMediaProgress
-          .map((mp) => {
-            const item = this.items.find(item => item.id === mp.libraryItemId);
-            return { ...item, mediaProgress: mp };
-          })
-          .filter((item) => !item.mediaProgress.isFinished || item.mediaProgress.progress < 1)
-          .sort((a, b) => b.mediaProgress.progress - a.mediaProgress.progress)[0]
-      )
       return this.currentMediaProgress
         .map((mp) => {
           const item = this.items.find(item => item.id === mp.libraryItemId);

@@ -123,14 +123,20 @@ export default {
           title: this.$strings.HeaderYourStats,
           path: '/config/stats'
         })
-        configRoutes.push({
-          id: 'config-to-go',
-          title: this.$strings.HeaderToGo,
-          path: '/config/to-go'
-        })
+        if(this.currentLibraryMediaType === 'book')
+        {
+          configRoutes.push({
+            id: 'config-to-go',
+            title: this.$strings.HeaderToGo,
+            path: '/config/to-go'
+          })
+        }
       }
 
       return configRoutes
+    },
+    currentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
     wrapperClass() {
       var classes = []
