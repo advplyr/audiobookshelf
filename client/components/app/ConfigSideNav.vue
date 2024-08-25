@@ -123,6 +123,11 @@ export default {
           title: this.$strings.HeaderYourStats,
           path: '/config/stats'
         })
+        configRoutes.push({
+          id: 'config-to-go',
+          title: this.$strings.HeaderToGo,
+          path: '/config/to-go'
+        })
       }
 
       return configRoutes
