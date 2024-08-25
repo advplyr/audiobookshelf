@@ -113,7 +113,7 @@ export default {
         {
           id: 'all-libraries-stats',
           title: this.$strings.HeaderAllLibrariesStats,
-          path: '/libraries/stats'
+          path: '/config/libraries-stats'
         }
       ]
 

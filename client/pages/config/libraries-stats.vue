@@ -1,7 +1,5 @@
 <template>
-  <div class="page relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar page="all-libraries-stats" is-home />
-    <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
+  <app-settings-content :header-text="$strings.HeaderAllLibrariesStats" class="!mb-4">
       <div class="w-full max-w-4xl mx-auto">
         <stats-preview-icons v-if="totalItems" :library-stats="combinedLibraryStats" />
 
@@ -24,7 +22,7 @@
               </div>
             </template>
           </div>
-          <div v-if="isBookLibrary" class="w-80 my-6 mx-auto">
+          <div v-if="top10Authors.length" class="w-80 my-6 mx-auto">
             <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop10Authors }}</h1>
             <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
             <template v-for="(author, index) in top10Authors">
@@ -83,8 +81,7 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </app-settings-content>
 </template>
 
 <script>
@@ -102,36 +99,39 @@ export default {
   },
   data() {
     return {
-      libraryStats: [],  // Now an array of stats objects
-    }
-  },
-  watch: {
-    currentLibraryId(newVal, oldVal) {
-      if (newVal) {
-        this.init()
-      }
+      libraryStats: []
     }
   },
   computed: {
     combinedLibraryStats() {
-      return this.libraryStats.reduce((combined, stats) => {
-        // Combine stats from all objects in the array
-        combined.totalItems += stats.totalItems || 0;
-        combined.genresWithCount = [...combined.genresWithCount, ...(stats.genresWithCount || [])];
-        combined.longestItems = [...combined.longestItems, ...(stats.longestItems || [])];
-        combined.largestItems = [...combined.largestItems, ...(stats.largestItems || [])];
-        combined.authorsWithCount = [...combined.authorsWithCount, ...(stats.authorsWithCount || [])];
-        return combined;
-      }, {
-        totalItems: 0,
-        genresWithCount: [],
-        longestItems: [],
-        largestItems: [],
-        authorsWithCount: [],
-      });
+      return this.libraryStats.reduce(
+        (combined, stats) => {
+          combined.totalItems += stats.totalItems || 0
+          combined.totalDuration += stats.totalDuration || 0
+          combined.totalAuthors += stats.totalAuthors || 0
+          combined.totalSize += stats.totalSize || 0
+          combined.numAudioTracks += stats.numAudioTracks || 0
+          combined.genresWithCount = [...combined.genresWithCount, ...(stats.genresWithCount || [])].sort((a, b) => b.count - a.count).slice(0, 10)
+          combined.longestItems = [...combined.longestItems, ...(stats.longestItems || [])].sort((a, b) => b.duration - a.duration).slice(0, 10)
+          combined.largestItems = [...combined.largestItems, ...(stats.largestItems || [])].sort((a, b) => b.size - a.size).slice(0, 10)
+          combined.authorsWithCount = [...combined.authorsWithCount, ...(stats.authorsWithCount || [])].sort((a, b) => b.count - a.count).slice(0, 10)
+          return combined
+        },
+        {
+          totalItems: 0,
+          totalDuration: 0,
+          totalAuthors: 0,
+          totalSize: 0,
+          numAudioTracks: 0,
+          genresWithCount: [],
+          longestItems: [],
+          largestItems: [],
+          authorsWithCount: []
+        }
+      )
     },
     totalItems() {
-      return this.combinedLibraryStats.totalItems || 0;
+      return this.combinedLibraryStats.totalItems || 0
     },
     top5Genres() {
       return this.combinedLibraryStats.genresWithCount?.slice(0, 5) || []
@@ -156,23 +156,19 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    currentLibraryName() {
-      return this.$store.getters['libraries/getCurrentLibraryName']
+    mostUsedAuthorCount() {
+      if (!this.combinedLibraryStats.authorsWithCount.length) return 0
+      return this.combinedLibraryStats.authorsWithCount[0].count
     },
-    currentLibraryMediaType() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType']
-    },
-    isBookLibrary() {
-      return this.currentLibraryMediaType === 'book'
-    }
   },
   methods: {
     async init() {
-      this.libraryStats = await this.$axios.$get(`/api/libraries/stats`).catch((err) => {
+      this.libraryStatsInformation = await this.$axios.$get(`/api/libraries/stats`).catch((err) => {
         console.error('Failed to get library stats', err)
-        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
-        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
       })
+      this.libraryStats = this.libraryStatsInformation.map(entry => {
+        return { ...entry.stats };
+      });
     }
   },
   mounted() {
