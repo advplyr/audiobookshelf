@@ -470,9 +470,12 @@ export default {
       return chapter.title || audioBookChapters[audioBookChapters.length - 1].title
     },
     findChapterHref(title) {
+      const normalizeString = (str) => {
+        return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+      }
       const findInToc = (items) => {
         for (let item of items) {
-          if (item.label.trim() === title) return item.href
+          if (normalizeString(item.label) === normalizeString(title)) return item.href
           if (item.subitems) {
             const result = findInToc(item.subitems)
             if (result) return result
