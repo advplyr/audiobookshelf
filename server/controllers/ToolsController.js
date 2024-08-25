@@ -29,12 +29,17 @@ class ToolsController {
 
     if (req.libraryItem.mediaType !== 'book') {
       Logger.error(`[MiscController] encodeM4b: Invalid library item ${req.params.id}: not a book`)
-      return res.status(500).send('Invalid library item: not a book')
+      return res.status(400).send('Invalid library item: not a book')
     }
 
     if (req.libraryItem.media.tracks.length <= 0) {
       Logger.error(`[MiscController] encodeM4b: Invalid audiobook ${req.params.id}: no audio tracks`)
-      return res.status(500).send('Invalid audiobook: no audio tracks')
+      return res.status(400).send('Invalid audiobook: no audio tracks')
+    }
+
+    if (this.abMergeManager.getPendingTaskByLibraryItemId(req.libraryItem.id)) {
+      Logger.error(`[MiscController] encodeM4b: Audiobook ${req.params.id} is already in queue or processing`)
+      return res.status(400).send('Audiobook is already in queue or processing')
     }
 
     const options = req.query || {}
