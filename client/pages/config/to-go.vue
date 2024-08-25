@@ -1,9 +1,9 @@
 <template>
   <app-settings-content :header-text="$strings.HeaderToGo" class="!mb-4">
     <div class="max-w-3xl w-full my-6 mx-auto">
-      <h2 class="text-2xl mb-0">Current Progress</h2>
-      <div class="my-8">
-        <div v-if="libraryStats" class="flex lg:flex-row flex-wrap justify-between flex-col mt-8">
+      <h2 class="text-2xl"> {{ $strings.HeaderCurrentProgress }} </h2>
+      <div class="mb-8">
+        <div v-if="libraryStats" class="flex lg:flex-row flex-wrap justify-between flex-col mt-4">
           <div class="w-full my-2">
             <div class="flex justify-between">
               <p class="text-2xl font-bold">{{ $elapsedPretty(listenedTime) }}</p>
@@ -36,17 +36,19 @@
 
       <div class="flex flex-col lg:flex-row justify-between gap-12">
         <div v-if="unfinishedStartedItems.length" class="w-full lg:w-1/2">
-          <h2 class="text-2xl mb-2">Items to continue</h2>
+          <h2 class="text-2xl mb-2"> {{$strings.HeaderItemToContinue}} </h2>
           <table class="w-full">
             <tbody>
             <tr v-for="(item, index) in unfinishedStartedItems" :key="item.id" v-if="index < itemsToShow" :class="!item.isFinished ? '' : 'isFinished'">
               <td class="pr-4">
-                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.libraryItemId, item.mediaUpdatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
+                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.id, item.updatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
                 <div v-else class="bg-primary flex items-center justify-center text-center text-xs text-gray-400 p-1" :style="{ width: '50px', height: 50 * bookCoverAspectRatio + 'px' }">No Cover</div>
               </td>
               <td class="w-full">
-                <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
-                <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                <nuxt-link :to="`/item/${item.id}`" class="hover:underline">
+                  <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
+                  <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                </nuxt-link>
               </td>
               <td class="text-center pl-1 text-white/70">
                 <p class="text-xs">{{ Math.floor(item.mediaProgress.progress * 100) }}%</p>
@@ -59,18 +61,20 @@
           </table>
         </div>
 
-        <div class="w-full lg:w-1/2">
-          <h2 class="text-2xl mb-2">Unfinished Items</h2>
+        <div class="w-full" v-bind:class = "(unfinishedStartedItems.length)?'lg:w-1/2':''">
+          <h2 class="text-2xl mb-2"> {{$strings.HeaderUnfinishedItems}} </h2>
           <table class="w-full">
             <tbody>
             <tr v-for="(item, index) in unfinishedItems" :key="item.id" v-if="index < topItemsToShow && index < unfinishedItems.length - bottomItemsToShow" :class="!item.isFinished ? '' : 'isFinished'">
               <td class="pr-4">
-                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.libraryItemId, item.mediaUpdatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
+                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.id, item.updatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
                 <div v-else class="bg-primary flex items-center justify-center text-center text-xs text-gray-400 p-1" :style="{ width: '50px', height: 50 * bookCoverAspectRatio + 'px' }">No Cover</div>
               </td>
               <td class="w-full">
-                <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
-                <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                <nuxt-link :to="`/item/${item.id}`" class="hover:underline">
+                  <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
+                  <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                </nuxt-link>
               </td>
               <td class="text-center text-white/70 whitespace-nowrap w-full">
                 <p class="inline-block w-full text-xs pl-1">
@@ -88,12 +92,14 @@
             </tr>
             <tr v-for="(item, index) in unfinishedItems" :key="item.id" v-if="index >= unfinishedItems.length - bottomItemsToShow && index >= topItemsToShow" :class="!item.isFinished ? '' : 'isFinished'">
               <td class="pr-4">
-                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.libraryItemId, item.mediaUpdatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
+                <covers-preview-cover v-if="item.media.coverPath" :width="50" :src="$store.getters['globals/getLibraryItemCoverSrcById'](item.id, item.updatedAt)" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
                 <div v-else class="bg-primary flex items-center justify-center text-center text-xs text-gray-400 p-1" :style="{ width: '50px', height: 50 * bookCoverAspectRatio + 'px' }">No Cover</div>
               </td>
               <td class="w-full">
-                <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
-                <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                <nuxt-link :to="`/item/${item.id}`" class="hover:underline">
+                  <p class="text-sm">{{ item.media.metadata.title || 'Unknown' }}</p>
+                  <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-xs font-sans">{{ item.media.metadata.subtitle }}</p>
+                </nuxt-link>
               </td>
               <td class="text-center text-white/70 whitespace-nowrap w-full">
                 <p class="inline-block w-full text-xs pl-1">
@@ -170,6 +176,15 @@ export default {
       }
     },
     unfinishedStartedItems() {
+      console.log(
+        this.currentMediaProgress
+          .map((mp) => {
+            const item = this.items.find(item => item.id === mp.libraryItemId);
+            return { ...item, mediaProgress: mp };
+          })
+          .filter((item) => !item.mediaProgress.isFinished || item.mediaProgress.progress < 1)
+          .sort((a, b) => b.mediaProgress.progress - a.mediaProgress.progress)[0]
+      )
       return this.currentMediaProgress
         .map((mp) => {
           const item = this.items.find(item => item.id === mp.libraryItemId);
