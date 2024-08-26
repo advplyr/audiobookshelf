@@ -711,7 +711,7 @@
   "MessageRemoveEpisodes": "ukloni {0} epizoda/-e",
   "MessageRemoveFromPlayerQueue": "Remove from player queue",
   "MessageRemoveUserWarning": "Jeste li sigurni da želite trajno obrisati korisnika \"{0}\"?",
-  "MessageReportBugsAndContribute": "Prijavte bugove, zatržite featurese i doprinosite na",
+  "MessageReportBugsAndContribute": "Prijavite pogreške, zatražite osobine i doprinosite na adresi",
   "MessageResetChaptersConfirm": "Are you sure you want to reset chapters and undo the changes you made?",
   "MessageRestoreBackupConfirm": "Jeste li sigurni da želite povratiti backup kreiran",
   "MessageRestoreBackupWarning": "Povračanje backupa će zamijeniti postoječu bazu podataka u /config i slike covera u /metadata/items i /metadata/authors.<br /><br />Backups ne modificiraju nikakve datoteke u folderu od biblioteke. Ako imate uključene server postavke da spremate cover i metapodtake u folderu od biblioteke, onda oni neće biti backupani ili overwritten.<br /><br />Svi klijenti koji koriste tvoj server će biti automatski osvježeni.",
