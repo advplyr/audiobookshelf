@@ -38,8 +38,8 @@ class ToolsController {
     }
 
     if (this.abMergeManager.getPendingTaskByLibraryItemId(req.libraryItem.id)) {
-      Logger.error(`[MiscController] encodeM4b: Audiobook ${req.params.id} is already in queue or processing`)
-      return res.status(400).send('Audiobook is already in queue or processing')
+      Logger.error(`[MiscController] encodeM4b: Audiobook ${req.params.id} is already processing`)
+      return res.status(400).send('Audiobook is already processing')
     }
 
     const options = req.query || {}
@@ -78,12 +78,12 @@ class ToolsController {
   async embedAudioFileMetadata(req, res) {
     if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
       Logger.error(`[ToolsController] Invalid library item`)
-      return res.sendStatus(500)
+      return res.sendStatus(400)
     }
 
     if (this.audioMetadataManager.getIsLibraryItemQueuedOrProcessing(req.libraryItem.id)) {
       Logger.error(`[ToolsController] Library item (${req.libraryItem.id}) is already in queue or processing`)
-      return res.status(500).send('Library item is already in queue or processing')
+      return res.status(400).send('Library item is already in queue or processing')
     }
 
     const options = {
@@ -125,12 +125,12 @@ class ToolsController {
 
       if (libraryItem.isMissing || !libraryItem.hasAudioFiles || !libraryItem.isBook) {
         Logger.error(`[ToolsController] Batch embed invalid library item (${libraryItemId})`)
-        return res.sendStatus(500)
+        return res.sendStatus(400)
       }
 
       if (this.audioMetadataManager.getIsLibraryItemQueuedOrProcessing(libraryItemId)) {
         Logger.error(`[ToolsController] Batch embed library item (${libraryItemId}) is already in queue or processing`)
-        return res.status(500).send('Library item is already in queue or processing')
+        return res.status(400).send('Library item is already in queue or processing')
       }
 
       libraryItems.push(libraryItem)
