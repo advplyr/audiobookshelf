@@ -1,6 +1,7 @@
 export const state = () => ({
   user: null,
   settings: {
+    authorPageLayout: 'cards',
     orderBy: 'media.metadata.title',
     orderDesc: false,
     filterBy: 'all',

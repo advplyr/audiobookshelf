@@ -98,6 +98,7 @@
 
         <!-- author sort select -->
         <controls-sort-select v-if="authors?.length" v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
+        <controls-layout-select v-if="authors?.length" v-model="settings.authorPageLayout" :items="layoutSelectItems" class="w-24 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorLayout" />
       </template>
       <!-- home page -->
       <template v-else-if="isHome">
@@ -192,6 +193,18 @@ export default {
         {
           text: this.$strings.LabelRandomly,
           value: 'random'
+        }
+      ]
+    },
+    layoutSelectItems() {
+      return [
+        {
+          text: 'Cards',
+          value: 'cards'
+        },
+        {
+          text: 'Table',
+          value: 'table'
         }
       ]
     },
@@ -591,6 +604,9 @@ export default {
       this.saveSettings()
     },
     updateAuthorSort() {
+      this.saveSettings()
+    },
+    updateAuthorLayout() {
       this.saveSettings()
     },
     saveSettings() {

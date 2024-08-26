@@ -2,12 +2,33 @@
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="authors" is-home :authors="authors" />
     <div id="bookshelf" class="w-full h-full p-8e overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
-      <!-- Cover size widget -->
-      <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
-      <div class="flex flex-wrap justify-center">
-        <template v-for="author in authorsSorted">
-          <cards-author-card :key="author.id" :author="author" class="p-3e" @edit="editAuthor" />
-        </template>
+      <div v-if="authorLayoutType === 'cards'">
+        <!-- Cover size widget -->
+        <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
+        <div class="flex flex-wrap justify-center">
+          <template v-for="author in authorsSorted">
+            <cards-author-card :key="author.id" :author="author" class="p-3e" @edit="editAuthor" />
+          </template>
+        </div>
+      </div>
+
+      <div v-if="authorLayoutType === 'table'">
+        <table class="tracksTable max-w-2xl mx-auto">
+          <tr>
+            <th class="text-left">{{ $strings.LabelName }}</th>
+            <th class="text-center w-24">{{ $strings.LabelBooks }}</th>
+          </tr>
+          <tr v-for="author in authorsSorted" :key="author.id">
+            <td>
+              <nuxt-link :to="`/author/${author.id}`">
+                <p class="text-sm md:text-base text-gray-100">{{ author.name }}</p>
+              </nuxt-link>
+            </td>
+            <td class="text-center w-24 h-12">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.numBooks }}</nuxt-link>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
   </div>
@@ -52,6 +73,9 @@ export default {
     },
     authorSortBy() {
       return this.$store.getters['user/getUserSetting']('authorSortBy') || 'name'
+    },
+    authorLayoutType() {
+      return this.$store.getters['user/getUserSetting']('authorPageLayout') || 'cards'
     },
     authorSortDesc() {
       return !!this.$store.getters['user/getUserSetting']('authorSortDesc')
