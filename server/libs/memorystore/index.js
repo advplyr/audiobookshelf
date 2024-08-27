@@ -21,7 +21,7 @@ const { Store } = require('express-session')
  */
 module.exports = class MemoryStore extends Store {
   constructor(checkPeriod, ttl, max) {
-    if (typeof checkPeriod !== 'number' || typeof checkPeriod !== 'number' || typeof checkPeriod !== 'number') {
+    if (typeof checkPeriod !== 'number' || typeof ttl !== 'number' || typeof max !== 'number') {
       throw Error('All arguments must be provided')
     }
     super()
