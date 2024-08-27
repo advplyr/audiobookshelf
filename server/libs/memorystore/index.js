@@ -8,88 +8,32 @@
 // SOURCE: https://github.com/roccomuso/memorystore
 //
 
-var debug = require('debug')('memorystore')
+const debug = require('debug')('memorystore')
 const { LRUCache } = require('lru-cache')
-var util = require('util')
+const { Store } = require('express-session')
 
 /**
- * One day in milliseconds.
- */
-
-var oneDay = 86400000
-
-function getTTL(options, sess, sid) {
-  if (typeof options.ttl === 'number') return options.ttl
-  if (typeof options.ttl === 'function') return options.ttl(options, sess, sid)
-  if (options.ttl) throw new TypeError('`options.ttl` must be a number or function.')
-
-  var maxAge = sess?.cookie?.maxAge || null
-  return typeof maxAge === 'number' ? Math.floor(maxAge) : oneDay
-}
-
-function prune(store) {
-  debug('Pruning expired entries')
-  store.forEach(function (value, key) {
-    store.get(key)
-  })
-}
-
-var defer =
-  typeof setImmediate === 'function'
-    ? setImmediate
-    : function (fn) {
-        process.nextTick(fn.bind.apply(fn, arguments))
-      }
-
-/**
- * Return the `MemoryStore` extending `express`'s session Store.
+ * An alternative memory store implementation for express session that prunes stale entries.
  *
- * @param {object} express session
- * @return {Function}
- * @api public
+ * @param {number} checkPeriod stale entry pruning frequency in ms
+ * @param {number} ttl entry time to live in ms
+ * @param {number} max LRU cache max entries
  */
-
-module.exports = function (session) {
-  /**
-   * Express's session Store.
-   */
-
-  var Store = session.Store
-
-  /**
-   * Initialize MemoryStore with the given `options`.
-   *
-   * @param {Object} options
-   * @api public
-   */
-
-  function MemoryStore(options) {
-    if (!(this instanceof MemoryStore)) {
-      throw new TypeError('Cannot call MemoryStore constructor as a function')
+module.exports = class MemoryStore extends Store {
+  constructor(checkPeriod, ttl, max) {
+    if (typeof checkPeriod !== 'number' || typeof ttl !== 'number' || typeof max !== 'number') {
+      throw Error('All arguments must be provided')
     }
-
-    options = options || {}
-    Store.call(this, options)
-
-    this.options = {}
-    this.options.checkPeriod = options.checkPeriod
-    this.options.max = options.max
-    this.options.ttl = options.ttl
-    this.options.dispose = options.dispose
-    this.options.stale = options.stale
-
-    this.serializer = options.serializer || JSON
-    this.store = new LRUCache(this.options)
-    debug('Init MemoryStore')
-
-    this.startInterval()
+    super()
+    this.store = new LRUCache({ ttl, max })
+    let prune = () => {
+      let sizeBefore = this.store.size
+      this.store.purgeStale()
+      debug('PRUNE size changed by %i entries', sizeBefore - this.store.size)
+    }
+    setInterval(prune, Math.floor(checkPeriod)).unref()
+    debug('INIT MemoryStore constructed with checkPeriod "%i", ttl "%i", max "%i"', checkPeriod, ttl, max)
   }
-
-  /**
-   * Inherit from `Store`.
-   */
-
-  util.inherits(MemoryStore, Store)
 
   /**
    * Attempt to fetch session by the given `sid`.
@@ -98,25 +42,19 @@ module.exports = function (session) {
    * @param {Function} fn
    * @api public
    */
-
-  MemoryStore.prototype.get = function (sid, fn) {
-    var store = this.store
-
-    debug('GET "%s"', sid)
-
-    var data = store.get(sid)
-    if (!data) return fn()
-
-    debug('GOT %s', data)
-    var err = null
-    var result
-    try {
-      result = this.serializer.parse(data)
-    } catch (er) {
-      err = er
+  get(sid, fn) {
+    let err = null
+    let res = null
+    const data = this.store.get(sid)
+    debug('GET %s: %s', sid, data)
+    if (data) {
+      try {
+        res = JSON.parse(data)
+      } catch (e) {
+        err = e
+      }
     }
-
-    fn && defer(fn, err, result)
+    fn && setImmediate(fn, err, res)
   }
 
   /**
@@ -127,48 +65,39 @@ module.exports = function (session) {
    * @param {Function} fn
    * @api public
    */
-
-  MemoryStore.prototype.set = function (sid, sess, fn) {
-    var store = this.store
-
-    var ttl = getTTL(this.options, sess, sid)
+  set(sid, sess, fn) {
+    let err = null
     try {
-      var jsess = this.serializer.stringify(sess)
-    } catch (err) {
-      fn && defer(fn, err)
+      let jsess = JSON.stringify(sess)
+      debug('SET %s: %s', sid, jsess)
+      this.store.set(sid, jsess)
+    } catch (e) {
+      err = e
     }
-
-    store.set(sid, jsess, {
-      ttl
-    })
-    debug('SET "%s" %s ttl:%s', sid, jsess, ttl)
-    fn && defer(fn, null)
+    fn && setImmediate(fn, err)
   }
 
   /**
    * Destroy the session associated with the given `sid`.
    *
    * @param {String} sid
+   * @param {Function} fn
    * @api public
    */
-
-  MemoryStore.prototype.destroy = function (sid, fn) {
-    var store = this.store
-
-    if (Array.isArray(sid)) {
-      sid.forEach(function (s) {
-        debug('DEL "%s"', s)
-        store.delete(s)
-      })
-    } else {
-      debug('DEL "%s"', sid)
-      store.delete(sid)
+  destroy(sid, fn) {
+    debug('DESTROY %s', sid)
+    let err = null
+    try {
+      this.store.delete(sid)
+    } catch (e) {
+      err = e
     }
-    fn && defer(fn, null)
+    fn && setImmediate(fn, err)
   }
 
   /**
-   * Refresh the time-to-live for the session with the given `sid`.
+   * Refresh the time-to-live for the session with the given `sid` without affecting
+   * LRU recency.
    *
    * @param {String} sid
    * @param {Session} sess
@@ -176,128 +105,14 @@ module.exports = function (session) {
    * @api public
    */
 
-  MemoryStore.prototype.touch = function (sid, sess, fn) {
-    var store = this.store
-
-    var ttl = getTTL(this.options, sess, sid)
-
-    debug('EXPIRE "%s" ttl:%s', sid, ttl)
-    var err = null
-    if (store.get(sid) !== undefined) {
-      try {
-        var s = this.serializer.parse(store.get(sid))
-        s.cookie = sess.cookie
-        store.set(sid, this.serializer.stringify(s), {
-          ttl
-        })
-      } catch (e) {
-        err = e
-      }
-    }
-    fn && defer(fn, err)
-  }
-
-  /**
-   * Fetch all sessions' ids
-   *
-   * @param {Function} fn
-   * @api public
-   */
-
-  MemoryStore.prototype.ids = function (fn) {
-    var store = this.store
-
-    var Ids = store.keys()
-    debug('Getting IDs: %s', Ids)
-    fn && defer(fn, null, Ids)
-  }
-
-  /**
-   * Fetch all sessions
-   *
-   * @param {Function} fn
-   * @api public
-   */
-
-  MemoryStore.prototype.all = function (fn) {
-    var store = this.store
-    var self = this
-
-    debug('Fetching all sessions')
-    var err = null
-    var result = {}
+  touch(sid, sess, fn) {
+    debug('TOUCH %s', sid)
+    let err = null
     try {
-      store.forEach(function (val, key) {
-        result[key] = self.serializer.parse(val)
-      })
+      this.store.has(sid, { updateAgeOnHas: true })
     } catch (e) {
       err = e
     }
-    fn && defer(fn, err, result)
+    fn && setImmediate(fn, err)
   }
-
-  /**
-   * Delete all sessions from the store
-   *
-   * @param {Function} fn
-   * @api public
-   */
-
-  MemoryStore.prototype.clear = function (fn) {
-    var store = this.store
-    debug('delete all sessions from the store')
-    store.clear()
-    fn && defer(fn, null)
-  }
-
-  /**
-   * Get the count of all sessions in the store
-   *
-   * @param {Function} fn
-   * @api public
-   */
-
-  MemoryStore.prototype.length = function (fn) {
-    var store = this.store
-    debug('getting length', store.size)
-    fn && defer(fn, null, store.size)
-  }
-
-  /**
-   * Start the check interval
-   * @api public
-   */
-
-  MemoryStore.prototype.startInterval = function () {
-    var self = this
-    var ms = this.options.checkPeriod
-    if (ms && typeof ms === 'number') {
-      clearInterval(this._checkInterval)
-      debug('starting periodic check for expired sessions')
-      this._checkInterval = setInterval(function () {
-        prune(self.store) // iterates over the entire cache proactively pruning old entries
-      }, Math.floor(ms)).unref()
-    }
-  }
-
-  /**
-   * Stop the check interval
-   * @api public
-   */
-
-  MemoryStore.prototype.stopInterval = function () {
-    debug('stopping periodic check for expired sessions')
-    clearInterval(this._checkInterval)
-  }
-
-  /**
-   * Remove only expired entries from the store
-   * @api public
-   */
-
-  MemoryStore.prototype.prune = function () {
-    prune(this.store)
-  }
-
-  return MemoryStore
 }
