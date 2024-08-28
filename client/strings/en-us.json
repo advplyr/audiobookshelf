@@ -820,6 +820,8 @@
   "ToastBackupRestoreFailed": "Failed to restore backup",
   "ToastBackupUploadFailed": "Failed to upload backup",
   "ToastBackupUploadSuccess": "Backup uploaded",
+  "ToastBatchDeleteFailed": "Batch delete failed",
+  "ToastBatchDeleteSuccess": "Batch delete success",
   "ToastBatchUpdateFailed": "Batch update failed",
   "ToastBatchUpdateSuccess": "Batch update success",
   "ToastBookmarkCreateFailed": "Failed to create bookmark",

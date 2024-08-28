@@ -332,13 +332,13 @@ export default {
                 libraryItemIds: this.selectedMediaItems.map((i) => i.id)
               })
               .then(() => {
-                this.$toast.success('Batch delete success')
+                this.$toast.success(this.$strings.ToastBatchDeleteSuccess)
                 this.$store.commit('globals/resetSelectedMediaItems', [])
                 this.$eventBus.$emit('bookshelf_clear_selection')
               })
               .catch((error) => {
                 console.error('Batch delete failed', error)
-                this.$toast.error('Batch delete failed')
+                this.$toast.error(this.$strings.ToastBatchDeleteFailed)
               })
               .finally(() => {
                 this.$store.commit('setProcessingBatch', false)
