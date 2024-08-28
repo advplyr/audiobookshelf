@@ -19,7 +19,7 @@ class FolderWatcher extends EventEmitter {
   constructor() {
     super()
 
-    /** @type {{id:string, name:string, folders:import('./objects/Folder')[], paths:string[], watcher:Watcher[]}[]} */
+    /** @type {{id:string, name:string, libraryFolders:import('./models/Folder')[], paths:string[], watcher:Watcher[]}[]} */
     this.libraryWatchers = []
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []

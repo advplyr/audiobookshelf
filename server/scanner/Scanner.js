@@ -15,7 +15,7 @@ const CoverManager = require('../managers/CoverManager')
 const TaskManager = require('../managers/TaskManager')
 
 class Scanner {
-  constructor() { }
+  constructor() {}
 
   async quickMatchLibraryItem(libraryItem, options = {}) {
     var provider = options.provider || 'google'
@@ -23,9 +23,9 @@ class Scanner {
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
     var overrideDefaults = options.overrideDefaults || false
 
-    // Set to override existing metadata if scannerPreferMatchedMetadata setting is true and 
+    // Set to override existing metadata if scannerPreferMatchedMetadata setting is true and
     // the overrideDefaults option is not set or set to false.
-    if ((overrideDefaults == false) && (Database.serverSettings.scannerPreferMatchedMetadata)) {
+    if (overrideDefaults == false && Database.serverSettings.scannerPreferMatchedMetadata) {
       options.overrideCover = true
       options.overrideDetails = true
     }
@@ -57,7 +57,8 @@ class Scanner {
       }
 
       updatePayload = await this.quickMatchBookBuildUpdatePayload(libraryItem, matchData, options)
-    } else if (libraryItem.isPodcast) { // Podcast quick match
+    } else if (libraryItem.isPodcast) {
+      // Podcast quick match
       var results = await PodcastFinder.search(searchTitle)
       if (!results.length) {
         return {
@@ -88,7 +89,8 @@ class Scanner {
     }
 
     if (hasUpdated) {
-      if (libraryItem.isPodcast && libraryItem.media.metadata.feedUrl) { // Quick match all unmatched podcast episodes
+      if (libraryItem.isPodcast && libraryItem.media.metadata.feedUrl) {
+        // Quick match all unmatched podcast episodes
         await this.quickMatchPodcastEpisodes(libraryItem, options)
       }
 
@@ -122,12 +124,16 @@ class Scanner {
     for (const key in matchDataTransformed) {
       if (matchDataTransformed[key]) {
         if (key === 'genres') {
-          if ((!libraryItem.media.metadata.genres.length || options.overrideDetails)) {
+          if (!libraryItem.media.metadata.genres.length || options.overrideDetails) {
             var genresArray = []
             if (Array.isArray(matchDataTransformed[key])) genresArray = [...matchDataTransformed[key]]
-            else { // Genres should always be passed in as an array but just incase handle a string
+            else {
+              // Genres should always be passed in as an array but just incase handle a string
               Logger.warn(`[Scanner] quickMatch genres is not an array ${matchDataTransformed[key]}`)
-              genresArray = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+              genresArray = matchDataTransformed[key]
+                .split(',')
+                .map((v) => v.trim())
+                .filter((v) => !!v)
             }
             updatePayload.metadata[key] = genresArray
           }
@@ -153,27 +159,38 @@ class Scanner {
     for (const key in matchData) {
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
-          if ((!libraryItem.media.metadata.narratorName || options.overrideDetails)) {
-            updatePayload.metadata.narrators = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+          if (!libraryItem.media.metadata.narratorName || options.overrideDetails) {
+            updatePayload.metadata.narrators = matchData[key]
+              .split(',')
+              .map((v) => v.trim())
+              .filter((v) => !!v)
           }
         } else if (key === 'genres') {
-          if ((!libraryItem.media.metadata.genres.length || options.overrideDetails)) {
+          if (!libraryItem.media.metadata.genres.length || options.overrideDetails) {
             var genresArray = []
             if (Array.isArray(matchData[key])) genresArray = [...matchData[key]]
-            else { // Genres should always be passed in as an array but just incase handle a string
+            else {
+              // Genres should always be passed in as an array but just incase handle a string
               Logger.warn(`[Scanner] quickMatch genres is not an array ${matchData[key]}`)
-              genresArray = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+              genresArray = matchData[key]
+                .split(',')
+                .map((v) => v.trim())
+                .filter((v) => !!v)
             }
             updatePayload.metadata[key] = genresArray
           }
         } else if (key === 'tags') {
-          if ((!libraryItem.media.tags.length || options.overrideDetails)) {
+          if (!libraryItem.media.tags.length || options.overrideDetails) {
             var tagsArray = []
             if (Array.isArray(matchData[key])) tagsArray = [...matchData[key]]
-            else tagsArray = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+            else
+              tagsArray = matchData[key]
+                .split(',')
+                .map((v) => v.trim())
+                .filter((v) => !!v)
             updatePayload[key] = tagsArray
           }
-        } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
+        } else if (!libraryItem.media.metadata[key] || options.overrideDetails) {
           updatePayload.metadata[key] = matchData[key]
         }
       }
@@ -182,7 +199,10 @@ class Scanner {
     // Add or set author if not set
     if (matchData.author && (!libraryItem.media.metadata.authorName || options.overrideDetails)) {
       if (!Array.isArray(matchData.author)) {
-        matchData.author = matchData.author.split(',').map(au => au.trim()).filter(au => !!au)
+        matchData.author = matchData.author
+          .split(',')
+          .map((au) => au.trim())
+          .filter((au) => !!au)
       }
       const authorPayload = []
       for (const authorName of matchData.author) {
@@ -227,7 +247,7 @@ class Scanner {
   }
 
   async quickMatchPodcastEpisodes(libraryItem, options = {}) {
-    const episodesToQuickMatch = libraryItem.media.episodes.filter(ep => !ep.enclosureUrl) // Only quick match episodes without enclosure
+    const episodesToQuickMatch = libraryItem.media.episodes.filter((ep) => !ep.enclosureUrl) // Only quick match episodes without enclosure
     if (!episodesToQuickMatch.length) return false
 
     const feed = await getPodcastFeed(libraryItem.media.metadata.feedUrl)
@@ -283,10 +303,10 @@ class Scanner {
 
   /**
    * Quick match library items
-   * 
-   * @param {import('../objects/Library')} library 
-   * @param {import('../objects/LibraryItem')[]} libraryItems 
-   * @param {LibraryScan} libraryScan 
+   *
+   * @param {import('../models/Library')} library
+   * @param {import('../objects/LibraryItem')[]} libraryItems
+   * @param {LibraryScan} libraryScan
    * @returns {Promise<boolean>} false if scan canceled
    */
   async matchLibraryItemsChunk(library, libraryItems, libraryScan) {
@@ -294,14 +314,12 @@ class Scanner {
       const libraryItem = libraryItems[i]
 
       if (libraryItem.media.metadata.asin && library.settings.skipMatchingMediaWithAsin) {
-        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
-          }" because it already has an ASIN (${i + 1} of ${libraryItems.length})`)
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title}" because it already has an ASIN (${i + 1} of ${libraryItems.length})`)
         continue
       }
 
       if (libraryItem.media.metadata.isbn && library.settings.skipMatchingMediaWithIsbn) {
-        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
-          }" because it already has an ISBN (${i + 1} of ${libraryItems.length})`)
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title}" because it already has an ISBN (${i + 1} of ${libraryItems.length})`)
         continue
       }
 
@@ -324,8 +342,8 @@ class Scanner {
 
   /**
    * Quick match all library items for library
-   * 
-   * @param {import('../objects/Library')} library 
+   *
+   * @param {import('../models/Library')} library
    */
   async matchLibraryItems(library) {
     if (library.mediaType === 'podcast') {
@@ -360,7 +378,7 @@ class Scanner {
 
       offset += limit
       hasMoreChunks = libraryItems.length === limit
-      let oldLibraryItems = libraryItems.map(li => Database.libraryItemModel.getOldLibraryItem(li))
+      let oldLibraryItems = libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
 
       const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)
       if (!shouldContinue) {
@@ -379,7 +397,7 @@ class Scanner {
     }
 
     delete LibraryScanner.cancelLibraryScan[libraryScan.libraryId]
-    LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter(ls => ls.id !== library.id)
+    LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter((ls) => ls.id !== library.id)
     TaskManager.taskFinished(task)
   }
 }

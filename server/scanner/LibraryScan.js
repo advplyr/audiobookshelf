@@ -1,10 +1,9 @@
 const Path = require('path')
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
 const Logger = require('../Logger')
-const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
 const { secondsToTimestamp, elapsedPretty } = require('../utils/index')
 
@@ -12,7 +11,7 @@ class LibraryScan {
   constructor() {
     this.id = null
     this.type = null
-    /** @type {import('../objects/Library')} */
+    /** @type {import('../models/Library')} */
     this.library = null
     this.verbose = false
 
@@ -33,13 +32,21 @@ class LibraryScan {
     this.logs = []
   }
 
-  get libraryId() { return this.library.id }
-  get libraryName() { return this.library.name }
-  get libraryMediaType() { return this.library.mediaType }
-  get folders() { return this.library.folders }
+  get libraryId() {
+    return this.library.id
+  }
+  get libraryName() {
+    return this.library.name
+  }
+  get libraryMediaType() {
+    return this.library.mediaType
+  }
+  get libraryFolders() {
+    return this.library.libraryFolders
+  }
 
   get timestamp() {
-    return (new Date()).toISOString()
+    return new Date().toISOString()
   }
 
   get resultStats() {
@@ -92,17 +99,22 @@ class LibraryScan {
     }
   }
 
+  /**
+   *
+   * @param {import('../models/Library')} library
+   * @param {string} type
+   */
   setData(library, type = 'scan') {
     this.id = uuidv4()
     this.type = type
-    this.library = new Library(library.toJSON()) // clone library
+    this.library = library
 
     this.startedAt = Date.now()
   }
 
   /**
-   * 
-   * @param {string} error 
+   *
+   * @param {string} error
    */
   setComplete(error = null) {
     this.finishedAt = Date.now()
@@ -142,7 +154,7 @@ class LibraryScan {
 
     const outputPath = Path.join(scanLogDir, this.logFilename)
     const logLines = [JSON.stringify(this.toJSON())]
-    this.logs.forEach(l => {
+    this.logs.forEach((l) => {
       logLines.push(JSON.stringify(l))
     })
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
