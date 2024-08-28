@@ -117,10 +117,10 @@ export default {
     },
     submitChangePassword() {
       if (this.newPassword !== this.confirmPassword) {
-        return this.$toast.error('New password and confirm password do not match')
+        return this.$toast.error(this.$strings.ToastUserPasswordMismatch)
       }
       if (this.password === this.newPassword) {
-        return this.$toast.error('Password and New Password cannot be the same')
+        return this.$toast.error(this.$strings.ToastUserPasswordMustChange)
       }
       this.changingPassword = true
       this.$axios
@@ -130,7 +130,7 @@ export default {
         })
         .then((res) => {
           if (res.success) {
-            this.$toast.success('Password Changed Successfully')
+            this.$toast.success(this.$strings.ToastUserPasswordChangeSuccess)
             this.resetForm()
           } else {
             this.$toast.error(res.error || 'Unknown Error')
@@ -139,7 +139,7 @@ export default {
         })
         .catch((error) => {
           console.error(error)
-          this.$toast.error('Api call failed')
+          this.$toast.error(this.$strings.ToastApiCallFailed)
           this.changingPassword = false
         })
     }

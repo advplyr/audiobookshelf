@@ -806,6 +806,7 @@
   "StatsYearInReview": "YEAR IN REVIEW",
   "ToastAccountUpdateFailed": "Failed to update account",
   "ToastAccountUpdateSuccess": "Account updated",
+  "ToastApiCallFailed": "API call failed",
   "ToastAuthorImageRemoveFailed": "Failed to remove image",
   "ToastAuthorImageRemoveSuccess": "Author image removed",
   "ToastAuthorUpdateFailed": "Failed to update author",
@@ -909,5 +910,9 @@
   "ToastUnlinkOpenIdFailed": "Failed to unlink user from OpenID",
   "ToastUnlinkOpenIdSuccess": "User unlinked from OpenID",
   "ToastUserDeleteFailed": "Failed to delete user",
-  "ToastUserDeleteSuccess": "User deleted"
+  "ToastUserDeleteSuccess": "User deleted",
+  "ToastUserPasswordChangeSuccess": "Password changed successfully",
+  "ToastUserPasswordMismatch": "Passwords do not match",
+  "ToastUserPasswordMustChange": "New password cannot match old password",
+  "ToastUserRootRequireName": "Must enter a root username"
 }
