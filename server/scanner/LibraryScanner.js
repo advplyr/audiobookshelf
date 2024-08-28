@@ -45,7 +45,7 @@ class LibraryScanner {
 
   /**
    *
-   * @param {import('../objects/Library')} library
+   * @param {import('../models/Library')} library
    * @param {boolean} [forceRescan]
    */
   async scan(library, forceRescan = false) {
@@ -54,12 +54,12 @@ class LibraryScanner {
       return
     }
 
-    if (!library.folders.length) {
+    if (!library.libraryFolders.length) {
       Logger.warn(`[LibraryScanner] Library has no folders to scan "${library.name}"`)
       return
     }
 
-    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence?.join()) {
+    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
       const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
       Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
       forceRescan = true
@@ -103,9 +103,12 @@ class LibraryScanner {
     library.lastScan = Date.now()
     library.lastScanVersion = packageJson.version
     if (library.isBook) {
-      library.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+      const newExtraData = library.extraData || {}
+      newExtraData.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+      library.extraData = newExtraData
+      library.changed('extraData', true)
     }
-    await Database.libraryModel.updateFromOld(library)
+    await library.save()
 
     task.setFinished(libraryScan.scanResultsString)
     TaskManager.taskFinished(task)
@@ -124,16 +127,16 @@ class LibraryScanner {
   async scanLibrary(libraryScan, forceRescan) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(libraryScan.library.mediaType, libraryScan.libraryId)
+    await libraryFilters.getFilterData(libraryScan.libraryMediaType, libraryScan.libraryId)
 
     /** @type {LibraryItemScanData[]} */
     let libraryItemDataFound = []
 
     // Scan each library folder
-    for (let i = 0; i < libraryScan.folders.length; i++) {
-      const folder = libraryScan.folders[i]
+    for (let i = 0; i < libraryScan.libraryFolders.length; i++) {
+      const folder = libraryScan.libraryFolders[i]
       const itemDataFoundInFolder = await this.scanFolder(libraryScan.library, folder)
-      libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
+      libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.path}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
 
@@ -283,12 +286,12 @@ class LibraryScanner {
 
   /**
    * Get scan data for library folder
-   * @param {import('../objects/Library')} library
-   * @param {import('../objects/Folder')} folder
+   * @param {import('../models/Library')} library
+   * @param {import('../models/LibraryFolder')} folder
    * @returns {LibraryItemScanData[]}
    */
   async scanFolder(library, folder) {
-    const folderPath = fileUtils.filePathToPOSIX(folder.fullPath)
+    const folderPath = fileUtils.filePathToPOSIX(folder.path)
 
     const pathExists = await fs.pathExists(folderPath)
     if (!pathExists) {

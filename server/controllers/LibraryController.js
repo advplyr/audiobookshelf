@@ -172,17 +172,17 @@ class LibraryController {
    * @param {Response} res
    */
   async findAll(req, res) {
-    const libraries = await Database.libraryModel.getAllOldLibraries()
+    const libraries = await Database.libraryModel.getAllWithFolders()
 
     const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
       return res.json({
-        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toJSON())
+        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toOldJSON())
       })
     }
 
     res.json({
-      libraries: libraries.map((lib) => lib.toJSON())
+      libraries: libraries.map((lib) => lib.toOldJSON())
     })
   }
 
@@ -198,16 +198,15 @@ class LibraryController {
       const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
       const customMetadataProviders = await Database.customMetadataProviderModel.getForClientByMediaType(req.library.mediaType)
 
-      const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
       return res.json({
         filterdata,
         issues: filterdata.numIssues,
         numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         customMetadataProviders,
-        library: oldLibrary
+        library: req.library.toOldJSON()
       })
     }
-    res.json(oldLibrary)
+    res.json(req.library.toOldJSON())
   }
 
   /**
@@ -1051,9 +1050,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
-    Scanner.matchLibraryItems(oldLibrary)
+    Scanner.matchLibraryItems(req.library)
     res.sendStatus(200)
   }
 
@@ -1071,10 +1068,9 @@ class LibraryController {
       return res.sendStatus(403)
     }
     res.sendStatus(200)
-    // TODO: Update to new library model
-    const oldLibrary = Database.libraryModel.getOldLibrary(req.library)
+
     const forceRescan = req.query.force === '1'
-    await LibraryScanner.scan(oldLibrary, forceRescan)
+    await LibraryScanner.scan(req.library, forceRescan)
 
     await Database.resetLibraryIssuesFilterData(req.library.id)
     Logger.info('[LibraryController] Scan complete')

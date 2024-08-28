@@ -65,12 +65,12 @@ class CronManager {
   startCronForLibrary(_library) {
     Logger.debug(`[CronManager] Init library scan cron for ${_library.name} on schedule ${_library.settings.autoScanCronExpression}`)
     const libScanCron = cron.schedule(_library.settings.autoScanCronExpression, async () => {
-      const oldLibrary = await Database.libraryModel.getOldById(_library.id)
-      if (!oldLibrary) {
+      const library = await Database.libraryModel.findByIdWithFolders(_library.id)
+      if (!library) {
         Logger.error(`[CronManager] Library not found for scan cron ${_library.id}`)
       } else {
-        Logger.debug(`[CronManager] Library scan cron executing for ${oldLibrary.name}`)
-        LibraryScanner.scan(oldLibrary)
+        Logger.debug(`[CronManager] Library scan cron executing for ${library.name}`)
+        LibraryScanner.scan(library)
       }
     })
     this.libraryScanCrons.push({

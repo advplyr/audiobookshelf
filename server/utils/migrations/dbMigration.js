@@ -1258,7 +1258,7 @@ async function handleOldLibraryItems(ctx) {
  */
 async function handleOldLibraries(ctx) {
   const oldLibraries = await oldDbFiles.loadOldData('libraries')
-  const libraries = await ctx.models.library.getAllOldLibraries()
+  const libraries = await ctx.models.library.getAllWithFolders()
 
   let librariesUpdated = 0
   for (const library of libraries) {
@@ -1268,13 +1268,17 @@ async function handleOldLibraries(ctx) {
         return false
       }
       const folderPaths = ol.folders?.map((f) => f.fullPath) || []
-      return folderPaths.join(',') === library.folders.map((f) => f.fullPath).join(',')
+      return folderPaths.join(',') === library.libraryFolders.map((f) => f.path).join(',')
     })
 
     if (matchingOldLibrary) {
-      library.oldLibraryId = matchingOldLibrary.id
+      const newExtraData = library.extraData || {}
+      newExtraData.oldLibraryId = matchingOldLibrary.id
+      library.extraData = newExtraData
+      library.changed('extraData', true)
+
       oldDbIdMap.libraries[library.oldLibraryId] = library.id
-      await ctx.models.library.updateFromOld(library)
+      await library.save()
       librariesUpdated++
     }
   }
