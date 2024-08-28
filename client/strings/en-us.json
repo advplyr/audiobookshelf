@@ -834,6 +834,8 @@
   "ToastCachePurgeSuccess": "Cache purged successfully",
   "ToastChaptersHaveErrors": "Chapters have errors",
   "ToastChaptersMustHaveTitles": "Chapters must have titles",
+  "ToastCollectionItemsAddFailed": "Item(s) added to collection failed",
+  "ToastCollectionItemsAddSuccess": "Item(s) added to collection success",
   "ToastCollectionItemsRemoveFailed": "Failed to remove item(s) from collection",
   "ToastCollectionItemsRemoveSuccess": "Item(s) removed from collection",
   "ToastCollectionRemoveFailed": "Failed to remove collection",
