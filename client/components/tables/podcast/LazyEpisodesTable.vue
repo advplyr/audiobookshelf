@@ -270,7 +270,7 @@ export default {
                 if (data.numEpisodesUpdated) {
                   this.$toast.success(`${data.numEpisodesUpdated} episodes updated`)
                 } else {
-                  this.$toast.info('No changes were made')
+                  this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
                 }
               })
               .catch((error) => {

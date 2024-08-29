@@ -618,7 +618,7 @@ export default {
           if (updateResult.updated) {
             this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           } else {
-            this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
+            this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
           }
           this.clearSelectedMatch()
           this.$emit('selectTab', 'details')

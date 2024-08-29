@@ -141,7 +141,7 @@ export default {
         }
       })
       if (!Object.keys(updatePayload).length) {
-        this.$toast.info(this.$strings.MessageNoUpdateNecessary)
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return
       }
       this.processing = true
@@ -158,7 +158,7 @@ export default {
         } else if (result.merged) {
           this.$toast.success(this.$strings.ToastAuthorUpdateMerged)
           this.show = false
-        } else this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+        } else this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.processing = false
     },
@@ -240,7 +240,7 @@ export default {
           ...response.author
         }
       } else {
-        this.$toast.info(this.$strings.ToastAuthorNoUpdatesNeeded)
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.processing = false
     }

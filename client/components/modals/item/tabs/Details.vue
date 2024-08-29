@@ -108,7 +108,7 @@ export default {
           if (res.warning) {
             this.$toast.warning(res.warning)
           } else if (res.updated) {
-            this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
+            this.$toast.success(this.$strings.ToastNoUpdatesNecessary)
           } else {
             this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
           }

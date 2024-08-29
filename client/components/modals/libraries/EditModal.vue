@@ -205,7 +205,7 @@ export default {
     submitUpdateLibrary() {
       var newLibraryPayload = this.getLibraryUpdatePayload()
       if (!Object.keys(newLibraryPayload).length) {
-        this.$toast.info('No updates are necessary')
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return
       }
 
