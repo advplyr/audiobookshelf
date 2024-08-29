@@ -48,7 +48,7 @@
               <p dir="auto" class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
 
               <div class="flex items-center">
-                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
+                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress?.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
                   <span v-if="episodeIdStreaming === episode.id" class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
                   <span v-else class="material-symbols fill text-2xl text-success">play_arrow</span>
                   <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
@@ -56,9 +56,10 @@
 
                 <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" direction="top">
                   <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" />
-                  <!-- <button class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
-                    <span class="material-symbols text-2xl">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
-                  </button> -->
+                </ui-tooltip>
+
+                <ui-tooltip :text="!!episode.progress?.isFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+                  <ui-read-icon-btn :disabled="episodesProcessingMap[episode.id]" :is-read="!!episode.progress?.isFinished" borderless class="mx-1 mt-0.5" @click="toggleEpisodeFinished(episode)" />
                 </ui-tooltip>
 
                 <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
@@ -98,6 +99,7 @@ export default {
   data() {
     return {
       recentEpisodes: [],
+      episodesProcessingMap: {},
       totalEpisodes: 0,
       currentPage: 0,
       processing: false,
@@ -143,6 +145,44 @@ export default {
     }
   },
   methods: {
+    async toggleEpisodeFinished(episode, confirmed = false) {
+      if (this.episodesProcessingMap[episode.id]) {
+        console.warn('Episode is already processing')
+        return
+      }
+
+      const isFinished = !!episode.progress?.isFinished
+      const itemProgressPercent = episode.progress?.progress || 0
+      if (!isFinished && itemProgressPercent > 0 && !confirmed) {
+        const payload = {
+          message: `Are you sure you want to mark "${episode.title}" as finished?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.toggleEpisodeFinished(episode, true)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+        return
+      }
+
+      const updatePayload = {
+        isFinished: !isFinished
+      }
+
+      this.$set(this.episodesProcessingMap, episode.id, true)
+
+      this.$axios
+        .$patch(`/api/me/progress/${episode.libraryItemId}/${episode.id}`, updatePayload)
+        .catch((error) => {
+          console.error('Failed to update progress', error)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
+        })
+        .finally(() => {
+          this.$set(this.episodesProcessingMap, episode.id, false)
+        })
+    },
     clickAddToPlaylist(episode) {
       // Makeshift libraryItem
       const libraryItem = {
@@ -215,7 +255,6 @@ export default {
         return null
       })
       this.processing = false
-      console.log('Episodes', episodePayload)
       this.recentEpisodes = episodePayload.episodes || []
       this.totalEpisodes = episodePayload.total
       this.currentPage = page
