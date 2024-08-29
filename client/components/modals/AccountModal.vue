@@ -329,8 +329,7 @@ export default {
         .then((data) => {
           this.processing = false
           if (data.error) {
-            this.$toast.error(`Failed to create account: ${data.error}`)
-            this.$toast.error(this.$strings.ToastNewUserCreatedFailed.replace('{0}', data.error))
+            this.$toast.error(this.$strings.ToastNewUserCreatedFailed + ': ' + data.error)
           } else {
             this.$toast.success(this.$strings.ToastNewUserCreatedSuccess)
             this.show = false
