@@ -126,7 +126,7 @@ export default {
     },
     submitForm() {
       if (!this.episodeTitle || !this.episodeTitle.length) {
-        this.$toast.error('Must enter an episode title')
+        this.$toast.error(this.$strings.ToastTitleRequired)
         return
       }
       this.searchedTitle = this.episodeTitle

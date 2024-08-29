@@ -92,7 +92,7 @@ export default {
 
       var { title, author } = this.$refs.itemDetailsEdit.getTitleAndAuthorName()
       if (!title) {
-        this.$toast.error(this.$strings.ToastItemQuickMatchTitleRequired)
+        this.$toast.error(this.$strings.ToastTitleRequired)
         return
       }
       this.quickMatching = true
