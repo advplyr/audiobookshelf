@@ -78,14 +78,14 @@ export default {
           if (data.error) {
             this.$toast.error(data.error)
           } else {
-            this.$toast.success('Cover Uploaded')
+            this.$toast.success(this.$strings.ToastCoverUploaded)
             this.resetCoverPreview()
           }
           this.processingUpload = false
         })
         .catch((error) => {
           console.error('Failed', error)
-          var errorMsg = error.response && error.response.data ? error.response.data : 'Unknown Error'
+          var errorMsg = error.response && error.response.data ? error.response.data : this.$strings.ToastUnknownError
           this.$toast.error(errorMsg)
           this.processingUpload = false
         })
@@ -95,7 +95,7 @@ export default {
 
       var success = await this.$axios.$post(`/api/${this.entity}/${this.entityId}/cover`, { url: this.imageUrl }).catch((error) => {
         console.error('Failed to download cover from url', error)
-        var errorMsg = error.response && error.response.data ? error.response.data : 'Unknown Error'
+        var errorMsg = error.response && error.response.data ? error.response.data : this.$strings.ToastUnknownError
         this.$toast.error(errorMsg)
         return false
       })

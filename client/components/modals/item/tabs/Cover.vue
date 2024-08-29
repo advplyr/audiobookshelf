@@ -194,7 +194,7 @@ export default {
           if (data.error) {
             this.$toast.error(data.error)
           } else {
-            this.$toast.success('Cover Uploaded')
+            this.$toast.success(this.$strings.ToastCoverUploaded)
             this.resetCoverPreview()
           }
           this.processingUpload = false
@@ -204,7 +204,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Oops, something went wrong...')
+            this.$toast.error(this.$strings.ToastUnknownError)
           }
           this.processingUpload = false
         })
@@ -255,7 +255,7 @@ export default {
     },
     async updateCover(cover) {
       if (!cover.startsWith('http:') && !cover.startsWith('https:')) {
-        this.$toast.error('Invalid URL')
+        this.$toast.error(this.$strings.ToastInvalidUrl)
         return
       }
 
@@ -264,11 +264,11 @@ export default {
         .$post(`/api/items/${this.libraryItemId}/cover`, { url: cover })
         .then(() => {
           this.imageUrl = ''
-          this.$toast.success('Update Successful')
+          this.$toast.success(this.$strings.ToastCoverUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to update cover', error)
-          this.$toast.error(error.response?.data || 'Failed to update cover')
+          this.$toast.error(error.response?.data || this.$strings.ToastCoverUpdateFailed)
         })
         .finally(() => {
           this.isProcessing = false
@@ -309,11 +309,11 @@ export default {
       this.$axios
         .$patch(`/api/items/${this.libraryItemId}/cover`, { cover: coverFile.metadata.path })
         .then(() => {
-          this.$toast.success('Update Successful')
+          this.$toast.success(this.$strings.ToastCoverUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to set local cover', error)
-          this.$toast.error(error.response?.data || 'Failed to set cover')
+          this.$toast.error(error.response?.data || this.$strings.ToastCoverUpdateFailed)
         })
         .finally(() => {
           this.isProcessing = false
