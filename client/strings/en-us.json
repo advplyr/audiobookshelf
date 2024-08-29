@@ -921,6 +921,8 @@
   "ToastServerSettingsUpdateSuccess": "Server settings updated",
   "ToastSessionDeleteFailed": "Failed to delete session",
   "ToastSessionDeleteSuccess": "Session deleted",
+  "ToastSlugMustChange": "Slug contains invalid characters",
+  "ToastSlugRequired": "Slug is required",
   "ToastSocketConnected": "Socket connected",
   "ToastSocketDisconnected": "Socket disconnected",
   "ToastSocketFailedToConnect": "Socket failed to connect",

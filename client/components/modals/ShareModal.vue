@@ -165,7 +165,7 @@ export default {
     },
     openShare() {
       if (!this.newShareSlug) {
-        this.$toast.error('Slug is required')
+        this.$toast.error(this.$strings.ToastSlugRequired)
         return
       }
       const payload = {
