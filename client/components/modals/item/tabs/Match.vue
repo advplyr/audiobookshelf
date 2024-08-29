@@ -397,7 +397,7 @@ export default {
     },
     submitSearch() {
       if (!this.searchTitle) {
-        this.$toast.warning('Search title is required')
+        this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
       this.persistProvider()

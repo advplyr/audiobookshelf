@@ -95,7 +95,7 @@ export default {
         return
       }
       if (!this.newPlaylistName) {
-        return this.$toast.error('Playlist must have a name')
+        return this.$toast.error(this.$strings.ToastNameRequired)
       }
 
       this.processing = true

@@ -156,7 +156,7 @@ export default {
     },
     validate() {
       if (!this.libraryCopy.name) {
-        this.$toast.error('Library must have a name')
+        this.$toast.error(this.$strings.ToastNameRequired)
         return false
       }
       if (!this.libraryCopy.folders.length) {

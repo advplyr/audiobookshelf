@@ -115,7 +115,7 @@ export default {
         return
       }
       if (!this.newCollectionName) {
-        return this.$toast.error('Collection must have a name')
+        return this.$toast.error(this.$strings.ToastNameRequired)
       }
 
       this.processing = true
