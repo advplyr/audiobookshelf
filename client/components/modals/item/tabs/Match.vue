@@ -397,7 +397,7 @@ export default {
     },
     submitSearch() {
       if (!this.searchTitle) {
-        this.$toast.warning('Search title is required')
+        this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
       this.persistProvider()
@@ -618,7 +618,7 @@ export default {
           if (updateResult.updated) {
             this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           } else {
-            this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
+            this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
           }
           this.clearSelectedMatch()
           this.$emit('selectTab', 'details')

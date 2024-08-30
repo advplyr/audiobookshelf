@@ -290,7 +290,6 @@ export default {
       this.$axios
         .$post(`/api/sessions/batch/delete`, payload)
         .then(() => {
-          this.$toast.success('Sessions removed')
           if (isAllSessions) {
             // If all sessions were removed from the current page then go to the previous page
             if (this.currentPage > 0) {
@@ -303,7 +302,7 @@ export default {
           }
         })
         .catch((error) => {
-          const errorMsg = error.response?.data || 'Failed to remove sessions'
+          const errorMsg = error.response?.data || this.$strings.ToastRemoveFailed
           this.$toast.error(errorMsg)
         })
         .finally(() => {
@@ -358,12 +357,13 @@ export default {
       })
 
       if (!libraryItem) {
-        this.$toast.error('Failed to get library item')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
       if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
-        this.$toast.error('Failed to get podcast episode')
+        console.error('Episode not found in library item', session.episodeId, libraryItem.media.episodes)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
@@ -377,7 +377,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: libraryItem.media.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.audioFile.duration || null,
           coverPath: libraryItem.media.coverPath || null
         }

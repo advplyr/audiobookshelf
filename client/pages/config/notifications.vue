@@ -105,12 +105,12 @@ export default {
       }
 
       if (isNaN(this.maxNotificationQueue) || this.maxNotificationQueue <= 0) {
-        this.$toast.error('Max notification queue must be >= 0')
+        this.$toast.error(this.$strings.ToastNotificationQueueMaximum)
         return false
       }
 
       if (isNaN(this.maxFailedAttempts) || this.maxFailedAttempts <= 0) {
-        this.$toast.error('Max failed attempts must be >= 0')
+        this.$toast.error(this.$strings.ToastNotificationFailedMaximum)
         return false
       }
 
@@ -128,11 +128,11 @@ export default {
       this.$axios
         .$patch('/api/notifications', updatePayload)
         .then(() => {
-          this.$toast.success('Notification settings updated')
+          this.$toast.success(this.$strings.ToastNotificationSettingsUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to update notification settings', error)
-          this.$toast.error('Failed to update notification settings')
+          this.$toast.error(this.$strings.ToastNotificationSettingsUpdateFailed)
         })
         .finally(() => {
           this.savingSettings = false

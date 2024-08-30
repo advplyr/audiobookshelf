@@ -142,7 +142,7 @@ export default {
 
       const updatedDetails = this.getUpdatePayload()
       if (!Object.keys(updatedDetails).length) {
-        this.$toast.info('No changes were made')
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return false
       }
       return this.updateDetails(updatedDetails)

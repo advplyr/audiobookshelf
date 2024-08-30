@@ -125,12 +125,12 @@ export default {
       this.$refs.ereaderEmailInput.blur()
 
       if (!this.newDevice.name?.trim() || !this.newDevice.email?.trim()) {
-        this.$toast.error('Name and email required')
+        this.$toast.error(this.$strings.ToastNameEmailRequired)
         return
       }
 
       if (this.newDevice.availabilityOption === 'specificUsers' && !this.newDevice.users.length) {
-        this.$toast.error('Must select at least one user')
+        this.$toast.error(this.$strings.ToastSelectAtLeastOneUser)
         return
       }
       if (this.newDevice.availabilityOption !== 'specificUsers') {
@@ -142,14 +142,14 @@ export default {
 
       if (!this.ereaderDevice) {
         if (this.existingDevices.some((d) => d.name === this.newDevice.name)) {
-          this.$toast.error('Ereader device with that name already exists')
+          this.$toast.error(this.$strings.ToastDeviceNameAlreadyExists)
           return
         }
 
         this.submitCreate()
       } else {
         if (this.ereaderDevice.name !== this.newDevice.name && this.existingDevices.some((d) => d.name === this.newDevice.name)) {
-          this.$toast.error('Ereader device with that name already exists')
+          this.$toast.error(this.$strings.ToastDeviceNameAlreadyExists)
           return
         }
 
@@ -174,12 +174,11 @@ export default {
         .$post(`/api/emails/ereader-devices`, payload)
         .then((data) => {
           this.$emit('update', data.ereaderDevices)
-          this.$toast.success('Device updated')
           this.show = false
         })
         .catch((error) => {
           console.error('Failed to update device', error)
-          this.$toast.error('Failed to update device')
+          this.$toast.error(this.$strings.ToastDeviceUpdateFailed)
         })
         .finally(() => {
           this.processing = false
@@ -201,12 +200,11 @@ export default {
         .$post('/api/emails/ereader-devices', payload)
         .then((data) => {
           this.$emit('update', data.ereaderDevices || [])
-          this.$toast.success('Device added')
           this.show = false
         })
         .catch((error) => {
           console.error('Failed to add device', error)
-          this.$toast.error('Failed to add device')
+          this.$toast.error(this.$strings.ToastDeviceAddFailed)
         })
         .finally(() => {
           this.processing = false
