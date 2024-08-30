@@ -149,7 +149,6 @@ export default {
         .$post('/api/notifications', payload)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success(this.$strings.ToastNotificationCreateSuccess)
           this.show = false
         })
         .catch((error) => {

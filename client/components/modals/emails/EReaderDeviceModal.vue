@@ -174,7 +174,6 @@ export default {
         .$post(`/api/emails/ereader-devices`, payload)
         .then((data) => {
           this.$emit('update', data.ereaderDevices)
-          this.$toast.success(this.$strings.ToastDeviceUpdateSuccess)
           this.show = false
         })
         .catch((error) => {
@@ -201,7 +200,6 @@ export default {
         .$post('/api/emails/ereader-devices', payload)
         .then((data) => {
           this.$emit('update', data.ereaderDevices || [])
-          this.$toast.success(this.$strings.ToastDeviceAddSuccess)
           this.show = false
         })
         .catch((error) => {

@@ -206,7 +206,6 @@ export default {
       this.$axios
         .$post(`/api/session/${this._session.id}/close`)
         .then(() => {
-          this.$toast.success(this.$strings.ToastSessionCloseSuccess)
           this.show = false
           this.$emit('closedSession')
         })

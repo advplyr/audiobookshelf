@@ -162,7 +162,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get filesystem paths', error)
-          this.$toast.error(this.$strings.ToastGetFilesystemPathsFailed)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
           return []
         })
         .finally(() => {

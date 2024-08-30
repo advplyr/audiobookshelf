@@ -15,7 +15,7 @@
         </template>
         <form class="flex items-center justify-center px-6 py-3" @submit.prevent="submitCustomTime">
           <ui-text-input v-model="customTime" type="number" step="any" min="0.1" :placeholder="$strings.LabelTimeInMinutes" class="w-48" />
-          <ui-btn color="success" type="submit" :padding-x="0" class="h-9 w-12 flex items-center justify-center ml-1">{{ $strings.ButtonSet }}</ui-btn>
+          <ui-btn color="success" type="submit" :padding-x="0" class="h-9 w-18 flex items-center justify-center ml-1">{{ $strings.ButtonSubmit }}</ui-btn>
         </form>
       </div>
       <div v-if="timerSet" class="w-full p-4">

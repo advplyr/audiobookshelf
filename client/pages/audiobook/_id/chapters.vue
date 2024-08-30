@@ -560,7 +560,7 @@ export default {
         .catch((error) => {
           this.findingChapters = false
           console.error('Failed to get chapter data', error)
-          this.$toast.error(this.$strings.ToastGetChaptersFailed)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
           this.showFindChaptersModal = false
         })
     },

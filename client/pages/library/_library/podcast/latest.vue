@@ -211,7 +211,7 @@ export default {
       this.processing = true
       const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=25&page=${page}`).catch((error) => {
         console.error('Failed to get recent episodes', error)
-        this.$toast.error(this.$strings.ToastGetRecentEpisodesFailed)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.processing = false

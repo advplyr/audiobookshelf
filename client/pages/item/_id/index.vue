@@ -628,7 +628,6 @@ export default {
           .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
-            this.$toast.success(this.$strings.ToastProgressReset)
             this.resettingProgress = false
           })
           .catch((error) => {

@@ -194,7 +194,6 @@ export default {
           if (data.error) {
             this.$toast.error(data.error)
           } else {
-            this.$toast.success(this.$strings.ToastCoverUploaded)
             this.resetCoverPreview()
           }
           this.processingUpload = false
@@ -264,7 +263,6 @@ export default {
         .$post(`/api/items/${this.libraryItemId}/cover`, { url: cover })
         .then(() => {
           this.imageUrl = ''
-          this.$toast.success(this.$strings.ToastCoverUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to update cover', error)
@@ -308,9 +306,6 @@ export default {
       this.isProcessing = true
       this.$axios
         .$patch(`/api/items/${this.libraryItemId}/cover`, { cover: coverFile.metadata.path })
-        .then(() => {
-          this.$toast.success(this.$strings.ToastCoverUpdateSuccess)
-        })
         .catch((error) => {
           console.error('Failed to set local cover', error)
           this.$toast.error(error.response?.data || this.$strings.ToastCoverUpdateFailed)

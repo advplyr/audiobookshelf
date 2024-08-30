@@ -127,7 +127,6 @@ export default {
         .$patch(`/api/notifications/${this.notification.id}`, payload)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success(this.$strings.ToastNotificationEnabled)
         })
         .catch((error) => {
           console.error('Failed to update notification', error)
@@ -155,7 +154,6 @@ export default {
         .$delete(`/api/notifications/${this.notification.id}`)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success(this.$strings.ToastNotificationDeleteSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)

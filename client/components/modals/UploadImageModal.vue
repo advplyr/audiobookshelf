@@ -78,7 +78,6 @@ export default {
           if (data.error) {
             this.$toast.error(data.error)
           } else {
-            this.$toast.success(this.$strings.ToastCoverUploaded)
             this.resetCoverPreview()
           }
           this.processingUpload = false

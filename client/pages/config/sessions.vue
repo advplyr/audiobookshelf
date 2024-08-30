@@ -290,7 +290,6 @@ export default {
       this.$axios
         .$post(`/api/sessions/batch/delete`, payload)
         .then(() => {
-          this.$toast.success(this.$strings.ToastSessionsRemoved)
           if (isAllSessions) {
             // If all sessions were removed from the current page then go to the previous page
             if (this.currentPage > 0) {
@@ -358,12 +357,13 @@ export default {
       })
 
       if (!libraryItem) {
-        this.$toast.error(this.$strings.ToastGetLibraryItemFailed)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
       if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
-        this.$toast.error(this.$strings.ToastGetPodcastEpisodeFailed)
+        console.error('Episode not found in library item', session.episodeId, libraryItem.media.episodes)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }

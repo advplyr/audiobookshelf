@@ -159,7 +159,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get ffprobe data', error)
-          this.$toast.error(this.$strings.ToastFfprobeFailed)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.probingFile = false

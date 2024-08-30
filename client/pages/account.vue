@@ -133,13 +133,13 @@ export default {
             this.$toast.success(this.$strings.ToastUserPasswordChangeSuccess)
             this.resetForm()
           } else {
-            this.$toast.error(res.error || 'Unknown Error')
+            this.$toast.error(res.error || this.$strings.ToastUnknownError)
           }
           this.changingPassword = false
         })
         .catch((error) => {
           console.error(error)
-          this.$toast.error(this.$strings.ToastApiCallFailed)
+          this.$toast.error(this.$strings.ToastUnknownError)
           this.changingPassword = false
         })
     }

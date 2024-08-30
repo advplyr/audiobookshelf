@@ -218,7 +218,6 @@ export default {
         .$post(`/api/emails/ereader-devices`, payload)
         .then((data) => {
           this.ereaderDevicesUpdated(data.ereaderDevices)
-          this.$toast.success(this.$strings.ToastDeviceDeleteSuccess)
         })
         .catch((error) => {
           console.error('Failed to delete device', error)
