@@ -363,14 +363,14 @@ export default {
     },
     displaySortLine() {
       if (this.collapsedSeries) return null
-      if (this.orderBy === 'mtimeMs') return this.$strings.LabelModified + ': ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
-      if (this.orderBy === 'birthtimeMs') return this.$strings.LabelBorn + ': ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
-      if (this.orderBy === 'addedAt') return this.$strings.LabelAdded + ': ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
+      if (this.orderBy === 'mtimeMs') return this.$getString('LabelFileModifiedDate', [this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)])
+      if (this.orderBy === 'birthtimeMs') return this.$getString('LabelFileBornDate', [this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)])
+      if (this.orderBy === 'addedAt') return this.$getString('LabelAddedDate', [this.$formatDate(this._libraryItem.addedAt, this.dateFormat)])
       if (this.orderBy === 'media.duration') return this.$strings.LabelDuration + ': ' + this.$elapsedPrettyExtended(this.media.duration, false)
       if (this.orderBy === 'size') return this.$strings.LabelSize + ': ' + this.$bytesPretty(this._libraryItem.size)
       if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} ` + this.$strings.LabelEpisodes
       if (this.orderBy === 'media.metadata.publishedYear') {
-        if (this.mediaMetadata.publishedYear) return this.$strings.LabelPublished + ': ' + this.mediaMetadata.publishedYear
+        if (this.mediaMetadata.publishedYear) return this.$getString('LabelPublishedDate', [this.mediaMetadata.publishedYear])
         return '\u00A0'
       }
       return null
@@ -873,7 +873,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? this.$strings.LabelPublished + ` ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : this.$strings.LabelUnknownPublishDate,
+          caption: this.recentEpisode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -1033,7 +1033,7 @@ export default {
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
-                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+                  caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
                   duration: episode.audioFile.duration || null,
                   coverPath: this.media.coverPath || null
                 })

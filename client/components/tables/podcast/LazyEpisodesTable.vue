@@ -295,7 +295,7 @@ export default {
         episodeId: episode.id,
         title: episode.title,
         subtitle: this.mediaMetadata.title,
-        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+        caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
         duration: episode.audioFile.duration || null,
         coverPath: this.media.coverPath || null
       }
@@ -372,7 +372,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: this.mediaMetadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.audioFile.duration || null,
             coverPath: this.media.coverPath || null
           })

@@ -194,7 +194,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: episode.podcast.metadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.duration || null,
             coverPath: episode.podcast.coverPath || null
           })
@@ -232,7 +232,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: episode.podcast.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.duration || null,
           coverPath: episode.podcast.coverPath || null
         }
