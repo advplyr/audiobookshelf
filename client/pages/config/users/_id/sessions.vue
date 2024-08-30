@@ -127,12 +127,12 @@ export default {
       })
 
       if (!libraryItem) {
-        this.$toast.error('Failed to get library item')
+        this.$toast.error(this.$strings.ToastGetLibraryItemFailed)
         this.processingGoToTimestamp = false
         return
       }
       if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
-        this.$toast.error('Failed to get podcast episode')
+        this.$toast.error(this.$strings.ToastGetPodcastEpisodeFailed)
         this.processingGoToTimestamp = false
         return
       }
