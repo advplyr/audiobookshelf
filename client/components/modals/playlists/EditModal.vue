@@ -86,7 +86,7 @@ export default {
           .catch((error) => {
             console.error('Failed to remove playlist', error)
             this.processing = false
-            this.$toast.error(this.$strings.ToastPlaylistRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
           })
       }
     },

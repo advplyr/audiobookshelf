@@ -222,7 +222,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to delete device', error)
-          this.$toast.error('Failed to delete device')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.deletingDeviceName = null

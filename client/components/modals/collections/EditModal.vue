@@ -106,7 +106,7 @@ export default {
           .catch((error) => {
             console.error('Failed to remove collection', error)
             this.processing = false
-            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
           })
       }
     },

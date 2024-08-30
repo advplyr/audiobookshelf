@@ -623,7 +623,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove chapters', error)
-          this.$toast.error('Failed to remove chapters')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.saving = false

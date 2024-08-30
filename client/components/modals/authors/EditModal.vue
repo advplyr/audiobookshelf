@@ -121,7 +121,7 @@ export default {
               })
               .catch((error) => {
                 console.error('Failed to remove author', error)
-                this.$toast.error(this.$strings.ToastAuthorRemoveFailed)
+                this.$toast.error(this.$strings.ToastRemoveFailed)
               })
               .finally(() => {
                 this.processing = false
@@ -174,7 +174,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error(this.$strings.ToastAuthorImageRemoveFailed)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.processing = false
@@ -201,7 +201,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error(error.response.data || this.$strings.ToastAuthorImageRemoveFailed)
+          this.$toast.error(error.response.data || this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.processing = false

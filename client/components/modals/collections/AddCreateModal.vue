@@ -143,7 +143,7 @@ export default {
           })
           .catch((error) => {
             console.error('Failed to remove books from collection', error)
-            this.$toast.error(this.$strings.ToastCollectionItemsRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
             this.processing = false
           })
       } else {
@@ -157,7 +157,7 @@ export default {
           })
           .catch((error) => {
             console.error('Failed to remove book from collection', error)
-            this.$toast.error(this.$strings.ToastCollectionItemsRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
             this.processing = false
           })
       }
