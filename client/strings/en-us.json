@@ -91,6 +91,8 @@
   "ButtonShiftTimes": "Shift Times",
   "ButtonShow": "Show",
   "ButtonStartM4BEncode": "Start M4B Encode",
+  "ToastEncodeCancelSucces": "Encode canceled",
+  "ToastEncodeCancelFailed": "Failed to cancel encode",
   "ButtonStartMetadataEmbed": "Start Metadata Embed",
   "ButtonStats": "Stats",
   "ButtonSubmit": "Submit",
