@@ -78,7 +78,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update collection', error)
-          this.$toast.error('Failed to save collection books order')
+          this.$toast.error(this.$strings.ToastCollectionUpdateFailed)
         })
     },
     editBook(book) {

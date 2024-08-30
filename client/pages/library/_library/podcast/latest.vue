@@ -234,7 +234,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: episode.podcast.metadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.duration || null,
             coverPath: episode.podcast.coverPath || null
           })
@@ -251,7 +251,7 @@ export default {
       this.processing = true
       const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=25&page=${page}`).catch((error) => {
         console.error('Failed to get recent episodes', error)
-        this.$toast.error('Failed to get recent episodes')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.processing = false
@@ -271,7 +271,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: episode.podcast.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.duration || null,
           coverPath: episode.podcast.coverPath || null
         }

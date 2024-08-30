@@ -96,7 +96,7 @@ export default {
     displaySortLine() {
       switch (this.orderBy) {
         case 'addedAt':
-          return `${this.$strings.LabelAdded} ${this.$formatDate(this.addedAt, this.dateFormat)}`
+          return this.$getString('LabelAddedDate', [this.$formatDate(this.addedAt, this.dateFormat)])
         case 'totalDuration':
           return `${this.$strings.LabelDuration} ${this.$elapsedPrettyExtended(this.totalDuration, false)}`
         case 'lastBookUpdated':

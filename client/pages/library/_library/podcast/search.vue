@@ -146,7 +146,7 @@ export default {
       this.processing = true
       var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.processing = false
@@ -197,7 +197,7 @@ export default {
       this.processing = true
       const payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.processing = false

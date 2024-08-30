@@ -130,12 +130,12 @@ export default {
         .$post(`/api/playlists/${playlist.id}/batch/remove`, { items: itemObjects })
         .then((updatedPlaylist) => {
           console.log(`Items removed from playlist`, updatedPlaylist)
-          this.$toast.success('Playlist item(s) removed')
+          this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           this.processing = false
         })
         .catch((error) => {
           console.error('Failed to remove items from playlist', error)
-          this.$toast.error('Failed to remove playlist item(s)')
+          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
           this.processing = false
         })
     },
@@ -148,12 +148,12 @@ export default {
         .$post(`/api/playlists/${playlist.id}/batch/add`, { items: itemObjects })
         .then((updatedPlaylist) => {
           console.log(`Items added to playlist`, updatedPlaylist)
-          this.$toast.success('Items added to playlist')
+          this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           this.processing = false
         })
         .catch((error) => {
           console.error('Failed to add items to playlist', error)
-          this.$toast.error('Failed to add items to playlist')
+          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
           this.processing = false
         })
     },
@@ -174,14 +174,14 @@ export default {
         .$post('/api/playlists', newPlaylist)
         .then((data) => {
           console.log('New playlist created', data)
-          this.$toast.success(`Playlist "${data.name}" created`)
+          this.$toast.success(this.$strings.ToastPlaylistCreateSuccess + ': ' + data.name)
           this.processing = false
           this.newPlaylistName = ''
         })
         .catch((error) => {
           console.error('Failed to create playlist', error)
           var errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error(`Failed to create playlist: ${errMsg}`)
+          this.$toast.error(this.$strings.ToastPlaylistCreateFailed + ': ' + errMsg)
           this.processing = false
         })
     }
