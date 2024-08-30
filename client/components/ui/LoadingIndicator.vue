@@ -17,7 +17,8 @@ export default {
   props: {
     text: {
       type: String,
-      default: this.$strings.MessagePleaseWait
+      //default: this.$strings.MessagePleaseWait
+      default: 'Please wait...'
     }
   }
 }
