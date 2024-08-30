@@ -290,7 +290,7 @@ export default {
       this.$axios
         .$post(`/api/sessions/batch/delete`, payload)
         .then(() => {
-          this.$toast.success('Sessions removed')
+          this.$toast.success(this.$strings.ToastSessionsRemoved)
           if (isAllSessions) {
             // If all sessions were removed from the current page then go to the previous page
             if (this.currentPage > 0) {
@@ -303,7 +303,7 @@ export default {
           }
         })
         .catch((error) => {
-          const errorMsg = error.response?.data || 'Failed to remove sessions'
+          const errorMsg = error.response?.data || this.$strings.ToastRemoveFailed
           this.$toast.error(errorMsg)
         })
         .finally(() => {

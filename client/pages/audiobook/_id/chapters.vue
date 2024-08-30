@@ -611,7 +611,7 @@ export default {
         .$post(`/api/items/${this.libraryItem.id}/chapters`, payload)
         .then((data) => {
           if (data.updated) {
-            this.$toast.success('Chapters removed')
+            this.$toast.success(this.$strings.ToastChaptersRemoved)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
