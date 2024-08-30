@@ -4,11 +4,11 @@
       <p class="text-base md:text-lg font-semibold pr-4">{{ eventName }}</p>
       <div class="flex-grow" />
 
-      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="fireTestEventAndSucceed">Fire onTest Event</ui-btn>
-      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" color="red-600" @click.stop="fireTestEventAndFail">Fire & Fail</ui-btn>
+      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="fireTestEventAndSucceed">{{ this.$strings.ButtonFireOnTest }}</ui-btn>
+      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" color="red-600" @click.stop="fireTestEventAndFail">{{ this.$strings.ButtonFireAndFail }}</ui-btn>
       <!-- <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="rapidFireTestEvents">Rapid Fire</ui-btn> -->
-      <ui-btn v-else-if="notification.enabled" :loading="sendingTest" small class="mr-2" @click.stop="sendTestClick">Test</ui-btn>
-      <ui-btn v-else :loading="enabling" small color="success" class="mr-2" @click="enableNotification">Enable</ui-btn>
+      <ui-btn v-else-if="notification.enabled" :loading="sendingTest" small class="mr-2" @click.stop="sendTestClick">{{ this.$strings.ButtonTest }}</ui-btn>
+      <ui-btn v-else :loading="enabling" small color="success" class="mr-2" @click="enableNotification">{{ this.$strings.ButtonEnable }}</ui-btn>
 
       <ui-icon-btn :size="7" icon-font-size="1.1rem" icon="edit" class="mr-2" @click="editNotification" />
       <ui-icon-btn bg-color="error" :size="7" icon-font-size="1.2rem" icon="delete" @click="deleteNotificationClick" />
@@ -65,12 +65,12 @@ export default {
       this.$axios
         .$get(`/api/notifications/test?fail=${intentionallyFail ? 1 : 0}`)
         .then(() => {
-          this.$toast.success('Triggered onTest Event')
+          this.$toast.success(this.$strings.ToastNotificationTestTriggerSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           const errorMsg = error.response ? error.response.data : null
-          this.$toast.error(`Failed: ${errorMsg}` || 'Failed to trigger onTest event')
+          this.$toast.error(`Failed: ${errorMsg}` || this.$strings.ToastNotificationTestTriggerFailed)
         })
         .finally(() => {
           this.testing = false
@@ -91,7 +91,7 @@ export default {
     // End testing functions
     sendTestClick() {
       const payload = {
-        message: `Trigger this notification with test data?`,
+        message: this.$strings.MessageConfirmNotificationTestTrigger,
         callback: (confirmed) => {
           if (confirmed) {
             this.sendTest()
@@ -106,12 +106,12 @@ export default {
       this.$axios
         .$get(`/api/notifications/${this.notification.id}/test`)
         .then(() => {
-          this.$toast.success('Triggered test notification')
+          this.$toast.success(this.$strings.ToastNotificationTestTriggerSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           const errorMsg = error.response ? error.response.data : null
-          this.$toast.error(`Failed: ${errorMsg}` || 'Failed to trigger test notification')
+          this.$toast.error(`Failed: ${errorMsg}` || this.$strings.ToastNotificationTestTriggerFailed)
         })
         .finally(() => {
           this.sendingTest = false
@@ -127,11 +127,11 @@ export default {
         .$patch(`/api/notifications/${this.notification.id}`, payload)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success('Notification enabled')
+          this.$toast.success(this.$strings.ToastNotificationEnabled)
         })
         .catch((error) => {
           console.error('Failed to update notification', error)
-          this.$toast.error('Failed to update notification')
+          this.$toast.error(this.$strings.ToastNotificationUpdateFailed)
         })
         .finally(() => {
           this.enabling = false
@@ -139,7 +139,7 @@ export default {
     },
     deleteNotificationClick() {
       const payload = {
-        message: `Are you sure you want to delete this notification?`,
+        message: this.$strings.MessageConfirmDeleteNotification,
         callback: (confirmed) => {
           if (confirmed) {
             this.deleteNotification()
@@ -155,11 +155,11 @@ export default {
         .$delete(`/api/notifications/${this.notification.id}`)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success('Deleted notification')
+          this.$toast.success(this.$strings.ToastNotificationDeleteSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Failed to delete notification')
+          this.$toast.error(this.$strings.ToastNotificationDeleteFailed)
         })
         .finally(() => {
           this.deleting = false
