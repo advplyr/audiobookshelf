@@ -261,7 +261,7 @@ export default {
             .catch((error) => {
               console.error('Failed to share', error)
               if (error.name !== 'AbortError') {
-                this.$toast.error('Failed to share: ' + error.message)
+                this.$toast.error(this.$strings.ToastFailedToShare + ': ' + error.message)
               }
             })
         } else {
