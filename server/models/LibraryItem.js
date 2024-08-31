@@ -773,7 +773,7 @@ class LibraryItem extends Model {
 
   /**
    * Get book library items for author, optional use user permissions
-   * @param {oldAuthor} author
+   * @param {import('./Author')} author
    * @param {import('./User')} user
    * @returns {Promise<oldLibraryItem[]>}
    */

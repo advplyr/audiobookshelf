@@ -887,8 +887,7 @@ class LibraryController {
     const oldAuthors = []
 
     for (const author of authors) {
-      const oldAuthor = author.getOldAuthor().toJSON()
-      oldAuthor.numBooks = author.books.length
+      const oldAuthor = author.toOldJSONExpanded(author.books.length)
       oldAuthor.lastFirst = author.lastFirst
       oldAuthors.push(oldAuthor)
     }

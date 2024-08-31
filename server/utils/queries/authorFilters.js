@@ -73,8 +73,7 @@ module.exports = {
     })
     const authorMatches = []
     for (const author of authors) {
-      const oldAuthor = author.getOldAuthor().toJSON()
-      oldAuthor.numBooks = author.dataValues.numBooks
+      const oldAuthor = author.toOldJSONExpanded(author.dataValues.numBooks)
       authorMatches.push(oldAuthor)
     }
     return authorMatches

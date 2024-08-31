@@ -151,6 +151,8 @@ class LibraryItemController {
    * PATCH: /items/:id/media
    * Update media for a library item. Will create new authors & series when necessary
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -185,6 +187,12 @@ class LibraryItemController {
       seriesRemoved = libraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
     }
 
+    let authorsRemoved = []
+    if (libraryItem.isBook && mediaPayload.metadata?.authors) {
+      const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
+      authorsRemoved = libraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+    }
+
     const hasUpdates = libraryItem.media.update(mediaPayload) || mediaPayload.url
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
@@ -205,6 +213,15 @@ class LibraryItemController {
       Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
       await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+
+      if (authorsRemoved.length) {
+        // Check remove empty authors
+        Logger.debug(`[LibraryItemController] Authors were removed from book. Check if authors are now empty.`)
+        await this.checkRemoveAuthorsWithNoBooks(
+          libraryItem.libraryId,
+          authorsRemoved.map((au) => au.id)
+        )
+      }
     }
     res.json({
       updated: hasUpdates,
@@ -823,7 +840,7 @@ class LibraryItemController {
       // We actually need to check for Webkit on Apple mobile devices because this issue impacts all browsers on iOS/iPadOS/etc, not just Safari.
       const isAppleMobileBrowser = ua.device.vendor === 'Apple' && ua.device.type === 'mobile' && ua.engine.name === 'WebKit'
       if (isAppleMobileBrowser && audioMimeType === AudioMimeType.M4B) {
-          audioMimeType = 'audio/m4b'
+        audioMimeType = 'audio/m4b'
       }
       res.setHeader('Content-Type', audioMimeType)
     }

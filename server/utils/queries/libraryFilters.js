@@ -353,7 +353,7 @@ module.exports = {
     return {
       authors: authors.map((au) => {
         const numBooks = au.books.length || 0
-        return au.getOldAuthor().toJSONExpanded(numBooks)
+        return au.toOldJSONExpanded(numBooks)
       }),
       count
     }
@@ -409,7 +409,7 @@ module.exports = {
 
   /**
    * Get library items for an author, optional use user permissions
-   * @param {oldAuthor} author
+   * @param {import('../../models/Author')} author
    * @param {import('../../models/User')} user
    * @param {number} limit
    * @param {number} offset

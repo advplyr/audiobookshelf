@@ -462,26 +462,6 @@ class Database {
     await this.models.series.removeById(seriesId)
   }
 
-  async createAuthor(oldAuthor) {
-    if (!this.sequelize) return false
-    await this.models.author.createFromOld(oldAuthor)
-  }
-
-  async createBulkAuthors(oldAuthors) {
-    if (!this.sequelize) return false
-    await this.models.author.createBulkFromOld(oldAuthors)
-  }
-
-  updateAuthor(oldAuthor) {
-    if (!this.sequelize) return false
-    return this.models.author.updateFromOld(oldAuthor)
-  }
-
-  async removeAuthor(authorId) {
-    if (!this.sequelize) return false
-    await this.models.author.removeById(authorId)
-  }
-
   async createBulkBookAuthors(bookAuthors) {
     if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
@@ -684,7 +664,7 @@ class Database {
    */
   async getAuthorIdByName(libraryId, authorName) {
     if (!this.libraryFilterData[libraryId]) {
-      return (await this.authorModel.getOldByNameAndLibrary(authorName, libraryId))?.id || null
+      return (await this.authorModel.getByNameAndLibrary(authorName, libraryId))?.id || null
     }
     return this.libraryFilterData[libraryId].authors.find((au) => au.name === authorName)?.id || null
   }

@@ -1,5 +1,6 @@
 const express = require('express')
 const Path = require('path')
+const sequelize = require('sequelize')
 
 const Logger = require('../Logger')
 const Database = require('../Database')
@@ -32,7 +33,6 @@ const CustomMetadataProviderController = require('../controllers/CustomMetadataP
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 
-const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class ApiRouter {
@@ -470,6 +470,54 @@ class ApiRouter {
   }
 
   /**
+   * Remove authors with no books and unset asin, description and imagePath
+   * Note: Other implementation is in BookScanner.checkAuthorsRemovedFromBooks (can be merged)
+   *
+   * @param {string} libraryId
+   * @param {string[]} authorIds
+   * @returns {Promise<void>}
+   */
+  async checkRemoveAuthorsWithNoBooks(libraryId, authorIds) {
+    if (!authorIds?.length) return
+
+    const bookAuthorsToRemove = (
+      await Database.authorModel.findAll({
+        where: [
+          {
+            id: authorIds,
+            asin: {
+              [sequelize.Op.or]: [null, '']
+            },
+            description: {
+              [sequelize.Op.or]: [null, '']
+            },
+            imagePath: {
+              [sequelize.Op.or]: [null, '']
+            }
+          },
+          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
+        ],
+        attributes: ['id', 'name'],
+        raw: true
+      })
+    ).map((au) => ({ id: au.id, name: au.name }))
+
+    if (bookAuthorsToRemove.length) {
+      await Database.authorModel.destroy({
+        where: {
+          id: bookAuthorsToRemove.map((au) => au.id)
+        }
+      })
+      bookAuthorsToRemove.forEach(({ id, name }) => {
+        Database.removeAuthorFromFilterData(libraryId, id)
+        // TODO: Clients were expecting full author in payload but its unnecessary
+        SocketAuthority.emitter('author_removed', { id, libraryId })
+        Logger.info(`[ApiRouter] Removed author "${name}" with no books`)
+      })
+    }
+  }
+
+  /**
    * Remove an empty series & close an open RSS feed
    * @param {import('../models/Series')} series
    */
@@ -567,11 +615,13 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.authors[i].id) {
-            let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryId)
+            let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryId)
             if (!author) {
-              author = new Author()
-              author.setData(mediaMetadata.authors[i], libraryId)
-              Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
+              author = await Database.authorModel.create({
+                name: authorName,
+                libraryId
+              })
+              Logger.debug(`[ApiRouter] Creating new author "${author.name}"`)
               newAuthors.push(author)
               // Update filter data
               Database.addAuthorToFilterData(libraryId, author.name, author.id)
@@ -584,10 +634,9 @@ class ApiRouter {
         // Remove authors without an id
         mediaMetadata.authors = mediaMetadata.authors.filter((au) => !!au.id)
         if (newAuthors.length) {
-          await Database.createBulkAuthors(newAuthors)
           SocketAuthority.emitter(
             'authors_added',
-            newAuthors.map((au) => au.toJSON())
+            newAuthors.map((au) => au.toOldJSON())
           )
         }
       }

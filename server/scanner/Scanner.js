@@ -8,7 +8,6 @@ const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcast
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
-const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
 const CoverManager = require('../managers/CoverManager')
@@ -206,12 +205,13 @@ class Scanner {
       }
       const authorPayload = []
       for (const authorName of matchData.author) {
-        let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryItem.libraryId)
+        let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryItem.libraryId)
         if (!author) {
-          author = new Author()
-          author.setData({ name: authorName }, libraryItem.libraryId)
-          await Database.createAuthor(author)
-          SocketAuthority.emitter('author_added', author.toJSON())
+          author = await Database.authorModel.create({
+            name: authorName,
+            libraryId: libraryItem.libraryId
+          })
+          SocketAuthority.emitter('author_added', author.toOldJSON())
           // Update filter data
           Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
         }
