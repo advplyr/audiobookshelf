@@ -571,7 +571,7 @@
   "LabelYourPlaylists": "আপনার প্লেলিস্ট",
   "LabelYourProgress": "আপনার অগ্রগতি",
   "MessageAddToPlayerQueue": "প্লেয়ার সারিতে যোগ করুন",
-  "MessageAppriseDescription": "এই বৈশিষ্ট্যটি ব্যবহার করার জন্য আপনাকে <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</-এর একটি উদাহরণ থাকতে হবে a> চলমান বা একটি এপিআই যা সেই একই অনুরোধগুলি পরিচালনা করবে৷ <br /> বিজ্ঞপ্তি পাঠানোর জন্য Apprise API Url সম্পূর্ণ URL পাথ হওয়া উচিত, যেমন, যদি আপনার API উদাহরণ <code>http://192.168 এ পরিবেশিত হয়৷ 1.1:8337</code> তারপর আপনি <code>http://192.168.1.1:8337/notify</code> লিখবেন।",
+  "MessageAppriseDescription": "এই বৈশিষ্ট্যটি ব্যবহার করার জন্য আপনাকে <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">এর একটি উদাহরণ থাকতে হবে </a> চলমান বা একটি এপিআই যা সেই একই অনুরোধগুলি পরিচালনা করবে৷ <br /> বিজ্ঞপ্তি পাঠানোর জন্য Apprise API Url সম্পূর্ণ URL পাথ হওয়া উচিত, যেমন, যদি আপনার API উদাহরণ <code>http://192.168 এ পরিবেশিত হয়৷ 1.1:8337</code> তারপর আপনি <code>http://192.168.1.1:8337/notify</code> লিখবেন।",
   "MessageBackupsDescription": "ব্যাকআপের মধ্যে রয়েছে ব্যবহারকারী, ব্যবহারকারীর অগ্রগতি, লাইব্রেরি আইটেমের বিবরণ, সার্ভার সেটিংস এবং <code>/metadata/items</code> & <code>/metadata/authors</code>-এ সংরক্ষিত ছবি। ব্যাকআপগুলি <strong> আপনার লাইব্রেরি ফোল্ডারে সঞ্চিত কোনো ফাইল >অন্তর্ভুক্ত করবেন না</strong>।",
   "MessageBatchQuickMatchDescription": "কুইক ম্যাচ নির্বাচিত আইটেমগুলির জন্য অনুপস্থিত কভার এবং মেটাডেটা যোগ করার চেষ্টা করবে। বিদ্যমান কভার এবং/অথবা মেটাডেটা ওভাররাইট করার জন্য দ্রুত ম্যাচকে অনুমতি দিতে নীচের বিকল্পগুলি সক্ষম করুন।",
   "MessageBookshelfNoCollections": "আপনি এখনও কোনো সংগ্রহ করেননি",
