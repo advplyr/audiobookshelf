@@ -61,6 +61,8 @@ export default {
       const bDesc = this.authorSortDesc ? -1 : 1
       return this.authors.sort((a, b) => {
         if (typeof a[sortProp] === 'number' && typeof b[sortProp] === 'number') {
+          // Fallback to name sort if equal
+          if (a[sortProp] === b[sortProp]) return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) * bDesc
           return a[sortProp] > b[sortProp] ? bDesc : -bDesc
         }
         return a[sortProp]?.localeCompare(b[sortProp], undefined, { sensitivity: 'base' }) * bDesc
