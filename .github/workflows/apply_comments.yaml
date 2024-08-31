@@ -45,6 +45,11 @@ jobs:
               - `localhost` versus IP address
               - hairpin NAT
               - VPN
+              - firewall ports
+              - public versus private network
+              - bridge versus host mode
+              - Docker networking
+              - DNS (such as EAI_AGAIN errors)
             
             After you have followed these steps, please post the solution or steps you followed to fix the problem to help others in the future, or show that it is a problem with Audiobookshelf so we can reopen the issue.
 
