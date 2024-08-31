@@ -218,12 +218,12 @@ export default {
             this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
           } else {
             console.log(`Item removed from playlist`, updatedPlaylist)
-            this.$toast.success('Item removed from playlist')
+            this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           }
         })
         .catch((error) => {
           console.error('Failed to remove item from playlist', error)
-          this.$toast.error('Failed to remove item from playlist')
+          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
         })
         .finally(() => {
           this.processingRemove = false

@@ -366,7 +366,7 @@ export default {
         }
       }
       if (!updates.length) {
-        return this.$toast.warning('No updates were made')
+        return this.$toast.warning(this.$strings.ToastNoUpdatesNecessary)
       }
 
       console.log('Pushing updates', updates)

@@ -9,7 +9,7 @@
       <widgets-cron-expression-builder ref="expressionBuilder" v-model="newCronExpression" @input="expressionUpdated" />
 
       <div class="flex items-center justify-end">
-        <ui-btn :disabled="!isUpdated" @click="submit">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdateNecessary }}</ui-btn>
+        <ui-btn :disabled="!isUpdated" @click="submit">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdatesWereNecessary }}</ui-btn>
       </div>
     </div>
   </modals-modal>

@@ -162,7 +162,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to save backup path', error)
-          const errorMsg = error.response?.data || 'Failed to save backup path'
+          const errorMsg = error.response?.data || this.$strings.ToastBackupPathUpdateFailed
           this.$toast.error(errorMsg)
         })
         .finally(() => {
@@ -171,11 +171,11 @@ export default {
     },
     updateBackupsSettings() {
       if (isNaN(this.maxBackupSize) || this.maxBackupSize < 0) {
-        this.$toast.error('Invalid maximum backup size')
+        this.$toast.error(this.$strings.ToastBackupInvalidMaxSize)
         return
       }
       if (isNaN(this.backupsToKeep) || this.backupsToKeep <= 0 || this.backupsToKeep > 99) {
-        this.$toast.error('Invalid number of backups to keep')
+        this.$toast.error(this.$strings.ToastBackupInvalidMaxKeep)
         return
       }
       const updatePayload = {

@@ -86,7 +86,7 @@ export default {
       return this.selectedEventData && this.selectedEventData.requiresLibrary
     },
     title() {
-      return this.isNew ? 'Create Notification' : 'Update Notification'
+      return this.isNew ? this.$strings.HeaderNotificationCreate : this.$strings.HeaderNotificationUpdate
     },
     availableVariables() {
       return this.selectedEventData ? this.selectedEventData.variables || null : null
@@ -104,9 +104,9 @@ export default {
     },
     submitForm() {
       this.$refs.urlsInput?.forceBlur()
-      
+
       if (!this.newNotification.urls.length) {
-        this.$toast.error('Must enter an Apprise URL')
+        this.$toast.error(this.$strings.ToastAppriseUrlRequired)
         return
       }
 
@@ -127,12 +127,12 @@ export default {
         .$patch(`/api/notifications/${payload.id}`, payload)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success('Notification updated')
+          this.$toast.success(this.$strings.ToastNotificationUpdateSuccess)
           this.show = false
         })
         .catch((error) => {
           console.error('Failed to update notification', error)
-          this.$toast.error('Failed to update notification')
+          this.$toast.error(this.$strings.ToastNotificationUpdateFailed)
         })
         .finally(() => {
           this.processing = false
@@ -149,12 +149,11 @@ export default {
         .$post('/api/notifications', payload)
         .then((updatedSettings) => {
           this.$emit('update', updatedSettings)
-          this.$toast.success('Notification created')
           this.show = false
         })
         .catch((error) => {
           console.error('Failed to create notification', error)
-          this.$toast.error('Failed to create notification')
+          this.$toast.error(this.$strings.ToastNotificationCreateFailed)
         })
         .finally(() => {
           this.processing = false

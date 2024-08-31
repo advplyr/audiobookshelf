@@ -484,23 +484,23 @@ export default {
         this.$axios
           .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
           .then(() => {
-            this.$toast.success('Episode download queue cleared')
+            this.$toast.success(this.$strings.ToastEpisodeDownloadQueueClearSuccess)
             this.episodeDownloadQueued = []
           })
           .catch((error) => {
             console.error('Failed to clear queue', error)
-            this.$toast.error('Failed to clear queue')
+            this.$toast.error(this.$strings.ToastEpisodeDownloadQueueClearFailed)
           })
       }
     },
     async findEpisodesClick() {
       if (!this.mediaMetadata.feedUrl) {
-        return this.$toast.error('Podcast does not have an RSS Feed')
+        return this.$toast.error(this.$strings.ToastNoRSSFeed)
       }
       this.fetchingRSSFeed = true
       var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.fetchingRSSFeed = false
@@ -509,7 +509,7 @@ export default {
       console.log('Podcast feed', payload)
       const podcastfeed = payload.podcast
       if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
-        this.$toast.info('No episodes found in RSS feed')
+        this.$toast.info(this.$strings.ToastPodcastNoEpisodesInFeed)
         return
       }
 
@@ -578,7 +578,7 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+              caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
@@ -622,13 +622,12 @@ export default {
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-      if (confirm(`Are you sure you want to reset your progress?`)) {
+      if (confirm(this.$strings.MessageConfirmResetProgress)) {
         this.resettingProgress = true
         this.$axios
           .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
-            this.$toast.success(`Your progress was reset`)
             this.resettingProgress = false
           })
           .catch((error) => {
@@ -722,12 +721,12 @@ export default {
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
                 this.$router.replace(`/library/${this.libraryId}`)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeleteFailed)
               })
           }
         },

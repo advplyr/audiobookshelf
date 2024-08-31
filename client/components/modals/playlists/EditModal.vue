@@ -86,7 +86,7 @@ export default {
           .catch((error) => {
             console.error('Failed to remove playlist', error)
             this.processing = false
-            this.$toast.error(this.$strings.ToastPlaylistRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
           })
       }
     },
@@ -95,7 +95,7 @@ export default {
         return
       }
       if (!this.newPlaylistName) {
-        return this.$toast.error('Playlist must have a name')
+        return this.$toast.error(this.$strings.ToastNameRequired)
       }
 
       this.processing = true

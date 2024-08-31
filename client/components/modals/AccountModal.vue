@@ -111,7 +111,7 @@
           </div>
 
           <div class="flex pt-4 px-2">
-            <ui-btn v-if="hasOpenIDLink" small :loading="unlinkingFromOpenID" color="primary" type="button" class="mr-2" @click.stop="unlinkOpenID">Unlink OpenID</ui-btn>
+            <ui-btn v-if="hasOpenIDLink" small :loading="unlinkingFromOpenID" color="primary" type="button" class="mr-2" @click.stop="unlinkOpenID">{{ $strings.ButtonUnlinkOpenId }}</ui-btn>
             <ui-btn v-if="isEditingRoot" small class="flex items-center" to="/account">{{ $strings.ButtonChangeRootPassword }}</ui-btn>
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
@@ -212,19 +212,19 @@ export default {
     },
     unlinkOpenID() {
       const payload = {
-        message: 'Are you sure you want to unlink this user from OpenID?',
+        message: this.$strings.MessageConfirmUnlinkOpenId,
         callback: (confirmed) => {
           if (confirmed) {
             this.unlinkingFromOpenID = true
             this.$axios
               .$patch(`/api/users/${this.account.id}/openid-unlink`)
               .then(() => {
-                this.$toast.success('User unlinked from OpenID')
+                this.$toast.success(this.$strings.ToastUnlinkOpenIdSuccess)
                 this.show = false
               })
               .catch((error) => {
                 console.error('Failed to unlink user from OpenID', error)
-                this.$toast.error('Failed to unlink user from OpenID')
+                this.$toast.error(this.$strings.ToastUnlinkOpenIdFailed)
               })
               .finally(() => {
                 this.unlinkingFromOpenID = false
@@ -265,15 +265,15 @@ export default {
     },
     submitForm() {
       if (!this.newUser.username) {
-        this.$toast.error('Enter a username')
+        this.$toast.error(this.$strings.ToastNewUserUsernameError)
         return
       }
       if (!this.newUser.permissions.accessAllLibraries && !this.newUser.librariesAccessible.length) {
-        this.$toast.error('Must select at least one library')
+        this.$toast.error(this.$strings.ToastNewUserLibraryError)
         return
       }
       if (!this.newUser.permissions.accessAllTags && !this.newUser.itemTagsSelected.length) {
-        this.$toast.error('Must select at least one tag')
+        this.$toast.error(this.$strings.ToastNewUserTagError)
         return
       }
 
@@ -313,12 +313,12 @@ export default {
           this.processing = false
           console.error('Failed to update account', error)
           var errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error(errMsg || 'Failed to update account')
+          this.$toast.error(errMsg || this.$strings.ToastFailedToUpdateAccount)
         })
     },
     submitCreateAccount() {
       if (!this.newUser.password) {
-        this.$toast.error('Must have a password, only root user can have an empty password')
+        this.$toast.error(this.$strings.ToastNewUserPasswordError)
         return
       }
 
@@ -329,9 +329,9 @@ export default {
         .then((data) => {
           this.processing = false
           if (data.error) {
-            this.$toast.error(`Failed to create account: ${data.error}`)
+            this.$toast.error(this.$strings.ToastNewUserCreatedFailed + ': ' + data.error)
           } else {
-            this.$toast.success('New account created')
+            this.$toast.success(this.$strings.ToastNewUserCreatedSuccess)
             this.show = false
           }
         })

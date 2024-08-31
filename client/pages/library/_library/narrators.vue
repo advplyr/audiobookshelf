@@ -138,7 +138,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove narrator', error)
-          this.$toast.error('Failed to remove narrator')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
           this.loading = false
         })
     },

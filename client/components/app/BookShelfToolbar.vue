@@ -473,11 +473,11 @@ export default {
       this.$axios
         .$get(`/api/me/series/${this.seriesId}/readd-to-continue-listening`)
         .then(() => {
-          this.$toast.success('Series re-added to continue listening')
+          this.$toast.success(this.$strings.ToastItemUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to re-add series to continue listening', error)
-          this.$toast.error('Failed to re-add series to continue listening')
+          this.$toast.error(this.$strings.ToastItemUpdateFailed)
         })
         .finally(() => {
           this.processingSeries = false
@@ -504,7 +504,7 @@ export default {
         })
         if (!response) {
           console.error(`Author ${author.name} not found`)
-          this.$toast.error(`Author ${author.name} not found`)
+          this.$toast.error(this.$getString('ToastAuthorNotFound', [author.name]))
         } else if (response.updated) {
           if (response.author.imagePath) console.log(`Author ${response.author.name} was updated`)
           else console.log(`Author ${response.author.name} was updated (no image found)`)
@@ -522,13 +522,13 @@ export default {
         this.$axios
           .$delete(`/api/libraries/${this.currentLibraryId}/issues`)
           .then(() => {
-            this.$toast.success('Removed library items with issues')
+            this.$toast.success(this.$strings.ToastRemoveItemsWithIssuesSuccess)
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
             this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
-            this.$toast.error('Failed to remove library items with issues')
+            this.$toast.error(this.$strings.ToastRemoveItemsWithIssuesFailed)
           })
           .finally(() => {
             this.processingIssues = false

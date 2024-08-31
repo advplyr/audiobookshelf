@@ -7,7 +7,7 @@
         <div class="absolute top-0 mt-1 w-3 h-3 rounded-full bg-green-500"></div>
         <div class="absolute top-0 mt-1 w-3 h-3 rounded-full bg-green-500"></div>
       </div>
-      <div class="text-gray-200 text-xs font-light mt-2 text-center">{{ text }}</div>
+      <div class="text-gray-200 text-xs font-light mt-2 text-center">{{ message }}</div>
     </div>
   </div>
 </template>
@@ -17,7 +17,12 @@ export default {
   props: {
     text: {
       type: String,
-      default: 'Please Wait...'
+      default: null
+    }
+  },
+  computed: {
+    message() {
+      return this.text || this.$strings.MessagePleaseWait
     }
   }
 }
