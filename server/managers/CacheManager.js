@@ -124,6 +124,13 @@ class CacheManager {
     await this.ensureCachePaths()
   }
 
+  /**
+   *
+   * @param {import('express').Response} res
+   * @param {import('../models/Author')} author
+   * @param {{ format?: string, width?: number, height?: number }} options
+   * @returns
+   */
   async handleAuthorCache(res, author, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400

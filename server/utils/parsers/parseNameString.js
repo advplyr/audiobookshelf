@@ -42,15 +42,15 @@ module.exports.parse = (nameString) => {
   var splitNames = []
   // Example &LF: Friedman, Milton & Friedman, Rose
   if (nameString.includes('&')) {
-    nameString.split('&').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
+    nameString.split('&').forEach((asa) => (splitNames = splitNames.concat(asa.split(','))))
   } else if (nameString.includes(' and ')) {
-    nameString.split(' and ').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
+    nameString.split(' and ').forEach((asa) => (splitNames = splitNames.concat(asa.split(','))))
   } else if (nameString.includes(';')) {
-    nameString.split(';').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
+    nameString.split(';').forEach((asa) => (splitNames = splitNames.concat(asa.split(','))))
   } else {
     splitNames = nameString.split(',')
   }
-  if (splitNames.length) splitNames = splitNames.map(a => a.trim())
+  if (splitNames.length) splitNames = splitNames.map((a) => a.trim())
 
   var names = []
 
@@ -84,21 +84,12 @@ module.exports.parse = (nameString) => {
   }
 
   // Filter out names that have no first and last
-  names = names.filter(n => n.first_name || n.last_name)
+  names = names.filter((n) => n.first_name || n.last_name)
 
   // Set name strings and remove duplicates
-  const namesArray = [...new Set(names.map(a => a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name))]
+  const namesArray = [...new Set(names.map((a) => (a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)))]
 
   return {
     names: namesArray // Array of first last
   }
-}
-
-module.exports.checkNamesAreEqual = (name1, name2) => {
-  if (!name1 || !name2) return false
-
-  // e.g. John H. Smith will be equal to John H Smith
-  name1 = String(name1).toLowerCase().trim().replace(/\./g, '')
-  name2 = String(name2).toLowerCase().trim().replace(/\./g, '')
-  return name1 === name2
 }
