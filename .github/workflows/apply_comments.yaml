@@ -21,6 +21,7 @@ jobs:
             
             This issue is available for anyone to work on.
 
+
   config-issue:
     if: github.event.label.name == 'config-issue'
     runs-on: ubuntu-latest
@@ -34,9 +35,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.issue.number }}
           BODY: >
-            After reviewing this issue, this appears to be a problem with your setup and not Audiobookshelf. This issue is being closed to keep the issue tracker focused on Audiobookshelf itself.
-            
-            Please reach out on the Audiobookshelf Discord for community support.
+            After reviewing this issue, this appears to be a problem with your setup and not Audiobookshelf. This issue is being closed to keep the issue tracker focused on Audiobookshelf itself. Please reach out on the Audiobookshelf Discord for community support.
             
             Some common search terms to help you find the solution to your problem:
               - Reverse proxy
