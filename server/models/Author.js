@@ -1,4 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
+const parseNameString = require('../utils/parsers/parseNameString')
 
 class Author extends Model {
   constructor(values, options) {
@@ -22,6 +23,16 @@ class Author extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+  }
+
+  /**
+   *
+   * @param {string} name
+   * @returns {string}
+   */
+  static getLastFirst(name) {
+    if (!name) return null
+    return parseNameString.nameToLastFirst(name)
   }
 
   /**

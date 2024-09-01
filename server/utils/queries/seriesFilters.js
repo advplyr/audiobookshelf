@@ -171,7 +171,7 @@ module.exports = {
     // Map series to old series
     const allOldSeries = []
     for (const s of series) {
-      const oldSeries = s.getOldSeries().toJSON()
+      const oldSeries = s.toOldJSON()
 
       if (s.dataValues.totalDuration) {
         oldSeries.totalDuration = s.dataValues.totalDuration

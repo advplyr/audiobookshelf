@@ -25,7 +25,7 @@ class RssFeedManager {
         return false
       }
     } else if (feedObj.entityType === 'series') {
-      const series = await Database.seriesModel.getOldById(feedObj.entityId)
+      const series = await Database.seriesModel.findByPk(feedObj.entityId)
       if (!series) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found`)
         return false
@@ -133,9 +133,9 @@ class RssFeedManager {
         }
       }
     } else if (feed.entityType === 'series') {
-      const series = await Database.seriesModel.getOldById(feed.entityId)
+      const series = await Database.seriesModel.findByPk(feed.entityId)
       if (series) {
-        const seriesJson = series.toJSON()
+        const seriesJson = series.toOldJSON()
 
         // Get books in series that have audio tracks
         seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)

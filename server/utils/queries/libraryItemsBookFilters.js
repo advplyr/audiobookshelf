@@ -954,12 +954,12 @@ module.exports = {
 
   /**
    * Get library items for series
-   * @param {import('../../objects/entities/Series')} oldSeries
+   * @param {import('../../models/Series')} series
    * @param {import('../../models/User')} [user]
    * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
-  async getLibraryItemsForSeries(oldSeries, user) {
-    const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, user, 'series', oldSeries.id, null, null, false, [], null, null)
+  async getLibraryItemsForSeries(series, user) {
+    const { libraryItems } = await this.getFilteredLibraryItems(series.libraryId, user, 'series', series.id, null, null, false, [], null, null)
     return libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
   },
 
@@ -1130,7 +1130,7 @@ module.exports = {
         return Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSON()
       })
       seriesMatches.push({
-        series: series.getOldSeries().toJSON(),
+        series: series.toOldJSON(),
         books
       })
     }

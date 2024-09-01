@@ -447,21 +447,6 @@ class Database {
     return this.models.series.updateFromOld(oldSeries)
   }
 
-  async createSeries(oldSeries) {
-    if (!this.sequelize) return false
-    await this.models.series.createFromOld(oldSeries)
-  }
-
-  async createBulkSeries(oldSeriesObjs) {
-    if (!this.sequelize) return false
-    await this.models.series.createBulkFromOld(oldSeriesObjs)
-  }
-
-  async removeSeries(seriesId) {
-    if (!this.sequelize) return false
-    await this.models.series.removeById(seriesId)
-  }
-
   async createBulkBookAuthors(bookAuthors) {
     if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
@@ -678,7 +663,7 @@ class Database {
    */
   async getSeriesIdByName(libraryId, seriesName) {
     if (!this.libraryFilterData[libraryId]) {
-      return (await this.seriesModel.getOldByNameAndLibrary(seriesName, libraryId))?.id || null
+      return (await this.seriesModel.getByNameAndLibrary(seriesName, libraryId))?.id || null
     }
     return this.libraryFilterData[libraryId].series.find((se) => se.name === seriesName)?.id || null
   }

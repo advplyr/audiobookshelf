@@ -125,7 +125,7 @@ class RSSFeedController {
   async openRSSFeedForSeries(req, res) {
     const options = req.body || {}
 
-    const series = await Database.seriesModel.getOldById(req.params.seriesId)
+    const series = await Database.seriesModel.findByPk(req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist
@@ -140,7 +140,7 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    const seriesJson = series.toJSON()
+    const seriesJson = series.toOldJSON()
 
     // Get books in series that have audio tracks
     seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)

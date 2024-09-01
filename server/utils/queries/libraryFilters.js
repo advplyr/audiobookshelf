@@ -276,7 +276,7 @@ module.exports = {
 
     const allOldSeries = []
     for (const s of series) {
-      const oldSeries = s.getOldSeries().toJSON()
+      const oldSeries = s.toOldJSON()
 
       if (s.feeds?.length) {
         oldSeries.rssFeed = Database.feedModel.getOldFeed(s.feeds[0]).toJSONMinified()

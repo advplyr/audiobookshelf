@@ -33,7 +33,7 @@ const CustomMetadataProviderController = require('../controllers/CustomMetadataP
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 
-const Series = require('../objects/entities/Series')
+const { getTitleIgnorePrefix } = require('../utils/index')
 
 class ApiRouter {
   constructor(Server) {
@@ -524,13 +524,15 @@ class ApiRouter {
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-    await Database.removeSeries(series.id)
+
     // Remove series from library filter data
     Database.removeSeriesFromFilterData(series.libraryId, series.id)
     SocketAuthority.emitter('series_removed', {
       id: series.id,
       libraryId: series.libraryId
     })
+
+    await series.destroy()
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -619,6 +621,7 @@ class ApiRouter {
             if (!author) {
               author = await Database.authorModel.create({
                 name: authorName,
+                lastFirst: Database.authorModel.getLastFirst(authorName),
                 libraryId
               })
               Logger.debug(`[ApiRouter] Creating new author "${author.name}"`)
@@ -663,11 +666,14 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.series[i].id) {
-            let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
+            let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesName, libraryId)
             if (!seriesItem) {
-              seriesItem = new Series()
-              seriesItem.setData(mediaMetadata.series[i], libraryId)
-              Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
+              seriesItem = await Database.seriesModel.create({
+                name: seriesName,
+                nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
+                libraryId
+              })
+              Logger.debug(`[ApiRouter] Creating new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
               // Update filter data
               Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
@@ -680,10 +686,9 @@ class ApiRouter {
         // Remove series without an id
         mediaMetadata.series = mediaMetadata.series.filter((se) => se.id)
         if (newSeries.length) {
-          await Database.createBulkSeries(newSeries)
           SocketAuthority.emitter(
             'multiple_series_added',
-            newSeries.map((se) => se.toJSON())
+            newSeries.map((se) => se.toOldJSON())
           )
         }
       }
