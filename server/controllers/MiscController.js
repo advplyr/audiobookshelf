@@ -44,7 +44,7 @@ class MiscController {
     const files = Object.values(req.files)
     const { title, author, series, folder: folderId, library: libraryId } = req.body
 
-    const library = await Database.libraryModel.findByPk(libraryId)
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
