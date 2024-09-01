@@ -45,7 +45,8 @@ class PodcastController {
     }
 
     const folder = await Database.libraryFolderModel.findByPk(payload.folderId)
-    if (!folder) {
+    // Verify the folder matches the library ID so we don't accidentally add a podcast to the wrong path
+    if (!folder || folder.libraryId !== library.id) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
       return res.status(404).send('Folder not found')
     }

@@ -49,7 +49,8 @@ class MiscController {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
     const folder = await Database.libraryFolderModel.findByPk(folderId)
-    if (!folder) {
+    // Verify the folder matches the library ID so we don't accidentally add a podcast to the wrong path
+    if (!folder || folder.libraryId !== library.id) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
 
