@@ -108,9 +108,9 @@ export default {
           if (res.warning) {
             this.$toast.warning(res.warning)
           } else if (res.updated) {
-            this.$toast.success(this.$strings.ToastNoUpdatesNecessary)
+            this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           } else {
-            this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
+            this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
           }
         })
         .catch((error) => {
@@ -170,7 +170,7 @@ export default {
       this.isProcessing = false
       if (updateResult) {
         if (updateResult.updated) {
-          this.$toast.success(this.$strings.MessageItemDetailsUpdated)
+          this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           return true
         } else {
           this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
