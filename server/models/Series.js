@@ -1,6 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 
-const oldSeries = require('../objects/entities/Series')
 const { getTitlePrefixAtEnd } = require('../utils/index')
 
 class Series extends Model {
@@ -21,36 +20,6 @@ class Series extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
-  }
-
-  getOldSeries() {
-    return new oldSeries({
-      id: this.id,
-      name: this.name,
-      description: this.description,
-      libraryId: this.libraryId,
-      addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf()
-    })
-  }
-
-  static updateFromOld(oldSeries) {
-    const series = this.getFromOld(oldSeries)
-    return this.update(series, {
-      where: {
-        id: series.id
-      }
-    })
-  }
-
-  static getFromOld(oldSeries) {
-    return {
-      id: oldSeries.id,
-      name: oldSeries.name,
-      nameIgnorePrefix: oldSeries.nameIgnorePrefix,
-      description: oldSeries.description,
-      libraryId: oldSeries.libraryId
-    }
   }
 
   /**

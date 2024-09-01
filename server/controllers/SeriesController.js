@@ -59,19 +59,28 @@ class SeriesController {
   }
 
   /**
-   * TODO: Update to use new model
+   * TODO: Currently unused in the client, should check for duplicate name
    *
    * @param {SeriesControllerRequest} req
    * @param {Response} res
    */
   async update(req, res) {
-    const oldSeries = req.series.getOldSeries()
-    const hasUpdated = oldSeries.update(req.body)
-    if (hasUpdated) {
-      await Database.updateSeries(oldSeries)
-      SocketAuthority.emitter('series_updated', oldSeries.toJSON())
+    const keysToUpdate = ['name', 'description']
+    const payload = {}
+    for (const key of keysToUpdate) {
+      if (req.body[key] !== undefined && typeof req.body[key] === 'string') {
+        payload[key] = req.body[key]
+      }
     }
-    res.json(oldSeries.toJSON())
+    if (!Object.keys(payload).length) {
+      return res.status(400).send('No valid fields to update')
+    }
+    req.series.set(payload)
+    if (req.series.changed()) {
+      await req.series.save()
+      SocketAuthority.emitter('series_updated', req.series.toOldJSON())
+    }
+    res.json(req.series.toOldJSON())
   }
 
   /**
