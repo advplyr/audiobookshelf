@@ -8,7 +8,6 @@ const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcast
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
-const Series = require('../objects/entities/Series')
 const LibraryScanner = require('./LibraryScanner')
 const CoverManager = require('../managers/CoverManager')
 const TaskManager = require('../managers/TaskManager')
@@ -209,6 +208,7 @@ class Scanner {
         if (!author) {
           author = await Database.authorModel.create({
             name: authorName,
+            lastFirst: Database.authorModel.getLastFirst(authorName),
             libraryId: libraryItem.libraryId
           })
           SocketAuthority.emitter('author_added', author.toOldJSON())
@@ -225,14 +225,16 @@ class Scanner {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesPayload = []
       for (const seriesMatchItem of matchData.series) {
-        let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
+        let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
         if (!seriesItem) {
-          seriesItem = new Series()
-          seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)
-          await Database.createSeries(seriesItem)
+          seriesItem = await Database.seriesModel.create({
+            name: seriesMatchItem.series,
+            nameIgnorePrefix: getTitleIgnorePrefix(seriesMatchItem.series),
+            libraryId
+          })
           // Update filter data
           Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
-          SocketAuthority.emitter('series_added', seriesItem.toJSON())
+          SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))
       }

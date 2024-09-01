@@ -104,6 +104,9 @@ class AuthorController {
     let hasUpdated = false
 
     const authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
+    if (authorNameUpdate) {
+      payload.lastFirst = Database.authorModel.getLastFirst(payload.name)
+    }
 
     // Check if author name matches another author and merge the authors
     let existingAuthor = null
@@ -167,6 +170,11 @@ class AuthorController {
         merged: true
       })
       return
+    }
+
+    // If lastFirst is not set, get it from the name
+    if (!authorNameUpdate && !req.author.lastFirst) {
+      payload.lastFirst = Database.authorModel.getLastFirst(req.author.name)
     }
 
     // Regular author update

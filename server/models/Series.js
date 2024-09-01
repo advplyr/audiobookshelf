@@ -1,6 +1,7 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const oldSeries = require('../objects/entities/Series')
+const { getTitlePrefixAtEnd } = require('../utils/index')
 
 class Series extends Model {
   constructor(values, options) {
@@ -20,11 +21,6 @@ class Series extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
-  }
-
-  static async getAllOldSeries() {
-    const series = await this.findAll()
-    return series.map((se) => se.getOldSeries())
   }
 
   getOldSeries() {
@@ -47,16 +43,6 @@ class Series extends Model {
     })
   }
 
-  static createFromOld(oldSeries) {
-    const series = this.getFromOld(oldSeries)
-    return this.create(series)
-  }
-
-  static createBulkFromOld(oldSeriesObjs) {
-    const series = oldSeriesObjs.map(this.getFromOld)
-    return this.bulkCreate(series)
-  }
-
   static getFromOld(oldSeries) {
     return {
       id: oldSeries.id,
@@ -65,25 +51,6 @@ class Series extends Model {
       description: oldSeries.description,
       libraryId: oldSeries.libraryId
     }
-  }
-
-  static removeById(seriesId) {
-    return this.destroy({
-      where: {
-        id: seriesId
-      }
-    })
-  }
-
-  /**
-   * Get oldSeries by id
-   * @param {string} seriesId
-   * @returns {Promise<oldSeries>}
-   */
-  static async getOldById(seriesId) {
-    const series = await this.findByPk(seriesId)
-    if (!series) return null
-    return series.getOldSeries()
   }
 
   /**
@@ -96,24 +63,21 @@ class Series extends Model {
   }
 
   /**
-   * Get old series by name and libraryId. name case insensitive
+   * Get series by name and libraryId. name case insensitive
    *
    * @param {string} seriesName
    * @param {string} libraryId
-   * @returns {Promise<oldSeries>}
+   * @returns {Promise<Series>}
    */
-  static async getOldByNameAndLibrary(seriesName, libraryId) {
-    const series = (
-      await this.findOne({
-        where: [
-          where(fn('lower', col('name')), seriesName.toLowerCase()),
-          {
-            libraryId
-          }
-        ]
-      })
-    )?.getOldSeries()
-    return series
+  static async getByNameAndLibrary(seriesName, libraryId) {
+    return this.findOne({
+      where: [
+        where(fn('lower', col('name')), seriesName.toLowerCase()),
+        {
+          libraryId
+        }
+      ]
+    })
   }
 
   /**
@@ -162,6 +126,26 @@ class Series extends Model {
       onDelete: 'CASCADE'
     })
     Series.belongsTo(library)
+  }
+
+  toOldJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      nameIgnorePrefix: getTitlePrefixAtEnd(this.name),
+      description: this.description,
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      libraryId: this.libraryId
+    }
+  }
+
+  toJSONMinimal(sequence) {
+    return {
+      id: this.id,
+      name: this.name,
+      sequence
+    }
   }
 }
 

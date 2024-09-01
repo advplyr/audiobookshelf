@@ -9,6 +9,11 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
  * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObject} RequestWithUser
+ *
+ * @typedef RequestEntityObject
+ * @property {import('../models/Series')} series
+ *
+ * @typedef {RequestWithUser & RequestEntityObject} SeriesControllerRequest
  */
 
 class SeriesController {
@@ -21,7 +26,7 @@ class SeriesController {
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
    * Series are not library specific so we need to know what the library id is
    *
-   * @param {RequestWithUser} req
+   * @param {SeriesControllerRequest} req
    * @param {Response} res
    */
   async findOne(req, res) {
@@ -30,7 +35,7 @@ class SeriesController {
       .map((v) => v.trim())
       .filter((v) => !!v)
 
-    const seriesJson = req.series.toJSON()
+    const seriesJson = req.series.toOldJSON()
 
     // Add progress map with isFinished flag
     if (include.includes('progress')) {
@@ -54,17 +59,19 @@ class SeriesController {
   }
 
   /**
+   * TODO: Update to use new model
    *
-   * @param {RequestWithUser} req
+   * @param {SeriesControllerRequest} req
    * @param {Response} res
    */
   async update(req, res) {
-    const hasUpdated = req.series.update(req.body)
+    const oldSeries = req.series.getOldSeries()
+    const hasUpdated = oldSeries.update(req.body)
     if (hasUpdated) {
-      await Database.updateSeries(req.series)
-      SocketAuthority.emitter('series_updated', req.series.toJSON())
+      await Database.updateSeries(oldSeries)
+      SocketAuthority.emitter('series_updated', oldSeries.toJSON())
     }
-    res.json(req.series.toJSON())
+    res.json(oldSeries.toJSON())
   }
 
   /**
@@ -74,7 +81,7 @@ class SeriesController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    const series = await Database.seriesModel.getOldById(req.params.id)
+    const series = await Database.seriesModel.findByPk(req.params.id)
     if (!series) return res.sendStatus(404)
 
     /**
