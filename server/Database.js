@@ -442,11 +442,6 @@ class Database {
     await this.models.feed.removeById(feedId)
   }
 
-  updateSeries(oldSeries) {
-    if (!this.sequelize) return false
-    return this.models.series.updateFromOld(oldSeries)
-  }
-
   async createBulkBookAuthors(bookAuthors) {
     if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
