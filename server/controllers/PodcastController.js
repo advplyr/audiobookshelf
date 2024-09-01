@@ -44,7 +44,7 @@ class PodcastController {
       return res.status(404).send('Library not found')
     }
 
-    const folder = library.libraryFolders.find((fold) => fold.id === payload.folderId)
+    const folder = await Database.libraryFolderModel.findByPk(payload.folderId)
     if (!folder) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
       return res.status(404).send('Folder not found')
