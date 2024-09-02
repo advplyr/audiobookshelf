@@ -108,6 +108,7 @@ class User extends Model {
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: true,
+      selectedTagsNotAccessible: false,
       librariesAccessible: [],
       itemTagsSelected: []
     }
