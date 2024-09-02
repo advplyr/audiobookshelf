@@ -270,8 +270,10 @@ class UserController {
       const permissions = {
         ...user.permissions
       }
+      const defaultPermissions = Database.userModel.getDefaultPermissionsForUserType(updatePayload.type || user.type || 'user')
       for (const key in updatePayload.permissions) {
-        if (permissions[key] !== undefined) {
+        // Check that the key is a valid permission key or is included in the default permissions
+        if (permissions[key] !== undefined || defaultPermissions[key] !== undefined) {
           if (typeof updatePayload.permissions[key] !== 'boolean') {
             Logger.warn(`[UserController] update: Invalid permission value for key ${key}. Should be boolean`)
           } else if (permissions[key] !== updatePayload.permissions[key]) {
