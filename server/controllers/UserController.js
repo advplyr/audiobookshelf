@@ -226,7 +226,10 @@ class UserController {
       return res.status(400).send('Invalid username')
     }
     if (updatePayload.type && !Database.userModel.accountTypes.includes(updatePayload.type)) {
-      return res.status(400).send('Invalid account type')
+      // Root user is not included in the OAuth account types so it cannot be overwritten
+      if (updatePayload.type !== 'root') {
+        return res.status(400).send('Invalid account type')
+      }
     }
     if (updatePayload.permissions && typeof updatePayload.permissions !== 'object') {
       return res.status(400).send('Invalid permissions')
