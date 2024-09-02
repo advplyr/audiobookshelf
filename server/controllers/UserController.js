@@ -205,9 +205,12 @@ class UserController {
   async update(req, res) {
     const user = req.reqUser
 
-    if (user.type === 'root' && !req.user.isRoot) {
+    if (user.isRoot && !req.user.isRoot) {
       Logger.error(`[UserController] Admin user "${req.user.username}" attempted to update root user`)
       return res.sendStatus(403)
+    } else if (user.isRoot) {
+      // Root user cannot update type
+      delete req.body.type
     }
 
     const updatePayload = req.body
