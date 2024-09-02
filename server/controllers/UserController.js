@@ -270,7 +270,7 @@ class UserController {
       const permissions = {
         ...user.permissions
       }
-      const defaultPermissions = Database.userModel.getDefaultPermissionsForUserType(updatePayload.type || 'user')
+      const defaultPermissions = Database.userModel.getDefaultPermissionsForUserType(updatePayload.type || user.type || 'user')
       for (const key in updatePayload.permissions) {
         // Check that the key is a valid permission key or is included in the default permissions
         if (permissions[key] !== undefined || defaultPermissions[key] !== undefined) {
