@@ -51,7 +51,3 @@ module.exports.AudioMimeType = {
   AWB: 'audio/amr-wb',
   CAF: 'audio/x-caf'
 }
-
-module.exports.VideoMimeType = {
-  MP4: 'video/mp4'
-}

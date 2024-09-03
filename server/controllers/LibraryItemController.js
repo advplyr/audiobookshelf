@@ -384,7 +384,7 @@ class LibraryItemController {
    * @param {Response} res
    */
   startPlaybackSession(req, res) {
-    if (!req.libraryItem.media.numTracks && req.libraryItem.mediaType !== 'video') {
+    if (!req.libraryItem.media.numTracks) {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }

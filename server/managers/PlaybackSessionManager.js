@@ -293,37 +293,27 @@ class PlaybackSessionManager {
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user.id, mediaPlayer, deviceInfo, userStartTime, episodeId)
 
-    if (libraryItem.mediaType === 'video') {
-      if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id}`)
-        newPlaybackSession.videoTrack = libraryItem.media.getVideoTrack()
-        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
-      } else {
-        // HLS not supported for video yet
-      }
+    let audioTracks = []
+    if (shouldDirectPlay) {
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
+      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
+      newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
-      let audioTracks = []
-      if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
-        audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
-        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
-      } else {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
-        const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
-        await stream.generatePlaylist()
-        stream.start() // Start transcode
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
+      const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
+      await stream.generatePlaylist()
+      stream.start() // Start transcode
 
-        audioTracks = [stream.getAudioTrack()]
-        newPlaybackSession.stream = stream
-        newPlaybackSession.playMethod = PlayMethod.TRANSCODE
+      audioTracks = [stream.getAudioTrack()]
+      newPlaybackSession.stream = stream
+      newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 
-        stream.on('closed', () => {
-          Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}" (Device: ${newPlaybackSession.deviceDescription})`)
-          newPlaybackSession.stream = null
-        })
-      }
-      newPlaybackSession.audioTracks = audioTracks
+      stream.on('closed', () => {
+        Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}" (Device: ${newPlaybackSession.deviceDescription})`)
+        newPlaybackSession.stream = null
+      })
     }
+    newPlaybackSession.audioTracks = audioTracks
 
     this.sessions.push(newPlaybackSession)
     SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))

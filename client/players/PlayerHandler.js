@@ -1,8 +1,6 @@
 import LocalAudioPlayer from './LocalAudioPlayer'
-import LocalVideoPlayer from './LocalVideoPlayer'
 import CastPlayer from './CastPlayer'
 import AudioTrack from './AudioTrack'
-import VideoTrack from './VideoTrack'
 
 export default class PlayerHandler {
   constructor(ctx) {
@@ -16,8 +14,6 @@ export default class PlayerHandler {
     this.player = null
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
-    this.isVideo = false
-    this.isMusic = false
     this.currentSessionId = null
     this.startTimeOverride = undefined // Used for starting playback at a specific time (i.e. clicking bookmark from library item page)
     this.startTime = 0
@@ -65,12 +61,10 @@ export default class PlayerHandler {
 
   load(libraryItem, episodeId, playWhenReady, playbackRate, startTimeOverride = undefined) {
     this.libraryItem = libraryItem
-    this.isVideo = libraryItem.mediaType === 'video'
-    this.isMusic = libraryItem.mediaType === 'music'
 
     this.episodeId = episodeId
     this.playWhenReady = playWhenReady
-    this.initialPlaybackRate = this.isMusic ? 1 : playbackRate
+    this.initialPlaybackRate = playbackRate
 
     this.startTimeOverride = startTimeOverride == null || isNaN(startTimeOverride) ? undefined : Number(startTimeOverride)
 
@@ -97,7 +91,7 @@ export default class PlayerHandler {
         this.playWhenReady = playWhenReady
         this.prepare()
       }
-    } else if (!this.isCasting && !(this.player instanceof LocalAudioPlayer) && !(this.player instanceof LocalVideoPlayer)) {
+    } else if (!this.isCasting && !(this.player instanceof LocalAudioPlayer)) {
       console.log('[PlayerHandler] Switching to local player')
 
       this.stopPlayInterval()
@@ -107,11 +101,7 @@ export default class PlayerHandler {
         this.player.destroy()
       }
 
-      if (this.isVideo) {
-        this.player = new LocalVideoPlayer(this.ctx)
-      } else {
-        this.player = new LocalAudioPlayer(this.ctx)
-      }
+      this.player = new LocalAudioPlayer(this.ctx)
 
       this.setPlayerListeners()
 
@@ -203,7 +193,7 @@ export default class PlayerHandler {
       supportedMimeTypes: this.player.playableMimeTypes,
       mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
       forceTranscode,
-      forceDirectPlay: this.isCasting || this.isVideo // TODO: add transcode support for chromecast
+      forceDirectPlay: this.isCasting // TODO: add transcode support for chromecast
     }
 
     const path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
@@ -218,7 +208,6 @@ export default class PlayerHandler {
     if (!this.player) this.switchPlayer() // Must set player first for open sessions
 
     this.libraryItem = session.libraryItem
-    this.isVideo = session.libraryItem.mediaType === 'video'
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
     this.startTimeOverride = undefined
@@ -237,27 +226,15 @@ export default class PlayerHandler {
 
     console.log('[PlayerHandler] Preparing Session', session)
 
-    if (session.videoTrack) {
-      var videoTrack = new VideoTrack(session.videoTrack, this.userToken)
+    var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, this.userToken))
 
-      this.ctx.playerLoading = true
-      this.isHlsTranscode = true
-      if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
-        this.isHlsTranscode = false
-      }
-
-      this.player.set(this.libraryItem, videoTrack, this.isHlsTranscode, this.startTime, this.playWhenReady)
-    } else {
-      var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, this.userToken))
-
-      this.ctx.playerLoading = true
-      this.isHlsTranscode = true
-      if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
-        this.isHlsTranscode = false
-      }
-
-      this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
+    this.ctx.playerLoading = true
+    this.isHlsTranscode = true
+    if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
+      this.isHlsTranscode = false
     }
+
+    this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
 
     // browser media session api
     this.ctx.setMediaSession()
@@ -333,8 +310,6 @@ export default class PlayerHandler {
   }
 
   sendProgressSync(currentTime) {
-    if (this.isMusic) return
-
     const diffSinceLastSync = Math.abs(this.lastSyncTime - currentTime)
     if (diffSinceLastSync < 1) return
 

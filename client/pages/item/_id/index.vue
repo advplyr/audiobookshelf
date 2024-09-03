@@ -39,16 +39,11 @@
                 ><span :key="index" v-if="index < seriesList.length - 1">, </span>
               </template>
 
-              <template v-if="!isVideo">
-                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
-                <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              </template>
+              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
+              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
+                by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+              </p>
+              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -109,7 +104,7 @@
               <ui-icon-btn icon="&#xe3c9;" outlined class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast && !isMusic" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
@@ -220,12 +215,6 @@ export default {
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
-    isVideo() {
-      return this.libraryItem.mediaType === 'video'
-    },
-    isMusic() {
-      return this.libraryItem.mediaType === 'music'
-    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -240,8 +229,6 @@ export default {
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
-      if (this.isMusic) return !!this.audioFile
-      if (this.isVideo) return !!this.videoFile
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
     },
@@ -292,9 +279,6 @@ export default {
     authors() {
       return this.mediaMetadata.authors || []
     },
-    musicArtists() {
-      return this.mediaMetadata.artists || []
-    },
     series() {
       return this.mediaMetadata.series || []
     },
@@ -309,7 +293,7 @@ export default {
       })
     },
     duration() {
-      if (!this.tracks.length && !this.audioFile) return 0
+      if (!this.tracks.length) return 0
       return this.media.duration
     },
     libraryFiles() {
@@ -321,18 +305,10 @@ export default {
     ebookFile() {
       return this.media.ebookFile
     },
-    videoFile() {
-      return this.media.videoFile
-    },
-    audioFile() {
-      // Music track
-      return this.media.audioFile
-    },
     description() {
       return this.mediaMetadata.description || ''
     },
     userMediaProgress() {
-      if (this.isMusic) return null
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userIsFinished() {
