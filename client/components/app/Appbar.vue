@@ -264,7 +264,6 @@ export default {
       libraryItems.forEach((item) => {
         let subtitle = ''
         if (item.mediaType === 'book') subtitle = item.media.metadata.authors.map((au) => au.name).join(', ')
-        else if (item.mediaType === 'music') subtitle = item.media.metadata.artists.join(', ')
         queueItems.push({
           libraryItemId: item.id,
           libraryId: item.libraryId,

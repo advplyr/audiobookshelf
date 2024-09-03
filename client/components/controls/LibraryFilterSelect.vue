@@ -98,9 +98,6 @@ export default {
     isPodcast() {
       return this.libraryMediaType === 'podcast'
     },
-    isMusic() {
-      return this.libraryMediaType === 'music'
-    },
     seriesItems() {
       return [
         {
@@ -274,35 +271,9 @@ export default {
         }
       ]
     },
-    musicItems() {
-      return [
-        {
-          text: this.$strings.LabelAll,
-          value: 'all'
-        },
-        {
-          text: this.$strings.LabelGenre,
-          textPlural: this.$strings.LabelGenres,
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: this.$strings.LabelTag,
-          textPlural: this.$strings.LabelTags,
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: this.$strings.ButtonIssues,
-          value: 'issues',
-          sublist: false
-        }
-      ]
-    },
     selectItems() {
       if (this.isSeries) return this.seriesItems
       if (this.isPodcast) return this.podcastItems
-      if (this.isMusic) return this.musicItems
       return this.bookItems
     },
     selectedItemSublist() {

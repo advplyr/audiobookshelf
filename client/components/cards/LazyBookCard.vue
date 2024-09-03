@@ -226,9 +226,6 @@ export default {
     isPodcast() {
       return this.mediaType === 'podcast' || this.store.getters['libraries/getCurrentLibraryMediaType'] === 'podcast'
     },
-    isMusic() {
-      return this.mediaType === 'music'
-    },
     isExplicit() {
       return this.mediaMetadata.explicit || false
     },
@@ -336,7 +333,6 @@ export default {
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
-      if (this.isMusic) return this.artist
       if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
@@ -364,7 +360,6 @@ export default {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.recentEpisode.id)
     },
     userProgress() {
-      if (this.isMusic) return null
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
@@ -420,7 +415,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.ebookFormat
@@ -464,8 +459,6 @@ export default {
       return this.store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
-      if (this.isMusic) return []
-
       if (this.recentEpisode) {
         const items = [
           {

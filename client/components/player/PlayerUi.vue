@@ -178,22 +178,6 @@ export default {
   methods: {
     toggleFullscreen(isFullscreen) {
       this.$store.commit('setPlayerIsFullscreen', isFullscreen)
-
-      var videoPlayerEl = document.getElementById('video-player')
-      if (videoPlayerEl) {
-        if (isFullscreen) {
-          videoPlayerEl.style.width = '100vw'
-          videoPlayerEl.style.height = '100vh'
-          videoPlayerEl.style.top = '0px'
-          videoPlayerEl.style.left = '0px'
-        } else {
-          videoPlayerEl.style.width = '384px'
-          videoPlayerEl.style.height = '216px'
-          videoPlayerEl.style.top = 'unset'
-          videoPlayerEl.style.bottom = '80px'
-          videoPlayerEl.style.left = '16px'
-        }
-      }
     },
     setDuration(duration) {
       this.duration = duration

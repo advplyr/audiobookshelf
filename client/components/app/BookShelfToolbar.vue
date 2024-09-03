@@ -246,9 +246,6 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    isMusicLibrary() {
-      return this.currentLibraryMediaType === 'music'
-    },
     isLibraryPage() {
       return this.page === ''
     },
@@ -281,7 +278,6 @@ export default {
     },
     entityName() {
       if (this.isAlbumsPage) return 'Albums'
-      if (this.isMusicLibrary) return 'Tracks'
 
       if (this.isPodcastLibrary) return this.$strings.LabelPodcasts
       if (!this.page) return this.$strings.LabelBooks
