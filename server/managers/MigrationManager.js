@@ -92,13 +92,13 @@ class MigrationManager {
       try {
         await this.copyMigrationsToConfigDir()
       } catch (error) {
-        throw new Error('Failed to copy migrations to the config directory.', error)
+        throw new Error('Failed to copy migrations to the config directory.', { cause: error })
       }
 
       try {
         await this.updateMaxVersion(serverVersion)
       } catch (error) {
-        throw new Error('Failed to update max version in the database.', error)
+        throw new Error('Failed to update max version in the database.', { cause: error })
       }
     }
 
@@ -155,6 +155,8 @@ class MigrationManager {
     const migrationsSourceDir = path.join(__dirname, '..', 'migrations')
 
     await fs.ensureDir(this.migrationsDir) // Ensure the target directory exists
+
+    if (!(await fs.pathExists(migrationsSourceDir))) return
 
     const files = await fs.readdir(migrationsSourceDir)
     await Promise.all(
