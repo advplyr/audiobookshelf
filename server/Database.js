@@ -8,6 +8,8 @@ const Logger = require('./Logger')
 const dbMigration = require('./utils/migrations/dbMigration')
 const Auth = require('./Auth')
 
+const MigrationManager = require('./managers/MigrationManager')
+
 class Database {
   constructor() {
     this.sequelize = null
@@ -166,6 +168,16 @@ class Database {
 
     if (!(await this.connect())) {
       throw new Error('Database connection failed')
+    }
+
+    if (!this.isNew) {
+      try {
+        const migrationManager = new MigrationManager(this.sequelize, global.ConfigPath)
+        await migrationManager.runMigrations(packageJson.version)
+      } catch (error) {
+        Logger.error(`[Database] Failed to run migrations`, error)
+        throw new Error('Database migration failed')
+      }
     }
 
     await this.buildModels(force)
