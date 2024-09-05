@@ -38,7 +38,7 @@ class Collection extends Model {
 
     // Optionally include rssfeed for collection
     const collectionIncludes = []
-    if (include.includes('rssfeed')) {
+    if (include?.includes('rssfeed')) {
       collectionIncludes.push({
         model: this.sequelize.models.feed
       })
