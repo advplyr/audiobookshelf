@@ -20,8 +20,8 @@
           <span class="material-symbols text-2xl sm:text-3xl">forward_media</span>
         </button>
       </ui-tooltip>
-      <ui-tooltip direction="top" :text="$strings.ButtonNextChapter" class="ml-4 lg:ml-8">
-        <button :aria-label="$strings.ButtonNextChapter" :disabled="!hasNextChapter" :class="hasNextChapter ? 'text-gray-300' : 'text-gray-500'" @mousedown.prevent @mouseup.prevent @click.stop="nextChapter">
+      <ui-tooltip direction="top" :text="hasNextLabel" class="ml-4 lg:ml-8">
+        <button :aria-label="hasNextLabel" :disabled="!hasNext" class="text-gray-300 disabled:text-gray-500" @mousedown.prevent @mouseup.prevent @click.stop="next">
           <span class="material-symbols text-2xl sm:text-3xl">last_page</span>
         </button>
       </ui-tooltip>
@@ -43,7 +43,8 @@ export default {
     seekLoading: Boolean,
     playbackRate: Number,
     paused: Boolean,
-    hasNextChapter: Boolean
+    hasNextChapter: Boolean,
+    hasNextItemInQueue: Boolean
   },
   data() {
     return {}
@@ -62,6 +63,13 @@ export default {
     },
     jumpBackwardText() {
       return this.getJumpText('jumpBackwardAmount', this.$strings.ButtonJumpBackward)
+    },
+    hasNextLabel() {
+      if (this.hasNextItemInQueue && !this.hasNextChapter) return this.$strings.ButtonNextItemInQueue
+      return this.$strings.ButtonNextChapter
+    },
+    hasNext() {
+      return this.hasNextItemInQueue || this.hasNextChapter
     }
   },
   methods: {
@@ -71,9 +79,9 @@ export default {
     prevChapter() {
       this.$emit('prevChapter')
     },
-    nextChapter() {
-      if (!this.hasNextChapter) return
-      this.$emit('nextChapter')
+    next() {
+      if (!this.hasNext) return
+      this.$emit('next')
     },
     jumpBackward() {
       this.$emit('jumpBackward')

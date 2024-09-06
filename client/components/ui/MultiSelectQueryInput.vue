@@ -20,7 +20,7 @@
 
       <ul ref="menu" v-show="showMenu" class="absolute z-60 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
-          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="isMenuItemSelected(item) ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
               <span class="font-normal ml-3 block truncate">{{ item.name }}</span>
             </div>
@@ -40,7 +40,10 @@
 </template>
 
 <script>
+import menuKeyboardNavigationMixin from '@/mixins/menuKeyboardNavigation'
+
 export default {
+  mixins: [menuKeyboardNavigationMixin],
   props: {
     value: {
       type: Array,
@@ -63,8 +66,7 @@ export default {
       typingTimeout: null,
       isFocused: false,
       menu: null,
-      items: [],
-      selectedMenuItemIndex: null
+      items: []
     }
   },
   watch: {
@@ -124,34 +126,7 @@ export default {
       this.items = results || []
     },
     keydownInput(event) {
-      let items = this.itemsToShow
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault()
-        if (!items.length) return
-        if (event.key === 'ArrowDown') {
-          if (this.selectedMenuItemIndex === null) {
-            this.selectedMenuItemIndex = 0
-          } else {
-            this.selectedMenuItemIndex = Math.min(this.selectedMenuItemIndex + 1, items.length - 1)
-          }
-        } else if (event.key === 'ArrowUp') {
-          if (this.selectedMenuItemIndex === null) {
-            this.selectedMenuItemIndex = items.length - 1
-          } else {
-            this.selectedMenuItemIndex = Math.max(this.selectedMenuItemIndex - 1, 0)
-          }
-        }
-        this.recalcScroll()
-        return
-      } else if (event.key === 'Enter') {
-        if (this.selectedMenuItemIndex !== null) {
-          this.clickedOption(event, items[this.selectedMenuItemIndex])
-        } else {
-          this.submitForm()
-        }
-        return
-      }
-      this.selectedMenuItemIndex = null
+      this.menuNavigationHandler(event)
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
         this.search()
@@ -165,24 +140,6 @@ export default {
         this.$refs.input.style.width = len + 'px'
         this.recalcMenuPos()
       }, 50)
-    },
-    recalcScroll() {
-      if (!this.menu) return
-      var menuItems = this.menu.querySelectorAll('li')
-      if (!menuItems.length) return
-      var selectedItem = menuItems[this.selectedMenuItemIndex]
-      if (!selectedItem) return
-      var menuHeight = this.menu.offsetHeight
-      var itemHeight = selectedItem.offsetHeight
-      var itemTop = selectedItem.offsetTop
-      var itemBottom = itemTop + itemHeight
-      if (itemBottom > this.menu.scrollTop + menuHeight) {
-        let menuPaddingBottom = parseFloat(window.getComputedStyle(this.menu).paddingBottom)
-        this.menu.scrollTop = itemBottom - menuHeight + menuPaddingBottom
-      } else if (itemTop < this.menu.scrollTop) {
-        let menuPaddingTop = parseFloat(window.getComputedStyle(this.menu).paddingTop)
-        this.menu.scrollTop = itemTop - menuPaddingTop
-      }
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
@@ -323,9 +280,6 @@ export default {
       this.textInput = null
       this.currentSearch = null
       this.selectedMenuItemIndex = null
-      this.$nextTick(() => {
-        this.blur()
-      })
     },
     submitForm() {
       if (!this.textInput) return

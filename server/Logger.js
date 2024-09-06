@@ -32,12 +32,8 @@ class Logger {
    * @returns {string}
    */
   get source() {
-    try {
-      throw new Error()
-    } catch (error) {
-      const regex = global.isWin ? /^.*\\([^\\:]*:[0-9]*):[0-9]*\)*/ : /^.*\/([^/:]*:[0-9]*):[0-9]*\)*/
-      return error.stack.split('\n')[3].replace(regex, '$1')
-    }
+    const regex = global.isWin ? /^.*\\([^\\:]*:[0-9]*):[0-9]*\)*/ : /^.*\/([^/:]*:[0-9]*):[0-9]*\)*/
+    return Error().stack.split('\n')[3].replace(regex, '$1')
   }
 
   getLogLevelString(level) {

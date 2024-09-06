@@ -126,7 +126,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to rename tag', error)
-          this.$toast.error('Failed to rename tag')
+          this.$toast.error(this.$strings.ToastRenameFailed)
         })
         .finally(() => {
           this.loading = false
@@ -143,7 +143,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove tag', error)
-          this.$toast.error('Failed to remove tag')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.loading = false

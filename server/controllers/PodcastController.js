@@ -38,13 +38,13 @@ class PodcastController {
     }
     const payload = req.body
 
-    const library = await Database.libraryModel.getOldById(payload.libraryId)
+    const library = await Database.libraryModel.findByIdWithFolders(payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
       return res.status(404).send('Library not found')
     }
 
-    const folder = library.folders.find((fold) => fold.id === payload.folderId)
+    const folder = library.libraryFolders.find((fold) => fold.id === payload.folderId)
     if (!folder) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
       return res.status(404).send('Folder not found')

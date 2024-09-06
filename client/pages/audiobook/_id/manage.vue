@@ -331,11 +331,11 @@ export default {
       this.$axios
         .$delete(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
         .then(() => {
-          this.$toast.success('Encode canceled')
+          this.$toast.success(this.$strings.ToastEncodeCancelSucces)
         })
         .catch((error) => {
           console.error('Failed to cancel encode', error)
-          this.$toast.error('Failed to cancel encode')
+          this.$toast.error(this.$strings.ToastEncodeCancelFailed)
         })
         .finally(() => {
           this.isCancelingEncode = false

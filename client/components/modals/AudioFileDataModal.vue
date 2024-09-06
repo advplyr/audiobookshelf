@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between">
         <p class="text-base text-gray-200 truncate">{{ metadata.filename }}</p>
         <ui-btn v-if="ffprobeData" small class="ml-2" @click="ffprobeData = null">{{ $strings.ButtonReset }}</ui-btn>
-        <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">Probe Audio File</ui-btn>
+        <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">{{ $strings.ButtonProbeAudioFile }}</ui-btn>
       </div>
 
       <div class="w-full h-px bg-white bg-opacity-10 my-4" />
@@ -159,7 +159,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get ffprobe data', error)
-          this.$toast.error('FFProbe failed')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.probingFile = false

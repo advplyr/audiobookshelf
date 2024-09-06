@@ -3,67 +3,67 @@
     <form class="w-full h-full px-2 md:px-4 py-6" @submit.prevent="submitForm">
       <div class="flex flex-wrap -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" />
+          <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" @input="handleInputChange" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="subtitleInput" v-model="details.subtitle" :label="$strings.LabelSubtitle" />
+          <ui-text-input-with-label ref="subtitleInput" v-model="details.subtitle" :label="$strings.LabelSubtitle" @input="handleInputChange" />
         </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-3/4 px-1">
           <!-- Authors filter only contains authors in this library, uses filter data -->
-          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" filter-key="authors" />
+          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" filter-key="authors" @input="handleInputChange" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" :label="$strings.LabelPublishYear" />
+          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" :label="$strings.LabelPublishYear" @input="handleInputChange" />
         </div>
       </div>
 
       <div class="flex mt-2 -mx-1">
         <div class="flex-grow px-1">
-          <widgets-series-input-widget v-model="details.series" />
+          <widgets-series-input-widget v-model="details.series" @input="handleInputChange" />
         </div>
       </div>
 
-      <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" />
+      <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" @input="handleInputChange" />
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-multi-select ref="genresSelect" v-model="details.genres" :label="$strings.LabelGenres" :items="genres" />
+          <ui-multi-select ref="genresSelect" v-model="details.genres" :label="$strings.LabelGenres" :items="genres" @input="handleInputChange" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-multi-select ref="tagsSelect" v-model="newTags" :label="$strings.LabelTags" :items="tags" />
+          <ui-multi-select ref="tagsSelect" v-model="newTags" :label="$strings.LabelTags" :items="tags" @input="handleInputChange" />
         </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-multi-select ref="narratorsSelect" v-model="details.narrators" :label="$strings.LabelNarrators" :items="narrators" />
+          <ui-multi-select ref="narratorsSelect" v-model="details.narrators" :label="$strings.LabelNarrators" :items="narrators" @input="handleInputChange" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="isbnInput" v-model="details.isbn" label="ISBN" />
+          <ui-text-input-with-label ref="isbnInput" v-model="details.isbn" label="ISBN" @input="handleInputChange" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="asinInput" v-model="details.asin" label="ASIN" />
+          <ui-text-input-with-label ref="asinInput" v-model="details.asin" label="ASIN" @input="handleInputChange" />
         </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/4 px-1">
-          <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" :label="$strings.LabelPublisher" />
+          <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" :label="$strings.LabelPublisher" @input="handleInputChange" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" />
+          <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" @input="handleInputChange" />
         </div>
         <div class="flex-grow px-1 pt-6 mt-2 md:mt-0">
           <div class="flex justify-center">
-            <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
           </div>
         </div>
         <div class="flex-grow px-1 pt-6 mt-2 md:mt-0">
           <div class="flex justify-center">
-            <ui-checkbox v-model="details.abridged" :label="$strings.LabelAbridged" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <ui-checkbox v-model="details.abridged" :label="$strings.LabelAbridged" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
           </div>
         </div>
       </div>
@@ -132,6 +132,12 @@ export default {
     }
   },
   methods: {
+    handleInputChange() {
+      this.$emit('change', {
+        libraryItemId: this.libraryItem.id,
+        hasChanges: this.checkForChanges().hasChanges
+      })
+    },
     getDetails() {
       this.forceBlur()
       return this.checkForChanges()
@@ -172,6 +178,7 @@ export default {
           }
         }
       }
+      this.handleInputChange()
     },
     forceBlur() {
       if (this.$refs.titleInput) this.$refs.titleInput.blur()

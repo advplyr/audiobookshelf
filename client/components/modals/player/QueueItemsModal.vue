@@ -13,7 +13,7 @@
           <div class="flex-grow" />
           <ui-checkbox v-model="playerQueueAutoPlay" label="Auto Play" medium checkbox-bg="primary" border-color="gray-600" label-class="pl-2 mb-px" />
         </div>
-        <modals-player-queue-item-row v-for="(item, index) in playerQueueItems" :key="index" :item="item" :index="index" @play="playItem" @remove="removeItem" />
+        <modals-player-queue-item-row v-for="(item, index) in playerQueueItems" :key="index" :item="item" :index="index" @play="playItem(index)" @remove="removeItem" />
       </div>
     </div>
   </modals-modal>
@@ -22,8 +22,7 @@
 <script>
 export default {
   props: {
-    value: Boolean,
-    libraryItemId: String
+    value: Boolean
   },
   data() {
     return {}
@@ -50,11 +49,9 @@ export default {
     }
   },
   methods: {
-    playItem(item) {
-      this.$eventBus.$emit('play-item', {
-        libraryItemId: item.libraryItemId,
-        episodeId: item.episodeId || null,
-        queueItems: this.playerQueueItems
+    playItem(index) {
+      this.$eventBus.$emit('play-queue-item', {
+        index
       })
       this.show = false
     },

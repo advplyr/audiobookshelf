@@ -29,7 +29,7 @@
     </div>
 
     <div class="flex p-2">
-      <span class="material-symbols-outlined text-5xl pt-1">insert_drive_file</span>
+      <span class="material-symbols text-5xl pt-1">insert_drive_file</span>
       <div class="px-1">
         <p class="text-4.5xl leading-none font-bold">{{ $formatNumber(totalSizeNum) }}</p>
         <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelSize }} ({{ totalSizeMod }})</p>
@@ -37,7 +37,7 @@
     </div>
 
     <div class="flex p-2">
-      <span class="material-symbols-outlined text-5xl pt-1">audio_file</span>
+      <span class="material-symbols text-5xl pt-1">audio_file</span>
       <div class="px-1">
         <p class="text-4.5xl leading-none font-bold">{{ $formatNumber(numAudioTracks) }}</p>
         <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsAudioTracks }}</p>

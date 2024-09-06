@@ -111,7 +111,7 @@ export default {
       this.processing = true
       const queuePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/episode-downloads`).catch((error) => {
         console.error('Failed to get download queue', error)
-        this.$toast.error('Failed to get download queue')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.processing = false

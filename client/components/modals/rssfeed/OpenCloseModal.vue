@@ -121,14 +121,14 @@ export default {
   methods: {
     openFeed() {
       if (!this.newFeedSlug) {
-        this.$toast.error('Must set a feed slug')
+        this.$toast.error(this.$strings.ToastSlugRequired)
         return
       }
 
       const sanitized = this.$sanitizeSlug(this.newFeedSlug)
       if (this.newFeedSlug !== sanitized) {
         this.newFeedSlug = sanitized
-        this.$toast.warning('Slug had to be modified - Run again')
+        this.$toast.warning(this.$strings.ToastSlugMustChange)
         return
       }
 

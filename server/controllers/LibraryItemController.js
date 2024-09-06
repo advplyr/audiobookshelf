@@ -1,13 +1,14 @@
 const { Request, Response, NextFunction } = require('express')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
+const uaParserJs = require('../libs/uaParser')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
-const { ScanResult } = require('../utils/constants')
+const { ScanResult, AudioMimeType } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
@@ -150,6 +151,8 @@ class LibraryItemController {
    * PATCH: /items/:id/media
    * Update media for a library item. Will create new authors & series when necessary
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -184,6 +187,12 @@ class LibraryItemController {
       seriesRemoved = libraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
     }
 
+    let authorsRemoved = []
+    if (libraryItem.isBook && mediaPayload.metadata?.authors) {
+      const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
+      authorsRemoved = libraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+    }
+
     const hasUpdates = libraryItem.media.update(mediaPayload) || mediaPayload.url
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
@@ -204,6 +213,15 @@ class LibraryItemController {
       Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
       await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+
+      if (authorsRemoved.length) {
+        // Check remove empty authors
+        Logger.debug(`[LibraryItemController] Authors were removed from book. Check if authors are now empty.`)
+        await this.checkRemoveAuthorsWithNoBooks(
+          libraryItem.libraryId,
+          authorsRemoved.map((au) => au.id)
+        )
+      }
     }
     res.json({
       updated: hasUpdates,
@@ -366,7 +384,7 @@ class LibraryItemController {
    * @param {Response} res
    */
   startPlaybackSession(req, res) {
-    if (!req.libraryItem.media.numTracks && req.libraryItem.mediaType !== 'video') {
+    if (!req.libraryItem.media.numTracks) {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
@@ -799,6 +817,7 @@ class LibraryItemController {
    */
   async downloadLibraryFile(req, res) {
     const libraryFile = req.libraryFile
+    const ua = uaParserJs(req.headers['user-agent'])
 
     if (!req.user.canDownload) {
       Logger.error(`[LibraryItemController] User "${req.user.username}" without download permission attempted to download file "${libraryFile.metadata.path}"`)
@@ -814,8 +833,15 @@ class LibraryItemController {
     }
 
     // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
+    let audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryFile.metadata.path))
     if (audioMimeType) {
+      // Work-around for Apple devices mishandling Content-Type on mobile browsers:
+      // https://github.com/advplyr/audiobookshelf/issues/3310
+      // We actually need to check for Webkit on Apple mobile devices because this issue impacts all browsers on iOS/iPadOS/etc, not just Safari.
+      const isAppleMobileBrowser = ua.device.vendor === 'Apple' && ua.device.type === 'mobile' && ua.engine.name === 'WebKit'
+      if (isAppleMobileBrowser && audioMimeType === AudioMimeType.M4B) {
+        audioMimeType = 'audio/m4b'
+      }
       res.setHeader('Content-Type', audioMimeType)
     }
 

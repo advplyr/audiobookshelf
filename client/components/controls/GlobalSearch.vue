@@ -5,7 +5,7 @@
         <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
       </form>
       <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
-        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">search</span>
+        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">&#xe8b6;</span>
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
       </div>
     </div>
@@ -42,7 +42,7 @@
           <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelAuthors }}</p>
           <template v-for="item in authorResults">
             <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.id)}`">
+              <nuxt-link :to="`/author/${item.id}`">
                 <cards-author-search-card :author="item" />
               </nuxt-link>
             </li>

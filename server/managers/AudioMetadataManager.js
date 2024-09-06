@@ -7,6 +7,12 @@ const TaskManager = require('./TaskManager')
 const Task = require('../objects/Task')
 const fileUtils = require('../utils/fileUtils')
 
+/**
+ * @typedef UpdateMetadataOptions
+ * @property {boolean} [forceEmbedChapters=false] - Whether to force embed chapters.
+ * @property {boolean} [backup=false] - Whether to backup the files.
+ */
+
 class AudioMetadataMangaer {
   constructor() {
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
@@ -47,8 +53,8 @@ class AudioMetadataMangaer {
   /**
    *
    * @param {string} userId
-   * @param {*} libraryItem
-   * @param {*} options
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {UpdateMetadataOptions} [options={}]
    */
   async updateMetadataForItem(userId, libraryItem, options = {}) {
     const forceEmbedChapters = !!options.forceEmbedChapters
@@ -67,9 +73,10 @@ class AudioMetadataMangaer {
     if (audioFiles.some((a) => a.mimeType !== mimeType)) mimeType = null
 
     // Create task
+    const libraryItemDir = libraryItem.isFile ? Path.dirname(libraryItem.path) : libraryItem.path
     const taskData = {
       libraryItemId: libraryItem.id,
-      libraryItemPath: libraryItem.path,
+      libraryItemDir,
       userId,
       audioFiles: audioFiles.map((af) => ({
         index: af.index,
@@ -112,10 +119,10 @@ class AudioMetadataMangaer {
     Logger.info(`[AudioMetadataManager] Starting metadata embed task`, task.description)
 
     // Ensure target directory is writable
-    const targetDirWritable = await fileUtils.isWritable(task.data.libraryItemPath)
-    Logger.debug(`[AudioMetadataManager] Target directory ${task.data.libraryItemPath} writable: ${targetDirWritable}`)
+    const targetDirWritable = await fileUtils.isWritable(task.data.libraryItemDir)
+    Logger.debug(`[AudioMetadataManager] Target directory ${task.data.libraryItemDir} writable: ${targetDirWritable}`)
     if (!targetDirWritable) {
-      Logger.error(`[AudioMetadataManager] Target directory is not writable: ${task.data.libraryItemPath}`)
+      Logger.error(`[AudioMetadataManager] Target directory is not writable: ${task.data.libraryItemDir}`)
       task.setFailed('Target directory is not writable')
       this.handleTaskFinished(task)
       return

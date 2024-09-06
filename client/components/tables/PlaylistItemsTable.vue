@@ -92,7 +92,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update playlist', error)
-          this.$toast.error('Failed to save playlist items order')
+          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
         })
     },
     init() {

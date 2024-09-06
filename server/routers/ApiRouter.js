@@ -1,5 +1,6 @@
 const express = require('express')
 const Path = require('path')
+const sequelize = require('sequelize')
 
 const Logger = require('../Logger')
 const Database = require('../Database')
@@ -32,8 +33,7 @@ const CustomMetadataProviderController = require('../controllers/CustomMetadataP
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 
-const Author = require('../objects/entities/Author')
-const Series = require('../objects/entities/Series')
+const { getTitleIgnorePrefix } = require('../utils/index')
 
 class ApiRouter {
   constructor(Server) {
@@ -53,6 +53,7 @@ class ApiRouter {
     this.audioMetadataManager = Server.audioMetadataManager
     /** @type {import('../managers/RssFeedManager')} */
     this.rssFeedManager = Server.rssFeedManager
+    /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
     /** @type {import('../managers/NotificationManager')} */
     this.notificationManager = Server.notificationManager
@@ -469,19 +470,69 @@ class ApiRouter {
   }
 
   /**
+   * Remove authors with no books and unset asin, description and imagePath
+   * Note: Other implementation is in BookScanner.checkAuthorsRemovedFromBooks (can be merged)
+   *
+   * @param {string} libraryId
+   * @param {string[]} authorIds
+   * @returns {Promise<void>}
+   */
+  async checkRemoveAuthorsWithNoBooks(libraryId, authorIds) {
+    if (!authorIds?.length) return
+
+    const bookAuthorsToRemove = (
+      await Database.authorModel.findAll({
+        where: [
+          {
+            id: authorIds,
+            asin: {
+              [sequelize.Op.or]: [null, '']
+            },
+            description: {
+              [sequelize.Op.or]: [null, '']
+            },
+            imagePath: {
+              [sequelize.Op.or]: [null, '']
+            }
+          },
+          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
+        ],
+        attributes: ['id', 'name'],
+        raw: true
+      })
+    ).map((au) => ({ id: au.id, name: au.name }))
+
+    if (bookAuthorsToRemove.length) {
+      await Database.authorModel.destroy({
+        where: {
+          id: bookAuthorsToRemove.map((au) => au.id)
+        }
+      })
+      bookAuthorsToRemove.forEach(({ id, name }) => {
+        Database.removeAuthorFromFilterData(libraryId, id)
+        // TODO: Clients were expecting full author in payload but its unnecessary
+        SocketAuthority.emitter('author_removed', { id, libraryId })
+        Logger.info(`[ApiRouter] Removed author "${name}" with no books`)
+      })
+    }
+  }
+
+  /**
    * Remove an empty series & close an open RSS feed
    * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
     await this.rssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-    await Database.removeSeries(series.id)
+
     // Remove series from library filter data
     Database.removeSeriesFromFilterData(series.libraryId, series.id)
     SocketAuthority.emitter('series_removed', {
       id: series.id,
       libraryId: series.libraryId
     })
+
+    await series.destroy()
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -566,11 +617,14 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.authors[i].id) {
-            let author = await Database.authorModel.getOldByNameAndLibrary(authorName, libraryId)
+            let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryId)
             if (!author) {
-              author = new Author()
-              author.setData(mediaMetadata.authors[i], libraryId)
-              Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
+              author = await Database.authorModel.create({
+                name: authorName,
+                lastFirst: Database.authorModel.getLastFirst(authorName),
+                libraryId
+              })
+              Logger.debug(`[ApiRouter] Creating new author "${author.name}"`)
               newAuthors.push(author)
               // Update filter data
               Database.addAuthorToFilterData(libraryId, author.name, author.id)
@@ -583,10 +637,9 @@ class ApiRouter {
         // Remove authors without an id
         mediaMetadata.authors = mediaMetadata.authors.filter((au) => !!au.id)
         if (newAuthors.length) {
-          await Database.createBulkAuthors(newAuthors)
           SocketAuthority.emitter(
             'authors_added',
-            newAuthors.map((au) => au.toJSON())
+            newAuthors.map((au) => au.toOldJSON())
           )
         }
       }
@@ -613,11 +666,14 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.series[i].id) {
-            let seriesItem = await Database.seriesModel.getOldByNameAndLibrary(seriesName, libraryId)
+            let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesName, libraryId)
             if (!seriesItem) {
-              seriesItem = new Series()
-              seriesItem.setData(mediaMetadata.series[i], libraryId)
-              Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
+              seriesItem = await Database.seriesModel.create({
+                name: seriesName,
+                nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
+                libraryId
+              })
+              Logger.debug(`[ApiRouter] Creating new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
               // Update filter data
               Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
@@ -630,10 +686,9 @@ class ApiRouter {
         // Remove series without an id
         mediaMetadata.series = mediaMetadata.series.filter((se) => se.id)
         if (newSeries.length) {
-          await Database.createBulkSeries(newSeries)
           SocketAuthority.emitter(
             'multiple_series_added',
-            newSeries.map((se) => se.toJSON())
+            newSeries.map((se) => se.toOldJSON())
           )
         }
       }

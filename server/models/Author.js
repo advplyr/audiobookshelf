@@ -1,6 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
-
-const oldAuthor = require('../objects/entities/Author')
+const parseNameString = require('../utils/parsers/parseNameString')
 
 class Author extends Model {
   constructor(values, options) {
@@ -26,67 +25,14 @@ class Author extends Model {
     this.createdAt
   }
 
-  getOldAuthor() {
-    return new oldAuthor({
-      id: this.id,
-      asin: this.asin,
-      name: this.name,
-      description: this.description,
-      imagePath: this.imagePath,
-      libraryId: this.libraryId,
-      addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf()
-    })
-  }
-
-  static updateFromOld(oldAuthor) {
-    const author = this.getFromOld(oldAuthor)
-    return this.update(author, {
-      where: {
-        id: author.id
-      }
-    })
-  }
-
-  static createFromOld(oldAuthor) {
-    const author = this.getFromOld(oldAuthor)
-    return this.create(author)
-  }
-
-  static createBulkFromOld(oldAuthors) {
-    const authors = oldAuthors.map(this.getFromOld)
-    return this.bulkCreate(authors)
-  }
-
-  static getFromOld(oldAuthor) {
-    return {
-      id: oldAuthor.id,
-      name: oldAuthor.name,
-      lastFirst: oldAuthor.lastFirst,
-      asin: oldAuthor.asin,
-      description: oldAuthor.description,
-      imagePath: oldAuthor.imagePath,
-      libraryId: oldAuthor.libraryId
-    }
-  }
-
-  static removeById(authorId) {
-    return this.destroy({
-      where: {
-        id: authorId
-      }
-    })
-  }
-
   /**
-   * Get oldAuthor by id
-   * @param {string} authorId
-   * @returns {Promise<oldAuthor>}
+   *
+   * @param {string} name
+   * @returns {string}
    */
-  static async getOldById(authorId) {
-    const author = await this.findByPk(authorId)
-    if (!author) return null
-    return author.getOldAuthor()
+  static getLastFirst(name) {
+    if (!name) return null
+    return parseNameString.nameToLastFirst(name)
   }
 
   /**
@@ -99,25 +45,22 @@ class Author extends Model {
   }
 
   /**
-   * Get old author by name and libraryId. name case insensitive
+   * Get author by name and libraryId. name case insensitive
    * TODO: Look for authors ignoring punctuation
    *
    * @param {string} authorName
    * @param {string} libraryId
-   * @returns {Promise<oldAuthor>}
+   * @returns {Promise<Author>}
    */
-  static async getOldByNameAndLibrary(authorName, libraryId) {
-    const author = (
-      await this.findOne({
-        where: [
-          where(fn('lower', col('name')), authorName.toLowerCase()),
-          {
-            libraryId
-          }
-        ]
-      })
-    )?.getOldAuthor()
-    return author
+  static async getByNameAndLibrary(authorName, libraryId) {
+    return this.findOne({
+      where: [
+        where(fn('lower', col('name')), authorName.toLowerCase()),
+        {
+          libraryId
+        }
+      ]
+    })
   }
 
   /**
@@ -212,6 +155,37 @@ class Author extends Model {
       onDelete: 'CASCADE'
     })
     Author.belongsTo(library)
+  }
+
+  toOldJSON() {
+    return {
+      id: this.id,
+      asin: this.asin,
+      name: this.name,
+      description: this.description,
+      imagePath: this.imagePath,
+      libraryId: this.libraryId,
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf()
+    }
+  }
+
+  /**
+   *
+   * @param {number} numBooks
+   * @returns
+   */
+  toOldJSONExpanded(numBooks = 0) {
+    const oldJson = this.toOldJSON()
+    oldJson.numBooks = numBooks
+    return oldJson
+  }
+
+  toJSONMinimal() {
+    return {
+      id: this.id,
+      name: this.name
+    }
   }
 }
 module.exports = Author

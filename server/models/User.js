@@ -1,7 +1,6 @@
 const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const Logger = require('../Logger')
-const oldUser = require('../objects/user/User')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
 
@@ -50,6 +49,9 @@ class User extends Model {
     /** @type {import('./MediaProgress')[]?} - Only included when extended */
     this.mediaProgresses
   }
+
+  // Excludes "root" since their can only be 1 root user
+  static accountTypes = ['admin', 'user', 'guest']
 
   /**
    * List of expected permission properties from the client
@@ -106,114 +108,9 @@ class User extends Model {
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: true,
+      selectedTagsNotAccessible: false,
       librariesAccessible: [],
       itemTagsSelected: []
-    }
-  }
-
-  /**
-   * Get old user model from new
-   *
-   * @param {User} userExpanded
-   * @returns {oldUser}
-   */
-  static getOldUser(userExpanded) {
-    const mediaProgress = userExpanded.mediaProgresses.map((mp) => mp.getOldMediaProgress())
-
-    const librariesAccessible = [...(userExpanded.permissions?.librariesAccessible || [])]
-    const itemTagsSelected = [...(userExpanded.permissions?.itemTagsSelected || [])]
-    const permissions = { ...(userExpanded.permissions || {}) }
-    delete permissions.librariesAccessible
-    delete permissions.itemTagsSelected
-
-    const seriesHideFromContinueListening = userExpanded.extraData?.seriesHideFromContinueListening || []
-
-    return new oldUser({
-      id: userExpanded.id,
-      oldUserId: userExpanded.extraData?.oldUserId || null,
-      username: userExpanded.username,
-      email: userExpanded.email || null,
-      pash: userExpanded.pash,
-      type: userExpanded.type,
-      token: userExpanded.token,
-      mediaProgress,
-      seriesHideFromContinueListening: [...seriesHideFromContinueListening],
-      bookmarks: userExpanded.bookmarks,
-      isActive: userExpanded.isActive,
-      isLocked: userExpanded.isLocked,
-      lastSeen: userExpanded.lastSeen?.valueOf() || null,
-      createdAt: userExpanded.createdAt.valueOf(),
-      permissions,
-      librariesAccessible,
-      itemTagsSelected,
-      authOpenIDSub: userExpanded.extraData?.authOpenIDSub || null
-    })
-  }
-
-  /**
-   *
-   * @param {oldUser} oldUser
-   * @returns {Promise<User>}
-   */
-  static createFromOld(oldUser) {
-    const user = this.getFromOld(oldUser)
-    return this.create(user)
-  }
-
-  /**
-   * Update User from old user model
-   *
-   * @param {oldUser} oldUser
-   * @param {boolean} [hooks=true] Run before / after bulk update hooks?
-   * @returns {Promise<boolean>}
-   */
-  static updateFromOld(oldUser, hooks = true) {
-    const user = this.getFromOld(oldUser)
-    return this.update(user, {
-      hooks: !!hooks,
-      where: {
-        id: user.id
-      }
-    })
-      .then((result) => result[0] > 0)
-      .catch((error) => {
-        Logger.error(`[User] Failed to save user ${oldUser.id}`, error)
-        return false
-      })
-  }
-
-  /**
-   * Get new User model from old
-   *
-   * @param {oldUser} oldUser
-   * @returns {Object}
-   */
-  static getFromOld(oldUser) {
-    const extraData = {
-      seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
-      oldUserId: oldUser.oldUserId
-    }
-    if (oldUser.authOpenIDSub) {
-      extraData.authOpenIDSub = oldUser.authOpenIDSub
-    }
-
-    return {
-      id: oldUser.id,
-      username: oldUser.username,
-      email: oldUser.email || null,
-      pash: oldUser.pash || null,
-      type: oldUser.type || null,
-      token: oldUser.token || null,
-      isActive: !!oldUser.isActive,
-      lastSeen: oldUser.lastSeen || null,
-      extraData,
-      createdAt: oldUser.createdAt || Date.now(),
-      permissions: {
-        ...oldUser.permissions,
-        librariesAccessible: oldUser.librariesAccessible || [],
-        itemTagsSelected: oldUser.itemTagsSelected || []
-      },
-      bookmarks: oldUser.bookmarks
     }
   }
 
@@ -344,18 +241,6 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
-  }
-
-  /**
-   * @deprecated
-   * Get old user by id
-   * @param {string} userId
-   * @returns {Promise<oldUser|null>} returns null if not found
-   */
-  static async getOldUserById(userId) {
-    const user = await this.getUserById(userId)
-    if (!user) return null
-    return this.getOldUser(user)
   }
 
   /**

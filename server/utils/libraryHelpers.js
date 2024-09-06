@@ -83,7 +83,7 @@ module.exports = {
    * @param {*} payload
    * @param {string} seriesId
    * @param {import('../models/User')} user
-   * @param {import('../objects/Library')} library
+   * @param {import('../models/Library')} library
    * @returns {Object[]}
    */
   async handleCollapseSubseries(payload, seriesId, user, library) {

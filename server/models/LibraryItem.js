@@ -1,3 +1,4 @@
+const util = require('util')
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const fsExtra = require('../libs/fsExtra')
@@ -9,8 +10,6 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
 const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
-
-const ShareManager = require('../managers/ShareManager')
 
 /**
  * @typedef LibraryFileObject
@@ -302,7 +301,7 @@ class LibraryItem extends Model {
               if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
               if (!areEquivalent(updatedEpisodeCleaned[key], existingValue, true)) {
-                Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
+                Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from %j to %j`, existingValue, updatedEpisodeCleaned[key]))
                 episodeHasUpdates = true
               }
             }
@@ -383,7 +382,23 @@ class LibraryItem extends Model {
       if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
       if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
-        Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
+        if (key === 'libraryFiles') {
+          // Handle logging of libraryFiles separately because the object is large (should be addressed when migrating off the old library item model)
+          const libraryFilesRemoved = libraryItemExpanded.libraryFiles.filter((lf) => !updatedLibraryItem.libraryFiles.some((ulf) => ulf.ino === lf.ino))
+          if (libraryFilesRemoved.length) {
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files removed: ${libraryFilesRemoved.map((lf) => lf.metadata.path).join(', ')}`)
+          }
+          const libraryFilesAdded = updatedLibraryItem.libraryFiles.filter((ulf) => !libraryItemExpanded.libraryFiles.some((lf) => lf.ino === ulf.ino))
+          if (libraryFilesAdded.length) {
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files added: ${libraryFilesAdded.map((lf) => lf.metadata.path).join(', ')}`)
+          }
+          if (!libraryFilesRemoved.length && !libraryFilesAdded.length) {
+            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files updated`)
+          }
+        } else {
+          Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from %j to %j`, existingValue, updatedLibraryItem[key]))
+        }
+
         hasLibraryItemUpdates = true
         if (key === 'updatedAt') {
           libraryItemExpanded.changed('updatedAt', true)
@@ -542,14 +557,14 @@ class LibraryItem extends Model {
 
   /**
    * Get library items using filter and sort
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {object} options
    * @returns {{ libraryItems:oldLibraryItem[], count:number }}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
-    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, user, options)
+    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     return {
@@ -585,7 +600,7 @@ class LibraryItem extends Model {
 
   /**
    * Get home page data personalized shelves
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {string[]} include
    * @param {number} limit
@@ -758,7 +773,7 @@ class LibraryItem extends Model {
 
   /**
    * Get book library items for author, optional use user permissions
-   * @param {oldAuthor} author
+   * @param {import('./Author')} author
    * @param {import('./User')} user
    * @returns {Promise<oldLibraryItem[]>}
    */

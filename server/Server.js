@@ -41,6 +41,7 @@ const LibraryScanner = require('./scanner/LibraryScanner')
 //Import the main Passport and Express-Session library
 const passport = require('passport')
 const expressSession = require('express-session')
+const MemoryStore = require('./libs/memorystore')
 
 class Server {
   constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -68,7 +69,7 @@ class Server {
     // Managers
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
-    this.backupManager = new BackupManager()
+    this.backupManager = new BackupManager(this.notificationManager)
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
@@ -142,7 +143,7 @@ class Server {
     await this.backupManager.init()
     await this.rssFeedManager.init()
 
-    const libraries = await Database.libraryModel.getAllOldLibraries()
+    const libraries = await Database.libraryModel.getAllWithFolders()
     await this.cronManager.init(libraries)
     this.apiCacheManager.init()
 
@@ -232,7 +233,8 @@ class Server {
         cookie: {
           // also send the cookie if were are not on https (not every use has https)
           secure: false
-        }
+        },
+        store: new MemoryStore(86400000, 86400000, 1000)
       })
     )
     // init passport.js

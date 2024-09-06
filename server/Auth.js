@@ -3,6 +3,7 @@ const passport = require('passport')
 const { Request, Response, NextFunction } = require('express')
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
+const requestIp = require('./libs/requestIp')
 const LocalStrategy = require('./libs/passportLocal')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
@@ -76,7 +77,7 @@ class Auth {
    * Passport use LocalStrategy
    */
   initAuthStrategyPassword() {
-    passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
+    passport.use(new LocalStrategy({ passReqToCallback: true }, this.localAuthCheckUserPw.bind(this)))
   }
 
   /**
@@ -153,7 +154,7 @@ class Auth {
    * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
    * or creates a new user if configured to do so.
    *
-   * @returns {import('./models/User')|null}
+   * @returns {Promise<import('./models/User')|null>}
    */
   async findOrCreateUser(userinfo) {
     let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
@@ -256,7 +257,7 @@ class Auth {
   /**
    * Sets the user group based on group claim in userinfo.
    *
-   * @param {import('./objects/user/User')} user
+   * @param {import('./models/User')} user
    * @param {Object} userinfo
    */
   async setUserGroup(user, userinfo) {
@@ -285,7 +286,7 @@ class Auth {
       if (user.type !== userType) {
         Logger.info(`[Auth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
         user.type = userType
-        await Database.userModel.updateFromOld(user)
+        await user.save()
       }
     } else {
       throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
@@ -295,7 +296,7 @@ class Auth {
   /**
    * Updates user permissions based on the advanced permissions claim.
    *
-   * @param {import('./objects/user/User')} user
+   * @param {import('./models/User')} user
    * @param {Object} userinfo
    */
   async updateUserPermissions(user, userinfo) {
@@ -825,15 +826,21 @@ class Auth {
 
   /**
    * Checks if a username and password tuple is valid and the user active.
+   * @param {Request} req
    * @param {string} username
    * @param {string} password
    * @param {Promise<function>} done
    */
-  async localAuthCheckUserPw(username, password, done) {
+  async localAuthCheckUserPw(req, username, password, done) {
     // Load the user given it's username
     const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
     if (!user?.isActive) {
+      if (user) {
+        this.logFailedLocalAuthLoginAttempt(req, user.username, 'User is not active')
+      } else {
+        this.logFailedLocalAuthLoginAttempt(req, username, 'User not found')
+      }
       done(null, null)
       return
     }
@@ -842,14 +849,16 @@ class Auth {
     if (user.type === 'root' && !user.pash) {
       if (password) {
         // deny login
+        this.logFailedLocalAuthLoginAttempt(req, user.username, 'Root user has no password set')
         done(null, null)
         return
       }
       // approve login
+      Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
       done(null, user)
       return
     } else if (!user.pash) {
-      Logger.error(`[Auth] User "${user.username}"/"${user.type}" attempted to login without a password set`)
+      this.logFailedLocalAuthLoginAttempt(req, user.username, 'User has no password set. Might have been created with OpenID')
       done(null, null)
       return
     }
@@ -858,12 +867,25 @@ class Auth {
     const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       // approve login
+      Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
       done(null, user)
       return
     }
     // deny login
+    this.logFailedLocalAuthLoginAttempt(req, user.username, 'Invalid password')
     done(null, null)
     return
+  }
+
+  /**
+   *
+   * @param {Request} req
+   * @param {string} username
+   * @param {string} message
+   */
+  logFailedLocalAuthLoginAttempt(req, username, message) {
+    if (!req || !username || !message) return
+    Logger.error(`[Auth] Failed login attempt for username "${username}" from ip ${requestIp.getClientIp(req)} (${message})`)
   }
 
   /**

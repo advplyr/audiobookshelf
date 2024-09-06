@@ -163,7 +163,7 @@ export default {
       this.isProcessing = false
       if (updateResult) {
         if (updateResult.updated) {
-          this.$toast.success('Item details updated')
+          this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           return true
         } else {
           this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)

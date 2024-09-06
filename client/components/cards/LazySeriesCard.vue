@@ -65,7 +65,7 @@ export default {
       return this.store.getters['libraries/getBookCoverAspectRatio']
     },
     cardWidth() {
-      return this.width || this.coverHeight * 2
+      return this.width || (this.coverHeight / this.bookCoverAspectRatio) * 2
     },
     coverHeight() {
       return this.height * this.sizeMultiplier
@@ -96,7 +96,7 @@ export default {
     displaySortLine() {
       switch (this.orderBy) {
         case 'addedAt':
-          return `${this.$strings.LabelAdded} ${this.$formatDate(this.addedAt, this.dateFormat)}`
+          return this.$getString('LabelAddedDate', [this.$formatDate(this.addedAt, this.dateFormat)])
         case 'totalDuration':
           return `${this.$strings.LabelDuration} ${this.$elapsedPrettyExtended(this.totalDuration, false)}`
         case 'lastBookUpdated':

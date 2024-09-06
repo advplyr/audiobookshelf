@@ -53,20 +53,21 @@ class AbMergeManager {
   async startAudiobookMerge(userId, libraryItem, options = {}) {
     const task = new Task()
 
-    const audiobookDirname = Path.basename(libraryItem.path)
-    const targetFilename = audiobookDirname + '.m4b'
+    const audiobookBaseName = libraryItem.isFile ? Path.basename(libraryItem.path, Path.extname(libraryItem.path)) : Path.basename(libraryItem.path)
+    const targetFilename = audiobookBaseName + '.m4b'
     const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
     const tempFilepath = Path.join(itemCachePath, targetFilename)
     const ffmetadataPath = Path.join(itemCachePath, 'ffmetadata.txt')
+    const libraryItemDir = libraryItem.isFile ? Path.dirname(libraryItem.path) : libraryItem.path
     const taskData = {
       libraryItemId: libraryItem.id,
-      libraryItemPath: libraryItem.path,
+      libraryItemDir,
       userId,
       originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
       inos: libraryItem.media.includedAudioFiles.map((f) => f.ino),
       tempFilepath,
       targetFilename,
-      targetFilepath: Path.join(libraryItem.path, targetFilename),
+      targetFilepath: Path.join(libraryItemDir, targetFilename),
       itemCachePath,
       ffmetadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, 1),
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })),
@@ -95,8 +96,8 @@ class AbMergeManager {
    */
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
     // Make sure the target directory is writable
-    if (!(await isWritable(libraryItem.path))) {
-      Logger.error(`[AbMergeManager] Target directory is not writable: ${libraryItem.path}`)
+    if (!(await isWritable(task.data.libraryItemDir))) {
+      Logger.error(`[AbMergeManager] Target directory is not writable: ${task.data.libraryItemDir}`)
       task.setFailed('Target directory is not writable')
       this.removeTask(task, true)
       return

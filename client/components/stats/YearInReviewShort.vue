@@ -64,7 +64,7 @@ export default {
 
       const addIcon = (icon, color, fontSize, x, y) => {
         ctx.fillStyle = color
-        ctx.font = `${fontSize} Material Symbols Outlined`
+        ctx.font = `${fontSize} Material Symbols Rounded`
         ctx.fillText(icon, x, y)
       }
 
@@ -167,7 +167,7 @@ export default {
             .catch((error) => {
               console.error('Failed to share', error)
               if (error.name !== 'AbortError') {
-                this.$toast.error('Failed to share: ' + error.message)
+                this.$toast.error(this.$strings.ToastFailedToShare + ': ' + error.message)
               }
             })
         } else {

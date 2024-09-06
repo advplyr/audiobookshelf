@@ -24,11 +24,11 @@
       </nuxt-link>
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
-        <span v-else class="material-symbols-outlined text-lg">queue_music</span>
+        <span v-else class="material-symbols text-lg">&#xe03d;</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
-        <span v-else class="material-symbols-outlined text-lg">collections_bookmark</span>
+        <span v-else class="material-symbols text-lg">&#xe431;</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>
@@ -159,6 +159,7 @@ export default {
       }
 
       this.addSubtitlesMenuItem(items)
+      this.addCollapseSubSeriesMenuItem(items)
 
       return items
     },
@@ -245,9 +246,6 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    isMusicLibrary() {
-      return this.currentLibraryMediaType === 'music'
-    },
     isLibraryPage() {
       return this.page === ''
     },
@@ -280,7 +278,6 @@ export default {
     },
     entityName() {
       if (this.isAlbumsPage) return 'Albums'
-      if (this.isMusicLibrary) return 'Tracks'
 
       if (this.isPodcastLibrary) return this.$strings.LabelPodcasts
       if (!this.page) return this.$strings.LabelBooks
@@ -371,6 +368,21 @@ export default {
         }
       }
     },
+    addCollapseSubSeriesMenuItem(items) {
+      if (this.selectedSeries && this.isBookLibrary && !this.isBatchSelecting) {
+        if (this.settings.collapseBookSeries) {
+          items.push({
+            text: this.$strings.LabelExpandSubSeries,
+            action: 'expand-sub-series'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelCollapseSubSeries,
+            action: 'collapse-sub-series'
+          })
+        }
+      }
+    },
     handleSubtitlesAction(action) {
       if (action === 'show-subtitles') {
         this.settings.showSubtitles = true
@@ -393,6 +405,19 @@ export default {
       if (action === 'expand-series') {
         this.settings.collapseSeries = false
         this.updateCollapseSeries()
+        return true
+      }
+      return false
+    },
+    handleCollapseSubSeriesAction(action) {
+      if (action === 'collapse-sub-series') {
+        this.settings.collapseBookSeries = true
+        this.updateCollapseSubSeries()
+        return true
+      }
+      if (action === 'expand-sub-series') {
+        this.settings.collapseBookSeries = false
+        this.updateCollapseSubSeries()
         return true
       }
       return false
@@ -427,6 +452,8 @@ export default {
         this.markSeriesFinished()
       } else if (this.handleSubtitlesAction(action)) {
         return
+      } else if (this.handleCollapseSubSeriesAction(action)) {
+        return
       }
     },
     showOpenSeriesRSSFeed() {
@@ -442,11 +469,11 @@ export default {
       this.$axios
         .$get(`/api/me/series/${this.seriesId}/readd-to-continue-listening`)
         .then(() => {
-          this.$toast.success('Series re-added to continue listening')
+          this.$toast.success(this.$strings.ToastItemUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to re-add series to continue listening', error)
-          this.$toast.error('Failed to re-add series to continue listening')
+          this.$toast.error(this.$strings.ToastItemUpdateFailed)
         })
         .finally(() => {
           this.processingSeries = false
@@ -473,7 +500,7 @@ export default {
         })
         if (!response) {
           console.error(`Author ${author.name} not found`)
-          this.$toast.error(`Author ${author.name} not found`)
+          this.$toast.error(this.$getString('ToastAuthorNotFound', [author.name]))
         } else if (response.updated) {
           if (response.author.imagePath) console.log(`Author ${response.author.name} was updated`)
           else console.log(`Author ${response.author.name} was updated (no image found)`)
@@ -491,13 +518,13 @@ export default {
         this.$axios
           .$delete(`/api/libraries/${this.currentLibraryId}/issues`)
           .then(() => {
-            this.$toast.success('Removed library items with issues')
+            this.$toast.success(this.$strings.ToastRemoveItemsWithIssuesSuccess)
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
             this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
-            this.$toast.error('Failed to remove library items with issues')
+            this.$toast.error(this.$strings.ToastRemoveItemsWithIssuesFailed)
           })
           .finally(() => {
             this.processingIssues = false
@@ -553,7 +580,7 @@ export default {
     updateCollapseSeries() {
       this.saveSettings()
     },
-    updateCollapseBookSeries() {
+    updateCollapseSubSeries() {
       this.saveSettings()
     },
     updateShowSubtitles() {

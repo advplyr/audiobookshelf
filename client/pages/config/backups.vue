@@ -3,7 +3,7 @@
     <app-settings-content :header-text="$strings.HeaderBackups" :description="$strings.MessageBackupsDescription">
       <div v-if="backupLocation" class="mb-4 max-w-full overflow-hidden">
         <div class="flex items-center mb-0.5">
-          <span class="material-symbols-outlined text-2xl text-black-50 mr-2">folder</span>
+          <span class="material-symbols text-2xl text-black-50 mr-2">folder</span>
           <span class="text-white text-opacity-60 uppercase text-sm whitespace-nowrap">{{ $strings.LabelBackupLocation }}:</span>
         </div>
         <div v-if="!showEditBackupPath" class="inline-flex items-center w-full overflow-hidden">
@@ -33,7 +33,7 @@
 
       <div v-if="enableBackups" class="mb-6">
         <div class="flex items-center pl-0 sm:pl-6 mb-2">
-          <span class="material-symbols-outlined text-xl sm:text-2xl text-black-50 mr-2">schedule</span>
+          <span class="material-symbols text-xl sm:text-2xl text-black-50 mr-2">schedule</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span>
           </div>
@@ -44,7 +44,7 @@
         </div>
 
         <div v-if="nextBackupDate" class="flex items-center pl-0 sm:pl-6 py-0.5">
-          <span class="material-symbols-outlined text-xl sm:text-2xl text-black-50 mr-2">event</span>
+          <span class="material-symbols text-xl sm:text-2xl text-black-50 mr-2">event</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
             <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
           </div>
@@ -162,7 +162,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to save backup path', error)
-          const errorMsg = error.response?.data || 'Failed to save backup path'
+          const errorMsg = error.response?.data || this.$strings.ToastBackupPathUpdateFailed
           this.$toast.error(errorMsg)
         })
         .finally(() => {
@@ -171,11 +171,11 @@ export default {
     },
     updateBackupsSettings() {
       if (isNaN(this.maxBackupSize) || this.maxBackupSize < 0) {
-        this.$toast.error('Invalid maximum backup size')
+        this.$toast.error(this.$strings.ToastBackupInvalidMaxSize)
         return
       }
       if (isNaN(this.backupsToKeep) || this.backupsToKeep <= 0 || this.backupsToKeep > 99) {
-        this.$toast.error('Invalid number of backups to keep')
+        this.$toast.error(this.$strings.ToastBackupInvalidMaxKeep)
         return
       }
       const updatePayload = {

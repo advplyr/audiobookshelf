@@ -39,16 +39,11 @@
                 ><span :key="index" v-if="index < seriesList.length - 1">, </span>
               </template>
 
-              <template v-if="!isVideo">
-                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
-                <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              </template>
+              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
+              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
+                by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+              </p>
+              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -80,14 +75,14 @@
             <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
-              <span class="material-symbols text-sm">close</span>
+              <span class="material-symbols text-sm">&#xe5cd;</span>
             </div>
           </div>
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
-              <span aria-hidden="true" v-show="!isStreaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
+              <span aria-hidden="true" v-show="!isStreaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">&#xe037;</span>
               {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
@@ -106,10 +101,10 @@
             </ui-btn>
 
             <ui-tooltip v-if="userCanUpdate" :text="$strings.LabelEdit" direction="top">
-              <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
+              <ui-icon-btn icon="&#xe3c9;" outlined class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast && !isMusic" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
@@ -121,7 +116,7 @@
             <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
                 <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
-                  <span class="material-symbols text-2xl">more_horiz</span>
+                  <span class="material-symbols text-2xl">&#xe5d3;</span>
                 </button>
               </template>
             </ui-context-menu-dropdown>
@@ -129,9 +124,7 @@
 
           <div class="my-4 w-full">
             <p ref="description" id="item-description" dir="auto" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
-            <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
-              {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
-            </button>
+            <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">{{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" /></button>
           </div>
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
@@ -222,12 +215,6 @@ export default {
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
-    isVideo() {
-      return this.libraryItem.mediaType === 'video'
-    },
-    isMusic() {
-      return this.libraryItem.mediaType === 'music'
-    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -242,8 +229,6 @@ export default {
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
-      if (this.isMusic) return !!this.audioFile
-      if (this.isVideo) return !!this.videoFile
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
     },
@@ -294,9 +279,6 @@ export default {
     authors() {
       return this.mediaMetadata.authors || []
     },
-    musicArtists() {
-      return this.mediaMetadata.artists || []
-    },
     series() {
       return this.mediaMetadata.series || []
     },
@@ -311,7 +293,7 @@ export default {
       })
     },
     duration() {
-      if (!this.tracks.length && !this.audioFile) return 0
+      if (!this.tracks.length) return 0
       return this.media.duration
     },
     libraryFiles() {
@@ -323,18 +305,10 @@ export default {
     ebookFile() {
       return this.media.ebookFile
     },
-    videoFile() {
-      return this.media.videoFile
-    },
-    audioFile() {
-      // Music track
-      return this.media.audioFile
-    },
     description() {
       return this.mediaMetadata.description || ''
     },
     userMediaProgress() {
-      if (this.isMusic) return null
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userIsFinished() {
@@ -486,23 +460,23 @@ export default {
         this.$axios
           .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
           .then(() => {
-            this.$toast.success('Episode download queue cleared')
+            this.$toast.success(this.$strings.ToastEpisodeDownloadQueueClearSuccess)
             this.episodeDownloadQueued = []
           })
           .catch((error) => {
             console.error('Failed to clear queue', error)
-            this.$toast.error('Failed to clear queue')
+            this.$toast.error(this.$strings.ToastEpisodeDownloadQueueClearFailed)
           })
       }
     },
     async findEpisodesClick() {
       if (!this.mediaMetadata.feedUrl) {
-        return this.$toast.error('Podcast does not have an RSS Feed')
+        return this.$toast.error(this.$strings.ToastNoRSSFeed)
       }
       this.fetchingRSSFeed = true
       var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.fetchingRSSFeed = false
@@ -511,7 +485,7 @@ export default {
       console.log('Podcast feed', payload)
       const podcastfeed = payload.podcast
       if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
-        this.$toast.info('No episodes found in RSS feed')
+        this.$toast.info(this.$strings.ToastPodcastNoEpisodesInFeed)
         return
       }
 
@@ -580,7 +554,7 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+              caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
@@ -624,13 +598,12 @@ export default {
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-      if (confirm(`Are you sure you want to reset your progress?`)) {
+      if (confirm(this.$strings.MessageConfirmResetProgress)) {
         this.resettingProgress = true
         this.$axios
           .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
-            this.$toast.success(`Your progress was reset`)
             this.resettingProgress = false
           })
           .catch((error) => {
@@ -724,12 +697,12 @@ export default {
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
                 this.$router.replace(`/library/${this.libraryId}`)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeleteFailed)
               })
           }
         },

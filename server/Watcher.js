@@ -19,7 +19,7 @@ class FolderWatcher extends EventEmitter {
   constructor() {
     super()
 
-    /** @type {{id:string, name:string, folders:import('./objects/Folder')[], paths:string[], watcher:Watcher[]}[]} */
+    /** @type {{id:string, name:string, libraryFolders:import('./models/Folder')[], paths:string[], watcher:Watcher[]}[]} */
     this.libraryWatchers = []
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []
@@ -45,6 +45,10 @@ class FolderWatcher extends EventEmitter {
     return this.pendingFileUpdates.map((f) => f.path)
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   buildLibraryWatcher(library) {
     if (this.libraryWatchers.find((w) => w.id === library.id)) {
       Logger.warn('[Watcher] Already watching library', library.name)
@@ -52,7 +56,7 @@ class FolderWatcher extends EventEmitter {
     }
     Logger.info(`[Watcher] Initializing watcher for "${library.name}".`)
 
-    const folderPaths = library.folderPaths
+    const folderPaths = library.libraryFolders.map((f) => f.path)
     folderPaths.forEach((fp) => {
       Logger.debug(`[Watcher] Init watcher for library folder path "${fp}"`)
     })
@@ -90,12 +94,16 @@ class FolderWatcher extends EventEmitter {
     this.libraryWatchers.push({
       id: library.id,
       name: library.name,
-      folders: library.folders,
-      paths: library.folderPaths,
+      libraryFolders: library.libraryFolders,
+      paths: folderPaths,
       watcher
     })
   }
 
+  /**
+   *
+   * @param {import('./models/Library')[]} libraries
+   */
   initWatcher(libraries) {
     libraries.forEach((lib) => {
       if (!lib.settings.disableWatcher) {
@@ -104,6 +112,10 @@ class FolderWatcher extends EventEmitter {
     })
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   addLibrary(library) {
     if (this.disabled || library.settings.disableWatcher) return
     this.buildLibraryWatcher(library)
@@ -111,7 +123,7 @@ class FolderWatcher extends EventEmitter {
 
   /**
    *
-   * @param {import('./objects/Library')} library
+   * @param {import('./models/Library')} library
    */
   updateLibrary(library) {
     if (this.disabled) return
@@ -129,8 +141,9 @@ class FolderWatcher extends EventEmitter {
       libwatcher.name = library.name
 
       // If any folder paths were added or removed then re-init watcher
-      const pathsToAdd = library.folderPaths.filter((path) => !libwatcher.paths.includes(path))
-      const pathsRemoved = libwatcher.paths.filter((path) => !library.folderPaths.includes(path))
+      const folderPaths = library.libraryFolders.map((f) => f.path)
+      const pathsToAdd = folderPaths.filter((path) => !libwatcher.paths.includes(path))
+      const pathsRemoved = libwatcher.paths.filter((path) => !folderPaths.includes(path))
       if (pathsToAdd.length || pathsRemoved.length) {
         Logger.info(`[Watcher] Re-Initializing watcher for "${library.name}".`)
 
@@ -145,6 +158,10 @@ class FolderWatcher extends EventEmitter {
     }
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   removeLibrary(library) {
     if (this.disabled) return
     var libwatcher = this.libraryWatchers.find((lib) => lib.id === library.id)
@@ -255,15 +272,15 @@ class FolderWatcher extends EventEmitter {
     }
 
     // Get file folder
-    const folder = libwatcher.folders.find((fold) => isSameOrSubPath(fold.fullPath, path))
+    const folder = libwatcher.libraryFolders.find((fold) => isSameOrSubPath(fold.path, path))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
     }
 
-    const folderFullPath = filePathToPOSIX(folder.fullPath)
+    const folderPath = filePathToPOSIX(folder.path)
 
-    const relPath = path.replace(folderFullPath, '')
+    const relPath = path.replace(folderPath, '')
 
     if (Path.extname(relPath).toLowerCase() === '.part') {
       Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)

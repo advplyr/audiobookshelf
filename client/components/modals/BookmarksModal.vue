@@ -94,7 +94,7 @@ export default {
           this.$toast.success(this.$strings.ToastBookmarkRemoveSuccess)
         })
         .catch((error) => {
-          this.$toast.error(this.$strings.ToastBookmarkRemoveFailed)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
           console.error(error)
         })
       this.show = false

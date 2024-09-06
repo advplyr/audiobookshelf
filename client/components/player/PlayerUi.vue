@@ -43,7 +43,7 @@
         </ui-tooltip>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :hasNextChapter="hasNextChapter" :hasNextItemInQueue="hasNextItemInQueue" @prevChapter="prevChapter" @next="goToNext" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
@@ -82,7 +82,8 @@ export default {
     sleepTimerType: String,
     isPodcast: Boolean,
     hideBookmarks: Boolean,
-    hideSleepTimer: Boolean
+    hideSleepTimer: Boolean,
+    hasNextItemInQueue: Boolean
   },
   data() {
     return {
@@ -145,7 +146,7 @@ export default {
       return Math.round((100 * time) / duration)
     },
     currentChapterName() {
-      return this.currentChapter ? this.currentChapter.title : ''
+      return this.currentChapter?.title || ''
     },
     currentChapterDuration() {
       if (!this.currentChapter) return 0
@@ -177,22 +178,6 @@ export default {
   methods: {
     toggleFullscreen(isFullscreen) {
       this.$store.commit('setPlayerIsFullscreen', isFullscreen)
-
-      var videoPlayerEl = document.getElementById('video-player')
-      if (videoPlayerEl) {
-        if (isFullscreen) {
-          videoPlayerEl.style.width = '100vw'
-          videoPlayerEl.style.height = '100vh'
-          videoPlayerEl.style.top = '0px'
-          videoPlayerEl.style.left = '0px'
-        } else {
-          videoPlayerEl.style.width = '384px'
-          videoPlayerEl.style.height = '216px'
-          videoPlayerEl.style.top = 'unset'
-          videoPlayerEl.style.bottom = '80px'
-          videoPlayerEl.style.left = '16px'
-        }
-      }
     },
     setDuration(duration) {
       this.duration = duration
@@ -278,10 +263,13 @@ export default {
         this.seek(this.currentChapter.start)
       }
     },
-    nextChapter() {
-      if (!this.currentChapter || !this.hasNextChapter) return
-      var nextChapter = this.chapters[this.currentChapterIndex + 1]
-      this.seek(nextChapter.start)
+    goToNext() {
+      if (this.hasNextChapter) {
+        const nextChapter = this.chapters[this.currentChapterIndex + 1]
+        this.seek(nextChapter.start)
+      } else if (this.hasNextItemInQueue) {
+        this.$emit('nextItemInQueue')
+      }
     },
     setStreamReady() {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)

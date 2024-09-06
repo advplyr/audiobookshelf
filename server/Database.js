@@ -359,7 +359,7 @@ class Database {
    * @param {string} username
    * @param {string} pash
    * @param {Auth} auth
-   * @returns {boolean} true if created
+   * @returns {Promise<boolean>} true if created
    */
   async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
@@ -379,30 +379,9 @@ class Database {
     return this.models.setting.updateSettingObj(settings.toJSON())
   }
 
-  async createUser(oldUser) {
-    if (!this.sequelize) return false
-    await this.models.user.createFromOld(oldUser)
-    return true
-  }
-
-  updateUser(oldUser) {
-    if (!this.sequelize) return false
-    return this.models.user.updateFromOld(oldUser)
-  }
-
   updateBulkBooks(oldBooks) {
     if (!this.sequelize) return false
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
-  }
-
-  createLibrary(oldLibrary) {
-    if (!this.sequelize) return false
-    return this.models.library.createFromOld(oldLibrary)
-  }
-
-  updateLibrary(oldLibrary) {
-    if (!this.sequelize) return false
-    return this.models.library.updateFromOld(oldLibrary)
   }
 
   removeLibrary(libraryId) {
@@ -461,46 +440,6 @@ class Database {
   async removeFeed(feedId) {
     if (!this.sequelize) return false
     await this.models.feed.removeById(feedId)
-  }
-
-  updateSeries(oldSeries) {
-    if (!this.sequelize) return false
-    return this.models.series.updateFromOld(oldSeries)
-  }
-
-  async createSeries(oldSeries) {
-    if (!this.sequelize) return false
-    await this.models.series.createFromOld(oldSeries)
-  }
-
-  async createBulkSeries(oldSeriesObjs) {
-    if (!this.sequelize) return false
-    await this.models.series.createBulkFromOld(oldSeriesObjs)
-  }
-
-  async removeSeries(seriesId) {
-    if (!this.sequelize) return false
-    await this.models.series.removeById(seriesId)
-  }
-
-  async createAuthor(oldAuthor) {
-    if (!this.sequelize) return false
-    await this.models.author.createFromOld(oldAuthor)
-  }
-
-  async createBulkAuthors(oldAuthors) {
-    if (!this.sequelize) return false
-    await this.models.author.createBulkFromOld(oldAuthors)
-  }
-
-  updateAuthor(oldAuthor) {
-    if (!this.sequelize) return false
-    return this.models.author.updateFromOld(oldAuthor)
-  }
-
-  async removeAuthor(authorId) {
-    if (!this.sequelize) return false
-    await this.models.author.removeById(authorId)
   }
 
   async createBulkBookAuthors(bookAuthors) {
@@ -705,7 +644,7 @@ class Database {
    */
   async getAuthorIdByName(libraryId, authorName) {
     if (!this.libraryFilterData[libraryId]) {
-      return (await this.authorModel.getOldByNameAndLibrary(authorName, libraryId))?.id || null
+      return (await this.authorModel.getByNameAndLibrary(authorName, libraryId))?.id || null
     }
     return this.libraryFilterData[libraryId].authors.find((au) => au.name === authorName)?.id || null
   }
@@ -719,7 +658,7 @@ class Database {
    */
   async getSeriesIdByName(libraryId, seriesName) {
     if (!this.libraryFilterData[libraryId]) {
-      return (await this.seriesModel.getOldByNameAndLibrary(seriesName, libraryId))?.id || null
+      return (await this.seriesModel.getByNameAndLibrary(seriesName, libraryId))?.id || null
     }
     return this.libraryFilterData[libraryId].series.find((se) => se.name === seriesName)?.id || null
   }

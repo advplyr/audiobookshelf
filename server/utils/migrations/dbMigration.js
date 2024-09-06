@@ -1258,7 +1258,7 @@ async function handleOldLibraryItems(ctx) {
  */
 async function handleOldLibraries(ctx) {
   const oldLibraries = await oldDbFiles.loadOldData('libraries')
-  const libraries = await ctx.models.library.getAllOldLibraries()
+  const libraries = await ctx.models.library.getAllWithFolders()
 
   let librariesUpdated = 0
   for (const library of libraries) {
@@ -1268,13 +1268,17 @@ async function handleOldLibraries(ctx) {
         return false
       }
       const folderPaths = ol.folders?.map((f) => f.fullPath) || []
-      return folderPaths.join(',') === library.folderPaths.join(',')
+      return folderPaths.join(',') === library.libraryFolders.map((f) => f.path).join(',')
     })
 
     if (matchingOldLibrary) {
-      library.oldLibraryId = matchingOldLibrary.id
+      const newExtraData = library.extraData || {}
+      newExtraData.oldLibraryId = matchingOldLibrary.id
+      library.extraData = newExtraData
+      library.changed('extraData', true)
+
       oldDbIdMap.libraries[library.oldLibraryId] = library.id
-      await ctx.models.library.updateFromOld(library)
+      await library.save()
       librariesUpdated++
     }
   }
@@ -1289,10 +1293,9 @@ async function handleOldUsers(ctx) {
   const usersNew = await ctx.userModel.findAll({
     include: ctx.models.mediaProgress
   })
-  const users = usersNew.map((u) => ctx.userModel.getOldUser(u))
 
   let usersUpdated = 0
-  for (const user of users) {
+  for (const user of usersNew) {
     let hasUpdates = false
     if (user.bookmarks?.length) {
       user.bookmarks = user.bookmarks
@@ -1305,21 +1308,31 @@ async function handleOldUsers(ctx) {
           return bm
         })
         .filter((bm) => bm.libraryItemId)
+      if (hasUpdates) {
+        user.changed('bookmarks', true)
+      }
     }
 
+    const librariesAccessible = user.permissions?.librariesAccessible || []
+
     // Convert old library ids to new library ids
-    if (user.librariesAccessible?.length) {
-      user.librariesAccessible = user.librariesAccessible
+    if (librariesAccessible.length) {
+      user.permissions.librariesAccessible = librariesAccessible
         .map((lid) => {
           if (!lid.startsWith('lib_') && lid !== 'main') return lid // Already not an old library id so dont change
           hasUpdates = true
           return oldDbIdMap.libraries[lid]
         })
         .filter((lid) => lid)
+      if (hasUpdates) {
+        user.changed('permissions', true)
+      }
     }
 
-    if (user.seriesHideFromContinueListening?.length) {
-      user.seriesHideFromContinueListening = user.seriesHideFromContinueListening
+    const seriesHideFromContinueListening = user.extraData?.seriesHideFromContinueListening || []
+
+    if (seriesHideFromContinueListening.length) {
+      user.extraData.seriesHideFromContinueListening = seriesHideFromContinueListening
         .map((seriesId) => {
           if (seriesId.startsWith('se_')) {
             hasUpdates = true
@@ -1328,10 +1341,13 @@ async function handleOldUsers(ctx) {
           return seriesId
         })
         .filter((se) => se)
+      if (hasUpdates) {
+        user.changed('extraData', true)
+      }
     }
 
     if (hasUpdates) {
-      await ctx.models.user.updateFromOld(user)
+      await user.save()
       usersUpdated++
     }
   }

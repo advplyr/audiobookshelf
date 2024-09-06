@@ -1,69 +1,71 @@
 const child_process = require('child_process')
 const { promisify } = require('util')
 const exec = promisify(child_process.exec)
-const path = require('path')
+const os = require('os')
 const axios = require('axios')
+const path = require('path')
 const which = require('../libs/which')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const fileUtils = require('../utils/fileUtils')
 const StreamZip = require('../libs/nodeStreamZip')
 
-class GithubAssetDownloader {
-  constructor(owner, repo) {
-    this.owner = owner
-    this.repo = repo
+class ZippedAssetDownloader {
+  constructor() {
     this.assetCache = {}
+  }
+
+  getReleaseUrl(releaseTag) {
+    throw new Error('Not implemented')
+  }
+
+  extractAssetUrl(assets, assetName) {
+    throw new Error('Not implemented')
+  }
+
+  getAssetName(binaryName, releaseTag) {
+    throw new Error('Not implemented')
+  }
+
+  getAssetFileName(binaryName) {
+    throw new Error('Not implemented')
   }
 
   async getAssetUrl(releaseTag, assetName) {
     // Check if the assets information is already cached for the release tag
     if (this.assetCache[releaseTag]) {
-      Logger.debug(`[GithubAssetDownloader] Repo ${this.repo} release ${releaseTag}: assets found in cache.`)
+      Logger.debug(`[ZippedAssetDownloader] release ${releaseTag}: assets found in cache.`)
     } else {
       // Get the release information
-      const releaseUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/releases/tags/${releaseTag}`
-      const releaseResponse = await axios.get(releaseUrl, {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'axios'
-        }
-      })
+      const releaseUrl = this.getReleaseUrl(releaseTag)
+      const releaseResponse = await axios.get(releaseUrl, { headers: { 'User-Agent': 'axios' } })
 
       // Cache the assets information for the release tag
-      this.assetCache[releaseTag] = releaseResponse.data.assets
-      Logger.debug(`[GithubAssetDownloader] Repo ${this.repo} release ${releaseTag}: assets fetched from API.`)
+      this.assetCache[releaseTag] = releaseResponse.data
+      Logger.debug(`[ZippedAssetDownloader] release ${releaseTag}: assets fetched from API.`)
     }
 
-    // Find the asset URL
     const assets = this.assetCache[releaseTag]
-    const asset = assets.find((asset) => asset.name === assetName)
-    if (!asset) {
-      throw new Error(`[GithubAssetDownloader] Repo ${this.repo} release ${releaseTag}: asset ${assetName} not found`)
-    }
+    const assetUrl = this.extractAssetUrl(assets, assetName)
 
-    return asset.browser_download_url
+    return assetUrl
   }
 
   async downloadAsset(assetUrl, destDir) {
     const zipPath = path.join(destDir, 'temp.zip')
     const writer = fs.createWriteStream(zipPath)
 
-    const assetResponse = await axios({
-      url: assetUrl,
-      method: 'GET',
-      responseType: 'stream'
-    })
+    const assetResponse = await axios({ url: assetUrl, responseType: 'stream' })
 
     assetResponse.data.pipe(writer)
 
     await new Promise((resolve, reject) => {
       writer.on('finish', () => {
-        Logger.debug(`[GithubAssetDownloader] Downloaded asset ${assetUrl} to ${zipPath}`)
+        Logger.debug(`[ZippedAssetDownloader] Downloaded asset ${assetUrl} to ${zipPath}`)
         resolve()
       })
       writer.on('error', (err) => {
-        Logger.error(`[GithubAssetDownloader] Error downloading asset ${assetUrl}: ${err.message}`)
+        Logger.error(`[ZippedAssetDownloader] Error downloading asset ${assetUrl}: ${err.message}`)
         reject(err)
       })
     })
@@ -77,7 +79,7 @@ class GithubAssetDownloader {
     for (const file of filesToExtract) {
       const outputPath = path.join(destDir, file.outputFileName)
       await zip.extract(file.pathInsideZip, outputPath)
-      Logger.debug(`[GithubAssetDownloader] Extracted file ${file.pathInsideZip} to ${outputPath}`)
+      Logger.debug(`[ZippedAssetDownloader] Extracted file ${file.pathInsideZip} to ${outputPath}`)
 
       // Set executable permission for Linux
       if (process.platform !== 'win32') {
@@ -96,101 +98,69 @@ class GithubAssetDownloader {
       zipPath = await this.downloadAsset(assetUrl, destDir)
       await this.extractFiles(zipPath, filesToExtract, destDir)
     } catch (error) {
-      Logger.error(`[GithubAssetDownloader] Error downloading or extracting files: ${error.message}`)
+      Logger.error(`[ZippedAssetDownloader] Error downloading or extracting files: ${error.message}`)
       throw error
     } finally {
       if (zipPath) await fs.remove(zipPath)
     }
   }
-}
-
-class FFBinariesDownloader extends GithubAssetDownloader {
-  constructor() {
-    super('ffbinaries', 'ffbinaries-prebuilt')
-  }
-
-  getPlatformSuffix() {
-    const platform = process.platform
-    const arch = process.arch
-
-    switch (platform) {
-      case 'win32':
-        return 'win-64'
-      case 'darwin':
-        return 'macos-64'
-      case 'linux':
-        switch (arch) {
-          case 'x64':
-            return 'linux-64'
-          case 'x32':
-          case 'ia32':
-            return 'linux-32'
-          case 'arm64':
-            return 'linux-arm-64'
-          case 'arm':
-            return 'linux-armhf-32'
-          default:
-            throw new Error(`Unsupported architecture: ${arch}`)
-        }
-      default:
-        throw new Error(`Unsupported platform: ${platform}`)
-    }
-  }
 
   async downloadBinary(binaryName, releaseTag, destDir) {
-    const platformSuffix = this.getPlatformSuffix()
-    const assetName = `${binaryName}-${releaseTag}-${platformSuffix}.zip`
-    const fileName = process.platform === 'win32' ? `${binaryName}.exe` : binaryName
+    const assetName = this.getAssetName(binaryName, releaseTag)
+    const fileName = this.getAssetFileName(binaryName)
     const filesToExtract = [{ pathInsideZip: fileName, outputFileName: fileName }]
-    releaseTag = `v${releaseTag}`
 
     await this.downloadAndExtractFiles(releaseTag, assetName, filesToExtract, destDir)
   }
 }
 
-class SQLeanDownloader extends GithubAssetDownloader {
+class FFBinariesDownloader extends ZippedAssetDownloader {
   constructor() {
-    super('nalgeon', 'sqlean')
+    super()
+    this.platformSuffix = this.getPlatformSuffix()
   }
 
   getPlatformSuffix() {
-    const platform = process.platform
-    const arch = process.arch
+    var type = os.type().toLowerCase()
+    var arch = os.arch().toLowerCase()
 
-    switch (platform) {
-      case 'win32':
-        return arch === 'x64' ? 'win-x64' : 'win-x86'
-      case 'darwin':
-        return arch === 'arm64' ? 'macos-arm64' : 'macos-x86'
-      case 'linux':
-        return arch === 'arm64' ? 'linux-arm64' : 'linux-x86'
-      default:
-        throw new Error(`Unsupported platform or architecture: ${platform}, ${arch}`)
+    if (type === 'darwin') {
+      return 'osx-64'
     }
+
+    if (type === 'windows_nt') {
+      return arch === 'x64' ? 'windows-64' : 'windows-32'
+    }
+
+    if (type === 'linux') {
+      if (arch === 'arm') return 'linux-armel'
+      if (arch === 'arm64') return 'linux-arm64'
+      return arch === 'x64' ? 'linux-64' : 'linux-32'
+    }
+
+    return null
   }
 
-  getLibraryName(binaryName) {
-    const platform = process.platform
-
-    switch (platform) {
-      case 'win32':
-        return `${binaryName}.dll`
-      case 'darwin':
-        return `${binaryName}.dylib`
-      case 'linux':
-        return `${binaryName}.so`
-      default:
-        throw new Error(`Unsupported platform: ${platform}`)
-    }
+  getReleaseUrl(releaseTag) {
+    return `https://ffbinaries.com/api/v1/version/${releaseTag}`
   }
 
-  async downloadBinary(binaryName, releaseTag, destDir) {
-    const platformSuffix = this.getPlatformSuffix()
-    const assetName = `sqlean-${platformSuffix}.zip`
-    const fileName = this.getLibraryName(binaryName)
-    const filesToExtract = [{ pathInsideZip: fileName, outputFileName: fileName }]
+  extractAssetUrl(assets, assetName) {
+    const assetUrl = assets?.bin?.[this.platformSuffix]?.[assetName]
 
-    await this.downloadAndExtractFiles(releaseTag, assetName, filesToExtract, destDir)
+    if (!assetUrl) {
+      throw new Error(`[FFBinariesDownloader] Asset ${assetName} not found for platform ${this.platformSuffix}`)
+    }
+
+    return assetUrl
+  }
+
+  getAssetName(binaryName, releaseTag) {
+    return binaryName
+  }
+
+  getAssetFileName(binaryName) {
+    return process.platform === 'win32' ? `${binaryName}.exe` : binaryName
   }
 }
 
@@ -257,8 +227,8 @@ class Binary {
 
 const ffbinaries = new FFBinariesDownloader()
 module.exports.ffbinaries = ffbinaries // for testing
-const sqlean = new SQLeanDownloader()
-module.exports.sqlean = sqlean // for testing
+//const sqlean = new SQLeanDownloader()
+//module.exports.sqlean = sqlean // for testing
 
 class BinaryManager {
   defaultRequiredBinaries = [
