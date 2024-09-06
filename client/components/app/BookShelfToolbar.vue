@@ -50,7 +50,7 @@
           {{ seriesName }}
         </p>
         <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
-          <span class="font-mono">{{ numShowing }}</span>
+          <span class="font-mono">{{ $formatNumber(numShowing) }}</span>
         </div>
         <div class="flex-grow" />
 
@@ -63,7 +63,7 @@
       </template>
       <!-- library & collections page -->
       <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
-        <p class="hidden md:block">{{ numShowing }} {{ entityName }}</p>
+        <p class="hidden md:block">{{ $formatNumber(numShowing) }} {{ entityName }}</p>
 
         <div class="flex-grow hidden sm:inline-block" />
 
@@ -80,7 +80,7 @@
         <controls-sort-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesSortBy" :descending.sync="settings.seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
         <!-- issues page remove all button -->
-        <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
+        <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ $formatNumber(numShowing) }} {{ entityName }}</ui-btn>
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
