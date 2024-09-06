@@ -365,7 +365,23 @@ class LibraryItem extends Model {
         if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
         if (!areEquivalent(updatedMedia[key], existingValue, true)) {
-          Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
+          if (key === 'chapters') {
+            // Handle logging of chapters separately because the object is large
+            const chaptersRemoved = libraryItemExpanded.media.chapters.filter((ch) => !updatedMedia.chapters.some((uch) => uch.id === ch.id))
+            if (chaptersRemoved.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters removed: ${chaptersRemoved.map((ch) => ch.title).join(', ')}`)
+            }
+            const chaptersAdded = updatedMedia.chapters.filter((uch) => !libraryItemExpanded.media.chapters.some((ch) => ch.id === uch.id))
+            if (chaptersAdded.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters added: ${chaptersAdded.map((ch) => ch.title).join(', ')}`)
+            }
+            if (!chaptersRemoved.length && !chaptersAdded.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters updated`)
+            }
+          } else {
+            Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from %j to %j`, existingValue, updatedMedia[key]))
+          }
+
           hasMediaUpdates = true
         }
       }
