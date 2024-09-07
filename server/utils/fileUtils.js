@@ -131,19 +131,6 @@ async function readTextFile(path) {
 }
 module.exports.readTextFile = readTextFile
 
-function bytesPretty(bytes, decimals = 0) {
-  if (bytes === 0) {
-    return '0 Bytes'
-  }
-  const k = 1000
-  var dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  if (i > 2 && dm === 0) dm = 1
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
-}
-module.exports.bytesPretty = bytesPretty
-
 /**
  * Get array of files inside dir
  * @param {string} path
