@@ -21,7 +21,7 @@ describe('migration_example', () => {
 
   describe('up', () => {
     it('should create example_table', async () => {
-      await up({ context: queryInterface })
+      await up({ context: { queryInterface, logger: Logger } })
 
       expect(loggerInfoStub.callCount).to.equal(4)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('Running migration_example up...'))).to.be.true
@@ -39,8 +39,8 @@ describe('migration_example', () => {
 
   describe('down', () => {
     it('should drop example_table', async () => {
-      await up({ context: queryInterface })
-      await down({ context: queryInterface })
+      await up({ context: { queryInterface, logger: Logger } })
+      await down({ context: { queryInterface, logger: Logger } })
 
       expect(loggerInfoStub.callCount).to.equal(8)
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('Running migration_example down...'))).to.be.true

@@ -170,14 +170,13 @@ class Database {
       throw new Error('Database connection failed')
     }
 
-    if (!this.isNew) {
-      try {
-        const migrationManager = new MigrationManager(this.sequelize, global.ConfigPath)
-        await migrationManager.runMigrations(packageJson.version)
-      } catch (error) {
-        Logger.error(`[Database] Failed to run migrations`, error)
-        throw new Error('Database migration failed')
-      }
+    try {
+      const migrationManager = new MigrationManager(this.sequelize, global.ConfigPath)
+      await migrationManager.init(packageJson.version)
+      if (!this.isNew) await migrationManager.runMigrations()
+    } catch (error) {
+      Logger.error(`[Database] Failed to run migrations`, error)
+      throw new Error('Database migration failed')
     }
 
     await this.buildModels(force)

@@ -17,7 +17,6 @@ describe('MigrationManager', () => {
   let fsMoveStub
   let fsRemoveStub
   let fsEnsureDirStub
-  let fsPathExistsStub
   let processExitStub
   let configPath = 'path/to/config'
 
@@ -36,6 +35,7 @@ describe('MigrationManager', () => {
     migrationManager.fetchVersionsFromDatabase = sinon.stub().resolves()
     migrationManager.copyMigrationsToConfigDir = sinon.stub().resolves()
     migrationManager.updateMaxVersion = sinon.stub().resolves()
+    migrationManager.initUmzug = sinon.stub()
     migrationManager.umzug = umzugStub
     loggerInfoStub = sinon.stub(Logger, 'info')
     loggerErrorStub = sinon.stub(Logger, 'error')
@@ -51,24 +51,59 @@ describe('MigrationManager', () => {
     sinon.restore()
   })
 
+  describe('init', () => {
+    it('should initialize the MigrationManager', async () => {
+      // arrange
+      migrationManager.databaseVersion = '1.1.0'
+      migrationManager.maxVersion = '1.1.0'
+      migrationManager.umzug = null
+      migrationManager.configPath = __dirname
+
+      // Act
+      await migrationManager.init(serverVersion)
+
+      // Assert
+      expect(migrationManager.serverVersion).to.equal(serverVersion)
+      expect(migrationManager.sequelize).to.equal(sequelizeStub)
+      expect(migrationManager.migrationsDir).to.equal(path.join(__dirname, 'migrations'))
+      expect(migrationManager.copyMigrationsToConfigDir.calledOnce).to.be.true
+      expect(migrationManager.updateMaxVersion.calledOnce).to.be.true
+      expect(migrationManager.initialized).to.be.true
+      /*
+      expect(migrationManager.umzug).to.be.an.instanceOf(Umzug)
+      expect((await migrationManager.umzug.migrations()).map((m) => m.name)).to.deep.equal(['v1.0.0-migration.js', 'v1.1.0-migration.js', 'v1.2.0-migration.js', 'v1.10.0-migration.js'])
+      */
+    })
+
+    it('should throw error if serverVersion is not provided', async () => {
+      // Act
+      try {
+        const result = await migrationManager.init()
+        expect.fail('Expected init to throw an error, but it did not.')
+      } catch (error) {
+        expect(error.message).to.equal('Invalid server version: undefined. Expected a version tag like v1.2.3.')
+      }
+    })
+  })
+
   describe('runMigrations', () => {
     it('should run up migrations successfully', async () => {
       // Arrange
       migrationManager.databaseVersion = '1.1.0'
       migrationManager.maxVersion = '1.1.0'
+      migrationManager.serverVersion = '1.2.0'
+      migrationManager.initialized = true
 
       umzugStub.migrations.resolves([{ name: 'v1.1.0-migration.js' }, { name: 'v1.1.1-migration.js' }, { name: 'v1.2.0-migration.js' }])
       umzugStub.executed.resolves([{ name: 'v1.1.0-migration.js' }])
 
       // Act
-      await migrationManager.runMigrations('1.2.0')
+      await migrationManager.runMigrations()
 
       // Assert
-      expect(migrationManager.fetchVersionsFromDatabase.calledOnce).to.be.true
-      expect(migrationManager.copyMigrationsToConfigDir.calledOnce).to.be.true
-      expect(migrationManager.updateMaxVersion.calledOnce).to.be.true
+      expect(migrationManager.initUmzug.calledOnce).to.be.true
       expect(umzugStub.up.calledOnce).to.be.true
-      expect(umzugStub.up.calledWith({ migrations: ['v1.1.1-migration.js', 'v1.2.0-migration.js'] })).to.be.true
+      expect(umzugStub.up.calledWith({ migrations: ['v1.1.1-migration.js', 'v1.2.0-migration.js'], rerun: 'ALLOW' })).to.be.true
       expect(fsCopyStub.calledOnce).to.be.true
       expect(fsCopyStub.calledWith(path.join(configPath, 'absdatabase.sqlite'), path.join(configPath, 'absdatabase.backup.sqlite'))).to.be.true
       expect(fsRemoveStub.calledOnce).to.be.true
@@ -80,19 +115,19 @@ describe('MigrationManager', () => {
       // Arrange
       migrationManager.databaseVersion = '1.2.0'
       migrationManager.maxVersion = '1.2.0'
+      migrationManager.serverVersion = '1.1.0'
+      migrationManager.initialized = true
 
       umzugStub.migrations.resolves([{ name: 'v1.1.0-migration.js' }, { name: 'v1.1.1-migration.js' }, { name: 'v1.2.0-migration.js' }])
       umzugStub.executed.resolves([{ name: 'v1.1.0-migration.js' }, { name: 'v1.1.1-migration.js' }, { name: 'v1.2.0-migration.js' }])
 
       // Act
-      await migrationManager.runMigrations('1.1.0')
+      await migrationManager.runMigrations()
 
       // Assert
-      expect(migrationManager.fetchVersionsFromDatabase.calledOnce).to.be.true
-      expect(migrationManager.copyMigrationsToConfigDir.called).to.be.false
-      expect(migrationManager.updateMaxVersion.called).to.be.false
+      expect(migrationManager.initUmzug.calledOnce).to.be.true
       expect(umzugStub.down.calledOnce).to.be.true
-      expect(umzugStub.down.calledWith({ migrations: ['v1.2.0-migration.js', 'v1.1.1-migration.js'] })).to.be.true
+      expect(umzugStub.down.calledWith({ migrations: ['v1.2.0-migration.js', 'v1.1.1-migration.js'], rerun: 'ALLOW' })).to.be.true
       expect(fsCopyStub.calledOnce).to.be.true
       expect(fsCopyStub.calledWith(path.join(configPath, 'absdatabase.sqlite'), path.join(configPath, 'absdatabase.backup.sqlite'))).to.be.true
       expect(fsRemoveStub.calledOnce).to.be.true
@@ -105,9 +140,10 @@ describe('MigrationManager', () => {
       migrationManager.serverVersion = '1.2.0'
       migrationManager.databaseVersion = '1.2.0'
       migrationManager.maxVersion = '1.2.0'
+      migrationManager.initialized = true
 
       // Act
-      await migrationManager.runMigrations(serverVersion)
+      await migrationManager.runMigrations()
 
       // Assert
       expect(umzugStub.up.called).to.be.false
@@ -119,6 +155,7 @@ describe('MigrationManager', () => {
       migrationManager.serverVersion = '1.2.0'
       migrationManager.databaseVersion = '1.1.0'
       migrationManager.maxVersion = '1.1.0'
+      migrationManager.initialized = true
 
       umzugStub.migrations.resolves([{ name: 'v1.2.0-migration.js' }])
       umzugStub.executed.resolves([{ name: 'v1.1.0-migration.js' }])
@@ -128,9 +165,10 @@ describe('MigrationManager', () => {
       const backupDbPath = path.join(configPath, 'absdatabase.backup.sqlite')
 
       // Act
-      await migrationManager.runMigrations(serverVersion)
+      await migrationManager.runMigrations()
 
       // Assert
+      expect(migrationManager.initUmzug.calledOnce).to.be.true
       expect(umzugStub.up.calledOnce).to.be.true
       expect(loggerErrorStub.calledWith(sinon.match('Migration failed'))).to.be.true
       expect(fsMoveStub.calledWith(originalDbPath, sinon.match('absdatabase.failed.sqlite'), { overwrite: true })).to.be.true
@@ -140,44 +178,15 @@ describe('MigrationManager', () => {
     })
   })
 
-  describe('init', () => {
-    it('should throw error if serverVersion is not provided', async () => {
-      // Act
-      try {
-        const result = await migrationManager.init()
-        expect.fail('Expected init to throw an error, but it did not.')
-      } catch (error) {
-        expect(error.message).to.equal('Invalid server version: undefined. Expected a version tag like v1.2.3.')
-      }
-    })
-
-    it('should initialize the MigrationManager', async () => {
-      // arrange
-      migrationManager.databaseVersion = '1.1.0'
-      migrationManager.maxVersion = '1.1.0'
-      migrationManager.umzug = null
-      migrationManager.configPath = __dirname
-
-      // Act
-      await migrationManager.init(serverVersion, memoryStorage())
-
-      // Assert
-      expect(migrationManager.serverVersion).to.equal('1.2.0')
-      expect(migrationManager.sequelize).to.equal(sequelizeStub)
-      expect(migrationManager.umzug).to.be.an.instanceOf(Umzug)
-      expect((await migrationManager.umzug.migrations()).map((m) => m.name)).to.deep.equal(['v1.0.0-migration.js', 'v1.1.0-migration.js', 'v1.2.0-migration.js', 'v1.10.0-migration.js'])
-    })
-  })
-
   describe('fetchVersionsFromDatabase', () => {
-    it('should fetch versions from a real database', async () => {
+    it('should fetch versions from the migrationsMeta table', async () => {
       // Arrange
       const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-      const serverSettings = { version: 'v1.1.0', maxVersion: 'v1.1.0' }
-      // Create a settings table with a single row
-      await sequelize.query('CREATE TABLE settings (key TEXT, value JSON)')
-      await sequelize.query('INSERT INTO settings (key, value) VALUES (:key, :value)', { replacements: { key: 'server-settings', value: JSON.stringify(serverSettings) } })
+      // Create a migrationsMeta table and populate it with version and maxVersion
+      await sequelize.query('CREATE TABLE migrationsMeta (key VARCHAR(255), value VARCHAR(255))')
+      await sequelize.query("INSERT INTO migrationsMeta (key, value) VALUES ('version', '1.1.0'), ('maxVersion', '1.1.0')")
       const migrationManager = new MigrationManager(sequelize, configPath)
+      migrationManager.checkOrCreateMigrationsMetaTable = sinon.stub().resolves()
 
       // Act
       await migrationManager.fetchVersionsFromDatabase()
@@ -187,35 +196,23 @@ describe('MigrationManager', () => {
       expect(migrationManager.databaseVersion).to.equal('1.1.0')
     })
 
-    it('should set versions to null if no result is returned from the database', async () => {
+    it('should create the migrationsMeta table if it does not exist and fetch versions from it', async () => {
       // Arrange
       const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-      await sequelize.query('CREATE TABLE settings (key TEXT, value JSON)')
       const migrationManager = new MigrationManager(sequelize, configPath)
+      migrationManager.serverVersion = serverVersion
 
       // Act
       await migrationManager.fetchVersionsFromDatabase()
 
       // Assert
-      expect(migrationManager.maxVersion).to.be.null
-      expect(migrationManager.databaseVersion).to.be.null
-    })
-
-    it('should return a default maxVersion if no maxVersion is set in the database', async () => {
-      // Arrange
-      const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-      const serverSettings = { version: 'v1.1.0' }
-      // Create a settings table with a single row
-      await sequelize.query('CREATE TABLE settings (key TEXT, value JSON)')
-      await sequelize.query('INSERT INTO settings (key, value) VALUES (:key, :value)', { replacements: { key: 'server-settings', value: JSON.stringify(serverSettings) } })
-      const migrationManager = new MigrationManager(sequelize, configPath)
-
-      // Act
-      await migrationManager.fetchVersionsFromDatabase()
-
-      // Assert
+      const tableDescription = await sequelize.getQueryInterface().describeTable('migrationsMeta')
+      expect(tableDescription).to.deep.equal({
+        key: { type: 'VARCHAR(255)', allowNull: false, defaultValue: undefined, primaryKey: false, unique: false },
+        value: { type: 'VARCHAR(255)', allowNull: false, defaultValue: undefined, primaryKey: false, unique: false }
+      })
       expect(migrationManager.maxVersion).to.equal('0.0.0')
-      expect(migrationManager.databaseVersion).to.equal('1.1.0')
+      expect(migrationManager.databaseVersion).to.equal(serverVersion)
     })
 
     it('should throw an error if the database query fails', async () => {
@@ -223,6 +220,7 @@ describe('MigrationManager', () => {
       const sequelizeStub = sinon.createStubInstance(Sequelize)
       sequelizeStub.query.rejects(new Error('Database query failed'))
       const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      migrationManager.checkOrCreateMigrationsMetaTable = sinon.stub().resolves()
 
       // Act
       try {
@@ -239,18 +237,20 @@ describe('MigrationManager', () => {
     it('should update the maxVersion in the database', async () => {
       // Arrange
       const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-      const serverSettings = { version: 'v1.1.0', maxVersion: 'v1.1.0' }
-      // Create a settings table with a single row
-      await sequelize.query('CREATE TABLE settings (key TEXT, value JSON)')
-      await sequelize.query('INSERT INTO settings (key, value) VALUES (:key, :value)', { replacements: { key: 'server-settings', value: JSON.stringify(serverSettings) } })
+      // Create a migrationsMeta table and populate it with version and maxVersion
+      await sequelize.query('CREATE TABLE migrationsMeta (key VARCHAR(255), value VARCHAR(255))')
+      await sequelize.query("INSERT INTO migrationsMeta (key, value) VALUES ('version', '1.1.0'), ('maxVersion', '1.1.0')")
       const migrationManager = new MigrationManager(sequelize, configPath)
+      migrationManager.serverVersion = '1.2.0'
 
       // Act
-      await migrationManager.updateMaxVersion('v1.2.0')
+      await migrationManager.updateMaxVersion()
 
       // Assert
-      const [result] = await sequelize.query("SELECT json_extract(value, '$.maxVersion') AS maxVersion FROM settings WHERE key = :key", { replacements: { key: 'server-settings' }, type: Sequelize.QueryTypes.SELECT })
-      expect(result.maxVersion).to.equal('v1.2.0')
+      const [{ maxVersion }] = await sequelize.query("SELECT value AS maxVersion FROM migrationsMeta WHERE key = 'maxVersion'", {
+        type: Sequelize.QueryTypes.SELECT
+      })
+      expect(maxVersion).to.equal('1.2.0')
     })
   })
 
