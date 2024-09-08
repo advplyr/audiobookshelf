@@ -1,11 +1,11 @@
-const { expect, config } = require('chai')
+const { expect } = require('chai')
 const sinon = require('sinon')
 const { Sequelize } = require('sequelize')
 const fs = require('../../../server/libs/fsExtra')
 const Logger = require('../../../server/Logger')
 const MigrationManager = require('../../../server/managers/MigrationManager')
-const { Umzug, memoryStorage } = require('umzug')
 const path = require('path')
+const { Umzug, memoryStorage } = require('../../../server/libs/umzug')
 
 describe('MigrationManager', () => {
   let sequelizeStub
@@ -18,7 +18,7 @@ describe('MigrationManager', () => {
   let fsRemoveStub
   let fsEnsureDirStub
   let processExitStub
-  let configPath = 'path/to/config'
+  let configPath = '/path/to/config'
 
   const serverVersion = '1.2.0'
 
@@ -69,10 +69,6 @@ describe('MigrationManager', () => {
       expect(migrationManager.copyMigrationsToConfigDir.calledOnce).to.be.true
       expect(migrationManager.updateMaxVersion.calledOnce).to.be.true
       expect(migrationManager.initialized).to.be.true
-      /*
-      expect(migrationManager.umzug).to.be.an.instanceOf(Umzug)
-      expect((await migrationManager.umzug.migrations()).map((m) => m.name)).to.deep.equal(['v1.0.0-migration.js', 'v1.1.0-migration.js', 'v1.2.0-migration.js', 'v1.10.0-migration.js'])
-      */
     })
 
     it('should throw error if serverVersion is not provided', async () => {
@@ -479,6 +475,29 @@ describe('MigrationManager', () => {
 
       // Assert
       expect(result).to.deep.equal(['v1.2.0-migration.js'])
+    })
+  })
+
+  describe('initUmzug', () => {
+    it('should initialize the umzug instance with migrations in the proper order', async () => {
+      // Arrange
+      const readdirStub = sinon.stub(fs, 'readdir').resolves(['v1.0.0-migration.js', 'v1.10.0-migration.js', 'v1.2.0-migration.js', 'v1.1.0-migration.js'])
+      const readFileSyncStub = sinon.stub(fs, 'readFileSync').returns('module.exports = { up: () => {}, down: () => {} }')
+      const umzugStorage = memoryStorage()
+      migrationManager = new MigrationManager(sequelizeStub, configPath)
+      migrationManager.migrationsDir = path.join(configPath, 'migrations')
+      const resolvedMigrationNames = ['v1.0.0-migration.js', 'v1.1.0-migration.js', 'v1.2.0-migration.js', 'v1.10.0-migration.js']
+      const resolvedMigrationPaths = resolvedMigrationNames.map((name) => path.resolve(path.join(migrationManager.migrationsDir, name)))
+
+      // Act
+      await migrationManager.initUmzug(umzugStorage)
+
+      // Assert
+      expect(readdirStub.calledOnce).to.be.true
+      expect(migrationManager.umzug).to.be.an.instanceOf(Umzug)
+      const migrations = await migrationManager.umzug.migrations()
+      expect(migrations.map((m) => m.name)).to.deep.equal(resolvedMigrationNames)
+      expect(migrations.map((m) => m.path)).to.deep.equal(resolvedMigrationPaths)
     })
   })
 })

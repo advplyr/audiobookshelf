@@ -22,13 +22,11 @@
   "pkg": {
     "assets": [
       "client/dist/**/*",
-      "node_modules/sqlite3/lib/binding/**/*.node",
-      "node_modules/string-argv/commonjs/package.json"
+      "node_modules/sqlite3/lib/binding/**/*.node"
     ],
     "scripts": [
       "prod.js",
-      "server/**/*.js",
-      "node_modules/string-argv/commonjs/*.js"
+      "server/**/*.js"
     ]
   },
   "mocha": {
@@ -37,7 +35,6 @@
   "author": "advplyr",
   "license": "GPL-3.0",
   "dependencies": {
-    "@rushstack/terminal": "^0.14.0",
     "axios": "^0.27.2",
     "cookie-parser": "^1.4.6",
     "express": "^4.17.1",
@@ -55,7 +52,6 @@
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
     "ssrf-req-filter": "^1.1.0",
-    "umzug": "^3.8.1",
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
