@@ -57,6 +57,137 @@ components:
       description: The fields to include in the response. The only current option is `rssfeed`.
       type: string
       example: 'rssfeed'
+    libraryBook:
+      type: object
+      description: A book object used for displaying items in a library.
+      properties:
+        bookId:
+          $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+        coverPath:
+          $ref: '../objects/mediaTypes/Book.yaml#/components/schemas/bookCoverPath'
+        title:
+          type: string
+          description: The title of the book
+          example: 'The Way of Kings'
+        subtitle:
+          type: string
+          description: The subtitle of the book
+          example: 'A Stormlight Archive Novel'
+        authors:
+          type: array
+          description: The authors of the book
+          items:
+            type: string
+          example: ['Brandon Sanderson']
+        duration:
+          type: integer
+          nullable: true
+          description: The duration of the book in seconds. Will be null if the book is an ebook.
+          example: 123456
+        size:
+          type: integer
+          description: The size of the book with all files in bytes.
+          example: 987654
+        hasEbook:
+          type: boolean
+          description: Whether the book has an ebook
+          example: true
+        hasAudio:
+          type: boolean
+          description: Whether the book has audio
+          example: true
+        hasRss:
+          type: boolean
+          description: Whether the book has an RSS feed open
+          example: false
+        explicit:
+          type: boolean
+          description: Whether the book is explicit
+          example: false
+        abridged:
+          type: boolean
+          description: Whether the book is abridged
+          example: false
+        extraInfo:
+          type: string
+          description: The extra info displayed when sorting or filtering. For example, the publish year.
+          example: '2010'
+        count:
+          type: integer
+          description: The number of books in the series when using the "Collapse Series" option.
+          example: 4
+        progress:
+          type: number
+          description: The progress of the book as a percentage. Will be `1.0` if finished.
+          example: 0.23265
+    libraryPodcast:
+      type: object
+      description: A podcast object used for displaying items in a library.
+      properties:
+        podcastId:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+        coverPath:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastCoverPath'
+        title:
+          type: string
+          description: The title of the podcast
+          example: 'The Daily'
+        author:
+          type: string
+          description: The author of the podcast
+          example: 'The New York Times'
+        explicit:
+          type: boolean
+          description: Whether the podcast is explicit
+          example: false
+        extraInfo:
+          type: string
+          description: The extra info displayed when sorting or filtering. For example, the publish year.
+          example: '2010'
+        count:
+          type: integer
+          description: The number of episodes in the podcast.
+          example: 50
+    libraryPodcastEpisode:
+      type: object
+      description: A podcast episode object used for displaying episodes in a library.
+      properties:
+        episodeId:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/episodeId'
+        podcastId:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+        coverPath:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/episodeCoverPath'
+        title:
+          type: string
+          description: The title of the podcast episode
+          example: 'The Daily - October 1, 2021'
+        description:
+          type: string
+          description: The description of the podcast episode
+          example: 'The Daily is a podcast from The New York Times.'
+        seasonNumber:
+          type: integer
+          nullable: true
+          description: The season number of the podcast episode.
+          example: 1
+        episodeNumber:
+          type: integer
+          nullable: true
+          description: The episode number of the podcast episode.
+          example: 1
+        publishDate:
+          type: integer
+          description: The publish date of the podcast episode in ms since POSIX epoch.
+          example: 1633522963509
+        duration:
+          type: integer
+          description: The duration of the podcast episode in seconds.
+          example: 1234
+        progress:
+          type: number
+          description: The progress of the podcast episode as a percentage. Will be `1.0` if finished.
+          example: 0.23265
   parameters:
     limit:
       in: query
@@ -243,6 +374,274 @@ paths:
                 example: 'Issues deleted.'
         '404':
           $ref: '#/components/responses/library404'
+  /api/libraries/{id}/books:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryBooks
+      summary: Get books in a library
+      description: Get books in a library by ID on server. Only available for libraries with mediaType `book`.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numBooks'
+          schema:
+            type: string
+            default: 'name'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+        - in: query
+          name: collapseSeries
+          description: Whether to collapse series into a single cover
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: getLibraryBooks OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    description: The books returned from the library with only required fields for displaying in a library.
+                    items:
+                      $ref: '#/components/schemas/libraryBook'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+                  collapseSeries:
+                    $ref: '#/components/schemas/collapseSeries'
+        '403':
+          description: Library is not a book library.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library is not a book library.
+        '404':
+          description: Library not found.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library not found.
+  /api/libraries/{id}/podcasts:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryPodcasts
+      summary: Get podcasts in a library
+      description: Get podcasts in a library by ID on server. Only available for libraries with mediaType `podcast`.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'numEpisodes'
+          schema:
+            type: string
+            default: 'numEpisodes'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: getLibraryPodcasts OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  podcasts:
+                    type: array
+                    description: The podcasts returned from the library with only required fields for displaying in a library.
+                    items:
+                      $ref: '#/components/schemas/libraryPodcast'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+        '403':
+          description: Library is not a podcast library.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library is not a podcast library.
+        '404':
+          description: Library not found.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library not found.
+  /api/libraries/{id}/podcast-episodes:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryPodcastEpisodes
+      summary: Get podcast episodes in a library
+      description: Get podcast episodes in a library by ID on server. Only available for libraries with mediaType `podcast`.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - in: query
+          name: sort
+          description: The field to sort by from the request.
+          example: 'publishDate'
+          schema:
+            type: string
+            default: 'publishDate'
+        - $ref: '#/components/parameters/desc'
+        - in: query
+          name: filter
+          description: The filter for the library.
+          example: 'media.metadata.title'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: getLibraryPodcastEpisodes OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  episodes:
+                    type: array
+                    description: The podcast episodes returned from the library with only required fields for displaying in a library.
+                    items:
+                      $ref: '#/components/schemas/libraryPodcastEpisode'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+                  sortBy:
+                    $ref: '#/components/schemas/sortBy'
+                  sortDesc:
+                    $ref: '#/components/schemas/sortDesc'
+                  filterBy:
+                    $ref: '#/components/schemas/filterBy'
+        '403':
+          description: Library is not a podcast library.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library is not a podcast library.
+        '404':
+          description: Library not found.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library not found.
+  /api/libraries/{id}/recent-episodes:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+    get:
+      operationId: getLibraryRecentEpisodes
+      summary: Get recent episodes in a library
+      description: Get recent episodes in a library by ID on server. Only available for libraries with mediaType `podcast`.
+      tags:
+        - Libraries
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+      responses:
+        '200':
+          description: getLibraryRecentEpisodes OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  episodes:
+                    type: array
+                    description: The recent podcast episodes returned from the library with only required fields for displaying in a library.
+                    items:
+                      $ref: '#/components/schemas/libraryPodcastEpisode'
+                  total:
+                    $ref: '../schemas.yaml#/components/schemas/total'
+                  limit:
+                    $ref: '../schemas.yaml#/components/schemas/limit'
+                  page:
+                    $ref: '../schemas.yaml#/components/schemas/page'
+        '403':
+          description: Library is not a podcast library.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library is not a podcast library.
+        '404':
+          description: Library not found.
+          content:
+            text/html:
+              schema:
+                type: string
+                example: Library not found.
   /api/libraries/{id}/items:
     parameters:
       - name: id
