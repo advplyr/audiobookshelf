@@ -1,4 +1,4 @@
-const { Umzug, SequelizeStorage } = require('umzug')
+const { Umzug, SequelizeStorage } = require('../libs/umzug')
 const { Sequelize, DataTypes } = require('sequelize')
 const semver = require('semver')
 const path = require('path')
@@ -60,7 +60,7 @@ class MigrationManager {
       return
     }
 
-    this.initUmzug()
+    await this.initUmzug()
     const migrations = await this.umzug.migrations()
     const executedMigrations = (await this.umzug.executed()).map((m) => m.name)
 
@@ -95,11 +95,12 @@ class MigrationManager {
         // Step 3: If migration fails, save the failed original and restore the backup
         const failedDbPath = path.join(this.configPath, 'absdatabase.failed.sqlite')
         await fs.move(originalDbPath, failedDbPath, { overwrite: true })
-        await fs.move(backupDbPath, originalDbPath, { overwrite: true })
-
-        Logger.info('[MigrationManager] Restored the original database from the backup.')
         Logger.info('[MigrationManager] Saved the failed database as absdatabase.failed.sqlite.')
 
+        await fs.move(backupDbPath, originalDbPath, { overwrite: true })
+        Logger.info('[MigrationManager] Restored the original database from the backup.')
+
+        Logger.info('[MigrationManager] Migration failed. Exiting Audiobookshelf with code 1.')
         process.exit(1)
       }
     } else {
@@ -109,49 +110,47 @@ class MigrationManager {
     await this.updateDatabaseVersion()
   }
 
-  initUmzug(umzugStorage = new SequelizeStorage({ sequelize: this.sequelize })) {
-    if (!this.umzug) {
-      // This check is for dependency injection in tests
-      const cwd = this.migrationsDir
+  async initUmzug(umzugStorage = new SequelizeStorage({ sequelize: this.sequelize })) {
+    // This check is for dependency injection in tests
+    const files = (await fs.readdir(this.migrationsDir)).map((file) => path.join(this.migrationsDir, file))
 
-      const parent = new Umzug({
-        migrations: {
-          glob: ['*.js', { cwd }],
-          resolve: (params) => {
-            // make script think it's in migrationsSourceDir
-            const migrationPath = params.path
-            const migrationName = params.name
-            const contents = fs.readFileSync(migrationPath, 'utf8')
-            const fakePath = path.join(this.migrationsSourceDir, path.basename(migrationPath))
-            const module = new Module(fakePath)
-            module.filename = fakePath
-            module.paths = Module._nodeModulePaths(this.migrationsSourceDir)
-            module._compile(contents, fakePath)
-            const script = module.exports
-            return {
-              name: migrationName,
-              path: migrationPath,
-              up: script.up,
-              down: script.down
-            }
+    const parent = new Umzug({
+      migrations: {
+        files,
+        resolve: (params) => {
+          // make script think it's in migrationsSourceDir
+          const migrationPath = params.path
+          const migrationName = params.name
+          const contents = fs.readFileSync(migrationPath, 'utf8')
+          const fakePath = path.join(this.migrationsSourceDir, path.basename(migrationPath))
+          const module = new Module(fakePath)
+          module.filename = fakePath
+          module.paths = Module._nodeModulePaths(this.migrationsSourceDir)
+          module._compile(contents, fakePath)
+          const script = module.exports
+          return {
+            name: migrationName,
+            path: migrationPath,
+            up: script.up,
+            down: script.down
           }
-        },
-        context: { queryInterface: this.sequelize.getQueryInterface(), logger: Logger },
-        storage: umzugStorage,
-        logger: Logger
-      })
+        }
+      },
+      context: { queryInterface: this.sequelize.getQueryInterface(), logger: Logger },
+      storage: umzugStorage,
+      logger: Logger
+    })
 
-      // Sort migrations by version
-      this.umzug = new Umzug({
-        ...parent.options,
-        migrations: async () =>
-          (await parent.migrations()).sort((a, b) => {
-            const versionA = this.extractVersionFromTag(a.name)
-            const versionB = this.extractVersionFromTag(b.name)
-            return semver.compare(versionA, versionB)
-          })
-      })
-    }
+    // Sort migrations by version
+    this.umzug = new Umzug({
+      ...parent.options,
+      migrations: async () =>
+        (await parent.migrations()).sort((a, b) => {
+          const versionA = this.extractVersionFromTag(a.name)
+          const versionB = this.extractVersionFromTag(b.name)
+          return semver.compare(versionA, versionB)
+        })
+    })
   }
 
   async fetchVersionsFromDatabase() {
