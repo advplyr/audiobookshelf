@@ -202,10 +202,14 @@ class BookFinder {
    * @returns {Promise<Object[]>}
    */
   async getCustomProviderResults(title, author, isbn, providerSlug) {
-    const books = await this.customProviderAdapter.search(title, author, isbn, providerSlug, 'book', this.#providerResponseTimeout)
-    if (this.verbose) Logger.debug(`Custom provider '${providerSlug}' Search Results: ${books.length || 0}`)
-
-    return books
+    try {
+      const books = await this.customProviderAdapter.search(title, author, isbn, providerSlug, 'book', this.#providerResponseTimeout)
+      if (this.verbose) Logger.debug(`Custom provider '${providerSlug}' Search Results: ${books.length || 0}`)
+      return books
+    } catch (error) {
+      Logger.error(`Error searching Custom provider '${providerSlug}':`, error)
+      return []
+    }
   }
 
   static TitleCandidates = class {
