@@ -1,6 +1,7 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const { getTitleIgnorePrefix } = require('../utils/index')
 
 // Utils
 const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
@@ -230,7 +231,7 @@ class Scanner {
           seriesItem = await Database.seriesModel.create({
             name: seriesMatchItem.series,
             nameIgnorePrefix: getTitleIgnorePrefix(seriesMatchItem.series),
-            libraryId
+            libraryId: libraryItem.libraryId
           })
           // Update filter data
           Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
