@@ -299,6 +299,12 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         '-metadata:s:v',
         'comment=Cover' // add comment metadata to cover image stream
       ])
+      const ext = Path.extname(coverFilePath).toLowerCase()
+      if (ext === '.webp') {
+        ffmpeg.outputOptions([
+          '-c:v mjpeg' // convert webp images to jpeg
+        ])
+      }
     } else {
       ffmpeg.outputOptions([
         '-map 0:v?' // retain video stream from input file if exists
