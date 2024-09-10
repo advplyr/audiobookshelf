@@ -9,6 +9,10 @@ const Logger = require('../Logger')
 class MigrationManager {
   static MIGRATIONS_META_TABLE = 'migrationsMeta'
 
+  /**
+   * @param {import('../Database').sequelize} sequelize
+   * @param {string} [configPath]
+   */
   constructor(sequelize, configPath = global.configPath) {
     if (!sequelize || !(sequelize instanceof Sequelize)) throw new Error('Sequelize instance is required for MigrationManager.')
     this.sequelize = sequelize
@@ -23,6 +27,11 @@ class MigrationManager {
     this.umzug = null
   }
 
+  /**
+   * Init version vars and copy migration files to config dir if necessary
+   *
+   * @param {string} serverVersion
+   */
   async init(serverVersion) {
     if (!(await fs.pathExists(this.configPath))) throw new Error(`Config path does not exist: ${this.configPath}`)
 
@@ -212,6 +221,13 @@ class MigrationManager {
     )
   }
 
+  /**
+   *
+   * @param {{ name: string }[]} migrations
+   * @param {string[]} executedMigrations - names of executed migrations
+   * @param {string} direction - 'up' or 'down'
+   * @returns {string[]} - names of migrations to run
+   */
   findMigrationsToRun(migrations, executedMigrations, direction) {
     const migrationsToRun = migrations
       .filter((migration) => {

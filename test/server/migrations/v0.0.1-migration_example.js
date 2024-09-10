@@ -1,10 +1,18 @@
 const { DataTypes } = require('sequelize')
 
 /**
+ * @typedef MigrationContext
+ * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
+ * @property {import('../Logger')} logger - a Logger object.
+ *
+ * @typedef MigrationOptions
+ * @property {MigrationContext} context - an object containing the migration context.
+ */
+
+/**
  * This is an example of an upward migration script.
  *
- * @param {import { QueryInterface } from "sequelize";} options.context.queryInterface - a suquelize QueryInterface object.
- * @param {import { Logger } from "../../../server/Logger";} options.context.logger - a Logger object.
+ * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
 async function up({ context: { queryInterface, logger } }) {
@@ -28,8 +36,7 @@ async function up({ context: { queryInterface, logger } }) {
 /**
  * This is an example of a downward migration script.
  *
- * @param {import { QueryInterface } from "sequelize";} options.context.queryInterface - a suquelize QueryInterface object.
- * @param {import { Logger } from "../../../server/Logger";} options.context.logger - a Logger object.
+ * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
 async function down({ context: { queryInterface, logger } }) {
