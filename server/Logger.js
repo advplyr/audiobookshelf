@@ -86,7 +86,7 @@ class Logger {
 
     // Emit log to sockets that are listening to log events
     this.socketListeners.forEach((socketListener) => {
-      if (socketListener.level <= level) {
+      if (level >= LogLevel.FATAL || level >= socketListener.level) {
         socketListener.socket.emit('log', logObj)
       }
     })
