@@ -107,7 +107,7 @@ class User extends Model {
       upload: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
-      accessExplicitContent: false,
+      accessExplicitContent: type === 'root' || type === 'admin',
       selectedTagsNotAccessible: false,
       librariesAccessible: [],
       itemTagsSelected: []
