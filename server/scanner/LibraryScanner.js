@@ -79,38 +79,49 @@ class LibraryScanner {
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    const canceled = await this.scanLibrary(libraryScan, forceRescan)
+    try {
+      const canceled = await this.scanLibrary(libraryScan, forceRescan)
 
-    if (canceled) {
-      Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
-      delete this.cancelLibraryScan[libraryScan.libraryId]
+      if (canceled) {
+        Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
+        delete this.cancelLibraryScan[libraryScan.libraryId]
+      }
+
+      libraryScan.setComplete()
+
+      Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+
+      if (canceled && !libraryScan.totalResults) {
+        task.setFinished('Scan canceled')
+        TaskManager.taskFinished(task)
+
+        const emitData = libraryScan.getScanEmitData
+        emitData.results = null
+        return
+      }
+
+      library.lastScan = Date.now()
+      library.lastScanVersion = packageJson.version
+      if (library.isBook) {
+        const newExtraData = library.extraData || {}
+        newExtraData.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+        library.extraData = newExtraData
+        library.changed('extraData', true)
+      }
+      await library.save()
+
+      task.setFinished(libraryScan.scanResultsString)
+    } catch (err) {
+      libraryScan.setComplete(err)
+      Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp}.`, err)
+
+      if (this.cancelLibraryScan[libraryScan.libraryId]) delete this.cancelLibraryScan[libraryScan.libraryId]
+
+      task.setFailed(`Scan failed: ${err.message}`)
     }
 
-    libraryScan.setComplete()
-
-    Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
     this.librariesScanning = this.librariesScanning.filter((ls) => ls.id !== library.id)
 
-    if (canceled && !libraryScan.totalResults) {
-      task.setFinished('Scan canceled')
-      TaskManager.taskFinished(task)
-
-      const emitData = libraryScan.getScanEmitData
-      emitData.results = null
-      return
-    }
-
-    library.lastScan = Date.now()
-    library.lastScanVersion = packageJson.version
-    if (library.isBook) {
-      const newExtraData = library.extraData || {}
-      newExtraData.lastScanMetadataPrecedence = library.settings.metadataPrecedence
-      library.extraData = newExtraData
-      library.changed('extraData', true)
-    }
-    await library.save()
-
-    task.setFinished(libraryScan.scanResultsString)
     TaskManager.taskFinished(task)
 
     if (libraryScan.totalResults) {
