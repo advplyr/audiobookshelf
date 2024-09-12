@@ -144,6 +144,11 @@ class Database {
     return this.models.mediaItemShare
   }
 
+  /** @type {typeof import('./models/Device')} */
+  get deviceModel() {
+    return this.models.device
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -487,21 +492,6 @@ class Database {
   removePlaybackSession(sessionId) {
     if (!this.sequelize) return false
     return this.models.playbackSession.removeById(sessionId)
-  }
-
-  getDeviceByDeviceId(deviceId) {
-    if (!this.sequelize) return false
-    return this.models.device.getOldDeviceByDeviceId(deviceId)
-  }
-
-  updateDevice(oldDevice) {
-    if (!this.sequelize) return false
-    return this.models.device.updateFromOld(oldDevice)
-  }
-
-  createDevice(oldDevice) {
-    if (!this.sequelize) return false
-    return this.models.device.createFromOld(oldDevice)
   }
 
   replaceTagInFilterData(oldTag, newTag) {

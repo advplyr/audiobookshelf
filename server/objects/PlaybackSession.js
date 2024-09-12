@@ -82,8 +82,8 @@ class PlaybackSession {
 
   /**
    * Session data to send to clients
-   * @param {[oldLibraryItem]} libraryItem optional
-   * @returns {object}
+   * @param {Object} [libraryItem] - old library item
+   * @returns
    */
   toJSONForClient(libraryItem) {
     return {
@@ -254,12 +254,6 @@ class PlaybackSession {
 
     this.timeListening += Number.parseFloat(timeListened)
     this.updatedAt = Date.now()
-  }
-
-  // New date since start of listening session
-  checkDateRollover() {
-    if (!this.date) return false
-    return date.format(new Date(), 'YYYY-MM-DD') !== this.date
   }
 }
 module.exports = PlaybackSession

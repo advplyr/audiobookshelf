@@ -29,33 +29,6 @@ class Device extends Model {
     this.updatedAt
   }
 
-  getOldDevice() {
-    let browserVersion = null
-    let sdkVersion = null
-    if (this.clientName === 'Abs Android') {
-      sdkVersion = this.deviceVersion || null
-    } else {
-      browserVersion = this.deviceVersion || null
-    }
-
-    return new oldDevice({
-      id: this.id,
-      deviceId: this.deviceId,
-      userId: this.userId,
-      ipAddress: this.ipAddress,
-      browserName: this.extraData.browserName || null,
-      browserVersion,
-      osName: this.extraData.osName || null,
-      osVersion: this.extraData.osVersion || null,
-      clientVersion: this.clientVersion || null,
-      manufacturer: this.extraData.manufacturer || null,
-      model: this.extraData.model || null,
-      sdkVersion,
-      deviceName: this.deviceName,
-      clientName: this.clientName
-    })
-  }
-
   static async getOldDeviceByDeviceId(deviceId) {
     const device = await this.findOne({
       where: {
@@ -144,6 +117,60 @@ class Device extends Model {
       onDelete: 'CASCADE'
     })
     Device.belongsTo(user)
+  }
+
+  toOldJSON() {
+    let browserVersion = null
+    let sdkVersion = null
+    if (this.clientName === 'Abs Android') {
+      sdkVersion = this.deviceVersion || null
+    } else {
+      browserVersion = this.deviceVersion || null
+    }
+
+    return {
+      id: this.id,
+      deviceId: this.deviceId,
+      userId: this.userId,
+      ipAddress: this.ipAddress,
+      browserName: this.extraData.browserName || null,
+      browserVersion,
+      osName: this.extraData.osName || null,
+      osVersion: this.extraData.osVersion || null,
+      clientVersion: this.clientVersion || null,
+      manufacturer: this.extraData.manufacturer || null,
+      model: this.extraData.model || null,
+      sdkVersion,
+      deviceName: this.deviceName,
+      clientName: this.clientName
+    }
+  }
+
+  getOldDevice() {
+    let browserVersion = null
+    let sdkVersion = null
+    if (this.clientName === 'Abs Android') {
+      sdkVersion = this.deviceVersion || null
+    } else {
+      browserVersion = this.deviceVersion || null
+    }
+
+    return new oldDevice({
+      id: this.id,
+      deviceId: this.deviceId,
+      userId: this.userId,
+      ipAddress: this.ipAddress,
+      browserName: this.extraData.browserName || null,
+      browserVersion,
+      osName: this.extraData.osName || null,
+      osVersion: this.extraData.osVersion || null,
+      clientVersion: this.clientVersion || null,
+      manufacturer: this.extraData.manufacturer || null,
+      model: this.extraData.model || null,
+      sdkVersion,
+      deviceName: this.deviceName,
+      clientName: this.clientName
+    })
   }
 }
 
