@@ -35,6 +35,9 @@ components:
     size:
       type: integer
       description: The size of the item in bytes.
+    trackCount:
+      type: integer
+      description: The number of tracks in the podcast.
     title:
       type: string
       description: The title of the item.
@@ -96,6 +99,9 @@ components:
       nullable: true
       items:
         $ref: '#/components/schemas/bookPerson'
+    authorName:
+      type: string
+      description: The name of an author associated with a book.
     authorNameArray:
       type: array
       description: An array of author names associated with a book.
@@ -117,6 +123,10 @@ components:
     publisher:
       type: string
       description: The publisher of the book.
+      nullable: true
+    publishDate:
+      type: string
+      description: The date the item was published.
       nullable: true
     publishYear:
       type: integer
@@ -154,6 +164,47 @@ components:
       type: string
       description: The language of the item.
       nullable: true
+    hasFeedOpen:
+      type: boolean
+      description: Whether the item has an open feed.
+    rssFeed:
+      type: string
+      description: The RSS feed of the podcast.
+      nullable: true
+    itunesId:
+      type: string
+      description: The iTunes ID of the podcast.
+      nullable: true
+    podcastType:
+      type: string
+      description: The type of podcast.
+      enum: ['episodic', 'serial']
+    episodeNumber:
+      type: integer
+      description: The episode number of the podcast.
+    seasonNumber:
+      type: integer
+      description: The season number of the podcast.
+    autoDownloadEnabled:
+      type: boolean
+      description: Whether auto-download is enabled for the podcast.
+    autoDownloadSchedule:
+      type: string
+      description: The cron expression of when to check for new episodes to auto-download from the RSS feed for the podcast.
+      example: '0 0 * * *'
+      nullable: true
+    lastEpisodeCheck:
+      type: string
+      description: The date and time the podcast was last checked for new episodes.
+      nullable: true
+    maxEpisodesToKeep:
+      type: integer
+      description: The maximum number of episodes to keep for the podcast. If zero, keep all episodes.
+      default: 0
+    maxNewEpisodestoDownload:
+      type: integer
+      description: The maximum number of new episodes to download for the podcast. If zero, download all new episodes.
+      default: 3
     bookChapter:
       type: object
       description: A chapter in a book.
@@ -287,12 +338,119 @@ components:
           description: The ebook files of the book. Will be null if no ebooks are associated with the book.
           items:
             $ref: '#/components/schemas/ebookFile'
+        hasFeedOpen:
+          $ref: '#/components/schemas/hasFeedOpen'
         progress:
           $ref: '#/components/schemas/progress'
         duration:
           $ref: '#/components/schemas/duration'
         size:
           $ref: '#/components/schemas/size'
+    podcastObject:
+      type: object
+      description: Information about the podcast.
+      properties:
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        title:
+          $ref: '#/components/schemas/title'
+        author:
+          type: string
+          description: The author or publisher of the podcast.
+        description:
+          $ref: '#/components/schemas/description'
+        duration:
+          $ref: '#/components/schemas/duration'
+        trackCount:
+          $ref: '#/components/schemas/trackCount'
+        size:
+          $ref: '#/components/schemas/size'
+        genres:
+          $ref: '#/components/schemas/genreArray'
+        tags:
+          $ref: '#/components/schemas/tagArray'
+        releaseDate:
+          $ref: '#/components/schemas/publishDate'
+        itunesId:
+          type: string
+          description: The iTunes ID of the podcast.
+        language:
+          $ref: '#/components/schemas/language'
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+        hasFeedOpen:
+          $ref: '#/components/schemas/hasFeedOpen'
+        rssFeed:
+          $ref: '#/components/schemas/rssFeed'
+        type:
+          $ref: '#/components/schemas/podcastType'
+        autoDownloadEnabled:
+          $ref: '#/components/schemas/autoDownloadEnabled'
+        autoDownloadSchedule:
+          $ref: '#/components/schemas/autoDownloadSchedule'
+        lastEpisodeCheck:
+          $ref: '#/components/schemas/lastEpisodeCheck'
+        maxEpisodesToKeep:
+          $ref: '#/components/schemas/maxEpisodesToKeep'
+        maxNewEpisodestoDownload:
+          $ref: '#/components/schemas/maxNewEpisodestoDownload'
+    podcastMatchObject:
+      type: object
+      description: Match information for a podcast from an online provider.
+      properties:
+        id:
+          type: integer
+          description: The ID of the podcast.
+        artistId:
+          type: integer
+          description: The ID of the artist.
+        title:
+          $ref: '#/components/schemas/title'
+        artistName:
+          $ref: '#/components/schemas/authorName'
+        description:
+          $ref: '#/components/schemas/description'
+        releaseDate:
+          $ref: '#/components/schemas/publishDate'
+        genres:
+          $ref: '#/components/schemas/genreArray'
+        cover:
+          $ref: '#/components/schemas/imagePath'
+        trackCount:
+          $ref: '#/components/schemas/trackCount'
+        feedUrl:
+          $ref: '#/components/schemas/rssFeed'
+        pageUrl:
+          type: string
+          description: The URL of the podcast page.
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+    podcastEpisodeDisplayObject:
+      type: object
+      description: An episode of a podcast, only includes the information needed to display the episode.
+      properties:
+        title:
+          $ref: '#/components/schemas/title'
+        description:
+          $ref: '#/components/schemas/description'
+        releaseDate:
+          $ref: '#/components/schemas/publishDate'
+        duration:
+          $ref: '#/components/schemas/duration'
+        size:
+          $ref: '#/components/schemas/size'
+        episodeNumber:
+          $ref: '#/components/schemas/episodeNumber'
+        seasonNumber:
+          $ref: '#/components/schemas/seasonNumber'
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        hasFeedOpen:
+          $ref: '#/components/schemas/hasFeedOpen'
+        progress:
+          $ref: '#/components/schemas/progress'
   responses:
     badRequest:
       description: Bad request.
@@ -750,5 +908,513 @@ paths:
                 $ref: '#/components/schemas/bookObject'
         '403':
           $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPodcastById
+      summary: Get podcast by ID
+      description: Get a podcast by its ID. This endpoint returns all of the information needed for the podcast details page and editing, but does not include file information or podcast episode information.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: updatePodcastById
+      summary: Update podcast by ID
+      description: Update a podcast by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  $ref: '#/components/schemas/titleNullable'
+                author:
+                  type: string
+                  description: The author or publisher of the podcast.
+                description:
+                  $ref: '#/components/schemas/description'
+                genres:
+                  $ref: '#/components/schemas/genreArray'
+                tags:
+                  $ref: '#/components/schemas/tagArray'
+                releaseDate:
+                  $ref: '#/components/schemas/publishDate'
+                itunesId:
+                  $ref: '#/components/schemas/itunesId'
+                language:
+                  $ref: '#/components/schemas/language'
+                explicit:
+                  $ref: '#/components/schemas/isExplicit'
+                rssFeed:
+                  $ref: '#/components/schemas/rssFeed'
+                type:
+                  $ref: '#/components/schemas/podcastType'
+                autoDownloadEnabled:
+                  $ref: '#/components/schemas/autoDownloadEnabled'
+                autoDownloadSchedule:
+                  $ref: '#/components/schemas/autoDownloadSchedule'
+                maxEpisodesToKeep:
+                  $ref: '#/components/schemas/maxEpisodesToKeep'
+                maxNewEpisodestoDownload:
+                  $ref: '#/components/schemas/maxNewEpisodestoDownload'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deletePodcastById
+      summary: Remove podcast by ID
+      description: Remove the podcast and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/hardDelete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: hardDeletePodcastById
+      summary: Hard delete podcast by ID
+      description: Hard delete the podcast and associated entries from the database. This deletes the podcast's files from the filesystem. This action cannot be undone.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/download:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: downloadPodcastById
+      summary: Download podcast by ID
+      description: Download the podcast by its ID. This endpoint will return the podcast's files as a zip archive.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/cover:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPodcastCoverById
+      summary: Get podcast cover by ID
+      description: Get the podcast cover by its ID. This endpoint will return the podcast's cover image. If no query parameters are provided, the image will be returned in the original format with the original dimensions.
+      tags:
+        - Podcast
+      parameters:
+        - name: width
+          in: query
+          required: false
+          description: The width of the image in pixels.
+          schema:
+            type: integer
+            minimum: 1
+        - name: height
+          in: query
+          required: false
+          description: The height of the image in pixels. If this parameter is not provided, the image will be scaled proportionally to the width.
+          schema:
+            type: integer
+            minimum: 1
+        - name: format
+          in: query
+          required: false
+          description: The format of the image. If not provided, the image will be returned in the original format.
+          schema:
+            type: string
+            enum: ['jpeg', 'png', 'webp']
+            default: 'jpeg'
+      responses:
+        '200':
+          description: OK
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: uploadPodcastCoverById
+      summary: Upload podcast cover by ID
+      description: Upload the podcast cover image to the podcast by the podcast ID. This endpoint will replace the podcast's cover image with the provided image. The image should be in JPEG, PNG, or WebP format. Alternatively, the image can be provided as a URL to download the image from.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                cover:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL to download the image from.
+                  format: uri
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  coverPath:
+                    $ref: '#/components/schemas/imagePath'
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updatePodcastCoverById
+      summary: Update podcast cover by ID
+      description: Update the podcast cover to be an existing image in the database. This endpoint will replace the podcast's cover image with the provided image. The image should be in JPEG, PNG, or WebP format.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                coverId:
+                  $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  coverPath:
+                    $ref: '#/components/schemas/imagePath'
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deletePodcastCoverById
+      summary: Remove podcast cover by ID
+      description: Remove the podcast cover image from the podcast. The cover image file is not deleted but is no longer associated with the podcast.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  coverPath:
+                    $ref: '#/components/schemas/imagePath'
+                  success:
+                    type: boolean
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/match:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: matchPodcastById
+      summary: Match podcast by ID
+      description: Match the podcast selected by ID against an online database. This returns an array of possible matches. The user can select the best match from the list and select which metadata fields should be kept.
+      tags:
+        - Podcast
+      parameters:
+        - in: query
+          name: provider
+          required: false
+          description: The provider to use for the match. If not provided, the default library provider will be used.
+          schema:
+            type: string
+            enum: ['itunes', 'google', 'podcastindex']
+        - in: query
+          name: rssFeed
+          required: false
+          description: The RSS feed of the podcast to match.
+          schema:
+            type: string
+        - in: query
+          name: title
+          required: false
+          description: The title of the podcast to match.
+          schema:
+            type: string
+        - in: query
+          name: itunesId
+          required: false
+          description: The iTunes ID of the podcast to match.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/podcastMatchObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/tracks:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPodcastTracksById
+      summary: Get podcast tracks by ID
+      description: Get the podcast's audio tracks by its ID. This endpoint will return the podcast's audio tracks.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/audioTrack'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updatePodcastTracksById
+      summary: Update podcast tracks by ID
+      description: Update the podcast's audio tracks based on the provided file IDs. This endpoint will replace the podcast's audio tracks with the provided tracks. The tracks should be in the correct order.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trackIds:
+                  type: array
+                  description: The IDs of the audio files to use as tracks.
+                  items:
+                    $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/scan:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: scanPodcastById
+      summary: Scan podcast by ID
+      description: Scan the podcast by its ID. This endpoint will scan the podcast's files and update the podcast's metadata based on the files found according to the metadata priority settings.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/episodes:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the podcast.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPodcastEpisodesById
+      summary: Get podcast episodes by ID
+      description: Get the podcast's episodes by its ID. This endpoint will return the podcast's episodes.
+      tags:
+        - Podcast
+      parameters:
+        - in: query
+          name: limit
+          required: true
+          description: The maximum number of episodes to return. This defines the page size
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - in: query
+          name: page
+          required: true
+          description: The page of episodes to return. This is used in conjunction with the limit parameter.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: sort
+          required: false
+          description: The field to sort the episodes by.
+          schema:
+            type: string
+            enum: ['releaseDate', 'title', 'duration', 'size', 'episodeNumber', 'seasonNumber']
+            default: 'releaseDate'
+        - in: query
+          name: filter
+          required: false
+          description: The field to filter the episodes by.
+          schema:
+            type: string
+            enum: ['incomplete', 'complete', 'in-progress', 'all']
+            default: 'incomplete'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of episodes.
+                  returnCount:
+                    type: integer
+                    description: The number of episodes returned.
+                  episodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodeDisplayObject'
         '404':
           $ref: '#/components/responses/notFound'
