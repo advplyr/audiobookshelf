@@ -164,7 +164,7 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
-      session.duration = libraryItem.media.duration
+      session.setDuration(libraryItem, sessionJson.episodeId)
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {

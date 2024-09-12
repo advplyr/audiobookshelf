@@ -219,11 +219,7 @@ class PlaybackSession {
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
 
-    if (episodeId) {
-      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
-    } else {
-      this.duration = libraryItem.media.duration
-    }
+    this.setDuration(libraryItem, episodeId)
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
@@ -237,6 +233,14 @@ class PlaybackSession {
     this.dayOfWeek = date.format(new Date(), 'dddd')
     this.startedAt = Date.now()
     this.updatedAt = Date.now()
+  }
+
+  setDuration(libraryItem, episodeId) {
+    if (episodeId) {
+      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
+    } else {
+      this.duration = libraryItem.media.duration
+    }
   }
 
   addListeningTime(timeListened) {
