@@ -75,13 +75,14 @@ class LibraryScan {
     return date.format(new Date(), 'YYYY-MM-DD') + '_' + this.id + '.txt'
   }
   get scanResultsString() {
-    if (this.error) return this.error
     const strs = []
     if (this.resultsAdded) strs.push(`${this.resultsAdded} added`)
     if (this.resultsUpdated) strs.push(`${this.resultsUpdated} updated`)
     if (this.resultsMissing) strs.push(`${this.resultsMissing} missing`)
-    if (!strs.length) return `Everything was up to date (${elapsedPretty(this.elapsed / 1000)})`
-    return strs.join(', ') + ` (${elapsedPretty(this.elapsed / 1000)})`
+    const changesDetected = strs.length > 0 ? strs.join(', ') : 'No changes detected'
+    const timeElapsed = `(${elapsedPretty(this.elapsed / 1000)})`
+    const error = this.error ? `${this.error}. ` : ''
+    return `${error}${changesDetected} ${timeElapsed}`
   }
 
   toJSON() {
