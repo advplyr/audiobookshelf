@@ -1,6 +1,7 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const { getTitlePrefixAtEnd } = require('../utils/index')
+const { asciiOnlyToLowerCase } = require('../utils/index')
 
 class Series extends Model {
   constructor(values, options) {
@@ -39,26 +40,14 @@ class Series extends Model {
    * @returns {Promise<Series>}
    */
   static async getByNameAndLibrary(seriesName, libraryId) {
-    const containsOnlyASCII = /^[\u0000-\u007f]*$/.test(authorName)
-
-    // SQLite does not support lower with non-Unicode chars
-    if (!containsOnlyASCII) {
-      return this.findOne({
-        where: {
-          name: seriesName,
-          libraryId: libraryId
+    return this.findOne({
+      where: [
+        where(fn('lower', col('name')), asciiOnlyToLowerCase(seriesName)),
+        {
+          libraryId
         }
-      })
-    } else {
-      return this.findOne({
-        where: [
-          where(fn('lower', col('name')), seriesName.toLowerCase()),
-          {
-            libraryId
-          }
-        ]
-      })
-    }
+      ]
+    })
   }
 
   /**
