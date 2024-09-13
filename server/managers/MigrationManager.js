@@ -42,6 +42,7 @@ class MigrationManager {
 
     await this.fetchVersionsFromDatabase()
     if (!this.maxVersion || !this.databaseVersion) throw new Error('Failed to fetch versions from the database.')
+    Logger.debug(`[MigrationManager] Database version: ${this.databaseVersion}, Max version: ${this.maxVersion}, Server version: ${this.serverVersion}`)
 
     if (semver.gt(this.serverVersion, this.maxVersion)) {
       try {
@@ -191,10 +192,11 @@ class MigrationManager {
           allowNull: false
         }
       })
-      await this.sequelize.query("INSERT INTO :migrationsMeta (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')", {
-        replacements: { version: this.serverVersion, migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+      await this.sequelize.query("INSERT INTO :migrationsMeta (key, value) VALUES ('version', '0.0.0'), ('maxVersion', '0.0.0')", {
+        replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
         type: Sequelize.QueryTypes.INSERT
       })
+      Logger.debug(`[MigrationManager] Created migrationsMeta table: "${MigrationManager.MIGRATIONS_META_TABLE}"`)
     }
   }
 
@@ -219,6 +221,7 @@ class MigrationManager {
           await fs.copy(sourceFile, targetFile) // Asynchronously copy the files
         })
     )
+    Logger.debug(`[MigrationManager] Copied migrations to the config directory: "${this.migrationsDir}"`)
   }
 
   /**
