@@ -53,14 +53,26 @@ class Author extends Model {
    * @returns {Promise<Author>}
    */
   static async getByNameAndLibrary(authorName, libraryId) {
-    return this.findOne({
-      where: [
-        where(fn('lower', col('name')), authorName.toLowerCase()),
-        {
-          libraryId
+    const containsOnlyASCII = /^[\u0000-\u007f]*$/.test(authorName)
+
+    // SQLite does not support lower with non-Unicode chars
+    if (!containsOnlyASCII) {
+      return this.findOne({
+        where: {
+          name: authorName,
+          libraryId: libraryId
         }
-      ]
-    })
+      })
+    } else {
+      return this.findOne({
+        where: [
+          where(fn('lower', col('name')), authorName.toLowerCase()),
+          {
+            libraryId
+          }
+        ]
+      })
+    }
   }
 
   /**

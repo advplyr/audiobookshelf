@@ -39,14 +39,26 @@ class Series extends Model {
    * @returns {Promise<Series>}
    */
   static async getByNameAndLibrary(seriesName, libraryId) {
-    return this.findOne({
-      where: [
-        where(fn('lower', col('name')), seriesName.toLowerCase()),
-        {
-          libraryId
+    const containsOnlyASCII = /^[\u0000-\u007f]*$/.test(authorName)
+
+    // SQLite does not support lower with non-Unicode chars
+    if (!containsOnlyASCII) {
+      return this.findOne({
+        where: {
+          name: seriesName,
+          libraryId: libraryId
         }
-      ]
-    })
+      })
+    } else {
+      return this.findOne({
+        where: [
+          where(fn('lower', col('name')), seriesName.toLowerCase()),
+          {
+            libraryId
+          }
+        ]
+      })
+    }
   }
 
   /**
