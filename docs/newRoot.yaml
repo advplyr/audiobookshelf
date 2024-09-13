@@ -30,7 +30,7 @@ components:
       description: The bitrate of the audio file.
     progress:
       type: number
-      description: The user's progress through the media. Will be 1.0 if completed.
+      description: The user's progress through the media. Will be 1.0 if completed, and 0.0 or null if not started.
       nullable: true
     size:
       type: integer
@@ -181,9 +181,11 @@ components:
       enum: ['episodic', 'serial']
     episodeNumber:
       type: integer
+      nullable: true
       description: The episode number of the podcast.
     seasonNumber:
       type: integer
+      nullable: true
       description: The season number of the podcast.
     autoDownloadEnabled:
       type: boolean
@@ -283,6 +285,96 @@ components:
           description: Whether the file is the primary ebook file.
         size:
           $ref: '#/components/schemas/size'
+    libraryBook:
+      type: object
+      description: A book object used for displaying items in a library.
+      properties:
+        bookId:
+          $ref: '#/components/schemas/itemId'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        title:
+          $ref: '#/components/schemas/title'
+        subtitle:
+          $ref: '#/components/schemas/subtitle'
+        authors:
+          $ref: '#/components/schemas/authorNameArray'
+        duration:
+          $ref: '#/components/schemas/duration'
+        size:
+          $ref: '#/components/schemas/size'
+        hasEbook:
+          type: boolean
+          description: Whether the book has an ebook
+          example: true
+        hasAudio:
+          type: boolean
+          description: Whether the book has audio
+          example: true
+        hasRss:
+          $ref: '#/components/schemas/hasFeedOpen'
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+        abridged:
+          $ref: '#/components/schemas/isAbridged'
+        extraInfo:
+          type: string
+          description: The extra info displayed when sorting or filtering. For example, the publish year.
+          example: '2010'
+        count:
+          type: integer
+          description: The number of books in the series when using the "Collapse Series" option.
+          example: 4
+        progress:
+          $ref: '#/components/schemas/progress'
+    libraryPodcast:
+      type: object
+      description: A podcast object used for displaying items in a library.
+      properties:
+        podcastId:
+          $ref: '#/components/schemas/itemId'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        title:
+          $ref: '#/components/schemas/title'
+        author:
+          $ref: '#/components/schemas/authorName'
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+        extraInfo:
+          type: string
+          description: The extra info displayed when sorting or filtering. For example, the publish year.
+          example: '2010'
+        count:
+          type: integer
+          description: The number of episodes in the podcast.
+          example: 50
+    libraryPodcastEpisode:
+      type: object
+      description: A podcast episode object used for displaying episodes in a library.
+      properties:
+        episodeId:
+          $ref: '#/components/schemas/itemId'
+        podcastId:
+          $ref: '#/components/schemas/itemId'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        title:
+          $ref: '#/components/schemas/title'
+        description:
+          $ref: '#/components/schemas/description'
+        seasonNumber:
+          $ref: '#/components/schemas/seasonNumber'
+        episodeNumber:
+          $ref: '#/components/schemas/episodeNumber'
+        publishDate:
+          type: integer
+          description: The publish date of the podcast episode in ms since POSIX epoch.
+          example: 1633522963509
+        duration:
+          $ref: '#/components/schemas/duration'
+        progress:
+          $ref: '#/components/schemas/progress'
     bookObject:
       type: object
       description: Information about the book and its audio files.
@@ -1416,5 +1508,207 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/podcastEpisodeDisplayObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/books:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the library.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getLibraryBooksById
+      summary: Get books in library
+      description: Get the books in the library by its ID. This endpoint will return the books in the library.
+      tags:
+        - Library
+      parameters:
+        - in: query
+          name: limit
+          required: true
+          description: The maximum number of books to return. This defines the page size
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - in: query
+          name: page
+          required: true
+          description: The page of books to return. This is used in conjunction with the limit parameter.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: sort
+          required: false
+          description: The field to sort the books by.
+          schema:
+            type: string
+            enum: ['title', 'publishYear', 'author', 'narrator', 'series', 'seriesSequence', 'size', 'duration', 'progress']
+            default: 'title'
+        - in: query
+          name: filter
+          required: false
+          description: A key-value pair of how to filter books. The key is the field to filter by and the value is the value to filter by. If the value is an array, the filter will be an OR filter.
+          schema:
+            type: string
+            enum: ['genre', 'tag', 'author', 'narrator', 'series', 'seriesSequence', 'publishYear', 'publisher', 'isbn', 'asin', 'progress', 'all']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of books.
+                  returnCount:
+                    type: integer
+                    description: The number of books returned.
+                  books:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/libraryBook'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/podcasts:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the library.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getLibraryPodcastsById
+      summary: Get podcasts in library
+      description: Get the podcasts in the library by its ID. This endpoint will return the podcasts in the library.
+      tags:
+        - Library
+      parameters:
+        - in: query
+          name: limit
+          required: true
+          description: The maximum number of podcasts to return. This defines the page size
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - in: query
+          name: page
+          required: true
+          description: The page of podcasts to return. This is used in conjunction with the limit parameter.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: sort
+          required: false
+          description: The field to sort the podcasts by.
+          schema:
+            type: string
+            enum: ['title', 'author', 'releaseDate', 'type', 'rssFeed', 'autoDownloadEnabled', 'autoDownloadSchedule', 'lastEpisodeCheck', 'maxEpisodesToKeep', 'maxNewEpisodestoDownload']
+            default: 'title'
+        - in: query
+          name: filter
+          required: false
+          description: A key-value pair of how to filter podcasts. The key is the field to filter by and the value is the value to filter by. If the value is an array, the filter will be an OR filter.
+          schema:
+            type: string
+            enum: ['genre', 'tag', 'author', 'rssFeed', 'type', 'autoDownloadEnabled', 'autoDownloadSchedule', 'lastEpisodeCheck', 'maxEpisodesToKeep', 'maxNewEpisodestoDownload', 'all']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of podcasts.
+                  returnCount:
+                    type: integer
+                    description: The number of podcasts returned.
+                  podcasts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/libraryPodcast'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/podcast-episodes:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The ID of the library.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getLibraryPodcastEpisodesById
+      summary: Get podcast episodes in library
+      description: Get the podcast episodes in the library by its ID. This endpoint will return the podcast episodes in the library.
+      tags:
+        - Library
+      parameters:
+        - in: query
+          name: limit
+          required: true
+          description: The maximum number of podcast episodes to return. This defines the page size
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - in: query
+          name: page
+          required: true
+          description: The page of podcast episodes to return. This is used in conjunction with the limit parameter.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: sort
+          required: false
+          description: The field to sort the podcast episodes by.
+          schema:
+            type: string
+            enum: ['releaseDate', 'title', 'duration', 'size', 'episodeNumber', 'seasonNumber']
+            default: 'releaseDate'
+        - in: query
+          name: filter
+          required: false
+          description: A key-value pair of how to filter podcast episodes. The key is the field to filter by and the value is the value to filter by. If the value is an array, the filter will be an OR filter.
+          schema:
+            type: string
+            enum: ['incomplete', 'complete', 'in-progress', 'all']
+            default: 'incomplete'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of podcast episodes.
+                  returnCount:
+                    type: integer
+                    description: The number of podcast episodes returned.
+                  episodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/libraryPodcastEpisode'
         '404':
           $ref: '#/components/responses/notFound'
