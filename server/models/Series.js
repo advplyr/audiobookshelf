@@ -84,6 +84,12 @@ class Series extends Model {
           //   }]
           // },
           {
+            // unique constraint on name and libraryId
+            fields: ['name', 'libraryId'],
+            unique: true,
+            name: 'unique_series_name_per_library'
+          },
+          {
             fields: ['libraryId']
           }
         ]
