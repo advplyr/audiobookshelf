@@ -208,7 +208,7 @@ describe('MigrationManager', () => {
         value: { type: 'VARCHAR(255)', allowNull: false, defaultValue: undefined, primaryKey: false, unique: false }
       })
       expect(migrationManager.maxVersion).to.equal('0.0.0')
-      expect(migrationManager.databaseVersion).to.equal(serverVersion)
+      expect(migrationManager.databaseVersion).to.equal('0.0.0')
     })
 
     it('should throw an error if the database query fails', async () => {
