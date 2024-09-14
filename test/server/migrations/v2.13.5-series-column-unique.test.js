@@ -226,7 +226,8 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
       const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
       expect(bookSeries).to.have.length(1)
-      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: null, bookId: book1Id, seriesId: series1Id })
+      // Keep BookSeries 2 because it was edited last from cleaning up duplicate books
+      expect(bookSeries).to.deep.include({ id: bookSeries2Id, sequence: null, bookId: book1Id, seriesId: series1Id })
     })
     it('upgrade with one book in two of the same series, one sequence is null', async () => {
       // Create two different series with the same name in the same library
@@ -277,8 +278,8 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('UPGRADE BEGIN: 2.13.5-series-column-unique '))).to.be.true
       expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.13.5 migration] Found 1 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.13.5 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
-      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.13.5 migration] Deduplicating bookId 8bc2e61d-47f6-42ef-a3f4-93cf2f1de82f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
-      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.13.5 migration] Finished cleanup of bookId 8bc2e61d-47f6-42ef-a3f4-93cf2f1de82f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
+      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.13.5 migration] Deduplicating bookId 4a38b6e5-0ae4-4de4-b119-4e33891bd63f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
+      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.13.5 migration] Finished cleanup of bookId 4a38b6e5-0ae4-4de4-b119-4e33891bd63f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
       expect(loggerInfoStub.getCall(5).calledWith(sinon.match('[2.13.5 migration] Deduplication complete'))).to.be.true
       expect(loggerInfoStub.getCall(6).calledWith(sinon.match('Added unique index on Series.name and Series.libraryId'))).to.be.true
       expect(loggerInfoStub.getCall(7).calledWith(sinon.match('UPGRADE END: 2.13.5-series-column-unique '))).to.be.true
@@ -288,7 +289,8 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
       const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
       expect(bookSeries).to.have.length(1)
-      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: '2', bookId: book1Id, seriesId: series1Id })
+      // Keep BookSeries 2 because it is the lower sequence number
+      expect(bookSeries).to.deep.include({ id: bookSeries2Id, sequence: '2', bookId: book1Id, seriesId: series1Id })
     })
   })
 
