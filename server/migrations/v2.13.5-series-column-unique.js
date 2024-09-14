@@ -20,7 +20,15 @@ async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
   logger.info('UPGRADE BEGIN: 2.13.5-series-column-unique ')
 
-  // Use the queryInterface to get the series table and find duplicates in the `name` column
+  // The steps taken to deduplicate the series are as follows:
+  // 1. Find all duplicate series in the `Series` table.
+  // 2. Iterate over the duplicate series and find all book IDs that are associated with the duplicate series in `bookSeries` table.
+  //    2.a For each book ID, check if the ID occurs multiple times for the duplicate series.
+  //    2.b If so, keep only one of the rows that has this bookId and seriesId.
+  // 3. Update `bookSeries` table to point to the most recent series.
+  // 4. Delete the older series.
+
+  // Use the queryInterface to get the series table and find duplicates in the `name` and `libraryId` column
   const [duplicates] = await queryInterface.sequelize.query(`
     SELECT name, libraryId, MAX(updatedAt) AS latestUpdatedAt, COUNT(name) AS count
     FROM Series
@@ -35,6 +43,70 @@ async function up({ context: { queryInterface, logger } }) {
   for (const duplicate of duplicates) {
     // Report the series name that is being deleted
     logger.info(`[2.13.5 migration] Deduplicating series "${duplicate.name}" in library ${duplicate.libraryId}`)
+
+    // Determine any duplicate book IDs in the `bookSeries` table for the same series
+    const [duplicateBookIds] = await queryInterface.sequelize.query(
+      `
+        SELECT bookId, COUNT(bookId) AS count
+        FROM BookSeries
+        WHERE seriesId IN (
+          SELECT id
+          FROM Series
+          WHERE name = :name AND libraryId = :libraryId
+        )
+        GROUP BY bookId
+        HAVING COUNT(bookId) > 1
+        `,
+      {
+        replacements: {
+          name: duplicate.name,
+          libraryId: duplicate.libraryId
+        }
+      }
+    )
+
+    // Iterate over the duplicate book IDs if there is at least one and only keep the first row that has this bookId and seriesId
+    for (const { bookId } of duplicateBookIds) {
+      // Get all rows of `BookSeries` table that have the same `bookId` and `seriesId`. Sort by `sequence` with nulls sorted last
+      const [duplicateBookSeries] = await queryInterface.sequelize.query(
+        `
+            SELECT id
+            FROM BookSeries
+            WHERE bookId = :bookId
+            AND seriesId IN (
+              SELECT id
+              FROM Series
+              WHERE name = :name AND libraryId = :libraryId
+            )
+            ORDER BY sequence NULLS LAST
+            `,
+        {
+          replacements: {
+            bookId,
+            name: duplicate.name,
+            libraryId: duplicate.libraryId
+          }
+        }
+      )
+
+      // remove the first element from the array
+      duplicateBookSeries.shift()
+
+      // Delete the remaining duplicate rows
+      if (duplicateBookSeries.length > 0) {
+        const [deletedBookSeries] = await queryInterface.sequelize.query(
+          `
+              DELETE FROM BookSeries
+              WHERE id IN (:ids)
+              `,
+          {
+            replacements: {
+              ids: duplicateBookSeries.map((row) => row.id)
+            }
+          }
+        )
+      }
+    }
 
     // Get all the most recent series which matches the `name` and `libraryId`
     const [mostRecentSeries] = await queryInterface.sequelize.query(
