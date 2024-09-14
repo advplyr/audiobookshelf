@@ -11,11 +11,13 @@ class MigrationManager {
 
   /**
    * @param {import('../Database').sequelize} sequelize
+   * @param {boolean} isDatabaseNew
    * @param {string} [configPath]
    */
-  constructor(sequelize, configPath = global.configPath) {
+  constructor(sequelize, isDatabaseNew, configPath = global.configPath) {
     if (!sequelize || !(sequelize instanceof Sequelize)) throw new Error('Sequelize instance is required for MigrationManager.')
     this.sequelize = sequelize
+    this.isDatabaseNew = isDatabaseNew
     if (!configPath) throw new Error('Config path is required for MigrationManager.')
     this.configPath = configPath
     this.migrationsSourceDir = path.join(__dirname, '..', 'migrations')
@@ -42,6 +44,7 @@ class MigrationManager {
 
     await this.fetchVersionsFromDatabase()
     if (!this.maxVersion || !this.databaseVersion) throw new Error('Failed to fetch versions from the database.')
+    Logger.debug(`[MigrationManager] Database version: ${this.databaseVersion}, Max version: ${this.maxVersion}, Server version: ${this.serverVersion}`)
 
     if (semver.gt(this.serverVersion, this.maxVersion)) {
       try {
@@ -62,6 +65,11 @@ class MigrationManager {
 
   async runMigrations() {
     if (!this.initialized) throw new Error('MigrationManager is not initialized. Call init() first.')
+
+    if (this.isDatabaseNew) {
+      Logger.info('[MigrationManager] Database is new. Skipping migrations.')
+      return
+    }
 
     const versionCompare = semver.compare(this.serverVersion, this.databaseVersion)
     if (versionCompare == 0) {
@@ -180,7 +188,15 @@ class MigrationManager {
 
   async checkOrCreateMigrationsMetaTable() {
     const queryInterface = this.sequelize.getQueryInterface()
-    if (!(await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE))) {
+    let migrationsMetaTableExists = await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
+
+    if (this.isDatabaseNew && migrationsMetaTableExists) {
+      // This can happen if database was initialized with force: true
+      await queryInterface.dropTable(MigrationManager.MIGRATIONS_META_TABLE)
+      migrationsMetaTableExists = false
+    }
+
+    if (!migrationsMetaTableExists) {
       await queryInterface.createTable(MigrationManager.MIGRATIONS_META_TABLE, {
         key: {
           type: DataTypes.STRING,
@@ -192,9 +208,10 @@ class MigrationManager {
         }
       })
       await this.sequelize.query("INSERT INTO :migrationsMeta (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')", {
-        replacements: { version: this.serverVersion, migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+        replacements: { version: this.isDatabaseNew ? this.serverVersion : '0.0.0', migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
         type: Sequelize.QueryTypes.INSERT
       })
+      Logger.debug(`[MigrationManager] Created migrationsMeta table: "${MigrationManager.MIGRATIONS_META_TABLE}"`)
     }
   }
 
@@ -219,6 +236,7 @@ class MigrationManager {
           await fs.copy(sourceFile, targetFile) // Asynchronously copy the files
         })
     )
+    Logger.debug(`[MigrationManager] Copied migrations to the config directory: "${this.migrationsDir}"`)
   }
 
   /**
