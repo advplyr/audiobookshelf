@@ -67,6 +67,7 @@ async function up({ context: { queryInterface, logger } }) {
 
     // Iterate over the duplicate book IDs if there is at least one and only keep the first row that has this bookId and seriesId
     for (const { bookId } of duplicateBookIds) {
+      logger.info(`[2.13.5 migration] Deduplicating bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
       // Get all rows of `BookSeries` table that have the same `bookId` and `seriesId`. Sort by `sequence` with nulls sorted last
       const [duplicateBookSeries] = await queryInterface.sequelize.query(
         `
@@ -106,6 +107,7 @@ async function up({ context: { queryInterface, logger } }) {
           }
         )
       }
+      logger.info(`[2.13.5 migration] Finished cleanup of bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
     }
 
     // Get all the most recent series which matches the `name` and `libraryId`
