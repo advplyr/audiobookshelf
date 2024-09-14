@@ -53,6 +53,7 @@ describe('migration-v2.13.5-series-column-unique', () => {
         'BookSeries',
         {
           id: { type: Sequelize.UUID, primaryKey: true },
+          sequence: { type: Sequelize.STRING, allowNull: true },
           bookId: { type: Sequelize.UUID, allowNull: false },
           seriesId: { type: Sequelize.UUID, allowNull: false }
         },
@@ -93,9 +94,9 @@ describe('migration-v2.13.5-series-column-unique', () => {
       ])
       // Add some entries to the BookSeries table
       await queryInterface.bulkInsert('BookSeries', [
-        { id: bookSeries1Id, bookId: book1Id, seriesId: series1Id },
+        { id: bookSeries1Id, sequence: '1', bookId: book1Id, seriesId: series1Id },
         { id: bookSeries2Id, bookId: book2Id, seriesId: series2Id },
-        { id: bookSeries3Id, bookId: book3Id, seriesId: series3Id }
+        { id: bookSeries3Id, sequence: '1', bookId: book3Id, seriesId: series3Id }
       ])
 
       await up({ context: { queryInterface, logger: Logger } })
@@ -112,13 +113,13 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
       expect(series).to.deep.include({ id: series2Id, name: 'Series 2', libraryId: library2Id })
       expect(series).to.deep.include({ id: series3Id, name: 'Series 3', libraryId: library1Id })
-      const bookSeries = await queryInterface.sequelize.query('SELECT "id", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
       expect(bookSeries).to.have.length(3)
-      expect(bookSeries).to.deep.include({ id: bookSeries1Id, bookId: book1Id, seriesId: series1Id })
-      expect(bookSeries).to.deep.include({ id: bookSeries2Id, bookId: book2Id, seriesId: series2Id })
-      expect(bookSeries).to.deep.include({ id: bookSeries3Id, bookId: book3Id, seriesId: series3Id })
+      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: '1', bookId: book1Id, seriesId: series1Id })
+      expect(bookSeries).to.deep.include({ id: bookSeries2Id, sequence: null, bookId: book2Id, seriesId: series2Id })
+      expect(bookSeries).to.deep.include({ id: bookSeries3Id, sequence: '1', bookId: book3Id, seriesId: series3Id })
     })
-    it('upgrade with duplicate series', async () => {
+    it('upgrade with duplicate series and no sequence', async () => {
       // Add some entries to the Series table using the UUID for the ids
       await queryInterface.bulkInsert('Series', [
         { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
@@ -192,6 +193,93 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(bookSeries).to.have.length(2)
       expect(bookSeries).to.deep.include({ id: bookSeries1Id, bookId: book1Id, seriesId: series1Id })
       expect(bookSeries).to.deep.include({ id: bookSeries2Id, bookId: book2Id, seriesId: series2Id })
+    })
+    it('upgrade with one book in two of the same series, both sequence are null', async () => {
+      // Create two different series with the same name in the same library
+      await queryInterface.bulkInsert('Series', [
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+      ])
+      // Create a book that is in both series
+      await queryInterface.bulkInsert('BookSeries', [
+        { id: bookSeries1Id, bookId: book1Id, seriesId: series1Id },
+        { id: bookSeries2Id, bookId: book1Id, seriesId: series2Id }
+      ])
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      expect(loggerInfoStub.callCount).to.equal(6)
+      expect(loggerInfoStub.getCall(0).calledWith(sinon.match('UPGRADE BEGIN: 2.13.5-series-column-unique '))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.13.5 migration] Found 1 duplicate series'))).to.be.true
+      expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.13.5 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
+      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.13.5 migration] Deduplication complete'))).to.be.true
+      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('Added unique index on Series.name and Series.libraryId')).to.be.true)
+      expect(loggerInfoStub.getCall(5).calledWith(sinon.match('UPGRADE END: 2.13.5-series-column-unique '))).to.be.true
+      // validate rows
+      const series = await queryInterface.sequelize.query('SELECT "id", "name", "libraryId" FROM Series', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(series).to.have.length(1)
+      expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
+      const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(bookSeries).to.have.length(1)
+      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: null, bookId: book1Id, seriesId: series1Id })
+    })
+    it('upgrade with one book in two of the same series, one sequence is null', async () => {
+      // Create two different series with the same name in the same library
+      await queryInterface.bulkInsert('Series', [
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+      ])
+      // Create a book that is in both series
+      await queryInterface.bulkInsert('BookSeries', [
+        { id: bookSeries1Id, sequence: '1', bookId: book1Id, seriesId: series1Id },
+        { id: bookSeries2Id, bookId: book1Id, seriesId: series2Id }
+      ])
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      expect(loggerInfoStub.callCount).to.equal(6)
+      expect(loggerInfoStub.getCall(0).calledWith(sinon.match('UPGRADE BEGIN: 2.13.5-series-column-unique '))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.13.5 migration] Found 1 duplicate series'))).to.be.true
+      expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.13.5 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
+      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.13.5 migration] Deduplication complete'))).to.be.true
+      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('Added unique index on Series.name and Series.libraryId')).to.be.true)
+      expect(loggerInfoStub.getCall(5).calledWith(sinon.match('UPGRADE END: 2.13.5-series-column-unique '))).to.be.true
+      // validate rows
+      const series = await queryInterface.sequelize.query('SELECT "id", "name", "libraryId" FROM Series', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(series).to.have.length(1)
+      expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
+      const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(bookSeries).to.have.length(1)
+      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: '1', bookId: book1Id, seriesId: series1Id })
+    })
+    it('upgrade with one book in two of the same series, both sequence are not null', async () => {
+      // Create two different series with the same name in the same library
+      await queryInterface.bulkInsert('Series', [
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+      ])
+      // Create a book that is in both series
+      await queryInterface.bulkInsert('BookSeries', [
+        { id: bookSeries1Id, sequence: '1', bookId: book1Id, seriesId: series1Id },
+        { id: bookSeries2Id, sequence: '2', bookId: book1Id, seriesId: series2Id }
+      ])
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      expect(loggerInfoStub.callCount).to.equal(6)
+      expect(loggerInfoStub.getCall(0).calledWith(sinon.match('UPGRADE BEGIN: 2.13.5-series-column-unique '))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.13.5 migration] Found 1 duplicate series'))).to.be.true
+      expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.13.5 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
+      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.13.5 migration] Deduplication complete'))).to.be.true
+      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('Added unique index on Series.name and Series.libraryId')).to.be.true)
+      expect(loggerInfoStub.getCall(5).calledWith(sinon.match('UPGRADE END: 2.13.5-series-column-unique '))).to.be.true
+      // validate rows
+      const series = await queryInterface.sequelize.query('SELECT "id", "name", "libraryId" FROM Series', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(series).to.have.length(1)
+      expect(series).to.deep.include({ id: series1Id, name: 'Series 1', libraryId: library1Id })
+      const bookSeries = await queryInterface.sequelize.query('SELECT "id", "sequence", "bookId", "seriesId" FROM BookSeries', { type: queryInterface.sequelize.QueryTypes.SELECT })
+      expect(bookSeries).to.have.length(1)
+      expect(bookSeries).to.deep.include({ id: bookSeries1Id, sequence: '1, 2', bookId: book1Id, seriesId: series1Id })
     })
   })
 
