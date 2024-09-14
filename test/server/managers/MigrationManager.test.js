@@ -31,7 +31,7 @@ describe('MigrationManager', () => {
       down: sinon.stub()
     }
     sequelizeStub.getQueryInterface.returns({})
-    migrationManager = new MigrationManager(sequelizeStub, configPath)
+    migrationManager = new MigrationManager(sequelizeStub, false, configPath)
     migrationManager.fetchVersionsFromDatabase = sinon.stub().resolves()
     migrationManager.copyMigrationsToConfigDir = sinon.stub().resolves()
     migrationManager.updateMaxVersion = sinon.stub().resolves()
@@ -131,6 +131,21 @@ describe('MigrationManager', () => {
       expect(loggerInfoStub.calledWith(sinon.match('Migrations successfully applied'))).to.be.true
     })
 
+    it('should log that migrations will be skipped if database is new', async () => {
+      // Arrange
+      migrationManager.isDatabaseNew = true
+      migrationManager.initialized = true
+
+      // Act
+      await migrationManager.runMigrations()
+
+      // Assert
+      expect(loggerInfoStub.calledWith(sinon.match('Database is new. Skipping migrations.'))).to.be.true
+      expect(migrationManager.initUmzug.called).to.be.false
+      expect(umzugStub.up.called).to.be.false
+      expect(umzugStub.down.called).to.be.false
+    })
+
     it('should log that no migrations are needed if serverVersion equals databaseVersion', async () => {
       // Arrange
       migrationManager.serverVersion = '1.2.0'
@@ -181,7 +196,7 @@ describe('MigrationManager', () => {
       // Create a migrationsMeta table and populate it with version and maxVersion
       await sequelize.query('CREATE TABLE migrationsMeta (key VARCHAR(255), value VARCHAR(255))')
       await sequelize.query("INSERT INTO migrationsMeta (key, value) VALUES ('version', '1.1.0'), ('maxVersion', '1.1.0')")
-      const migrationManager = new MigrationManager(sequelize, configPath)
+      const migrationManager = new MigrationManager(sequelize, false, configPath)
       migrationManager.checkOrCreateMigrationsMetaTable = sinon.stub().resolves()
 
       // Act
@@ -195,7 +210,26 @@ describe('MigrationManager', () => {
     it('should create the migrationsMeta table if it does not exist and fetch versions from it', async () => {
       // Arrange
       const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-      const migrationManager = new MigrationManager(sequelize, configPath)
+      const migrationManager = new MigrationManager(sequelize, false, configPath)
+      migrationManager.serverVersion = serverVersion
+
+      // Act
+      await migrationManager.fetchVersionsFromDatabase()
+
+      // Assert
+      const tableDescription = await sequelize.getQueryInterface().describeTable('migrationsMeta')
+      expect(tableDescription).to.deep.equal({
+        key: { type: 'VARCHAR(255)', allowNull: false, defaultValue: undefined, primaryKey: false, unique: false },
+        value: { type: 'VARCHAR(255)', allowNull: false, defaultValue: undefined, primaryKey: false, unique: false }
+      })
+      expect(migrationManager.maxVersion).to.equal('0.0.0')
+      expect(migrationManager.databaseVersion).to.equal('0.0.0')
+    })
+
+    it('should create the migrationsMeta with databaseVersion=serverVersion if database is new', async () => {
+      // Arrange
+      const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+      const migrationManager = new MigrationManager(sequelize, true, configPath)
       migrationManager.serverVersion = serverVersion
 
       // Act
@@ -211,11 +245,28 @@ describe('MigrationManager', () => {
       expect(migrationManager.databaseVersion).to.equal(serverVersion)
     })
 
+    it('should re-create the migrationsMeta table if it existed and database is new (Database force=true)', async () => {
+      // Arrange
+      const sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+      // Create a migrationsMeta table and populate it with version and maxVersion
+      await sequelize.query('CREATE TABLE migrationsMeta (key VARCHAR(255), value VARCHAR(255))')
+      await sequelize.query("INSERT INTO migrationsMeta (key, value) VALUES ('version', '1.1.0'), ('maxVersion', '1.1.0')")
+      const migrationManager = new MigrationManager(sequelize, true, configPath)
+      migrationManager.serverVersion = serverVersion
+
+      // Act
+      await migrationManager.fetchVersionsFromDatabase()
+
+      // Assert
+      expect(migrationManager.maxVersion).to.equal('0.0.0')
+      expect(migrationManager.databaseVersion).to.equal(serverVersion)
+    })
+
     it('should throw an error if the database query fails', async () => {
       // Arrange
       const sequelizeStub = sinon.createStubInstance(Sequelize)
       sequelizeStub.query.rejects(new Error('Database query failed'))
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       migrationManager.checkOrCreateMigrationsMetaTable = sinon.stub().resolves()
 
       // Act
@@ -236,7 +287,7 @@ describe('MigrationManager', () => {
       // Create a migrationsMeta table and populate it with version and maxVersion
       await sequelize.query('CREATE TABLE migrationsMeta (key VARCHAR(255), value VARCHAR(255))')
       await sequelize.query("INSERT INTO migrationsMeta (key, value) VALUES ('version', '1.1.0'), ('maxVersion', '1.1.0')")
-      const migrationManager = new MigrationManager(sequelize, configPath)
+      const migrationManager = new MigrationManager(sequelize, false, configPath)
       migrationManager.serverVersion = '1.2.0'
 
       // Act
@@ -253,7 +304,7 @@ describe('MigrationManager', () => {
   describe('extractVersionFromTag', () => {
     it('should return null if tag is not provided', () => {
       // Arrange
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
 
       // Act
       const result = migrationManager.extractVersionFromTag()
@@ -264,7 +315,7 @@ describe('MigrationManager', () => {
 
     it('should return null if tag does not match the version format', () => {
       // Arrange
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       const tag = 'invalid-tag'
 
       // Act
@@ -276,7 +327,7 @@ describe('MigrationManager', () => {
 
     it('should extract the version from the tag', () => {
       // Arrange
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       const tag = 'v1.2.3'
 
       // Act
@@ -290,7 +341,7 @@ describe('MigrationManager', () => {
   describe('copyMigrationsToConfigDir', () => {
     it('should copy migrations to the config directory', async () => {
       // Arrange
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       migrationManager.migrationsDir = path.join(configPath, 'migrations')
       const migrationsSourceDir = path.join(__dirname, '..', '..', '..', 'server', 'migrations')
       const targetDir = migrationManager.migrationsDir
@@ -313,7 +364,7 @@ describe('MigrationManager', () => {
 
     it('should throw an error if copying the migrations fails', async () => {
       // Arrange
-      const migrationManager = new MigrationManager(sequelizeStub, configPath)
+      const migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       migrationManager.migrationsDir = path.join(configPath, 'migrations')
       const migrationsSourceDir = path.join(__dirname, '..', '..', '..', 'server', 'migrations')
       const targetDir = migrationManager.migrationsDir
@@ -484,7 +535,7 @@ describe('MigrationManager', () => {
       const readdirStub = sinon.stub(fs, 'readdir').resolves(['v1.0.0-migration.js', 'v1.10.0-migration.js', 'v1.2.0-migration.js', 'v1.1.0-migration.js'])
       const readFileSyncStub = sinon.stub(fs, 'readFileSync').returns('module.exports = { up: () => {}, down: () => {} }')
       const umzugStorage = memoryStorage()
-      migrationManager = new MigrationManager(sequelizeStub, configPath)
+      migrationManager = new MigrationManager(sequelizeStub, false, configPath)
       migrationManager.migrationsDir = path.join(configPath, 'migrations')
       const resolvedMigrationNames = ['v1.0.0-migration.js', 'v1.1.0-migration.js', 'v1.2.0-migration.js', 'v1.10.0-migration.js']
       const resolvedMigrationPaths = resolvedMigrationNames.map((name) => path.resolve(path.join(migrationManager.migrationsDir, name)))
