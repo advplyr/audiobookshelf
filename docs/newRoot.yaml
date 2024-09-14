@@ -17,6 +17,202 @@ components:
       description: Bearer authentication
       type: http
       scheme: bearer
+  parameters:
+    pathLibraryId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the library.
+      schema:
+        type: string
+        format: uuid
+    pathBookId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the book.
+      schema:
+        type: string
+        format: uuid
+    pathPodcastId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the podcast.
+      schema:
+        type: string
+        format: uuid
+    pathPodcastEpisodeId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the podcast episode.
+      schema:
+        type: string
+        format: uuid
+    queryLimit:
+      name: limit
+      in: query
+      required: false
+      description: The number of items per page.
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+    queryPage:
+      name: page
+      in: query
+      required: false
+      description: The page number of items to return. The first page is 1, and the page size is determined by the limit parameter.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    queryDesc:
+      name: desc
+      in: query
+      required: false
+      description: Whether to sort the items in descending order.
+      schema:
+        type: boolean
+        default: false
+    queryFilterGenre:
+      name: genre
+      in: query
+      required: false
+      description: The genre ID to filter by.
+      schema:
+        type: string
+        format: uuid
+    queryFilterTag:
+      name: tag
+      in: query
+      required: false
+      description: The tag ID to filter by.
+      schema:
+        type: string
+        format: uuid
+    queryFilterAuthor:
+      name: author
+      in: query
+      required: false
+      description: The author ID to filter by.
+      schema:
+        type: string
+        format: uuid
+    queryFilterNarrator:
+      name: narrator
+      in: query
+      required: false
+      description: The narrator ID to filter by.
+      schema:
+        type: string
+        format: uuid
+    queryFilterPublisher:
+      name: publisher
+      in: query
+      required: false
+      description: The publisher name to filter by.
+      schema:
+        type: string
+    queryFilterSeries:
+      name: series
+      in: query
+      required: false
+      description: The series ID to filter by.
+      schema:
+        type: string
+        format: uuid
+    queryFilterLanguage:
+      name: language
+      in: query
+      required: false
+      description: The language to filter by.
+      schema:
+        type: string
+    queryFilterProgress:
+      name: progress
+      in: query
+      required: false
+      description: The progress to filter by.
+      schema:
+        type: string
+        enum: ['not-started', 'in-progress', 'completed', 'not-completed']
+    queryFilterMissing:
+      name: missing
+      in: query
+      required: false
+      description: Which fields to filter by missing values.
+      schema:
+        type: string
+        enum: ['asin', 'isbn', 'author', 'title', 'subtitle', 'publish-year', 'series', 'description', 'genre', 'tag', 'narrator', 'publisher', 'language', 'cover']
+    queryFilterTrackCount:
+      name: trackCount
+      in: query
+      required: false
+      description: Filter if the book has a single audio file, multiple audio files, or no audio files (ebook).
+      schema:
+        type: string
+        enum: ['single', 'multiple', 'none']
+    queryFilterEbook:
+      name: ebook
+      in: query
+      required: false
+      description: Filter by presence or abscence of ebook files.
+      schema:
+        type: string
+        enum: ['has-ebook', 'no-ebook', 'has-primary', 'no-primary', 'has-supplementary', 'no-supplementary']
+    queryFilterAbridged:
+      name: abridged
+      in: query
+      required: false
+      description: Filter by abridged or unabridged books.
+      schema:
+        type: boolean
+    queryFilterExplicit:
+      name: explicit
+      in: query
+      required: false
+      description: Filter by explicit or non-explicit content.
+      schema:
+        type: boolean
+    queryFilterIssues:
+      name: issues
+      in: query
+      required: false
+      description: Filter by books with issues.
+      schema:
+        type: boolean
+    queryFilterFeedOpen:
+      name: feedOpen
+      in: query
+      required: false
+      description: Filter by books with open feeds.
+      schema:
+        type: boolean
+    queryFilterShareOpen:
+      name: shareOpen
+      in: query
+      required: false
+      description: Filter by books with open shares.
+      schema:
+        type: boolean
+    querySortBooks:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the books by.
+      schema:
+        type: string
+        enum: ['title', 'publishYear', 'author-fl', 'author-lf', 'size', 'duration', 'progress', 'file-birthtime', 'file-mtime', 'random']
+    querySortPodcasts:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the podcasts by.
+      schema:
+        type: string
+        enum: ['title', 'author', 'created', 'size', 'episodeCount', 'random']
   schemas:
     itemId:
       type: string
@@ -187,6 +383,10 @@ components:
       type: integer
       nullable: true
       description: The season number of the podcast.
+    episodeType:
+      type: string
+      description: The type of episode.
+      enum: ['full', 'trailer', 'bonus', 'teaser', 'sponsored', 'patron']
     autoDownloadEnabled:
       type: boolean
       description: Whether auto-download is enabled for the podcast.
@@ -285,7 +485,7 @@ components:
           description: Whether the file is the primary ebook file.
         size:
           $ref: '#/components/schemas/size'
-    libraryBook:
+    displayBookObject:
       type: object
       description: A book object used for displaying items in a library.
       properties:
@@ -327,7 +527,7 @@ components:
           example: 4
         progress:
           $ref: '#/components/schemas/progress'
-    libraryPodcast:
+    displayPodcastObject:
       type: object
       description: A podcast object used for displaying items in a library.
       properties:
@@ -349,7 +549,7 @@ components:
           type: integer
           description: The number of episodes in the podcast.
           example: 50
-    libraryPodcastEpisode:
+    displayPodcastEpisodeObject:
       type: object
       description: A podcast episode object used for displaying episodes in a library.
       properties:
@@ -543,6 +743,40 @@ components:
           $ref: '#/components/schemas/hasFeedOpen'
         progress:
           $ref: '#/components/schemas/progress'
+    podcastEpisodeObject:
+      type: object
+      description: An episode of a podcast.
+      properties:
+        episodeId:
+          $ref: '#/components/schemas/itemId'
+        podcastId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        subtitle:
+          $ref: '#/components/schemas/subtitle'
+        description:
+          $ref: '#/components/schemas/description'
+        releaseDate:
+          $ref: '#/components/schemas/publishDate'
+        duration:
+          $ref: '#/components/schemas/duration'
+        size:
+          $ref: '#/components/schemas/size'
+        episodeType:
+          $ref: '#/components/schemas/episodeType'
+        episodeNumber:
+          $ref: '#/components/schemas/episodeNumber'
+        seasonNumber:
+          $ref: '#/components/schemas/seasonNumber'
+        explicit:
+          $ref: '#/components/schemas/isExplicit'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        rssFeed:
+          $ref: '#/components/schemas/rssFeed'
+        hasFeedOpen:
+          $ref: '#/components/schemas/hasFeedOpen'
   responses:
     badRequest:
       description: Bad request.
@@ -571,13 +805,7 @@ tags:
 paths:
   /api/book/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: getBookById
       summary: Get book by ID
@@ -662,13 +890,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/hardDelete:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     delete:
       operationId: hardDeleteBookById
       summary: Hard delete book by ID
@@ -688,13 +910,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/download:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: downloadBookById
       summary: Download book by ID
@@ -715,13 +931,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/cover:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: getBookCoverById
       summary: Get book cover by ID
@@ -867,13 +1077,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/match:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     post:
       operationId: matchBookById
       summary: Match book by ID
@@ -938,13 +1142,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/tracks:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     patch:
       operationId: updateBookTracksById
       summary: Update book tracks
@@ -978,13 +1176,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/book/{id}/scan:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the book.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathBookId'
     post:
       operationId: scanBookById
       summary: Scan book by ID
@@ -1004,13 +1196,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastById
       summary: Get podcast by ID
@@ -1102,13 +1288,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/hardDelete:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     delete:
       operationId: hardDeletePodcastById
       summary: Hard delete podcast by ID
@@ -1128,13 +1308,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/download:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: downloadPodcastById
       summary: Download podcast by ID
@@ -1155,13 +1329,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/cover:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastCoverById
       summary: Get podcast cover by ID
@@ -1307,13 +1475,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/match:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     post:
       operationId: matchPodcastById
       summary: Match podcast by ID
@@ -1361,13 +1523,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/tracks:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastTracksById
       summary: Get podcast tracks by ID
@@ -1418,13 +1574,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/scan:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     post:
       operationId: scanPodcastById
       summary: Scan podcast by ID
@@ -1444,13 +1594,7 @@ paths:
           $ref: '#/components/responses/notFound'
   /api/podcast/{id}/episodes:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the podcast.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastEpisodesById
       summary: Get podcast episodes by ID
@@ -1510,15 +1654,157 @@ paths:
                       $ref: '#/components/schemas/podcastEpisodeDisplayObject'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/podcast-episode/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastEpisodeId'
+    get:
+      operationId: getPodcastEpisodeById
+      summary: Get podcast episode by ID
+      description: Get a podcast episode by its ID. This endpoint returns all of the information needed for the podcast episode details page and editing.
+      tags:
+        - Podcast Episode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: updatePodcastEpisodeById
+      summary: Update podcast episode by ID
+      description: Update a podcast episode by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Podcast Episode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  $ref: '#/components/schemas/titleNullable'
+                description:
+                  $ref: '#/components/schemas/description'
+                releaseDate:
+                  $ref: '#/components/schemas/publishDate'
+                episodeNumber:
+                  $ref: '#/components/schemas/episodeNumber'
+                seasonNumber:
+                  $ref: '#/components/schemas/seasonNumber'
+                explicit:
+                  $ref: '#/components/schemas/isExplicit'
+                #coverPath:
+                #$ref: '#/components/schemas/imagePath'
+                #hasFeedOpen:
+                #$ref: '#/components/schemas/hasFeedOpen'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deletePodcastEpisodeById
+      summary: Remove podcast episode by ID
+      description: Remove the podcast episode and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Podcast Episode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast-episode/{id}/hardDelete:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastEpisodeId'
+    delete:
+      operationId: hardDeletePodcastEpisodeById
+      summary: Hard delete podcast episode by ID
+      description: Hard delete the podcast episode and associated entries from the database. This deletes the podcast episode's files from the filesystem. This action cannot be undone.
+      tags:
+        - Podcast Episode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast-episode/{id}/download:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastEpisodeId'
+    get:
+      operationId: downloadPodcastEpisodeById
+      summary: Download podcast episode by ID
+      description: Download the podcast episode by its ID. This endpoint will return the podcast episode file as a raw file.
+      tags:
+        - Podcast Episode
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast-episode/{id}/match:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastEpisodeId'
+    post:
+      operationId: matchPodcastEpisodeById
+      summary: Match podcast episode by ID
+      description: Match the podcast episode selected by ID against an online database. This returns an array of possible matches. The user can select the best match from the list and select which metadata fields should be kept.
+      tags:
+        - Podcast Episode
+      parameters:
+        - in: query
+          name: title
+          required: false
+          description: The title of the podcast episode to match.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  # TODO, verify this schema
+                  $ref: '#/components/schemas/podcastEpisodeObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
   /api/library/{id}/books:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the library.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathLibraryId'
     get:
       operationId: getLibraryBooksById
       summary: Get books in library
@@ -1526,37 +1812,26 @@ paths:
       tags:
         - Library
       parameters:
-        - in: query
-          name: limit
-          required: true
-          description: The maximum number of books to return. This defines the page size
-          schema:
-            type: integer
-            minimum: 1
-            default: 20
-        - in: query
-          name: page
-          required: true
-          description: The page of books to return. This is used in conjunction with the limit parameter.
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: sort
-          required: false
-          description: The field to sort the books by.
-          schema:
-            type: string
-            enum: ['title', 'publishYear', 'author', 'narrator', 'series', 'seriesSequence', 'size', 'duration', 'progress']
-            default: 'title'
-        - in: query
-          name: filter
-          required: false
-          description: A key-value pair of how to filter books. The key is the field to filter by and the value is the value to filter by. If the value is an array, the filter will be an OR filter.
-          schema:
-            type: string
-            enum: ['genre', 'tag', 'author', 'narrator', 'series', 'seriesSequence', 'publishYear', 'publisher', 'isbn', 'asin', 'progress', 'all']
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortBooks'
+        - $ref: '#/components/parameters/queryDesc'
+        - $ref: '#/components/parameters/queryFilterGenre'
+        - $ref: '#/components/parameters/queryFilterTag'
+        - $ref: '#/components/parameters/queryFilterAuthor'
+        - $ref: '#/components/parameters/queryFilterNarrator'
+        - $ref: '#/components/parameters/queryFilterSeries'
+        - $ref: '#/components/parameters/queryFilterPublisher'
+        - $ref: '#/components/parameters/queryFilterLanguage'
+        - $ref: '#/components/parameters/queryFilterProgress'
+        - $ref: '#/components/parameters/queryFilterMissing'
+        - $ref: '#/components/parameters/queryFilterTrackCount'
+        - $ref: '#/components/parameters/queryFilterEbook'
+        - $ref: '#/components/parameters/queryFilterAbridged'
+        - $ref: '#/components/parameters/queryFilterExplicit'
+        - $ref: '#/components/parameters/queryFilterIssues'
+        - $ref: '#/components/parameters/queryFilterFeedOpen'
+        - $ref: '#/components/parameters/queryFilterShareOpen'
       responses:
         '200':
           description: OK
@@ -1574,18 +1849,12 @@ paths:
                   books:
                     type: array
                     items:
-                      $ref: '#/components/schemas/libraryBook'
+                      $ref: '#/components/schemas/displayBookObject'
         '404':
           $ref: '#/components/responses/notFound'
   /api/library/{id}/podcasts:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the library.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathLibraryId'
     get:
       operationId: getLibraryPodcastsById
       summary: Get podcasts in library
@@ -1593,37 +1862,14 @@ paths:
       tags:
         - Library
       parameters:
-        - in: query
-          name: limit
-          required: true
-          description: The maximum number of podcasts to return. This defines the page size
-          schema:
-            type: integer
-            minimum: 1
-            default: 20
-        - in: query
-          name: page
-          required: true
-          description: The page of podcasts to return. This is used in conjunction with the limit parameter.
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: sort
-          required: false
-          description: The field to sort the podcasts by.
-          schema:
-            type: string
-            enum: ['title', 'author', 'releaseDate', 'type', 'rssFeed', 'autoDownloadEnabled', 'autoDownloadSchedule', 'lastEpisodeCheck', 'maxEpisodesToKeep', 'maxNewEpisodestoDownload']
-            default: 'title'
-        - in: query
-          name: filter
-          required: false
-          description: A key-value pair of how to filter podcasts. The key is the field to filter by and the value is the value to filter by. If the value is an array, the filter will be an OR filter.
-          schema:
-            type: string
-            enum: ['genre', 'tag', 'author', 'rssFeed', 'type', 'autoDownloadEnabled', 'autoDownloadSchedule', 'lastEpisodeCheck', 'maxEpisodesToKeep', 'maxNewEpisodestoDownload', 'all']
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortPodcasts'
+        - $ref: '#/components/parameters/queryDesc'
+        - $ref: '#/components/parameters/queryFilterGenre'
+        - $ref: '#/components/parameters/queryFilterTag'
+        - $ref: '#/components/parameters/queryFilterLanguage'
+        - $ref: '#/components/parameters/queryFilterIssues'
       responses:
         '200':
           description: OK
@@ -1641,18 +1887,12 @@ paths:
                   podcasts:
                     type: array
                     items:
-                      $ref: '#/components/schemas/libraryPodcast'
+                      $ref: '#/components/schemas/displayPodcastObject'
         '404':
           $ref: '#/components/responses/notFound'
   /api/library/{id}/podcast-episodes:
     parameters:
-      - name: id
-        in: path
-        required: true
-        description: The ID of the library.
-        schema:
-          type: string
-          format: uuid
+      - $ref: '#/components/parameters/pathLibraryId'
     get:
       operationId: getLibraryPodcastEpisodesById
       summary: Get podcast episodes in library
@@ -1660,22 +1900,8 @@ paths:
       tags:
         - Library
       parameters:
-        - in: query
-          name: limit
-          required: true
-          description: The maximum number of podcast episodes to return. This defines the page size
-          schema:
-            type: integer
-            minimum: 1
-            default: 20
-        - in: query
-          name: page
-          required: true
-          description: The page of podcast episodes to return. This is used in conjunction with the limit parameter.
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
         - in: query
           name: sort
           required: false
@@ -1684,6 +1910,7 @@ paths:
             type: string
             enum: ['releaseDate', 'title', 'duration', 'size', 'episodeNumber', 'seasonNumber']
             default: 'releaseDate'
+        - $ref: '#/components/parameters/queryDesc'
         - in: query
           name: filter
           required: false
@@ -1709,6 +1936,6 @@ paths:
                   episodes:
                     type: array
                     items:
-                      $ref: '#/components/schemas/libraryPodcastEpisode'
+                      $ref: '#/components/schemas/displayPodcastEpisodeObject'
         '404':
           $ref: '#/components/responses/notFound'
