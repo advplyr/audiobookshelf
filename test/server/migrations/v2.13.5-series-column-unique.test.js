@@ -16,11 +16,13 @@ describe('migration-v2.13.5-series-column-unique', () => {
   let series3Id
   let series1Id_dup
   let series3Id_dup
+  let series1Id_dup2
   let book1Id
   let book2Id
   let book3Id
   let book4Id
   let book5Id
+  let book6Id
   let library1Id
   let library2Id
   let bookSeries1Id
@@ -28,6 +30,7 @@ describe('migration-v2.13.5-series-column-unique', () => {
   let bookSeries3Id
   let bookSeries1Id_dup
   let bookSeries3Id_dup
+  let bookSeries1Id_dup2
 
   beforeEach(() => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
@@ -164,7 +167,7 @@ describe('migration-v2.13.5-series-column-unique', () => {
       expect(bookSeries).to.deep.include({ id: bookSeries3Id_dup, bookId: book5Id, seriesId: series3Id })
       expect(bookSeries).to.deep.include({ id: bookSeries1Id_dup2, bookId: book6Id, seriesId: series1Id })
     })
-    it('update with same series name in different libraries', async () => {
+    it('upgrade with same series name in different libraries', async () => {
       // Add some entries to the Series table using the UUID for the ids
       await queryInterface.bulkInsert('Series', [
         { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
