@@ -7,7 +7,7 @@ const { query } = require('express')
 const { logger } = require('sequelize/lib/utils/logger')
 const e = require('express')
 
-describe('migration_example', () => {
+describe('migration-v2.13.5-series-column-unique', () => {
   let sequelize
   let queryInterface
   let loggerInfoStub
