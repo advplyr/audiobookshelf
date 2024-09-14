@@ -48,11 +48,16 @@ describe('migration-v2.13.5-series-column-unique', () => {
         createdAt: { type: Sequelize.DATE, allowNull: false },
         updatedAt: { type: Sequelize.DATE, allowNull: false }
       })
-      await queryInterface.createTable('BookSeries', {
-        id: { type: Sequelize.UUID, primaryKey: true },
-        bookId: { type: Sequelize.UUID, allowNull: false },
-        seriesId: { type: Sequelize.UUID, allowNull: false }
-      })
+      // Create a table for BookSeries, with a unique constraint of bookId and seriesId
+      await queryInterface.createTable(
+        'BookSeries',
+        {
+          id: { type: Sequelize.UUID, primaryKey: true },
+          bookId: { type: Sequelize.UUID, allowNull: false },
+          seriesId: { type: Sequelize.UUID, allowNull: false }
+        },
+        { uniqueKeys: { book_series_unique: { fields: ['bookId', 'seriesId'] } } }
+      )
       // Set UUIDs for the tests
       series1Id = 'fc086255-3fd2-4a95-8a28-840d9206501b'
       series2Id = '70f46ac2-ee48-4b3c-9822-933cc15c29bd'
@@ -199,11 +204,16 @@ describe('migration-v2.13.5-series-column-unique', () => {
         createdAt: { type: Sequelize.DATE, allowNull: false },
         updatedAt: { type: Sequelize.DATE, allowNull: false }
       })
-      await queryInterface.createTable('BookSeries', {
-        id: { type: Sequelize.UUID, primaryKey: true },
-        bookId: { type: Sequelize.UUID, allowNull: false },
-        seriesId: { type: Sequelize.UUID, allowNull: false }
-      })
+      // Create a table for BookSeries, with a unique constraint of bookId and seriesId
+      await queryInterface.createTable(
+        'BookSeries',
+        {
+          id: { type: Sequelize.UUID, primaryKey: true },
+          bookId: { type: Sequelize.UUID, allowNull: false },
+          seriesId: { type: Sequelize.UUID, allowNull: false }
+        },
+        { uniqueKeys: { book_series_unique: { fields: ['bookId', 'seriesId'] } } }
+      )
     })
     it('should not have unique constraint on series name and libraryId', async () => {
       await up({ context: { queryInterface, logger: Logger } })
