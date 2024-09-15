@@ -1,9 +1,10 @@
-const pkg = require('./package.json')
+import { defineNuxtConfig } from '@nuxt/bridge'
+import pkg from './package.json'
 
 const routerBasePath = process.env.ROUTER_BASE_PATH || ''
 const serverHostUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333'
 
-module.exports = {
+export default defineNuxtConfig({
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
   target: 'static',
@@ -136,6 +137,8 @@ module.exports = {
     host: '0.0.0.0'
   },
 
+  bridge: false,
+
   /**
    * Temporary workaround for @nuxt-community/tailwindcss-module.
    *
@@ -145,4 +148,4 @@ module.exports = {
   devServerHandlers: [],
 
   ignore: ['**/*.test.*', '**/*.cy.*']
-}
+})
