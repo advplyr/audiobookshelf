@@ -50,6 +50,14 @@ components:
       schema:
         type: string
         format: uuid
+    pathAuthorId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the author.
+      schema:
+        type: string
+        format: uuid
     queryLimit:
       name: limit
       in: query
@@ -205,6 +213,7 @@ components:
       schema:
         type: string
         enum: ['title', 'publishYear', 'author-fl', 'author-lf', 'size', 'duration', 'progress', 'file-birthtime', 'file-mtime', 'random']
+        default: 'title'
     querySortPodcasts:
       name: sort
       in: query
@@ -213,6 +222,37 @@ components:
       schema:
         type: string
         enum: ['title', 'author', 'created', 'size', 'episodeCount', 'random']
+        default: 'title'
+    querySortAuthors:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the authors by.
+      schema:
+        type: string
+        enum: ['author-fl', 'author-lf', 'bookCount', 'seriesCount', 'updatedAt', 'createdAt', 'random']
+        default: 'author-fl'
+    queryAuthorName:
+      name: name
+      in: query
+      required: false
+      description: The name of the author.
+      schema:
+        type: string
+    queryAsin:
+      name: asin
+      in: query
+      required: false
+      description: The ASIN of the book or author.
+      schema:
+        type: string
+    queryRegion:
+      name: region
+      in: query
+      required: false
+      description: The region to search for the book or author.
+      schema:
+        type: string
   schemas:
     itemId:
       type: string
@@ -367,6 +407,10 @@ components:
       type: string
       description: The RSS feed of the podcast.
       nullable: true
+    imageUrl:
+      type: string
+      description: The URL of the image to download.
+      format: uri
     itunesId:
       type: string
       description: The iTunes ID of the podcast.
@@ -527,6 +571,23 @@ components:
           example: 4
         progress:
           $ref: '#/components/schemas/progress'
+    displaySeriesObject:
+      type: object
+      description: A series object used for displaying items in a library.
+      properties:
+        seriesId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        count:
+          type: integer
+          description: The number of books in the series.
+          example: 10
+        books:
+          type: array
+          description: The books in the series.
+          items:
+            $ref: '#/components/schemas/displayBookObject'
     displayPodcastObject:
       type: object
       description: A podcast object used for displaying items in a library.
@@ -575,6 +636,42 @@ components:
           $ref: '#/components/schemas/duration'
         progress:
           $ref: '#/components/schemas/progress'
+    authorObject:
+      type: object
+      description: Information about the author.
+      properties:
+        authorId:
+          $ref: '#/components/schemas/itemId'
+        name:
+          $ref: '#/components/schemas/authorName'
+        asin:
+          $ref: '#/components/schemas/asin'
+        description:
+          $ref: '#/components/schemas/description'
+        image:
+          $ref: '#/components/schemas/imagePath'
+        books:
+          type: array
+          description: The books written by the author.
+          items:
+            $ref: '#/components/schemas/displayBookObject'
+        series:
+          type: array
+          description: The series written by the author.
+          items:
+            $ref: '#/components/schemas/displaySeriesObject'
+    authorDisplayObject:
+      type: object
+      description: An author object used for displaying in a library.
+      properties:
+        authorId:
+          $ref: '#/components/schemas/itemId'
+        name:
+          $ref: '#/components/schemas/authorName'
+        count:
+          type: integer
+          description: The number of books by the author.
+          example: 10
     bookObject:
       type: object
       description: Information about the book and its audio files.
@@ -1852,6 +1949,40 @@ paths:
                       $ref: '#/components/schemas/displayBookObject'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/library/{id}/authors:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryAuthorsById
+      summary: Get authors in library
+      description: Get the authors in the library by its ID. This endpoint will return the authors in the library.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortAuthors'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of authors.
+                  returnCount:
+                    type: integer
+                    description: The number of authors returned.
+                  authors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/authorDisplayObject'
+        '404':
+          $ref: '#/components/responses/notFound'
   /api/library/{id}/podcasts:
     parameters:
       - $ref: '#/components/parameters/pathLibraryId'
@@ -1937,5 +2068,215 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/displayPodcastEpisodeObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/author/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathAuthorId'
+    get:
+      operationId: getAuthorById
+      summary: Get author by ID
+      description: Get an author by its ID. This endpoint returns all of the information needed for the author details page and editing.
+      tags:
+        - Author
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateAuthorById
+      summary: Update author by ID
+      description: Update an author by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Author
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/authorName'
+                descrption:
+                  $ref: '#/components/schemas/description'
+                asin:
+                  $ref: '#/components/schemas/asin'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteAuthorById
+      summary: Remove author by ID
+      description: Remove the author and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Author
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/author/{id}/image:
+    parameters:
+      - $ref: '#/components/parameters/pathAuthorId'
+    get:
+      operationId: getAuthorImageById
+      summary: Get author image by ID
+      description: Get the author image by its ID. This endpoint will return the author's image. If no query parameters are provided, the image will be returned in the original format with the original dimensions.
+      security: [] # No security for getting image
+      tags:
+        - Author
+      parameters:
+        - name: width
+          in: query
+          required: false
+          description: The width of the image in pixels.
+          schema:
+            type: integer
+            minimum: 1
+        - name: height
+          in: query
+          required: false
+          description: The height of the image in pixels. If this parameter is not provided, the image will be scaled proportionally to the width.
+          schema:
+            type: integer
+            minimum: 1
+        - name: format
+          in: query
+          required: false
+          description: The format of the image. If not provided, the image will be returned in the original format.
+          schema:
+            type: string
+            enum: ['jpeg', 'png', 'webp']
+            default: 'jpeg'
+      responses:
+        '200':
+          description: OK
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: uploadAuthorImageById
+      summary: Upload author image by ID
+      description: Upload the author image to the author by the author ID. This endpoint will replace the author's image with the provided image. The image should be in JPEG, PNG, or WebP format. Alternatively, the image can be provided as a URL to download the image from.
+      tags:
+        - Author
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL to download the image from.
+                  format: uri
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  imageData:
+                    $ref: '#/components/schemas/file'
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteAuthorImageById
+      summary: Remove author image by ID
+      description: Remove the author image from the author. The image file is not deleted but is no longer associated with the author.
+      tags:
+        - Author
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  imageData:
+                    $ref: '#/components/schemas/file'
+                  success:
+                    type: boolean
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/author/{id}/match:
+    parameters:
+      - $ref: '#/components/parameters/pathAuthorId'
+    post:
+      operationId: matchAuthorById
+      summary: Match author by ID
+      description: Match the author selected by ID against an online database.
+      tags:
+        - Author
+      parameters:
+        - $ref: '#/components/parameters/queryAuthorName'
+        - $ref: '#/components/parameters/queryAsin'
+        - $ref: '#/components/parameters/queryRegion'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/authorObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
