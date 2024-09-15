@@ -258,6 +258,13 @@ components:
       type: string
       description: A unique ID for the item. This ID is unique across all tables.
       format: uuid
+    mediaType:
+      type: string
+      description: The type of media that the library contains. Will be `book` or `podcast`.
+      enum: ['book', 'podcast']
+    libraryProvider:
+      type: string
+      description: Preferred metadata provider for the library.
     duration:
       type: number
       description: The length of the item in seconds. Will be 0 if no audio is associated with the item.
@@ -317,6 +324,14 @@ components:
       type: string
       description: The absolute path of the image on the server. Null if no image is associated with the item.
       nullable: true
+    folderPath:
+      type: string
+      description: The absolute path of the folder on the server.
+    folderArray:
+      type: array
+      description: An array of folders associated with the item.
+      items:
+        $ref: '#/components/schemas/folderPath'
     filePath:
       type: string
       description: The absolute path of the file on the server.
@@ -491,6 +506,78 @@ components:
           $ref: '#/components/schemas/duration'
         fileType:
           $ref: '#/components/schemas/fileType'
+    libraryIcon:
+      type: string
+      description: The icon of the library.
+      enum: ['database', 'audiobookshelf', 'books-1', 'books-2', 'book-1', 'microphone-1', 'microphone-3', 'radio', 'podcast', 'rss', 'headphones', 'music', 'file-picture', 'rocket', 'power', 'star', 'heart']
+    libraryDisplayOrder:
+      type: integer
+      description: Display position of the library in the list of libraries. If the display order is higher than the number of libraries, the library will be placed at the end of the list.
+      minimum: 1
+    libraryObject:
+      type: object
+      description: A library object which includes either books or podcasts.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        folders:
+          $ref: '#/components/schemas/folderArray'
+        displayOrder:
+          $ref: '#/components/schemas/libraryDisplayOrder'
+        icon:
+          $ref: '#/components/schemas/libraryIcon'
+        mediaType:
+          $ref: '#/components/schemas/mediaType'
+        provider:
+          $ref: '#/components/schemas/libraryProvider'
+        settings:
+          $ref: '#/components/schemas/librarySettings'
+    librarySettings:
+      type: object
+      description: The settings for the library.
+      properties:
+        coverAspectRatio:
+          type: number
+          description: The aspect ratio of the cover image.
+          default: 1
+        disableWatcher:
+          type: boolean
+          description: Whether to disable the folder watcher.
+        skipMatchingMediaWithAsin:
+          type: boolean
+          description: Whether to skip matching media with an ASIN.
+        skipMatchingMediaWithIsbn:
+          type: boolean
+          description: Whether to skip matching media with an ISBN.
+        autoScanCronExpression:
+          type: string
+          description: The cron expression for when to automatically scan the library folders.
+          nullable: true
+          example: '0 1 * * *'
+        audiobooksOnly:
+          type: boolean
+          description: Whether to only scan audiobooks. Ebook files cannot be primary, but can still be supplementary.
+        epubsAllowScriptedContent:
+          type: boolean
+          description: Whether to allow scripted content in EPUB files.
+        hideSingleBookSeries:
+          type: boolean
+          description: Whether to hide series with only one book.
+        onlyShowLaterBooksInContinueSeries:
+          type: boolean
+          description: Whether to only show later books in a series when using the "Continue Series" option.
+        metadataPrecedence:
+          type: array
+          description: The precedence of metadata sources.
+          items:
+            type: string
+            enum: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+        podcastSearchRegion:
+          type: string
+          description: The region to use when searching for podcasts.
+          example: 'us'
     audioFileCodec:
       type: string
       description: The codec of an audio file.
@@ -2276,6 +2363,135 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/authorObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library:
+    get:
+      operationId: getLibraries
+      summary: Get libraries
+      description: Get all libraries. This endpoint will return all libraries.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/libraryObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    post:
+      operationId: createLibrary
+      summary: Create library
+      description: Create a new library. The request body should contain the library's name.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                folders:
+                  $ref: '#/components/schemas/folderArray'
+                icon:
+                  $ref: '#/components/schemas/libraryIcon'
+                mediaType:
+                  $ref: '#/components/schemas/mediaType'
+                provider:
+                  $ref: '#/components/schemas/libraryProvider'
+                settings:
+                  $ref: '#/components/schemas/librarySettings'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/libraryObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/library/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryById
+      summary: Get library by ID
+      description: Get a library by its ID. This endpoint returns all of the information needed for the library details page and editing.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/libraryObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateLibraryById
+      summary: Update library by ID
+      description: Update a library by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/titleNullable'
+                folders:
+                  $ref: '#/components/schemas/folderArray'
+                displayOrder:
+                  $ref: '#/components/schemas/libraryDisplayOrder'
+                icon:
+                  $ref: '#/components/schemas/libraryIcon'
+                provider:
+                  $ref: '#/components/schemas/libraryProvider'
+                settings:
+                  $ref: '#/components/schemas/librarySettings'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/libraryObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteLibraryById
+      summary: Remove library by ID
+      description: Remove the library and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/libraryObject'
         '403':
           $ref: '#/components/responses/forbidden'
         '404':
