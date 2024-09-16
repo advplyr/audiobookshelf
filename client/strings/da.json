@@ -1,7 +1,10 @@
 {
   "ButtonAdd": "Tilføj",
   "ButtonAddChapters": "Tilføj kapitler",
+  "ButtonAddDevice": "Tilføj enhed",
+  "ButtonAddLibrary": "Tilføj Bibliotek",
   "ButtonAddPodcasts": "Tilføj podcasts",
+  "ButtonAddUser": "Tilføj bruger",
   "ButtonAddYourFirstLibrary": "Tilføj din første bibliotek",
   "ButtonApply": "Anvend",
   "ButtonApplyChapters": "Anvend kapitler",
@@ -42,6 +45,7 @@
   "ButtonOk": "OK",
   "ButtonOpenFeed": "Åbn feed",
   "ButtonOpenManager": "Åbn manager",
+  "ButtonPause": "Pause",
   "ButtonPlay": "Afspil",
   "ButtonPlaying": "Afspiller",
   "ButtonPlaylists": "Afspilningslister",
