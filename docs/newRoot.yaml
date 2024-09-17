@@ -58,6 +58,14 @@ components:
       schema:
         type: string
         format: uuid
+    pathNarratorId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the narrator.
+      schema:
+        type: string
+        format: uuid
     queryLimit:
       name: limit
       in: query
@@ -76,6 +84,14 @@ components:
         type: integer
         minimum: 1
         default: 1
+    querySubObjectLimit:
+      name: subObjectLimit
+      in: query
+      required: false
+      description: The number of sub-objects to return. If null, return all sub-objects.
+      schema:
+        type: integer
+        minimum: 1
     queryDesc:
       name: desc
       in: query
@@ -223,6 +239,33 @@ components:
         type: string
         enum: ['title', 'author', 'created', 'size', 'episodeCount', 'random']
         default: 'title'
+    querySortSeries:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the series by.
+      schema:
+        type: string
+        enum: ['title', 'bookCount', 'duration', 'lastbook-added', 'lastbook-updated', 'createdAt', 'random']
+        default: 'title'
+    querySortCollections:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the collections by.
+      schema:
+        type: string
+        enum: ['title', 'bookCount', 'duration', 'lastbook-added', 'lastbook-updated', 'createdAt', 'random']
+        default: 'title'
+    querySortPlaylists:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the playlists by.
+      schema:
+        type: string
+        enum: ['title', 'bookCount', 'duration', 'lastbook-added', 'lastbook-updated', 'createdAt', 'random']
+        default: 'title'
     querySortAuthors:
       name: sort
       in: query
@@ -353,6 +396,9 @@ components:
     authorName:
       type: string
       description: The name of an author associated with a book.
+    narratorName:
+      type: string
+      description: The name of a narrator associated with a book.
     authorNameArray:
       type: array
       description: An array of author names associated with a book.
@@ -658,7 +704,7 @@ components:
           example: 4
         progress:
           $ref: '#/components/schemas/progress'
-    displaySeriesObject:
+    seriesDisplayObject:
       type: object
       description: A series object used for displaying items in a library.
       properties:
@@ -675,6 +721,84 @@ components:
           description: The books in the series.
           items:
             $ref: '#/components/schemas/displayBookObject'
+        progress:
+          $ref: '#/components/schemas/progress'
+    bookCollectionDisplayObject:
+      type: object
+      description: A collection object used for displaying books in a library.
+      properties:
+        collectionId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        count:
+          type: integer
+          description: The number of items in the collection.
+          example: 10
+        duration:
+          $ref: '#/components/schemas/duration'
+        books:
+          type: array
+          description: The books in the collection.
+          items:
+            $ref: '#/components/schemas/displayBookObject'
+    bookPlaylistDisplayObject:
+      type: object
+      description: A playlist object used for displaying books in a library.
+      properties:
+        playlistId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        count:
+          type: integer
+          description: The number of items in the playlist.
+          example: 10
+        duration:
+          $ref: '#/components/schemas/duration'
+        books:
+          type: array
+          description: The books in the playlist.
+          items:
+            $ref: '#/components/schemas/displayBookObject'
+    podcastEpisodePlaylistDisplayObject:
+      type: object
+      description: A playlist object used for displaying episodes in a library.
+      properties:
+        playlistId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        count:
+          type: integer
+          description: The number of items in the playlist.
+          example: 10
+        duration:
+          $ref: '#/components/schemas/duration'
+        episodes:
+          type: array
+          description: The episodes in the playlist.
+          items:
+            $ref: '#/components/schemas/podcastEpisodeDisplayObject'
+    podcastEpisodeCollectionDisplayObject:
+      type: object
+      description: A collection object used for displaying episodes in a library.
+      properties:
+        collectionId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        count:
+          type: integer
+          description: The number of items in the collection.
+          example: 10
+        duration:
+          $ref: '#/components/schemas/duration'
+        episodes:
+          type: array
+          description: The episodes in the collection.
+          items:
+            $ref: '#/components/schemas/podcastEpisodeDisplayObject'
     displayPodcastObject:
       type: object
       description: A podcast object used for displaying items in a library.
@@ -746,7 +870,7 @@ components:
           type: array
           description: The series written by the author.
           items:
-            $ref: '#/components/schemas/displaySeriesObject'
+            $ref: '#/components/schemas/seriesDisplayObject'
     authorDisplayObject:
       type: object
       description: An author object used for displaying in a library.
@@ -759,6 +883,33 @@ components:
           type: integer
           description: The number of books by the author.
           example: 10
+    narratorDisplayObject:
+      type: object
+      description: A narrator object used for displaying in a library.
+      properties:
+        narratorId:
+          $ref: '#/components/schemas/itemId'
+        name:
+          type: string
+          description: The name of the narrator.
+        count:
+          type: integer
+          description: The number of books narrated by the narrator.
+          example: 10
+    narratorObject:
+      type: object
+      description: Information about the narrator.
+      properties:
+        narratorId:
+          $ref: '#/components/schemas/itemId'
+        name:
+          type: string
+          description: The name of the narrator.
+        books:
+          type: array
+          description: The books narrated by the narrator.
+          items:
+            $ref: '#/components/schemas/displayBookObject'
     bookObject:
       type: object
       description: Information about the book and its audio files.
@@ -983,6 +1134,20 @@ components:
           schema:
             type: string
             example: Item not found.
+    bookLibraryOnly:
+      description: This endpoint is for book libraries only.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: This endpoint is for book libraries only.
+    podcastLibraryOnly:
+      description: This endpoint is for podcast libraries only.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: This endpoint is for podcast libraries only.
 tags:
   - name: Book
     description: Book endpoints
@@ -2421,6 +2586,34 @@ paths:
           $ref: '#/components/responses/badRequest'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/library/order:
+    patch:
+      operationId: updateLibraryOrder
+      summary: Update library order
+      description: Update the order of the libraries. The request body must contain all library IDs in the order they should be displayed.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/libraryObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
   /api/library/{id}:
     parameters:
       - $ref: '#/components/parameters/pathLibraryId'
@@ -2494,5 +2687,415 @@ paths:
                 $ref: '#/components/schemas/libraryObject'
         '403':
           $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/issues:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    delete:
+      operationId: deleteLibraryIssuesById
+      summary: Remove items with issues
+      description: Remove all items with issues located in the library. This does not delete any files from the filesystem. A file with issues is defined as a file missing from the filesystem.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removed:
+                    type: integer
+                    description: The number of items removed.
+                  remaining:
+                    type: integer
+                    description: The number of items remaining after removing items with issues.
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/series:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibrarySeriesById
+      summary: Get series in library
+      description: Get the series in the library by its ID. This endpoint will return the series in the library.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortSeries'
+        - $ref: '#/components/parameters/querySubObjectLimit'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of series.
+                  returnCount:
+                    type: integer
+                    description: The number of series returned.
+                  series:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/seriesDisplayObject'
+        '403':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/book-collections:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryBookCollectionsById
+      summary: Get book collections in library
+      description: Get the collections in the library by its ID. This endpoint will return the collections in the library. This endpoint will return an error if the library is not `books` media type.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortCollections'
+        - $ref: '#/components/parameters/querySubObjectLimit'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of collections.
+                  returnCount:
+                    type: integer
+                    description: The number of collections returned.
+                  collections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/book-playlists:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryBookPlaylistsById
+      summary: Get book playlists in library
+      description: Get the playlists in the library by its ID. This endpoint will return the playlists in the library for this user. This endpoint will return an error if the library is not `books` media type.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortPlaylists'
+        - $ref: '#/components/parameters/querySubObjectLimit'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of playlists.
+                  returnCount:
+                    type: integer
+                    description: The number of playlists returned.
+                  playlists:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/bookPlaylistDisplayObject'
+        '403':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/podcast-episode-playlists:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryPodcastEpisodePlaylistsById
+      summary: Get podcast episode playlists in library
+      description: Get the playlists in the library by its ID. This endpoint will return the playlists in the library for this user. This endpoint will return an error if the library is not `podcasts` media type.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortPlaylists'
+        - $ref: '#/components/parameters/querySubObjectLimit'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of playlists.
+                  returnCount:
+                    type: integer
+                    description: The number of playlists returned.
+                  playlists:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodePlaylistDisplayObject'
+        '403':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/podcast-episode-collections:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryPodcastEpisodeCollectionsById
+      summary: Get podcast episode collections in library
+      description: Get the collections in the library by its ID. This endpoint will return the collections in the library. This endpoint will return an error if the library is not `podcasts` media type.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortCollections'
+        - $ref: '#/components/parameters/querySubObjectLimit'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of collections.
+                  returnCount:
+                    type: integer
+                    description: The number of collections returned.
+                  collections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/narrators:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryNarratorsById
+      summary: Get narrators in library
+      description: Get the narrators in the library by its ID. This endpoint will return the narrators in the library.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/queryDesc'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of narrators.
+                  returnCount:
+                    type: integer
+                    description: The number of narrators returned.
+                  narrators:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/narratorDisplayObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/narrator/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathNarratorId'
+    get:
+      operationId: getNarratorById
+      summary: Get narrator by ID
+      description: Get a narrator by its ID. This endpoint returns all of the information needed for the narrator details page and editing.
+      tags:
+        - Narrator
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/narratorObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateNarratorById
+      summary: Update narrator by ID
+      description: Update a narrator by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Narrator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/narratorName'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/narratorObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteNarratorById
+      summary: Remove narrator by ID
+      description: Remove the narrator and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Narrator
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/narratorObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/scan:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    post:
+      operationId: scanLibraryById
+      summary: Scan library by ID
+      description: Scan the library by its ID. This will scan the library's folders for new media and update the database with the new media.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                folders:
+                  type: array
+                  description: An array of folder IDs in the library to scan for media.
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: integer
+                    description: The number of items added to the library.
+                  updated:
+                    type: integer
+                    description: The number of items updated in the library.
+                  removed:
+                    type: integer
+                    description: The number of items removed from the library.
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/match:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    post:
+      operationId: matchLibraryById
+      summary: Match library by ID
+      description: Match all items in the library which do not have an ASIN or ISBN against an online database. If a provider is not specified, the default library provider will be used. Matched items will have missing details filled in by default and data will not be overwritten, unless the "Prefer matched metadata" setting is enabled.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  $ref: '#/components/schemas/libraryProvider'
+        required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+                    description: The number of items updated in the library. This will be equal to or less than `found`.
+                  found:
+                    type: integer
+                    description: The number of unmatched items found in the online database.
+                  notFound:
+                    type: integer
+                    description: The number of unmatched items not found in the online database.
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/opml:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryOpmlById
+      summary: Get library OPML by ID
+      description: Generate an OPML file for the library. This endpoint is only available for podcast libraries.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/podcastLibraryOnly'
         '404':
           $ref: '#/components/responses/notFound'
