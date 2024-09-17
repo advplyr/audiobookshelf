@@ -70,9 +70,13 @@ class Library extends Model {
         epubsAllowScriptedContent: false,
         hideSingleBookSeries: false,
         onlyShowLaterBooksInContinueSeries: false,
-        metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+        metadataPrecedence: this.defaultMetadataPrecedence
       }
     }
+  }
+
+  static get defaultMetadataPrecedence() {
+    return ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
   }
 
   /**

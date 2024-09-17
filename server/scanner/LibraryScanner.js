@@ -59,9 +59,10 @@ class LibraryScanner {
       return
     }
 
-    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
+    const metadataPrecedence = library.settings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
+    if (library.isBook && metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
       const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
-      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
+      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${metadataPrecedence.join()}]`)
       forceRescan = true
     }
 
@@ -90,7 +91,7 @@ class LibraryScanner {
         library.lastScanVersion = packageJson.version
         if (library.isBook) {
           const newExtraData = library.extraData || {}
-          newExtraData.lastScanMetadataPrecedence = library.settings.metadataPrecedence
+          newExtraData.lastScanMetadataPrecedence = metadataPrecedence
           library.extraData = newExtraData
           library.changed('extraData', true)
         }
