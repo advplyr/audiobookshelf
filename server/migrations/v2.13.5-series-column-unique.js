@@ -1,5 +1,3 @@
-const Logger = require('../Logger')
-
 /**
  * @typedef MigrationContext
  * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
@@ -30,7 +28,7 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Use the queryInterface to get the series table and find duplicates in the `name` and `libraryId` column
   const [duplicates] = await queryInterface.sequelize.query(`
-    SELECT name, libraryId, MAX(updatedAt) AS latestUpdatedAt, COUNT(name) AS count
+    SELECT name, libraryId
     FROM Series
     GROUP BY name, libraryId
     HAVING COUNT(name) > 1
@@ -47,7 +45,7 @@ async function up({ context: { queryInterface, logger } }) {
     // Determine any duplicate book IDs in the `bookSeries` table for the same series
     const [duplicateBookIds] = await queryInterface.sequelize.query(
       `
-        SELECT bookId, COUNT(bookId) AS count
+        SELECT bookId
         FROM BookSeries
         WHERE seriesId IN (
           SELECT id
