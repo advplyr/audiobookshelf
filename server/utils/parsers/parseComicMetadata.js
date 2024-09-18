@@ -1,10 +1,8 @@
 const Path = require('path')
-const globals = require('../globals')
-const fs = require('../../libs/fsExtra')
 const Logger = require('../../Logger')
-const Archive = require('../../libs/libarchive/archive')
-const { xmlToJSON } = require('../index')
 const parseComicInfoMetadata = require('./parseComicInfoMetadata')
+const globals = require('../globals')
+const { xmlToJSON } = require('../index')
 const { createComicBookExtractor } = require('../comicBookExtractors.js')
 
 /**
