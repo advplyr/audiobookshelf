@@ -71,6 +71,17 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     return filePaths
   }
 
+  async removeEmptyParentDirs(file) {
+    let dir = Path.dirname(file)
+    while (dir !== '.') {
+      const fullDirPath = Path.join(this.tmpDir, dir)
+      const files = await fs.readdir(fullDirPath)
+      if (files.length > 0) break
+      await fs.remove(fullDirPath)
+      dir = Path.dirname(dir)
+    }
+  }
+
   async extractToBuffer(file) {
     if (!this.archive) return null
     const extracted = this.archive.extract({ files: [file] })
@@ -78,6 +89,7 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     const filePath = Path.join(this.tmpDir, files[0].fileHeader.name)
     const fileData = await fs.readFile(filePath)
     await fs.remove(filePath)
+    await this.removeEmptyParentDirs(files[0].fileHeader.name)
     Logger.debug(`[CbrComicBookExtractor] Extracted file "${file}" from comic book "${this.comicPath}" to buffer, size: ${fileData.length}`)
     return fileData
   }
@@ -86,9 +98,9 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     if (!this.archive) return false
     const extracted = this.archive.extract({ files: [file] })
     const files = [...extracted.files]
-    const fileEntry = files[0]
-    const extractedFilePath = Path.join(this.tmpDir, fileEntry.fileHeader.name)
+    const extractedFilePath = Path.join(this.tmpDir, files[0].fileHeader.name)
     await fs.move(extractedFilePath, outputFilePath, { overwrite: true })
+    await this.removeEmptyParentDirs(files[0].fileHeader.name)
     Logger.debug(`[CbrComicBookExtractor] Extracted file "${file}" from comic book "${this.comicPath}" to "${outputFilePath}"`)
     return true
   }
