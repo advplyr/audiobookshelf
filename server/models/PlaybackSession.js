@@ -117,7 +117,7 @@ class PlaybackSession extends Model {
 
   static createFromOld(oldPlaybackSession) {
     const playbackSession = this.getFromOld(oldPlaybackSession)
-    return this.create(playbackSession, {
+    return this.upsert(playbackSession, {
       silent: true
     })
   }
