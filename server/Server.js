@@ -182,7 +182,7 @@ class Server {
      * @see https://nodejs.org/api/process.html#event-unhandledrejection
      */
     process.on('unhandledRejection', async (reason, promise) => {
-      await Logger.fatal(`[Server] Unhandled rejection: ${reason}, promise:`, util.format('%O', promise))
+      await Logger.fatal('[Server] Unhandled rejection:', reason, '\npromise:', util.format('%O', promise))
       process.exit(1)
     })
   }
