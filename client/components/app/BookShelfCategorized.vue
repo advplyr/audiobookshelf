@@ -347,6 +347,13 @@ export default {
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
 
+      // First items added to library
+      const isThisLibrary = libraryItems.some((li) => li.libraryId === this.currentLibraryId)
+      if (!this.shelves.length && !this.search && isThisLibrary) {
+        this.fetchCategories()
+        return
+      }
+
       const recentlyAddedShelf = this.shelves.find((shelf) => shelf.id === 'recently-added')
       if (!recentlyAddedShelf) return
 

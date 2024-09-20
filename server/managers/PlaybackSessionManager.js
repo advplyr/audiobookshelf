@@ -51,16 +51,16 @@ class PlaybackSessionManager {
     deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
     if (clientDeviceInfo?.deviceId) {
-      const existingDevice = await Database.getDeviceByDeviceId(clientDeviceInfo.deviceId)
+      const existingDevice = await Database.deviceModel.getOldDeviceByDeviceId(clientDeviceInfo.deviceId)
       if (existingDevice) {
         if (existingDevice.update(deviceInfo)) {
-          await Database.updateDevice(existingDevice)
+          await Database.deviceModel.updateFromOld(existingDevice)
         }
         return existingDevice
       }
     }
 
-    await Database.createDevice(deviceInfo)
+    await Database.deviceModel.createFromOld(deviceInfo)
 
     return deviceInfo
   }
@@ -164,6 +164,7 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
+      session.setDuration(libraryItem, sessionJson.episodeId)
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {

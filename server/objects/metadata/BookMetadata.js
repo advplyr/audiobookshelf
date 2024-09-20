@@ -6,7 +6,7 @@ class BookMetadata {
     this.title = null
     this.subtitle = null
     this.authors = []
-    this.narrators = []  // Array of strings
+    this.narrators = [] // Array of strings
     this.series = []
     this.genres = [] // Array of strings
     this.publishedYear = null
@@ -27,9 +27,9 @@ class BookMetadata {
   construct(metadata) {
     this.title = metadata.title
     this.subtitle = metadata.subtitle
-    this.authors = (metadata.authors?.map) ? metadata.authors.map(a => ({ ...a })) : []
-    this.narrators = metadata.narrators ? [...metadata.narrators].filter(n => n) : []
-    this.series = (metadata.series?.map) ? metadata.series.map(s => ({ ...s })) : []
+    this.authors = metadata.authors?.map ? metadata.authors.map((a) => ({ ...a })) : []
+    this.narrators = metadata.narrators ? [...metadata.narrators].filter((n) => n) : []
+    this.series = metadata.series?.map ? metadata.series.map((s) => ({ ...s })) : []
     this.genres = metadata.genres ? [...metadata.genres] : []
     this.publishedYear = metadata.publishedYear || null
     this.publishedDate = metadata.publishedDate || null
@@ -46,9 +46,9 @@ class BookMetadata {
     return {
       title: this.title,
       subtitle: this.subtitle,
-      authors: this.authors.map(a => ({ ...a })), // Author JSONMinimal with name and id
+      authors: this.authors.map((a) => ({ ...a })), // Author JSONMinimal with name and id
       narrators: [...this.narrators],
-      series: this.series.map(s => ({ ...s })), // Series JSONMinimal with name, id and sequence
+      series: this.series.map((s) => ({ ...s })), // Series JSONMinimal with name, id and sequence
       genres: [...this.genres],
       publishedYear: this.publishedYear,
       publishedDate: this.publishedDate,
@@ -89,9 +89,9 @@ class BookMetadata {
       title: this.title,
       titleIgnorePrefix: this.titlePrefixAtEnd,
       subtitle: this.subtitle,
-      authors: this.authors.map(a => ({ ...a })), // Author JSONMinimal with name and id
+      authors: this.authors.map((a) => ({ ...a })), // Author JSONMinimal with name and id
       narrators: [...this.narrators],
-      series: this.series.map(s => ({ ...s })),
+      series: this.series.map((s) => ({ ...s })),
       genres: [...this.genres],
       publishedYear: this.publishedYear,
       publishedDate: this.publishedDate,
@@ -111,8 +111,8 @@ class BookMetadata {
 
   toJSONForMetadataFile() {
     const json = this.toJSON()
-    json.authors = json.authors.map(au => au.name)
-    json.series = json.series.map(se => {
+    json.authors = json.authors.map((au) => au.name)
+    json.series = json.series.map((se) => {
       if (!se.sequence) return se.name
       return `${se.name} #${se.sequence}`
     })
@@ -131,36 +131,31 @@ class BookMetadata {
   }
   get authorName() {
     if (!this.authors.length) return ''
-    return this.authors.map(au => au.name).join(', ')
+    return this.authors.map((au) => au.name).join(', ')
   }
-  get authorNameLF() { // Last, First
+  get authorNameLF() {
+    // Last, First
     if (!this.authors.length) return ''
-    return this.authors.map(au => parseNameString.nameToLastFirst(au.name)).join(', ')
+    return this.authors.map((au) => parseNameString.nameToLastFirst(au.name)).join(', ')
   }
   get seriesName() {
     if (!this.series.length) return ''
-    return this.series.map(se => {
-      if (!se.sequence) return se.name
-      return `${se.name} #${se.sequence}`
-    }).join(', ')
-  }
-  get firstSeriesName() {
-    if (!this.series.length) return ''
-    return this.series[0].name
-  }
-  get firstSeriesSequence() {
-    if (!this.series.length) return ''
-    return this.series[0].sequence
+    return this.series
+      .map((se) => {
+        if (!se.sequence) return se.name
+        return `${se.name} #${se.sequence}`
+      })
+      .join(', ')
   }
   get narratorName() {
     return this.narrators.join(', ')
   }
 
   getSeries(seriesId) {
-    return this.series.find(se => se.id == seriesId)
+    return this.series.find((se) => se.id == seriesId)
   }
   getSeriesSequence(seriesId) {
-    const series = this.series.find(se => se.id == seriesId)
+    const series = this.series.find((se) => se.id == seriesId)
     if (!series) return null
     return series.sequence || ''
   }
@@ -179,22 +174,6 @@ class BookMetadata {
       }
     }
     return hasUpdates
-  }
-
-  // Updates author name
-  updateAuthor(updatedAuthor) {
-    const author = this.authors.find(au => au.id === updatedAuthor.id)
-    if (!author || author.name == updatedAuthor.name) return false
-    author.name = updatedAuthor.name
-    return true
-  }
-
-  replaceAuthor(oldAuthor, newAuthor) {
-    this.authors = this.authors.filter(au => au.id !== oldAuthor.id) // Remove old author
-    this.authors.push({
-      id: newAuthor.id,
-      name: newAuthor.name
-    })
   }
 }
 module.exports = BookMetadata

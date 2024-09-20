@@ -8,6 +8,8 @@ const Logger = require('./Logger')
 const dbMigration = require('./utils/migrations/dbMigration')
 const Auth = require('./Auth')
 
+const MigrationManager = require('./managers/MigrationManager')
+
 class Database {
   constructor() {
     this.sequelize = null
@@ -142,6 +144,11 @@ class Database {
     return this.models.mediaItemShare
   }
 
+  /** @type {typeof import('./models/Device')} */
+  get deviceModel() {
+    return this.models.device
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -166,6 +173,15 @@ class Database {
 
     if (!(await this.connect())) {
       throw new Error('Database connection failed')
+    }
+
+    try {
+      const migrationManager = new MigrationManager(this.sequelize, this.isNew, global.ConfigPath)
+      await migrationManager.init(packageJson.version)
+      await migrationManager.runMigrations()
+    } catch (error) {
+      Logger.error(`[Database] Failed to run migrations`, error)
+      throw new Error('Database migration failed')
     }
 
     await this.buildModels(force)
@@ -476,21 +492,6 @@ class Database {
   removePlaybackSession(sessionId) {
     if (!this.sequelize) return false
     return this.models.playbackSession.removeById(sessionId)
-  }
-
-  getDeviceByDeviceId(deviceId) {
-    if (!this.sequelize) return false
-    return this.models.device.getOldDeviceByDeviceId(deviceId)
-  }
-
-  updateDevice(oldDevice) {
-    if (!this.sequelize) return false
-    return this.models.device.updateFromOld(oldDevice)
-  }
-
-  createDevice(oldDevice) {
-    if (!this.sequelize) return false
-    return this.models.device.createFromOld(oldDevice)
   }
 
   replaceTagInFilterData(oldTag, newTag) {

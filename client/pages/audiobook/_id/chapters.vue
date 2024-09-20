@@ -628,15 +628,27 @@ export default {
         .finally(() => {
           this.saving = false
         })
+    },
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItem.id) {
+        if (!!libraryItem.media.metadata.asin && this.mediaMetadata.asin !== libraryItem.media.metadata.asin) {
+          this.asinInput = libraryItem.media.metadata.asin
+        }
+        this.libraryItem = libraryItem
+      }
     }
   },
   mounted() {
     this.regionInput = localStorage.getItem('audibleRegion') || 'US'
     this.asinInput = this.mediaMetadata.asin || null
     this.initChapters()
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   },
   beforeDestroy() {
     this.destroyAudioEl()
+
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   }
 }
 </script>

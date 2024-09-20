@@ -59,9 +59,10 @@ class LibraryScanner {
       return
     }
 
-    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
+    const metadataPrecedence = library.settings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
+    if (library.isBook && metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
       const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
-      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
+      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${metadataPrecedence.join()}]`)
       forceRescan = true
     }
 
@@ -79,43 +80,39 @@ class LibraryScanner {
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    const canceled = await this.scanLibrary(libraryScan, forceRescan)
+    try {
+      const canceled = await this.scanLibrary(libraryScan, forceRescan)
+      libraryScan.setComplete()
 
-    if (canceled) {
-      Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
-      delete this.cancelLibraryScan[libraryScan.libraryId]
+      Logger.info(`[LibraryScanner] Library scan "${libraryScan.id}" ${canceled ? 'canceled after' : 'completed in'} ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+
+      if (!canceled) {
+        library.lastScan = Date.now()
+        library.lastScanVersion = packageJson.version
+        if (library.isBook) {
+          const newExtraData = library.extraData || {}
+          newExtraData.lastScanMetadataPrecedence = metadataPrecedence
+          library.extraData = newExtraData
+          library.changed('extraData', true)
+        }
+        await library.save()
+      }
+
+      task.setFinished(`${canceled ? 'Canceled' : 'Completed'}. ${libraryScan.scanResultsString}`)
+    } catch (err) {
+      libraryScan.setComplete(err)
+
+      Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}.`, err)
+
+      task.setFailed(`Failed. ${libraryScan.scanResultsString}`)
     }
 
-    libraryScan.setComplete()
-
-    Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+    if (this.cancelLibraryScan[libraryScan.libraryId]) delete this.cancelLibraryScan[libraryScan.libraryId]
     this.librariesScanning = this.librariesScanning.filter((ls) => ls.id !== library.id)
 
-    if (canceled && !libraryScan.totalResults) {
-      task.setFinished('Scan canceled')
-      TaskManager.taskFinished(task)
-
-      const emitData = libraryScan.getScanEmitData
-      emitData.results = null
-      return
-    }
-
-    library.lastScan = Date.now()
-    library.lastScanVersion = packageJson.version
-    if (library.isBook) {
-      const newExtraData = library.extraData || {}
-      newExtraData.lastScanMetadataPrecedence = library.settings.metadataPrecedence
-      library.extraData = newExtraData
-      library.changed('extraData', true)
-    }
-    await library.save()
-
-    task.setFinished(libraryScan.scanResultsString)
     TaskManager.taskFinished(task)
 
-    if (libraryScan.totalResults) {
-      libraryScan.saveLog()
-    }
+    libraryScan.saveLog()
   }
 
   /**
@@ -140,7 +137,7 @@ class LibraryScanner {
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     const existingLibraryItems = await Database.libraryItemModel.findAll({
       where: {
@@ -148,7 +145,7 @@ class LibraryScanner {
       }
     })
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     const libraryItemIdsMissing = []
     let oldLibraryItemsUpdated = []
@@ -216,7 +213,7 @@ class LibraryScanner {
         oldLibraryItemsUpdated = []
       }
 
-      if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+      if (this.shouldCancelScan(libraryScan)) return true
     }
     // Emit item updates to client
     if (oldLibraryItemsUpdated.length) {
@@ -247,7 +244,7 @@ class LibraryScanner {
       )
     }
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     // Add new library items
     if (libraryItemDataFound.length) {
@@ -271,7 +268,7 @@ class LibraryScanner {
           newOldLibraryItems = []
         }
 
-        if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+        if (this.shouldCancelScan(libraryScan)) return true
       }
       // Emit new items to client
       if (newOldLibraryItems.length) {
@@ -282,6 +279,17 @@ class LibraryScanner {
         )
       }
     }
+
+    libraryScan.addLog(LogLevel.INFO, `Scan completed. ${libraryScan.resultStats}`)
+    return false
+  }
+
+  shouldCancelScan(libraryScan) {
+    if (this.cancelLibraryScan[libraryScan.libraryId]) {
+      libraryScan.addLog(LogLevel.INFO, `Scan canceled. ${libraryScan.resultStats}`)
+      return true
+    }
+    return false
   }
 
   /**

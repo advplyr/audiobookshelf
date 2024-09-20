@@ -82,8 +82,8 @@ class PlaybackSession {
 
   /**
    * Session data to send to clients
-   * @param {[oldLibraryItem]} libraryItem optional
-   * @returns {object}
+   * @param {Object} [libraryItem] - old library item
+   * @returns
    */
   toJSONForClient(libraryItem) {
     return {
@@ -219,11 +219,7 @@ class PlaybackSession {
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
 
-    if (episodeId) {
-      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
-    } else {
-      this.duration = libraryItem.media.duration
-    }
+    this.setDuration(libraryItem, episodeId)
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
@@ -239,6 +235,14 @@ class PlaybackSession {
     this.updatedAt = Date.now()
   }
 
+  setDuration(libraryItem, episodeId) {
+    if (episodeId) {
+      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
+    } else {
+      this.duration = libraryItem.media.duration
+    }
+  }
+
   addListeningTime(timeListened) {
     if (!timeListened || isNaN(timeListened)) return
 
@@ -250,12 +254,6 @@ class PlaybackSession {
 
     this.timeListening += Number.parseFloat(timeListened)
     this.updatedAt = Date.now()
-  }
-
-  // New date since start of listening session
-  checkDateRollover() {
-    if (!this.date) return false
-    return date.format(new Date(), 'YYYY-MM-DD') !== this.date
   }
 }
 module.exports = PlaybackSession

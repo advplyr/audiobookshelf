@@ -655,7 +655,7 @@ class BookScanner {
     }
 
     const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, ebookFileScanData, libraryItemData, libraryScan, existingLibraryItemId)
-    const metadataPrecedence = librarySettings.metadataPrecedence || ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+    const metadataPrecedence = librarySettings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
     libraryScan.addLog(LogLevel.DEBUG, `"${bookMetadata.title}" Getting metadata with precedence [${metadataPrecedence.join(', ')}]`)
     for (const metadataSource of metadataPrecedence) {
       if (bookMetadataSourceHandler[metadataSource]) {

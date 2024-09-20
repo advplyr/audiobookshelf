@@ -233,15 +233,6 @@ class Podcast {
     this.episodes.push(podcastEpisode)
   }
 
-  addNewEpisodeFromAudioFile(audioFile, index) {
-    const pe = new PodcastEpisode()
-    pe.libraryItemId = this.libraryItemId
-    pe.podcastId = this.id
-    audioFile.index = 1 // Only 1 audio file per episode
-    pe.setDataFromAudioFile(audioFile, index)
-    this.episodes.push(pe)
-  }
-
   removeEpisode(episodeId) {
     const episode = this.episodes.find((ep) => ep.id === episodeId)
     if (episode) {
