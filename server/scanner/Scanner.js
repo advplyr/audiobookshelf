@@ -368,7 +368,12 @@ class Scanner {
     const taskData = {
       libraryId: library.id
     }
-    const task = TaskManager.createAndAddTask('library-match-all', `Matching books in "${library.name}"`, null, true, taskData)
+    const taskTitleString = {
+      text: `Matching books in "${library.name}"`,
+      key: 'MessageTaskMatchingBooksInLibrary',
+      subs: [library.name]
+    }
+    const task = TaskManager.createAndAddTask('library-match-all', taskTitleString, null, true, taskData)
     Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
     let hasMoreChunks = true
@@ -393,7 +398,7 @@ class Scanner {
     if (offset === 0) {
       Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
       libraryScan.setComplete('Library has no items')
-      task.setFailed(libraryScan.error)
+      task.setFailedText(libraryScan.error)
     } else {
       libraryScan.setComplete()
       task.setFinished(isCanceled ? 'Canceled' : libraryScan.scanResultsString)

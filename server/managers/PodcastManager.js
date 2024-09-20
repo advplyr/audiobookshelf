@@ -71,12 +71,20 @@ class PodcastManager {
       return
     }
 
-    const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
     const taskData = {
       libraryId: podcastEpisodeDownload.libraryId,
       libraryItemId: podcastEpisodeDownload.libraryItemId
     }
-    const task = TaskManager.createAndAddTask('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
+    const taskTitleString = {
+      text: 'Downloading episode',
+      key: 'MessageDownloadingEpisode'
+    }
+    const taskDescriptionString = {
+      text: `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`,
+      key: 'MessageTaskDownloadingEpisodeDescription',
+      subs: [podcastEpisodeDownload.podcastEpisode.title]
+    }
+    const task = TaskManager.createAndAddTask('download-podcast-episode', taskTitleString, taskDescriptionString, false, taskData)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
@@ -119,14 +127,14 @@ class PodcastManager {
       if (!success) {
         await fs.remove(this.currentDownload.targetPath)
         this.currentDownload.setFinished(false)
-        task.setFailed('Failed to download episode')
+        task.setFailedText('Failed to download episode')
       } else {
         Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.podcastEpisode.title}"`)
         this.currentDownload.setFinished(true)
         task.setFinished()
       }
     } else {
-      task.setFailed('Failed to download episode')
+      task.setFailedText('Failed to download episode')
       this.currentDownload.setFinished(false)
     }
 
@@ -407,13 +415,35 @@ class PodcastManager {
    * @param {import('../managers/CronManager')} cronManager
    */
   async createPodcastsFromFeedUrls(rssFeedUrls, folder, autoDownloadEpisodes, cronManager) {
-    const task = TaskManager.createAndAddTask('opml-import', 'OPML import', `Creating podcasts from ${rssFeedUrls.length} RSS feeds`, true, null)
+    const taskTitleString = {
+      text: 'OPML import',
+      key: 'MessageTaskOpmlImport'
+    }
+    const taskDescriptionString = {
+      text: `Creating podcasts from ${rssFeedUrls.length} RSS feeds`,
+      key: 'MessageTaskOpmlImportDescription',
+      subs: [rssFeedUrls.length]
+    }
+    const task = TaskManager.createAndAddTask('opml-import', taskTitleString, taskDescriptionString, true, null)
     let numPodcastsAdded = 0
     Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Importing ${rssFeedUrls.length} RSS feeds to folder "${folder.path}"`)
     for (const feedUrl of rssFeedUrls) {
       const feed = await getPodcastFeed(feedUrl).catch(() => null)
       if (!feed?.episodes) {
-        TaskManager.createAndEmitFailedTask('opml-import-feed', 'OPML import feed', `Importing RSS feed "${feedUrl}"`, 'Failed to get podcast feed')
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringFeed = {
+          text: `Importing RSS feed "${feedUrl}"`,
+          key: 'MessageTaskOpmlImportFeedDescription',
+          subs: [feedUrl]
+        }
+        const taskErrorString = {
+          text: 'Failed to get podcast feed',
+          key: 'MessageTaskOpmlImportFeedFailed'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringFeed, taskErrorString)
         Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Failed to get podcast feed for "${feedUrl}"`)
         continue
       }
@@ -429,7 +459,20 @@ class PodcastManager {
         })) > 0
       if (existingLibraryItem) {
         Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Podcast already exists at path "${podcastPath}"`)
-        TaskManager.createAndEmitFailedTask('opml-import-feed', 'OPML import feed', `Creating podcast "${feed.metadata.title}"`, 'Podcast already exists at path')
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringPodcast = {
+          text: `Creating podcast "${feed.metadata.title}"`,
+          key: 'MessageTaskOpmlImportFeedPodcastDescription',
+          subs: [feed.metadata.title]
+        }
+        const taskErrorString = {
+          text: 'Podcast already exists at path',
+          key: 'MessageTaskOpmlImportFeedPodcastExists'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringPodcast, taskErrorString)
         continue
       }
 
@@ -442,7 +485,20 @@ class PodcastManager {
         })
       if (!successCreatingPath) {
         Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Failed to create podcast folder at "${podcastPath}"`)
-        TaskManager.createAndEmitFailedTask('opml-import-feed', 'OPML import feed', `Creating podcast "${feed.metadata.title}"`, 'Failed to create podcast folder')
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringPodcast = {
+          text: `Creating podcast "${feed.metadata.title}"`,
+          key: 'MessageTaskOpmlImportFeedPodcastDescription',
+          subs: [feed.metadata.title]
+        }
+        const taskErrorString = {
+          text: 'Failed to create podcast folder',
+          key: 'MessageTaskOpmlImportFeedPodcastFailed'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringPodcast, taskErrorString)
         continue
       }
 

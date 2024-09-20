@@ -1,6 +1,13 @@
 const SocketAuthority = require('../SocketAuthority')
 const Task = require('../objects/Task')
 
+/**
+ * @typedef TaskString
+ * @property {string} text
+ * @property {string} key
+ * @property {string[]} [subs]
+ */
+
 class TaskManager {
   constructor() {
     /** @type {Task[]} */
@@ -33,14 +40,14 @@ class TaskManager {
    * Create new task and add
    *
    * @param {string} action
-   * @param {string} title
-   * @param {string} description
+   * @param {TaskString} titleString
+   * @param {TaskString|null} descriptionString
    * @param {boolean} showSuccess
    * @param {Object} [data]
    */
-  createAndAddTask(action, title, description, showSuccess, data = {}) {
+  createAndAddTask(action, titleString, descriptionString, showSuccess, data = {}) {
     const task = new Task()
-    task.setData(action, title, description, showSuccess, data)
+    task.setData(action, titleString, descriptionString, showSuccess, data)
     this.addTask(task)
     return task
   }
@@ -49,14 +56,14 @@ class TaskManager {
    * Create new failed task and add
    *
    * @param {string} action
-   * @param {string} title
-   * @param {string} description
-   * @param {string} errorMessage
+   * @param {TaskString} titleString
+   * @param {TaskString|null} descriptionString
+   * @param {TaskString} errorMessageString
    */
-  createAndEmitFailedTask(action, title, description, errorMessage) {
+  createAndEmitFailedTask(action, titleString, descriptionString, errorMessageString) {
     const task = new Task()
-    task.setData(action, title, description, false)
-    task.setFailed(errorMessage)
+    task.setData(action, titleString, descriptionString, false)
+    task.setFailedText(errorMessageString)
     SocketAuthority.emitter('task_started', task.toJSON())
     return task
   }

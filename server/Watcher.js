@@ -301,7 +301,12 @@ class FolderWatcher extends EventEmitter {
         libraryId,
         libraryName: libwatcher.name
       }
-      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', `Scanning file changes in "${libwatcher.name}"`, null, true, taskData)
+      const taskTitleString = {
+        text: `Scanning file changes in "${libwatcher.name}"`,
+        key: 'MessageTaskScanningFileChanges',
+        subs: [libwatcher.name]
+      }
+      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', taskTitleString, null, true, taskData)
     }
     this.pendingFileUpdates.push({
       path,

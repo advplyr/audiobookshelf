@@ -76,7 +76,12 @@ class LibraryScanner {
       libraryName: library.name,
       libraryMediaType: library.mediaType
     }
-    const task = TaskManager.createAndAddTask('library-scan', `Scanning "${library.name}" library`, null, true, taskData)
+    const taskTitleString = {
+      text: `Scanning "${library.name}" library`,
+      key: 'MessageTaskScanningLibrary',
+      subs: [library.name]
+    }
+    const task = TaskManager.createAndAddTask('library-scan', taskTitleString, null, true, taskData)
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
@@ -104,7 +109,7 @@ class LibraryScanner {
 
       Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}.`, err)
 
-      task.setFailed(`Failed. ${libraryScan.scanResultsString}`)
+      task.setFailedText(`Failed. ${libraryScan.scanResultsString}`)
     }
 
     if (this.cancelLibraryScan[libraryScan.libraryId]) delete this.cancelLibraryScan[libraryScan.libraryId]

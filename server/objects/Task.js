@@ -1,4 +1,11 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
+
+/**
+ * @typedef TaskString
+ * @property {string} text
+ * @property {string} key
+ * @property {string[]} [subs]
+ */
 
 class Task {
   constructor() {
@@ -11,10 +18,25 @@ class Task {
 
     /** @type {string} */
     this.title = null
+    /** @type {string} - Used for translation */
+    this.titleKey = null
+    /** @type {string[]} - Used for translation */
+    this.titleSubs = null
+
     /** @type {string} */
     this.description = null
+    /** @type {string} - Used for translation */
+    this.descriptionKey = null
+    /** @type {string[]} - Used for translation */
+    this.descriptionSubs = null
+
     /** @type {string} */
     this.error = null
+    /** @type {string} - Used for translation */
+    this.errorKey = null
+    /** @type {string[]} - Used for translation */
+    this.errorSubs = null
+
     /** @type {boolean} client should keep the task visible after success */
     this.showSuccess = false
 
@@ -47,30 +69,51 @@ class Task {
 
   /**
    * Set initial task data
-   * 
-   * @param {string} action 
-   * @param {string} title 
-   * @param {string} description 
-   * @param {boolean} showSuccess 
-   * @param {Object} [data] 
+   *
+   * @param {string} action
+   * @param {TaskString} titleString
+   * @param {TaskString|null} descriptionString
+   * @param {boolean} showSuccess
+   * @param {Object} [data]
    */
-  setData(action, title, description, showSuccess, data = {}) {
+  setData(action, titleString, descriptionString, showSuccess, data = {}) {
     this.id = uuidv4()
     this.action = action
     this.data = { ...data }
-    this.title = title
-    this.description = description
+    this.title = titleString.text
+    this.titleKey = titleString.key || null
+    this.titleSubs = titleString.subs || null
+    this.description = descriptionString?.text || null
+    this.descriptionKey = descriptionString?.key || null
+    this.descriptionSubs = descriptionString?.subs || null
     this.showSuccess = showSuccess
     this.startedAt = Date.now()
   }
 
   /**
    * Set task as failed
-   * 
-   * @param {string} message error message
+   *
+   * @param {TaskString} messageString
    */
-  setFailed(message) {
+  setFailed(messageString) {
+    this.error = messageString.text
+    this.errorKey = messageString.key || null
+    this.errorSubs = messageString.subs || null
+    this.isFailed = true
+    this.failedAt = Date.now()
+    this.setFinished()
+  }
+
+  /**
+   * Set task as failed without translation key
+   * TODO: Remove this method after all tasks are using translation keys
+   *
+   * @param {string} message
+   */
+  setFailedText(message) {
     this.error = message
+    this.errorKey = null
+    this.errorSubs = null
     this.isFailed = true
     this.failedAt = Date.now()
     this.setFinished()
@@ -78,12 +121,15 @@ class Task {
 
   /**
    * Set task as finished
-   * 
+   * TODO: Update to use translation keys
+   *
    * @param {string} [newDescription] update description
    */
   setFinished(newDescription = null) {
     if (newDescription) {
       this.description = newDescription
+      this.descriptionKey = null
+      this.descriptionSubs = null
     }
     this.isFinished = true
     this.finishedAt = Date.now()
