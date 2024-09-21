@@ -1112,6 +1112,81 @@ components:
           $ref: '#/components/schemas/rssFeed'
         hasFeedOpen:
           $ref: '#/components/schemas/hasFeedOpen'
+    ereaderName:
+      type: string
+      description: The name of the e-reader device.
+    ereaderDeviceObject:
+      type: object
+      description: An e-reader device configured to receive EPUB through e-mail.
+      properties:
+        name:
+          $ref: '#/components/schemas/ereaderName'
+        email:
+          type: string
+          description: The email address associated with the e-reader device.
+        availabilityOption:
+          type: string
+          description: The availability option for the device.
+          enum: ['adminOrUp', 'userOrUp', 'guestOrUp', 'specificUsers']
+        users:
+          type: array
+          description: List of specific user ids allowed to access the device.
+          items:
+            type: string
+            format: uuid
+      required:
+        - name
+        - email
+        - availabilityOption
+    emailSettings:
+      type: object
+      description: The email settings for sending emails.
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the email settings. Currently this is always `email-settings`
+          enum: ['email-settings']
+        host:
+          type: string
+          description: The SMTP host address.
+          nullable: true
+        port:
+          type: integer
+          minimum: 1
+          description: The port number for the SMTP server.
+          example: 465
+        secure:
+          type: boolean
+          description: Indicates if the connection should use SSL/TLS.
+        rejectUnauthorized:
+          type: boolean
+          description: Indicates if unauthorized SSL/TLS certificates should be rejected.
+        user:
+          type: string
+          description: The username for SMTP authentication.
+          nullable: true
+        pass:
+          type: string
+          description: The password for SMTP authentication.
+          nullable: true
+        testAddress:
+          type: string
+          description: The test email address used for sending test emails.
+          nullable: true
+        fromAddress:
+          type: string
+          description: The default "from" email address for outgoing emails. A formatted name can be included using the syntax of `Formatted Name <example.com>`.
+          nullable: true
+        ereaderDevices:
+          type: array
+          description: List of configured e-reader devices.
+          items:
+            $ref: '#/components/schemas/ereaderDeviceObject'
+      required:
+        - id
+        - port
+        - secure
+        - ereaderDevices
   responses:
     badRequest:
       description: Bad request.
@@ -3099,3 +3174,161 @@ paths:
           $ref: '#/components/responses/podcastLibraryOnly'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/email/settings:
+    get:
+      operationId: getEmailSettings
+      summary: Get email settings
+      description: Get the email settings for sending e-books to e-readers.
+      tags:
+        - Email
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/emailSettings'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    patch:
+      operationId: updateEmailSettings
+      summary: Update email settings
+      description: Update the email settings for sending e-books to e-readers. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailSettings:
+                  $ref: '#/components/schemas/emailSettings'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/emailSettings'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/email/test:
+    post:
+      operationId: testEmailSettings
+      summary: Test email settings
+      description: Test the email settings for sending e-books to e-readers. This will send a test email to the specified e-reader.
+      tags:
+        - Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ereader-name:
+                  $ref: '#/components/schemas/ereaderName'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/email/create-device:
+    post:
+      operationId: addEreaderDevice
+      summary: Add e-reader device
+      description: Add an e-reader device to the list of devices that can receive e-books via email.
+      tags:
+        - Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ereader:
+                  $ref: '#/components/schemas/ereaderDeviceObject'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ereaderDeviceObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/email/delete-device:
+    delete:
+      operationId: deleteEreaderDevice
+      summary: Remove e-reader device
+      description: Remove an e-reader device from the list of devices that can receive e-books via email.
+      tags:
+        - Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ereader-name:
+                  $ref: '#/components/schemas/ereaderName'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ereaderDeviceObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/email/send-ebook:
+    post:
+      operationId: sendEbookToEreader
+      summary: Send e-book to e-reader
+      description: Send an e-book to an e-reader device. The e-reader device must be in the list of devices that can receive e-books via email for this user.
+      tags:
+        - Email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ereader-name:
+                  $ref: '#/components/schemas/ereaderName'
+                book-id:
+                  $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
