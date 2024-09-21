@@ -188,10 +188,11 @@ class AbMergeManager {
       if (error.message === 'FFMPEG_CANCELED') {
         Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
       } else {
-        Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
+        Logger.error(`[AbMergeManager] Failed to embed metadata in file "${task.data.tempFilepath}"`)
         const taskFailedString = {
-          text: 'Failed to write metadata to m4b file',
-          key: 'MessageTaskFailedToWriteMetadataToM4bFile'
+          text: `Failed to embed metadata in file ${Path.basename(task.data.tempFilepath)}`,
+          key: 'MessageTaskFailedToEmbedMetadataInFile',
+          subs: [Path.basename(task.data.tempFilepath)]
         }
         task.setFailed(taskFailedString)
         this.removeTask(task, true)

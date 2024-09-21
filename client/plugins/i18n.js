@@ -89,10 +89,10 @@ Vue.prototype.$strings = { ...enUsStrings }
  * Get string and substitute
  *
  * @param {string} key
- * @param {string[]} subs
+ * @param {string[]} [subs=[]]
  * @returns {string}
  */
-Vue.prototype.$getString = (key, subs) => {
+Vue.prototype.$getString = (key, subs = []) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
     return supplant(Vue.prototype.$strings[key], subs)

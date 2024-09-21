@@ -335,7 +335,11 @@ class FolderWatcher extends EventEmitter {
       if (this.pendingFileUpdates.length) {
         LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
       } else {
-        this.pendingTask.setFinished('Scan abandoned. No files to scan.')
+        const taskFinishedString = {
+          text: 'No files to scan',
+          key: 'MessageTaskNoFilesToScan'
+        }
+        this.pendingTask.setFinished(taskFinishedString)
         TaskManager.taskFinished(this.pendingTask)
       }
       this.pendingTask = null

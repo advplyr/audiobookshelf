@@ -127,14 +127,22 @@ class PodcastManager {
       if (!success) {
         await fs.remove(this.currentDownload.targetPath)
         this.currentDownload.setFinished(false)
-        task.setFailedText('Failed to download episode')
+        const taskFailedString = {
+          text: 'Failed',
+          key: 'MessageTaskFailed'
+        }
+        task.setFailed(taskFailedString)
       } else {
         Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.podcastEpisode.title}"`)
         this.currentDownload.setFinished(true)
         task.setFinished()
       }
     } else {
-      task.setFailedText('Failed to download episode')
+      const taskFailedString = {
+        text: 'Failed',
+        key: 'MessageTaskFailed'
+      }
+      task.setFailed(taskFailedString)
       this.currentDownload.setFinished(false)
     }
 
@@ -560,7 +568,12 @@ class PodcastManager {
 
       numPodcastsAdded++
     }
-    task.setFinished(`Added ${numPodcastsAdded} podcasts`)
+    const taskFinishedString = {
+      text: `Added ${numPodcastsAdded} podcasts`,
+      key: 'MessageTaskOpmlImportFinished',
+      subs: [numPodcastsAdded]
+    }
+    task.setFinished(taskFinishedString)
     TaskManager.taskFinished(task)
     Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Finished OPML import. Created ${numPodcastsAdded} podcasts out of ${rssFeedUrls.length} RSS feed URLs`)
   }

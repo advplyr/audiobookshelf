@@ -18,7 +18,10 @@ Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-Vue.prototype.$elapsedPretty = (seconds, useFullNames = false) => {
+Vue.prototype.$elapsedPretty = (seconds, useFullNames = false, useMilliseconds = false) => {
+  if (useMilliseconds && seconds > 0 && seconds < 1) {
+    return `${Math.floor(seconds * 1000)} ms`
+  }
   if (seconds < 60) {
     return `${Math.floor(seconds)} sec${useFullNames ? 'onds' : ''}`
   }

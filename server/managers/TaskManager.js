@@ -63,7 +63,7 @@ class TaskManager {
   createAndEmitFailedTask(action, titleString, descriptionString, errorMessageString) {
     const task = new Task()
     task.setData(action, titleString, descriptionString, false)
-    task.setFailedText(errorMessageString)
+    task.setFailed(errorMessageString)
     SocketAuthority.emitter('task_started', task.toJSON())
     return task
   }

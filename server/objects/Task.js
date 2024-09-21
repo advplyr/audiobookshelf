@@ -57,8 +57,14 @@ class Task {
       action: this.action,
       data: this.data ? { ...this.data } : {},
       title: this.title,
+      titleKey: this.titleKey,
+      titleSubs: this.titleSubs,
       description: this.description,
+      descriptionKey: this.descriptionKey,
+      descriptionSubs: this.descriptionSubs,
       error: this.error,
+      errorKey: this.errorKey,
+      errorSubs: this.errorSubs,
       showSuccess: this.showSuccess,
       isFailed: this.isFailed,
       isFinished: this.isFinished,
@@ -105,29 +111,18 @@ class Task {
   }
 
   /**
-   * Set task as failed without translation key
-   * TODO: Remove this method after all tasks are using translation keys
-   *
-   * @param {string} message
-   */
-  setFailedText(message) {
-    this.error = message
-    this.errorKey = null
-    this.errorSubs = null
-    this.isFailed = true
-    this.failedAt = Date.now()
-    this.setFinished()
-  }
-
-  /**
    * Set task as finished
-   * TODO: Update to use translation keys
    *
-   * @param {string} [newDescription] update description
+   * @param {TaskString} [newDescriptionString] update description
+   * @param {boolean} [clearDescription] clear description
    */
-  setFinished(newDescription = null) {
-    if (newDescription) {
-      this.description = newDescription
+  setFinished(newDescriptionString = null, clearDescription = false) {
+    if (newDescriptionString) {
+      this.description = newDescriptionString.text
+      this.descriptionKey = newDescriptionString.key || null
+      this.descriptionSubs = newDescriptionString.subs || null
+    } else if (clearDescription) {
+      this.description = null
       this.descriptionKey = null
       this.descriptionSubs = null
     }

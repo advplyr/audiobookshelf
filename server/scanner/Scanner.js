@@ -364,7 +364,7 @@ class Scanner {
 
     const libraryScan = new LibraryScan()
     libraryScan.setData(library, 'match')
-    LibraryScanner.librariesScanning.push(libraryScan.getScanEmitData)
+    LibraryScanner.librariesScanning.push(libraryScan.libraryId)
     const taskData = {
       libraryId: library.id
     }
@@ -397,15 +397,29 @@ class Scanner {
 
     if (offset === 0) {
       Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
-      libraryScan.setComplete('Library has no items')
-      task.setFailedText(libraryScan.error)
+      libraryScan.setComplete()
+      const taskFailedString = {
+        text: 'No items found',
+        key: 'MessageNoItemsFound'
+      }
+      task.setFailed(taskFailedString)
     } else {
       libraryScan.setComplete()
-      task.setFinished(isCanceled ? 'Canceled' : libraryScan.scanResultsString)
+
+      task.data.scanResults = libraryScan.scanResults
+      if (isCanceled) {
+        const taskFinishedString = {
+          text: 'Task canceled by user',
+          key: 'MessageTaskCanceledByUser'
+        }
+        task.setFinished(taskFinishedString)
+      } else {
+        task.setFinished(null, true)
+      }
     }
 
     delete LibraryScanner.cancelLibraryScan[libraryScan.libraryId]
-    LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter((ls) => ls.id !== library.id)
+    LibraryScanner.librariesScanning = LibraryScanner.librariesScanning.filter((lid) => lid !== library.id)
     TaskManager.taskFinished(task)
   }
 }
