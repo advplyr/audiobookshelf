@@ -480,7 +480,7 @@ class LibraryItemController {
     const libraryId = itemsToDelete[0].libraryId
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
-      Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
+      Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}" with id "${libraryItem.id}"`)
       const mediaItemIds = libraryItem.mediaType === 'podcast' ? libraryItem.media.episodes.map((ep) => ep.id) : [libraryItem.media.id]
       await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
       if (hardDelete) {
