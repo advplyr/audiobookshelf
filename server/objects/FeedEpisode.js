@@ -1,7 +1,6 @@
 const Path = require('path')
 const uuidv4 = require('uuid').v4
 const date = require('../libs/dateAndTime')
-const { secondsToTimestamp } = require('../utils/index')
 
 class FeedEpisode {
   constructor(episode) {
@@ -23,6 +22,7 @@ class FeedEpisode {
     this.episodeId = null
     this.trackIndex = null
     this.fullPath = null
+    this.imageUrl = null
 
     if (episode) {
       this.construct(episode)
@@ -119,6 +119,7 @@ class FeedEpisode {
     const contentUrl = `/feed/${slug}/item/${episodeId}/media${contentFileExtension}`
     const media = libraryItem.media
     const mediaMetadata = media.metadata
+    const coverFileExtension = media.coverPath ? Path.extname(media.coverPath) : null
 
     let title = audioTrack.title
     if (libraryItem.media.tracks.length == 1) {
@@ -149,6 +150,8 @@ class FeedEpisode {
     this.episodeId = null
     this.trackIndex = audioTrack.index
     this.fullPath = audioTrack.metadata.path
+    // debugger
+    this.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/item/${media.libraryItemId}/image${coverFileExtension}` : meta.imageUrl
   }
 
   getRSSData() {
@@ -167,7 +170,14 @@ class FeedEpisode {
         { 'itunes:explicit': !!this.explicit },
         { 'itunes:episodeType': this.episodeType },
         { 'itunes:season': this.season },
-        { 'itunes:episode': this.episode }
+        { 'itunes:episode': this.episode },
+        {
+          'itunes:image': {
+            _attr: {
+              href: this.imageUrl
+            }
+          }
+        },
       ]
     }
   }

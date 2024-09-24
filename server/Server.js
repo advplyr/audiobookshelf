@@ -280,6 +280,9 @@ class Server {
     router.get('/feed/:slug/cover*', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
+    router.get('/feed/:slug/item/:episodeId/image*', (req, res) => {
+      this.rssFeedManager.getFeedItemImage(req, res)
+    })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
