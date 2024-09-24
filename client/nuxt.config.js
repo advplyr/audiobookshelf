@@ -12,9 +12,11 @@ export default defineNuxtConfig({
   },
   telemetry: false,
 
-  publicRuntimeConfig: {
-    version: pkg.version,
-    routerBasePath: process.env.ROUTER_BASE_PATH || ''
+  runtimeConfig: {
+    public: {
+      version: pkg.version,
+      routerBasePath: process.env.ROUTER_BASE_PATH || ''
+    }
   },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
