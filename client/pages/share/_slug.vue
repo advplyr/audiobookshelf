@@ -60,8 +60,7 @@ export default {
       return this.mediaItemShare.playbackSession
     },
     coverUrl() {
-      if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
-      return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
+      return `${this.$config.public.routerBasePath}/${this.playbackSession.coverPath ? `public/share/${this.mediaItemShare.slug}/cover` : `book_placeholder.jpg`}`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
