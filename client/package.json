@@ -5,11 +5,11 @@
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
   "scripts": {
-    "dev": "nuxt2",
-    "dev2": "nuxt2 --hostname localhost --port 1337",
-    "build": "nuxt2 build",
-    "start": "nuxt2 start",
-    "generate": "nuxt2 generate",
+    "dev": "nuxi dev",
+    "dev2": "nuxi dev --hostname localhost --port 1337",
+    "build": "nuxi build",
+    "start": "nuxi preview",
+    "generate": "nuxi generate",
     "test": "npm run compile-tailwind && cypress run --component --browser chrome",
     "test-visually": "npm run compile-tailwind && cypress open --component --browser chrome",
     "compile-tailwind": "tailwindcss -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css"
@@ -38,6 +38,8 @@
     "@nuxt/bridge": "^3.3.1",
     "@nuxtjs/pwa": "^3.3.5",
     "autoprefixer": "^10.4.7",
+    "defu": "^6.1.4",
+    "hookable": "^5.5.3",
     "nuxi": "^3.13.2",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.4.1"

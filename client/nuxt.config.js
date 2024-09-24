@@ -136,7 +136,8 @@ export default defineNuxtConfig({
           autoprefixer: {},
         }
       }
-    }
+    },
+    transpile: ['luxon', 'cookie-es']
   },
   watchers: {
     webpack: {
@@ -149,7 +150,10 @@ export default defineNuxtConfig({
     host: '0.0.0.0'
   },
 
-  bridge: false,
+  bridge: {
+    transpile: true,
+    nitro: true
+  },
 
   /**
  * Temporary workaround for @nuxt-community/tailwindcss-module.
