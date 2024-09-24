@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import ePub from 'epubjs'
+import ePub from '../../static/libs/epubjs-patch/index.js'
 
 /**
  * @typedef {object} EpubReader
