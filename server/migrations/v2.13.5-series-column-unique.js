@@ -16,7 +16,15 @@
  */
 async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
-  logger.info('UPGRADE BEGIN: 2.13.5-series-column-unique ')
+  logger.info('[2.13.5 migration] UPGRADE BEGIN: 2.13.5-series-column-unique ')
+
+  // Check if the unique index already exists
+  const seriesIndexes = await queryInterface.showIndex('Series')
+  if (seriesIndexes.some((index) => index.name === 'unique_series_name_per_library')) {
+    logger.info('[2.13.5 migration] Unique index on Series.name and Series.libraryId already exists')
+    logger.info('[2.13.5 migration] UPGRADE END: 2.13.5-series-column-unique ')
+    return
+  }
 
   // The steps taken to deduplicate the series are as follows:
   // 1. Find all duplicate series in the `Series` table.
@@ -173,9 +181,9 @@ async function up({ context: { queryInterface, logger } }) {
     unique: true,
     name: 'unique_series_name_per_library'
   })
-  logger.info('Added unique index on Series.name and Series.libraryId')
+  logger.info('[2.13.5 migration] Added unique index on Series.name and Series.libraryId')
 
-  logger.info('UPGRADE END: 2.13.5-series-column-unique ')
+  logger.info('[2.13.5 migration] UPGRADE END: 2.13.5-series-column-unique ')
 }
 
 /**
@@ -186,13 +194,13 @@ async function up({ context: { queryInterface, logger } }) {
  */
 async function down({ context: { queryInterface, logger } }) {
   // Downward migration script
-  logger.info('DOWNGRADE BEGIN: 2.13.5-series-column-unique ')
+  logger.info('[2.13.5 migration] DOWNGRADE BEGIN: 2.13.5-series-column-unique ')
 
   // Remove the unique index
   await queryInterface.removeIndex('Series', 'unique_series_name_per_library')
-  logger.info('Removed unique index on Series.name and Series.libraryId')
+  logger.info('[2.13.5 migration] Removed unique index on Series.name and Series.libraryId')
 
-  logger.info('DOWNGRADE END: 2.13.5-series-column-unique ')
+  logger.info('[2.13.5 migration] DOWNGRADE END: 2.13.5-series-column-unique ')
 }
 
 module.exports = { up, down }
