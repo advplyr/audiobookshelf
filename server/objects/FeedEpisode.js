@@ -162,11 +162,9 @@ class FeedEpisode {
       enclosure: this.enclosure,
       custom_elements: [
         { 'itunes:author': this.author },
-        { 'itunes:duration': secondsToTimestamp(this.duration) },
+        { 'itunes:duration': Math.round(this.duration) },
         { 'itunes:summary': this.description || '' },
-        {
-          'itunes:explicit': !!this.explicit
-        },
+        { 'itunes:explicit': !!this.explicit },
         { 'itunes:episodeType': this.episodeType },
         { 'itunes:season': this.season },
         { 'itunes:episode': this.episode }
