@@ -4,4 +4,4 @@ Please add a record of every database migration that you create to this file. Th
 
 | Server Version | Migration Script Name        | Description                                       |
 | -------------- | ---------------------------- | ------------------------------------------------- |
-| v2.13.5        | v2.13.5-series-column-unique | Series must have unique names in the same library |
+| v2.14.0        | v2.14.0-series-column-unique | Series must have unique names in the same library |
