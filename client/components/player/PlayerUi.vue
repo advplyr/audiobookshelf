@@ -4,6 +4,8 @@
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
         <!-- <span class="material-symbols text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
+        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
+
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
@@ -227,6 +229,12 @@ export default {
       if (this.playbackRate <= 0.5) return
       this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
       this.setPlaybackRate(this.playbackRate)
+    },
+    playbackRateChanged(playbackRate) {
+      this.setPlaybackRate(playbackRate)
+      this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
+        console.error('Failed to update settings', err)
+      })
     },
     setPlaybackRate(playbackRate) {
       this.$emit('setPlaybackRate', playbackRate)
