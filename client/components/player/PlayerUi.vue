@@ -2,8 +2,6 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <!-- <span class="material-symbols text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
-
         <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
 
         <ui-tooltip direction="top" :text="$strings.LabelVolume">
@@ -15,7 +13,7 @@
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
-              <p class="text-sm sm:text-lg text-warning font-mono font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
+              <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
             </div>
           </button>
         </ui-tooltip>
