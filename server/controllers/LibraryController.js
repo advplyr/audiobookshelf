@@ -503,6 +503,14 @@ class LibraryController {
       collapseseries: req.query.collapseseries === '1',
       include: include.join(',')
     }
+
+    if (!Number.isInteger(payload.limit) || payload.limit < 0) {
+      return res.status(400).send('Invalid request. Limit must be a positive integer')
+    }
+    if (!Number.isInteger(payload.page) || payload.page < 0) {
+      return res.status(400).send('Invalid request. Page must be a positive integer')
+    }
+
     payload.offset = payload.page * payload.limit
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
