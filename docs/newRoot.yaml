@@ -66,6 +66,21 @@ components:
       schema:
         type: string
         format: uuid
+    pathFeedId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the feed.
+      schema:
+        type: string
+        format: uuid
+    pathFeedSlug:
+      name: slug
+      in: path
+      required: true
+      description: The slug of the feed.
+      schema:
+        type: string
     queryLimit:
       name: limit
       in: query
@@ -461,6 +476,25 @@ components:
       type: string
       description: The language of the item.
       nullable: true
+    feedUrl:
+      type: string
+      description: The RSS feed hosted by ABS.
+    feedItemType:
+      type: string
+      description: The type of media in the feed.
+      enum: ['book', 'collection', 'series', 'podcast']
+    feedOwnerName:
+      type: string
+      description: The owner of the feed.
+    feedOwnerEmail:
+      type: string
+      description: The email of the feed owner.
+    feedPreventIndexing:
+      type: boolean
+      description: Whether the feed should be indexed by search engines.
+    feedSlug:
+      type: string
+      description: The slug of the feed. By default this is a custom UUID, but can be any valid URL slug.
     hasFeedOpen:
       type: boolean
       description: Whether the item has an open feed.
@@ -1187,6 +1221,30 @@ components:
         - port
         - secure
         - ereaderDevices
+    rssFeedObject:
+      type: object
+      description: An RSS feed object hosted by ABS.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        feedUrl:
+          $ref: '#/components/schemas/feedUrl'
+        imageUrl:
+          $ref: '#/components/schemas/imageUrl'
+        title:
+          $ref: '#/components/schemas/title'
+        description:
+          $ref: '#/components/schemas/description'
+        feedPreventIndexing:
+          $ref: '#/components/schemas/feedPreventIndexing'
+        feedItemType:
+          $ref: '#/components/schemas/feedItemType'
+        feedOwnerName:
+          $ref: '#/components/schemas/feedOwnerName'
+        feedOwnerEmail:
+          $ref: '#/components/schemas/feedOwnerEmail'
+        feedUserId:
+          $ref: '#/components/schemas/itemId'
   responses:
     badRequest:
       description: Bad request.
@@ -2976,6 +3034,38 @@ paths:
           $ref: '#/components/responses/podcastLibraryOnly'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/library/{id}/feeds:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryFeedsById
+      summary: Get feeds in library
+      description: Get the feeds in the library by its ID. This endpoint will return the feeds in the library.
+      tags:
+        - Library
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of feeds.
+                  returnCount:
+                    type: integer
+                    description: The number of feeds returned.
+                  feeds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/rssFeedObject'
+        '404':
+          $ref: '#/components/responses/notFound'
   /api/library/{id}/narrators:
     parameters:
       - $ref: '#/components/parameters/pathLibraryId'
@@ -3332,3 +3422,112 @@ paths:
           $ref: '#/components/responses/badRequest'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/feeds:
+    get:
+      operationId: getFeeds
+      summary: Get feeds
+      description: Get all feeds. This endpoint will return all feeds for the server.
+      tags:
+        - RSS Feed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rssFeedObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    post:
+      operationId: createFeed
+      summary: Create feed
+      description: Create a new feed. The request body should contain the feed's slug and the ID of the object the feed corresponds to.
+      tags:
+        - RSS Feed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityId:
+                  $ref: '#/components/schemas/itemId'
+                slug:
+                  $ref: '#/components/schemas/feedSlug'
+                preventIndexing:
+                  $ref: '#/components/schemas/feedPreventIndexing'
+                ownerName:
+                  $ref: '#/components/schemas/feedOwnerName'
+                ownerEmail:
+                  $ref: '#/components/schemas/feedOwnerEmail'
+              required:
+                - entityId
+                - slug
+                - preventIndexing
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rssFeedObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/feeds/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathFeedId'
+    get:
+      operationId: getFeedById
+      summary: Get feed object by ID
+      description: Get a feed by its ID. This endpoint returns all of the information needed for the feed details page and editing.
+      tags:
+        - RSS Feed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rssFeedObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteFeedById
+      summary: Remove feed by ID
+      description: Remove the feed and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - RSS Feed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rssFeedObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /feed/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/pathFeedSlug'
+    get:
+      operationId: getFeedBySlug
+      summary: Get RSS feed
+      description: Get a feed by its slug. This endpoint returns the RSS feed as a string.
+      tags:
+        - RSS Feed
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/notFound'
