@@ -34,6 +34,14 @@ components:
       schema:
         type: string
         format: uuid
+    pathSeriesId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the series.
+      schema:
+        type: string
+        format: uuid
     pathPodcastId:
       name: id
       in: path
@@ -3529,5 +3537,72 @@ paths:
               schema:
                 type: string
                 format: binary
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/series/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathSeriesId'
+    get:
+      operationId: getSeriesById
+      summary: Get series by ID
+      description: Get a series by its ID. This endpoint returns all of the information needed for the series page.
+      tags:
+        - Series
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/seriesDisplayObject'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateSeriesById
+      summary: Update series by ID
+      description: Update a series by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Series
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                descrption:
+                  $ref: '#/components/schemas/description'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/seriesDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteSeriesById
+      summary: Remove series by ID
+      description: Remove the series and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Series
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/seriesDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
