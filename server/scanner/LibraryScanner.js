@@ -16,7 +16,8 @@ const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
 
 class LibraryScanner {
-  constructor() {
+  constructor(notificationManager) {
+    this.notificationManager = notificationManager
     this.cancelLibraryScan = {}
     /** @type {string[]} - library ids */
     this.librariesScanning = []
@@ -284,6 +285,7 @@ class LibraryScanner {
             'items_added',
             newOldLibraryItems.map((li) => li.toJSONExpanded())
           )
+          this.notificationManager.onItemsAdded(newOldLibraryItems)
           newOldLibraryItems = []
         }
 
@@ -296,6 +298,7 @@ class LibraryScanner {
           'items_added',
           newOldLibraryItems.map((li) => li.toJSONExpanded())
         )
+        this.notificationManager.onItemsAdded(newOldLibraryItems)
       }
     }
 
@@ -647,6 +650,7 @@ class LibraryScanner {
       if (newLibraryItem) {
         const oldNewLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
         SocketAuthority.emitter('item_added', oldNewLibraryItem.toJSONExpanded())
+        this.notificationManager.onItemsAdded([oldNewLibraryItem])
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
@@ -654,7 +658,7 @@ class LibraryScanner {
     return itemGroupingResults
   }
 }
-module.exports = new LibraryScanner()
+module.exports = new LibraryScanner(new NotificationManager())
 
 function ItemToFileInoMatch(libraryItem1, libraryItem2) {
   return libraryItem1.isFile && libraryItem2.libraryFiles.some((lf) => lf.ino === libraryItem1.ino)

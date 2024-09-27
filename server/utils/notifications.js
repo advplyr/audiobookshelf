@@ -3,6 +3,28 @@ const { version } = require('../../package.json')
 module.exports.notificationData = {
   events: [
     {
+      name: 'onItemsAdded',
+      requiresLibrary: true,
+      libraryMediaType: 'item',
+      description: 'Triggered when an item is added to the library',
+      variables: ['libraryItemId', 'libraryId', 'libraryName', 'tags', 'title', 'authors', 'description', 'genres', 'publishedYear'],
+      defaults: {
+        title: 'New Book!',
+        body: '{{title}} has been added to {{libraryName}} library.'
+      },
+      testData: {
+        libraryItemId: 'li_notification_test',
+        libraryId: 'lib_test',
+        libraryName: 'My Library',
+        tags: 'TestTag1, TestTag2',
+        title: 'ABS Test Book',
+        authors: 'Author1, Author2',
+        description: 'Description of the Abs Test Book belongs here.',
+        genres: 'TestGenre1, TestGenre2',
+        publishedYear: '2020'
+      }
+    },
+    {
       name: 'onPodcastEpisodeDownloaded',
       requiresLibrary: true,
       libraryMediaType: 'podcast',
