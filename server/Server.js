@@ -23,7 +23,6 @@ const HlsRouter = require('./routers/HlsRouter')
 const PublicRouter = require('./routers/PublicRouter')
 
 const LogManager = require('./managers/LogManager')
-const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -67,12 +66,11 @@ class Server {
     this.auth = new Auth()
 
     // Managers
-    this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
-    this.backupManager = new BackupManager(this.notificationManager)
+    this.backupManager = new BackupManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
+    this.podcastManager = new PodcastManager(this.watcher)
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)

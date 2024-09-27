@@ -14,6 +14,7 @@ const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const TaskManager = require('./TaskManager')
 const CoverManager = require('../managers/CoverManager')
+const NotificationManager = require('../managers/NotificationManager')
 
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
@@ -22,9 +23,8 @@ const AudioFile = require('../objects/files/AudioFile')
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastManager {
-  constructor(watcher, notificationManager) {
+  constructor(watcher) {
     this.watcher = watcher
-    this.notificationManager = notificationManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -203,7 +203,7 @@ class PodcastManager {
 
     if (this.currentDownload.isAutoDownload) {
       // Notifications only for auto downloaded episodes
-      this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
+      NotificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
     return true

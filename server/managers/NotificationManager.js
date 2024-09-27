@@ -180,4 +180,4 @@ class NotificationManager {
       })
   }
 }
-module.exports = NotificationManager
+module.exports = new NotificationManager()
