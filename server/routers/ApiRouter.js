@@ -55,8 +55,6 @@ class ApiRouter {
     this.rssFeedManager = Server.rssFeedManager
     /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
-    /** @type {import('../managers/NotificationManager')} */
-    this.notificationManager = Server.notificationManager
     /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
