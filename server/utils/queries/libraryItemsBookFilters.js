@@ -979,8 +979,6 @@ module.exports = {
 
     const matchTitle = textSearchQuery.matchExpression('title')
     const matchSubtitle = textSearchQuery.matchExpression('subtitle')
-    Logger.debug(`[libraryItemsBookFilters] matchTitle: ${matchTitle}`)
-    Logger.debug(`[libraryItemsBookFilters] matchSubtitle: ${matchSubtitle}`)
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({

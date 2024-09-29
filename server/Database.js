@@ -786,7 +786,6 @@ class Database {
       const normalizedQueryResult = await this.sequelize.query(`SELECT ${normalizedQueryExpression} as normalized_query`)
       const normalizedQuery = normalizedQueryResult[0][0].normalized_query
       this.hasAccents = escapedQuery !== this.sequelize.escape(normalizedQuery)
-      Logger.debug(`[TextSearchQuery] hasAccents: ${this.hasAccents}`)
     }
 
     /**
