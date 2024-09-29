@@ -222,7 +222,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error(this.$strings.ToastLibraryUpdateFailed)
+            this.$toast.error(this.$strings.ToastFailedToUpdate)
           }
           this.processing = false
         })

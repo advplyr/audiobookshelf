@@ -135,7 +135,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove items from playlist', error)
-          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
           this.processing = false
         })
     },
@@ -153,7 +153,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to add items to playlist', error)
-          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
           this.processing = false
         })
     },

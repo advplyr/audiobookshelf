@@ -178,7 +178,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update device', error)
-          this.$toast.error(this.$strings.ToastDeviceUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false

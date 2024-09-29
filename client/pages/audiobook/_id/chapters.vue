@@ -499,7 +499,7 @@ export default {
         .catch((error) => {
           this.saving = false
           console.error('Failed to update chapters', error)
-          this.$toast.error('Failed to update chapters')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     },
     applyChapterNamesOnly() {

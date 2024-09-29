@@ -623,7 +623,7 @@ export default {
           this.clearSelectedMatch()
           this.$emit('selectTab', 'details')
         } else {
-          this.$toast.error(this.$strings.ToastItemDetailsUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         }
       } else {
         this.clearSelectedMatch()
