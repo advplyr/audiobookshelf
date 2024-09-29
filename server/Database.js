@@ -28,6 +28,9 @@ class Database {
     this.notificationSettings = null
     /** @type {import('./objects/settings/EmailSettings')} */
     this.emailSettings = null
+
+    this.supportsUnaccent = false
+    this.supportsUnicodeFoldings = false
   }
 
   get models() {
@@ -223,6 +226,12 @@ class Database {
 
     try {
       await this.sequelize.authenticate()
+      if (process.env.NUSQLITE3_PATH) {
+        await this.loadExtension(process.env.NUSQLITE3_PATH)
+        Logger.info(`[Database] Db supports unaccent and unicode foldings`)
+        this.supportsUnaccent = true
+        this.supportsUnicodeFoldings = true
+      }
       Logger.info(`[Database] Db connection was successful`)
       return true
     } catch (error) {
@@ -232,10 +241,9 @@ class Database {
   }
 
   /**
-   * TODO: Temporarily disabled
-   * @param {string[]} extensions paths to extension binaries
+   * @param {string} extension paths to extension binary
    */
-  async loadExtensions(extensions) {
+  async loadExtension(extension) {
     // This is a hack to get the db connection for loading extensions.
     // The proper way would be to use the 'afterConnect' hook, but that hook is never called for sqlite due to a bug in sequelize.
     // See https://github.com/sequelize/sequelize/issues/12487
@@ -243,20 +251,18 @@ class Database {
     const db = await this.sequelize.dialect.connectionManager.getConnection()
     if (typeof db?.loadExtension !== 'function') throw new Error('Failed to get db connection for loading extensions')
 
-    for (const ext of extensions) {
-      Logger.info(`[Database] Loading extension ${ext}`)
-      await new Promise((resolve, reject) => {
-        db.loadExtension(ext, (err) => {
-          if (err) {
-            Logger.error(`[Database] Failed to load extension ${ext}`, err)
-            reject(err)
-            return
-          }
-          Logger.info(`[Database] Successfully loaded extension ${ext}`)
-          resolve()
-        })
+    Logger.info(`[Database] Loading extension ${extension}`)
+    await new Promise((resolve, reject) => {
+      db.loadExtension(extension, (err) => {
+        if (err) {
+          Logger.error(`[Database] Failed to load extension ${extension}`, err)
+          reject(err)
+          return
+        }
+        Logger.info(`[Database] Successfully loaded extension ${extension}`)
+        resolve()
       })
-    }
+    })
   }
 
   /**
@@ -745,37 +751,58 @@ class Database {
     }
   }
 
-  /**
-   * TODO: Temporarily unused
-   * @param {string} value
-   * @returns {string}
-   */
-  normalize(value) {
-    return `lower(unaccent(${value}))`
+  async createTextSearchQuery(query) {
+    const textQuery = new this.TextSearchQuery(this.sequelize, this.supportsUnaccent, query)
+    await textQuery.init()
+    return textQuery
   }
 
-  /**
-   * TODO: Temporarily unused
-   * @param {string} query
-   * @returns {Promise<string>}
-   */
-  async getNormalizedQuery(query) {
-    const escapedQuery = this.sequelize.escape(query)
-    const normalizedQuery = this.normalize(escapedQuery)
-    const normalizedQueryResult = await this.sequelize.query(`SELECT ${normalizedQuery} as normalized_query`)
-    return normalizedQueryResult[0][0].normalized_query
-  }
+  TextSearchQuery = class {
+    constructor(sequelize, supportsUnaccent, query) {
+      this.sequelize = sequelize
+      this.supportsUnaccent = supportsUnaccent
+      this.query = query
+      this.hasAccents = false
+    }
 
-  /**
-   *
-   * @param {string} column
-   * @param {string} normalizedQuery
-   * @returns {string}
-   */
-  matchExpression(column, normalizedQuery) {
-    const normalizedPattern = this.sequelize.escape(`%${normalizedQuery}%`)
-    const normalizedColumn = column
-    return `${normalizedColumn} LIKE ${normalizedPattern}`
+    /**
+     * Returns a normalized (accents-removed) expression for the specified value.
+     *
+     * @param {string} value
+     * @returns {string}
+     */
+    normalize(value) {
+      return `unaccent(${value})`
+    }
+
+    /**
+     * Initialize the text query.
+     *
+     */
+    async init() {
+      if (!this.supportsUnaccent) return
+      const escapedQuery = this.sequelize.escape(this.query)
+      const normalizedQueryExpression = this.normalize(escapedQuery)
+      const normalizedQueryResult = await this.sequelize.query(`SELECT ${normalizedQueryExpression} as normalized_query`)
+      const normalizedQuery = normalizedQueryResult[0][0].normalized_query
+      this.hasAccents = escapedQuery !== this.sequelize.escape(normalizedQuery)
+      Logger.debug(`[TextSearchQuery] hasAccents: ${this.hasAccents}`)
+    }
+
+    /**
+     * Get match expression for the specified column.
+     * If the query contains accents, match against the column as-is (case-insensitive exact match).
+     * otherwise match against a normalized column (case-insensitive match with accents removed).
+     *
+     * @param {string} column
+     * @returns {string}
+     */
+    matchExpression(column) {
+      const pattern = this.sequelize.escape(`%${this.query}%`)
+      if (!this.supportsUnaccent) return `${column} LIKE ${pattern}`
+      const normalizedColumn = this.hasAccents ? column : this.normalize(column)
+      return `${normalizedColumn} LIKE ${pattern}`
+    }
   }
 }
 
