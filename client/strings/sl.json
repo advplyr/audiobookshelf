@@ -901,6 +901,7 @@
   "ToastErrorCannotShare": "V tej napravi ni mogoče dati v skupno rabo",
   "ToastFailedToLoadData": "Podatkov ni bilo mogoče naložiti",
   "ToastFailedToShare": "Skupna raba ni uspela",
+  "ToastFailedToUpdate": "Napaka pri posodobitvi",
   "ToastInvalidImageUrl": "Neveljaven URL slike",
   "ToastInvalidUrl": "Neveljaven URL",
   "ToastItemCoverUpdateSuccess": "Naslovnica elementa je bila posodobljena",
