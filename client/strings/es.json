@@ -901,6 +901,7 @@
   "ToastErrorCannotShare": "No se puede compartir de forma nativa en este dispositivo",
   "ToastFailedToLoadData": "Error al cargar data",
   "ToastFailedToShare": "Error al compartir",
+  "ToastFailedToUpdate": "Error al actualizar",
   "ToastInvalidImageUrl": "URL de la imagen no válida",
   "ToastInvalidUrl": "URL no válida",
   "ToastItemCoverUpdateSuccess": "Portada del elemento actualizada",
