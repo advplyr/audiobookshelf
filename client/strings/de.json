@@ -777,6 +777,7 @@
   "MessageShareExpiresIn": "Läuft in {0} ab",
   "MessageShareURLWillBe": "Der Freigabe Link wird <strong>{0}</strong> sein.",
   "MessageStartPlaybackAtTime": "Start der Wiedergabe für \"{0}\" bei {1}?",
+  "MessageTaskAudioFileNotWritable": "Die Audiodatei \"{0}\" ist schreibgeschützt",
   "MessageTaskCanceledByUser": "Aufgabe vom Benutzer abgebrochen",
   "MessageTaskDownloadingEpisodeDescription": "Folge \"{0}\" wird heruntergeladen",
   "MessageTaskEmbeddingMetadata": "Metadaten werden eingebettet",
