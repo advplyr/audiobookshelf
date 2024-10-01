@@ -975,10 +975,10 @@ module.exports = {
   async search(user, library, query, limit, offset) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
-    const normalizedQuery = query
+    const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchSubtitle = Database.matchExpression('subtitle', normalizedQuery)
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchSubtitle = textSearchQuery.matchExpression('subtitle')
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
@@ -1041,7 +1041,7 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search narrators
     const narratorMatches = []
@@ -1095,7 +1095,7 @@ module.exports = {
     }
 
     // Search series
-    const matchName = Database.matchExpression('name', normalizedQuery)
+    const matchName = textSearchQuery.matchExpression('name')
     const allSeries = await Database.seriesModel.findAll({
       where: {
         [Sequelize.Op.and]: [
@@ -1136,7 +1136,7 @@ module.exports = {
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(library.id, normalizedQuery, limit, offset)
+    const authorMatches = await authorFilters.search(library.id, textSearchQuery, limit, offset)
 
     return {
       book: itemMatches,

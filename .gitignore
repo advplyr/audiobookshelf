@@ -16,6 +16,7 @@
 /ffmpeg*
 /ffprobe*
 /unicode*
+/libnusqlite3*
 
 sw.*
 .DS_STORE
