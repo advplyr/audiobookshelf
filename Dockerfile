@@ -33,9 +33,9 @@ ENV NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
 RUN case "$TARGETPLATFORM" in \
   "linux/amd64") \
-  curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.0/libnusqlite3-linux-x64.zip" ;; \
+  curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.1/libnusqlite3-linux-x64.zip" ;; \
   "linux/arm64") \
-  curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.0/libnusqlite3-linux-arm64.zip" ;; \
+  curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.1/libnusqlite3-linux-arm64.zip" ;; \
   *) echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
   esac && \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
