@@ -26,6 +26,14 @@ components:
       schema:
         type: string
         format: uuid
+    pathUserId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the user.
+      schema:
+        type: string
+        format: uuid
     pathBookId:
       name: id
       in: path
@@ -298,6 +306,15 @@ components:
         type: string
         enum: ['author-fl', 'author-lf', 'bookCount', 'seriesCount', 'updatedAt', 'createdAt', 'random']
         default: 'author-fl'
+    querySortUsers:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the users by.
+      schema:
+        type: string
+        enum: ['username', 'email', 'createdAt', 'updatedAt', 'hasOpenId', 'accountType', 'isEnabled']
+        default: 'username'
     queryAuthorName:
       name: name
       in: query
@@ -331,6 +348,40 @@ components:
     libraryProvider:
       type: string
       description: Preferred metadata provider for the library.
+    createdAt:
+      type: number
+      description: The date and time the item was created in ms since POSIX epoch.
+    updatedAt:
+      type: number
+      description: The date and time the item was last updated in ms since POSIX epoch.
+    userPermissions:
+      type: object
+      description: The permissions of the user.
+      properties:
+        download:
+          type: boolean
+          description: Whether the user can download files.
+        update:
+          type: boolean
+          description: Whether the user can update metadata.
+        delete:
+          type: boolean
+          description: Whether the user can delete the item.
+        upload:
+          type: boolean
+          description: Whether the user can upload files.
+        accessAllLibraries:
+          type: boolean
+          description: Whether the user can access all libraries.
+        accessAllTags:
+          type: boolean
+          description: Whether the user can access all tags.
+        accessExplicitContent:
+          type: boolean
+          description: Whether the user can access explicit content.
+        selectedTagsAccessible:
+          type: boolean
+          description: Whether the user can access selected tags. If false, invert so selected tags are not accessible.
     duration:
       type: number
       description: The length of the item in seconds. Will be 0 if no audio is associated with the item.
@@ -1253,6 +1304,87 @@ components:
           $ref: '#/components/schemas/feedOwnerEmail'
         feedUserId:
           $ref: '#/components/schemas/itemId'
+    username:
+      type: string
+      description: The username of the user.
+    userPassword:
+      type: string
+      description: The password of the user. Only used when creating the user or updating the password.
+    userEmail:
+      type: string
+      nullable: true
+      description: The email address of the user.
+    userType:
+      type: string
+      description: The type of user.
+      enum: ['root', 'admin', 'user', 'guest']
+    apiToken:
+      type: string
+      description: The API token of the user.
+    seriesHideFromContinueListening:
+      type: array
+      description: The series that are hidden from the "Continue Listening" section.
+      items:
+        $ref: '#/components/schemas/itemId'
+    userIsActive:
+      type: boolean
+      description: Whether the user is active.
+    userIsLocked:
+      type: boolean
+      description: Whether the user is locked.
+    userLastSeen:
+      type: number
+      description: The last time the user was seen in ms since POSIX epoch.
+    userLibrariesAccessible:
+      type: array
+      description: The libraries the user has access to.
+      nullable: true
+      items:
+        $ref: '#/components/schemas/itemId'
+    userItemTagsSelected:
+      type: array
+      description: The tags the user has selected to filter items.
+      nullable: true
+      items:
+        $ref: '#/components/schemas/tag'
+    userLinkedToOpenId:
+      type: boolean
+      description: Whether the user is linked to an OpenID.
+    openIdSub:
+      type: string
+      description: The sub claim of the OpenID token.
+    userObject:
+      type: object
+      description: A user object.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        username:
+          $ref: '#/components/schemas/username'
+        email:
+          $ref: '#/components/schemas/userEmail'
+        type:
+          $ref: '#/components/schemas/userType'
+        token:
+          $ref: '#/components/schemas/apiToken'
+        seriesHideFromContinueListening:
+          $ref: '#/components/schemas/seriesHideFromContinueListening'
+        isActive:
+          $ref: '#/components/schemas/userIsActive'
+        isLocked:
+          $ref: '#/components/schemas/userIsLocked'
+        lastSeen:
+          $ref: '#/components/schemas/userLastSeen'
+        createdAt:
+          $ref: '#/components/schemas/createdAt'
+        permissions:
+          $ref: '#/components/schemas/userPermissions'
+        hasOpenIdLink:
+          $ref: '#/components/schemas/userLinkedToOpenId'
+        librariesAccessible:
+          $ref: '#/components/schemas/userLibrariesAccessible'
+        itemTagsSelected:
+          $ref: '#/components/schemas/userItemTagsSelected'
   responses:
     badRequest:
       description: Bad request.
@@ -3602,6 +3734,182 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/seriesDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/users:
+    get:
+      operationId: getUsers
+      summary: Get users
+      description: Get all users. This endpoint will return all users, with optional paging and sorting.
+      tags:
+        - User
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/querySortUsers'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/userObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    post:
+      operationId: createUser
+      summary: Create user
+      description: Create a new user. Only one root user can exist per server.
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/username'
+                email:
+                  $ref: '#/components/schemas/userEmail'
+                password:
+                  $ref: '#/components/schemas/userPassword'
+                type:
+                  $ref: '#/components/schemas/userType'
+                isActive:
+                  $ref: '#/components/schemas/userIsActive'
+                isLocked:
+                  $ref: '#/components/schemas/userIsLocked'
+                permissions:
+                  $ref: '#/components/schemas/userPermissions'
+                librariesAccesible:
+                  $ref: '#/components/schemas/userLibrariesAccessible'
+                itemTagsSelected:
+                  $ref: '#/components/schemas/userItemTagsSelected'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/user/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathUserId'
+    get:
+      operationId: getUserById
+      summary: Get user by ID
+      description: Get a user by its ID. This endpoint returns all of the information needed for the user details page and editing.
+      tags:
+        - User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateUserById
+      summary: Update user by ID
+      description: Update a user by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/username'
+                email:
+                  $ref: '#/components/schemas/userEmail'
+                password:
+                  $ref: '#/components/schemas/userPassword'
+                type:
+                  $ref: '#/components/schemas/userType'
+                isActive:
+                  $ref: '#/components/schemas/userIsActive'
+                isLocked:
+                  $ref: '#/components/schemas/userIsLocked'
+                permissions:
+                  $ref: '#/components/schemas/userPermissions'
+                librariesAccesible:
+                  $ref: '#/components/schemas/userLibrariesAccessible'
+                itemTagsSelected:
+                  $ref: '#/components/schemas/userItemTagsSelected'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteUserById
+      summary: Remove user by ID
+      description: Remove the user and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/user/{id}/openid-unlink:
+    parameters:
+      - $ref: '#/components/parameters/pathUserId'
+    patch:
+      operationId: unlinkOpenId
+      summary: Unlink OpenID
+      description: Unlink an OpenID account from a user account.
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                openIdSub:
+                  $ref: '#/components/schemas/openIdSub'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
         '403':
           $ref: '#/components/responses/forbidden'
         '404':
