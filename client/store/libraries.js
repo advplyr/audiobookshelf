@@ -240,7 +240,8 @@ export const mutations = {
       series: [],
       narrators: [],
       languages: [],
-      publishers: []
+      publishers: [],
+      publishedDecades: []
     }
     */
     const mediaMetadata = libraryItem.media.metadata
@@ -305,6 +306,16 @@ export const mutations = {
     if (mediaMetadata.publisher && !state.filterData.publishers.includes(mediaMetadata.publisher)) {
       state.filterData.publishers.push(mediaMetadata.publisher)
       state.filterData.publishers.sort((a, b) => a.localeCompare(b))
+    }
+
+    // Add publishedDecades
+    if (mediaMetadata.publishedYear) {
+      const publishedYear = parseInt(mediaMetadata.publishedYear, 10);
+      const decade = Math.floor(publishedYear / 10) * 10
+      if (!state.filterData.publishedDecades.includes(decade)) {
+        state.filterData.publishedDecades.push(decade)
+        state.filterData.publishedDecades.sort((a, b) => a - b)
+      }
     }
 
     // Add language
