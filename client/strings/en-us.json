@@ -464,6 +464,8 @@
   "LabelProviderAuthorizationValue": "Authorization Header Value",
   "LabelPubDate": "Pub Date",
   "LabelPublishYear": "Publish Year",
+  "LabelPublishedDecade": "Published Decade",
+  "LabelPublishedDecades": "Published Decades",
   "LabelPublishedDate": "Published {0}",
   "LabelPublisher": "Publisher",
   "LabelPublishers": "Publishers",
