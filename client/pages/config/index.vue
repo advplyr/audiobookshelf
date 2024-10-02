@@ -328,7 +328,6 @@ export default {
         .dispatch('updateServerSettings', payload)
         .then(() => {
           this.updatingServerSettings = false
-          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
 
           if (payload.language) {
             // Updating language after save allows for re-rendering
