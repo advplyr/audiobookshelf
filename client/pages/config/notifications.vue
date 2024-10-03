@@ -132,7 +132,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update notification settings', error)
-          this.$toast.error(this.$strings.ToastNotificationSettingsUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.savingSettings = false

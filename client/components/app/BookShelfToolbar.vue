@@ -473,7 +473,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to re-add series to continue listening', error)
-          this.$toast.error(this.$strings.ToastItemUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processingSeries = false

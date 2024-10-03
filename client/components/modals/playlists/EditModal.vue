@@ -115,7 +115,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update playlist', error)
           this.processing = false
-          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     }
   },
