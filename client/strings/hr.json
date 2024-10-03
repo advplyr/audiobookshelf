@@ -901,6 +901,7 @@
   "ToastErrorCannotShare": "Dijeljenje na ovaj uređaj nije moguće",
   "ToastFailedToLoadData": "Učitavanje podataka nije uspjelo",
   "ToastFailedToShare": "Dijeljenje nije uspjelo",
+  "ToastFailedToUpdate": "Ažuriranje nije uspjelo",
   "ToastInvalidImageUrl": "Neispravan URL slike",
   "ToastInvalidUrl": "Neispravan URL",
   "ToastItemCoverUpdateSuccess": "Naslovnica stavke ažurirana",
