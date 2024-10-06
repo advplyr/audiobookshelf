@@ -180,7 +180,7 @@ export default {
       return this.$route.name === 'library-library-series-id' || this.paramId === 'series'
     },
     isAuthorsPage() {
-      return this.$route.name === 'library-library-authors'
+      return this.libraryBookshelfPage && this.paramId === 'authors'
     },
     isNarratorsPage() {
       return this.$route.name === 'library-library-narrators'
