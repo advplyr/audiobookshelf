@@ -58,7 +58,7 @@
         <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
           <path
             fill="currentColor"
@@ -180,7 +180,7 @@ export default {
       return this.$route.name === 'library-library-series-id' || this.paramId === 'series'
     },
     isAuthorsPage() {
-      return this.$route.name === 'library-library-authors'
+      return this.libraryBookshelfPage && this.paramId === 'authors'
     },
     isNarratorsPage() {
       return this.$route.name === 'library-library-narrators'

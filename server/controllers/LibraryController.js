@@ -493,8 +493,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: undefined,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit,
+      page: req.query.page,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -502,13 +502,6 @@ class LibraryController {
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1',
       include: include.join(',')
-    }
-
-    if (!Number.isInteger(payload.limit) || payload.limit < 0) {
-      return res.status(400).send('Invalid request. Limit must be a positive integer')
-    }
-    if (!Number.isInteger(payload.page) || payload.page < 0) {
-      return res.status(400).send('Invalid request. Page must be a positive integer')
     }
 
     payload.offset = payload.page * payload.limit
@@ -602,8 +595,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit,
+      page: req.query.page,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -674,8 +667,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit,
+      page: req.query.page,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -710,8 +703,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: playlistsForUser.length,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+      limit: req.query.limit,
+      page: req.query.page
     }
 
     if (payload.limit) {
@@ -742,7 +735,7 @@ class LibraryController {
    * @param {Response} res
    */
   async getUserPersonalizedShelves(req, res) {
-    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
+    const limitPerShelf = req.query.limit || 10
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
@@ -815,7 +808,7 @@ class LibraryController {
       return res.status(400).send('Invalid request. Query param "q" must be a string')
     }
 
-    const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    const limit = req.query.limit || 12
     const query = asciiOnlyToLowerCase(req.query.q.trim())
 
     const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
@@ -873,8 +866,40 @@ class LibraryController {
    * @param {Response} res
    */
   async getAuthors(req, res) {
+    const isPaginated = req.query.limit && !isNaN(req.query.limit) && !isNaN(req.query.page)
+
+    const payload = {
+      results: [],
+      total: 0,
+      limit: isPaginated ? Number(req.query.limit) : 0,
+      page: isPaginated ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1',
+      include: req.query.include
+    }
+
+    // create order, limit and offset for pagination
+    let offset = isPaginated ? payload.page * payload.limit : undefined
+    let limit = isPaginated ? payload.limit : undefined
+    let order = undefined
+    const direction = payload.sortDesc ? 'DESC' : 'ASC'
+    if (payload.sortBy === 'name') {
+      order = [[Sequelize.literal('name COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'lastFirst') {
+      order = [[Sequelize.literal('lastFirst COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'addedAt') {
+      order = [['createdAt', direction]]
+    } else if (payload.sortBy === 'updatedAt') {
+      order = [['updatedAt', direction]]
+    } else if (payload.sortBy === 'numBooks') {
+      offset = undefined
+      limit = undefined
+    }
+
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
-    const authors = await Database.authorModel.findAll({
+    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: req.library.id
       },
@@ -888,10 +913,13 @@ class LibraryController {
           attributes: []
         }
       },
-      order: [[Sequelize.literal('name COLLATE NOCASE'), 'ASC']]
+      order: order,
+      limit: limit,
+      offset: offset,
+      distinct: true
     })
 
-    const oldAuthors = []
+    let oldAuthors = []
 
     for (const author of authors) {
       const oldAuthor = author.toOldJSONExpanded(author.books.length)
@@ -899,9 +927,25 @@ class LibraryController {
       oldAuthors.push(oldAuthor)
     }
 
-    res.json({
-      authors: oldAuthors
-    })
+    // numBooks sort is handled post-query
+    if (payload.sortBy === 'numBooks') {
+      oldAuthors.sort((a, b) => (payload.sortDesc ? b.numBooks - a.numBooks : a.numBooks - b.numBooks))
+      if (isPaginated) {
+        const startIndex = payload.page * payload.limit
+        const endIndex = startIndex + payload.limit
+        oldAuthors = oldAuthors.slice(startIndex, endIndex)
+      }
+    }
+
+    payload.results = oldAuthors
+    if (isPaginated) {
+      payload.total = count
+      res.json(payload)
+    } else {
+      res.json({
+        authors: payload.results
+      })
+    }
   }
 
   /**
@@ -1096,8 +1140,8 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+      limit: req.query.limit,
+      page: req.query.page
     }
 
     const offset = payload.page * payload.limit
@@ -1200,6 +1244,17 @@ class LibraryController {
       return res.status(404).send('Library not found')
     }
     req.library = library
+
+    // Ensure pagination query params are positive integers
+    for (const queryKey of ['limit', 'page']) {
+      if (req.query[queryKey] !== undefined) {
+        req.query[queryKey] = !isNaN(req.query[queryKey]) ? Number(req.query[queryKey]) : 0
+        if (!Number.isInteger(req.query[queryKey]) || req.query[queryKey] < 0) {
+          return res.status(400).send(`Invalid request. ${queryKey} must be a positive integer`)
+        }
+      }
+    }
+
     next()
   }
 }

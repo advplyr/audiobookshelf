@@ -920,6 +920,7 @@
   "ToastLibraryScanFailedToStart": "Failed to start scan",
   "ToastLibraryScanStarted": "Library scan started",
   "ToastLibraryUpdateSuccess": "Library \"{0}\" updated",
+  "ToastMatchAllAuthorsFailed": "Failed to match all authors",
   "ToastNameEmailRequired": "Name and email are required",
   "ToastNameRequired": "Name is required",
   "ToastNewUserCreatedFailed": "Failed to create account: \"{0}\"",

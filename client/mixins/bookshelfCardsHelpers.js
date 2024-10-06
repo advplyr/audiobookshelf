@@ -4,6 +4,7 @@ import LazySeriesCard from '@/components/cards/LazySeriesCard'
 import LazyCollectionCard from '@/components/cards/LazyCollectionCard'
 import LazyPlaylistCard from '@/components/cards/LazyPlaylistCard'
 import LazyAlbumCard from '@/components/cards/LazyAlbumCard'
+import AuthorCard from '@/components/cards/AuthorCard'
 
 export default {
   data() {
@@ -20,6 +21,7 @@ export default {
       if (this.entityName === 'collections') return Vue.extend(LazyCollectionCard)
       if (this.entityName === 'playlists') return Vue.extend(LazyPlaylistCard)
       if (this.entityName === 'albums') return Vue.extend(LazyAlbumCard)
+      if (this.entityName === 'authors') return Vue.extend(AuthorCard)
       return Vue.extend(LazyBookCard)
     },
     getComponentName() {
@@ -27,6 +29,7 @@ export default {
       if (this.entityName === 'collections') return 'cards-lazy-collection-card'
       if (this.entityName === 'playlists') return 'cards-lazy-playlist-card'
       if (this.entityName === 'albums') return 'cards-lazy-album-card'
+      if (this.entityName === 'authors') return 'cards-author-card'
       return 'cards-lazy-book-card'
     },
     async setCardSize() {
@@ -46,13 +49,14 @@ export default {
         props.orderBy = this.seriesSortBy
       }
       const instance = new ComponentClass({
-        propsData: props
+        propsData: props,
+        parent: this
       })
       instance.$mount()
       this.resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
-          this.cardWidth = entry.contentRect.width
-          this.cardHeight = entry.contentRect.height
+          this.cardWidth = entry.borderBoxSize[0].inlineSize
+          this.cardHeight = entry.borderBoxSize[0].blockSize
           this.resizeObserver.disconnect()
           this.$refs.bookshelf.removeChild(instance.$el)
         }
@@ -72,7 +76,7 @@ export default {
       })
       const timeAfter = performance.now()
     },
-    async mountEntityCard(index) {
+    mountEntityCard(index) {
       var shelf = Math.floor(index / this.entitiesPerShelf)
       var shelfEl = document.getElementById(`shelf-${shelf}`)
       if (!shelfEl) {
@@ -114,6 +118,7 @@ export default {
       const _this = this
       const instance = new ComponentClass({
         propsData: props,
+        parent: this,
         created() {
           this.$on('edit', (entity) => {
             if (_this.editEntity) _this.editEntity(entity)
