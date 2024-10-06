@@ -479,8 +479,6 @@ export default {
         })
     },
     async fetchAllAuthors() {
-      const authors = []
-
       // fetch all authors from the server, in the order that they are currently displayed
       const response = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/authors?sort=${this.settings.authorSortBy}&desc=${this.settings.authorSortDesc}`)
       return response.authors
