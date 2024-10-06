@@ -920,6 +920,7 @@
   "ToastLibraryScanFailedToStart": "Error al iniciar el escaneo",
   "ToastLibraryScanStarted": "Se inició el escaneo de la biblioteca",
   "ToastLibraryUpdateSuccess": "Biblioteca \"{0}\" actualizada",
+  "ToastMatchAllAuthorsFailed": "No se pudo hacer coincidir todos los autores",
   "ToastNameEmailRequired": "Nombre y correo electrónico obligatorios",
   "ToastNameRequired": "Nombre obligatorio",
   "ToastNewUserCreatedFailed": "Error al crear la cuenta: \"{0}\"",
