@@ -873,8 +873,40 @@ class LibraryController {
    * @param {Response} res
    */
   async getAuthors(req, res) {
+    const isPaginated = req.query.limit && !isNaN(req.query.limit) && req.query.page && !isNaN(req.query.page)
+
+    const payload = {
+      results: [],
+      total: 0,
+      limit: isPaginated ? Number(req.query.limit) : 0,
+      page: isPaginated ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1',
+      include: req.query.include
+    }
+
+    // create order, limit and offset for pagination
+    let offset = isPaginated ? payload.page * payload.limit : undefined
+    let limit = isPaginated ? payload.limit : undefined
+    let order = undefined
+    const direction = payload.sortDesc ? 'DESC' : 'ASC'
+    if (payload.sortBy === 'name') {
+      order = [[Sequelize.literal('name COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'lastFirst') {
+      order = [[Sequelize.literal('lastFirst COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'addedAt') {
+      order = [['createdAt', direction]]
+    } else if (payload.sortBy === 'updatedAt') {
+      order = [['updatedAt', direction]]
+    } else if (payload.sortBy === 'numBooks') {
+      offset = undefined
+      limit = undefined
+    }
+
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
-    const authors = await Database.authorModel.findAll({
+    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: req.library.id
       },
@@ -888,10 +920,13 @@ class LibraryController {
           attributes: []
         }
       },
-      order: [[Sequelize.literal('name COLLATE NOCASE'), 'ASC']]
+      order: order,
+      limit: limit,
+      offset: offset,
+      distinct: true
     })
 
-    const oldAuthors = []
+    let oldAuthors = []
 
     for (const author of authors) {
       const oldAuthor = author.toOldJSONExpanded(author.books.length)
@@ -899,9 +934,25 @@ class LibraryController {
       oldAuthors.push(oldAuthor)
     }
 
-    res.json({
-      authors: oldAuthors
-    })
+    // numBooks sort is handled post-query
+    if (payload.sortBy === 'numBooks') {
+      oldAuthors.sort((a, b) => (payload.sortDesc ? b.numBooks - a.numBooks : a.numBooks - b.numBooks))
+      if (isPaginated) {
+        const startIndex = payload.page * payload.limit
+        const endIndex = startIndex + payload.limit
+        oldAuthors = oldAuthors.slice(startIndex, endIndex)
+      }
+    }
+
+    payload.results = oldAuthors
+    if (isPaginated) {
+      payload.total = count
+      res.json(payload)
+    } else {
+      res.json({
+        authors: payload.results
+      })
+    }
   }
 
   /**
