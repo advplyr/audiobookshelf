@@ -920,6 +920,7 @@
   "ToastLibraryScanFailedToStart": "Pregleda ni bilo mogoče začeti",
   "ToastLibraryScanStarted": "Pregled knjižnice se je začel",
   "ToastLibraryUpdateSuccess": "Knjižnica \"{0}\" je bila posodobljena",
+  "ToastMatchAllAuthorsFailed": "Ujemanje vseh avtorjev ni bilo uspešno",
   "ToastNameEmailRequired": "Ime in e-pošta sta obvezna",
   "ToastNameRequired": "Ime je obvezno",
   "ToastNewUserCreatedFailed": "Računa ni bilo mogoče ustvariti: \"{0}\"",
