@@ -920,6 +920,7 @@
   "ToastLibraryScanFailedToStart": "Skeniranje nije uspjelo",
   "ToastLibraryScanStarted": "Skeniranje knjižnice započelo",
   "ToastLibraryUpdateSuccess": "Knjižnica \"{0}\" ažurirana",
+  "ToastMatchAllAuthorsFailed": "Nisu prepoznati svi autori",
   "ToastNameEmailRequired": "Ime i adresa e-pošte su obavezni",
   "ToastNameRequired": "Ime je obavezno",
   "ToastNewUserCreatedFailed": "Račun \"{0}\" nije uspješno izrađen",
