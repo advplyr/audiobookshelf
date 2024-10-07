@@ -567,7 +567,7 @@
   "LabelStatsMinutesListening": "Gehörte Minuten",
   "LabelStatsOverallDays": "Gesamte Tage",
   "LabelStatsOverallHours": "Gesamte Stunden",
-  "LabelStatsWeekListening": "Wochenhördauer",
+  "LabelStatsWeekListening": "7-Tage-Durchschnitt",
   "LabelSubtitle": "Untertitel",
   "LabelSupportedFileTypes": "Unterstützte Dateitypen",
   "LabelTag": "Schlagwort",
