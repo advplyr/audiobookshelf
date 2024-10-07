@@ -601,6 +601,11 @@ class Database {
     this.libraryFilterData[libraryId].publishers.push(publisher)
   }
 
+  addPublishedDecadeToFilterData(libraryId, decade) {
+    if (!this.libraryFilterData[libraryId] || !decade || this.libraryFilterData[libraryId].publishedDecades.includes(decade)) return
+    this.libraryFilterData[libraryId].publishedDecades.push(decade)
+  }
+
   addLanguageToFilterData(libraryId, language) {
     if (!this.libraryFilterData[libraryId] || !language || this.libraryFilterData[libraryId].languages.includes(language)) return
     this.libraryFilterData[libraryId].languages.push(language)
