@@ -2718,6 +2718,112 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/displayPodcastObject'
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: addPodcastToLibraryById
+      summary: Add podcast to library by ID
+      description: Add a podcast to the library by its ID. This endpoint will add the podcast to the library.
+      tags:
+        - Library
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                podcast:
+                  $ref: '#/components/schemas/podcastObject'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/displayPodcastObject'
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/library/{id}/opml:
+    parameters:
+      - $ref: '#/components/parameters/pathLibraryId'
+    get:
+      operationId: getLibraryOpmlById
+      summary: Get library OPML
+      description: Get the library's OPML file by library ID. This endpoint will return the library's OPML file.
+      tags:
+        - Library
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: createPodcastByOpml
+      summary: Create podcast by OPML
+      description: Add podcasts to library by using an OPML file. This endpoint accepts a file upload or a link to an OPML file.
+      tags:
+        - Library
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                opml:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL to download the OPML file from.
+                  format: uri
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of podcasts imported.
+                  success:
+                    type: array
+                    description: The podcasts successfully imported.
+                    items:
+                      type: string
+                      description: The podcast name which was successfully imported.
+                  errors:
+                    type: array
+                    description: The podcasts that failed to import.
+                    items:
+                      type: string
+                      description: The podcast name which failed to import.
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
   /api/library/{id}/podcast-episodes:
@@ -3555,27 +3661,6 @@ paths:
                     description: The number of unmatched items not found in the online database.
         '403':
           $ref: '#/components/responses/forbidden'
-        '404':
-          $ref: '#/components/responses/notFound'
-  /api/library/{id}/opml:
-    parameters:
-      - $ref: '#/components/parameters/pathLibraryId'
-    get:
-      operationId: getLibraryOpmlById
-      summary: Get library OPML by ID
-      description: Generate an OPML file for the library. This endpoint is only available for podcast libraries.
-      tags:
-        - Library
-      responses:
-        '200':
-          description: OK
-          content:
-            application/xml:
-              schema:
-                type: string
-                format: binary
-        '403':
-          $ref: '#/components/responses/podcastLibraryOnly'
         '404':
           $ref: '#/components/responses/notFound'
   /api/email/settings:
