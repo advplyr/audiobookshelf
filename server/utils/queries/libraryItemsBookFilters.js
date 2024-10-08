@@ -228,6 +228,11 @@ module.exports = {
       } else if (value === 'series') {
         mediaWhere['$series.id$'] = null
       }
+    } else if (group === 'publishedDecades') {
+      const year = parseInt(value, 10)
+      mediaWhere['publishedYear'] = {
+        [Sequelize.Op.between]: year >= 1000 ? [year, year + 9] : [year * 10, (year + 1) * 10 - 1]
+      }
     }
 
     return { mediaWhere, replacements }

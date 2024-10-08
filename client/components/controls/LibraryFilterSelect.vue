@@ -190,6 +190,12 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelPublishedDecade,
+          textPlural: this.$strings.LabelPublishedDecades,
+          value: 'publishedDecades',
+          sublist: true
+        },
+        {
           text: this.$strings.LabelLanguage,
           textPlural: this.$strings.LabelLanguages,
           value: 'languages',
@@ -337,6 +343,9 @@ export default {
     },
     publishers() {
       return this.filterData.publishers || []
+    },
+    publishedDecades() {
+      return this.filterData.publishedDecades || []
     },
     progress() {
       return [
