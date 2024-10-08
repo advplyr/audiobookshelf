@@ -1407,6 +1407,85 @@ components:
           $ref: '#/components/schemas/userLibrariesAccessible'
         itemTagsSelected:
           $ref: '#/components/schemas/userItemTagsSelected'
+    playMethod:
+      type: integer
+      description: The method used to play the media.
+      enum: [0, 1, 2, 3]
+    deviceInfo:
+      type: object
+      description: Information about the media player.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        userId:
+          $ref: '#/components/schemas/itemId'
+        deviceId:
+          type: string
+          description: The ID of the device.
+        ipAddress:
+          type: string
+          description: The IP address of the device.
+        clientVersion:
+          type: string
+          description: The version of the client.
+        manufacturer:
+          type: string
+          description: The manufacturer of the device.
+        model:
+          type: string
+          description: The model of the device.
+        sdkVersion:
+          type: string
+          description: The SDK version of the device.
+        clientName:
+          type: string
+          description: The name of the client.
+        deviceName:
+          type: string
+          description: The name of the device.
+    listeningSessionObject:
+      type: object
+      description: A listening session object.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        userId:
+          $ref: '#/components/schemas/itemId'
+        libraryId:
+          $ref: '#/components/schemas/itemId'
+        libraryItemId:
+          $ref: '#/components/schemas/itemId'
+        bookId:
+          $ref: '#/components/schemas/itemId'
+        episodeId:
+          $ref: '#/components/schemas/itemId'
+        mediaType:
+          $ref: '#/components/schemas/mediaType'
+        displayTitle:
+          $ref: '#/components/schemas/title'
+        displayAuthor:
+          $ref: '#/components/schemas/authorName'
+        mediaDuration:
+          $ref: '#/components/schemas/duration'
+        sessionStartTime:
+          type: number
+          description: The start time of the session in ms since POSIX epoch.
+        sessionEndTime:
+          type: number
+          description: The end time of the session in ms since POSIX epoch.
+        mediaStartTime:
+          type: number
+          description: The start time within the media.
+        endTime:
+          type: number
+          description: The end time within the media.
+        timeListened:
+          type: number
+          description: The time listened in seconds.
+        playMethod:
+          $ref: '#/components/schemas/playMethod'
+        deviceInfo:
+          $ref: '#/components/schemas/deviceInfo'
   responses:
     badRequest:
       description: Bad request.
@@ -4173,3 +4252,49 @@ paths:
           $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/my:
+    get:
+      operationId: getMyUser
+      summary: Get my user
+      description: Get the user information for the currently logged in user.
+      tags:
+        - Myself
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/my/listening-sessions:
+    get:
+      operationId: getMyListeningSessions
+      summary: Get my listening sessions
+      description: Get the listening sessions for the currently logged in user.
+      tags:
+        - Myself
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of listening sessions.
+                  returnCount:
+                    type: integer
+                    description: The number of listening sessions returned.
+                  listeningSessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/listeningSessionObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
