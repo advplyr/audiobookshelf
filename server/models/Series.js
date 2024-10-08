@@ -1,7 +1,6 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const { getTitlePrefixAtEnd } = require('../utils/index')
-const { asciiOnlyToLowerCase } = require('../utils/index')
 
 class Series extends Model {
   constructor(values, options) {
@@ -42,7 +41,7 @@ class Series extends Model {
   static async getByNameAndLibrary(seriesName, libraryId) {
     return this.findOne({
       where: [
-        where(fn('lower', col('name')), asciiOnlyToLowerCase(seriesName)),
+        where(fn('lower', col('name')), seriesName.toLowerCase()),
         {
           libraryId
         }

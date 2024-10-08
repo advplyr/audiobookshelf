@@ -1,6 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 const parseNameString = require('../utils/parsers/parseNameString')
-const { asciiOnlyToLowerCase } = require('../utils/index')
 
 class Author extends Model {
   constructor(values, options) {
@@ -56,7 +55,7 @@ class Author extends Model {
   static async getByNameAndLibrary(authorName, libraryId) {
     return this.findOne({
       where: [
-        where(fn('lower', col('name')), asciiOnlyToLowerCase(authorName)),
+        where(fn('lower', col('name')), authorName.toLowerCase()),
         {
           libraryId
         }
