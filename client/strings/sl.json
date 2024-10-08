@@ -640,7 +640,7 @@
   "LabelYourPlaylists": "Tvoje seznami predvajanj",
   "LabelYourProgress": "Tvoj napredek",
   "MessageAddToPlayerQueue": "Dodaj v čakalno vrsto predvajalnika",
-  "MessageAppriseDescription": "Če želite uporabljati to funkcijo, morate imeti zagnan primerek <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">API Apprise</a> ali API, ki bo obravnaval te iste zahteve. <br />Url API-ja Apprise mora biti celotna pot URL-ja za pošiljanje obvestila, npr. če je vaš primerek API-ja postrežen na <code>http://192.168.1.1:8337</code>, bi morali vnesti <code >http://192.168.1.1:8337/notify</code>.",
+  "MessageAppriseDescription": "Če želite uporabljati to funkcijo, morate imeti zagnano namestitev <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">API Apprise</a> ali API, ki bo obravnavala te iste zahteve. <br />Url API-ja Apprise mora biti celotna pot URL-ja za pošiljanje obvestila, npr. če je vaša namestitev API-ja postrežena na <code>http://192.168.1.1:8337</code>, bi morali vnesti <code >http://192.168.1.1:8337/notify</code>.",
   "MessageBackupsDescription": "Varnostne kopije vključujejo uporabnike, napredek uporabnikov, podrobnosti elementov knjižnice, nastavitve strežnika in slike, shranjene v <code>/metadata/items</code> & <code>/metadata/authors</code>. Varnostne kopije <strong>ne</strong> vključujejo datotek, shranjenih v mapah vaše knjižnice.",
   "MessageBackupsLocationEditNote": "Opomba: Posodabljanje lokacije varnostne kopije ne bo premaknilo ali spremenilo obstoječih varnostnih kopij",
   "MessageBackupsLocationNoEditNote": "Opomba: Lokacija varnostne kopije je nastavljena s spremenljivko okolja in je tu ni mogoče spremeniti.",
