@@ -16,13 +16,13 @@
  */
 async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
-  logger.info('[2.14.0 migration] UPGRADE BEGIN: 2.14.0-series-column-unique ')
+  logger.info('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique ')
 
   // Check if the unique index already exists
   const seriesIndexes = await queryInterface.showIndex('Series')
   if (seriesIndexes.some((index) => index.name === 'unique_series_name_per_library')) {
-    logger.info('[2.14.0 migration] Unique index on Series.name and Series.libraryId already exists')
-    logger.info('[2.14.0 migration] UPGRADE END: 2.14.0-series-column-unique ')
+    logger.info('[2.15.0 migration] Unique index on Series.name and Series.libraryId already exists')
+    logger.info('[2.15.0 migration] UPGRADE END: 2.15.0-series-column-unique ')
     return
   }
 
@@ -43,12 +43,12 @@ async function up({ context: { queryInterface, logger } }) {
   `)
 
   // Print out how many duplicates were found
-  logger.info(`[2.14.0 migration] Found ${duplicates.length} duplicate series`)
+  logger.info(`[2.15.0 migration] Found ${duplicates.length} duplicate series`)
 
   // Iterate over each duplicate series
   for (const duplicate of duplicates) {
     // Report the series name that is being deleted
-    logger.info(`[2.14.0 migration] Deduplicating series "${duplicate.name}" in library ${duplicate.libraryId}`)
+    logger.info(`[2.15.0 migration] Deduplicating series "${duplicate.name}" in library ${duplicate.libraryId}`)
 
     // Determine any duplicate book IDs in the `bookSeries` table for the same series
     const [duplicateBookIds] = await queryInterface.sequelize.query(
@@ -73,7 +73,7 @@ async function up({ context: { queryInterface, logger } }) {
 
     // Iterate over the duplicate book IDs if there is at least one and only keep the first row that has this bookId and seriesId
     for (const { bookId } of duplicateBookIds) {
-      logger.info(`[2.14.0 migration] Deduplicating bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
+      logger.info(`[2.15.0 migration] Deduplicating bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
       // Get all rows of `BookSeries` table that have the same `bookId` and `seriesId`. Sort by `sequence` with nulls sorted last
       const [duplicateBookSeries] = await queryInterface.sequelize.query(
         `
@@ -113,7 +113,7 @@ async function up({ context: { queryInterface, logger } }) {
           }
         )
       }
-      logger.info(`[2.14.0 migration] Finished cleanup of bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
+      logger.info(`[2.15.0 migration] Finished cleanup of bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
     }
 
     // Get all the most recent series which matches the `name` and `libraryId`
@@ -174,16 +174,16 @@ async function up({ context: { queryInterface, logger } }) {
     }
   }
 
-  logger.info(`[2.14.0 migration] Deduplication complete`)
+  logger.info(`[2.15.0 migration] Deduplication complete`)
 
   // Create a unique index based on the name and library ID for the `Series` table
   await queryInterface.addIndex('Series', ['name', 'libraryId'], {
     unique: true,
     name: 'unique_series_name_per_library'
   })
-  logger.info('[2.14.0 migration] Added unique index on Series.name and Series.libraryId')
+  logger.info('[2.15.0 migration] Added unique index on Series.name and Series.libraryId')
 
-  logger.info('[2.14.0 migration] UPGRADE END: 2.14.0-series-column-unique ')
+  logger.info('[2.15.0 migration] UPGRADE END: 2.15.0-series-column-unique ')
 }
 
 /**
@@ -194,13 +194,13 @@ async function up({ context: { queryInterface, logger } }) {
  */
 async function down({ context: { queryInterface, logger } }) {
   // Downward migration script
-  logger.info('[2.14.0 migration] DOWNGRADE BEGIN: 2.14.0-series-column-unique ')
+  logger.info('[2.15.0 migration] DOWNGRADE BEGIN: 2.15.0-series-column-unique ')
 
   // Remove the unique index
   await queryInterface.removeIndex('Series', 'unique_series_name_per_library')
-  logger.info('[2.14.0 migration] Removed unique index on Series.name and Series.libraryId')
+  logger.info('[2.15.0 migration] Removed unique index on Series.name and Series.libraryId')
 
-  logger.info('[2.14.0 migration] DOWNGRADE END: 2.14.0-series-column-unique ')
+  logger.info('[2.15.0 migration] DOWNGRADE END: 2.15.0-series-column-unique ')
 }
 
 module.exports = { up, down }
