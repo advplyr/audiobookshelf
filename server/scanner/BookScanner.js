@@ -590,9 +590,9 @@ class BookScanner {
     Database.addPublisherToFilterData(libraryItemData.libraryId, libraryItem.book.publisher)
     Database.addLanguageToFilterData(libraryItemData.libraryId, libraryItem.book.language)
 
-    const publishedYear = libraryItem.book.publishedYear;
-    const decade = publishedYear ? `${Math.floor(publishedYear / 10) * 10}` : null;
-    Database.addPublishedDecadeToFilterData(libraryItemData.libraryId, decade);
+    const publishedYear = libraryItem.book.publishedYear
+    const decade = publishedYear ? `${Math.floor(publishedYear / 10) * 10}` : null
+    Database.addPublishedDecadeToFilterData(libraryItemData.libraryId, decade)
 
     // Load for emitting to client
     libraryItem.media = await libraryItem.getMedia({

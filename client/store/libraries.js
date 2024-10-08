@@ -310,7 +310,7 @@ export const mutations = {
 
     // Add publishedDecades
     if (mediaMetadata.publishedYear) {
-      const publishedYear = parseInt(mediaMetadata.publishedYear, 10);
+      const publishedYear = parseInt(mediaMetadata.publishedYear, 10)
       const decade = Math.floor(publishedYear / 10) * 10
       if (!state.filterData.publishedDecades.includes(decade)) {
         state.filterData.publishedDecades.push(decade)
