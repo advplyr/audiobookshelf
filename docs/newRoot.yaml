@@ -557,6 +557,10 @@ components:
     hasFeedOpen:
       type: boolean
       description: Whether the item has an open feed.
+    episodeUrl:
+      type: string
+      description: The URL of the podcast episode.
+      format: uri
     rssFeed:
       type: string
       description: The RSS feed of the podcast.
@@ -1171,6 +1175,24 @@ components:
           $ref: '#/components/schemas/hasFeedOpen'
         progress:
           $ref: '#/components/schemas/progress'
+    podcastEpisodeQueueObject:
+      type: object
+      description: An episode of a podcast, only includes the information needed to include the episode in the queue.
+      properties:
+        podcastId:
+          $ref: '#/components/schemas/itemId'
+        coverPath:
+          $ref: '#/components/schemas/imagePath'
+        episodeUrl:
+          $ref: '#/components/schemas/episodeUrl'
+        libraryId:
+          $ref: '#/components/schemas/itemId'
+        episodeTitle:
+          $ref: '#/components/schemas/title'
+        episodeNumber:
+          $ref: '#/components/schemas/episodeNumber'
+        releaseDate:
+          $ref: '#/components/schemas/publishDate'
     podcastEpisodeObject:
       type: object
       description: An episode of a podcast.
@@ -1949,6 +1971,124 @@ paths:
           $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/checknew:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastId'
+    post:
+      operationId: checkNewEpisodesById
+      summary: Check for new episodes
+      description: Check for new episodes for the podcast by its ID. This endpoint will check the podcast's RSS feed for new episodes and add them to the database.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  type: integer
+                  description: The maximum number of new episodes to check for. Use 0 for unlimited.
+                  minimum: 0
+                  default: 3
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  newEpisodes:
+                    type: array
+                    description: The new episodes added to the download queue.
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodeQueueObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/download-queue:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastId'
+    get:
+      operationId: getPodcastDownloadQueueById
+      summary: Get podcast download queue by ID
+      description: Get the podcast download queue by its ID. This endpoint will return the podcast's download queue, which includes the episodes that are queued for download.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloadQueue:
+                    type: array
+                    description: The episodes queued for download.
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodeQueueObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    post:
+      operationId: addPodcastDownloadQueueById
+      summary: Add podcast episode to download queue
+      description: Add a podcast episode to the download queue by the podcast ID. This endpoint will add the episode to the end of the download queue.
+      tags:
+        - Podcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                episodes:
+                  type: array
+                  description: The podcasts to add to the download queue.
+                  items:
+                    $ref: '#/components/schemas/podcastEpisodeQueueObject'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Episodes added to download queue.
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: clearPodcastDownloadQueueById
+      summary: Clear podcast download queue by ID
+      description: Clear the podcast download queue by its ID. This endpoint will remove all episodes from the podcast's download queue.
+      tags:
+        - Podcast
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloadQueue:
+                    type: array
+                    description: The episodes removed from the download queue.
+                    items:
+                      $ref: '#/components/schemas/podcastEpisodeQueueObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
   /api/podcast/{id}/cover:
     parameters:
       - $ref: '#/components/parameters/pathPodcastId'
@@ -2091,6 +2231,40 @@ paths:
                     $ref: '#/components/schemas/imagePath'
                   success:
                     type: boolean
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/podcast/{id}/match-episodes:
+    parameters:
+      - $ref: '#/components/parameters/pathPodcastId'
+    post:
+      operationId: quickMatchPodcastEpisodesById
+      summary: Quick match podcast episodes
+      description: Quick match all episodes in the podcast against an RSS feed. Quick match will fill empty metadata fields. Metadata fields are not overwritten unless the "Prefer Matched Metadata" setting is enabled or the "force" query is set.
+      tags:
+        - Podcast
+      parameters:
+        - in: query
+          name: force
+          required: false
+          description: Whether to force the match and overwrite all metadata fields.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/podcastObject'
+                  - type: object
+                    properties:
+                      updated:
+                        type: boolean
+                        description: Whether the podcast was updated with the match.
         '403':
           $ref: '#/components/responses/forbidden'
         '404':
