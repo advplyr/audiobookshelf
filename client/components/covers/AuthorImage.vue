@@ -65,10 +65,6 @@ export default {
   },
   methods: {
     imageLoaded() {
-      var aspectRatio = 1.25
-      if (this.$refs.wrapper) {
-        aspectRatio = this.$refs.wrapper.clientHeight / this.$refs.wrapper.clientWidth
-      }
       if (this.$refs.img) {
         var { naturalWidth, naturalHeight } = this.$refs.img
         var imgAr = naturalHeight / naturalWidth
