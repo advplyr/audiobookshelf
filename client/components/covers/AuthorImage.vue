@@ -72,8 +72,7 @@ export default {
       if (this.$refs.img) {
         var { naturalWidth, naturalHeight } = this.$refs.img
         var imgAr = naturalHeight / naturalWidth
-        var arDiff = Math.abs(imgAr - aspectRatio)
-        if (arDiff > 0.15) {
+        if (imgAr < 0.5 || imgAr > 2) {
           this.showCoverBg = true
         } else {
           this.showCoverBg = false
