@@ -135,7 +135,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update collection', error)
           this.processing = false
-          this.$toast.error(this.$strings.ToastCollectionUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     }
   },

@@ -40,7 +40,11 @@ class AbMergeManager {
    * @returns {Promise<void>}
    */
   cancelEncode(task) {
-    task.setFailed('Task canceled by user')
+    const taskFailedString = {
+      text: 'Task canceled by user',
+      key: 'MessageTaskCanceledByUser'
+    }
+    task.setFailed(taskFailedString)
     return this.removeTask(task, true)
   }
 
@@ -76,8 +80,17 @@ class AbMergeManager {
       duration: libraryItem.media.duration,
       encodeOptions: options
     }
-    const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
-    task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
+
+    const taskTitleString = {
+      text: 'Encoding M4b',
+      key: 'MessageTaskEncodingM4b'
+    }
+    const taskDescriptionString = {
+      text: `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`,
+      key: 'MessageTaskEncodingM4bDescription',
+      subs: [libraryItem.media.metadata.title]
+    }
+    task.setData('encode-m4b', taskTitleString, taskDescriptionString, false, taskData)
     TaskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
@@ -98,7 +111,11 @@ class AbMergeManager {
     // Make sure the target directory is writable
     if (!(await isWritable(task.data.libraryItemDir))) {
       Logger.error(`[AbMergeManager] Target directory is not writable: ${task.data.libraryItemDir}`)
-      task.setFailed('Target directory is not writable')
+      const taskFailedString = {
+        text: 'Target directory is not writable',
+        key: 'MessageTaskTargetDirectoryNotWritable'
+      }
+      task.setFailed(taskFailedString)
       this.removeTask(task, true)
       return
     }
@@ -106,7 +123,11 @@ class AbMergeManager {
     // Create ffmetadata file
     if (!(await ffmpegHelpers.writeFFMetadataFile(task.data.ffmetadataObject, task.data.chapters, task.data.ffmetadataPath))) {
       Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
-      task.setFailed('Failed to write metadata file.')
+      const taskFailedString = {
+        text: 'Failed to write metadata file',
+        key: 'MessageTaskFailedToWriteMetadataFile'
+      }
+      task.setFailed(taskFailedString)
       this.removeTask(task, true)
       return
     }
@@ -137,7 +158,11 @@ class AbMergeManager {
         Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
       } else {
         Logger.error(`[AbMergeManager] mergeAudioFiles failed`, error)
-        task.setFailed('Failed to merge audio files')
+        const taskFailedString = {
+          text: 'Failed to merge audio files',
+          key: 'MessageTaskFailedToMergeAudioFiles'
+        }
+        task.setFailed(taskFailedString)
         this.removeTask(task, true)
       }
       return
@@ -163,8 +188,13 @@ class AbMergeManager {
       if (error.message === 'FFMPEG_CANCELED') {
         Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
       } else {
-        Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
-        task.setFailed('Failed to write metadata to m4b file')
+        Logger.error(`[AbMergeManager] Failed to embed metadata in file "${task.data.tempFilepath}"`)
+        const taskFailedString = {
+          text: `Failed to embed metadata in file ${Path.basename(task.data.tempFilepath)}`,
+          key: 'MessageTaskFailedToEmbedMetadataInFile',
+          subs: [Path.basename(task.data.tempFilepath)]
+        }
+        task.setFailed(taskFailedString)
         this.removeTask(task, true)
       }
       return
@@ -196,7 +226,11 @@ class AbMergeManager {
       await fs.remove(task.data.tempFilepath)
     } catch (err) {
       Logger.error(`[AbMergeManager] Failed to move m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`, err)
-      task.setFailed('Failed to move m4b file')
+      const taskFailedString = {
+        text: 'Failed to move m4b file',
+        key: 'MessageTaskFailedToMoveM4bFile'
+      }
+      task.setFailed(taskFailedString)
       this.removeTask(task, true)
       return
     }

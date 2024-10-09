@@ -223,7 +223,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove item from playlist', error)
-          this.$toast.error(this.$strings.ToastPlaylistUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processingRemove = false

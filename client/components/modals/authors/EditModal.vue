@@ -148,7 +148,7 @@ export default {
       var result = await this.$axios.$patch(`/api/authors/${this.authorId}`, updatePayload).catch((error) => {
         console.error('Failed', error)
         const errorMsg = error.response ? error.response.data : null
-        this.$toast.error(errorMsg || this.$strings.ToastAuthorUpdateFailed)
+        this.$toast.error(errorMsg || this.$strings.ToastFailedToUpdate)
         return null
       })
       if (result) {

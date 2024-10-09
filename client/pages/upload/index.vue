@@ -384,12 +384,6 @@ export default {
         else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')
       }
-      if (itemsUploaded) {
-        this.$toast.success(`Successfully uploaded ${itemsUploaded} item${itemsUploaded > 1 ? 's' : ''}`)
-      }
-      if (itemsFailed) {
-        this.$toast.success(`Failed to upload ${itemsFailed} item${itemsFailed > 1 ? 's' : ''}`)
-      }
       this.processing = false
       this.uploadFinished = true
     }

@@ -129,7 +129,7 @@ class Audnexus {
       return null
     }
 
-    const author = await this.authorRequest(closestMatch.asin)
+    const author = await this.authorRequest(closestMatch.asin, region)
     if (!author) {
       return null
     }

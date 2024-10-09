@@ -8,6 +8,7 @@
       <p class="truncate text-sm">{{ title }}</p>
 
       <p class="truncate text-xs text-gray-300">{{ description }}</p>
+      <p v-if="specialMessage" class="truncate text-xs text-gray-300">{{ specialMessage }}</p>
 
       <p v-if="isFailed && failedMessage" class="text-xs truncate text-red-500">{{ failedMessage }}</p>
       <p v-else-if="!isFinished && cancelingScan" class="text-xs truncate">Canceling...</p>
@@ -26,7 +27,16 @@ export default {
   },
   data() {
     return {
-      cancelingScan: false
+      cancelingScan: false,
+      specialMessage: ''
+    }
+  },
+  watch: {
+    task: {
+      immediate: true,
+      handler() {
+        this.initTask()
+      }
     }
   },
   computed: {
@@ -34,13 +44,16 @@ export default {
       return this.$store.getters['user/getIsAdminOrUp']
     },
     title() {
+      if (this.task.titleKey && this.$strings[this.task.titleKey]) {
+        return this.$getString(this.task.titleKey, this.task.titleSubs)
+      }
       return this.task.title || 'No Title'
     },
     description() {
+      if (this.task.descriptionKey && this.$strings[this.task.descriptionKey]) {
+        return this.$getString(this.task.descriptionKey, this.task.descriptionSubs)
+      }
       return this.task.description || ''
-    },
-    details() {
-      return this.task.details || 'Unknown'
     },
     isFinished() {
       return !!this.task.isFinished
@@ -52,6 +65,9 @@ export default {
       return this.isFinished && !this.isFailed
     },
     failedMessage() {
+      if (this.task.errorKey && this.$strings[this.task.errorKey]) {
+        return this.$getString(this.task.errorKey, this.task.errorSubs)
+      }
       return this.task.error || ''
     },
     action() {
@@ -87,6 +103,21 @@ export default {
     }
   },
   methods: {
+    initTask() {
+      // special message for library scan tasks
+      if (this.task?.data?.scanResults) {
+        const scanResults = this.task.data.scanResults
+        const strs = []
+        if (scanResults.added) strs.push(this.$getString('MessageTaskScanItemsAdded', [scanResults.added]))
+        if (scanResults.updated) strs.push(this.$getString('MessageTaskScanItemsUpdated', [scanResults.updated]))
+        if (scanResults.missing) strs.push(this.$getString('MessageTaskScanItemsMissing', [scanResults.missing]))
+        const changesDetected = strs.length > 0 ? strs.join(', ') : this.$strings.MessageTaskScanNoChangesNeeded
+        const timeElapsed = scanResults.elapsed ? ` (${this.$elapsedPretty(scanResults.elapsed / 1000, false, true)})` : ''
+        this.specialMessage = `${changesDetected}${timeElapsed}`
+      } else {
+        this.specialMessage = ''
+      }
+    },
     cancelScan() {
       const libraryId = this.task?.data?.libraryId
       if (!libraryId) {

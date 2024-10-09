@@ -296,7 +296,7 @@ export default {
         .then((data) => {
           this.processing = false
           if (data.error) {
-            this.$toast.error(`${this.$strings.ToastAccountUpdateFailed}: ${data.error}`)
+            this.$toast.error(`${this.$strings.ToastFailedToUpdate}: ${data.error}`)
           } else {
             console.log('Account updated', data.user)
 
@@ -313,7 +313,7 @@ export default {
           this.processing = false
           console.error('Failed to update account', error)
           var errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error(errMsg || this.$strings.ToastFailedToUpdateAccount)
+          this.$toast.error(errMsg || this.$strings.ToastFailedToUpdate)
         })
     },
     submitCreateAccount() {

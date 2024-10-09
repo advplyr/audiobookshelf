@@ -475,16 +475,26 @@ class AudioFileScanner {
 
         audioFiles.forEach((file) => {
           if (file.duration) {
-            const afChapters =
-              file.chapters?.map((c) => ({
-                ...c,
-                id: c.id + currChapterId,
-                start: c.start + currStartTime,
-                end: c.end + currStartTime
-              })) ?? []
+            // Multi-file audiobook may include the previous and next chapters embedded with close to 0 duration
+            // Filter these out and log a warning
+            // See https://github.com/advplyr/audiobookshelf/issues/3361
+            const afChaptersCleaned =
+              file.chapters?.filter((c) => {
+                if (c.end - c.start < 0.1) {
+                  libraryScan.addLog(LogLevel.WARN, `Chapter "${c.title}" has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
+                  return false
+                }
+                return true
+              }) || []
+            const afChapters = afChaptersCleaned.map((c) => ({
+              ...c,
+              id: c.id + currChapterId,
+              start: c.start + currStartTime,
+              end: c.end + currStartTime
+            }))
             chapters = chapters.concat(afChapters)
 
-            currChapterId += file.chapters?.length ?? 0
+            currChapterId += afChaptersCleaned.length ?? 0
             currStartTime += file.duration
           }
         })

@@ -816,7 +816,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove series from home', error)
-          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -834,7 +834,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to hide item from home', error)
-          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false

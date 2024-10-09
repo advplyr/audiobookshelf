@@ -1,6 +1,7 @@
 const { Request, Response, NextFunction } = require('express')
 const Database = require('../Database')
 const { version } = require('../../package.json')
+const NotificationManager = require('../managers/NotificationManager')
 
 /**
  * @typedef RequestUserObject
@@ -23,7 +24,7 @@ class NotificationController {
    */
   get(req, res) {
     res.json({
-      data: this.notificationManager.getData(),
+      data: NotificationManager.getData(),
       settings: Database.notificationSettings
     })
   }
@@ -52,7 +53,7 @@ class NotificationController {
    * @param {Response} res
    */
   getData(req, res) {
-    res.json(this.notificationManager.getData())
+    res.json(NotificationManager.getData())
   }
 
   /**
@@ -64,7 +65,7 @@ class NotificationController {
    * @param {Response} res
    */
   async fireTestEvent(req, res) {
-    await this.notificationManager.triggerNotification('onTest', { version: `v${version}` }, req.query.fail === '1')
+    await NotificationManager.triggerNotification('onTest', { version: `v${version}` }, req.query.fail === '1')
     res.sendStatus(200)
   }
 
@@ -121,7 +122,7 @@ class NotificationController {
   async sendNotificationTest(req, res) {
     if (!Database.notificationSettings.isUseable) return res.status(400).send('Apprise is not configured')
 
-    const success = await this.notificationManager.sendTestNotification(req.notification)
+    const success = await NotificationManager.sendTestNotification(req.notification)
     if (success) res.sendStatus(200)
     else res.sendStatus(500)
   }

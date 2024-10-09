@@ -132,7 +132,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update notification', error)
-          this.$toast.error(this.$strings.ToastNotificationUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false

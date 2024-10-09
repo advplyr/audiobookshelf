@@ -292,7 +292,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update email settings', error)
-          this.$toast.error(this.$strings.ToastEmailSettingsUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.savingSettings = false

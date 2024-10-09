@@ -18,6 +18,7 @@ const Task = require('../objects/Task')
 class LibraryScanner {
   constructor() {
     this.cancelLibraryScan = {}
+    /** @type {string[]} - library ids */
     this.librariesScanning = []
 
     this.scanningFilesChanged = false
@@ -30,7 +31,7 @@ class LibraryScanner {
    * @returns {boolean}
    */
   isLibraryScanning(libraryId) {
-    return this.librariesScanning.some((ls) => ls.id === libraryId)
+    return this.librariesScanning.some((lid) => lid === libraryId)
   }
 
   /**
@@ -38,8 +39,7 @@ class LibraryScanner {
    * @param {string} libraryId
    */
   setCancelLibraryScan(libraryId) {
-    const libraryScanning = this.librariesScanning.find((ls) => ls.id === libraryId)
-    if (!libraryScanning) return
+    if (!this.isLibraryScanning(libraryId)) return
     this.cancelLibraryScan[libraryId] = true
   }
 
@@ -69,14 +69,19 @@ class LibraryScanner {
     const libraryScan = new LibraryScan()
     libraryScan.setData(library)
     libraryScan.verbose = true
-    this.librariesScanning.push(libraryScan.getScanEmitData)
+    this.librariesScanning.push(libraryScan.libraryId)
 
     const taskData = {
       libraryId: library.id,
       libraryName: library.name,
       libraryMediaType: library.mediaType
     }
-    const task = TaskManager.createAndAddTask('library-scan', `Scanning "${library.name}" library`, null, true, taskData)
+    const taskTitleString = {
+      text: `Scanning "${library.name}" library`,
+      key: 'MessageTaskScanningLibrary',
+      subs: [library.name]
+    }
+    const task = TaskManager.createAndAddTask('library-scan', taskTitleString, null, true, taskData)
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
@@ -98,17 +103,31 @@ class LibraryScanner {
         await library.save()
       }
 
-      task.setFinished(`${canceled ? 'Canceled' : 'Completed'}. ${libraryScan.scanResultsString}`)
+      task.data.scanResults = libraryScan.scanResults
+      if (canceled) {
+        const taskFinishedString = {
+          text: 'Task canceled by user',
+          key: 'MessageTaskCanceledByUser'
+        }
+        task.setFinished(taskFinishedString)
+      } else {
+        task.setFinished(null, true)
+      }
     } catch (err) {
-      libraryScan.setComplete(err)
+      libraryScan.setComplete()
 
       Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}.`, err)
 
-      task.setFailed(`Failed. ${libraryScan.scanResultsString}`)
+      task.data.scanResults = libraryScan.scanResults
+      const taskFailedString = {
+        text: 'Failed',
+        key: 'MessageTaskFailed'
+      }
+      task.setFailed(taskFailedString)
     }
 
     if (this.cancelLibraryScan[libraryScan.libraryId]) delete this.cancelLibraryScan[libraryScan.libraryId]
-    this.librariesScanning = this.librariesScanning.filter((ls) => ls.id !== library.id)
+    this.librariesScanning = this.librariesScanning.filter((lid) => lid !== library.id)
 
     TaskManager.taskFinished(task)
 
@@ -441,9 +460,15 @@ class LibraryScanner {
     if (results.added) resultStrs.push(`${results.added} added`)
     if (results.updated) resultStrs.push(`${results.updated} updated`)
     if (results.removed) resultStrs.push(`${results.removed} missing`)
-    let scanResultStr = 'Scan finished with no changes'
+    let scanResultStr = 'No changes needed'
     if (resultStrs.length) scanResultStr = resultStrs.join(', ')
-    pendingTask.setFinished(scanResultStr)
+
+    pendingTask.data.scanResults = {
+      ...results,
+      text: scanResultStr,
+      elapsed: Date.now() - pendingTask.startedAt
+    }
+    pendingTask.setFinished(null, true)
     TaskManager.taskFinished(pendingTask)
 
     this.scanningFilesChanged = false
@@ -593,7 +618,7 @@ class LibraryScanner {
           }
         }
         // Scan library item for updates
-        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
+        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" with id "${existingLibraryItem.id}" - scan for updates`)
         itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {

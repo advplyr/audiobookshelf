@@ -65,7 +65,7 @@ export default {
         },
         authors: {
           component: 'cards-author-card',
-          itemPropName: 'author',
+          itemPropName: 'author-mount',
           itemIdFunc: (item) => item.id
         },
         narrators: {
