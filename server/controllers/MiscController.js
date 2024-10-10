@@ -634,7 +634,30 @@ class MiscController {
     for (const key in currentAuthenticationSettings) {
       if (settingsUpdate[key] === undefined) continue
 
-      if (key === 'authActiveAuthMethods') {
+      if (key === 'authForwardAuthPattern') {
+        const updatedValue = settingsUpdate[key]
+        if (updatedValue === '') updatedValue = null
+        let currentValue = currentAuthenticationSettings[key]
+        if (currentValue === '') currentValue = null
+
+        if (updatedValue !== currentValue) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
+          Database.serverSettings[key] = updatedValue
+          hasUpdates = true
+        }
+      } else if (key === 'authForwardAuthEnabled') {
+        if (typeof settingsUpdate[key] !== 'boolean') {
+          Logger.warn(`[MiscController] Invalid value for ${key}. Expected boolean`)
+          continue
+        }
+        let updatedValue = settingsUpdate[key]
+        let currentValue = currentAuthenticationSettings[key]
+        if (updatedValue !== currentValue) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
+          Database.serverSettings[key] = updatedValue
+          hasUpdates = true
+        }
+      } else if (key === 'authActiveAuthMethods') {
         let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
         if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
           updatedAuthMethods.sort()
