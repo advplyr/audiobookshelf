@@ -1,6 +1,10 @@
 const { createNewSortInstance } = require('../libs/fastSort')
 const Database = require('../Database')
 const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+const authorFilters = require('../utils/queries/authorFilters')
+const libraryItemFilters = require('../utils/queries/libraryItemFilters')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -76,6 +80,48 @@ module.exports = {
     })
 
     return filteredLibraryItems
+  },
+
+  /**
+   * Helper method to get stats for a specific library
+   * @param {import('express').Request} req
+   * @returns {Promise<Object>} stats
+   */
+  async getLibraryStats(req) {
+    const stats = {
+      largestItems: await libraryItemFilters.getLargestItems(req.library.id, 10)
+    };
+
+    if (req.library.mediaType === 'book') {
+      const authors = await authorFilters.getAuthorsWithCount(req.library.id, 10)
+      const genres = await libraryItemsBookFilters.getGenresWithCount(req.library.id)
+      const bookStats = await libraryItemsBookFilters.getBookLibraryStats(req.library.id)
+      const longestBooks = await libraryItemsBookFilters.getLongestBooks(req.library.id, 10)
+
+      stats.totalAuthors = await authorFilters.getAuthorsTotalCount(req.library.id)
+      stats.authorsWithCount = authors;
+      stats.totalGenres = genres.length;
+      stats.genresWithCount = genres;
+      stats.totalItems = bookStats.totalItems;
+      stats.longestItems = longestBooks;
+      stats.totalSize = bookStats.totalSize;
+      stats.totalDuration = bookStats.totalDuration;
+      stats.numAudioTracks = bookStats.numAudioFiles;
+    } else {
+      const genres = await libraryItemsPodcastFilters.getGenresWithCount(req.library.id)
+      const podcastStats = await libraryItemsPodcastFilters.getPodcastLibraryStats(req.library.id)
+      const longestPodcasts = await libraryItemsPodcastFilters.getLongestPodcasts(req.library.id, 10)
+
+      stats.totalGenres = genres.length;
+      stats.genresWithCount = genres;
+      stats.totalItems = podcastStats.totalItems;
+      stats.longestItems = longestPodcasts;
+      stats.totalSize = podcastStats.totalSize;
+      stats.totalDuration = podcastStats.totalDuration;
+      stats.numAudioTracks = podcastStats.numAudioFiles;
+    }
+
+    return stats;
   },
 
   /**
