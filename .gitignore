@@ -9,6 +9,8 @@
 /metadata/
 /client/.nuxt/
 /client/dist/
+/client/dist
+/client/.output/
 /dist/
 /deploy/
 /coverage/

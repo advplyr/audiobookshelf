@@ -415,7 +415,7 @@ export default {
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
       if (this.$isDev) {
-        src = `http://localhost:3333${this.$config.routerBasePath}${src}`
+        src = `http://localhost:3333${this.$config.public.routerBasePath}${src}`
       }
 
       audioEl.src = src

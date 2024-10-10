@@ -59,7 +59,7 @@ export default {
       return this.mediaItemShare.playbackSession
     },
     coverUrl() {
-      if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
+      if (!this.playbackSession.coverPath) return `${this.$config.public.routerBasePath}/book_placeholder.jpg`
       if (process.env.NODE_ENV === 'development') {
         return `http://localhost:3333/public/share/${this.mediaItemShare.slug}/cover`
       }

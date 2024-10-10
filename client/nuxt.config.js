@@ -1,6 +1,7 @@
-const pkg = require('./package.json')
+import { defineNuxtConfig } from '@nuxt/bridge'
+import pkg from './package.json'
 
-module.exports = {
+export default defineNuxtConfig({
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
   target: 'static',
@@ -11,9 +12,11 @@ module.exports = {
   },
   telemetry: false,
 
-  publicRuntimeConfig: {
-    version: pkg.version,
-    routerBasePath: process.env.ROUTER_BASE_PATH || ''
+  runtimeConfig: {
+    public: {
+      version: pkg.version,
+      routerBasePath: process.env.ROUTER_BASE_PATH || ''
+    }
   },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -135,7 +138,8 @@ module.exports = {
           autoprefixer: {},
         }
       }
-    }
+    },
+    transpile: ['luxon', 'cookie-es']
   },
   watchers: {
     webpack: {
@@ -148,6 +152,11 @@ module.exports = {
     host: '0.0.0.0'
   },
 
+  bridge: {
+    transpile: true,
+    nitro: true
+  },
+
   /**
  * Temporary workaround for @nuxt-community/tailwindcss-module.
  *
@@ -157,4 +166,4 @@ module.exports = {
   devServerHandlers: [],
 
   ignore: ["**/*.test.*", "**/*.cy.*"]
-}
+})
