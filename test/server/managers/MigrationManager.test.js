@@ -63,6 +63,8 @@ describe('MigrationManager', () => {
       await migrationManager.init(serverVersion)
 
       // Assert
+      expect(fsEnsureDirStub.calledOnce).to.be.true
+      expect(fsEnsureDirStub.calledWith(migrationManager.migrationsDir)).to.be.true
       expect(migrationManager.serverVersion).to.equal(serverVersion)
       expect(migrationManager.sequelize).to.equal(sequelizeStub)
       expect(migrationManager.migrationsDir).to.equal(path.join(__dirname, 'migrations'))
@@ -353,8 +355,6 @@ describe('MigrationManager', () => {
       await migrationManager.copyMigrationsToConfigDir()
 
       // Assert
-      expect(fsEnsureDirStub.calledOnce).to.be.true
-      expect(fsEnsureDirStub.calledWith(targetDir)).to.be.true
       expect(readdirStub.calledOnce).to.be.true
       expect(readdirStub.calledWith(migrationsSourceDir)).to.be.true
       expect(fsCopyStub.calledTwice).to.be.true
@@ -382,8 +382,6 @@ describe('MigrationManager', () => {
       } catch (error) {}
 
       // Assert
-      expect(fsEnsureDirStub.calledOnce).to.be.true
-      expect(fsEnsureDirStub.calledWith(targetDir)).to.be.true
       expect(readdirStub.calledOnce).to.be.true
       expect(readdirStub.calledWith(migrationsSourceDir)).to.be.true
       expect(fsCopyStub.calledTwice).to.be.true
