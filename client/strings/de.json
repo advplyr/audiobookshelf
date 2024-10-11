@@ -465,6 +465,8 @@
   "LabelPubDate": "Veröffentlichungsdatum",
   "LabelPublishYear": "Jahr",
   "LabelPublishedDate": "Veröffentlicht {0}",
+  "LabelPublishedDecade": "Jahrzehnt",
+  "LabelPublishedDecades": "Jahrzehnte",
   "LabelPublisher": "Herausgeber",
   "LabelPublishers": "Herausgeber",
   "LabelRSSFeedCustomOwnerEmail": "Benutzerdefinierte Eigentümer-E-Mail",
