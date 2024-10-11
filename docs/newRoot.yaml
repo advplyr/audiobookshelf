@@ -74,6 +74,30 @@ components:
       schema:
         type: string
         format: uuid
+    pathItemSubId:
+      name: itemId
+      in: path
+      required: true
+      description: The ID of the sub-item. This ID can be a book, series, or podcast episode.
+      schema:
+        type: string
+        format: uuid
+    pathCollectionId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the collection.
+      schema:
+        type: string
+        format: uuid
+    pathPlaylistId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the playlist.
+      schema:
+        type: string
+        format: uuid
     pathAuthorId:
       name: id
       in: path
@@ -4097,7 +4121,7 @@ paths:
       - $ref: '#/components/parameters/pathSeriesId'
     get:
       operationId: getSeriesById
-      summary: Get series by ID
+      summary: Get series
       description: Get a series by its ID. This endpoint returns all of the information needed for the series page.
       tags:
         - Series
@@ -4112,7 +4136,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateSeriesById
-      summary: Update series by ID
+      summary: Update series
       description: Update a series by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Series
@@ -4144,7 +4168,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteSeriesById
-      summary: Remove series by ID
+      summary: Remove series
       description: Remove the series and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Series
@@ -4523,3 +4547,772 @@ paths:
                       $ref: '#/components/schemas/progressObject'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/collection/{id}/books:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    get:
+      operationId: getCollectionBooksById
+      summary: Get collection of books
+      description: Get a collection by its ID. This endpoint returns all of the information needed for the collection details page and editing.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateBookCollectionById
+      summary: Update book collection
+      description: Update a collection by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                description:
+                  $ref: '#/components/schemas/description'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteBookCollectionById
+      summary: Remove book collection
+      description: Remove the collection and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/update-book:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: addOrUpdateBookToCollection
+      summary: Add or update book in collection
+      description: Add or update a book in a collection. The request body should contain the book ID and the position in the collection. If the position is not specified, the book is added to the end of the collection.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  $ref: '#/components/schemas/itemId'
+                position:
+                  type: integer
+                  description: The position in the collection to add the book.
+                  minimum: 0
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/remove-book/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+      - $ref: '#/components/parameters/pathItemSubId'
+    delete:
+      operationId: removeBookFromCollection
+      summary: Remove book from collection
+      description: Remove a book from a collection.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/bulk/update-book:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: bulkUpdateCollectionBooks
+      summary: Bulk update collection books
+      description: Bulk update the books in a collection. The request body should contain an array of objects, each containing the book ID and the position in the collection. If the position is not specified, books are added to the end of the collection in the order they are specified in the request.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  bookId:
+                    $ref: '#/components/schemas/itemId'
+                  position:
+                    type: integer
+                    description: The position in the collection to add the book.
+                    minimum: 0
+                    nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/collection/{id}/bulk/remove-book:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: bulkRemoveBooksFromCollection
+      summary: Bulk remove books from collection
+      description: Bulk remove books from a collection. The request body should contain an array of book IDs to remove.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/podcast-episodes:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    get:
+      operationId: getCollectionPodcastEpisodesById
+      summary: Get collection of podcast episodes
+      description: Get a collection by its ID. This endpoint returns all of the information needed for the collection details page and editing.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updatePodcastEpisodeCollectionById
+      summary: Update podcast episode collection
+      description: Update a collection by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                description:
+                  $ref: '#/components/schemas/description'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deletePodcastEpisodeCollectionById
+      summary: Remove podcast episode collection
+      description: Remove the collection and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/update-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: addOrUpdatePodcastEpisodeToCollection
+      summary: Add or update podcast episode in collection
+      description: Add or update a podcast episode in a collection. The request body should contain the podcast episode ID and the position in the collection. If the position is not specified, the podcast episode is added to the end of the collection.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                podcastEpisodeId:
+                  $ref: '#/components/schemas/itemId'
+                position:
+                  type: integer
+                  description: The position in the collection to add the podcast episode.
+                  minimum: 0
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/remove-podcast-episode/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+      - $ref: '#/components/parameters/pathItemSubId'
+    delete:
+      operationId: removePodcastEpisodeFromCollection
+      summary: Remove podcast episode from collection
+      description: Remove a podcast episode from a collection.
+      tags:
+        - Collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/collection/{id}/bulk/update-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: bulkUpdateCollectionPodcastEpisodes
+      summary: Bulk update collection podcast episodes
+      description: Bulk update the podcast episodes in a collection. The request body should contain an array of objects, each containing the podcast episode ID and the position in the collection. If the position is not specified, podcast episodes are added to the end of the collection in the order they are specified in the request.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  podcastEpisodeId:
+                    $ref: '#/components/schemas/itemId'
+                  position:
+                    type: integer
+                    description: The position in the collection to add the podcast episode.
+                    minimum: 0
+                    nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/collection/{id}/bulk/remove-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathCollectionId'
+    post:
+      operationId: bulkRemovePodcastEpisodesFromCollection
+      summary: Bulk remove podcast episodes from collection
+      description: Bulk remove podcast episodes from a collection. The request body should contain an array of podcast episode IDs to remove.
+      tags:
+        - Collection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  # We want to do the same thing as collections for playlists
+  /api/playlist/{id}/books:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    get:
+      operationId: getPlaylistBooksById
+      summary: Get playlist of books
+      description: Get a playlist by its ID. This endpoint returns all of the information needed for the playlist details page and editing.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateBookPlaylistById
+      summary: Update book playlist
+      description: Update a playlist by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                description:
+                  $ref: '#/components/schemas/description'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteBookPlaylistById
+      summary: Remove book playlist
+      description: Remove the playlist and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/update-book:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: addOrUpdateBookToPlaylist
+      summary: Add or update book in playlist
+      description: Add or update a book in a playlist. The request body should contain the book ID and the position in the playlist. If the position is not specified, the book is added to the end of the playlist.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookId:
+                  $ref: '#/components/schemas/itemId'
+                position:
+                  type: integer
+                  description: The position in the playlist to add the book.
+                  minimum: 0
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/remove-book/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+      - $ref: '#/components/parameters/pathItemSubId'
+    delete:
+      operationId: removeBookFromPlaylist
+      summary: Remove book from playlist
+      description: Remove a book from a playlist.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/bulk/update-book:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: bulkUpdatePlaylistBooks
+      summary: Bulk update playlist books
+      description: Bulk update the books in a playlist. The request body should contain an array of objects, each containing the book ID and the position in the playlist. If the position is not specified, books are added to the end of the playlist in the order they are specified in the request.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  bookId:
+                    $ref: '#/components/schemas/itemId'
+                  position:
+                    type: integer
+                    description: The position in the playlist to add the book.
+                    minimum: 0
+                    nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/playlist/{id}/bulk/remove-book:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: bulkRemoveBooksFromPlaylist
+      summary: Bulk remove books from playlist
+      description: Bulk remove books from a playlist. The request body should contain an array of book IDs to remove.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/podcast-episodes:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    get:
+      operationId: getPlaylistPodcastEpisodesById
+      summary: Get playlist of podcast episodes
+      description: Get a playlist by its ID. This endpoint returns all of the information needed for the playlist details page and editing.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updatePodcastEpisodePlaylistById
+      summary: Update podcast episode playlist
+      description: Update a playlist by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/title'
+                description:
+                  $ref: '#/components/schemas/description'
+                imageUrl:
+                  $ref: '#/components/schemas/imageUrl'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deletePodcastEpisodePlaylistById
+      summary: Remove podcast episode playlist
+      description: Remove the playlist and associated entries from the database. This does not delete any files from the filesystem.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/update-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: addOrUpdatePodcastEpisodeToPlaylist
+      summary: Add or update podcast episode in playlist
+      description: Add or update a podcast episode in a playlist. The request body should contain the podcast episode ID and the position in the playlist. If the position is not specified, the podcast episode is added to the end of the playlist.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                podcastEpisodeId:
+                  $ref: '#/components/schemas/itemId'
+                position:
+                  type: integer
+                  description: The position in the playlist to add the podcast episode.
+                  minimum: 0
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/remove-podcast-episode/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+      - $ref: '#/components/parameters/pathItemSubId'
+    delete:
+      operationId: removePodcastEpisodeFromPlaylist
+      summary: Remove podcast episode from playlist
+      description: Remove a podcast episode from a playlist.
+      tags:
+        - Playlist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/playlist/{id}/bulk/update-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: bulkUpdatePlaylistPodcastEpisodes
+      summary: Bulk update playlist podcast episodes
+      description: Bulk update the podcast episodes in a playlist. The request body should contain an array of objects, each containing the podcast episode ID and the position in the playlist. If the position is not specified, podcast episodes are added to the end of the playlist in the order they are specified in the request.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  podcastEpisodeId:
+                    $ref: '#/components/schemas/itemId'
+                  position:
+                    type: integer
+                    description: The position in the playlist to add the podcast episode.
+                    minimum: 0
+                    nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/playlist/{id}/bulk/remove-podcast-episode:
+    parameters:
+      - $ref: '#/components/parameters/pathPlaylistId'
+    post:
+      operationId: bulkRemovePodcastEpisodesFromPlaylist
+      summary: Bulk remove podcast episodes from playlist
+      description: Bulk remove podcast episodes from a playlist. The request body should contain an array of podcast episode IDs to remove.
+      tags:
+        - Playlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/itemId'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/podcastEpisodeCollectionDisplayObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
