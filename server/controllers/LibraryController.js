@@ -1227,6 +1227,44 @@ class LibraryController {
   }
 
   /**
+   * GET: /api/libraries/:id/podcast-titles
+   *
+   * Get podcast titles with itunesId and libraryItemId for library
+   * Used on the podcast add page in order to check if a podcast is already in the library and redirect to it
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async getPodcastTitles(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to get podcast titles`)
+      return res.sendStatus(403)
+    }
+
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: ['id', 'title', 'itunesId'],
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    })
+
+    res.json({
+      podcasts: podcasts.map((p) => {
+        return {
+          title: p.title,
+          itunesId: p.itunesId,
+          libraryItemId: p.libraryItem.id,
+          libraryId: p.libraryItem.libraryId
+        }
+      })
+    })
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res

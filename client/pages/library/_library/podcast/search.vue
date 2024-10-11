@@ -22,7 +22,7 @@
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
                 <widgets-explicit-indicator v-if="podcast.explicit" />
-                <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
+                <widgets-already-in-library-indicator v-if="podcast.alreadyInLibrary" />
               </div>
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">{{ $getString('LabelByAuthor', [podcast.artistName]) }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
@@ -211,15 +211,15 @@ export default {
     async fetchExistentPodcastsInYourLibrary() {
       this.processing = true
 
-      const podcasts = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/items?page=0&minified=1`).catch((error) => {
+      const podcastsResponse = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/podcast-titles`).catch((error) => {
         console.error('Failed to fetch podcasts', error)
         return []
       })
-      this.existentPodcasts = podcasts.results.map((p) => {
+      this.existentPodcasts = podcastsResponse.podcasts.map((p) => {
         return {
-          title: p.media.metadata.title.toLowerCase(),
-          itunesId: p.media.metadata.itunesId,
-          id: p.id
+          title: p.title.toLowerCase(),
+          itunesId: p.itunesId,
+          id: p.libraryItemId
         }
       })
       this.processing = false
