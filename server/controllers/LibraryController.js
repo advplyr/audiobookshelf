@@ -1246,11 +1246,9 @@ class LibraryController {
 
     // Ensure pagination query params are positive integers
     for (const queryKey of ['limit', 'page']) {
-      if (req.query[queryKey] !== undefined) {
-        req.query[queryKey] = !isNaN(req.query[queryKey]) ? Number(req.query[queryKey]) : 0
-        if (!Number.isInteger(req.query[queryKey]) || req.query[queryKey] < 0) {
-          return res.status(400).send(`Invalid request. ${queryKey} must be a positive integer`)
-        }
+      req.query[queryKey] = req.query[queryKey] && !isNaN(req.query[queryKey]) ? Number(req.query[queryKey]) : 0
+      if (!Number.isInteger(req.query[queryKey]) || req.query[queryKey] < 0) {
+        return res.status(400).send(`Invalid request. ${queryKey} must be a positive integer`)
       }
     }
 
