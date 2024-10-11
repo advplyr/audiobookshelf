@@ -1248,7 +1248,7 @@ class LibraryController {
     for (const queryKey of ['limit', 'page']) {
       req.query[queryKey] = req.query[queryKey] && !isNaN(req.query[queryKey]) ? Number(req.query[queryKey]) : 0
       if (!Number.isInteger(req.query[queryKey]) || req.query[queryKey] < 0) {
-        return res.status(400).send(`Invalid request. ${queryKey} must be a positive integer`)
+        return res.status(400).send(`Invalid request. ${queryKey} must be a non-negative integer`)
       }
     }
 
