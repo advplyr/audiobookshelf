@@ -492,8 +492,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: undefined,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -594,8 +594,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -666,8 +666,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -702,8 +702,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: playlistsForUser.length,
-      limit: req.query.limit,
-      page: req.query.page
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     if (payload.limit) {
@@ -1139,8 +1139,8 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      limit: req.query.limit,
-      page: req.query.page
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     const offset = payload.page * payload.limit
