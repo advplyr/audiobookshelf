@@ -66,6 +66,14 @@ components:
       schema:
         type: string
         format: uuid
+    pathItemId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the item. This ID can be a book, series, or podcast episode.
+      schema:
+        type: string
+        format: uuid
     pathAuthorId:
       name: id
       in: path
@@ -193,6 +201,22 @@ components:
       schema:
         type: string
         enum: ['not-started', 'in-progress', 'completed', 'not-completed']
+    queryHideContinueListening:
+      name: hideFromContinueListening
+      in: query
+      required: false
+      description: Do not include items which are removed from the "Continue Listening" list. True to hide, false to show.
+      schema:
+        type: boolean
+        default: false
+    queryProgressItemType:
+      name: progressItemType
+      in: query
+      required: false
+      description: The type of item to filter by progress. If not provided, return all items in progress.
+      schema:
+        type: string
+        enum: ['book', 'series', 'podcast-episode']
     queryFilterMissing:
       name: missing
       in: query
@@ -315,6 +339,15 @@ components:
         type: string
         enum: ['username', 'email', 'createdAt', 'updatedAt', 'hasOpenId', 'accountType', 'isEnabled']
         default: 'username'
+    querySortProgress:
+      name: sort
+      in: query
+      required: false
+      description: The field to sort the progress by.
+      schema:
+        type: string
+        enum: ['progress', 'createdAt', 'updatedAt']
+        default: 'updatedAt'
     queryAuthorName:
       name: name
       in: query
@@ -1486,6 +1519,56 @@ components:
           $ref: '#/components/schemas/playMethod'
         deviceInfo:
           $ref: '#/components/schemas/deviceInfo'
+    audioProgress:
+      type: number
+      description: The progress of the item in seconds.
+    audioProgressPercent:
+      type: number
+      description: The progress of the item as a percentage.
+    ebookProgress:
+      type: string
+      description: The location in the ebook that the user has read to.
+    ebookProgressPercent:
+      type: number
+      description: The progress of the item as a percentage.
+    isFinished:
+      type: boolean
+      description: Whether the item is finished.
+    finishedAt:
+      type: number
+      description: The time the item was finished in ms since POSIX epoch.
+    hideFromContinueListening:
+      type: boolean
+      description: Whether the item is hidden from the "Continue Listening" section.
+    lastPlayed:
+      type: number
+      description: The last time the item was played in ms since POSIX epoch.
+    progressObject:
+      type: object
+      description: The user progress of an item.
+      properties:
+        userId:
+          $ref: '#/components/schemas/itemId'
+        itemId:
+          $ref: '#/components/schemas/itemId'
+        mediaType:
+          $ref: '#/components/schemas/mediaType'
+        audioProgress:
+          $ref: '#/components/schemas/audioProgress'
+        audioPercent:
+          $ref: '#/components/schemas/audioProgressPercent'
+        ebookProgress:
+          $ref: '#/components/schemas/ebookProgress'
+        ebookPercent:
+          $ref: '#/components/schemas/ebookProgressPercent'
+        isFinished:
+          $ref: '#/components/schemas/isFinished'
+        hideFromContinueListening:
+          $ref: '#/components/schemas/hideFromContinueListening'
+        finishedAt:
+          $ref: '#/components/schemas/finishedAt'
+        lastPlayed:
+          $ref: '#/components/schemas/lastPlayed'
   responses:
     badRequest:
       description: Bad request.
@@ -4296,5 +4379,147 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/listeningSessionObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/my/progress/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathItemId'
+    get:
+      operationId: getMyProgress
+      summary: Get my progress
+      description: Get the progress for an item for the currently logged in user. The item ID can be a book, series, or podcast episode.
+      tags:
+        - Myself
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/progressObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    patch:
+      operationId: updateMyProgress
+      summary: Update my progress
+      description: Update the progress for an item for the currently logged in user. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Myself
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/audioProgress'
+                - $ref: '#/components/schemas/audioProgressPercent'
+                - $ref: '#/components/schemas/ebookProgress'
+                - $ref: '#/components/schemas/ebookProgressPercent'
+                - $ref: '#/components/schemas/isFinished'
+                - $ref: '#/components/schemas/hideFromContinueListening'
+                - $ref: '#/components/schemas/finishedAt'
+                - $ref: '#/components/schemas/lastPlayed'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/progressObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteMyProgress
+      summary: Remove my progress
+      description: Remove the progress for an item for the currently logged in user.
+      tags:
+        - Myself
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/progressObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/my/progress/batch-update:
+    patch:
+      operationId: updateMyProgressBatch
+      summary: Update my progress in batch
+      description: Update the progress for multiple items for the currently logged in user. The request body should contain an array of objects, each containing the item ID and the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
+      tags:
+        - Myself
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/itemId'
+                  - $ref: '#/components/schemas/audioProgress'
+                  - $ref: '#/components/schemas/audioProgressPercent'
+                  - $ref: '#/components/schemas/ebookProgress'
+                  - $ref: '#/components/schemas/ebookProgressPercent'
+                  - $ref: '#/components/schemas/isFinished'
+                  - $ref: '#/components/schemas/hideFromContinueListening'
+                  - $ref: '#/components/schemas/finishedAt'
+                  - $ref: '#/components/schemas/lastPlayed'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+                    description: The number of items updated.
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/my/progress:
+    get:
+      operationId: getMyItemsInProgress
+      summary: Get all my items in progress
+      description: Get the items in progress for the currently logged in user. This endpoint only returns the progress object and does not return the full media object for displaying. This endpoint will return all items in progress, with optional paging and sorting. This endpoint can be used to get rows for the home page.
+      tags:
+        - Myself
+      parameters:
+        - $ref: '#/components/parameters/queryLimit'
+        - $ref: '#/components/parameters/queryPage'
+        - $ref: '#/components/parameters/queryHideContinueListening'
+        - $ref: '#/components/parameters/queryProgressItemType'
+        - $ref: '#/components/parameters/querySortProgress'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of items in progress.
+                  returnCount:
+                    type: integer
+                    description: The number of items in progress returned.
+                  itemsInProgress:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/progressObject'
         '403':
           $ref: '#/components/responses/forbidden'
