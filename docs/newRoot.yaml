@@ -129,6 +129,14 @@ components:
       description: The slug of the feed.
       schema:
         type: string
+    pathBackupId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the backup.
+      schema:
+        type: string
+        format: uuid
     queryLimit:
       name: limit
       in: query
@@ -1593,6 +1601,54 @@ components:
           $ref: '#/components/schemas/finishedAt'
         lastPlayed:
           $ref: '#/components/schemas/lastPlayed'
+    backupObject:
+      type: object
+      description: A backup object.
+      properties:
+        id:
+          $ref: '#/components/schemas/itemId'
+        databaseType:
+          type: string
+          description: The type of database.
+          example: sqlite
+        backupTime:
+          type: number
+          description: The time the backup was created in ms since POSIX epoch.
+        backupSize:
+          $ref: '#/components/schemas/size'
+        serverVersion:
+          type: string
+          description: The version of the server when the backup was created.
+          example: 2.14.0
+        path:
+          type: string
+          description: The path to the backup file.
+        fullPath:
+          type: string
+          description: The full path to the backup file.
+        filename:
+          type: string
+          description: The name of the backup file.
+    backupSettings:
+      type: object
+      description: The backup settings for the server.
+      properties:
+        automaticBackupsEnabled:
+          type: boolean
+          description: Whether automatic backups are enabled.
+        backupSchedule:
+          type: string
+          description: The cron schedule for automatic backups.
+        maxBackups:
+          type: integer
+          description: The maximum number of backups to keep. Use 0 for unlimited
+          minimum: 0
+          default: 5
+        maxBackupSize:
+          type: integer
+          description: The maximum size of a backup in GB. Use 0 for unlimited
+          minimum: 0
+          default: 1
   responses:
     badRequest:
       description: Bad request.
@@ -4547,6 +4603,38 @@ paths:
                       $ref: '#/components/schemas/progressObject'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/my/password:
+    patch:
+      operationId: updateMyPassword
+      summary: Update my password
+      description: Update the password for the currently logged in user. The request body should contain the current password and the new password.
+      tags:
+        - Myself
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  $ref: '#/components/schemas/userPassword'
+                newPassword:
+                  $ref: '#/components/schemas/userPassword'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
   /api/collection/{id}/books:
     parameters:
       - $ref: '#/components/parameters/pathCollectionId'
@@ -4931,7 +5019,6 @@ paths:
           $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
-  # We want to do the same thing as collections for playlists
   /api/playlist/{id}/books:
     parameters:
       - $ref: '#/components/parameters/pathPlaylistId'
@@ -5316,3 +5403,214 @@ paths:
           $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
+  /api/backup:
+    get:
+      operationId: getAllBackups
+      summary: Get all backups
+      description: Get all backups. This endpoint returns all of the information needed for the backups page.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/backupObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    patch:
+      operationId: updateBackupSettings
+      summary: Update backup settings
+      description: Update the backup settings. The request body should contain the new settings. This endpoint will return a 400 error if the backup path is set by an environment variable.
+      tags:
+        - Backup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/backupSettings'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupSettings'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/backup/create:
+    post:
+      operationId: createBackup
+      summary: Create backup
+      description: Create a backup. This endpoint creates a backup of the database and files and returns the backup information.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/backup/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathBackupId'
+    get:
+      operationId: getBackupById
+      summary: Get backup by ID
+      description: Get a backup by its ID. This endpoint returns all of the information needed for the backup details page.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteBackupById
+      summary: Remove backup
+      description: Remove a backup by its ID. This endpoint removes the backup from the database and deletes the backup files.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/backup/{id}/apply:
+    parameters:
+      - $ref: '#/components/parameters/pathBackupId'
+    post:
+      operationId: applyBackupById
+      summary: Apply backup
+      description: Apply a backup by its ID. This endpoint restores the database and files from the backup.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/backup/{id}/download:
+    parameters:
+      - $ref: '#/components/parameters/pathBackupId'
+    get:
+      operationId: downloadBackupById
+      summary: Download backup
+      description: Download a backup by its ID. This endpoint returns the backup files as a zip archive.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/backup/upload:
+    post:
+      operationId: uploadBackup
+      summary: Upload backup
+      description: Upload a backup. This endpoint uploads a backup zip archive.
+      tags:
+        - Backup
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                backup:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/backupObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/backup/path:
+    get:
+      operationId: getBackupPath
+      summary: Get backup path
+      description: Get the path to the backup directory.
+      tags:
+        - Backup
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+        '403':
+          $ref: '#/components/responses/forbidden'
+    patch:
+      operationId: updateBackupPath
+      summary: Update backup path
+      description: Update the path to the backup directory. The request body should contain the new path. This endpoint will return a 400 error if the backup path is set by an environment variable.
+      tags:
+        - Backup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  $ref: '#/components/schemas/folderPath'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/folderPath'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
