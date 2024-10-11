@@ -93,17 +93,18 @@ export default {
   },
   computed: {
     contextMenuItems() {
-      if (!this.userIsAdminOrUp) return []
-      return [
-        {
+      const menuItems = []
+      if (this.userIsAdminOrUp) {
+        menuItems.push({
           text: 'Quick match all episodes',
           action: 'quick-match-episodes'
-        },
-        {
-          text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
-          action: 'batch-mark-as-finished'
-        }
-      ]
+        })
+      }
+      menuItems.push({
+        text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
+        action: 'batch-mark-as-finished'
+      })
+      return menuItems
     },
     sortItems() {
       return [
