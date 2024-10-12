@@ -6067,3 +6067,244 @@ paths:
           $ref: '#/components/responses/badRequest'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/upload/book:
+    post:
+      operationId: uploadBook
+      summary: Upload book
+      description: Upload a book. This endpoint uploads a book zip archive.
+      tags:
+        - Upload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                book:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Book uploaded.'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/upload/podcast:
+    post:
+      operationId: uploadPodcast
+      summary: Upload podcast
+      description: Upload a podcast. This endpoint uploads a podcast zip archive.
+      tags:
+        - Upload
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                podcast:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Podcast uploaded.'
+        '400':
+          $ref: '#/components/responses/podcastLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/tags:
+    get:
+      operationId: getAllTags
+      summary: Get all tags
+      description: Get all tags. This endpoint returns all of the tags in the database.
+      tags:
+        - Misc
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/tag'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/tag/{tag}:
+    parameters:
+      - $ref: '#/components/parameters/pathTag'
+    post:
+      operationId: renameTag
+      summary: Rename tag
+      description: Rename the specificed tag.
+      tags:
+        - Misc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newName:
+                  $ref: '#/components/schemas/tag'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Tag renamed.'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteTag
+      summary: Remove tag
+      description: Remove the specified tag.
+      tags:
+        - Misc
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Tag deleted.'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/genre:
+    get:
+      operationId: getAllGenres
+      summary: Get all genres
+      description: Get all genres. This endpoint returns all of the genres in the database.
+      tags:
+        - Misc
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  genres:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/genre'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/genre/{gerne}:
+    parameters:
+      - $ref: '#/components/parameters/pathGenre'
+    post:
+      operationId: renameGenre
+      summary: Rename genre
+      description: Rename the specificed genre.
+      tags:
+        - Misc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newName:
+                  $ref: '#/components/schemas/genre'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Genre renamed.'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: deleteGenre
+      summary: Remove genre
+      description: Remove the specified genre.
+      tags:
+        - Misc
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+                example: 'Genre deleted.'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/validate-cron:
+    post:
+      operationId: validateCronExpression
+      summary: Validate cron expression
+      description: Validate a cron expression. This endpoint returns whether the cron expression is valid.
+      tags:
+        - Misc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cron:
+                  type: string
+                  description: The cron expression to validate.
+                  example: '0 0 * * *'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the cron expression is valid.
+        '400':
+          $ref: '#/components/responses/badRequest'
+    #this.router.post('/upload', MiscController.handleUpload.bind(this))
+    #this.router.get('/tasks', MiscController.getTasks.bind(this))
+    #this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
+    #this.router.patch('/sorting-prefixes', MiscController.updateSortingPrefixes.bind(this))
+    #this.router.post('/authorize', MiscController.authorize.bind(this))
+    #this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
+    #this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
+    #this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
+    #this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
+    #this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
