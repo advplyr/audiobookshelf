@@ -1601,6 +1601,19 @@ components:
           $ref: '#/components/schemas/finishedAt'
         lastPlayed:
           $ref: '#/components/schemas/lastPlayed'
+    bookmarkObject:
+      type: object
+      description: A bookmark object.
+      properties:
+        itemId:
+          $ref: '#/components/schemas/itemId'
+        title:
+          $ref: '#/components/schemas/title'
+        position:
+          type: number
+          description: The position of the bookmark in seconds.
+        createdAt:
+          $ref: '#/components/schemas/createdAt'
     backupObject:
       type: object
       description: A backup object.
@@ -4603,6 +4616,91 @@ paths:
                       $ref: '#/components/schemas/progressObject'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/my/bookmark:
+    get:
+      operationId: getMyBookmarks
+      summary: Get my bookmarks
+      description: Get the bookmarks for the currently logged in user. This endpoint will return all bookmarks.
+      tags:
+        - Myself
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: The total number of bookmarks.
+                  bookmarks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/bookmarkObject'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    post:
+      operationId: createMyBookmark
+      summary: Create my bookmark
+      description: Create a new bookmark for the currently logged in user. The request body should contain the item ID, title, and the position in the item. Each bookmark for an item must have a unique title. If the title is included, the existing bookmark will be updated.
+      tags:
+        - Myself
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId:
+                  $ref: '#/components/schemas/itemId'
+                title:
+                  $ref: '#/components/schemas/title'
+                position:
+                  type: integer
+                  description: The position in the item to bookmark.
+                  minimum: 0
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookmarkObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+    delete:
+      operationId: deleteMyBookmark
+      summary: Remove my bookmark
+      description: Remove a bookmark for the currently logged in user. The item ID and title of the bookmark must be specified.
+      tags:
+        - Myself
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId:
+                  $ref: '#/components/schemas/itemId'
+                title:
+                  $ref: '#/components/schemas/title'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bookmarkObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
   /api/my/password:
     patch:
       operationId: updateMyPassword
@@ -5610,6 +5708,144 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/folderPath'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/tool/encode/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathBookId'
+    post:
+      operationId: encodeToolById
+      summary: Encode book
+      description: Encode audiobook to M4B. This endpoint begins the encoding process for the book with the specified ID.
+      tags:
+        - Tool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bitrate:
+                  type: string
+                  description: The bitrate to encode the audiobook to.
+                  example: '64k'
+                codec:
+                  type: string
+                  description: The codec to encode the audiobook with. Use `copy` to not re-encode the audio if the source codec is compatible with M4B.
+                  example: 'aac'
+                channels:
+                  type: integer
+                  description: The number of channels to encode the audiobook with.
+                  example: 1
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Encoding started.'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+    delete:
+      operationId: cancelEncodeToolById
+      summary: Cancel encode
+      description: Cancel the encoding process for the book with the specified ID.
+      tags:
+        - Tool
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Encoding canceled.'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/tool/embed-metadata/{id}:
+    parameters:
+      - $ref: '#/components/parameters/pathBookId'
+    post:
+      operationId: embedMetadataToolById
+      summary: Embed metadata
+      description: Embed metadata into an audiobook. This endpoint embeds metadata into the book with the specified ID.
+      tags:
+        - Tool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forceEmbedChapters:
+                  type: string
+                  description: Whether to force embedding chapters even if the book already has chapters. Use `1` to force embed chapters.
+                  enum: ['0', '1']
+                backup:
+                  type: string
+                  description: Whether to create a backup of the book before embedding metadata. Use `1` to create a backup.
+                  enum: ['0', '1']
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Metadata embedded.'
+        '400':
+          $ref: '#/components/responses/bookLibraryOnly'
+        '403':
+          $ref: '#/components/responses/forbidden'
+        '404':
+          $ref: '#/components/responses/notFound'
+  /api/tool/embed-metadata/batch:
+    post:
+      operationId: embedMetadataToolBatch
+      summary: Batch embed metadata
+      description: Embed metadata into multiple audiobooks. This endpoint embeds metadata into the books with the specified IDs.
+      tags:
+        - Tool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookIds:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/itemId'
+                  description: The IDs of the books to embed metadata into.
+                forceEmbedChapters:
+                  type: string
+                  description: Whether to force embedding chapters even if the book already has chapters. Use `1` to force embed chapters.
+                  enum: ['0', '1']
+                backup:
+                  type: string
+                  description: Whether to create a backup of the book before embedding metadata. Use `1` to create a backup.
+                  enum: ['0', '1']
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Metadata embed began.'
         '400':
           $ref: '#/components/responses/badRequest'
         '403':
