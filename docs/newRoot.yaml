@@ -6031,3 +6031,39 @@ paths:
                           example: 11111
         '400':
           $ref: '#/components/responses/badRequest'
+  /api/cache/purge-all:
+    post:
+      operationId: purgeAllCache
+      summary: Purge all cache
+      description: Purge all cache. This endpoint purges all cache entries under `metadata/cache`.
+      tags:
+        - Cache
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Server cache purged.'
+        '403':
+          $ref: '#/components/responses/forbidden'
+  /api/cache/purge-items:
+    post:
+      operationId: purgeCacheItems
+      summary: Purge cache items
+      description: Purge cache items. This endpoint purges cache entries by key under `metadata/cache/items`.
+      tags:
+        - Cache
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'Item cache purged.'
+        '400':
+          $ref: '#/components/responses/badRequest'
+        '403':
+          $ref: '#/components/responses/forbidden'
