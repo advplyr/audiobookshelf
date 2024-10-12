@@ -1,10 +1,7 @@
 @font-face {
   font-family: 'absicons';
-  src: url('~static/fonts/absicons/absicons.eot?2jfq33');
-  src: url('~static/fonts/absicons/absicons.eot?2jfq33#iefix') format('embedded-opentype'),
-    url('~static/fonts/absicons/absicons.ttf?2jfq33') format('truetype'),
-    url('~static/fonts/absicons/absicons.woff?2jfq33') format('woff'),
-    url('~static/fonts/absicons/absicons.svg?2jfq33#absicons') format('svg');
+  src: url('~/static/fonts/absicons/absicons.eot?2jfq33');
+  src: url('~/static/fonts/absicons/absicons.eot?2jfq33#iefix') format('embedded-opentype'), url('~/static/fonts/absicons/absicons.ttf?2jfq33') format('truetype'), url('~/static/fonts/absicons/absicons.woff?2jfq33') format('woff'), url('~/static/fonts/absicons/absicons.svg?2jfq33#absicons') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -26,81 +23,81 @@
 }
 
 .icon-books-1:before {
-  content: "\e905";
+  content: '\e905';
 }
 
 .icon-microphone-1:before {
-  content: "\e902";
+  content: '\e902';
 }
 
 .icon-radio:before {
-  content: "\e903";
+  content: '\e903';
 }
 
 .icon-podcast:before {
-  content: "\e904";
+  content: '\e904';
 }
 
 .icon-audiobookshelf:before {
-  content: "\e900";
+  content: '\e900';
 }
 
 .icon-database:before {
-  content: "\e906";
+  content: '\e906';
 }
 
 .icon-microphone-2:before {
-  content: "\e901";
+  content: '\e901';
 }
 
 .icon-headphones:before {
-  content: "\e910";
+  content: '\e910';
 }
 
 .icon-music:before {
-  content: "\e911";
+  content: '\e911';
 }
 
 .icon-video:before {
-  content: "\e914";
+  content: '\e914';
 }
 
 .icon-microphone-3:before {
-  content: "\e91e";
+  content: '\e91e';
 }
 
 .icon-book-1:before {
-  content: "\e91f";
+  content: '\e91f';
 }
 
 .icon-books-2:before {
-  content: "\e920";
+  content: '\e920';
 }
 
 .icon-file-picture:before {
-  content: "\e927";
+  content: '\e927';
 }
 
 .icon-database-1:before {
-  content: "\e964";
+  content: '\e964';
 }
 
 .icon-rocket:before {
-  content: "\e9a5";
+  content: '\e9a5';
 }
 
 .icon-power:before {
-  content: "\e9b5";
+  content: '\e9b5';
 }
 
 .icon-star:before {
-  content: "\e9d9";
+  content: '\e9d9';
 }
 
 .icon-heart:before {
-  content: "\e9da";
+  content: '\e9da';
 }
 
 .icon-rss:before {
-  content: "\ea9b";
+  content: '\ea9b';
 }
