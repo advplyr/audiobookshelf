@@ -401,6 +401,57 @@ components:
       description: The region to search for the book or author.
       schema:
         type: string
+    querySearchProvider:
+      name: provider
+      in: query
+      required: false
+      description: The provider to use for searching.
+      schema:
+        type: string
+    querySearchTitle:
+      name: title
+      in: query
+      required: false
+      description: The title to use for searching.
+      schema:
+        type: string
+    querySearchAuthor:
+      name: author
+      in: query
+      required: false
+      description: The author to use for searching.
+      schema:
+        type: string
+    querySearchId:
+      name: id
+      in: query
+      required: false
+      description: The library item ID to use for searching.
+      schema:
+        type: string
+    querySearchIsPodcast:
+      name: isPodcast
+      in: query
+      required: false
+      description: Whether the search is for a podcast.
+      schema:
+        type: integer
+        description: 0 for false, 1 for true
+        enum: [0, 1]
+    querySearchTerm:
+      name: term
+      in: query
+      required: false
+      description: The search term to use for searching.
+      schema:
+        type: string
+    querySearchAsin:
+      name: asin
+      in: query
+      required: false
+      description: The ASIN to use for searching.
+      schema:
+        type: string
   schemas:
     itemId:
       type: string
@@ -5850,3 +5901,133 @@ paths:
           $ref: '#/components/responses/badRequest'
         '403':
           $ref: '#/components/responses/forbidden'
+  /api/search/covers:
+    get:
+      operationId: findCovers
+      summary: Find covers
+      description: Find covers by title. This endpoint searches for covers by title and returns the results.
+      tags:
+        - Search
+      parameters:
+        - $ref: '#/components/parameters/querySearchTitle'
+        - $ref: '#/components/parameters/querySearchAuthor'
+        - $ref: '#/components/parameters/querySearchProvider'
+        - $ref: '#/components/parameters/querySearchIsPodcast'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  covers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/imageUrl'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/search/book:
+    get:
+      operationId: findBooks
+      summary: Find books
+      description: Find books by title. This endpoint searches for books by title and returns the results.
+      tags:
+        - Search
+      parameters:
+        - $ref: '#/components/parameters/querySearchId'
+        - $ref: '#/components/parameters/querySearchTitle'
+        - $ref: '#/components/parameters/querySearchAuthor'
+        - $ref: '#/components/parameters/querySearchProvider'
+        - $ref: '#/components/parameters/querySearchIsPodcast'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/imageUrl'
+                        - $ref: '#/components/schemas/title'
+                        - $ref: '#/components/schemas/authorName'
+                        - $ref: '#/components/schemas/description'
+                        - $ref: '#/components/schemas/publishYear'
+                        - $ref: '#/components/schemas/genreArray'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/search/podcast:
+    get:
+      operationId: findPodcasts
+      summary: Find podcasts
+      description: Find podcasts by title. This endpoint searches for podcasts by title and returns the results.
+      tags:
+        - Search
+      parameters:
+        - $ref: '#/components/parameters/querySearchTerm'
+        - $ref: '#/components/parameters/querySearchProvider'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  podcasts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/podcastMatchObject'
+        '400':
+          $ref: '#/components/responses/badRequest'
+  /api/search/chapter:
+    get:
+      operationId: findChapters
+      summary: Find chapters
+      description: Find chapters by title. This endpoint searches for chapters by ASIN (Audible SIN) and returns the results.
+      tags:
+        - Search
+      parameters:
+        - $ref: '#/components/parameters/querySearchAsin'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lengthSeconds:
+                    type: integer
+                    description: The length of the book in seconds.
+                    example: 1234
+                  lengthMilliseconds:
+                    type: integer
+                    description: The length of the book in milliseconds.
+                    example: 1234567
+                  chapters:
+                    type: array
+                    items:
+                      type: object
+                      description: The chapter information.
+                      properties:
+                        title:
+                          $ref: '#/components/schemas/title'
+                        startTime:
+                          type: integer
+                          description: The start time of the chapter in milliseconds.
+                          example: 123456
+                        endTime:
+                          type: integer
+                          description: The end time of the chapter in milliseconds.
+                          example: 234567
+                        length:
+                          type: integer
+                          description: The length of the chapter in milliseconds.
+                          example: 11111
+        '400':
+          $ref: '#/components/responses/badRequest'
