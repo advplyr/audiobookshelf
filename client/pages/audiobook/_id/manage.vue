@@ -63,11 +63,11 @@
     <div class="w-full max-w-4xl mx-auto">
       <!-- queued alert -->
       <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mb-4">
-        <p class="text-lg">Audiobook is queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+        <p class="text-lg">{{ $getString('MessageEmbedQueue', [queuedEmbedLIds.length]) }}</p>
       </widgets-alert>
       <!-- metadata embed action buttons -->
       <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
-        <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
+        <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" :label="$strings.LabelBackupAudioFiles" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
 
         <div class="flex-grow" />
 
@@ -78,7 +78,7 @@
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
         <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
+          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
         </button>
 
         <div class="flex-grow" />
@@ -94,11 +94,11 @@
         <transition name="slide">
           <div v-if="showEncodeOptions || usingCustomEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
             <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" @input="bitrateChanged" />
-              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" @input="channelsChanged" />
-              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" @input="codecChanged" />
+              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
+              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
+              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioCodec" class="m-2 max-w-40" @input="codecChanged" />
             </div>
-            <p class="text-sm text-warning">Warning: Do not update these settings unless you are familiar with ffmpeg encoding options.</p>
+            <p class="text-sm text-warning">{{ $strings.LabelEncodingWarningAdvancedSettings }}</p>
           </div>
         </transition>
       </div>
@@ -106,36 +106,36 @@
       <div class="mb-4">
         <div v-if="isEmbedTool" class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">Metadata will be embedded in the audio tracks inside your audiobook folder.</p>
+          <p class="text-gray-200 ml-2">{{ $strings.LabelEncodingInfoEmbedded }}</p>
         </div>
         <div v-else class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
-            Finished M4B will be put into your audiobook folder at <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">.../{{ libraryItemRelPath }}/</span>.
+            {{ $strings.LabelEncodingFinishedM4B }} <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">.../{{ libraryItemRelPath }}/</span>.
           </p>
         </div>
 
         <div v-if="shouldBackupAudioFiles || isM4BTool" class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
-            A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
+            {{ $strings.LabelEncodingBackupLocation }} <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. {{ $strings.LabelEncodingClearItemCache }}
           </p>
         </div>
         <div v-if="isEmbedTool && audioFiles.length > 1" class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">Chapters are not embedded in multi-track audiobooks.</p>
+          <p class="text-gray-200 ml-2">{{ $strings.LabelEncodingChaptersNotEmbedded }}</p>
         </div>
         <div v-if="isM4BTool" class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">Encoding can take up to 30 minutes.</p>
+          <p class="text-gray-200 ml-2">{{ $strings.LabelEncodingTimeWarning }}</p>
         </div>
         <div v-if="isM4BTool" class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">If you have the watcher disabled you will need to re-scan this audiobook afterwards.</p>
+          <p class="text-gray-200 ml-2">{{ $strings.LabelEncodingWatcherDisabled }}</p>
         </div>
         <div class="flex items-start mb-2">
           <span class="material-symbols text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">Once the task is started you can navigate away from this page.</p>
+          <p class="text-gray-200 ml-2">{{ $strings.LabelEncodingStartedNavigation }}</p>
         </div>
       </div>
     </div>
@@ -269,11 +269,11 @@ export default {
     },
     availableTools() {
       if (this.isSingleM4b) {
-        return [{ value: 'embed', text: 'Embed Metadata' }]
+        return [{ value: 'embed', text: this.$strings.LabelToolsEmbedMetadata }]
       } else {
         return [
-          { value: 'embed', text: 'Embed Metadata' },
-          { value: 'm4b', text: 'M4B Encoder' }
+          { value: 'embed', text: this.$strings.LabelToolsEmbedMetadata },
+          { value: 'm4b', text: this.$strings.LabelToolsM4bEncoder }
         ]
       }
     },
