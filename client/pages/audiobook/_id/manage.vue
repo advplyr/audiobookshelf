@@ -370,7 +370,7 @@ export default {
     },
     embedClick() {
       const payload = {
-        message: `Are you sure you want to embed metadata in ${this.audioFiles.length} audio files?`,
+        message: this.$getString('MessageConfirmEmbedMetadataInAudioFiles', [this.audioFiles.length]),
         callback: (confirmed) => {
           if (confirmed) {
             this.updateAudioFileMetadata()
