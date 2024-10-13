@@ -325,7 +325,7 @@ export default {
     },
     displaySubtitle() {
       if (!this.libraryItem) return '\u00A0'
-      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
+      if (this.collapsedSeries) return `${this.collapsedSeries.numBooks} ${this.$strings.LabelBooks}`
       if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
       if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
       return ''

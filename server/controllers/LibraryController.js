@@ -492,8 +492,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: undefined,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -594,8 +594,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -666,8 +666,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit,
-      page: req.query.page,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -702,8 +702,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: playlistsForUser.length,
-      limit: req.query.limit,
-      page: req.query.page
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     if (payload.limit) {
@@ -1139,8 +1139,8 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      limit: req.query.limit,
-      page: req.query.page
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     const offset = payload.page * payload.limit
@@ -1223,6 +1223,44 @@ class LibraryController {
     res.json({
       found: libraryItemsWithMetadata.length,
       removed: numRemoved
+    })
+  }
+
+  /**
+   * GET: /api/libraries/:id/podcast-titles
+   *
+   * Get podcast titles with itunesId and libraryItemId for library
+   * Used on the podcast add page in order to check if a podcast is already in the library and redirect to it
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async getPodcastTitles(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to get podcast titles`)
+      return res.sendStatus(403)
+    }
+
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: ['id', 'title', 'itunesId'],
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    })
+
+    res.json({
+      podcasts: podcasts.map((p) => {
+        return {
+          title: p.title,
+          itunesId: p.itunesId,
+          libraryItemId: p.libraryItem.id,
+          libraryId: p.libraryItem.libraryId
+        }
+      })
     })
   }
 
