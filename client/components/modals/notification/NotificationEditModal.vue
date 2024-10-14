@@ -77,7 +77,13 @@ export default {
       return this.notificationData.events || []
     },
     eventOptions() {
-      return this.notificationEvents.map((e) => ({ value: e.name, text: e.name, subtext: e.description }))
+      return this.notificationEvents.map((e) => {
+        return {
+          value: e.name,
+          text: e.name,
+          subtext: this.$strings[e.descriptionKey] || e.description
+        }
+      })
     },
     selectedEventData() {
       return this.notificationEvents.find((e) => e.name === this.newNotification.eventName)
