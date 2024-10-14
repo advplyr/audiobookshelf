@@ -130,7 +130,7 @@ class MigrationManager {
 
   async initUmzug(umzugStorage = new SequelizeStorage({ sequelize: this.sequelize })) {
     // This check is for dependency injection in tests
-    const files = (await fs.readdir(this.migrationsDir)).map((file) => path.join(this.migrationsDir, file))
+    const files = (await fs.readdir(this.migrationsDir)).filter((file) => !file.startsWith('.')).map((file) => path.join(this.migrationsDir, file))
 
     const parent = new Umzug({
       migrations: {
