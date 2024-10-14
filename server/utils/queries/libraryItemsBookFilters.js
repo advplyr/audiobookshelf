@@ -229,9 +229,10 @@ module.exports = {
         mediaWhere['$series.id$'] = null
       }
     } else if (group === 'publishedDecades') {
-      const year = parseInt(value, 10)
+      const startYear = value.padStart(4, '0')
+      const endYear = (parseInt(value, 10) + 9).toString().padStart(4, '0')
       mediaWhere['publishedYear'] = {
-        [Sequelize.Op.between]: year >= 1000 ? [year, year + 9] : [year * 10, (year + 1) * 10 - 1]
+        [Sequelize.Op.between]: [startYear, endYear]
       }
     }
 
