@@ -1,6 +1,7 @@
 const pkg = require('./package.json')
 
 const routerBasePath = process.env.ROUTER_BASE_PATH || ''
+const serverHostUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333'
 
 module.exports = {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -8,7 +9,7 @@ module.exports = {
   target: 'static',
   dev: process.env.NODE_ENV !== 'production',
   env: {
-    serverUrl: process.env.NODE_ENV === 'production' ? routerBasePath : 'http://localhost:3333',
+    serverUrl: serverHostUrl + routerBasePath,
     chromecastReceiver: 'FD1F76C5'
   },
   telemetry: false,
@@ -74,13 +75,15 @@ module.exports = {
   ],
 
   proxy: {
-    [`${routerBasePath}/api/`]: { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
+    [`${routerBasePath}/api/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
+    [`${routerBasePath}/public/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
+    [`${routerBasePath}/hls/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' }
   },
 
   io: {
     sockets: [{
       name: 'dev',
-      url: 'http://localhost:3333'
+      url: serverHostUrl
     },
     {
       name: 'prod'
