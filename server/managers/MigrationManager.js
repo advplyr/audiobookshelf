@@ -38,6 +38,7 @@ class MigrationManager {
     if (!(await fs.pathExists(this.configPath))) throw new Error(`Config path does not exist: ${this.configPath}`)
 
     this.migrationsDir = path.join(this.configPath, 'migrations')
+    await fs.ensureDir(this.migrationsDir)
 
     this.serverVersion = this.extractVersionFromTag(serverVersion)
     if (!this.serverVersion) throw new Error(`Invalid server version: ${serverVersion}. Expected a version tag like v1.2.3.`)
@@ -222,8 +223,6 @@ class MigrationManager {
   }
 
   async copyMigrationsToConfigDir() {
-    await fs.ensureDir(this.migrationsDir) // Ensure the target directory exists
-
     if (!(await fs.pathExists(this.migrationsSourceDir))) return
 
     const files = await fs.readdir(this.migrationsSourceDir)

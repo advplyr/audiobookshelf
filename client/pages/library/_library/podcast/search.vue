@@ -5,7 +5,7 @@
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="searchInput" type="search" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />
+          <ui-text-input v-model="searchInput" type="search" :disabled="processing" :placeholder="$strings.MessagePodcastSearchField" class="flex-grow mr-2 text-sm md:text-base" />
           <ui-btn type="submit" :disabled="processing" class="hidden md:block">{{ $strings.ButtonSubmit }}</ui-btn>
           <ui-btn type="submit" :disabled="processing" class="block md:hidden" small>{{ $strings.ButtonSubmit }}</ui-btn>
         </form>
@@ -108,7 +108,7 @@ export default {
 
       if (!txt || !txt.includes('<opml') || !txt.includes('<outline ')) {
         // Quick lazy check for valid OPML
-        this.$toast.error('Invalid OPML file <opml> tag not found OR an <outline> tag was not found')
+        this.$toast.error(this.$strings.MessageTaskOpmlParseFastFail)
         this.processing = false
         return
       }
@@ -117,7 +117,7 @@ export default {
         .$post(`/api/podcasts/opml/parse`, { opmlText: txt })
         .then((data) => {
           if (!data.feeds?.length) {
-            this.$toast.error('No feeds found in OPML file')
+            this.$toast.error(this.$strings.MessageTaskOpmlParseNoneFound)
           } else {
             this.opmlFeeds = data.feeds || []
             this.showOPMLFeedsModal = true
@@ -125,7 +125,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Failed to parse OPML file')
+          this.$toast.error(this.$strings.MessageTaskOpmlParseFailed)
         })
         .finally(() => {
           this.processing = false
@@ -191,7 +191,7 @@ export default {
         return
       }
       if (!podcast.feedUrl) {
-        this.$toast.error('Invalid podcast - no feed')
+        this.$toast.error(this.$strings.MessageNoPodcastFeed)
         return
       }
       this.processing = true

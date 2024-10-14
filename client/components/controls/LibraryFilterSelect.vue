@@ -414,20 +414,16 @@ export default {
           name: 'ISBN'
         },
         {
-          id: 'subtitle',
-          name: this.$strings.LabelSubtitle
-        },
-        {
           id: 'authors',
           name: this.$strings.LabelAuthor
         },
         {
-          id: 'publishedYear',
-          name: this.$strings.LabelPublishYear
+          id: 'chapters',
+          name: this.$strings.LabelChapters
         },
         {
-          id: 'series',
-          name: this.$strings.LabelSeries
+          id: 'cover',
+          name: this.$strings.LabelCover
         },
         {
           id: 'description',
@@ -438,24 +434,32 @@ export default {
           name: this.$strings.LabelGenres
         },
         {
-          id: 'tags',
-          name: this.$strings.LabelTags
+          id: 'language',
+          name: this.$strings.LabelLanguage
         },
         {
           id: 'narrators',
           name: this.$strings.LabelNarrator
         },
         {
+          id: 'publishedYear',
+          name: this.$strings.LabelPublishYear
+        },
+        {
           id: 'publisher',
           name: this.$strings.LabelPublisher
         },
         {
-          id: 'language',
-          name: this.$strings.LabelLanguage
+          id: 'series',
+          name: this.$strings.LabelSeries
         },
         {
-          id: 'cover',
-          name: this.$strings.LabelCover
+          id: 'subtitle',
+          name: this.$strings.LabelSubtitle
+        },
+        {
+          id: 'tags',
+          name: this.$strings.LabelTags
         }
       ]
     },
