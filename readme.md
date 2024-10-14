@@ -114,6 +114,11 @@ server
 
                      proxy_pass                          http://<URL_to_forward_to>;
                      proxy_redirect                      http:// https://;
+
+                     # Prevent 413 Request Entity Too Large error 
+                     # by increasing the maximum allowed size of the client request body
+                     # For example, set it to 10 GiB
+                     client_max_body_size                10240M;
                    }
 }
 ```
