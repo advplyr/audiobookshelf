@@ -112,11 +112,11 @@ export default {
       return this.$store.state.user.user
     },
     demoShareUrl() {
-      return `${window.origin}/share/${this.newShareSlug}`
+      return `${window.origin}${this.$config.routerBasePath}/share/${this.newShareSlug}`
     },
     currentShareUrl() {
       if (!this.currentShare) return ''
-      return `${window.origin}/share/${this.currentShare.slug}`
+      return `${window.origin}${this.$config.routerBasePath}/share/${this.currentShare.slug}`
     },
     currentShareTimeRemaining() {
       if (!this.currentShare) return 'Error'

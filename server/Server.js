@@ -243,6 +243,15 @@ class Server {
     await this.auth.initPassportJs()
 
     const router = express.Router()
+    // if RouterBasePath is set, modify all requests to include the base path
+    if (global.RouterBasePath) {
+      app.use((req, res, next) => {
+        if (!req.url.startsWith(global.RouterBasePath)) {
+          req.url = `${global.RouterBasePath}${req.url}`
+        }
+        next()
+      })
+    }
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
@@ -340,7 +349,7 @@ class Server {
       Logger.info('Received ping')
       res.json({ success: true })
     })
-    app.get('/healthcheck', (req, res) => res.sendStatus(200))
+    router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)

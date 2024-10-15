@@ -23,10 +23,6 @@ export default class AudioTrack {
   get relativeContentUrl() {
     if (!this.contentUrl || this.contentUrl.startsWith('http')) return this.contentUrl
 
-    if (process.env.NODE_ENV === 'development') {
-      return `${process.env.serverUrl}${this.contentUrl}?token=${this.userToken}`
-    }
-
     return this.contentUrl + `?token=${this.userToken}`
   }
 }
