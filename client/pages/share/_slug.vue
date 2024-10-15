@@ -61,16 +61,10 @@ export default {
     },
     coverUrl() {
       if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
-      if (process.env.NODE_ENV === 'development') {
-        return `http://localhost:3333/public/share/${this.mediaItemShare.slug}/cover`
-      }
-      return `/public/share/${this.mediaItemShare.slug}/cover`
+      return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
-        if (process.env.NODE_ENV === 'development') {
-          track.contentUrl = `${process.env.serverUrl}${track.contentUrl}`
-        }
         track.relativeContentUrl = track.contentUrl
         return track
       })
