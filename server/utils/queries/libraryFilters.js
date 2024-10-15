@@ -508,9 +508,9 @@ module.exports = {
         }
         if (book.publisher) data.publishers.add(book.publisher)
         // Check if published year exists and is valid
-        if (book.publishedYear && !isNaN(book.publishedYear) && book.publishedYear > 0 && book.publishedYear < 3000 && book.publishedYear.toString().length === 4) {
-          const decade = Math.floor(book.publishedYear / 10) * 10
-          data.publishedDecades.add(decade.toString())
+        if (book.publishedYear && !isNaN(book.publishedYear) && book.publishedYear > 0 && book.publishedYear < 3000) {
+          const decade = (Math.floor(book.publishedYear / 10) * 10).toString()
+          data.publishedDecades.add(decade)
         }
         if (book.language) data.languages.add(book.language)
       }
