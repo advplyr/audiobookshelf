@@ -108,6 +108,21 @@
           </div>
         </transition>
       </div>
+      <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
+        <div class="flex items-center">
+          <ui-checkbox v-model="newAuthSettings.authForwardAuthEnabled" checkbox-bg="bg" />
+          <p class="text-lg pl-4">{{ $strings.HeaderForwardAuthentication }}</p>
+        </div>
+        <transition name="slide">
+          <div v-if="newAuthSettings.authForwardAuthEnabled" class="flex flex-wrap pt-4">
+            <p class="text-lg text-gray-300 mb-2">{{ $strings.LabelForwardAuthenticationWarning }}</p>
+            <ui-text-input-with-label ref="forwardAuthPattern" v-model="newAuthSettings.authForwardAuthPattern" :disabled="savingSettings" :label="'IP Pattern'" class="mb-2" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelForwardAuthenticationPatternDescription" />
+            <ui-text-input-with-label ref="forwardAuthPath" v-model="newAuthSettings.authForwardAuthPath" :disabled="savingSettings" :label="'Logout Path'" class="mb-2" />
+            <p class="sm:pl-4 text-sm text-gray-300 mb-2">{{ $strings.LabelForwardAuthenticationLogoutDescription }}</p>
+          </div>
+        </transition>
+      </div>
       <div class="w-full flex items-center justify-end p-4">
         <ui-btn color="success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
       </div>
@@ -116,6 +131,10 @@
 </template>
 
 <script>
+import { isPrivate } from 'ip'
+import { isV4Format, isV6Format } from 'ip'
+
+
 export default {
   async asyncData({ store, redirect, app }) {
     if (!store.getters['user/getIsAdminOrUp']) {
@@ -139,6 +158,7 @@ export default {
     return {
       enableLocalAuth: false,
       enableOpenIDAuth: false,
+      enableForwardAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
       openIdSigningAlgorithmsSupportedByIssuer: [],
@@ -286,14 +306,66 @@ export default {
 
       return isValid
     },
+
+    validateForwardAuth(input){
+      let cidr = '';
+      let address = input;
+      let message = undefined;
+      console.log(input)
+      // Check to see if a cidr is included
+      if(input.includes('/')){
+        [address, cidr] = input.split('/');
+      }
+      if(isV4Format(address)) {
+        if(cidr && (cidr < 0 || cidr > 32)){
+          message = `'${cidr}' is an invalid CIDR range for ipv4, a valid range is between 0 and 32`;
+        }
+        else if (!cidr) {
+          // default to 32 if no cidr is provided
+          cidr = 32;
+        }
+      } else if (isV6Format(address)) {
+        if(cidr && (cidr < 0 || cidr > 128)){
+          message = `'${cidr}' is an invalid CIDR range for ipv6, a valid range is between 0 and 128`;
+        }else if (!cidr) {
+          // default to 128 if no cidr is provided
+          cidr = 128;
+        }
+      } else {
+        message = 'Address is not a valid ipv4 or ipv6 address';
+      }
+
+      if(!message && !isPrivate(address)){
+        message = `Address '${address}' is not a private address. For security reasons, only private addresses are allowed.`;
+      }
+      
+      return {
+        message,
+        address,
+        cidr
+        };
+    },
+
     async saveSettings() {
-      if (!this.enableLocalAuth && !this.enableOpenIDAuth) {
+      if (!this.enableLocalAuth && !this.enableOpenIDAuth && !this.enableForwardAuth) {
         this.$toast.error('Must have at least one authentication method enabled')
         return
       }
 
       if (this.enableOpenIDAuth && !this.validateOpenID()) {
         return
+      }
+
+      if(this.newAuthSettings.authForwardAuthEnabled){
+        const validationResults = this.validateForwardAuth(this.newAuthSettings.authForwardAuthPattern);
+        console.log(validationResults);
+        // if there is a message, then there was an error
+        if(validationResults.message){
+          this.$toast.error(validationResults.message);
+          return;
+        }
+        // ensure the address is in IP/CIDR format
+        this.newAuthSettings.authForwardAuthPattern = `${validationResults.address}/${validationResults.cidr}`;
       }
 
       if (!this.showCustomLoginMessage || !this.newAuthSettings.authLoginCustomMessage?.trim()) {
