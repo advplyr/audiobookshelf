@@ -101,7 +101,12 @@ export default {
       return this.$store.state.libraries.filterData || {}
     },
     podcastTypes() {
-      return this.$store.state.globals.podcastTypes || []
+      return this.$store.state.globals.podcastTypes.map((e) => {
+        return {
+          text: this.$strings[e.descriptionKey] || e.text,
+          value: e.value
+        }
+      })
     }
   },
   methods: {

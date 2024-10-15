@@ -156,7 +156,12 @@ export default {
       return this.selectedFolder.fullPath
     },
     podcastTypes() {
-      return this.$store.state.globals.podcastTypes || []
+      return this.$store.state.globals.podcastTypes.map((e) => {
+        return {
+          text: this.$strings[e.descriptionKey] || e.text,
+          value: e.value
+        }
+      })
     }
   },
   methods: {
