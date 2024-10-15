@@ -357,7 +357,8 @@ export default {
         teardown: false,
         transports: ['websocket'],
         upgrade: false,
-        reconnection: true
+        reconnection: true,
+        path: `${this.$config.routerBasePath}/socket.io`
       })
       this.$root.socket = this.socket
       console.log('Socket initialized')
