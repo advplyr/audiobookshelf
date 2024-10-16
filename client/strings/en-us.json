@@ -928,6 +928,8 @@
   "ToastBackupUploadSuccess": "Backup uploaded",
   "ToastBatchDeleteFailed": "Batch delete failed",
   "ToastBatchDeleteSuccess": "Batch delete success",
+  "ToastBatchQuickMatchFailed": "Batch Quick Match failed!",
+  "ToastBatchQuickMatchStarted": "Batch Quick Match of {0} books started!",
   "ToastBatchUpdateFailed": "Batch update failed",
   "ToastBatchUpdateSuccess": "Batch update success",
   "ToastBookmarkCreateFailed": "Failed to create bookmark",
