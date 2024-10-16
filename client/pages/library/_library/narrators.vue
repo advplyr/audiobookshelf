@@ -120,7 +120,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to updated narrator', error)
-          this.$toast.error('Failed to update narrator')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
           this.loading = false
         })
     },
