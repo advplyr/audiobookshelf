@@ -71,6 +71,15 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
+                <p id="ereader-permissions-toggle">{{ $strings.LabelPermissionsCreateEReader || "Can Create Ereader" }}</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch labeledBy="ereader-permissions-toggle" v-model="newUser.permissions.createEreader" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
                 <p id="explicit-content-permissions-toggle">{{ $strings.LabelPermissionsAccessExplicitContent }}</p>
               </div>
               <div class="w-1/2">
@@ -354,7 +363,8 @@ export default {
         accessExplicitContent: type === 'admin',
         accessAllLibraries: true,
         accessAllTags: true,
-        selectedTagsNotAccessible: false
+        selectedTagsNotAccessible: false,
+        createEreader: type === 'admin'
       }
     },
     init() {
@@ -387,7 +397,8 @@ export default {
             accessAllLibraries: true,
             accessAllTags: true,
             accessExplicitContent: false,
-            selectedTagsNotAccessible: false
+            selectedTagsNotAccessible: false,
+            createEreader: false
           },
           librariesAccessible: [],
           itemTagsSelected: []
