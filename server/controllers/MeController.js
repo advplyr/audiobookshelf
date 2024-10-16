@@ -395,6 +395,36 @@ class MeController {
   }
 
   /**
+   * POST: /api/me/ereader-devices
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async updateUserEReaderDevices(req, res) {
+    if (!req.body.ereaderDevices || !Array.isArray(req.body.ereaderDevices)) {
+      return res.status(400).send('Invalid payload. ereaderDevices array required')
+    }
+
+    const ereaderDevices = req.body.ereaderDevices
+    for (const device of ereaderDevices) {
+      if (!device.name || !device.email) {
+        return res.status(400).send('Invalid payload. ereaderDevices array items must have name and email')
+      }
+    }
+
+    const updated = Database.emailSettings.updateUserEReaderDevices(req.user, ereaderDevices)
+    if (updated) {
+      await Database.updateSetting(Database.emailSettings)
+      SocketAuthority.clientEmitter('ereader-devices-updated', {
+        ereaderDevices: Database.emailSettings.ereaderDevices
+      })
+    }
+    res.json({
+      ereaderDevices: Database.emailSettings.getEReaderDevices(req.user)
+    })
+  }
+
+  /**
    * GET: /api/me/stats/year/:year
    *
    * @param {import('express').Request} req

@@ -174,5 +174,20 @@ class EmailSettings {
   getEReaderDevice(deviceName) {
     return this.ereaderDevices.find((d) => d.name === deviceName)
   }
+
+  /**
+   * Update the ereader devices that belong to a specific user
+   *
+   * @param {import('../../models/User')} user
+   * @param {EreaderDeviceObject[]} userEReaderDevices
+   * @returns {boolean}
+   */
+  updateUserEReaderDevices(user, userEReaderDevices) {
+    // Filter to get all devices the user can't access separate
+    // then merge with the updated user devices
+    const otherDevices = this.ereaderDevices.filter((device) => !this.checkUserCanAccessDevice(device, user))
+    const ereaderDevices = otherDevices.concat(userEReaderDevices)
+    return this.update({ ereaderDevices })
+  }
 }
 module.exports = EmailSettings
