@@ -25,12 +25,7 @@ module.exports = {
     htmlAttrs: {
       lang: 'en'
     },
-    meta: [
-      { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: '' },
-      { hid: 'robots', name: 'robots', content: 'noindex' }
-    ],
+    meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { hid: 'description', name: 'description', content: '' }, { hid: 'robots', name: 'robots', content: 'noindex' }],
     script: [],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: routerBasePath + '/favicon.ico' },
@@ -43,20 +38,10 @@ module.exports = {
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [
-    '@/assets/tailwind.css',
-    '@/assets/app.css'
-  ],
+  css: ['@/assets/tailwind.css', '@/assets/app.css'],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [
-    '@/plugins/constants.js',
-    '@/plugins/init.client.js',
-    '@/plugins/axios.js',
-    '@/plugins/toast.js',
-    '@/plugins/utils.js',
-    '@/plugins/i18n.js'
-  ],
+  plugins: ['@/plugins/constants.js', '@/plugins/init.client.js', '@/plugins/axios.js', '@/plugins/toast.js', '@/plugins/utils.js', '@/plugins/i18n.js'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -68,26 +53,25 @@ module.exports = {
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [
-    'nuxt-socket-io',
-    '@nuxtjs/axios',
-    '@nuxtjs/proxy'
-  ],
+  modules: ['nuxt-socket-io', '@nuxtjs/axios', '@nuxtjs/proxy'],
 
   proxy: {
     [`${routerBasePath}/api/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
     [`${routerBasePath}/public/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
-    [`${routerBasePath}/hls/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' }
+    [`${routerBasePath}/hls/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
+    [`${routerBasePath}/dev/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/', pathRewrite: { '^/dev/': '' } }
   },
 
   io: {
-    sockets: [{
-      name: 'dev',
-      url: serverHostUrl
-    },
-    {
-      name: 'prod'
-    }]
+    sockets: [
+      {
+        name: 'dev',
+        url: serverHostUrl
+      },
+      {
+        name: 'prod'
+      }
+    ]
   },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
@@ -136,7 +120,7 @@ module.exports = {
       postcssOptions: {
         plugins: {
           tailwindcss: {},
-          autoprefixer: {},
+          autoprefixer: {}
         }
       }
     }
@@ -153,12 +137,12 @@ module.exports = {
   },
 
   /**
- * Temporary workaround for @nuxt-community/tailwindcss-module.
- *
- * Reported: 2022-05-23
- * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
- */
+   * Temporary workaround for @nuxt-community/tailwindcss-module.
+   *
+   * Reported: 2022-05-23
+   * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
+   */
   devServerHandlers: [],
 
-  ignore: ["**/*.test.*", "**/*.cy.*"]
+  ignore: ['**/*.test.*', '**/*.cy.*']
 }
