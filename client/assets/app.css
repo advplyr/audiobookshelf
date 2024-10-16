@@ -92,10 +92,9 @@
 }
 
 /* Firefox */
-input[type=number] {
+input[type='number'] {
   -moz-appearance: textfield;
 }
-
 
 .tracksTable {
   border-collapse: collapse;
@@ -174,7 +173,10 @@ input[type=number] {
 }
 
 .box-shadow-book {
-  box-shadow: 4px 1px 8px #11111166, -4px 1px 8px #11111166, 1px -4px 8px #11111166;
+  box-shadow:
+    4px 1px 8px #11111166,
+    -4px 1px 8px #11111166,
+    1px -4px 8px #11111166;
 }
 
 .shadow-height {
@@ -182,7 +184,9 @@ input[type=number] {
 }
 
 .box-shadow-book3d {
-  box-shadow: 4px 1px 8px #11111166, 1px -4px 8px #11111166;
+  box-shadow:
+    4px 1px 8px #11111166,
+    1px -4px 8px #11111166;
 }
 
 .box-shadow-side {
@@ -203,7 +207,6 @@ Bookshelf Label
   border-style: solid;
   color: #fce3a6;
 }
-
 
 .cover-bg {
   width: calc(100% + 40px);

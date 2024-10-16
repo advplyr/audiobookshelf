@@ -51,7 +51,8 @@ export default {
           let txtWidth = ctx.measureText(text).width
           while (txtWidth > maxWidth) {
             console.warn(`Text "${text}" is greater than max width ${maxWidth} (width:${txtWidth})`)
-            if (text.endsWith('...')) text = text.slice(0, -4) // Repeated checks remove 1 char at a time
+            if (text.endsWith('...'))
+              text = text.slice(0, -4) // Repeated checks remove 1 char at a time
             else text = text.slice(0, -3) // First check remove last 3 chars
             text += '...'
             txtWidth = ctx.measureText(text).width

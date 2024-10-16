@@ -643,7 +643,6 @@ export default {
 }
 </script>
 
-
 <style>
 #toolbar {
   box-shadow: 0px 8px 6px #111111aa;

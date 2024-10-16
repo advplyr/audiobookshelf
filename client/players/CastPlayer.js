@@ -1,4 +1,4 @@
-import { buildCastLoadRequest, castLoadMedia } from "./castUtils"
+import { buildCastLoadRequest, castLoadMedia } from './castUtils'
 import EventEmitter from 'events'
 
 export default class CastPlayer extends EventEmitter {
@@ -37,8 +37,7 @@ export default class CastPlayer extends EventEmitter {
   initialize() {
     this.player = this.ctx.$root.castPlayer
     this.playerController = this.ctx.$root.castPlayerController
-    this.playerController.addEventListener(
-      cast.framework.RemotePlayerEventType.MEDIA_INFO_CHANGED, this.evtMediaInfoChanged.bind(this))
+    this.playerController.addEventListener(cast.framework.RemotePlayerEventType.MEDIA_INFO_CHANGED, this.evtMediaInfoChanged.bind(this))
   }
 
   evtMediaInfoChanged() {
