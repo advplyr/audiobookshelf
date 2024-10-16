@@ -456,6 +456,7 @@
   "LabelPermissionsAccessAllLibraries": "Can Access All Libraries",
   "LabelPermissionsAccessAllTags": "Can Access All Tags",
   "LabelPermissionsAccessExplicitContent": "Can Access Explicit Content",
+  "LabelPermissionsCreateEReader": "Can Create Ereader",
   "LabelPermissionsDelete": "Can Delete",
   "LabelPermissionsDownload": "Can Download",
   "LabelPermissionsUpdate": "Can Update",
