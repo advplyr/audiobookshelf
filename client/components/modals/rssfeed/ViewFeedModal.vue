@@ -121,4 +121,3 @@ export default {
   background-color: #2f2f2f;
 }
 </style>
-

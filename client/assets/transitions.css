@@ -32,8 +32,6 @@
   max-height: 0;
 }
 
-
-
 .menu-enter,
 .menu-leave-active {
   transform: translateY(-15px);
@@ -69,7 +67,6 @@
 .menux-leave-active {
   opacity: 0;
 }
-
 
 .list-complete-item {
   transition: all 0.8s ease;
