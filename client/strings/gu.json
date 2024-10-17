@@ -160,7 +160,6 @@
   "HeaderStatsRecentSessions": "છેલ્લી સાંભળતી સેશન્સ",
   "LabelBackupsMaxBackupSize": "Maximum backup size (in GB)",
   "LabelFontFamily": "ફોન્ટ કુટુંબ",
-  "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPodcastSearchRegion": "પોડકાસ્ટ શોધ પ્રદેશ",
   "LabelSettingsPreferMatchedMetadataHelp": "Matched data will overide item details when using Quick Match. By default Quick Match will only fill in missing details.",
   "MessageBookshelfNoResultsForFilter": "No Results for filter \"{0}: {1}\"",

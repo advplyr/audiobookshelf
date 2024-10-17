@@ -442,7 +442,6 @@
   "LabelPermissionsAccessAllLibraries": "Есть доступ ко всем библиотекам",
   "LabelPermissionsAccessAllTags": "Есть доступ ко всем тегам",
   "LabelPermissionsAccessExplicitContent": "Есть доступ к явному содержимому",
-  "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPermissionsDelete": "Может удалять",
   "LabelPermissionsDownload": "Может скачивать",
   "LabelPermissionsUpdate": "Может обновлять",
