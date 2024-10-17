@@ -2,6 +2,8 @@ const pkg = require('./package.json')
 
 const routerBasePath = process.env.ROUTER_BASE_PATH || ''
 const serverHostUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333'
+const serverPaths = ['api/', 'public/', 'hls/', 'auth/', 'feed/', 'status', 'login', 'logout', 'init']
+const proxy = Object.fromEntries(serverPaths.map((path) => [`${routerBasePath}/${path}`, { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' }]))
 
 module.exports = {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -55,12 +57,7 @@ module.exports = {
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: ['nuxt-socket-io', '@nuxtjs/axios', '@nuxtjs/proxy'],
 
-  proxy: {
-    [`${routerBasePath}/api/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
-    [`${routerBasePath}/public/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
-    [`${routerBasePath}/hls/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/' },
-    [`${routerBasePath}/dev/`]: { target: process.env.NODE_ENV !== 'production' ? serverHostUrl : '/', pathRewrite: { '^/dev/': '' } }
-  },
+  proxy,
 
   io: {
     sockets: [
