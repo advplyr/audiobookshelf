@@ -405,14 +405,33 @@ class MeController {
       return res.status(400).send('Invalid payload. ereaderDevices array required')
     }
 
-    const ereaderDevices = req.body.ereaderDevices
-    for (const device of ereaderDevices) {
+    const userEReaderDevices = req.body.ereaderDevices
+    for (const device of userEReaderDevices) {
       if (!device.name || !device.email) {
         return res.status(400).send('Invalid payload. ereaderDevices array items must have name and email')
       }
     }
 
-    const updated = Database.emailSettings.updateUserEReaderDevices(req.user, ereaderDevices)
+    const otherDevices = Database.emailSettings.ereaderDevices.filter((device) => {
+      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user)
+    })
+    const ereaderDevices = otherDevices.concat(userEReaderDevices)
+
+    // Check for duplicate names
+    const nameSet = new Set()
+    const hasDupes = ereaderDevices.some((device) => {
+      if (nameSet.has(device.name)) {
+        return true // Duplicate found
+      }
+      nameSet.add(device.name)
+      return false
+    })
+
+    if (hasDupes) {
+      return res.status(400).send('Invalid payload. Duplicate "name" field found.')
+    }
+
+    const updated = Database.emailSettings.update({ ereaderDevices })
     if (updated) {
       await Database.updateSetting(Database.emailSettings)
       SocketAuthority.clientEmitter('ereader-devices-updated', {
