@@ -15,11 +15,11 @@
 
     <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
       <div class="flex items-center justify-between">
-        <button type="button" class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</button>
+        <button type="button" class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.public.version }}</button>
 
         <p class="text-xs text-gray-300 italic">{{ Source }}</p>
       </div>
-      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ $config.version }}</a>
+      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ $config.public.version }}</a>
     </div>
   </div>
 </template>
