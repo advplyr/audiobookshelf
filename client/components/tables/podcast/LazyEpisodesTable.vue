@@ -262,7 +262,7 @@ export default {
       this.processing = true
 
       const payload = {
-        message: this.$strings.LabelSettingsQuickMatchEpisodes,
+        message: this.$strings.MessageConfirmQuickMatchEpisodes,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
