@@ -73,7 +73,7 @@
         <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
 
-      <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="ereaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
+      <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
     </div>
   </div>
 </template>
@@ -126,6 +126,9 @@ export default {
     },
     showEreaderTable() {
       return this.usertype !== 'root' && this.usertype !== 'admin' && this.user.permissions?.createEreader
+    },
+    revisedEreaderDevices() {
+      return this.ereaderDevices.filter((device) => device.users?.length === 1)
     }
   },
   methods: {

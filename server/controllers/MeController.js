@@ -413,7 +413,7 @@ class MeController {
     }
 
     const otherDevices = Database.emailSettings.ereaderDevices.filter((device) => {
-      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user)
+      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user) && device.users?.length === 1
     })
     const ereaderDevices = otherDevices.concat(userEReaderDevices)
 
