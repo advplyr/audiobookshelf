@@ -14,7 +14,6 @@ export default function ({ $axios, store, $config }) {
 
     if (process.env.NODE_ENV === 'development') {
       console.log('Making request to ' + config.url)
-      config.url = `/dev${config.url}`
     }
   })
 
