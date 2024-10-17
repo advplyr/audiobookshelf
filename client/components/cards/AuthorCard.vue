@@ -125,12 +125,15 @@ export default {
         return null
       })
       if (!response) {
-        this.$toast.error(`Author ${this.name} not found`)
+        this.$toast.error(this.$getString('ToastAuthorNotFound', [this.name]))
       } else if (response.updated) {
-        if (response.author.imagePath) this.$toast.success(`Author ${response.author.name} was updated`)
-        else this.$toast.success(`Author ${response.author.name} was updated (no image found)`)
+        if (response.author.imagePath) {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+        } else {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
+        }
       } else {
-        this.$toast.info(`No updates were made for Author ${response.author.name}`)
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.searching = false
     },

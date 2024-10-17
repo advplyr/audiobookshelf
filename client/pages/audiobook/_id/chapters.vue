@@ -486,7 +486,7 @@ export default {
         .then((data) => {
           this.saving = false
           if (data.updated) {
-            this.$toast.success('Chapters updated')
+            this.$toast.success(this.$strings.ToastChaptersUpdated)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -533,7 +533,7 @@ export default {
     },
     findChapters() {
       if (!this.asinInput) {
-        this.$toast.error('Must input an ASIN')
+        this.$toast.error(this.$strings.ToastAsinRequired)
         return
       }
 

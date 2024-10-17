@@ -160,7 +160,7 @@ export default {
         return false
       }
       if (!this.libraryCopy.folders.length) {
-        this.$toast.error('Library must have at least 1 path')
+        this.$toast.error(this.$strings.ToastMustHaveAtLeastOnePath)
         return false
       }
 
