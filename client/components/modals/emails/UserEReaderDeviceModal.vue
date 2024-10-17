@@ -116,6 +116,8 @@ export default {
       this.newDevice.name = this.newDevice.name.trim()
       this.newDevice.email = this.newDevice.email.trim()
 
+      // Only catches duplicate names for the current user
+      // Duplicates with other users caught on server side
       if (!this.ereaderDevice) {
         if (this.existingDevices.some((d) => d.name === this.newDevice.name)) {
           this.$toast.error(this.$strings.ToastDeviceNameAlreadyExists)
@@ -154,7 +156,11 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update device', error)
-          this.$toast.error(this.$strings.ToastFailedToUpdate)
+          if (error.response?.data?.toLowerCase().includes('duplicate')) {
+            this.$toast.error(this.$strings.ToastDeviceNameAlreadyExists)
+          } else {
+            this.$toast.error(this.$strings.ToastDeviceAddFailed)
+          }
         })
         .finally(() => {
           this.processing = false
@@ -180,7 +186,11 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to add device', error)
-          this.$toast.error(this.$strings.ToastDeviceAddFailed)
+          if (error.response?.data?.toLowerCase().includes('duplicate')) {
+            this.$toast.error(this.$strings.ToastDeviceNameAlreadyExists)
+          } else {
+            this.$toast.error(this.$strings.ToastDeviceAddFailed)
+          }
         })
         .finally(() => {
           this.processing = false
