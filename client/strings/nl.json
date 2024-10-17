@@ -358,6 +358,7 @@
   "LabelPermissionsAccessAllLibraries": "Heeft toegang tot all bibliotheken",
   "LabelPermissionsAccessAllTags": "Heeft toegang tot alle tags",
   "LabelPermissionsAccessExplicitContent": "Heeft toegang tot expliciete inhoud",
+  "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPermissionsDelete": "Kan verwijderen",
   "LabelPermissionsDownload": "Kan downloaden",
   "LabelPermissionsUpdate": "Kan bijwerken",

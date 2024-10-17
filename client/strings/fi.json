@@ -307,6 +307,7 @@
   "LabelPath": "Polku",
   "LabelPermanent": "Pysyvä",
   "LabelPermissionsAccessAllLibraries": "Käyttöoikeudet kaikkiin kirjastoihin",
+  "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPermissionsDelete": "Voi poistaa",
   "LabelPermissionsDownload": "Voi ladata",
   "LabelPermissionsUpdate": "Voi päivittää",

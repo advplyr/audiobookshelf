@@ -71,7 +71,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p id="ereader-permissions-toggle">{{ $strings.LabelPermissionsCreateEReader || "Can Create Ereader" }}</p>
+                <p id="ereader-permissions-toggle">{{ $strings.LabelPermissionsCreateEreader }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch labeledBy="ereader-permissions-toggle" v-model="newUser.permissions.createEreader" />

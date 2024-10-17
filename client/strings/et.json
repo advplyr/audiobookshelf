@@ -391,6 +391,7 @@
   "LabelPermissionsAccessAllLibraries": "Saab ligi kõikidele raamatukogudele",
   "LabelPermissionsAccessAllTags": "Saab ligi kõikidele siltidele",
   "LabelPermissionsAccessExplicitContent": "Saab ligi vulgaarsele sisule",
+  "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPermissionsDelete": "Saab kustutada",
   "LabelPermissionsDownload": "Saab alla laadida",
   "LabelPermissionsUpdate": "Saab uuendada",
