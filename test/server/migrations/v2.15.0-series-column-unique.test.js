@@ -106,7 +106,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(6)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 0 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplication complete'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Added unique index on Series.name and Series.libraryId'))).to.be.true
@@ -147,7 +147,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(8)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 2 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Deduplicating series "Series 3" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
@@ -185,7 +185,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(6)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 0 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplication complete'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Added unique index on Series.name and Series.libraryId'))).to.be.true
@@ -216,7 +216,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(9)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 1 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Deduplicating bookId 4a38b6e5-0ae4-4de4-b119-4e33891bd63f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
@@ -249,7 +249,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(9)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 1 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Deduplicating bookId 4a38b6e5-0ae4-4de4-b119-4e33891bd63f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
@@ -281,7 +281,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(9)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 1 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplicating series "Series 1" in library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Deduplicating bookId 4a38b6e5-0ae4-4de4-b119-4e33891bd63f in series "Series 1" of library 3a5a1c7c-a914-472e-88b0-b871ceae63e7'))).to.be.true
@@ -326,7 +326,7 @@ describe('migration-v2.15.0-series-column-unique', () => {
 
       expect(loggerInfoStub.callCount).to.equal(9)
       expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique '))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to potential fix hidden corruption issues'))).to.be.true
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues'))).to.be.true
       expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.15.0 migration] Found 0 duplicate series'))).to.be.true
       expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.15.0 migration] Deduplication complete'))).to.be.true
       expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.15.0 migration] Added unique index on Series.name and Series.libraryId'))).to.be.true
