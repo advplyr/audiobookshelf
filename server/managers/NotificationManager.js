@@ -14,6 +14,32 @@ class NotificationManager {
     return notificationData
   }
 
+  async onItemsAdded(LibraryItems) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onItemsAdded')) {
+      Logger.debug(`[NotificationManager] onItemsAdded: No active notifications`)
+      return
+    }
+
+    for (const item of LibraryItems) {
+      Logger.debug(`[NotificationManager] onItemsAdded: Item "${item.media.metadata.title}"`)
+      const library = await Database.libraryModel.findByPk(item.libraryId)
+      const eventData = {
+        libraryItemId: item.id,
+        libraryId: item.libraryId,
+        libraryName: library?.name || 'Unknown',
+        tags: (item.media.tags || []).join(', ') || 'None',
+        title: item.media.metadata.title,
+        authors: (item.media.metadata.authors.map(a => a.name) || []).join(', ') || '',
+        description: item.media.metadata.description || '',
+        genres: (item.media.metadata.genres || []).join(', ') || 'None',
+        publishedYear: item.media.metadata.publishedYear || '',
+      }
+      this.triggerNotification('onItemsAdded', eventData)
+    }
+  }
+
   async onPodcastEpisodeDownloaded(libraryItem, episode) {
     if (!Database.notificationSettings.isUseable) return
 
