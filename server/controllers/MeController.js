@@ -413,7 +413,7 @@ class MeController {
     }
 
     const otherDevices = Database.emailSettings.ereaderDevices.filter((device) => {
-      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user) && device.users?.length === 1
+      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user) || device.users?.length !== 1
     })
     const ereaderDevices = otherDevices.concat(userEReaderDevices)
 
@@ -434,7 +434,7 @@ class MeController {
     const updated = Database.emailSettings.update({ ereaderDevices })
     if (updated) {
       await Database.updateSetting(Database.emailSettings)
-      SocketAuthority.clientEmitter('ereader-devices-updated', {
+      SocketAuthority.clientEmitter(req.user.id, 'ereader-devices-updated', {
         ereaderDevices: Database.emailSettings.ereaderDevices
       })
     }
