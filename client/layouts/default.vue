@@ -358,7 +358,7 @@ export default {
         transports: ['websocket'],
         upgrade: false,
         reconnection: true,
-        path: `${this.$config.routerBasePath}/socket.io`
+        path: `${this.$config.public.routerBasePath}/socket.io`
       })
       this.$root.socket = this.socket
       console.log('Socket initialized')
