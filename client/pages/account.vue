@@ -219,7 +219,7 @@ export default {
     },
     deleteDevice(device) {
       const payload = {
-        ereaderDevices: this.ereaderDevices.filter((d) => d.name !== device.name)
+        ereaderDevices: this.revisedEreaderDevices.filter((d) => d.name !== device.name)
       }
       this.deletingDeviceName = device.name
       this.$axios
