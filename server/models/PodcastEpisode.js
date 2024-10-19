@@ -157,6 +157,7 @@ class PodcastEpisode extends Model {
         modelName: 'podcastEpisode',
         indexes: [
           {
+            name: 'podcastEpisode_createdAt_podcastId',
             fields: ['createdAt', 'podcastId']
           }
         ]

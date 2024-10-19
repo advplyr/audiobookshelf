@@ -31,7 +31,7 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
-  await queryInterface.removeIndex('podcastEpisodes', 'podcast_episode_created_at')
+  await queryInterface.removeIndex('podcastEpisodes', 'podcast_episodes_created_at')
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating index for podcastEpisode and createdAt')
@@ -66,9 +66,9 @@ async function down({ context: { queryInterface, logger } }) {
   await queryInterface.removeIndex('podcastEpisodes', 'podcastEpisode_createdAt_podcastId')
 
   // Create index for podcastEpisode and createdAt
-  logger.info('[2.15.2 migration] Creating index for podcastEpisode createdAt')
+  logger.info('[2.15.2 migration] Creating original index for podcastEpisode createdAt')
   await queryInterface.addIndex('podcastEpisodes', ['createdAt'], {
-    name: 'podcast_episode_created_at'
+    name: 'podcast_episodes_created_at'
   })
 
   // Finished migration
