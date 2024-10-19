@@ -43,7 +43,13 @@ class BookSeries extends Model {
         sequelize,
         modelName: 'bookSeries',
         timestamps: true,
-        updatedAt: false
+        updatedAt: false,
+        indexes: [
+          {
+            name: 'bookSeries_seriesId',
+            fields: ['seriesId']
+          }
+        ]
       }
     )
 

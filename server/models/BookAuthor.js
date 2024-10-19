@@ -54,7 +54,13 @@ class BookAuthor extends Model {
         sequelize,
         modelName: 'bookAuthor',
         timestamps: true,
-        updatedAt: false
+        updatedAt: false,
+        indexes: [
+          {
+            name: 'bookAuthor_authorId',
+            fields: ['authorId']
+          }
+        ]
       }
     )
 
