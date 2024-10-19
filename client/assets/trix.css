@@ -117,7 +117,7 @@ trix-toolbar .trix-button--icon::before {
   bottom: 0;
   left: 0;
   opacity: 0.6;
-  content: "";
+  content: '';
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -230,7 +230,7 @@ trix-toolbar .trix-input--dialog {
 }
 
 trix-toolbar .trix-input--dialog.validate:invalid {
-  box-shadow: #F00 0px 0px 1.5px 1px;
+  box-shadow: #f00 0px 0px 1.5px 1px;
 }
 
 trix-toolbar .trix-button--dialog {
@@ -317,7 +317,7 @@ trix-editor .attachment__progress {
   transition: opacity 200ms ease-in;
 }
 
-trix-editor .attachment__progress[value="100"] {
+trix-editor .attachment__progress[value='100'] {
   opacity: 0;
 }
 
@@ -399,7 +399,7 @@ trix-editor .trix-button--remove::before {
   bottom: 0;
   left: 0;
   opacity: 0.7;
-  content: "";
+  content: '';
   background-image: url(data:image/svg+xml,%3Csvg%20height%3D%2224%22%20width%3D%2224%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M19%206.4L17.6%205%2012%2010.6%206.4%205%205%206.4l5.6%205.6L5%2017.6%206.4%2019l5.6-5.6%205.6%205.6%201.4-1.4-5.6-5.6z%22%2F%3E%3Cpath%20d%3D%22M0%200h24v24H0z%22%20fill%3D%22none%22%2F%3E%3C%2Fsvg%3E);
   background-position: center;
   background-repeat: no-repeat;
@@ -467,8 +467,8 @@ trix-editor .attachment__metadata .attachment__size {
   padding-left: 0.6em;
 }
 
-.trix-content [dir=rtl] blockquote,
-.trix-content blockquote[dir=rtl] {
+.trix-content [dir='rtl'] blockquote,
+.trix-content blockquote[dir='rtl'] {
   border-width: 0;
   border-right-width: 0.3em;
   margin-right: 0.3em;
@@ -479,7 +479,7 @@ trix-editor .attachment__metadata .attachment__size {
   margin-left: 1em;
 }
 
-.trix-content [dir=rtl] li {
+.trix-content [dir='rtl'] li {
   margin-right: 1em;
 }
 
@@ -520,7 +520,7 @@ trix-editor .attachment__metadata .attachment__size {
   text-align: center;
 }
 
-.trix-content .attachment__caption .attachment__name+.attachment__size::before {
+.trix-content .attachment__caption .attachment__name + .attachment__size::before {
   content: ' · ';
 }
 
