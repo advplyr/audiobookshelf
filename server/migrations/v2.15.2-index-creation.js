@@ -19,15 +19,25 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Create index for bookAuthors
   logger.info('[2.15.2 migration] Creating index for bookAuthors')
-  await queryInterface.addIndex('bookAuthors', ['authorId'], {
-    name: 'bookAuthor_authorId'
-  })
+  const bookAuthorsIndexes = await queryInterface.showIndex('bookAuthors')
+  if (!bookAuthorsIndexes.some((index) => index.name === 'bookAuthor_authorId')) {
+    await queryInterface.addIndex('bookAuthors', ['authorId'], {
+      name: 'bookAuthor_authorId'
+    })
+  } else {
+    logger.info('[2.15.2 migration] Index bookAuthor_authorId already exists')
+  }
 
   // Create index for bookSeries
   logger.info('[2.15.2 migration] Creating index for bookSeries')
-  await queryInterface.addIndex('bookSeries', ['seriesId'], {
-    name: 'bookSeries_seriesId'
-  })
+  const bookSeriesIndexes = await queryInterface.showIndex('bookSeries')
+  if (!bookSeriesIndexes.some((index) => index.name === 'bookSeries_seriesId')) {
+    await queryInterface.addIndex('bookSeries', ['seriesId'], {
+      name: 'bookSeries_seriesId'
+    })
+  } else {
+    logger.info('[2.15.2 migration] Index bookSeries_seriesId already exists')
+  }
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
@@ -35,9 +45,14 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating index for podcastEpisode and createdAt')
-  await queryInterface.addIndex('podcastEpisodes', ['createdAt', 'podcastId'], {
-    name: 'podcastEpisode_createdAt_podcastId'
-  })
+  const podcastEpisodesIndexes = await queryInterface.showIndex('podcastEpisodes')
+  if (!podcastEpisodesIndexes.some((index) => index.name === 'podcastEpisode_createdAt_podcastId')) {
+    await queryInterface.addIndex('podcastEpisodes', ['createdAt', 'podcastId'], {
+      name: 'podcastEpisode_createdAt_podcastId'
+    })
+  } else {
+    logger.info('[2.15.2 migration] Index podcastEpisode_createdAt_podcastId already exists')
+  }
 
   // Completed migration
   logger.info('[2.15.2 migration] UPGRADE END: 2.15.2-index-creation')
