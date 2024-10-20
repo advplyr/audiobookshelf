@@ -380,9 +380,8 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     copyright: metadata.publisher,
     publisher: metadata.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
+    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join('; ')
   }
-
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
       delete ffmetadata[key]

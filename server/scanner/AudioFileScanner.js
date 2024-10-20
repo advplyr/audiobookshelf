@@ -4,6 +4,7 @@ const prober = require('../utils/prober')
 const { LogLevel } = require('../utils/constants')
 const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
 const parseNameString = require('../utils/parsers/parseNameString')
+const parseSeriesString = require('../utils/parsers/parseSeriesString')
 const LibraryItem = require('../models/LibraryItem')
 const AudioFile = require('../objects/files/AudioFile')
 
@@ -256,6 +257,7 @@ class AudioFileScanner {
       },
       {
         tag: 'tagSeries',
+        altTag: 'tagGrouping',
         key: 'series'
       },
       {
@@ -276,8 +278,10 @@ class AudioFileScanner {
     const audioFileMetaTags = firstScannedFile.metaTags
     MetadataMapArray.forEach((mapping) => {
       let value = audioFileMetaTags[mapping.tag]
+      let isAltTag = false
       if (!value && mapping.altTag) {
         value = audioFileMetaTags[mapping.altTag]
+        isAltTag = true
       }
 
       if (value && typeof value === 'string') {
@@ -290,12 +294,28 @@ class AudioFileScanner {
         } else if (mapping.key === 'genres') {
           bookMetadata.genres = this.parseGenresString(value)
         } else if (mapping.key === 'series') {
-          bookMetadata.series = [
-            {
-              name: value,
-              sequence: audioFileMetaTags.tagSeriesPart || null
+          // If series was embedded in the grouping tag, then parse it with semicolon separator and sequence in the same string
+          // e.g. "Test Series; Series Name #1; Other Series #2"
+          if (isAltTag) {
+            const series = value
+              .split(';')
+              .map((seriesWithPart) => {
+                seriesWithPart = seriesWithPart.trim()
+                return parseSeriesString.parse(seriesWithPart)
+              })
+              .filter(Boolean)
+            if (series.length) {
+              bookMetadata.series = series
             }
-          ]
+          } else {
+            // Original embed used "series" and "series-part" tags
+            bookMetadata.series = [
+              {
+                name: value,
+                sequence: audioFileMetaTags.tagSeriesPart || null
+              }
+            ]
+          }
         } else {
           bookMetadata[mapping.key] = value
         }
