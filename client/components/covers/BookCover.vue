@@ -175,4 +175,3 @@ export default {
   mounted() {}
 }
 </script>
-

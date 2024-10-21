@@ -117,7 +117,9 @@ export default {
   background-color: #272727;
   border-radius: 4px;
   color: transparent;
-  transition: color, background-color 0.5s ease;
+  transition:
+    color,
+    background-color 0.5s ease;
 }
 
 .custom-provider-api-key:hover {
