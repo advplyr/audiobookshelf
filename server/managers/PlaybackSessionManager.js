@@ -343,9 +343,13 @@ class PlaybackSessionManager {
     const updateResponse = await user.createUpdateMediaProgressFromPayload({
       libraryItemId: libraryItem.id,
       episodeId: session.episodeId,
-      duration: syncData.duration,
+      // duration no longer required (v2.15.1) but used if available
+      duration: syncData.duration || libraryItem.media.duration || 0,
       currentTime: syncData.currentTime,
       progress: session.progress
+      // TODO: Add support for passing in these values from library settings
+      // markAsFinishedTimeRemaining: 5,
+      // markAsFinishedPercentageComplete: 95
     })
     if (updateResponse.mediaProgress) {
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {

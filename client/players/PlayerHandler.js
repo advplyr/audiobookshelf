@@ -297,7 +297,6 @@ export default class PlayerHandler {
       if (listeningTimeToAdd > 20) {
         syncData = {
           timeListened: listeningTimeToAdd,
-          duration: this.getDuration(),
           currentTime: this.getCurrentTime()
         }
       }
@@ -317,7 +316,6 @@ export default class PlayerHandler {
     const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
     const syncData = {
       timeListened: listeningTimeToAdd,
-      duration: this.getDuration(),
       currentTime
     }
 

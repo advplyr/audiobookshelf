@@ -14,6 +14,23 @@ const { DataTypes, Model } = sequelize
  * @property {number} createdAt
  */
 
+/**
+ * @typedef ProgressUpdatePayload
+ * @property {string} libraryItemId
+ * @property {string} [episodeId]
+ * @property {number} [duration]
+ * @property {number} [progress]
+ * @property {number} [currentTime]
+ * @property {boolean} [isFinished]
+ * @property {boolean} [hideFromContinueListening]
+ * @property {string} [ebookLocation]
+ * @property {number} [ebookProgress]
+ * @property {string} [finishedAt]
+ * @property {number} [lastUpdate]
+ * @property {number} [markAsFinishedTimeRemaining]
+ * @property {number} [markAsFinishedPercentageComplete]
+ */
+
 class User extends Model {
   constructor(values, options) {
     super(values, options)
@@ -514,19 +531,6 @@ class User extends Model {
 
   /**
    * TODO: Uses old model and should account for the different between ebook/audiobook progress
-   *
-   * @typedef ProgressUpdatePayload
-   * @property {string} libraryItemId
-   * @property {string} [episodeId]
-   * @property {number} [duration]
-   * @property {number} [progress]
-   * @property {number} [currentTime]
-   * @property {boolean} [isFinished]
-   * @property {boolean} [hideFromContinueListening]
-   * @property {string} [ebookLocation]
-   * @property {number} [ebookProgress]
-   * @property {string} [finishedAt]
-   * @property {number} [lastUpdate]
    *
    * @param {ProgressUpdatePayload} progressPayload
    * @returns {Promise<{ mediaProgress: import('./MediaProgress'), error: [string], statusCode: [number] }>}

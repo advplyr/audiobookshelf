@@ -1,4 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
+const Logger = require('../Logger')
+const { isNullOrNaN } = require('../utils')
 
 class MediaProgress extends Model {
   constructor(values, options) {
@@ -183,10 +185,16 @@ class MediaProgress extends Model {
     }
   }
 
+  get progress() {
+    // Value between 0 and 1
+    if (!this.duration) return 0
+    return Math.max(0, Math.min(this.currentTime / this.duration, 1))
+  }
+
   /**
    * Apply update to media progress
    *
-   * @param {Object} progress
+   * @param {import('./User').ProgressUpdatePayload} progressPayload
    * @returns {Promise<MediaProgress>}
    */
   applyProgressUpdate(progressPayload) {
@@ -219,8 +227,27 @@ class MediaProgress extends Model {
     }
 
     const timeRemaining = this.duration - this.currentTime
-    // Set to finished if time remaining is less than 5 seconds
-    if (!this.isFinished && this.duration && timeRemaining < 5) {
+
+    // Check if progress is far enough to mark as finished
+    //   - If markAsFinishedPercentageComplete is provided, use that otherwise use markAsFinishedTimeRemaining (default 5 seconds)
+    let shouldMarkAsFinished = false
+    if (!this.isFinished && this.duration) {
+      if (!isNullOrNaN(progressPayload.markAsFinishedPercentageComplete)) {
+        const markAsFinishedPercentageComplete = Number(progressPayload.markAsFinishedPercentageComplete) / 100
+        shouldMarkAsFinished = markAsFinishedPercentageComplete <= this.progress
+        if (shouldMarkAsFinished) {
+          Logger.debug(`[MediaProgress] Marking media progress as finished because progress (${this.progress}) is greater than ${markAsFinishedPercentageComplete}`)
+        }
+      } else {
+        const markAsFinishedTimeRemaining = isNullOrNaN(progressPayload.markAsFinishedTimeRemaining) ? 5 : Number(progressPayload.markAsFinishedTimeRemaining)
+        shouldMarkAsFinished = timeRemaining <= markAsFinishedTimeRemaining
+        if (shouldMarkAsFinished) {
+          Logger.debug(`[MediaProgress] Marking media progress as finished because time remaining (${timeRemaining}) is less than ${markAsFinishedTimeRemaining} seconds`)
+        }
+      }
+    }
+
+    if (shouldMarkAsFinished) {
       this.isFinished = true
       this.finishedAt = this.finishedAt || Date.now()
       this.extraData.progress = 1
