@@ -54,7 +54,7 @@
           </table>
           <div class="flex items-center justify-end py-1">
             <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
-            <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <p class="text-sm mx-1">{{ $getString('LabelPaginationPageXOfY', [currentPage + 1, numPages]) }}</p>
             <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
           </div>
         </div>
