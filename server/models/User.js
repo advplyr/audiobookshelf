@@ -28,7 +28,7 @@ const { DataTypes, Model } = sequelize
  * @property {string} [finishedAt]
  * @property {number} [lastUpdate]
  * @property {number} [markAsFinishedTimeRemaining]
- * @property {number} [markAsFinishedPercentageComplete]
+ * @property {number} [markAsFinishedPercentComplete]
  */
 
 class User extends Model {

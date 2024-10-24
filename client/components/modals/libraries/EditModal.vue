@@ -111,7 +111,6 @@ export default {
     },
     updateLibrary(library) {
       this.mapLibraryToCopy(library)
-      console.log('Updated library', this.libraryCopy)
     },
     getNewLibraryData() {
       return {
@@ -128,7 +127,9 @@ export default {
           autoScanCronExpression: null,
           hideSingleBookSeries: false,
           onlyShowLaterBooksInContinueSeries: false,
-          metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+          metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata'],
+          markAsFinishedPercentComplete: null,
+          markAsFinishedTimeRemaining: 10
         }
       }
     },
@@ -236,7 +237,6 @@ export default {
           this.show = false
           this.$toast.success(this.$getString('ToastLibraryCreateSuccess', [res.name]))
           if (!this.$store.state.libraries.currentLibraryId) {
-            console.log('Setting initially library id', res.id)
             // First library added
             this.$store.dispatch('libraries/fetch', res.id)
           }

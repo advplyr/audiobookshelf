@@ -349,7 +349,7 @@ class PlaybackSessionManager {
       progress: session.progress
       // TODO: Add support for passing in these values from library settings
       // markAsFinishedTimeRemaining: 5,
-      // markAsFinishedPercentageComplete: 95
+      // markAsFinishedPercentComplete: 95
     })
     if (updateResponse.mediaProgress) {
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {

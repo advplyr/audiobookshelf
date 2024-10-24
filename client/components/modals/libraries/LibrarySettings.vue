@@ -75,6 +75,20 @@
       <div v-if="isPodcastLibrary" class="p-2 w-full md:w-1/2">
         <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-72" menu-max-height="200px" @input="formUpdated" />
       </div>
+      <div class="p-2 w-full flex items-center space-x-2 flex-wrap">
+        <div>
+          <ui-dropdown v-model="markAsFinishedWhen" :items="maskAsFinishedWhenItems" :label="$strings.LabelSettingsLibraryMarkAsFinishedWhen" small class="w-72 min-w-72 text-sm" menu-max-height="200px" @input="markAsFinishedWhenChanged" />
+        </div>
+        <div class="w-16">
+          <div>
+            <label class="px-1 text-sm font-semibold"></label>
+            <div class="relative">
+              <ui-text-input v-model="markAsFinishedValue" type="number" label="" no-spinner custom-input-class="pr-5" @input="markAsFinishedChanged" />
+              <div class="absolute top-0 bottom-0 right-4 flex items-center">{{ markAsFinishedWhen === 'timeRemaining' ? '' : '%' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -99,7 +113,9 @@ export default {
       epubsAllowScriptedContent: false,
       hideSingleBookSeries: false,
       onlyShowLaterBooksInContinueSeries: false,
-      podcastSearchRegion: 'us'
+      podcastSearchRegion: 'us',
+      markAsFinishedWhen: 'timeRemaining',
+      markAsFinishedValue: 10
     }
   },
   computed: {
@@ -121,10 +137,34 @@ export default {
     providers() {
       if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
+    },
+    maskAsFinishedWhenItems() {
+      return [
+        {
+          text: this.$strings.LabelSettingsLibraryMarkAsFinishedTimeRemaining,
+          value: 'timeRemaining'
+        },
+        {
+          text: this.$strings.LabelSettingsLibraryMarkAsFinishedPercentComplete,
+          value: 'percentComplete'
+        }
+      ]
     }
   },
   methods: {
+    markAsFinishedWhenChanged(val) {
+      if (val === 'percentComplete' && this.markAsFinishedValue > 100) {
+        this.markAsFinishedValue = 100
+      }
+      this.formUpdated()
+    },
+    markAsFinishedChanged(val) {
+      this.formUpdated()
+    },
     getLibraryData() {
+      let markAsFinishedTimeRemaining = this.markAsFinishedWhen === 'timeRemaining' ? Number(this.markAsFinishedValue) : null
+      let markAsFinishedPercentComplete = this.markAsFinishedWhen === 'percentComplete' ? Number(this.markAsFinishedValue) : null
+
       return {
         settings: {
           coverAspectRatio: this.useSquareBookCovers ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD,
@@ -135,7 +175,9 @@ export default {
           epubsAllowScriptedContent: !!this.epubsAllowScriptedContent,
           hideSingleBookSeries: !!this.hideSingleBookSeries,
           onlyShowLaterBooksInContinueSeries: !!this.onlyShowLaterBooksInContinueSeries,
-          podcastSearchRegion: this.podcastSearchRegion
+          podcastSearchRegion: this.podcastSearchRegion,
+          markAsFinishedTimeRemaining: markAsFinishedTimeRemaining,
+          markAsFinishedPercentComplete: markAsFinishedPercentComplete
         }
       }
     },
@@ -152,6 +194,11 @@ export default {
       this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries
       this.onlyShowLaterBooksInContinueSeries = !!this.librarySettings.onlyShowLaterBooksInContinueSeries
       this.podcastSearchRegion = this.librarySettings.podcastSearchRegion || 'us'
+      this.markAsFinishedWhen = this.librarySettings.markAsFinishedTimeRemaining ? 'timeRemaining' : 'percentComplete'
+      if (!this.librarySettings.markAsFinishedTimeRemaining && !this.librarySettings.markAsFinishedPercentComplete) {
+        this.markAsFinishedWhen = 'timeRemaining'
+      }
+      this.markAsFinishedValue = this.librarySettings.markAsFinishedTimeRemaining || this.librarySettings.markAsFinishedPercentComplete || 10
     }
   },
   mounted() {
