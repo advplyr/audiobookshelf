@@ -607,13 +607,14 @@ class User extends Model {
         ebookLocation: progressPayload.ebookLocation || null,
         ebookProgress: isNullOrNaN(progressPayload.ebookProgress) ? 0 : Number(progressPayload.ebookProgress),
         finishedAt: progressPayload.finishedAt || null,
+        createdAt: progressPayload.createdAt || new Date(),
         extraData: {
           libraryItemId: progressPayload.libraryItemId,
           progress: isNullOrNaN(progressPayload.progress) ? 0 : Number(progressPayload.progress)
         }
       }
       if (newMediaProgressPayload.isFinished) {
-        newMediaProgressPayload.finishedAt = new Date()
+        newMediaProgressPayload.finishedAt = newMediaProgressPayload.finishedAt || new Date()
         newMediaProgressPayload.extraData.progress = 1
       } else {
         newMediaProgressPayload.finishedAt = null
