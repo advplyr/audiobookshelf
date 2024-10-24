@@ -1,24 +1,21 @@
-
 export const state = () => ({
   usersOnline: []
 })
 
 export const getters = {
-  getIsUserOnline: state => id => {
-    return state.usersOnline.find(u => u.id === id)
+  getIsUserOnline: (state) => (id) => {
+    return state.usersOnline.find((u) => u.id === id)
   }
 }
 
-export const actions = {
-
-}
+export const actions = {}
 
 export const mutations = {
   setUsersOnline(state, usersOnline) {
     state.usersOnline = usersOnline
   },
   updateUserOnline(state, user) {
-    var index = state.usersOnline.findIndex(u => u.id === user.id)
+    var index = state.usersOnline.findIndex((u) => u.id === user.id)
     if (index >= 0) {
       state.usersOnline.splice(index, 1, user)
     } else {
@@ -26,6 +23,6 @@ export const mutations = {
     }
   },
   removeUserOnline(state, user) {
-    state.usersOnline = state.usersOnline.filter(u => u.id !== user.id)
+    state.usersOnline = state.usersOnline.filter((u) => u.id !== user.id)
   }
 }
