@@ -125,7 +125,7 @@ export default {
       return this.$strings.LabelUnknown
     },
     coverUrl(feed) {
-      if (!feed.coverPath) return `${this.$config.routerBasePath}/Logo.png`
+      if (!feed.coverPath) return `${this.$config.public.routerBasePath}/Logo.png`
       return `${feed.feedUrl}/cover`
     },
     async loadFeeds() {
