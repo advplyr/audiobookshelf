@@ -1,3 +1,8 @@
+- https://www.podbean.com/eas/pb-8hhij-171ad07
+- https://www.spreaker.com/episode/mastering-the-pte-strategies-for-success--62497738
+- https://go.ivoox.com/rf/135210290
+- https://podcasters.spotify.com/pod/show/akia-monga
+- https://open.spotify.com/show/2xsYVPGSzLaI2iPjYxCzS4
 <br />
 <div align="center">
    <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/banner.svg" width="600">
