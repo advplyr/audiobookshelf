@@ -231,8 +231,8 @@ class MediaProgress extends Model {
     // Check if progress is far enough to mark as finished
     //   - If markAsFinishedPercentComplete is provided, use that otherwise use markAsFinishedTimeRemaining (default 10 seconds)
     let shouldMarkAsFinished = false
-    if (!this.isFinished && this.duration) {
-      if (!isNullOrNaN(progressPayload.markAsFinishedPercentComplete)) {
+    if (this.duration) {
+      if (!isNullOrNaN(progressPayload.markAsFinishedPercentComplete) && progressPayload.markAsFinishedPercentComplete > 0) {
         const markAsFinishedPercentComplete = Number(progressPayload.markAsFinishedPercentComplete) / 100
         shouldMarkAsFinished = markAsFinishedPercentComplete < this.progress
         if (shouldMarkAsFinished) {
@@ -247,12 +247,12 @@ class MediaProgress extends Model {
       }
     }
 
-    if (shouldMarkAsFinished) {
+    if (!this.isFinished && shouldMarkAsFinished) {
       this.isFinished = true
       this.finishedAt = this.finishedAt || Date.now()
       this.extraData.progress = 1
       this.changed('extraData', true)
-    } else if (this.isFinished && this.changed('currentTime') && this.currentTime < this.duration) {
+    } else if (this.isFinished && this.changed('currentTime') && !shouldMarkAsFinished) {
       this.isFinished = false
       this.finishedAt = null
     }

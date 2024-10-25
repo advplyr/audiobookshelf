@@ -203,6 +203,13 @@ class Library extends Model {
   }
 
   /**
+   * @returns {LibrarySettingsObject}
+   */
+  get librarySettings() {
+    return this.settings || Library.getDefaultLibrarySettingsForMediaType(this.mediaType)
+  }
+
+  /**
    * TODO: Update to use new model
    */
   toOldJSON() {
