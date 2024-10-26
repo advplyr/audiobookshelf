@@ -38,10 +38,6 @@ export default {
     ereaderDevice: {
       type: Object,
       default: () => null
-    },
-    users: {
-      type: Array,
-      default: () => []
     }
   },
   data() {
@@ -78,29 +74,6 @@ export default {
     },
     title() {
       return !this.ereaderDevice ? 'Create Device' : 'Update Device'
-    },
-    userAvailabilityOptions() {
-      return [
-        {
-          text: this.$strings.LabelAdminUsersOnly,
-          value: 'adminOrUp'
-        },
-        {
-          text: this.$strings.LabelAllUsersExcludingGuests,
-          value: 'userOrUp'
-        },
-        {
-          text: this.$strings.LabelAllUsersIncludingGuests,
-          value: 'guestOrUp'
-        },
-        {
-          text: this.$strings.LabelSelectUsers,
-          value: 'specificUsers'
-        }
-      ]
-    },
-    userOptions() {
-      return this.users.map((u) => ({ text: u.username, value: u.id }))
     }
   },
   methods: {

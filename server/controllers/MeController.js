@@ -409,12 +409,15 @@ class MeController {
     for (const device of userEReaderDevices) {
       if (!device.name || !device.email) {
         return res.status(400).send('Invalid payload. ereaderDevices array items must have name and email')
+      } else if (device.availabilityOption !== 'specificUsers' || device.users?.length !== 1 || device.users[0] !== req.user.id) {
+        return res.status(400).send('Invalid payload. ereaderDevices array items must have availabilityOption "specificUsers" and only the current user')
       }
     }
 
     const otherDevices = Database.emailSettings.ereaderDevices.filter((device) => {
       return !Database.emailSettings.checkUserCanAccessDevice(device, req.user) || device.users?.length !== 1
     })
+
     const ereaderDevices = otherDevices.concat(userEReaderDevices)
 
     // Check for duplicate names
