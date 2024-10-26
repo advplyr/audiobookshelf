@@ -82,6 +82,7 @@ class User extends Model {
     canAccessExplicitContent: 'accessExplicitContent',
     canAccessAllLibraries: 'accessAllLibraries',
     canAccessAllTags: 'accessAllTags',
+    canCreateEReader: 'createEreader',
     tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
@@ -122,6 +123,7 @@ class User extends Model {
       update: type === 'root' || type === 'admin',
       delete: type === 'root',
       upload: type === 'root' || type === 'admin',
+      createEreader: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: type === 'root' || type === 'admin',
