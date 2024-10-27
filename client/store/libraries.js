@@ -309,9 +309,9 @@ export const mutations = {
     }
 
     // Add publishedDecades
-    if (mediaMetadata.publishedYear) {
+    if (mediaMetadata.publishedYear && !isNaN(mediaMetadata.publishedYear)) {
       const publishedYear = parseInt(mediaMetadata.publishedYear, 10)
-      const decade = Math.floor(publishedYear / 10) * 10
+      const decade = (Math.floor(publishedYear / 10) * 10).toString()
       if (!state.filterData.publishedDecades.includes(decade)) {
         state.filterData.publishedDecades.push(decade)
         state.filterData.publishedDecades.sort((a, b) => a - b)

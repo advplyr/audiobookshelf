@@ -229,10 +229,11 @@ module.exports = {
         mediaWhere['$series.id$'] = null
       }
     } else if (group === 'publishedDecades') {
-      const year = parseInt(value, 10)
-      mediaWhere['publishedYear'] = {
-        [Sequelize.Op.between]: year >= 1000 ? [year, year + 9] : [year * 10, (year + 1) * 10 - 1]
-      }
+      const startYear = parseInt(value)
+      const endYear = parseInt(value, 10) + 9
+      mediaWhere = Sequelize.where(Sequelize.literal('CAST(`book`.`publishedYear` AS INTEGER)'), {
+        [Sequelize.Op.between]: [startYear, endYear]
+      })
     }
 
     return { mediaWhere, replacements }
@@ -504,7 +505,6 @@ module.exports = {
     }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
-
     let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
 
     // User permissions

@@ -33,11 +33,11 @@
     </div>
     <div v-if="enclosureUrl" class="pb-4 pt-6">
       <ui-text-input-with-label :value="enclosureUrl" readonly class="text-xs">
-        <label class="px-1 text-xs text-gray-200 font-semibold">Episode URL from RSS feed</label>
+        <label class="px-1 text-xs text-gray-200 font-semibold">{{ $strings.LabelEpisodeUrlFromRssFeed }}</label>
       </ui-text-input-with-label>
     </div>
     <div v-else class="py-4">
-      <p class="text-xs text-gray-300 font-semibold">Episode not linked to RSS feed episode</p>
+      <p class="text-xs text-gray-300 font-semibold">{{ $strings.LabelEpisodeNotLinkedToRssFeed }}</p>
     </div>
   </div>
 </template>
@@ -97,7 +97,12 @@ export default {
       return this.enclosure.url
     },
     episodeTypes() {
-      return this.$store.state.globals.episodeTypes || []
+      return this.$store.state.globals.episodeTypes.map((e) => {
+        return {
+          text: this.$strings[e.descriptionKey] || e.text,
+          value: e.value
+        }
+      })
     }
   },
   methods: {
@@ -152,14 +157,14 @@ export default {
       const updateResult = await this.$axios.$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, updatedDetails).catch((error) => {
         console.error('Failed update episode', error)
         this.isProcessing = false
-        this.$toast.error(error?.response?.data || 'Failed to update episode')
+        this.$toast.error(error?.response?.data || this.$strings.ToastFailedToUpdate)
         return false
       })
 
       this.isProcessing = false
       if (updateResult) {
         if (updateResult) {
-          this.$toast.success('Podcast episode updated')
+          this.$toast.success(this.$strings.ToastItemUpdateSuccess)
           return true
         } else {
           this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)

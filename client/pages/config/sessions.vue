@@ -88,7 +88,7 @@
             <ui-dropdown v-model="itemsPerPage" :items="itemsPerPageOptions" small class="w-24 mx-2" @input="updatedItemsPerPage" />
           </div>
           <div class="inline-flex items-center">
-            <p class="text-sm mx-2">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <p class="text-sm mx-2">{{ $getString('LabelPaginationPageXOfY', [currentPage + 1, numPages]) }}</p>
             <ui-icon-btn icon="arrow_back_ios_new" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
             <ui-icon-btn icon="arrow_forward_ios" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
           </div>
@@ -103,7 +103,7 @@
       <div v-if="openListeningSessions.length" class="w-full my-8 h-px bg-white/10" />
 
       <!-- open listening sessions table -->
-      <p v-if="openListeningSessions.length" class="text-lg my-4">Open Listening Sessions</p>
+      <p v-if="openListeningSessions.length" class="text-lg my-4">{{ $strings.HeaderOpenListeningSessions }}</p>
       <div v-if="openListeningSessions.length" class="block max-w-full">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">

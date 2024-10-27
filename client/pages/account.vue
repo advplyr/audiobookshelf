@@ -32,9 +32,48 @@
         </form>
       </div>
 
+      <div v-if="showEreaderTable">
+        <div class="w-full h-px bg-white/10 my-4" />
+
+        <app-settings-content :header-text="$strings.HeaderEreaderDevices">
+          <template #header-items>
+            <div class="flex-grow" />
+
+            <ui-btn color="primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
+          </template>
+
+          <table v-if="ereaderDevices.length" class="tracksTable mt-4">
+            <tr>
+              <th class="text-left">{{ $strings.LabelName }}</th>
+              <th class="text-left">{{ $strings.LabelEmail }}</th>
+              <th class="w-40"></th>
+            </tr>
+            <tr v-for="device in ereaderDevices" :key="device.name">
+              <td>
+                <p class="text-sm md:text-base text-gray-100">{{ device.name }}</p>
+              </td>
+              <td class="text-left">
+                <p class="text-sm md:text-base text-gray-100">{{ device.email }}</p>
+              </td>
+              <td class="w-40">
+                <div class="flex justify-end items-center h-10">
+                  <ui-icon-btn icon="edit" borderless :size="8" icon-font-size="1.1rem" :disabled="deletingDeviceName === device.name || device.users?.length !== 1" class="mx-1" @click="editDeviceClick(device)" />
+                  <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" :disabled="deletingDeviceName === device.name || device.users?.length !== 1" @click="deleteDeviceClick(device)" />
+                </div>
+              </td>
+            </tr>
+          </table>
+          <div v-else-if="!loading" class="text-center py-4">
+            <p class="text-lg text-gray-100">{{ $strings.MessageNoDevices }}</p>
+          </div>
+        </app-settings-content>
+      </div>
+
       <div class="py-4 mt-8 flex">
         <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
+
+      <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
     </div>
   </div>
 </template>
@@ -43,11 +82,20 @@
 export default {
   data() {
     return {
+      loading: false,
       password: null,
       newPassword: null,
       confirmPassword: null,
       changingPassword: false,
-      selectedLanguage: ''
+      selectedLanguage: '',
+      newEReaderDevice: {
+        name: '',
+        email: ''
+      },
+      ereaderDevices: [],
+      deletingDeviceName: null,
+      selectedEReaderDevice: null,
+      showEReaderDeviceModal: false
     }
   },
   computed: {
@@ -75,6 +123,12 @@ export default {
     },
     showChangePasswordForm() {
       return !this.isGuest && this.isPasswordAuthEnabled
+    },
+    showEreaderTable() {
+      return this.usertype !== 'root' && this.usertype !== 'admin' && this.user.permissions?.createEreader
+    },
+    revisedEreaderDevices() {
+      return this.ereaderDevices.filter((device) => device.users?.length === 1)
     }
   },
   methods: {
@@ -142,10 +196,52 @@ export default {
           this.$toast.error(this.$strings.ToastUnknownError)
           this.changingPassword = false
         })
+    },
+    addNewDeviceClick() {
+      this.selectedEReaderDevice = null
+      this.showEReaderDeviceModal = true
+    },
+    editDeviceClick(device) {
+      this.selectedEReaderDevice = device
+      this.showEReaderDeviceModal = true
+    },
+    deleteDeviceClick(device) {
+      const payload = {
+        message: this.$getString('MessageConfirmDeleteDevice', [device.name]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteDevice(device)
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteDevice(device) {
+      const payload = {
+        ereaderDevices: this.revisedEreaderDevices.filter((d) => d.name !== device.name)
+      }
+      this.deletingDeviceName = device.name
+      this.$axios
+        .$post(`/api/me/ereader-devices`, payload)
+        .then((data) => {
+          this.ereaderDevicesUpdated(data.ereaderDevices)
+        })
+        .catch((error) => {
+          console.error('Failed to delete device', error)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
+        })
+        .finally(() => {
+          this.deletingDeviceName = null
+        })
+    },
+    ereaderDevicesUpdated(ereaderDevices) {
+      this.ereaderDevices = ereaderDevices
     }
   },
   mounted() {
     this.selectedLanguage = this.$languageCodes.current
+    this.ereaderDevices = this.$store.state.libraries.ereaderDevices || []
   }
 }
 </script>

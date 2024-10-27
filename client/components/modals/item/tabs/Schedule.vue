@@ -2,28 +2,28 @@
   <div class="w-full h-full relative">
     <div id="scheduleWrapper" class="w-full overflow-y-auto px-2 py-4 md:px-6 md:py-6">
       <template v-if="!feedUrl">
-        <widgets-alert type="warning" class="text-base mb-4">No RSS feed URL is set for this podcast</widgets-alert>
+        <widgets-alert type="warning" class="text-base mb-4">{{ $strings.ToastPodcastNoRssFeed }}</widgets-alert>
       </template>
       <template v-if="feedUrl || autoDownloadEpisodes">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-base md:text-xl font-semibold">Schedule Automatic Episode Downloads</p>
-          <ui-checkbox v-model="enableAutoDownloadEpisodes" label="Enable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
+          <p class="text-base md:text-xl font-semibold">{{ $strings.HeaderScheduleEpisodeDownloads }}</p>
+          <ui-checkbox v-model="enableAutoDownloadEpisodes" :label="$strings.LabelEnable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
         </div>
 
         <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">
           <ui-text-input ref="maxEpisodesInput" type="number" v-model="newMaxEpisodesToKeep" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updatedMaxEpisodesToKeep" />
-          <ui-tooltip text="Value of 0 sets no max limit. After a new episode is auto-downloaded this will delete the oldest episode if you have more than X episodes. <br>This will only delete 1 episode per new download.">
+          <ui-tooltip :text="$strings.LabelMaxEpisodesToKeepHelp">
             <p class="pl-4 text-base">
-              Max episodes to keep
+              {{ $strings.LabelMaxEpisodesToKeep }}
               <span class="material-symbols icon-text">info</span>
             </p>
           </ui-tooltip>
         </div>
         <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">
           <ui-text-input ref="maxEpisodesToDownloadInput" type="number" v-model="newMaxNewEpisodesToDownload" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updateMaxNewEpisodesToDownload" />
-          <ui-tooltip text="Value of 0 sets no max limit. When checking for new episodes this is the max number of episodes that will be downloaded.">
+          <ui-tooltip :text="$strings.LabelUseZeroForUnlimited">
             <p class="pl-4 text-base">
-              Max new episodes to download per check
+              {{ $strings.LabelMaxEpisodesToDownloadPerCheck }}
               <span class="material-symbols icon-text">info</span>
             </p>
           </ui-tooltip>
@@ -36,7 +36,7 @@
     <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white border-opacity-5">
       <div class="flex items-center px-2 md:px-4">
         <div class="flex-grow" />
-        <ui-btn @click="save" :disabled="!isUpdated" :color="isUpdated ? 'success' : 'primary'" class="mx-2">{{ isUpdated ? 'Save' : 'No update necessary' }}</ui-btn>
+        <ui-btn @click="save" :disabled="!isUpdated" :color="isUpdated ? 'success' : 'primary'" class="mx-2">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdatesWereNecessary }}</ui-btn>
       </div>
     </div>
   </div>

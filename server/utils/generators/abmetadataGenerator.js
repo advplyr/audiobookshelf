@@ -1,4 +1,5 @@
 const Logger = require('../../Logger')
+const parseSeriesString = require('../parsers/parseSeriesString')
 
 function parseJsonMetadataText(text) {
   try {
@@ -19,39 +20,25 @@ function parseJsonMetadataText(text) {
     delete abmetadataData.metadata
 
     if (abmetadataData.series?.length) {
-      abmetadataData.series = [...new Set(abmetadataData.series.map(t => t?.trim()).filter(t => t))]
-      abmetadataData.series = abmetadataData.series.map(series => {
-        let sequence = null
-        let name = series
-        // Series sequence match any characters after " #" other than whitespace and another #
-        //  e.g. "Name #1a" is valid. "Name #1#a" or "Name #1 a" is not valid.
-        const matchResults = series.match(/ #([^#\s]+)$/) // Pull out sequence #
-        if (matchResults && matchResults.length && matchResults.length > 1) {
-          sequence = matchResults[1] // Group 1
-          name = series.replace(matchResults[0], '')
-        }
-        return {
-          name,
-          sequence
-        }
-      })
+      abmetadataData.series = [...new Set(abmetadataData.series.map((t) => t?.trim()).filter((t) => t))]
+      abmetadataData.series = abmetadataData.series.map((series) => parseSeriesString.parse(series))
     }
     // clean tags & remove dupes
     if (abmetadataData.tags?.length) {
-      abmetadataData.tags = [...new Set(abmetadataData.tags.map(t => t?.trim()).filter(t => t))]
+      abmetadataData.tags = [...new Set(abmetadataData.tags.map((t) => t?.trim()).filter((t) => t))]
     }
     if (abmetadataData.chapters?.length) {
       abmetadataData.chapters = cleanChaptersArray(abmetadataData.chapters, abmetadataData.title)
     }
     // clean remove dupes
     if (abmetadataData.authors?.length) {
-      abmetadataData.authors = [...new Set(abmetadataData.authors.map(t => t?.trim()).filter(t => t))]
+      abmetadataData.authors = [...new Set(abmetadataData.authors.map((t) => t?.trim()).filter((t) => t))]
     }
     if (abmetadataData.narrators?.length) {
-      abmetadataData.narrators = [...new Set(abmetadataData.narrators.map(t => t?.trim()).filter(t => t))]
+      abmetadataData.narrators = [...new Set(abmetadataData.narrators.map((t) => t?.trim()).filter((t) => t))]
     }
     if (abmetadataData.genres?.length) {
-      abmetadataData.genres = [...new Set(abmetadataData.genres.map(t => t?.trim()).filter(t => t))]
+      abmetadataData.genres = [...new Set(abmetadataData.genres.map((t) => t?.trim()).filter((t) => t))]
     }
     return abmetadataData
   } catch (error) {

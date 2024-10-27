@@ -103,7 +103,8 @@ class SocketAuthority {
       cors: {
         origin: '*',
         methods: ['GET', 'POST']
-      }
+      },
+      path: `${global.RouterBasePath}/socket.io`
     })
 
     this.io.on('connection', (socket) => {

@@ -14,6 +14,23 @@ const { DataTypes, Model } = sequelize
  * @property {number} createdAt
  */
 
+/**
+ * @typedef ProgressUpdatePayload
+ * @property {string} libraryItemId
+ * @property {string} [episodeId]
+ * @property {number} [duration]
+ * @property {number} [progress]
+ * @property {number} [currentTime]
+ * @property {boolean} [isFinished]
+ * @property {boolean} [hideFromContinueListening]
+ * @property {string} [ebookLocation]
+ * @property {number} [ebookProgress]
+ * @property {string} [finishedAt]
+ * @property {number} [lastUpdate]
+ * @property {number} [markAsFinishedTimeRemaining]
+ * @property {number} [markAsFinishedPercentComplete]
+ */
+
 class User extends Model {
   constructor(values, options) {
     super(values, options)
@@ -65,6 +82,7 @@ class User extends Model {
     canAccessExplicitContent: 'accessExplicitContent',
     canAccessAllLibraries: 'accessAllLibraries',
     canAccessAllTags: 'accessAllTags',
+    canCreateEReader: 'createEreader',
     tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
@@ -105,6 +123,7 @@ class User extends Model {
       update: type === 'root' || type === 'admin',
       delete: type === 'root',
       upload: type === 'root' || type === 'admin',
+      createEreader: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: type === 'root' || type === 'admin',
@@ -514,19 +533,6 @@ class User extends Model {
 
   /**
    * TODO: Uses old model and should account for the different between ebook/audiobook progress
-   *
-   * @typedef ProgressUpdatePayload
-   * @property {string} libraryItemId
-   * @property {string} [episodeId]
-   * @property {number} [duration]
-   * @property {number} [progress]
-   * @property {number} [currentTime]
-   * @property {boolean} [isFinished]
-   * @property {boolean} [hideFromContinueListening]
-   * @property {string} [ebookLocation]
-   * @property {number} [ebookProgress]
-   * @property {string} [finishedAt]
-   * @property {number} [lastUpdate]
    *
    * @param {ProgressUpdatePayload} progressPayload
    * @returns {Promise<{ mediaProgress: import('./MediaProgress'), error: [string], statusCode: [number] }>}
