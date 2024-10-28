@@ -235,12 +235,14 @@ class LibraryController {
     for (const key of keysToCheck) {
       if (!req.body[key]) continue
       if (typeof req.body[key] !== 'string') {
+        Logger.error(`[LibraryController] Invalid request. ${key} must be a string`)
         return res.status(400).send(`Invalid request. ${key} must be a string`)
       }
       updatePayload[key] = req.body[key]
     }
     if (req.body.displayOrder !== undefined) {
       if (isNaN(req.body.displayOrder)) {
+        Logger.error(`[LibraryController] Invalid request. displayOrder must be a number`)
         return res.status(400).send('Invalid request. displayOrder must be a number')
       }
       updatePayload.displayOrder = req.body.displayOrder
@@ -259,6 +261,13 @@ class LibraryController {
     const updatedSettings = {
       ...(req.library.settings || defaultLibrarySettings)
     }
+    // In case new settings are added in the future, ensure all settings are present
+    for (const key in defaultLibrarySettings) {
+      if (updatedSettings[key] === undefined) {
+        updatedSettings[key] = defaultLibrarySettings[key]
+      }
+    }
+
     let hasUpdates = false
     let hasUpdatedDisableWatcher = false
     let hasUpdatedScanCron = false
@@ -270,6 +279,7 @@ class LibraryController {
 
         if (key === 'metadataPrecedence') {
           if (!Array.isArray(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Settings "metadataPrecedence" must be an array`)
             return res.status(400).send('Invalid request. Settings "metadataPrecedence" must be an array')
           }
           if (JSON.stringify(req.body.settings[key]) !== JSON.stringify(updatedSettings[key])) {
@@ -279,6 +289,7 @@ class LibraryController {
           }
         } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
           if (req.body.settings[key] !== null && typeof req.body.settings[key] !== 'string') {
+            Logger.error(`[LibraryController] Invalid request. Settings "${key}" must be a string`)
             return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -290,8 +301,10 @@ class LibraryController {
           }
         } else if (key === 'markAsFinishedPercentComplete') {
           if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be a number`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
           } else if (req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 100)) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be between 0 and 100`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 100`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -301,8 +314,10 @@ class LibraryController {
           }
         } else if (key === 'markAsFinishedTimeRemaining') {
           if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be a number`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
           } else if (req.body.settings[key] !== null && Number(req.body.settings[key]) < 0) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be greater than or equal to 0`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be greater than or equal to 0`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -312,6 +327,7 @@ class LibraryController {
           }
         } else {
           if (typeof req.body.settings[key] !== typeof updatedSettings[key]) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -353,6 +369,7 @@ class LibraryController {
               return false
             })
           if (!success) {
+            Logger.error(`[LibraryController] Invalid folder directory "${path}"`)
             return res.status(400).send(`Invalid folder directory "${path}"`)
           }
         }
