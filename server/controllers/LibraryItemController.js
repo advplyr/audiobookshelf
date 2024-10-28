@@ -115,6 +115,16 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
+  #handleDownloadError(error, res) {
+    if (!res.headersSent) {
+      if (error.code === 'ENOENT') {
+        return res.status(404).send('File not found')
+      } else {
+        return res.status(500).send('Download failed')
+      }
+    }
+  }
+
   /**
    * GET: /api/items/:id/download
    * Download library item. Zip file if multiple files.
@@ -122,7 +132,7 @@ class LibraryItemController {
    * @param {RequestWithUser} req
    * @param {Response} res
    */
-  download(req, res) {
+  async download(req, res) {
     if (!req.user.canDownload) {
       Logger.warn(`User "${req.user.username}" attempted to download without permission`)
       return res.sendStatus(403)
@@ -130,21 +140,26 @@ class LibraryItemController {
     const libraryItemPath = req.libraryItem.path
     const itemTitle = req.libraryItem.media.metadata.title
 
-    // If library item is a single file in root dir then no need to zip
-    if (req.libraryItem.isFile) {
-      // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
-      if (audioMimeType) {
-        res.setHeader('Content-Type', audioMimeType)
-      }
-      Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
-      res.download(libraryItemPath, req.libraryItem.relPath)
-      return
-    }
-
     Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
-    const filename = `${itemTitle}.zip`
-    zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
+
+    try {
+      // If library item is a single file in root dir then no need to zip
+      if (req.libraryItem.isFile) {
+        // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+        const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
+        if (audioMimeType) {
+          res.setHeader('Content-Type', audioMimeType)
+        }
+        await new Promise((resolve, reject) => res.download(libraryItemPath, req.libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
+      } else {
+        const filename = `${itemTitle}.zip`
+        await zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
+      }
+      Logger.info(`[LibraryItemController] Downloaded item "${itemTitle}" at "${libraryItemPath}"`)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Download failed for item "${itemTitle}" at "${libraryItemPath}"`, error)
+      this.#handleDownloadError(error, res)
+    }
   }
 
   /**
@@ -845,7 +860,13 @@ class LibraryItemController {
       res.setHeader('Content-Type', audioMimeType)
     }
 
-    res.download(libraryFile.metadata.path, libraryFile.metadata.filename)
+    try {
+      await new Promise((resolve, reject) => res.download(libraryFile.metadata.path, libraryFile.metadata.filename, (error) => (error ? reject(error) : resolve())))
+      Logger.info(`[LibraryItemController] Downloaded file "${libraryFile.metadata.path}"`)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Failed to download file "${libraryFile.metadata.path}"`, error)
+      this.#handleDownloadError(error, res)
+    }
   }
 
   /**
@@ -883,7 +904,13 @@ class LibraryItemController {
       return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
 
-    res.sendFile(ebookFilePath)
+    try {
+      await new Promise((resolve, reject) => res.sendFile(ebookFilePath, (error) => (error ? reject(error) : resolve())))
+      Logger.info(`[LibraryItemController] Downloaded ebook file "${ebookFilePath}"`)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Failed to download ebook file "${ebookFilePath}"`, error)
+      this.#handleDownloadError(error, res)
+    }
   }
 
   /**
