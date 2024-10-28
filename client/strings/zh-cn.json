@@ -472,6 +472,7 @@
   "LabelPermissionsAccessAllLibraries": "可以访问所有媒体库",
   "LabelPermissionsAccessAllTags": "可以访问所有标签",
   "LabelPermissionsAccessExplicitContent": "可以访问显式内容",
+  "LabelPermissionsCreateEreader": "可以创建电子阅读器",
   "LabelPermissionsDelete": "可以删除",
   "LabelPermissionsDownload": "可以下载",
   "LabelPermissionsUpdate": "可以更新",
