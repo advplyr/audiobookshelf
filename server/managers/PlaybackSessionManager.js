@@ -366,7 +366,7 @@ class PlaybackSessionManager {
       libraryItemId: libraryItem.id,
       episodeId: session.episodeId,
       // duration no longer required (v2.15.1) but used if available
-      duration: syncData.duration || libraryItem.media.duration || 0,
+      duration: syncData.duration || session.duration || 0,
       currentTime: syncData.currentTime,
       progress: session.progress,
       markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining,
