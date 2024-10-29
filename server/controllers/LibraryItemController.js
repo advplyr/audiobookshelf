@@ -115,7 +115,7 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
-  #handleDownloadError(error, res) {
+  static handleDownloadError(error, res) {
     if (!res.headersSent) {
       if (error.code === 'ENOENT') {
         return res.status(404).send('File not found')
@@ -158,7 +158,7 @@ class LibraryItemController {
       Logger.info(`[LibraryItemController] Downloaded item "${itemTitle}" at "${libraryItemPath}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Download failed for item "${itemTitle}" at "${libraryItemPath}"`, error)
-      this.#handleDownloadError(error, res)
+      LibraryItemController.handleDownloadError(error, res)
     }
   }
 
@@ -865,7 +865,7 @@ class LibraryItemController {
       Logger.info(`[LibraryItemController] Downloaded file "${libraryFile.metadata.path}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Failed to download file "${libraryFile.metadata.path}"`, error)
-      this.#handleDownloadError(error, res)
+      LibraryItemController.handleDownloadError(error, res)
     }
   }
 
@@ -909,7 +909,7 @@ class LibraryItemController {
       Logger.info(`[LibraryItemController] Downloaded ebook file "${ebookFilePath}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Failed to download ebook file "${ebookFilePath}"`, error)
-      this.#handleDownloadError(error, res)
+      LibraryItemController.handleDownloadError(error, res)
     }
   }
 
