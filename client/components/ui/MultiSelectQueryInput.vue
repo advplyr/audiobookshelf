@@ -12,7 +12,7 @@
             {{ item[textKey] }}
           </div>
           <div v-if="showEdit && !disabled" class="rounded-full cursor-pointer w-6 h-6 mx-0.5 bg-bg flex items-center justify-center">
-            <span class="material-symbols text-white hover:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem">add</span>
+            <span class="material-symbols text-white hover:text-success focus:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem" @keydown.enter.stop="addItem" tabindex="0">add</span>
           </div>
           <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
