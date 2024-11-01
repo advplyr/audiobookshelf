@@ -37,6 +37,8 @@
   "devDependencies": {
     "@nuxtjs/pwa": "^3.3.5",
     "autoprefixer": "^10.4.7",
+    "nuxt-compress": "^5.0.0",
+    "nuxt-webpack-optimisations": "^2.2.8",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.4.1"
   },
