@@ -6,7 +6,7 @@
       <div class="flex-grow" />
       <ui-btn v-if="userCanUpdate" small :to="`/audiobook/${libraryItemId}/chapters`" color="primary" class="mr-2" @click="clickEditChapters">{{ $strings.ButtonEditChapters }}</ui-btn>
       <div v-if="!keepOpen" class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="expanded ? 'transform rotate-180' : ''">
-        <span class="material-icons text-4xl">expand_more</span>
+        <span class="material-symbols text-4xl">&#xe313;</span>
       </div>
     </div>
     <transition name="slide">
@@ -15,7 +15,7 @@
           <th class="text-left w-16"><span class="px-4">Id</span></th>
           <th class="text-left">{{ $strings.LabelTitle }}</th>
           <th class="text-center">{{ $strings.LabelStart }}</th>
-          <th class="text-center">{{ $strings.LabelEnd }}</th>
+          <th class="text-center">{{ $strings.LabelDuration }}</th>
         </tr>
         <tr v-for="chapter in chapters" :key="chapter.id">
           <td class="text-left">
@@ -27,8 +27,8 @@
           <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
             {{ $secondsToTimestamp(chapter.start) }}
           </td>
-          <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
-            {{ $secondsToTimestamp(chapter.end) }}
+          <td class="font-mono text-center">
+            {{ $secondsToTimestamp(Math.max(0, chapter.end - chapter.start)) }}
           </td>
         </tr>
       </table>

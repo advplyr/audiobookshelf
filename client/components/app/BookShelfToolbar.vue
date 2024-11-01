@@ -24,13 +24,13 @@
       </nuxt-link>
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="flex-grow h-full flex justify-center items-center" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isPlaylistsPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonPlaylists }}</p>
-        <span v-else class="material-icons-outlined text-lg">queue_music</span>
+        <span v-else class="material-symbols text-lg">&#xe03d;</span>
       </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
-        <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
+        <span v-else class="material-symbols text-lg">&#xe431;</span>
       </nuxt-link>
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>
         <svg v-else class="w-5 h-5" viewBox="0 0 24 24">
           <path
@@ -50,10 +50,9 @@
           {{ seriesName }}
         </p>
         <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
-          <span class="font-mono">{{ numShowing }}</span>
+          <span class="font-mono">{{ $formatNumber(numShowing) }}</span>
         </div>
         <div class="flex-grow" />
-        <ui-checkbox v-if="!isBatchSelecting" v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
 
         <!-- RSS feed -->
         <ui-tooltip v-if="seriesRssFeed" :text="$strings.LabelOpenRSSFeed" direction="top">
@@ -63,13 +62,10 @@
         <ui-context-menu-dropdown v-if="!isBatchSelecting && seriesContextMenuItems.length" :items="seriesContextMenuItems" class="mx-px" @action="seriesContextMenuAction" />
       </template>
       <!-- library & collections page -->
-      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
-        <p class="hidden md:block">{{ numShowing }} {{ entityName }}</p>
+      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome && !isAuthorsPage">
+        <p class="hidden md:block">{{ $formatNumber(numShowing) }} {{ entityName }}</p>
 
         <div class="flex-grow hidden sm:inline-block" />
-
-        <!-- collapse series checkbox -->
-        <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
 
         <!-- library filter select -->
         <controls-library-filter-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
@@ -84,7 +80,7 @@
         <controls-sort-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesSortBy" :descending.sync="settings.seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
         <!-- issues page remove all button -->
-        <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
+        <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ $formatNumber(numShowing) }} {{ entityName }}</ui-btn>
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
@@ -93,14 +89,22 @@
         <div class="flex-grow" />
         <p>{{ $strings.MessageSearchResultsFor }} "{{ searchQuery }}"</p>
         <div class="flex-grow" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- authors page -->
-      <template v-else-if="page === 'authors'">
-        <div class="flex-grow" />
-        <ui-btn v-if="userCanUpdate && authors && authors.length && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
+      <template v-else-if="isAuthorsPage">
+        <p class="hidden md:block">{{ $formatNumber(numShowing) }} {{ entityName }}</p>
+
+        <div class="flex-grow hidden sm:inline-block" />
+        <ui-btn v-if="userCanUpdate && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
 
         <!-- author sort select -->
-        <controls-sort-select v-if="authors && authors.length" v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
+        <controls-sort-select v-model="settings.authorSortBy" :descending.sync="settings.authorSortDesc" :items="authorSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateAuthorSort" />
+      </template>
+      <!-- home page -->
+      <template v-else-if="isHome">
+        <div class="flex-grow" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
     </div>
   </div>
@@ -115,11 +119,7 @@ export default {
       type: Object,
       default: () => null
     },
-    searchQuery: String,
-    authors: {
-      type: Array,
-      default: () => []
-    }
+    searchQuery: String
   },
   data() {
     return {
@@ -151,10 +151,13 @@ export default {
 
       if (this.isSeriesRemovedFromContinueListening) {
         items.push({
-          text: 'Re-Add Series to Continue Listening',
+          text: this.$strings.LabelReAddSeriesToContinueListening,
           action: 're-add-to-continue-listening'
         })
       }
+
+      this.addSubtitlesMenuItem(items)
+      this.addCollapseSubSeriesMenuItem(items)
 
       return items
     },
@@ -183,6 +186,10 @@ export default {
         {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
+        },
+        {
+          text: this.$strings.LabelRandomly,
+          value: 'random'
         }
       ]
     },
@@ -237,9 +244,6 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    isMusicLibrary() {
-      return this.currentLibraryMediaType === 'music'
-    },
     isLibraryPage() {
       return this.page === ''
     },
@@ -262,7 +266,7 @@ export default {
       return this.$route.name === 'library-library-podcast-latest'
     },
     isAuthorsPage() {
-      return this.$route.name === 'library-library-authors'
+      return this.page === 'authors'
     },
     isAlbumsPage() {
       return this.page === 'albums'
@@ -272,13 +276,13 @@ export default {
     },
     entityName() {
       if (this.isAlbumsPage) return 'Albums'
-      if (this.isMusicLibrary) return 'Tracks'
 
       if (this.isPodcastLibrary) return this.$strings.LabelPodcasts
       if (!this.page) return this.$strings.LabelBooks
       if (this.isSeriesPage) return this.$strings.LabelSeries
       if (this.isCollectionsPage) return this.$strings.LabelCollections
       if (this.isPlaylistsPage) return this.$strings.LabelPlaylists
+      if (this.isAuthorsPage) return this.$strings.LabelAuthors
       return ''
     },
     seriesId() {
@@ -318,10 +322,13 @@ export default {
 
       if (this.isPodcastLibrary && this.isLibraryPage && this.userCanDownload) {
         items.push({
-          text: 'Export OPML',
+          text: this.$strings.LabelExportOPML,
           action: 'export-opml'
         })
       }
+
+      this.addSubtitlesMenuItem(items)
+      this.addCollapseSeriesMenuItem(items)
 
       return items
     },
@@ -330,9 +337,98 @@ export default {
     }
   },
   methods: {
+    addSubtitlesMenuItem(items) {
+      if (this.isBookLibrary && (!this.page || this.page === 'search')) {
+        if (this.settings.showSubtitles) {
+          items.push({
+            text: this.$strings.LabelHideSubtitles,
+            action: 'hide-subtitles'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelShowSubtitles,
+            action: 'show-subtitles'
+          })
+        }
+      }
+    },
+    addCollapseSeriesMenuItem(items) {
+      if (this.isLibraryPage && this.isBookLibrary && !this.isBatchSelecting) {
+        if (this.settings.collapseSeries) {
+          items.push({
+            text: this.$strings.LabelExpandSeries,
+            action: 'expand-series'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelCollapseSeries,
+            action: 'collapse-series'
+          })
+        }
+      }
+    },
+    addCollapseSubSeriesMenuItem(items) {
+      if (this.selectedSeries && this.isBookLibrary && !this.isBatchSelecting) {
+        if (this.settings.collapseBookSeries) {
+          items.push({
+            text: this.$strings.LabelExpandSubSeries,
+            action: 'expand-sub-series'
+          })
+        } else {
+          items.push({
+            text: this.$strings.LabelCollapseSubSeries,
+            action: 'collapse-sub-series'
+          })
+        }
+      }
+    },
+    handleSubtitlesAction(action) {
+      if (action === 'show-subtitles') {
+        this.settings.showSubtitles = true
+        this.updateShowSubtitles()
+        return true
+      }
+      if (action === 'hide-subtitles') {
+        this.settings.showSubtitles = false
+        this.updateShowSubtitles()
+        return true
+      }
+      return false
+    },
+    handleCollapseSeriesAction(action) {
+      if (action === 'collapse-series') {
+        this.settings.collapseSeries = true
+        this.updateCollapseSeries()
+        return true
+      }
+      if (action === 'expand-series') {
+        this.settings.collapseSeries = false
+        this.updateCollapseSeries()
+        return true
+      }
+      return false
+    },
+    handleCollapseSubSeriesAction(action) {
+      if (action === 'collapse-sub-series') {
+        this.settings.collapseBookSeries = true
+        this.updateCollapseSubSeries()
+        return true
+      }
+      if (action === 'expand-sub-series') {
+        this.settings.collapseBookSeries = false
+        this.updateCollapseSubSeries()
+        return true
+      }
+      return false
+    },
     contextMenuAction({ action }) {
       if (action === 'export-opml') {
         this.exportOPML()
+        return
+      } else if (this.handleSubtitlesAction(action)) {
+        return
+      } else if (this.handleCollapseSeriesAction(action)) {
+        return
       }
     },
     exportOPML() {
@@ -353,6 +449,10 @@ export default {
           return
         }
         this.markSeriesFinished()
+      } else if (this.handleSubtitlesAction(action)) {
+        return
+      } else if (this.handleCollapseSubSeriesAction(action)) {
+        return
       }
     },
     showOpenSeriesRSSFeed() {
@@ -368,46 +468,58 @@ export default {
       this.$axios
         .$get(`/api/me/series/${this.seriesId}/readd-to-continue-listening`)
         .then(() => {
-          this.$toast.success('Series re-added to continue listening')
+          this.$toast.success(this.$strings.ToastItemUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to re-add series to continue listening', error)
-          this.$toast.error('Failed to re-add series to continue listening')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processingSeries = false
         })
     },
+    async fetchAllAuthors() {
+      // fetch all authors from the server, in the order that they are currently displayed
+      const response = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/authors?sort=${this.settings.authorSortBy}&desc=${this.settings.authorSortDesc}`)
+      return response.authors
+    },
     async matchAllAuthors() {
       this.processingAuthors = true
 
-      for (const author of this.authors) {
-        const payload = {}
-        if (author.asin) payload.asin = author.asin
-        else payload.q = author.name
+      try {
+        const authors = await this.fetchAllAuthors()
 
-        payload.region = 'us'
-        if (this.libraryProvider.startsWith('audible.')) {
-          payload.region = this.libraryProvider.split('.').pop() || 'us'
+        for (const author of authors) {
+          const payload = {}
+          if (author.asin) payload.asin = author.asin
+          else payload.q = author.name
+
+          payload.region = 'us'
+          if (this.libraryProvider.startsWith('audible.')) {
+            payload.region = this.libraryProvider.split('.').pop() || 'us'
+          }
+
+          this.$eventBus.$emit(`searching-author-${author.id}`, true)
+
+          var response = await this.$axios.$post(`/api/authors/${author.id}/match`, payload).catch((error) => {
+            console.error('Failed', error)
+            return null
+          })
+          if (!response) {
+            console.error(`Author ${author.name} not found`)
+            this.$toast.error(this.$getString('ToastAuthorNotFound', [author.name]))
+          } else if (response.updated) {
+            if (response.author.imagePath) console.log(`Author ${response.author.name} was updated`)
+            else console.log(`Author ${response.author.name} was updated (no image found)`)
+          } else {
+            console.log(`No updates were made for Author ${response.author.name}`)
+          }
+
+          this.$eventBus.$emit(`searching-author-${author.id}`, false)
         }
-
-        this.$eventBus.$emit(`searching-author-${author.id}`, true)
-
-        var response = await this.$axios.$post(`/api/authors/${author.id}/match`, payload).catch((error) => {
-          console.error('Failed', error)
-          return null
-        })
-        if (!response) {
-          console.error(`Author ${author.name} not found`)
-          this.$toast.error(`Author ${author.name} not found`)
-        } else if (response.updated) {
-          if (response.author.imagePath) console.log(`Author ${response.author.name} was updated`)
-          else console.log(`Author ${response.author.name} was updated (no image found)`)
-        } else {
-          console.log(`No updates were made for Author ${response.author.name}`)
-        }
-
-        this.$eventBus.$emit(`searching-author-${author.id}`, false)
+      } catch (error) {
+        console.error('Failed to match all authors', error)
+        this.$toast.error(this.$strings.ToastMatchAllAuthorsFailed)
       }
       this.processingAuthors = false
     },
@@ -417,13 +529,13 @@ export default {
         this.$axios
           .$delete(`/api/libraries/${this.currentLibraryId}/issues`)
           .then(() => {
-            this.$toast.success('Removed library items with issues')
+            this.$toast.success(this.$strings.ToastRemoveItemsWithIssuesSuccess)
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
             this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
-            this.$toast.error('Failed to remove library items with issues')
+            this.$toast.error(this.$strings.ToastRemoveItemsWithIssuesFailed)
           })
           .finally(() => {
             this.processingIssues = false
@@ -479,7 +591,10 @@ export default {
     updateCollapseSeries() {
       this.saveSettings()
     },
-    updateCollapseBookSeries() {
+    updateCollapseSubSeries() {
+      this.saveSettings()
+    },
+    updateShowSubtitles() {
       this.saveSettings()
     },
     updateAuthorSort() {

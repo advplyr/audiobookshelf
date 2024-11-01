@@ -16,14 +16,14 @@
     <ui-context-menu-dropdown v-if="!isScanning && !isDeleting" :items="contextMenuItems" :icon-class="`text-1.5xl text-gray-${isHovering ? 50 : 400}`" class="!hidden md:!block" @action="contextMenuAction" />
 
     <!-- Mobile context menu icon -->
-    <span v-if="!isScanning && !isDeleting" class="!block md:!hidden material-icons text-xl text-gray-300 ml-3 cursor-pointer" @click.stop="showMenu">more_vert</span>
+    <span v-if="!isScanning && !isDeleting" class="!block md:!hidden material-symbols text-xl text-gray-300 ml-3 cursor-pointer" @click.stop="showMenu">more_vert</span>
 
     <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin">
       <svg viewBox="0 0 24 24" class="w-6 h-6">
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
       </svg>
     </div>
-    <span class="material-icons drag-handle text-xl text-gray-400 hover:text-gray-50 ml-2 md:ml-4">reorder</span>
+    <span class="material-symbols drag-handle text-xl text-gray-400 hover:text-gray-50 ml-2 md:ml-4">reorder</span>
 
     <!-- For mobile -->
     <modals-dialog v-model="showMobileMenu" :title="menuTitle" :items="contextMenuItems" @action="contextMenuAction" />

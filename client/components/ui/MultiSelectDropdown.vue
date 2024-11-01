@@ -5,7 +5,7 @@
       <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-pointer" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
         <div v-for="item in selectedItems" :key="item.value" class="rounded-full px-2 py-1 ma-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center relative">
           <div class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
-            <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.value)">close</span>
+            <span class="material-symbols text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.value)">close</span>
           </div>
           {{ item.text }}
         </div>
@@ -18,7 +18,7 @@
               <p class="font-normal ml-3 block truncate">{{ item.text }}</p>
 
               <div v-if="selected.includes(item.value)" class="text-yellow-400 absolute inset-y-0 right-0 my-auto w-5 h-5 mr-3 overflow-hidden">
-                <span class="material-icons text-xl">checkmark</span>
+                <span class="material-symbols text-xl">check</span>
               </div>
             </li>
           </template>

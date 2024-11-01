@@ -81,6 +81,10 @@ function parseNfoMetadata(nfoText) {
         case 'isbn-13':
           metadata.isbn = value
           break
+        case 'language':
+        case 'lang':
+          metadata.language = value
+          break
       }
     }
   })

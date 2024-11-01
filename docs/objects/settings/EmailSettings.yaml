@@ -1,0 +1,78 @@
+components:
+  schemas:
+    ereaderName:
+      type: string
+      description: The name of the e-reader device.
+    EreaderDeviceObject:
+      type: object
+      description: An e-reader device configured to receive EPUB through e-mail.
+      properties:
+        name:
+          $ref: '#/components/schemas/ereaderName'
+        email:
+          type: string
+          description: The email address associated with the e-reader device.
+        availabilityOption:
+          type: string
+          description: The availability option for the device.
+          enum: ['adminOrUp', 'userOrUp', 'guestOrUp', 'specificUsers']
+        users:
+          type: array
+          description: List of specific users allowed to access the device.
+          items:
+            type: string
+      required:
+        - name
+        - email
+        - availabilityOption
+    EmailSettings:
+      type: object
+      description: The email settings configuration for the server. This includes the credentials to send e-books and an array of e-reader devices.
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the email settings. Currently this is always `email-settings`
+          example: email-settings
+        host:
+          type: string
+          description: The SMTP host address.
+          nullable: true
+        port:
+          type: integer
+          format: int32
+          description: The port number for the SMTP server.
+          example: 465
+        secure:
+          type: boolean
+          description: Indicates if the connection should use SSL/TLS.
+          example: true
+        rejectUnauthorized:
+          type: boolean
+          description: Indicates if unauthorized SSL/TLS certificates should be rejected.
+          example: true
+        user:
+          type: string
+          description: The username for SMTP authentication.
+          nullable: true
+        pass:
+          type: string
+          description: The password for SMTP authentication.
+          nullable: true
+        testAddress:
+          type: string
+          description: The test email address used for sending test emails.
+          nullable: true
+        fromAddress:
+          type: string
+          description: The default "from" email address for outgoing emails.
+          nullable: true
+        ereaderDevices:
+          type: array
+          description: List of configured e-reader devices.
+          items:
+            $ref: '#/components/schemas/EreaderDeviceObject'
+      required:
+        - id
+        - port
+        - secure
+        - ereaderDevices

@@ -9,7 +9,7 @@
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
           <div v-if="userCanDelete" class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
             <ui-tooltip direction="top" :text="$strings.LabelRemoveCover">
-              <span class="material-icons text-2xl">delete</span>
+              <span class="material-symbols text-2xl">delete</span>
             </ui-tooltip>
           </div>
         </div>
@@ -19,7 +19,7 @@
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
               <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
-              <span class="material-icons text-2xl inline-block md:!hidden">upload</span>
+              <span class="material-symbols text-2xl inline-block md:!hidden">upload</span>
             </ui-file-input>
           </div>
 
@@ -73,7 +73,7 @@
 
     <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
       <p class="text-lg">{{ $strings.HeaderPreviewCover }}</p>
-      <span class="absolute top-4 right-4 material-icons text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
+      <span class="absolute top-4 right-4 material-symbols text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
       <div class="flex justify-center py-4">
         <covers-preview-cover :src="previewUpload" :width="240" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </div>
@@ -194,7 +194,6 @@ export default {
           if (data.error) {
             this.$toast.error(data.error)
           } else {
-            this.$toast.success('Cover Uploaded')
             this.resetCoverPreview()
           }
           this.processingUpload = false
@@ -204,7 +203,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Oops, something went wrong...')
+            this.$toast.error(this.$strings.ToastUnknownError)
           }
           this.processingUpload = false
         })
@@ -255,7 +254,7 @@ export default {
     },
     async updateCover(cover) {
       if (!cover.startsWith('http:') && !cover.startsWith('https:')) {
-        this.$toast.error('Invalid URL')
+        this.$toast.error(this.$strings.ToastInvalidUrl)
         return
       }
 
@@ -264,11 +263,10 @@ export default {
         .$post(`/api/items/${this.libraryItemId}/cover`, { url: cover })
         .then(() => {
           this.imageUrl = ''
-          this.$toast.success('Update Successful')
         })
         .catch((error) => {
           console.error('Failed to update cover', error)
-          this.$toast.error(error.response?.data || 'Failed to update cover')
+          this.$toast.error(error.response?.data || this.$strings.ToastCoverUpdateFailed)
         })
         .finally(() => {
           this.isProcessing = false
@@ -308,12 +306,9 @@ export default {
       this.isProcessing = true
       this.$axios
         .$patch(`/api/items/${this.libraryItemId}/cover`, { cover: coverFile.metadata.path })
-        .then(() => {
-          this.$toast.success('Update Successful')
-        })
         .catch((error) => {
           console.error('Failed to set local cover', error)
-          this.$toast.error(error.response?.data || 'Failed to set cover')
+          this.$toast.error(error.response?.data || this.$strings.ToastCoverUpdateFailed)
         })
         .finally(() => {
           this.isProcessing = false

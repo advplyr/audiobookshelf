@@ -19,12 +19,12 @@
       <div class="folders-container overflow-y-auto w-full py-2 mb-2">
         <p class="px-1 text-sm font-semibold">{{ $strings.LabelFolders }}</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
-          <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text ref="folderInput" v-model="folder.fullPath" :readonly="!!folder.id" type="text" class="w-full" @blur="existingFolderInputBlurred(folder)" />
-          <span v-show="folders.length > 1" class="material-icons text-2xl ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
+          <span v-show="folders.length > 1" class="material-symbols text-2xl ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
         </div>
         <div class="flex py-1 px-2 items-center w-full">
-          <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text ref="newFolderInput" v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 

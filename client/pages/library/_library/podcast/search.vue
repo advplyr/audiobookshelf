@@ -5,7 +5,7 @@
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="searchInput" type="search" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />
+          <ui-text-input v-model="searchInput" type="search" :disabled="processing" :placeholder="$strings.MessagePodcastSearchField" class="flex-grow mr-2 text-sm md:text-base" />
           <ui-btn type="submit" :disabled="processing" class="hidden md:block">{{ $strings.ButtonSubmit }}</ui-btn>
           <ui-btn type="submit" :disabled="processing" class="block md:hidden" small>{{ $strings.ButtonSubmit }}</ui-btn>
         </form>
@@ -22,7 +22,7 @@
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
                 <widgets-explicit-indicator v-if="podcast.explicit" />
-                <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
+                <widgets-already-in-library-indicator v-if="podcast.alreadyInLibrary" />
               </div>
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">{{ $getString('LabelByAuthor', [podcast.artistName]) }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
@@ -108,23 +108,28 @@ export default {
 
       if (!txt || !txt.includes('<opml') || !txt.includes('<outline ')) {
         // Quick lazy check for valid OPML
-        this.$toast.error('Invalid OPML file <opml> tag not found OR an <outline> tag was not found')
+        this.$toast.error(this.$strings.MessageTaskOpmlParseFastFail)
         this.processing = false
         return
       }
 
-      await this.$axios
-        .$post(`/api/podcasts/opml`, { opmlText: txt })
+      this.$axios
+        .$post(`/api/podcasts/opml/parse`, { opmlText: txt })
         .then((data) => {
-          console.log(data)
-          this.opmlFeeds = data.feeds || []
-          this.showOPMLFeedsModal = true
+          if (!data.feeds?.length) {
+            this.$toast.error(this.$strings.MessageTaskOpmlParseNoneFound)
+          } else {
+            this.opmlFeeds = data.feeds || []
+            this.showOPMLFeedsModal = true
+          }
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Failed to parse OPML file')
+          this.$toast.error(this.$strings.MessageTaskOpmlParseFailed)
         })
-      this.processing = false
+        .finally(() => {
+          this.processing = false
+        })
     },
     submit() {
       if (!this.searchInput) return
@@ -141,7 +146,7 @@ export default {
       this.processing = true
       var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.processing = false
@@ -186,13 +191,13 @@ export default {
         return
       }
       if (!podcast.feedUrl) {
-        this.$toast.error('Invalid podcast - no feed')
+        this.$toast.error(this.$strings.MessageNoPodcastFeed)
         return
       }
       this.processing = true
       const payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.processing = false
@@ -206,15 +211,15 @@ export default {
     async fetchExistentPodcastsInYourLibrary() {
       this.processing = true
 
-      const podcasts = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/items?page=0&minified=1`).catch((error) => {
+      const podcastsResponse = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/podcast-titles`).catch((error) => {
         console.error('Failed to fetch podcasts', error)
         return []
       })
-      this.existentPodcasts = podcasts.results.map((p) => {
+      this.existentPodcasts = podcastsResponse.podcasts.map((p) => {
         return {
-          title: p.media.metadata.title.toLowerCase(),
-          itunesId: p.media.metadata.itunesId,
-          id: p.id
+          title: p.title.toLowerCase(),
+          itunesId: p.itunesId,
+          id: p.libraryItemId
         }
       })
       this.processing = false

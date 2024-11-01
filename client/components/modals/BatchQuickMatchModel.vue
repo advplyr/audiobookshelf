@@ -19,7 +19,7 @@
             <ui-tooltip :text="$strings.LabelUpdateCoverHelp">
               <p class="pl-4">
                 {{ $strings.LabelUpdateCover }}
-                <span class="material-icons icon-text">info_outlined</span>
+                <span class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
           </div>
@@ -28,7 +28,7 @@
             <ui-tooltip :text="$strings.LabelUpdateDetailsHelp">
               <p class="pl-4">
                 {{ $strings.LabelUpdateDetails }}
-                <span class="material-icons icon-text">info_outlined</span>
+                <span class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
           </div>
@@ -116,10 +116,10 @@ export default {
           libraryItemIds: this.selectedBookIds
         })
         .then(() => {
-          this.$toast.info('Batch quick match of ' + this.selectedBookIds.length + ' books started!')
+          this.$toast.info(this.$getString('ToastBatchQuickMatchStarted', [this.selectedBookIds.length]))
         })
         .catch((error) => {
-          this.$toast.error('Batch quick match failed')
+          this.$toast.error(this.$strings.ToastBatchQuickMatchFailed)
           console.error('Failed to batch quick match', error)
         })
         .finally(() => {

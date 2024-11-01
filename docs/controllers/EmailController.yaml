@@ -1,0 +1,106 @@
+components:
+  schemas:
+    emailSettings:
+      type: string
+      description: The field to sort by from the request.
+      example: 'media.metadata.title'
+  responses:
+    email200:
+      description: Successful response - Email
+      content:
+        application/json:
+          schema:
+            $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EmailSettings'
+    ereader200:
+      description: Successful response - Ereader
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ereaderDevices:
+                type: array
+                items:
+                  $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EreaderDeviceObject'
+paths:
+  /api/emails/settings:
+    get:
+      summary: Get email settings
+      description: Get email settings for sending e-books to e-readers.
+      operationId: getEmailSettings
+      tags:
+        - Email
+      responses:
+        200:
+          $ref: '#/components/responses/email200'
+    patch:
+      summary: Update email settings
+      operationId: updateEmailSettings
+      tags:
+        - Email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EmailSettings'
+      responses:
+        200:
+          $ref: '#/components/responses/email200'
+  /api/emails/test:
+    post:
+      summary: Send test email
+      operationId: sendTestEmail
+      tags:
+        - Email
+      responses:
+        200:
+          description: Successful response
+  /api/emails/ereader-devices:
+    post:
+      summary: Update e-reader devices
+      operationId: updateEReaderDevices
+      tags:
+        - Email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ereaderDevices:
+                  type: array
+                  items:
+                    $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/EreaderDeviceObject'
+      responses:
+        200:
+          $ref: '#/components/responses/ereader200'
+        400:
+          description: Invalid payload
+  /api/emails/send-ebook-to-device:
+    post:
+      summary: Send ebook to device
+      operationId: sendEBookToDevice
+      tags:
+        - Email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                libraryItemId:
+                  $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemId'
+                deviceName:
+                  $ref: '../objects/settings/EmailSettings.yaml#/components/schemas/ereaderName'
+      responses:
+        200:
+          description: Successful response
+        400:
+          description: Invalid request
+        403:
+          description: Forbidden
+        404:
+          description: Not found

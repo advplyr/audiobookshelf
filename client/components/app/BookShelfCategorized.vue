@@ -1,5 +1,5 @@
 <template>
-  <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative">
+  <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <!-- Cover size widget -->
     <widgets-cover-size-widget class="fixed right-4 z-50" :style="{ bottom: streamLibraryItem ? '181px' : '16px' }" />
 
@@ -11,31 +11,19 @@
       </div>
     </div>
     <div v-else-if="loaded && !shelves.length && search" class="w-full h-40 flex items-center justify-center">
-      <p class="text-center text-xl py-4">No results for query</p>
+      <p class="text-center text-xl py-4">{{ $strings.MessageBookshelfNoResultsForQuery }}</p>
     </div>
     <!-- Alternate plain view -->
-    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
-      <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+    <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24e">
+      <template v-for="(shelf, index) in supportedShelves">
+        <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8e my-6e" @selectEntity="(payload) => selectEntity(payload, index)">
+          <p class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
-        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
-        </widgets-episode-slider>
-        <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
-        </widgets-series-slider>
-        <widgets-authors-slider v-else-if="shelf.type === 'authors'" :key="index + '.'" :items="shelf.entities" :height="192 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
-        </widgets-authors-slider>
-        <widgets-narrators-slider v-else-if="shelf.type === 'narrators'" :key="index + '.'" :items="shelf.entities" :height="100 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
-        </widgets-narrators-slider>
       </template>
     </div>
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
-      <template v-for="(shelf, index) in shelves">
+      <template v-for="(shelf, index) in supportedShelves">
         <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
@@ -63,6 +51,9 @@ export default {
     }
   },
   computed: {
+    supportedShelves() {
+      return this.shelves.filter((shelf) => ['book', 'podcast', 'episode', 'series', 'authors', 'narrators'].includes(shelf.type))
+    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -90,8 +81,7 @@ export default {
       return this.coverAspectRatio == 1
     },
     sizeMultiplier() {
-      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
-      return this.bookCoverWidth / baseSize
+      return this.$store.getters['user/getSizeMultiplier']
     },
     selectedMediaItems() {
       return this.$store.state.globals.selectedMediaItems || []
@@ -177,8 +167,19 @@ export default {
       this.loaded = true
     },
     async fetchCategories() {
+      // Sets the limit for the number of items to be displayed based on the viewport width.
+      const viewportWidth = window.innerWidth
+      let limit
+      if (viewportWidth >= 3240) {
+        limit = 15
+      } else if (viewportWidth >= 2880 && viewportWidth < 3240) {
+        limit = 12
+      }
+
+      const limitQuery = limit ? `&limit=${limit}` : ''
+
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete,share${limitQuery}`)
         .then((data) => {
           return data
         })
@@ -346,6 +347,13 @@ export default {
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
 
+      // First items added to library
+      const isThisLibrary = libraryItems.some((li) => li.libraryId === this.currentLibraryId)
+      if (!this.shelves.length && !this.search && isThisLibrary) {
+        this.fetchCategories()
+        return
+      }
+
       const recentlyAddedShelf = this.shelves.find((shelf) => shelf.id === 'recently-added')
       if (!recentlyAddedShelf) return
 
@@ -418,6 +426,36 @@ export default {
         }
       })
     },
+    shareOpen(mediaItemShare) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.media.id === mediaItemShare.mediaItemId) {
+              return {
+                ...ent,
+                mediaItemShare
+              }
+            }
+            return ent
+          })
+        }
+      })
+    },
+    shareClosed(mediaItemShare) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.media.id === mediaItemShare.mediaItemId) {
+              return {
+                ...ent,
+                mediaItemShare: null
+              }
+            }
+            return ent
+          })
+        }
+      })
+    },
     initListeners() {
       if (this.$root.socket) {
         this.$root.socket.on('user_updated', this.userUpdated)
@@ -429,6 +467,8 @@ export default {
         this.$root.socket.on('items_updated', this.libraryItemsUpdated)
         this.$root.socket.on('items_added', this.libraryItemsAdded)
         this.$root.socket.on('episode_added', this.episodeAdded)
+        this.$root.socket.on('share_open', this.shareOpen)
+        this.$root.socket.on('share_closed', this.shareClosed)
       } else {
         console.error('Error socket not initialized')
       }
@@ -444,6 +484,8 @@ export default {
         this.$root.socket.off('items_updated', this.libraryItemsUpdated)
         this.$root.socket.off('items_added', this.libraryItemsAdded)
         this.$root.socket.off('episode_added', this.episodeAdded)
+        this.$root.socket.off('share_open', this.shareOpen)
+        this.$root.socket.off('share_closed', this.shareClosed)
       } else {
         console.error('Error socket not initialized')
       }

@@ -4,15 +4,15 @@
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
           <a href="https://www.audiobookshelf.org/guides/server_logs" target="_blank" class="inline-flex">
-            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
       </template>
 
       <div class="flex justify-between mb-2 place-items-end">
-        <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
+        <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
-        <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" class="w-full sm:w-44" />
+        <ui-dropdown v-model="newServerSettings.logLevel" :label="$strings.LabelServerLogLevel" :items="logLevelItems" @input="logLevelUpdated" class="w-full sm:w-44" />
       </div>
 
       <div class="relative">

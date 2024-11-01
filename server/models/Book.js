@@ -21,13 +21,13 @@ const Logger = require('../Logger')
 /**
  * @typedef SeriesExpandedProperties
  * @property {{sequence:string}} bookSeries
- * 
+ *
  * @typedef {import('./Series') & SeriesExpandedProperties} SeriesExpanded
- * 
+ *
  * @typedef BookExpandedProperties
  * @property {import('./Author')[]} authors
  * @property {SeriesExpanded[]} series
- * 
+ *
  * @typedef {Book & BookExpandedProperties} BookExpanded
  */
 
@@ -112,29 +112,31 @@ class Book extends Model {
     const bookExpanded = libraryItemExpanded.media
     let authors = []
     if (bookExpanded.authors?.length) {
-      authors = bookExpanded.authors.map(au => {
+      authors = bookExpanded.authors.map((au) => {
         return {
           id: au.id,
           name: au.name
         }
       })
     } else if (bookExpanded.bookAuthors?.length) {
-      authors = bookExpanded.bookAuthors.map(ba => {
-        if (ba.author) {
-          return {
-            id: ba.author.id,
-            name: ba.author.name
+      authors = bookExpanded.bookAuthors
+        .map((ba) => {
+          if (ba.author) {
+            return {
+              id: ba.author.id,
+              name: ba.author.name
+            }
+          } else {
+            Logger.error(`[Book] Invalid bookExpanded bookAuthors: no author`, ba)
+            return null
           }
-        } else {
-          Logger.error(`[Book] Invalid bookExpanded bookAuthors: no author`, ba)
-          return null
-        }
-      }).filter(a => a)
+        })
+        .filter((a) => a)
     }
 
     let series = []
     if (bookExpanded.series?.length) {
-      series = bookExpanded.series.map(se => {
+      series = bookExpanded.series.map((se) => {
         return {
           id: se.id,
           name: se.name,
@@ -142,18 +144,20 @@ class Book extends Model {
         }
       })
     } else if (bookExpanded.bookSeries?.length) {
-      series = bookExpanded.bookSeries.map(bs => {
-        if (bs.series) {
-          return {
-            id: bs.series.id,
-            name: bs.series.name,
-            sequence: bs.sequence
+      series = bookExpanded.bookSeries
+        .map((bs) => {
+          if (bs.series) {
+            return {
+              id: bs.series.id,
+              name: bs.series.name,
+              sequence: bs.sequence
+            }
+          } else {
+            Logger.error(`[Book] Invalid bookExpanded bookSeries: no series`, bs)
+            return null
           }
-        } else {
-          Logger.error(`[Book] Invalid bookExpanded bookSeries: no series`, bs)
-          return null
-        }
-      }).filter(s => s)
+        })
+        .filter((s) => s)
     }
 
     return {
@@ -185,7 +189,7 @@ class Book extends Model {
   }
 
   /**
-   * @param {object} oldBook 
+   * @param {object} oldBook
    * @returns {boolean} true if updated
    */
   static saveFromOld(oldBook) {
@@ -194,10 +198,12 @@ class Book extends Model {
       where: {
         id: book.id
       }
-    }).then(result => result[0] > 0).catch((error) => {
-      Logger.error(`[Book] Failed to save book ${book.id}`, error)
-      return false
     })
+      .then((result) => result[0] > 0)
+      .catch((error) => {
+        Logger.error(`[Book] Failed to save book ${book.id}`, error)
+        return false
+      })
   }
 
   static getFromOld(oldBook) {
@@ -219,7 +225,7 @@ class Book extends Model {
       ebookFile: oldBook.ebookFile?.toJSON() || null,
       coverPath: oldBook.coverPath,
       duration: oldBook.duration,
-      audioFiles: oldBook.audioFiles?.map(af => af.toJSON()) || [],
+      audioFiles: oldBook.audioFiles?.map((af) => af.toJSON()) || [],
       chapters: oldBook.chapters,
       tags: oldBook.tags,
       genres: oldBook.metadata.genres
@@ -229,12 +235,12 @@ class Book extends Model {
   getAbsMetadataJson() {
     return {
       tags: this.tags || [],
-      chapters: this.chapters?.map(c => ({ ...c })) || [],
+      chapters: this.chapters?.map((c) => ({ ...c })) || [],
       title: this.title,
       subtitle: this.subtitle,
-      authors: this.authors.map(a => a.name),
+      authors: this.authors.map((a) => a.name),
       narrators: this.narrators,
-      series: this.series.map(se => {
+      series: this.series.map((se) => {
         const sequence = se.bookSeries?.sequence || ''
         if (!sequence) return se.name
         return `${se.name} #${sequence}`
@@ -254,60 +260,65 @@ class Book extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-      },
-      title: DataTypes.STRING,
-      titleIgnorePrefix: DataTypes.STRING,
-      subtitle: DataTypes.STRING,
-      publishedYear: DataTypes.STRING,
-      publishedDate: DataTypes.STRING,
-      publisher: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      isbn: DataTypes.STRING,
-      asin: DataTypes.STRING,
-      language: DataTypes.STRING,
-      explicit: DataTypes.BOOLEAN,
-      abridged: DataTypes.BOOLEAN,
-      coverPath: DataTypes.STRING,
-      duration: DataTypes.FLOAT,
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        title: DataTypes.STRING,
+        titleIgnorePrefix: DataTypes.STRING,
+        subtitle: DataTypes.STRING,
+        publishedYear: DataTypes.STRING,
+        publishedDate: DataTypes.STRING,
+        publisher: DataTypes.STRING,
+        description: DataTypes.TEXT,
+        isbn: DataTypes.STRING,
+        asin: DataTypes.STRING,
+        language: DataTypes.STRING,
+        explicit: DataTypes.BOOLEAN,
+        abridged: DataTypes.BOOLEAN,
+        coverPath: DataTypes.STRING,
+        duration: DataTypes.FLOAT,
 
-      narrators: DataTypes.JSON,
-      audioFiles: DataTypes.JSON,
-      ebookFile: DataTypes.JSON,
-      chapters: DataTypes.JSON,
-      tags: DataTypes.JSON,
-      genres: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'book',
-      indexes: [
-        {
-          fields: [{
-            name: 'title',
-            collate: 'NOCASE'
-          }]
-        },
-        // {
-        //   fields: [{
-        //     name: 'titleIgnorePrefix',
-        //     collate: 'NOCASE'
-        //   }]
-        // },
-        {
-          fields: ['publishedYear']
-        },
-        // {
-        //   fields: ['duration']
-        // }
-      ]
-    })
+        narrators: DataTypes.JSON,
+        audioFiles: DataTypes.JSON,
+        ebookFile: DataTypes.JSON,
+        chapters: DataTypes.JSON,
+        tags: DataTypes.JSON,
+        genres: DataTypes.JSON
+      },
+      {
+        sequelize,
+        modelName: 'book',
+        indexes: [
+          {
+            fields: [
+              {
+                name: 'title',
+                collate: 'NOCASE'
+              }
+            ]
+          },
+          // {
+          //   fields: [{
+          //     name: 'titleIgnorePrefix',
+          //     collate: 'NOCASE'
+          //   }]
+          // },
+          {
+            fields: ['publishedYear']
+          }
+          // {
+          //   fields: ['duration']
+          // }
+        ]
+      }
+    )
   }
 }
 

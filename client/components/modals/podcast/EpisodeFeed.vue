@@ -20,7 +20,7 @@
           @click="toggleSelectEpisode(episode)"
         >
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <span v-if="getIsEpisodeDownloaded(episode)" class="material-icons text-success text-xl">download_done</span>
+            <span v-if="getIsEpisodeDownloaded(episode)" class="material-symbols text-success text-xl">download_done</span>
             <ui-checkbox v-else v-model="selectedEpisodes[episode.cleanUrl]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">

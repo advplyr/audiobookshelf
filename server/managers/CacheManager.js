@@ -16,27 +16,17 @@ class CacheManager {
   /**
    * Create cache directory paths if they dont exist
    */
-  async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
+  async ensureCachePaths() {
+    // Creates cache paths if necessary and sets owner and permissions
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
     this.ItemCachePath = Path.join(this.CachePath, 'items')
 
-    if (!(await fs.pathExists(this.CachePath))) {
-      await fs.mkdir(this.CachePath)
-    }
-
-    if (!(await fs.pathExists(this.CoverCachePath))) {
-      await fs.mkdir(this.CoverCachePath)
-    }
-
-    if (!(await fs.pathExists(this.ImageCachePath))) {
-      await fs.mkdir(this.ImageCachePath)
-    }
-
-    if (!(await fs.pathExists(this.ItemCachePath))) {
-      await fs.mkdir(this.ItemCachePath)
-    }
+    await fs.ensureDir(this.CachePath)
+    await fs.ensureDir(this.CoverCachePath)
+    await fs.ensureDir(this.ImageCachePath)
+    await fs.ensureDir(this.ItemCachePath)
   }
 
   async handleCoverCache(res, libraryItemId, coverPath, options = {}) {
@@ -89,23 +79,28 @@ class CacheManager {
   }
 
   async purgeEntityCache(entityId, cachePath) {
-    return Promise.all((await fs.readdir(cachePath)).reduce((promises, file) => {
-      if (file.startsWith(entityId)) {
-        Logger.debug(`[CacheManager] Going to purge ${file}`);
-        promises.push(this.removeCache(Path.join(cachePath, file)))
-      }
-      return promises
-    }, []))
+    return Promise.all(
+      (await fs.readdir(cachePath)).reduce((promises, file) => {
+        if (file.startsWith(entityId)) {
+          Logger.debug(`[CacheManager] Going to purge ${file}`)
+          promises.push(this.removeCache(Path.join(cachePath, file)))
+        }
+        return promises
+      }, [])
+    )
   }
 
   removeCache(path) {
     if (!path) return false
     return fs.pathExists(path).then((exists) => {
       if (!exists) return false
-      return fs.unlink(path).then(() => true).catch((err) => {
-        Logger.error(`[CacheManager] Failed to remove cache "${path}"`, err)
-        return false
-      })
+      return fs
+        .unlink(path)
+        .then(() => true)
+        .catch((err) => {
+          Logger.error(`[CacheManager] Failed to remove cache "${path}"`, err)
+          return false
+        })
     })
   }
 
@@ -129,6 +124,13 @@ class CacheManager {
     await this.ensureCachePaths()
   }
 
+  /**
+   *
+   * @param {import('express').Response} res
+   * @param {import('../models/Author')} author
+   * @param {{ format?: string, width?: number, height?: number }} options
+   * @returns
+   */
   async handleAuthorCache(res, author, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400

@@ -93,17 +93,18 @@ export default {
   },
   computed: {
     contextMenuItems() {
-      if (!this.userIsAdminOrUp) return []
-      return [
-        {
-          text: 'Quick match all episodes',
+      const menuItems = []
+      if (this.userIsAdminOrUp) {
+        menuItems.push({
+          text: this.$strings.MessageQuickMatchAllEpisodes,
           action: 'quick-match-episodes'
-        },
-        {
-          text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
-          action: 'batch-mark-as-finished'
-        }
-      ]
+        })
+      }
+      menuItems.push({
+        text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
+        action: 'batch-mark-as-finished'
+      })
+      return menuItems
     },
     sortItems() {
       return [
@@ -246,7 +247,7 @@ export default {
         message: newIsFinished ? this.$strings.MessageConfirmMarkAllEpisodesFinished : this.$strings.MessageConfirmMarkAllEpisodesNotFinished,
         callback: (confirmed) => {
           if (confirmed) {
-            this.batchUpdateEpisodesFinished(this.episodesSorted, newIsFinished)
+            this.batchUpdateEpisodesFinished(this.episodesCopy, newIsFinished)
           }
         },
         type: 'yesNo'
@@ -261,21 +262,21 @@ export default {
       this.processing = true
 
       const payload = {
-        message: 'Quick matching episodes will overwrite details if a match is found. Only unmatched episodes will be updated. Are you sure?',
+        message: this.$strings.MessageConfirmQuickMatchEpisodes,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
               .$post(`/api/podcasts/${this.libraryItem.id}/match-episodes?override=1`)
               .then((data) => {
                 if (data.numEpisodesUpdated) {
-                  this.$toast.success(`${data.numEpisodesUpdated} episodes updated`)
+                  this.$toast.success(this.$getString('ToastEpisodeUpdateSuccess', [data.numEpisodesUpdated]))
                 } else {
-                  this.$toast.info('No changes were made')
+                  this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
                 }
               })
               .catch((error) => {
                 console.error('Failed to request match episodes', error)
-                this.$toast.error('Failed to match episodes')
+                this.$toast.error(this.$strings.ToastFailedToMatch)
               })
           }
           this.processing = false
@@ -295,7 +296,7 @@ export default {
         episodeId: episode.id,
         title: episode.title,
         subtitle: this.mediaMetadata.title,
-        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+        caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
         duration: episode.audioFile.duration || null,
         coverPath: this.media.coverPath || null
       }
@@ -305,6 +306,7 @@ export default {
       this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)
     },
     batchUpdateEpisodesFinished(episodes, newIsFinished) {
+      if (!episodes.length) return
       this.processing = true
 
       const updateProgressPayloads = episodes.map((episode) => {
@@ -371,7 +373,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: this.mediaMetadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.audioFile.duration || null,
             coverPath: this.media.coverPath || null
           })

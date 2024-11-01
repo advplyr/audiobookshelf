@@ -4,7 +4,7 @@
       <nuxt-link to="/config/users" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
-            <span class="material-icons text-2xl">arrow_back</span>
+            <span class="material-symbols text-2xl">arrow_back</span>
           </div>
           <p class="pl-1">{{ $strings.LabelAllUsers }}</p>
         </div>
@@ -14,10 +14,10 @@
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
       <div v-if="userToken" class="flex text-xs mt-4">
-        <ui-text-input-with-label label="API Token" :value="userToken" readonly />
+        <ui-text-input-with-label :label="$strings.LabelApiToken" :value="userToken" readonly />
 
         <div class="px-1 mt-8 cursor-pointer" @click="copyToClipboard(userToken)">
-          <span class="material-icons pl-2 text-base">content_copy</span>
+          <span class="material-symbols pl-2 text-base">content_copy</span>
         </div>
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />

@@ -1,65 +1,68 @@
 <template>
   <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
-    <div id="videoDock" />
     <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </div>
-    <div class="flex items-start mb-6 lg:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
-      <div class="min-w-0">
+    <div class="flex items-start mb-6 lg:mb-0" :class="isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
+      <div class="min-w-0 w-full">
         <div class="flex items-center">
           <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
             {{ title }}
           </nuxt-link>
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
-        <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
-          <span class="material-icons text-sm">person</span>
-          <div class="flex items-center">
-            <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
-            <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
-            <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
-              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-            </div>
-            <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
+        <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
+          <span class="material-symbols text-sm">person</span>
+          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+          <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
+            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </div>
+          <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
         </div>
 
         <div class="text-gray-400 flex items-center">
-          <span class="material-icons text-xs">schedule</span>
+          <span class="material-symbols text-xs">schedule</span>
           <p class="font-mono text-xs sm:text-sm pl-1 sm:pl-1.5 pb-px">{{ totalDurationPretty }}</p>
         </div>
       </div>
       <div class="flex-grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <button :aria-label="$strings.LabelClosePlayer" class="material-icons sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
       ref="audioPlayer"
       :chapters="chapters"
+      :current-chapter="currentChapter"
       :paused="!isPlaying"
       :loading="playerLoading"
       :bookmarks="bookmarks"
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
+      :sleep-timer-type="sleepTimerType"
       :is-podcast="isPodcast"
+      :hasNextItemInQueue="hasNextItemInQueue"
       @playPause="playPause"
       @jumpForward="jumpForward"
       @jumpBackward="jumpBackward"
       @setVolume="setVolume"
       @setPlaybackRate="setPlaybackRate"
       @seek="seek"
+      @nextItemInQueue="playNextItemInQueue"
       @close="closePlayer"
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
+      @showPlayerSettings="showPlayerSettingsModal = true"
     />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
 
-    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-time="sleepTimerTime" :remaining="sleepTimerRemaining" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
+    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
-    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :library-item-id="libraryItemId" />
+    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" />
+
+    <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
 </template>
 
@@ -78,9 +81,10 @@ export default {
       currentTime: 0,
       showSleepTimerModal: false,
       showPlayerQueueItemsModal: false,
+      showPlayerSettingsModal: false,
       sleepTimerSet: false,
-      sleepTimerTime: 0,
       sleepTimerRemaining: 0,
+      sleepTimerType: null,
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
@@ -134,9 +138,6 @@ export default {
     isPodcast() {
       return this.streamLibraryItem?.mediaType === 'podcast'
     },
-    isMusic() {
-      return this.streamLibraryItem?.mediaType === 'music'
-    },
     isExplicit() {
       return !!this.mediaMetadata.explicit
     },
@@ -146,6 +147,9 @@ export default {
     chapters() {
       if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
+    },
+    currentChapter() {
+      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     },
     title() {
       if (this.playerHandler.displayTitle) return this.playerHandler.displayTitle
@@ -163,11 +167,17 @@ export default {
     },
     podcastAuthor() {
       if (!this.isPodcast) return null
-      return this.mediaMetadata.author || 'Unknown'
+      return this.mediaMetadata.author || this.$strings.LabelUnknown
     },
-    musicArtists() {
-      if (!this.isMusic) return null
-      return this.mediaMetadata.artists.join(', ')
+    hasNextItemInQueue() {
+      return this.currentPlayerQueueIndex < this.playerQueueItems.length - 1
+    },
+    currentPlayerQueueIndex() {
+      if (!this.libraryItemId) return -1
+      return this.playerQueueItems.findIndex((i) => {
+        if (this.streamEpisode?.id) return i.episodeId === this.streamEpisode.id
+        return i.libraryItemId === this.libraryItemId
+      })
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
@@ -206,14 +216,18 @@ export default {
       this.$store.commit('setIsPlaying', isPlaying)
       this.updateMediaSessionPlaybackState()
     },
-    setSleepTimer(seconds) {
+    setSleepTimer(time) {
       this.sleepTimerSet = true
-      this.sleepTimerTime = seconds
-      this.sleepTimerRemaining = seconds
-      this.runSleepTimer()
       this.showSleepTimerModal = false
+
+      this.sleepTimerType = time.timerType
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.COUNTDOWN) {
+        this.runSleepTimer(time)
+      }
     },
-    runSleepTimer() {
+    runSleepTimer(time) {
+      this.sleepTimerRemaining = time.seconds
+
       var lastTick = Date.now()
       clearInterval(this.sleepTimer)
       this.sleepTimer = setInterval(() => {
@@ -222,11 +236,22 @@ export default {
         this.sleepTimerRemaining -= elapsed / 1000
 
         if (this.sleepTimerRemaining <= 0) {
-          this.clearSleepTimer()
-          this.playerHandler.pause()
-          this.$toast.info('Sleep Timer Done.. zZzzZz')
+          this.sleepTimerEnd()
         }
       }, 1000)
+    },
+    checkChapterEnd(time) {
+      if (!this.currentChapter) return
+      const chapterEndTime = this.currentChapter.end
+      const tolerance = 0.75
+      if (time >= chapterEndTime - tolerance) {
+        this.sleepTimerEnd()
+      }
+    },
+    sleepTimerEnd() {
+      this.clearSleepTimer()
+      this.playerHandler.pause()
+      this.$toast.info(this.$strings.ToastSleepTimerDone)
     },
     cancelSleepTimer() {
       this.showSleepTimerModal = false
@@ -237,6 +262,7 @@ export default {
       this.sleepTimerRemaining = 0
       this.sleepTimer = null
       this.sleepTimerSet = false
+      this.sleepTimerType = null
     },
     incrementSleepTimer(amount) {
       if (!this.sleepTimerSet) return
@@ -276,6 +302,10 @@ export default {
       this.currentTime = time
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setCurrentTime(time)
+      }
+
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
+        this.checkChapterEnd(time)
       }
     },
     setDuration(duration) {
@@ -433,6 +463,30 @@ export default {
         this.playerHandler.switchPlayer()
       }
     },
+    playNextItemInQueue() {
+      if (this.hasNextItemInQueue) {
+        this.playQueueItem({ index: this.currentPlayerQueueIndex + 1 })
+      }
+    },
+    /**
+     * @param {{ index: number }} payload
+     */
+    playQueueItem(payload) {
+      if (payload?.index === undefined) {
+        console.error('playQueueItem: No index provided')
+        return
+      }
+      if (!this.playerQueueItems[payload.index]) {
+        console.error('playQueueItem: No item found at index', payload.index)
+        return
+      }
+      const item = this.playerQueueItems[payload.index]
+      this.playLibraryItem({
+        libraryItemId: item.libraryItemId,
+        episodeId: item.episodeId || null,
+        queueItems: this.playerQueueItems
+      })
+    },
     async playLibraryItem(payload) {
       const libraryItemId = payload.libraryItemId
       const episodeId = payload.episodeId || null
@@ -471,7 +525,7 @@ export default {
     },
     showFailedProgressSyncs() {
       if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
-      this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
+      this.syncFailedToast = this.$toast(this.$strings.ToastProgressIsNotBeingSynced, { timeout: false, type: 'error' })
     },
     sessionClosedEvent(sessionId) {
       if (this.playerHandler.currentSessionId === sessionId) {
@@ -485,6 +539,7 @@ export default {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
     this.$eventBus.$on('playback-seek', this.seek)
     this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
+    this.$eventBus.$on('play-queue-item', this.playQueueItem)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
@@ -492,6 +547,7 @@ export default {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
     this.$eventBus.$off('playback-seek', this.seek)
     this.$eventBus.$off('playback-time-update', this.playbackTimeUpdate)
+    this.$eventBus.$off('play-queue-item', this.playQueueItem)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }

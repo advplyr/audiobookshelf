@@ -1,0 +1,45 @@
+components:
+  schemas:
+    AudioTrack:
+      type: object
+      description: Represents an audio track with various properties.
+      properties:
+        index:
+          type: integer
+          nullable: true
+          description: The index of the audio track.
+          example: null
+        startOffset:
+          type: number
+          format: float
+          nullable: true
+          description: The start offset of the audio track in seconds.
+          example: null
+        duration:
+          type: number
+          format: float
+          nullable: true
+          description: The duration of the audio track in seconds.
+          example: null
+        title:
+          type: string
+          nullable: true
+          description: The title of the audio track.
+          example: null
+        contentUrl:
+          type: string
+          nullable: true
+          description: The URL where the audio track content is located.
+          example: '`/api/items/${itemId}/file/${audioFile.ino}`'
+        mimeType:
+          type: string
+          nullable: true
+          description: The MIME type of the audio track.
+          example: null
+        codec:
+          type: string
+          nullable: true
+          description: The codec used for the audio track.
+          example: aac
+        metadata:
+          $ref: '../metadata/FileMetadata.yaml#/components/schemas/fileMetadata'

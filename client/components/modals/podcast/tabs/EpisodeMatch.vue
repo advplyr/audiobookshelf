@@ -105,7 +105,7 @@ export default {
       }
       const updatePayload = this.getUpdatePayload(episodeData)
       if (!Object.keys(updatePayload).length) {
-        return this.$toast.info('No updates are necessary')
+        return this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       console.log('Episode update payload', updatePayload)
 
@@ -126,13 +126,13 @@ export default {
     },
     submitForm() {
       if (!this.episodeTitle || !this.episodeTitle.length) {
-        this.$toast.error('Must enter an episode title')
+        this.$toast.error(this.$strings.ToastTitleRequired)
         return
       }
       this.searchedTitle = this.episodeTitle
       this.isProcessing = true
       this.$axios
-        .$get(`/api/podcasts/${this.libraryItem.id}/search-episode?title=${this.$encodeUriPath(this.episodeTitle)}`)
+        .$get(`/api/podcasts/${this.libraryItem.id}/search-episode?title=${encodeURIComponent(this.episodeTitle)}`)
         .then((results) => {
           this.episodesFound = results.episodes.map((ep) => ep.episode)
           console.log('Episodes found', this.episodesFound)

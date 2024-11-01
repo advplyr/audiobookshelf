@@ -28,7 +28,7 @@
       <template v-else>
         <div class="flex items-center mb-3">
           <div class="hover:bg-white hover:bg-opacity-10 cursor-pointer h-11 w-11 flex items-center justify-center rounded-full" @click="showImageUploader = false">
-            <span class="material-icons text-4xl">arrow_back</span>
+            <span class="material-symbols text-4xl">arrow_back</span>
           </div>
           <p class="ml-2 text-xl mb-1">Collection Cover Image</p>
         </div>
@@ -106,7 +106,7 @@ export default {
           .catch((error) => {
             console.error('Failed to remove collection', error)
             this.processing = false
-            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+            this.$toast.error(this.$strings.ToastRemoveFailed)
           })
       }
     },
@@ -115,7 +115,7 @@ export default {
         return
       }
       if (!this.newCollectionName) {
-        return this.$toast.error('Collection must have a name')
+        return this.$toast.error(this.$strings.ToastNameRequired)
       }
 
       this.processing = true
@@ -135,7 +135,7 @@ export default {
         .catch((error) => {
           console.error('Failed to update collection', error)
           this.processing = false
-          this.$toast.error(this.$strings.ToastCollectionUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     }
   },

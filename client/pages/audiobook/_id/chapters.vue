@@ -5,7 +5,7 @@
         <h1 class="text-lg lg:text-xl">{{ title }}</h1>
       </nuxt-link>
       <button class="w-7 h-7 flex items-center justify-center mx-4 hover:scale-110 duration-100 transform text-gray-200 hover:text-white" @click="editItem">
-        <span class="material-icons text-base">edit</span>
+        <span class="material-symbols text-base">edit</span>
       </button>
       <div class="flex-grow hidden md:block" />
       <p class="text-base hidden md:block">{{ $strings.LabelDuration }}:</p>
@@ -42,7 +42,7 @@
                   <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
                   <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
                   <div class="flex-grow" />
-                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">expand_less</span>
+                  <span class="material-symbols text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">expand_less</span>
                 </div>
                 <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
               </div>
@@ -71,27 +71,27 @@
               <div class="flex items-center">
                 <ui-tooltip :text="$strings.MessageRemoveChapter" direction="bottom">
                   <button v-if="newChapters.length > 1" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-error transform hover:scale-110 duration-150" @click="removeChapter(chapter)">
-                    <span class="material-icons-outlined text-base">remove</span>
+                    <span class="material-symbols text-base">remove</span>
                   </button>
                 </ui-tooltip>
 
                 <ui-tooltip :text="$strings.MessageInsertChapterBelow" direction="bottom">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150" @click="addChapter(chapter)">
-                    <span class="material-icons text-lg">add</span>
+                    <span class="material-symbols text-lg">add</span>
                   </button>
                 </ui-tooltip>
 
                 <ui-tooltip :text="selectedChapterId === chapter.id && isPlayingChapter ? $strings.MessagePauseChapter : $strings.MessagePlayChapter" direction="bottom">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
                     <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
-                    <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-icons-outlined text-base">pause</span>
-                    <span v-else class="material-icons-outlined text-base">play_arrow</span>
+                    <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-symbols text-base">pause</span>
+                    <span v-else class="material-symbols text-base">play_arrow</span>
                   </button>
                 </ui-tooltip>
 
                 <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
-                    <span class="material-icons-outlined text-lg">error_outline</span>
+                    <span class="material-symbols text-lg">error_outline</span>
                   </button>
                 </ui-tooltip>
               </div>
@@ -106,7 +106,7 @@
           <div class="flex-grow" />
           <ui-btn small @click="setChaptersFromTracks">{{ $strings.ButtonSetChaptersFromTracks }}</ui-btn>
           <ui-tooltip :text="$strings.MessageSetChaptersFromTracksDescription" direction="top" class="flex items-center mx-1 cursor-default">
-            <span class="material-icons-outlined text-xl text-gray-200">info</span>
+            <span class="material-symbols text-xl text-gray-200">info</span>
           </ui-tooltip>
         </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
@@ -123,7 +123,7 @@
               <p class="text-xs font-mono text-gray-200">{{ $secondsToTimestamp(Math.round(track.duration), false, true) }}</p>
             </div>
             <div class="w-20 hidden md:flex justify-center" style="min-width: 80px">
-              <span v-if="(track.chapters || []).length" class="material-icons text-success text-sm">check</span>
+              <span v-if="(track.chapters || []).length" class="material-symbols text-success text-sm">check</span>
             </div>
           </div>
         </template>
@@ -189,7 +189,7 @@
           <div class="flex items-center pt-2">
             <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
             <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
-              <span class="material-icons-outlined text-xl text-gray-200">info</span>
+              <span class="material-symbols text-xl text-gray-200">info</span>
             </ui-tooltip>
             <div class="flex-grow" />
             <ui-btn small color="success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
@@ -415,7 +415,7 @@ export default {
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
       if (this.$isDev) {
-        src = `http://localhost:3333${this.$config.routerBasePath}${src}`
+        src = `${process.env.serverUrl}${src}`
       }
 
       audioEl.src = src
@@ -486,7 +486,7 @@ export default {
         .then((data) => {
           this.saving = false
           if (data.updated) {
-            this.$toast.success('Chapters updated')
+            this.$toast.success(this.$strings.ToastChaptersUpdated)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -499,7 +499,7 @@ export default {
         .catch((error) => {
           this.saving = false
           console.error('Failed to update chapters', error)
-          this.$toast.error('Failed to update chapters')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     },
     applyChapterNamesOnly() {
@@ -533,7 +533,7 @@ export default {
     },
     findChapters() {
       if (!this.asinInput) {
-        this.$toast.error('Must input an ASIN')
+        this.$toast.error(this.$strings.ToastAsinRequired)
         return
       }
 
@@ -560,7 +560,7 @@ export default {
         .catch((error) => {
           this.findingChapters = false
           console.error('Failed to get chapter data', error)
-          this.$toast.error('Failed to find chapters')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
           this.showFindChaptersModal = false
         })
     },
@@ -611,7 +611,7 @@ export default {
         .$post(`/api/items/${this.libraryItem.id}/chapters`, payload)
         .then((data) => {
           if (data.updated) {
-            this.$toast.success('Chapters removed')
+            this.$toast.success(this.$strings.ToastChaptersRemoved)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -623,20 +623,32 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove chapters', error)
-          this.$toast.error('Failed to remove chapters')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.saving = false
         })
+    },
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItem.id) {
+        if (!!libraryItem.media.metadata.asin && this.mediaMetadata.asin !== libraryItem.media.metadata.asin) {
+          this.asinInput = libraryItem.media.metadata.asin
+        }
+        this.libraryItem = libraryItem
+      }
     }
   },
   mounted() {
     this.regionInput = localStorage.getItem('audibleRegion') || 'US'
     this.asinInput = this.mediaMetadata.asin || null
     this.initChapters()
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   },
   beforeDestroy() {
     this.destroyAudioEl()
+
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   }
 }
 </script>

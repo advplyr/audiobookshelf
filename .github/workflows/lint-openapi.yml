@@ -1,0 +1,32 @@
+name: API linting
+
+# Run on pull requests or pushes when there is a change to any OpenAPI files in docs/
+on:
+  pull_request:
+  push:
+    paths:
+      - 'docs/**'
+
+# This action only needs read permissions
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+      # Set up node to run the javascript
+      - name: Set up node
+        uses: actions/setup-node@v4
+      # Install Redocly CLI
+      - name: Install Redocly CLI
+        run: npm install -g @redocly/cli@latest
+      # Perform linting for exploded spec
+      - name: Run linting for exploded spec
+        run: redocly lint docs/root.yaml --format=github-actions
+      # Perform linting for bundled spec
+      - name: Run linting for bundled spec
+        run: redocly lint docs/openapi.json --format=github-actions

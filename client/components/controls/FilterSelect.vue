@@ -10,7 +10,7 @@
         </svg>
       </span>
       <div v-else class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-gray-400 hover:text-gray-300" @mousedown.stop @mouseup.stop @click.stop.prevent="clearSelected">
-        <span class="material-icons" style="font-size: 1.1rem">close</span>
+        <span class="material-symbols" style="font-size: 1.1rem">close</span>
       </div>
     </button>
 
@@ -24,7 +24,7 @@
 
             <!-- selected checkmark icon -->
             <div v-if="item.value === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
-              <span class="material-icons text-base text-yellow-400">check</span>
+              <span class="material-symbols text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>

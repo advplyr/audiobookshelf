@@ -15,13 +15,13 @@
         </td>
         <td class="py-0">
           <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="removeProvider(provider)">
-            <button type="button" :aria-label="$strings.ButtonDelete" class="material-icons text-base">delete</button>
+            <button type="button" :aria-label="$strings.ButtonDelete" class="material-symbols text-base">delete</button>
           </div>
         </td>
       </tr>
     </table>
     <div v-else-if="!processing" class="text-center py-8">
-      <p class="text-lg">No custom metadata providers</p>
+      <p class="text-lg">{{ $strings.LabelNoCustomMetadataProviders }}</p>
     </div>
 
     <div v-if="processing" class="absolute inset-0 h-full flex items-center justify-center bg-black/40 rounded-md">
@@ -45,7 +45,7 @@ export default {
   methods: {
     removeProvider(provider) {
       const payload = {
-        message: `Are you sure you want remove custom metadata provider "${provider.name}"?`,
+        message: this.$getString('MessageConfirmDeleteMetadataProvider', [provider.name]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$emit('update:processing', true)
@@ -53,12 +53,12 @@ export default {
             this.$axios
               .$delete(`/api/custom-metadata-providers/${provider.id}`)
               .then(() => {
-                this.$toast.success('Provider removed')
+                this.$toast.success(this.$strings.ToastProviderRemoveSuccess)
                 this.$emit('removed', provider.id)
               })
               .catch((error) => {
                 console.error('Failed to remove provider', error)
-                this.$toast.error('Failed to remove provider')
+                this.$toast.error(this.$strings.ToastRemoveFailed)
               })
               .finally(() => {
                 this.$emit('update:processing', false)

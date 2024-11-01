@@ -15,7 +15,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons text-2xl">format_list_bulleted</span>
+        <span class="material-symbols text-2xl">&#xe241;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
 
@@ -43,7 +43,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons-outlined text-2xl">collections_bookmark</span>
+        <span class="material-symbols text-2xl">&#xe431;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
 
@@ -51,14 +51,14 @@
       </nuxt-link>
 
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons text-2.5xl">queue_music</span>
+        <span class="material-symbols text-2.5xl">&#xe03d;</span>
 
         <p class="pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
 
         <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
           <path
             fill="currentColor"
@@ -72,11 +72,19 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/narrators`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isNarratorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons text-2xl">record_voice_over</span>
+        <span class="material-symbols text-2xl">&#xe91f;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.LabelNarrators }}</p>
 
         <div v-show="isNarratorsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      </nuxt-link>
+
+      <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/stats`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isStatsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+        <span class="material-symbols text-2xl">&#xf190;</span>
+
+        <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonStats }}</p>
+
+        <div v-show="isStatsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
@@ -87,24 +95,16 @@
         <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isMusicLibrary" :to="`/library/${currentLibraryId}/bookshelf/albums`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isMusicAlbumsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons-outlined text-xl">album</span>
-
-        <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">Albums</p>
-
-        <div v-show="isMusicAlbumsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-      </nuxt-link>
-
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastDownloadQueuePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-icons text-2xl">file_download</span>
+        <span class="material-symbols text-2xl">&#xf090;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonDownloadQueue }}</p>
 
         <div v-show="isPodcastDownloadQueuePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">
-        <span class="material-icons text-2xl">warning</span>
+      <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : 'bg-error bg-opacity-20'">
+        <span class="material-symbols text-2xl">warning</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 1rem">{{ $strings.ButtonIssues }}</p>
 
@@ -121,7 +121,7 @@
       <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
     </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
+    <modals-changelog-view-modal v-model="showChangelogModal" :versionData="versionData" />
   </div>
 </template>
 
@@ -164,9 +164,6 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    isMusicLibrary() {
-      return this.currentLibraryMediaType === 'music'
-    },
     isPodcastDownloadQueuePage() {
       return this.$route.name === 'library-library-podcast-download-queue'
     },
@@ -176,9 +173,6 @@ export default {
     isPodcastLatestPage() {
       return this.$route.name === 'library-library-podcast-latest'
     },
-    isMusicAlbumsPage() {
-      return this.paramId === 'albums'
-    },
     homePage() {
       return this.$route.name === 'library-library'
     },
@@ -186,13 +180,16 @@ export default {
       return this.$route.name === 'library-library-series-id' || this.paramId === 'series'
     },
     isAuthorsPage() {
-      return this.$route.name === 'library-library-authors'
+      return this.libraryBookshelfPage && this.paramId === 'authors'
     },
     isNarratorsPage() {
       return this.$route.name === 'library-library-narrators'
     },
     isPlaylistsPage() {
       return this.paramId === 'playlists'
+    },
+    isStatsPage() {
+      return this.$route.name === 'library-library-stats'
     },
     libraryBookshelfPage() {
       return this.$route.name === 'library-library-bookshelf-id'
@@ -218,9 +215,6 @@ export default {
     },
     githubTagUrl() {
       return this.versionData.githubTagUrl
-    },
-    currentVersionChangelog() {
-      return this.versionData.currentVersionChangelog || 'No Changelog Available'
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem

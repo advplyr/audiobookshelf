@@ -12,16 +12,16 @@
         </div>
         <div class="h-8 flex items-center">
           <div class="w-full inline-flex justify-between max-w-xl">
-            <p v-if="episode?.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
-            <p v-if="episode?.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
-            <p v-if="episode?.chapters?.length" class="text-sm text-gray-300">{{ episode.chapters.length }} Chapters</p>
-            <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, dateFormat) }}</p>
+            <p v-if="episode?.season" class="text-sm text-gray-300">{{ $getString('LabelSeasonNumber', [episode.season]) }}</p>
+            <p v-if="episode?.episode" class="text-sm text-gray-300">{{ $getString('LabelEpisodeNumber', [episode.episode]) }}</p>
+            <p v-if="episode?.chapters?.length" class="text-sm text-gray-300">{{ $getString('LabelChapterCount', [episode.chapters.length]) }}</p>
+            <p v-if="publishedAt" class="text-sm text-gray-300">{{ $getString('LabelPublishedDate', [$formatDate(publishedAt, dateFormat)]) }}</p>
           </div>
         </div>
 
         <div class="flex items-center pt-2">
           <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
-            <span class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <span class="material-symbols fill text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
 
@@ -132,13 +132,13 @@ export default {
       return this.store.state.streamIsPlaying && this.isStreaming
     },
     timeRemaining() {
-      if (this.streamIsPlaying) return 'Playing'
+      if (this.streamIsPlaying) return this.$strings.ButtonPlaying
       if (!this.itemProgress) return this.$elapsedPretty(this.episode?.duration || 0)
-      if (this.userIsFinished) return 'Finished'
+      if (this.userIsFinished) return this.$strings.LabelFinished
 
       const duration = this.itemProgress.duration || this.episode?.duration || 0
       const remaining = Math.floor(duration - this.itemProgress.currentTime)
-      return `${this.$elapsedPretty(remaining)} left`
+      return this.$getString('LabelTimeLeft', [this.$elapsedPretty(remaining)])
     }
   },
   methods: {
@@ -182,7 +182,7 @@ export default {
     toggleFinished(confirmed = false) {
       if (!this.userIsFinished && this.itemProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${this.title}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [this.episodeTitle]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleFinished(true)

@@ -2,11 +2,8 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <p class="text-xl font-semibold mb-2">{{ $strings.HeaderAudiobookTools }}</p>
 
-    <!-- alert for windows install -->
-    <widgets-alert v-if="isWindowsInstall" type="warning" class="my-8 text-base">Not supported for the Windows install yet</widgets-alert>
-
     <!-- Merge to m4b -->
-    <div v-if="showM4bDownload && !isWindowsInstall" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-8">
       <div class="flex flex-wrap items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsMakeM4b }}</p>
@@ -16,14 +13,14 @@
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=m4b`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
-            <span class="material-icons text-lg ml-2">launch</span>
+            <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
         </div>
       </div>
     </div>
 
     <!-- Embed Metadata -->
-    <div v-if="mediaTracks.length && !isWindowsInstall" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsEmbedMetadata }}</p>
@@ -33,21 +30,21 @@
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
-            <span class="material-icons text-lg ml-2">launch</span>
+            <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
 
-          <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">Quick Embed</ui-btn>
+          <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">{{ $strings.ButtonQuickEmbed }}</ui-btn>
         </div>
       </div>
 
       <!-- queued alert -->
       <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mt-4">
-        <p class="text-lg">Queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+        <p class="text-lg">{{ $getString('MessageQuickEmbedQueue', [queuedEmbedLIds.length]) }}</p>
       </widgets-alert>
 
       <!-- processing alert -->
       <widgets-alert v-if="isEmbedTaskRunning" type="warning" class="mt-4">
-        <p class="text-lg">Currently embedding metadata</p>
+        <p class="text-lg">{{ $strings.MessageQuickEmbedInProgress }}</p>
       </widgets-alert>
     </div>
 
@@ -111,18 +108,12 @@ export default {
     },
     isEncodeTaskRunning() {
       return this.encodeTask && !this.encodeTask?.isFinished
-    },
-    isWindowsInstall() {
-      return this.Source == 'windows'
-    },
-    Source() {
-      return this.$store.state.Source
     }
   },
   methods: {
     quickEmbed() {
       const payload = {
-        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        message: this.$strings.MessageConfirmQuickEmbed,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios

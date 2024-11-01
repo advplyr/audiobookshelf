@@ -3,13 +3,13 @@
     <app-settings-content :header-text="$strings.HeaderCustomMetadataProviders">
       <template #header-prefix>
         <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center mr-2">
-          <span class="material-icons text-2xl">arrow_back</span>
+          <span class="material-symbols text-2xl">arrow_back</span>
         </nuxt-link>
       </template>
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
           <a href="https://www.audiobookshelf.org/guides/custom-metadata-providers" target="_blank" class="inline-flex">
-            <span class="material-icons text-xl w-5 text-gray-200">help_outline</span>
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
         <div class="flex-grow" />

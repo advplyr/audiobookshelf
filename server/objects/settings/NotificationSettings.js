@@ -20,7 +20,7 @@ class NotificationSettings {
   construct(settings) {
     this.appriseType = settings.appriseType
     this.appriseApiUrl = settings.appriseApiUrl || null
-    this.notifications = (settings.notifications || []).map(n => new Notification(n))
+    this.notifications = (settings.notifications || []).map((n) => new Notification(n))
     this.maxFailedAttempts = settings.maxFailedAttempts || 5
     this.maxNotificationQueue = settings.maxNotificationQueue || 20
     this.notificationDelay = settings.notificationDelay || 1000
@@ -31,7 +31,7 @@ class NotificationSettings {
       id: this.id,
       appriseType: this.appriseType,
       appriseApiUrl: this.appriseApiUrl,
-      notifications: this.notifications.map(n => n.toJSON()),
+      notifications: this.notifications.map((n) => n.toJSON()),
       maxFailedAttempts: this.maxFailedAttempts,
       maxNotificationQueue: this.maxNotificationQueue,
       notificationDelay: this.notificationDelay
@@ -42,17 +42,29 @@ class NotificationSettings {
     return !!this.appriseApiUrl
   }
 
+  /**
+   * @param {string} eventName
+   * @returns {boolean} - TRUE if there are active notifications for the event
+   */
+  getHasActiveNotificationsForEvent(eventName) {
+    return this.notifications.some((n) => n.eventName === eventName && n.enabled)
+  }
+
+  /**
+   * @param {string} eventName
+   * @returns {Notification[]}
+   */
   getActiveNotificationsForEvent(eventName) {
-    return this.notifications.filter(n => n.eventName === eventName && n.enabled)
+    return this.notifications.filter((n) => n.eventName === eventName && n.enabled)
   }
 
   getNotification(id) {
-    return this.notifications.find(n => n.id === id)
+    return this.notifications.find((n) => n.id === id)
   }
 
   removeNotification(id) {
-    if (this.notifications.some(n => n.id === id)) {
-      this.notifications = this.notifications.filter(n => n.id !== id)
+    if (this.notifications.some((n) => n.id === id)) {
+      this.notifications = this.notifications.filter((n) => n.id !== id)
       return true
     }
     return false
@@ -94,7 +106,7 @@ class NotificationSettings {
 
   updateNotification(payload) {
     if (!payload) return false
-    const notification = this.notifications.find(n => n.id === payload.id)
+    const notification = this.notifications.find((n) => n.id === payload.id)
     if (!notification) {
       Logger.error(`[NotificationSettings] updateNotification: Notification not found ${payload.id}`)
       return false

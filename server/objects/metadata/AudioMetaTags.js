@@ -9,6 +9,7 @@ class AudioMetaTags {
     this.tagTitleSort = null
     this.tagSeries = null
     this.tagSeriesPart = null
+    this.tagGrouping = null
     this.tagTrack = null
     this.tagDisc = null
     this.tagSubtitle = null
@@ -61,7 +62,7 @@ class AudioMetaTags {
 
     // Track ID3 tag might be "3/10" or just "3"
     if (this.tagTrack) {
-      const trackParts = this.tagTrack.split('/').map(part => Number(part))
+      const trackParts = this.tagTrack.split('/').map((part) => Number(part))
       if (trackParts.length > 0) {
         // Fractional track numbers not supported
         data.number = !isNaN(trackParts[0]) ? Math.trunc(trackParts[0]) : null
@@ -81,7 +82,7 @@ class AudioMetaTags {
     }
 
     if (this.tagDisc) {
-      const discParts = this.tagDisc.split('/').map(p => Number(p))
+      const discParts = this.tagDisc.split('/').map((p) => Number(p))
       if (discParts.length > 0) {
         data.number = !isNaN(discParts[0]) ? Math.trunc(discParts[0]) : null
       }
@@ -93,10 +94,18 @@ class AudioMetaTags {
     return data
   }
 
-  get discNumber() { return this.discNumAndTotal.number }
-  get discTotal() { return this.discNumAndTotal.total }
-  get trackNumber() { return this.trackNumAndTotal.number }
-  get trackTotal() { return this.trackNumAndTotal.total }
+  get discNumber() {
+    return this.discNumAndTotal.number
+  }
+  get discTotal() {
+    return this.discNumAndTotal.total
+  }
+  get trackNumber() {
+    return this.trackNumAndTotal.number
+  }
+  get trackTotal() {
+    return this.trackNumAndTotal.total
+  }
 
   construct(metadata) {
     this.tagAlbum = metadata.tagAlbum || null
@@ -108,6 +117,7 @@ class AudioMetaTags {
     this.tagTitleSort = metadata.tagTitleSort || null
     this.tagSeries = metadata.tagSeries || null
     this.tagSeriesPart = metadata.tagSeriesPart || null
+    this.tagGrouping = metadata.tagGrouping || null
     this.tagTrack = metadata.tagTrack || null
     this.tagDisc = metadata.tagDisc || null
     this.tagSubtitle = metadata.tagSubtitle || null
@@ -148,6 +158,7 @@ class AudioMetaTags {
     this.tagTitleSort = payload.file_tag_titlesort || null
     this.tagSeries = payload.file_tag_series || null
     this.tagSeriesPart = payload.file_tag_seriespart || null
+    this.tagGrouping = payload.file_tag_grouping || null
     this.tagTrack = payload.file_tag_track || null
     this.tagDisc = payload.file_tag_disc || null
     this.tagSubtitle = payload.file_tag_subtitle || null
@@ -177,10 +188,6 @@ class AudioMetaTags {
     this.tagMusicBrainzArtistId = payload.file_tag_musicbrainz_artistid || null
   }
 
-  setDataFromTone(tags) {
-    // TODO: Implement
-  }
-
   updateData(payload) {
     const dataMap = {
       tagAlbum: payload.file_tag_album || null,
@@ -192,6 +199,7 @@ class AudioMetaTags {
       tagTitleSort: payload.file_tag_titlesort || null,
       tagSeries: payload.file_tag_series || null,
       tagSeriesPart: payload.file_tag_seriespart || null,
+      tagGrouping: payload.file_tag_grouping || null,
       tagTrack: payload.file_tag_track || null,
       tagDisc: payload.file_tag_disc || null,
       tagSubtitle: payload.file_tag_subtitle || null,

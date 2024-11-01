@@ -16,11 +16,18 @@
           </div>
         </div>
 
-        <p class="text-lg font-semibold mb-2">{{ $strings.HeaderPodcastsToAdd }}</p>
+        <p class="text-lg font-semibold mb-1">{{ $strings.HeaderPodcastsToAdd }}</p>
+        <p class="text-sm text-gray-300 mb-4">{{ $strings.MessageOpmlPreviewNote }}</p>
 
         <div class="w-full overflow-y-auto" style="max-height: 50vh">
-          <template v-for="(feed, index) in feedMetadata">
-            <cards-podcast-feed-summary-card :key="index" :feed="feed" :library-folder-path="selectedFolderPath" class="my-1" />
+          <template v-for="(feed, index) in feeds">
+            <div :key="index" class="py-1 flex items-center">
+              <p class="text-lg font-semibold">{{ index + 1 }}.</p>
+              <div class="pl-2">
+                <p v-if="feed.title" class="text-sm font-semibold">{{ feed.title }}</p>
+                <p class="text-xs text-gray-400">{{ feed.feedUrl }}</p>
+              </div>
+            </div>
           </template>
         </div>
       </div>
@@ -45,9 +52,7 @@ export default {
     return {
       processing: false,
       selectedFolderId: null,
-      fullPath: null,
-      autoDownloadEpisodes: false,
-      feedMetadata: []
+      autoDownloadEpisodes: false
     }
   },
   watch: {
@@ -96,73 +101,36 @@ export default {
     }
   },
   methods: {
-    toFeedMetadata(feed) {
-      const metadata = feed.metadata
-      return {
-        title: metadata.title,
-        author: metadata.author,
-        description: metadata.description,
-        releaseDate: '',
-        genres: [...metadata.categories],
-        feedUrl: metadata.feedUrl,
-        imageUrl: metadata.image,
-        itunesPageUrl: '',
-        itunesId: '',
-        itunesArtistId: '',
-        language: '',
-        numEpisodes: feed.numEpisodes
-      }
-    },
     init() {
-      this.feedMetadata = this.feeds.map(this.toFeedMetadata)
-
       if (this.folderItems[0]) {
         this.selectedFolderId = this.folderItems[0].value
       }
     },
     async submit() {
       this.processing = true
-      const newFeedPayloads = this.feedMetadata.map((metadata) => {
-        return {
-          path: `${this.selectedFolderPath}/${this.$sanitizeFilename(metadata.title)}`,
-          folderId: this.selectedFolderId,
-          libraryId: this.currentLibrary.id,
-          media: {
-            metadata: {
-              ...metadata
-            },
-            autoDownloadEpisodes: this.autoDownloadEpisodes
-          }
-        }
-      })
-      console.log('New feed payloads', newFeedPayloads)
 
-      for (const podcastPayload of newFeedPayloads) {
-        await this.$axios
-          .$post('/api/podcasts', podcastPayload)
-          .then(() => {
-            this.$toast.success(`${podcastPayload.media.metadata.title}: ${this.$strings.ToastPodcastCreateSuccess}`)
-          })
-          .catch((error) => {
-            var errorMsg = error.response && error.response.data ? error.response.data : this.$strings.ToastPodcastCreateFailed
-            console.error('Failed to create podcast', podcastPayload, error)
-            this.$toast.error(`${podcastPayload.media.metadata.title}: ${errorMsg}`)
-          })
+      const payload = {
+        feeds: this.feeds.map((f) => f.feedUrl),
+        folderId: this.selectedFolderId,
+        libraryId: this.currentLibrary.id,
+        autoDownloadEpisodes: this.autoDownloadEpisodes
       }
-      this.processing = false
-      this.show = false
+      this.$axios
+        .$post('/api/podcasts/opml/create', payload)
+        .then(() => {
+          this.show = false
+        })
+        .catch((error) => {
+          const errorMsg = error.response?.data || this.$strings.ToastPodcastCreateFailed
+          console.error('Failed to create podcast', payload, error)
+          this.$toast.error(errorMsg)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     }
   },
   mounted() {}
 }
 </script>
 
-<style scoped>
-#podcast-wrapper {
-  min-height: 400px;
-  max-height: 80vh;
-}
-#episodes-scroll {
-  max-height: calc(80vh - 200px);
-}
-</style>

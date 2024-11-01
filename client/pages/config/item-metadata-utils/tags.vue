@@ -2,7 +2,7 @@
   <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8 relative" style="min-height: 200px">
     <div class="flex items-center mb-4">
       <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center">
-        <span class="material-icons text-2xl">arrow_back</span>
+        <span class="material-symbols text-2xl">arrow_back</span>
       </nuxt-link>
 
       <h1 class="text-xl mx-2">{{ $strings.HeaderManageTags }}</h1>
@@ -126,7 +126,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to rename tag', error)
-          this.$toast.error('Failed to rename tag')
+          this.$toast.error(this.$strings.ToastRenameFailed)
         })
         .finally(() => {
           this.loading = false
@@ -143,7 +143,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove tag', error)
-          this.$toast.error('Failed to remove tag')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.loading = false

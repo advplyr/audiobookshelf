@@ -1,18 +1,17 @@
-var ms = require('../../ms');
+const ms = require('ms')
 
 module.exports = function (time, iat) {
-  var timestamp = iat || Math.floor(Date.now() / 1000);
+  var timestamp = iat || Math.floor(Date.now() / 1000)
 
   if (typeof time === 'string') {
-    var milliseconds = ms(time);
+    var milliseconds = ms(time)
     if (typeof milliseconds === 'undefined') {
-      return;
+      return
     }
-    return Math.floor(timestamp + milliseconds / 1000);
+    return Math.floor(timestamp + milliseconds / 1000)
   } else if (typeof time === 'number') {
-    return timestamp + time;
+    return timestamp + time
   } else {
-    return;
+    return
   }
-
-};
+}

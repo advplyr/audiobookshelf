@@ -1,0 +1,74 @@
+components:
+  schemas:
+    PodcastEpisode:
+      type: object
+      description: A single episode of a podcast.
+      properties:
+        libraryItemId:
+          $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        podcastId:
+          $ref: '../mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+        id:
+          $ref: '../mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+        oldEpisodeId:
+          $ref: '../mediaTypes/Podcast.yaml#/components/schemas/oldPodcastId'
+        index:
+          type: integer
+          description: The index of the episode within the podcast.
+          nullable: true
+        season:
+          type: string
+          description: The season number of the episode.
+          nullable: true
+        episode:
+          type: string
+          description: The episode number within the season.
+          nullable: true
+        episodeType:
+          type: string
+          description: The type of episode (e.g., full, trailer).
+          nullable: true
+        title:
+          type: string
+          description: The title of the episode.
+          nullable: true
+        subtitle:
+          type: string
+          description: The subtitle of the episode.
+          nullable: true
+        description:
+          type: string
+          description: The description of the episode.
+          nullable: true
+        enclosure:
+          type: object
+          description: The enclosure object containing additional episode data.
+          nullable: true
+          additionalProperties: true
+        guid:
+          type: string
+          description: The globally unique identifier for the episode.
+          nullable: true
+        pubDate:
+          type: string
+          description: The publication date of the episode.
+          nullable: true
+        chapters:
+          type: array
+          description: The chapters within the episode.
+          items:
+            type: object
+        audioFile:
+          $ref: '../files/AudioFile.yaml#/components/schemas/audioFile'
+        publishedAt:
+          $ref: '../../schemas.yaml#/components/schemas/createdAt'
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+        audioTrack:
+          $ref: '../files/AudioTrack.yaml#/components/schemas/AudioTrack'
+        duration:
+          $ref: '../../schemas.yaml#/components/schemas/durationSec'
+        size:
+          $ref: '../../schemas.yaml#/components/schemas/size'

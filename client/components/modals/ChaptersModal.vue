@@ -1,8 +1,8 @@
 <template>
   <modals-modal v-model="show" name="chapters" :width="600" :height="'unset'">
-    <div id="chapter-modal-wrapper" ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div id="chapter-modal-wrapper" ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <template v-for="chap in chapters">
-        <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer hover:bg-bg relative" :class="chap.id === currentChapterId ? 'bg-yellow-400 bg-opacity-10' : chap.end / _playbackRate <= currentChapterStart ? 'bg-success bg-opacity-5' : 'bg-opacity-20'" @click="clickChapter(chap)">
+        <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer relative" :class="chap.id === currentChapterId ? 'bg-yellow-400/20 hover:bg-yellow-400/10' : chap.end / _playbackRate <= currentChapterStart ? 'bg-success/10 hover:bg-success/5' : 'hover:bg-primary/10'" @click="clickChapter(chap)">
           <p class="chapter-title truncate text-sm md:text-base">
             {{ chap.title }}
           </p>

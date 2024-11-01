@@ -1,0 +1,59 @@
+components:
+  schemas:
+    PodcastMetadata:
+      type: object
+      description: Metadata for a podcast.
+      properties:
+        title:
+          type: string
+          description: The title of the podcast.
+          nullable: true
+        author:
+          type: string
+          description: The author of the podcast.
+          nullable: true
+        description:
+          type: string
+          description: The description of the podcast.
+          nullable: true
+        releaseDate:
+          type: string
+          format: date-time
+          description: The release date of the podcast.
+          nullable: true
+        genres:
+          type: array
+          description: The genres of the podcast.
+          items:
+            type: string
+        feedUrl:
+          type: string
+          description: The URL of the podcast feed.
+          nullable: true
+        imageUrl:
+          type: string
+          description: The URL of the podcast's image.
+          nullable: true
+        itunesPageUrl:
+          type: string
+          description: The URL of the podcast's iTunes page.
+          nullable: true
+        itunesId:
+          type: string
+          description: The iTunes ID of the podcast.
+          nullable: true
+        itunesArtistId:
+          type: string
+          description: The iTunes artist ID of the podcast.
+          nullable: true
+        explicit:
+          type: boolean
+          description: Whether the podcast contains explicit content.
+        language:
+          type: string
+          description: The language of the podcast.
+          nullable: true
+        type:
+          type: string
+          description: The type of podcast (e.g., episodic, serial).
+          nullable: true

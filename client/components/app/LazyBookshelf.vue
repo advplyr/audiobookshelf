@@ -1,8 +1,8 @@
 <template>
-  <div id="bookshelf" class="w-full overflow-y-auto">
+  <div id="bookshelf" ref="bookshelf" class="w-full overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
+      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4e sm:px-8e relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6e" />
       </div>
     </template>
 
@@ -49,10 +49,9 @@ export default {
       entityIndexesMounted: [],
       entityComponentRefs: {},
       currentBookWidth: 0,
-      pageLoadQueue: [],
       isFetchingEntities: false,
       scrollTimeout: null,
-      booksPerFetch: 100,
+      booksPerFetch: 0,
       totalShelves: 0,
       bookshelfMarginLeft: 0,
       isSelectionMode: false,
@@ -63,7 +62,10 @@ export default {
       resizeTimeout: null,
       mountWindowWidth: 0,
       lastItemIndexSelected: -1,
-      tempIsScanning: false
+      tempIsScanning: false,
+      cardWidth: 0,
+      cardHeight: 0,
+      resizeObserver: null
     }
   },
   watch: {
@@ -89,6 +91,7 @@ export default {
       if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
       if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollections
       if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylists
+      if (this.page === 'authors') return this.$strings.MessageNoAuthors
       if (this.hasFilter) {
         if (this.filterName === 'Issues') return this.$strings.MessageNoIssues
         else if (this.filterName === 'Feed-open') return this.$strings.MessageBookshelfNoRSSFeeds
@@ -108,6 +111,12 @@ export default {
     },
     seriesFilterBy() {
       return this.$store.getters['user/getUserSetting']('seriesFilterBy')
+    },
+    authorSortBy() {
+      return this.$store.getters['user/getUserSetting']('authorSortBy')
+    },
+    authorSortDesc() {
+      return !!this.$store.getters['user/getUserSetting']('authorSortDesc')
     },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
@@ -160,52 +169,40 @@ export default {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
     bookWidth() {
-      const coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
-      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return coverSize * 1.6
-      return coverSize
+      return this.cardWidth
     },
     bookHeight() {
-      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return this.bookWidth
-      return this.bookWidth * 1.6
+      return this.cardHeight
     },
     shelfPadding() {
-      if (this.bookshelfWidth < 640) return 32
-      return 64
+      if (this.bookshelfWidth < 640) return 32 * this.sizeMultiplier
+      return 64 * this.sizeMultiplier
     },
     totalPadding() {
       return this.shelfPadding * 2
     },
     entityWidth() {
-      if (this.entityName === 'series' || this.entityName === 'collections') {
-        if (this.bookWidth * 2 > this.bookshelfWidth - this.shelfPadding) return this.bookWidth * 1.6
-        return this.bookWidth * 2
-      }
-      return this.bookWidth
+      return this.cardWidth
     },
     entityHeight() {
-      return this.bookHeight
+      return this.cardHeight
     },
-    shelfDividerHeightIndex() {
-      return 6
+    shelfPaddingHeight() {
+      return 16
     },
     shelfHeight() {
-      if (this.isAlternativeBookshelfView) {
-        const isItemEntity = this.entityName === 'series-books' || this.entityName === 'items'
-        const extraTitleSpace = isItemEntity ? 80 : this.entityName === 'albums' ? 60 : 40
-        return this.entityHeight + extraTitleSpace * this.sizeMultiplier
-      }
-      return this.entityHeight + 40
+      const dividerHeight = this.isAlternativeBookshelfView ? 0 : 24 // h-6
+      return this.cardHeight + (this.shelfPaddingHeight + dividerHeight) * this.sizeMultiplier
     },
     totalEntityCardWidth() {
       // Includes margin
-      return this.entityWidth + 24
+      return this.entityWidth + 24 * this.sizeMultiplier
     },
     selectedMediaItems() {
       return this.$store.state.globals.selectedMediaItems || []
     },
     sizeMultiplier() {
-      const baseSize = this.isCoverSquareAspectRatio ? 192 : 120
-      return this.entityWidth / baseSize
+      return this.$store.getters['user/getSizeMultiplier']
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -227,6 +224,8 @@ export default {
         this.$store.commit('globals/setEditCollection', entity)
       } else if (this.entityName === 'playlists') {
         this.$store.commit('globals/setEditPlaylist', entity)
+      } else if (this.entityName === 'authors') {
+        this.$store.commit('globals/showEditAuthorModal', entity)
       }
     },
     clearSelectedEntities() {
@@ -322,7 +321,7 @@ export default {
 
       let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete`
+      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete,share`
 
       const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch items', error)
@@ -436,10 +435,14 @@ export default {
     rebuild() {
       this.initSizeData()
 
-      var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
+      var lastBookIndex = Math.min(this.totalEntities, this.booksPerFetch)
       this.entityIndexesMounted = []
       for (let i = 0; i < lastBookIndex; i++) {
         this.entityIndexesMounted.push(i)
+        if (!this.entities[i]) {
+          const page = Math.floor(i / this.booksPerFetch)
+          this.loadPage(page)
+        }
       }
       var bookshelfEl = document.getElementById('bookshelf')
       if (bookshelfEl) {
@@ -463,6 +466,9 @@ export default {
         if (this.collapseBookSeries) {
           searchParams.set('collapseseries', 1)
         }
+      } else if (this.page === 'authors') {
+        searchParams.set('sort', this.authorSortBy)
+        searchParams.set('desc', this.authorSortDesc ? 1 : 0)
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -501,7 +507,8 @@ export default {
         this.resetEntities()
       }
     },
-    settingsUpdated(settings) {
+    async settingsUpdated(settings) {
+      await this.cardsHelpers.setCardSize()
       const wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
         this.resetEntities()
@@ -606,6 +613,72 @@ export default {
         this.executeRebuild()
       }
     },
+    authorAdded(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorAdded ${author.id}`, author)
+      this.resetEntities()
+    },
+    authorUpdated(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorUpdated ${author.id}`, author)
+      const indexOf = this.entities.findIndex((ent) => ent && ent.id === author.id)
+      if (indexOf >= 0) {
+        this.entities[indexOf] = author
+        if (this.entityComponentRefs[indexOf]) {
+          this.entityComponentRefs[indexOf].setEntity(author)
+        }
+      }
+    },
+    authorRemoved(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorRemoved ${author.id}`, author)
+      const indexOf = this.entities.findIndex((ent) => ent && ent.id === author.id)
+      if (indexOf >= 0) {
+        this.entities = this.entities.filter((ent) => ent.id !== author.id)
+        this.totalEntities--
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.executeRebuild()
+      }
+    },
+
+    shareOpen(mediaItemShare) {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
+        var indexOf = this.entities.findIndex((ent) => ent?.media?.id === mediaItemShare.mediaItemId)
+        if (indexOf >= 0) {
+          if (this.entityComponentRefs[indexOf]) {
+            const libraryItem = { ...this.entityComponentRefs[indexOf].libraryItem }
+            libraryItem.mediaItemShare = mediaItemShare
+            this.entityComponentRefs[indexOf].setEntity?.(libraryItem)
+          }
+        }
+      }
+    },
+    shareClosed(mediaItemShare) {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
+        var indexOf = this.entities.findIndex((ent) => ent?.media?.id === mediaItemShare.mediaItemId)
+        if (indexOf >= 0) {
+          if (this.entityComponentRefs[indexOf]) {
+            const libraryItem = { ...this.entityComponentRefs[indexOf].libraryItem }
+            libraryItem.mediaItemShare = null
+            this.entityComponentRefs[indexOf].setEntity?.(libraryItem)
+          }
+        }
+      }
+    },
+    updatePagesLoaded() {
+      let numPages = Math.ceil(this.totalEntities / this.booksPerFetch)
+      for (let page = 0; page < numPages; page++) {
+        let numEntities = Math.min(this.totalEntities - page * this.booksPerFetch, this.booksPerFetch)
+        this.pagesLoaded[page] = true
+        for (let i = 0; i < numEntities; i++) {
+          const index = page * this.booksPerFetch + i
+          if (!this.entities[index]) {
+            this.pagesLoaded[page] = false
+            break
+          }
+        }
+      }
+    },
     initSizeData(_bookshelf) {
       var bookshelf = _bookshelf || document.getElementById('bookshelf')
       if (!bookshelf) {
@@ -622,6 +695,13 @@ export default {
       this.entitiesPerShelf = Math.max(1, Math.floor((this.bookshelfWidth - this.shelfPadding) / this.totalEntityCardWidth))
       this.shelvesPerPage = Math.ceil(this.bookshelfHeight / this.shelfHeight) + 2
       this.bookshelfMarginLeft = (this.bookshelfWidth - this.entitiesPerShelf * this.totalEntityCardWidth) / 2
+      const booksPerFetch = this.entitiesPerShelf * this.shelvesPerPage
+      if (booksPerFetch !== this.booksPerFetch) {
+        this.booksPerFetch = booksPerFetch
+        if (this.totalEntities) {
+          this.updatePagesLoaded()
+        }
+      }
 
       this.currentBookWidth = this.bookWidth
       if (this.totalEntities) {
@@ -630,13 +710,8 @@ export default {
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },
     async init(bookshelf) {
-      if (this.entityName === 'series') {
-        this.booksPerFetch = 50
-      } else {
-        this.booksPerFetch = 100
-      }
-      this.checkUpdateSearchParams()
       this.initSizeData(bookshelf)
+      this.checkUpdateSearchParams()
 
       this.pagesLoaded[0] = true
       await this.fetchEntites(0)
@@ -692,6 +767,11 @@ export default {
         this.$root.socket.on('playlist_added', this.playlistAdded)
         this.$root.socket.on('playlist_updated', this.playlistUpdated)
         this.$root.socket.on('playlist_removed', this.playlistRemoved)
+        this.$root.socket.on('author_added', this.authorAdded)
+        this.$root.socket.on('author_updated', this.authorUpdated)
+        this.$root.socket.on('author_removed', this.authorRemoved)
+        this.$root.socket.on('share_open', this.shareOpen)
+        this.$root.socket.on('share_closed', this.shareClosed)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -719,6 +799,11 @@ export default {
         this.$root.socket.off('playlist_added', this.playlistAdded)
         this.$root.socket.off('playlist_updated', this.playlistUpdated)
         this.$root.socket.off('playlist_removed', this.playlistRemoved)
+        this.$root.socket.off('author_added', this.authorAdded)
+        this.$root.socket.off('author_updated', this.authorUpdated)
+        this.$root.socket.off('author_removed', this.authorRemoved)
+        this.$root.socket.off('share_open', this.shareOpen)
+        this.$root.socket.off('share_closed', this.shareClosed)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -743,7 +828,8 @@ export default {
         })
     }
   },
-  mounted() {
+  async mounted() {
+    await this.cardsHelpers.setCardSize()
     this.initListeners()
 
     this.routeFullPath = window.location.pathname + (window.location.search || '')
@@ -778,6 +864,6 @@ export default {
 .bookshelfDivider {
   background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);
-  box-shadow: 2px 14px 8px #111111aa;
+  box-shadow: 0.125em 0.875em 0.5em #111111aa;
 }
 </style>

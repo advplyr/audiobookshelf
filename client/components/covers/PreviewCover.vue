@@ -7,7 +7,7 @@
       <img ref="cover" :src="cover" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-fill'" />
 
       <a v-if="!imageFailed && showOpenNewTab && isHovering" :href="cover" @click.stop target="_blank" class="absolute bg-primary flex items-center justify-center shadow-sm rounded-full hover:scale-110 transform duration-100" :style="{ top: sizeMultiplier * 0.5 + 'rem', right: sizeMultiplier * 0.5 + 'rem', width: 2.5 * sizeMultiplier + 'rem', height: 2.5 * sizeMultiplier + 'rem' }">
-        <span class="material-icons" :style="{ fontSize: sizeMultiplier * 1.75 + 'rem' }">open_in_new</span>
+        <span class="material-symbols" :style="{ fontSize: sizeMultiplier * 1.75 + 'rem' }">open_in_new</span>
       </a>
     </div>
 

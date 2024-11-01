@@ -1,19 +1,12 @@
 @font-face {
-  font-family: 'Material Icons';
+  font-family: 'Material Symbols Rounded';
   font-style: normal;
   font-weight: 400;
-  src: url(~static/fonts/MaterialIcons.woff2) format('woff2');
+  src: url(~static/fonts/MaterialSymbolsRounded.woff2) format('woff2');
 }
 
-@font-face {
-  font-family: 'Material Icons Outlined';
-  font-style: normal;
-  font-weight: 400;
-  src: url(~static/fonts/MaterialIconsOutlined.woff2) format('woff2');
-}
-
-.material-icons {
-  font-family: 'Material Icons';
+.material-symbols {
+  font-family: 'Material Symbols Rounded';
   font-weight: normal;
   font-style: normal;
   line-height: 1;
@@ -27,26 +20,9 @@
   vertical-align: top;
 }
 
-.material-icons:not([class*="text-"]) {
-  font-size: 1.5rem;
-}
-
-.material-icons-outlined {
-  font-family: 'Material Icons Outlined';
-  font-weight: normal;
-  font-style: normal;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-}
-
-.material-icons-outlined:not([class*="text-"]) {
-  font-size: 1.5rem;
+.material-symbols.fill {
+  font-variation-settings:
+    'FILL' 1
 }
 
 /* cyrillic-ext */

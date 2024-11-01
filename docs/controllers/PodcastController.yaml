@@ -1,0 +1,393 @@
+paths:
+  /api/podcasts:
+    post:
+      summary: Create a new podcast
+      operationId: createPodcast
+      tags:
+        - Podcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
+      responses:
+        200:
+          description: Successfully created a podcast
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+        404:
+          description: Not found
+
+  /api/podcasts/feed:
+    post:
+      summary: Get podcast feed
+      operationId: getPodcastFeed
+      tags:
+        - Podcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rssFeed:
+                  type: string
+                  description: The RSS feed URL of the podcast
+      responses:
+        200:
+          description: Successfully retrieved podcast feed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  podcast:
+                    $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+        404:
+          description: Not found
+
+  /api/podcasts/opml/parse:
+    post:
+      summary: Get feeds from OPML text
+      description: Parse OPML text and return an array of feeds
+      operationId: getFeedsFromOPMLText
+      tags:
+        - Podcasts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                opmlText:
+                  type: string
+      responses:
+        '200':
+          description: Successfully parsed OPML text and returned feeds
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feeds:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        feedUrl:
+                          type: string
+        '400':
+          description: Bad request, OPML text not provided
+        '403':
+          description: Forbidden, user is not admin
+  /api/podcasts/opml/create:
+    post:
+      summary: Bulk create podcasts from OPML feed URLs
+      operationId: bulkCreatePodcastsFromOpmlFeedUrls
+      tags:
+        - Podcasts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feeds:
+                  type: array
+                  items:
+                    type: string
+                libraryId:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+                folderId:
+                  $ref: '../objects/Folder.yaml#/components/schemas/folderId'
+                autoDownloadEpisodes:
+                  $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/autoDownloadEpisodes'
+      responses:
+        '200':
+          description: Successfully created podcasts from feed URLs
+        '400':
+          description: Bad request, invalid request body
+        '403':
+          description: Forbidden, user is not admin
+        '404':
+          description: Folder not found
+
+  /api/podcasts/{id}/checknew:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    get:
+      summary: Check and download new episodes
+      operationId: checkNewEpisodes
+      tags:
+        - Podcasts
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of episodes to download
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Successfully checked and downloaded new episodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  episodes:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
+        403:
+          description: Forbidden
+        404:
+          description: Not found
+        500:
+          description: Server error
+
+  /api/podcasts/{id}/clear-queue:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    get:
+      summary: Clear episode download queue
+      operationId: clearEpisodeDownloadQueue
+      tags:
+        - Podcasts
+      responses:
+        200:
+          description: Successfully cleared download queue
+        403:
+          description: Forbidden
+
+  /api/podcasts/{id}/downloads:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    get:
+      summary: Get episode downloads
+      operationId: getEpisodeDownloads
+      tags:
+        - Podcasts
+      responses:
+        200:
+          description: Successfully retrieved episode downloads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloads:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
+        404:
+          description: Not found
+
+  /api/podcasts/{id}/search-episode:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    get:
+      summary: Find episode by title
+      operationId: findEpisode
+      tags:
+        - Podcasts
+      parameters:
+        - name: title
+          in: query
+          description: Title of the episode to search for
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully found episodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  episodes:
+                    type: array
+                    items:
+                      $ref: '../objects/entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
+        404:
+          description: Not found
+        500:
+          description: Server error
+
+  /api/podcasts/{id}/download-episodes:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    post:
+      summary: Download podcast episodes
+      operationId: downloadEpisodes
+      tags:
+        - Podcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        200:
+          description: Successfully started episode download
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+
+  /api/podcasts/{id}/match-episodes:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    post:
+      summary: Quick match podcast episodes
+      operationId: quickMatchEpisodes
+      tags:
+        - Podcasts
+      parameters:
+        - name: override
+          in: query
+          description: Override existing details if set to 1
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully matched episodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  numEpisodesUpdated:
+                    type: integer
+        403:
+          description: Forbidden
+
+  /api/podcasts/{id}/episode/{episodeId}:
+    parameters:
+      - name: id
+        in: path
+        description: Podcast ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+      - name: episodeId
+        in: path
+        description: Episode ID
+        required: true
+        schema:
+          $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/podcastId'
+
+    patch:
+      summary: Update a podcast episode
+      operationId: updateEpisode
+      tags:
+        - Podcasts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Successfully updated episode
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
+        404:
+          description: Not found
+
+    get:
+      summary: Get a specific podcast episode
+      operationId: getEpisode
+      tags:
+        - Podcasts
+      responses:
+        200:
+          description: Successfully retrieved episode
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/PodcastEpisode.yaml#/components/schemas/PodcastEpisode'
+        404:
+          description: Not found
+
+    delete:
+      summary: Remove a podcast episode
+      operationId: removeEpisode
+      tags:
+        - Podcasts
+      parameters:
+        - name: hard
+          in: query
+          description: Hard delete the episode if set to 1
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successfully removed episode
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/mediaTypes/Podcast.yaml#/components/schemas/Podcast'
+        404:
+          description: Not found
+        500:
+          description: Server error

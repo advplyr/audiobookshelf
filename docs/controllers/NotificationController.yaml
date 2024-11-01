@@ -1,0 +1,231 @@
+components:
+  responses:
+    notification200:
+      description: Notification endpoint success.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: OK
+    notification404:
+      description: An admin user is required or notification with the given ID not found.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Series not found.
+paths:
+  /api/notifications:
+    get:
+      operationId: getNotifications
+      summary: Get notification settings
+      description: Get all Apprise notification events and notification settings for server.
+      tags:
+        - Notification
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      events:
+                        type: array
+                        items:
+                          $ref: '../objects/Notification.yaml#/components/schemas/NotificationEvent'
+                  settings:
+                    $ref: '../objects/Notification.yaml#/components/schemas/NotificationSettings'
+        '404':
+          $ref: '#/components/responses/notification404'
+    patch:
+      operationId: configureNotificationSettings
+      summary: Update select notification settings
+      description: Update the URL, max failed attempts, and maximum notifications that can be queued for Apprise.
+      tags:
+        - Notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appriseApiUrl:
+                  $ref: '../objects/Notification.yaml#/components/schemas/appriseApiUrl'
+                maxFailedAttempts:
+                  $ref: '../objects/Notification.yaml#/components/schemas/maxFailedAttempts'
+                maxNotificationQueue:
+                  $ref: '../objects/Notification.yaml#/components/schemas/maxNotificationQueue'
+      responses:
+        '200':
+          $ref: '#/components/responses/notification200'
+        '404':
+          $ref: '#/components/responses/notification404'
+    post:
+      operationId: createNotification
+      summary: Create notification settings
+      description: Create or update Notification settings.
+      tags:
+        - Notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                libraryId:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryIdNullable'
+                eventName:
+                  $ref: '../objects/Notification.yaml#/components/schemas/notificationEventName'
+                urls:
+                  $ref: '../objects/Notification.yaml#/components/schemas/urls'
+                titleTemplate:
+                  $ref: '../objects/Notification.yaml#/components/schemas/titleTemplate'
+                bodyTemplate:
+                  $ref: '../objects/Notification.yaml#/components/schemas/bodyTemplate'
+                enabled:
+                  $ref: '../objects/Notification.yaml#/components/schemas/enabled'
+                type:
+                  $ref: '../objects/Notification.yaml#/components/schemas/notificationType'
+              required:
+                - eventName
+                - urls
+                - titleTemplate
+                - bodyTemplate
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '../objects/Notification.yaml#/components/schemas/NotificationSettings'
+        '404':
+          $ref: '#/components/responses/notification404'
+  /api/notificationdata:
+    get:
+      operationId: getNotificationEventData
+      summary: Get notification event data
+      description: Get all Apprise notification event data for the server.
+      tags:
+        - Notification
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '../objects/Notification.yaml#/components/schemas/NotificationEvent'
+        '404':
+          $ref: '#/components/responses/notification404'
+  /api/notifications/test:
+    get:
+      operationId: sendDefaultTestNotification
+      summary: Send general test notification
+      description: Send a test notification.
+      tags:
+        - Notification
+      parameters:
+        - in: query
+          name: fail
+          description: Whether to intentionally cause the notification to fail. `0` for false, `1` for true.
+          schema:
+            type: integer
+      responses:
+        '200':
+          $ref: '#/components/responses/notification200'
+        '404':
+          $ref: '#/components/responses/notification404'
+  /api/notifications/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the notification.
+        required: true
+        schema:
+          $ref: '../objects/Notification.yaml#/components/schemas/notificationId'
+    delete:
+      operationId: deleteNotification
+      summary: Delete a notification
+      description: Delete the notification by ID and return the notification settings.
+      tags:
+        - Notification
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '../objects/Notification.yaml#/components/schemas/NotificationSettings'
+        '404':
+          $ref: '#/components/responses/notification404'
+    patch:
+      operationId: updateNotification
+      summary: Update a notification
+      description: Update an individual Notification by ID
+      tags:
+        - Notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                libraryId:
+                  $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+                eventName:
+                  $ref: '../objects/Notification.yaml#/components/schemas/notificationEventName'
+                urls:
+                  $ref: '../objects/Notification.yaml#/components/schemas/urls'
+                titleTemplate:
+                  $ref: '../objects/Notification.yaml#/components/schemas/titleTemplate'
+                bodyTemplate:
+                  $ref: '../objects/Notification.yaml#/components/schemas/bodyTemplate'
+                enabled:
+                  $ref: '../objects/Notification.yaml#/components/schemas/enabled'
+                type:
+                  $ref: '../objects/Notification.yaml#/components/schemas/notificationType'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '../objects/Notification.yaml#/components/schemas/NotificationSettings'
+        '404':
+          $ref: '#/components/responses/notification404'
+  /api/notifications/{id}/test:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the notification.
+        required: true
+        schema:
+          $ref: '../objects/Notification.yaml#/components/schemas/notificationId'
+    get:
+      operationId: sendTestNotification
+      summary: Send a test notification
+      description: Send a test to the given notification by ID.
+      tags:
+        - Notification
+      responses:
+        '200':
+          $ref: '#/components/responses/notification200'
+        '404':
+          $ref: '#/components/responses/notification404'

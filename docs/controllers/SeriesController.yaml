@@ -1,0 +1,72 @@
+components:
+  responses:
+    series404:
+      description: Series not found.
+      content:
+        text/html:
+          schema:
+            type: string
+            example: Series not found.
+paths:
+  /api/series/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the series.
+        required: true
+        schema:
+          $ref: '../objects/entities/Series.yaml#/components/schemas/seriesId'
+    get:
+      operationId: getSeries
+      tags:
+        - Series
+      summary: Get series
+      description: Get a series by ID.
+      requestBody:
+        required: false
+        description: A comma separated list of what to include with the series.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                include:
+                  type: string
+                  description: A comma separated list of what to include with the series.
+                  example: 'progress,rssfeed'
+                  enum: ['progress', 'rssfeed', 'progress,rssfeed', 'rssfeed,progress']
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/Series.yaml#/components/schemas/seriesWithProgressAndRSS'
+        '404':
+          $ref: '#/components/responses/series404'
+    patch:
+      operationId: updateSeries
+      tags:
+        - Series
+      summary: Update series
+      description: Update a series by ID.
+      requestBody:
+        required: true
+        description: The series to update.
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  $ref: '../objects/entities/Series.yaml#/components/schemas/seriesName'
+                description:
+                  $ref: '../objects/entities/Series.yaml#/components/schemas/seriesDescription'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/entities/Series.yaml#/components/schemas/series'
+        '404':
+          $ref: '#/components/responses/series404'

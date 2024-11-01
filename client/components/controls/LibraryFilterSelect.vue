@@ -10,7 +10,7 @@
         </svg>
       </span>
       <div v-else class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-gray-400 hover:text-gray-200" @mousedown.stop @mouseup.stop @click.stop.prevent="clearSelected">
-        <span class="material-icons" style="font-size: 1.1rem">close</span>
+        <span class="material-symbols" style="font-size: 1.1rem">close</span>
       </div>
     </button>
 
@@ -22,11 +22,11 @@
               <span class="font-normal ml-3 block truncate text-sm">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
-              <span class="material-icons text-2xl">arrow_right</span>
+              <span class="material-symbols text-2xl">arrow_right</span>
             </div>
             <!-- selected checkmark icon -->
             <div v-if="item.value === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
-              <span class="material-icons text-base text-yellow-400">check</span>
+              <span class="material-symbols text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>
@@ -34,15 +34,15 @@
       <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-white/5" role="option" @click="sublist = null">
           <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
-            <span class="material-icons text-2xl">arrow_left</span>
+            <span class="material-symbols text-2xl">arrow_left</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="font-normal block truncate">Back</span>
+            <span class="font-normal block truncate">{{ $strings.ButtonBack }}</span>
           </div>
         </li>
         <li v-if="!sublistItems.length" class="text-gray-400 select-none relative px-2" role="option">
           <div class="flex items-center justify-center">
-            <span class="font-normal block truncate py-2">No {{ sublist }}</span>
+            <span class="font-normal block truncate py-2">{{ $getString('LabelLibraryFilterSublistEmpty', [selectedSublistText]) }}</span>
           </div>
         </li>
         <template v-for="item in sublistItems">
@@ -52,7 +52,7 @@
             </div>
             <!-- selected checkmark icon -->
             <div v-if="`${sublist}.${item.value}` === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
-              <span class="material-icons text-base text-yellow-400">check</span>
+              <span class="material-symbols text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>
@@ -89,14 +89,14 @@ export default {
         this.$emit('input', val)
       }
     },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     libraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
     isPodcast() {
       return this.libraryMediaType === 'podcast'
-    },
-    isMusic() {
-      return this.libraryMediaType === 'music'
     },
     seriesItems() {
       return [
@@ -106,31 +106,37 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelAuthor,
+          textPlural: this.$strings.LabelAuthors,
           value: 'authors',
           sublist: true
         },
         {
           text: this.$strings.LabelNarrator,
+          textPlural: this.$strings.LabelNarrators,
           value: 'narrators',
           sublist: true
         },
         {
           text: this.$strings.LabelPublisher,
+          textPlural: this.$strings.LabelPublishers,
           value: 'publishers',
           sublist: true
         },
         {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
           sublist: true
         },
@@ -142,43 +148,56 @@ export default {
       ]
     },
     bookItems() {
-      return [
+      const items = [
         {
           text: this.$strings.LabelAll,
           value: 'all'
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelSeries,
+          textPlural: this.$strings.LabelSeries,
           value: 'series',
           sublist: true
         },
         {
           text: this.$strings.LabelAuthor,
+          textPlural: this.$strings.LabelAuthors,
           value: 'authors',
           sublist: true
         },
         {
           text: this.$strings.LabelNarrator,
+          textPlural: this.$strings.LabelNarrators,
           value: 'narrators',
           sublist: true
         },
         {
           text: this.$strings.LabelPublisher,
+          textPlural: this.$strings.LabelPublishers,
           value: 'publishers',
           sublist: true
         },
         {
+          text: this.$strings.LabelPublishedDecade,
+          textPlural: this.$strings.LabelPublishedDecades,
+          value: 'publishedDecades',
+          sublist: true
+        },
+        {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
           sublist: true
         },
@@ -218,6 +237,14 @@ export default {
           sublist: false
         }
       ]
+      if (this.userIsAdminOrUp) {
+        items.push({
+          text: this.$strings.LabelShareOpen,
+          value: 'share-open',
+          sublist: false
+        })
+      }
+      return items
     },
     podcastItems() {
       return [
@@ -227,40 +254,20 @@ export default {
         },
         {
           text: this.$strings.LabelGenre,
+          textPlural: this.$strings.LabelGenres,
           value: 'genres',
           sublist: true
         },
         {
           text: this.$strings.LabelTag,
+          textPlural: this.$strings.LabelTags,
           value: 'tags',
           sublist: true
         },
         {
           text: this.$strings.LabelLanguage,
+          textPlural: this.$strings.LabelLanguages,
           value: 'languages',
-          sublist: true
-        },
-        {
-          text: this.$strings.ButtonIssues,
-          value: 'issues',
-          sublist: false
-        }
-      ]
-    },
-    musicItems() {
-      return [
-        {
-          text: this.$strings.LabelAll,
-          value: 'all'
-        },
-        {
-          text: this.$strings.LabelGenre,
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: this.$strings.LabelTag,
-          value: 'tags',
           sublist: true
         },
         {
@@ -273,11 +280,17 @@ export default {
     selectItems() {
       if (this.isSeries) return this.seriesItems
       if (this.isPodcast) return this.podcastItems
-      if (this.isMusic) return this.musicItems
       return this.bookItems
     },
     selectedItemSublist() {
       return this.selected?.includes('.') ? this.selected.split('.')[0] : null
+    },
+    selectedSublistText() {
+      if (!this.sublist) {
+        return ''
+      }
+      const sublistItem = this.selectItems.find((i) => i.value === this.sublist)
+      return sublistItem?.textPlural || sublistItem?.text || ''
     },
     selectedText() {
       if (!this.selected) return ''
@@ -330,6 +343,9 @@ export default {
     },
     publishers() {
       return this.filterData.publishers || []
+    },
+    publishedDecades() {
+      return this.filterData.publishedDecades || []
     },
     progress() {
       return [
@@ -398,20 +414,16 @@ export default {
           name: 'ISBN'
         },
         {
-          id: 'subtitle',
-          name: this.$strings.LabelSubtitle
-        },
-        {
           id: 'authors',
           name: this.$strings.LabelAuthor
         },
         {
-          id: 'publishedYear',
-          name: this.$strings.LabelPublishYear
+          id: 'chapters',
+          name: this.$strings.LabelChapters
         },
         {
-          id: 'series',
-          name: this.$strings.LabelSeries
+          id: 'cover',
+          name: this.$strings.LabelCover
         },
         {
           id: 'description',
@@ -422,24 +434,32 @@ export default {
           name: this.$strings.LabelGenres
         },
         {
-          id: 'tags',
-          name: this.$strings.LabelTags
+          id: 'language',
+          name: this.$strings.LabelLanguage
         },
         {
           id: 'narrators',
           name: this.$strings.LabelNarrator
         },
         {
+          id: 'publishedYear',
+          name: this.$strings.LabelPublishYear
+        },
+        {
           id: 'publisher',
           name: this.$strings.LabelPublisher
         },
         {
-          id: 'language',
-          name: this.$strings.LabelLanguage
+          id: 'series',
+          name: this.$strings.LabelSeries
         },
         {
-          id: 'cover',
-          name: this.$strings.LabelCover
+          id: 'subtitle',
+          name: this.$strings.LabelSubtitle
+        },
+        {
+          id: 'tags',
+          name: this.$strings.LabelTags
         }
       ]
     },

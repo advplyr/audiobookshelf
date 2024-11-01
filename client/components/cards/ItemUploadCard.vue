@@ -5,7 +5,7 @@
     </div>
 
     <div v-if="!processing && !uploadFailed && !uploadSuccess" class="absolute -top-3 -right-3 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-error cursor-pointer" @click="$emit('remove')">
-      <span class="text-base text-white text-opacity-80 font-mono material-icons">close</span>
+      <span class="text-base text-white text-opacity-80 font-mono material-symbols">close</span>
     </div>
 
     <template v-if="!uploadSuccess && !uploadFailed">
@@ -22,7 +22,7 @@
             <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
             <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
               <div class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
-                <span class="text-base text-white text-opacity-80 font-mono material-icons">sync</span>
+                <span class="text-base text-white text-opacity-80 font-mono material-symbols">sync</span>
               </div>
             </ui-tooltip>
           </div>

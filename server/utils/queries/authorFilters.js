@@ -54,18 +54,16 @@ module.exports = {
    * Search authors
    *
    * @param {string} libraryId
-   * @param {string} query
+   * @param {Database.TextQuery} query
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<Object[]>} oldAuthor with numBooks
    */
   async search(libraryId, query, limit, offset) {
+    const matchAuthor = query.matchExpression('name')
     const authors = await Database.authorModel.findAll({
       where: {
-        name: {
-          [Sequelize.Op.substring]: query
-        },
-        libraryId
+        [Sequelize.Op.and]: [Sequelize.literal(matchAuthor), { libraryId }]
       },
       attributes: {
         include: [[Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'numBooks']]
@@ -75,8 +73,7 @@ module.exports = {
     })
     const authorMatches = []
     for (const author of authors) {
-      const oldAuthor = author.getOldAuthor().toJSON()
-      oldAuthor.numBooks = author.dataValues.numBooks
+      const oldAuthor = author.toOldJSONExpanded(author.dataValues.numBooks)
       authorMatches.push(oldAuthor)
     }
     return authorMatches

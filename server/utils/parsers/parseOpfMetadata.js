@@ -1,23 +1,38 @@
 const { xmlToJSON } = require('../index')
 const htmlSanitizer = require('../htmlSanitizer')
 
+/**
+ * @typedef MetadataCreatorObject
+ * @property {string} value
+ * @property {string} role
+ * @property {string} fileAs
+ *
+ * @example
+ * <dc:creator xmlns:ns0="http://www.idpf.org/2007/opf" ns0:role="aut" ns0:file-as="Steinbeck, John">John Steinbeck</dc:creator>
+ * <dc:creator opf:role="aut" opf:file-as="Orwell, George">George Orwell</dc:creator>
+ *
+ * @param {Object} metadata
+ * @returns {MetadataCreatorObject[]}
+ */
 function parseCreators(metadata) {
-  if (!metadata['dc:creator']) return null
-  const creators = metadata['dc:creator']
-  if (!creators.length) return null
-  return creators.map(c => {
+  if (!metadata['dc:creator']?.length) return null
+  return metadata['dc:creator'].map((c) => {
     if (typeof c !== 'object' || !c['$'] || !c['_']) return false
+    const namespace =
+      Object.keys(c['$'])
+        .find((key) => key.startsWith('xmlns:'))
+        ?.split(':')[1] || 'opf'
     return {
       value: c['_'],
-      role: c['$']['opf:role'] || null,
-      fileAs: c['$']['opf:file-as'] || null
+      role: c['$'][`${namespace}:role`] || null,
+      fileAs: c['$'][`${namespace}:file-as`] || null
     }
   })
 }
 
 function fetchCreators(creators, role) {
   if (!creators?.length) return null
-  return [...new Set(creators.filter(c => c.role === role && c.value).map(c => c.value))]
+  return [...new Set(creators.filter((c) => c.role === role && c.value).map((c) => c.value))]
 }
 
 function fetchTagString(metadata, tag) {
@@ -59,18 +74,34 @@ function fetchPublisher(metadata) {
   return fetchTagString(metadata, 'dc:publisher')
 }
 
+/**
+ * @example
+ * <dc:identifier xmlns:ns4="http://www.idpf.org/2007/opf" ns4:scheme="ISBN">9781440633904</dc:identifier>
+ * <dc:identifier opf:scheme="ISBN">9780141187761</dc:identifier>
+ *
+ * @param {Object} metadata
+ * @param {string} scheme
+ * @returns {string}
+ */
+function fetchIdentifier(metadata, scheme) {
+  if (!metadata['dc:identifier']?.length) return null
+  const identifierObj = metadata['dc:identifier'].find((i) => {
+    if (!i['$']) return false
+    const namespace =
+      Object.keys(i['$'])
+        .find((key) => key.startsWith('xmlns:'))
+        ?.split(':')[1] || 'opf'
+    return i['$'][`${namespace}:scheme`] === scheme
+  })
+  return identifierObj?.['_'] || null
+}
+
 function fetchISBN(metadata) {
-  if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
-  const identifiers = metadata['dc:identifier']
-  const isbnObj = identifiers.find(i => i['$'] && i['$']['opf:scheme'] === 'ISBN')
-  return isbnObj ? isbnObj['_'] || null : null
+  return fetchIdentifier(metadata, 'ISBN')
 }
 
 function fetchASIN(metadata) {
-  if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
-  const identifiers = metadata['dc:identifier']
-  const asinObj = identifiers.find(i => i['$'] && i['$']['opf:scheme'] === 'ASIN')
-  return asinObj ? asinObj['_'] || null : null
+  return fetchIdentifier(metadata, 'ASIN')
 }
 
 function fetchTitle(metadata) {
@@ -92,7 +123,7 @@ function fetchDescription(metadata) {
 
 function fetchGenres(metadata) {
   if (!metadata['dc:subject'] || !metadata['dc:subject'].length) return []
-  return [...new Set(metadata['dc:subject'].filter(g => g && typeof g === 'string'))]
+  return [...new Set(metadata['dc:subject'].filter((g) => g && typeof g === 'string'))]
 }
 
 function fetchLanguage(metadata) {
@@ -116,20 +147,24 @@ function fetchSeries(metadataMeta) {
   // If one series was found with no series_index then check if any series_index meta can be found
   //   this is to support when calibre:series_index is not directly underneath calibre:series
   if (result.length === 1 && !result[0].sequence) {
-    const seriesIndexMeta = metadataMeta.find(m => m.$?.name === 'calibre:series_index' && m.$.content?.trim())
+    const seriesIndexMeta = metadataMeta.find((m) => m.$?.name === 'calibre:series_index' && m.$.content?.trim())
     if (seriesIndexMeta) {
       result[0].sequence = seriesIndexMeta.$.content.trim()
     }
   }
-  return result
+
+  // Remove duplicates
+  const dedupedResult = result.filter((se, idx) => result.findIndex((s) => s.name === se.name) === idx)
+
+  return dedupedResult
 }
 
 function fetchNarrators(creators, metadata) {
   const narrators = fetchCreators(creators, 'nrt')
   if (narrators?.length) return narrators
   try {
-    const narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
-    return narratorsJSON["#value#"]
+    const narratorsJSON = JSON.parse(fetchTagString(metadata.meta, 'calibre:user_metadata:#narrators').replace(/&quot;/g, '"'))
+    return narratorsJSON['#value#']
   } catch {
     return null
   }
@@ -137,7 +172,7 @@ function fetchNarrators(creators, metadata) {
 
 function fetchTags(metadata) {
   if (!metadata['dc:tag'] || !metadata['dc:tag'].length) return []
-  return [...new Set(metadata['dc:tag'].filter(tag => tag && typeof tag === 'string'))]
+  return [...new Set(metadata['dc:tag'].filter((tag) => tag && typeof tag === 'string'))]
 }
 
 function stripPrefix(str) {
@@ -147,7 +182,7 @@ function stripPrefix(str) {
 
 module.exports.parseOpfMetadataJson = (json) => {
   // Handle <package ...> or with prefix <ns0:package ...>
-  const packageKey = Object.keys(json).find(key => stripPrefix(key) === 'package')
+  const packageKey = Object.keys(json).find((key) => stripPrefix(key) === 'package')
   if (!packageKey) return null
   const prefix = packageKey.split(':').shift()
   let metadata = prefix ? json[packageKey][`${prefix}:metadata`] || json[packageKey].metadata : json[packageKey].metadata
@@ -170,8 +205,8 @@ module.exports.parseOpfMetadataJson = (json) => {
   }
 
   const creators = parseCreators(metadata)
-  const authors = (fetchCreators(creators, 'aut') || []).map(au => au?.trim()).filter(au => au)
-  const narrators = (fetchNarrators(creators, metadata) || []).map(nrt => nrt?.trim()).filter(nrt => nrt)
+  const authors = (fetchCreators(creators, 'aut') || []).map((au) => au?.trim()).filter((au) => au)
+  const narrators = (fetchNarrators(creators, metadata) || []).map((nrt) => nrt?.trim()).filter((nrt) => nrt)
   return {
     title: fetchTitle(metadata),
     subtitle: fetchSubtitle(metadata),

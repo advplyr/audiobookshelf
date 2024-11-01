@@ -1,6 +1,7 @@
 const axios = require('axios').default
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
+const { isValidASIN } = require('../utils/index')
 
 class Audible {
   #responseTimeout = 30000
@@ -82,24 +83,14 @@ class Audible {
   }
 
   /**
-   * Test if a search title matches an ASIN. Supports lowercase letters
-   *
-   * @param {string} title
-   * @returns {boolean}
-   */
-  isProbablyAsin(title) {
-    return /^[0-9A-Za-z]{10}$/.test(title)
-  }
-
-  /**
    *
    * @param {string} asin
    * @param {string} region
    * @param {number} [timeout] response timeout in ms
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<Object>}
    */
   asinSearch(asin, region, timeout = this.#responseTimeout) {
-    if (!asin) return []
+    if (!asin) return null
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
     asin = encodeURIComponent(asin.toUpperCase())
@@ -111,12 +102,12 @@ class Audible {
         timeout
       })
       .then((res) => {
-        if (!res || !res.data || !res.data.asin) return null
+        if (!res?.data?.asin) return null
         return res.data
       })
       .catch((error) => {
         Logger.error('[Audible] ASIN search error', error)
-        return []
+        return null
       })
   }
 
@@ -136,16 +127,18 @@ class Audible {
     }
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
-    let items
-    if (asin) {
-      items = [await this.asinSearch(asin, region, timeout)]
+    let items = []
+    if (asin && isValidASIN(asin.toUpperCase())) {
+      const item = await this.asinSearch(asin, region, timeout)
+      if (item) items.push(item)
     }
 
-    if (!items && this.isProbablyAsin(title)) {
-      items = [await this.asinSearch(title, region, timeout)]
+    if (!items.length && isValidASIN(title.toUpperCase())) {
+      const item = await this.asinSearch(title, region, timeout)
+      if (item) items.push(item)
     }
 
-    if (!items) {
+    if (!items.length) {
       const queryObj = {
         num_results: '10',
         products_sort_by: 'Relevance',
@@ -169,7 +162,7 @@ class Audible {
           return []
         })
     }
-    return items?.map((item) => this.cleanResult(item)) || []
+    return items.filter(Boolean).map((item) => this.cleanResult(item)) || []
   }
 }
 

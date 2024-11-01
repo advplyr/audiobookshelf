@@ -20,7 +20,7 @@
           <span class="pl-2 text-base">{{ $strings.LabelAutoFetchMetadata }}</span>
         </label>
         <ui-tooltip :text="$strings.LabelAutoFetchMetadataHelp" class="inline-flex pt-4">
-          <span class="pl-1 material-icons icon-text text-sm cursor-pointer">info_outlined</span>
+          <span class="pl-1 material-symbols icon-text text-sm cursor-pointer">info</span>
         </ui-tooltip>
 
         <div class="flex-grow ml-4">
@@ -383,12 +383,6 @@ export default {
         if (result) itemsUploaded++
         else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')
-      }
-      if (itemsUploaded) {
-        this.$toast.success(`Successfully uploaded ${itemsUploaded} item${itemsUploaded > 1 ? 's' : ''}`)
-      }
-      if (itemsFailed) {
-        this.$toast.success(`Failed to upload ${itemsFailed} item${itemsFailed > 1 ? 's' : ''}`)
       }
       this.processing = false
       this.uploadFinished = true

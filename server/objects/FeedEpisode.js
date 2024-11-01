@@ -1,5 +1,5 @@
 const Path = require('path')
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const date = require('../libs/dateAndTime')
 const { secondsToTimestamp } = require('../utils/index')
 
@@ -98,27 +98,22 @@ class FeedEpisode {
   }
 
   /**
-   * 
-   * @param {import('../objects/LibraryItem')} libraryItem 
-   * @param {string} serverAddress 
-   * @param {string} slug 
-   * @param {import('../objects/files/AudioTrack')} audioTrack 
-   * @param {Object} meta 
-   * @param {boolean} useChapterTitles 
-   * @param {number} [additionalOffset] 
+   *
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {string} serverAddress
+   * @param {string} slug
+   * @param {import('../objects/files/AudioTrack')} audioTrack
+   * @param {Object} meta
+   * @param {boolean} useChapterTitles
+   * @param {string} [pubDateOverride] Used for series & collections to ensure correct episode order
    */
-  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, useChapterTitles, additionalOffset = null) {
+  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, useChapterTitles, pubDateOverride = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
-    let timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
+    let timeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset pubdate to ensure correct order
     let episodeId = uuidv4()
 
-    // Additional offset can be used for collections/series
-    if (additionalOffset !== null && !isNaN(additionalOffset)) {
-      timeOffset += Number(additionalOffset) * 1000
-    }
-
     // e.g. Track 1 will have a pub date before Track 2
-    const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+    const audiobookPubDate = pubDateOverride || date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 
     const contentFileExtension = Path.extname(audioTrack.metadata.filename)
     const contentUrl = `/feed/${slug}/item/${episodeId}/media${contentFileExtension}`
@@ -126,12 +121,13 @@ class FeedEpisode {
     const mediaMetadata = media.metadata
 
     let title = audioTrack.title
-    if (libraryItem.media.tracks.length == 1) { // If audiobook is a single file, use book title instead of chapter/file title
+    if (libraryItem.media.tracks.length == 1) {
+      // If audiobook is a single file, use book title instead of chapter/file title
       title = libraryItem.media.metadata.title
     } else {
       if (useChapterTitles) {
         // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
-        const matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+        const matchingChapter = libraryItem.media.chapters.find((ch) => Math.abs(ch.start - audioTrack.startOffset) < 1)
         if (matchingChapter?.title) title = matchingChapter.title
       }
     }
@@ -169,11 +165,11 @@ class FeedEpisode {
         { 'itunes:duration': secondsToTimestamp(this.duration) },
         { 'itunes:summary': this.description || '' },
         {
-          "itunes:explicit": !!this.explicit
+          'itunes:explicit': !!this.explicit
         },
-        { "itunes:episodeType": this.episodeType },
-        { "itunes:season": this.season },
-        { "itunes:episode": this.episode }
+        { 'itunes:episodeType': this.episodeType },
+        { 'itunes:season': this.season },
+        { 'itunes:episode': this.episode }
       ]
     }
   }

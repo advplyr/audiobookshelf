@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between">
         <p class="text-base text-gray-200 truncate">{{ metadata.filename }}</p>
         <ui-btn v-if="ffprobeData" small class="ml-2" @click="ffprobeData = null">{{ $strings.ButtonReset }}</ui-btn>
-        <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">Probe Audio File</ui-btn>
+        <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">{{ $strings.ButtonProbeAudioFile }}</ui-btn>
       </div>
 
       <div class="w-full h-px bg-white bg-opacity-10 my-4" />
@@ -91,7 +91,7 @@
           <ui-textarea-with-label :value="prettyFfprobeData" readonly :rows="30" class="text-xs" />
 
           <button class="absolute top-4 right-4" :class="copiedToClipboard ? 'text-success' : 'text-white/50 hover:text-white/80'" @click.stop="copyFfprobeData">
-            <span class="material-icons">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
+            <span class="material-symbols">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
           </button>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to get ffprobe data', error)
-          this.$toast.error('FFProbe failed')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
         })
         .finally(() => {
           this.probingFile = false

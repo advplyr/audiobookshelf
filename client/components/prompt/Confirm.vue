@@ -3,7 +3,7 @@
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
     <div ref="content" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }" v-click-outside="clickedOutside">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p class="text-lg mb-6 mt-2 px-1" v-html="message" />
+        <p id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1" v-html="message" />
 
         <ui-checkbox v-if="checkboxLabel" v-model="checkboxValue" checkbox-bg="bg" :label="checkboxLabel" label-class="pl-2 text-base" class="mb-6 px-1" />
 
@@ -132,3 +132,13 @@ export default {
   }
 }
 </script>
+
+<style>
+#confirm-prompt-message code {
+  font-size: 1rem;
+  border-radius: 6px;
+  background-color: rgb(82, 82, 82);
+  color: white;
+  padding: 2px 4px;
+}
+</style>

@@ -54,7 +54,7 @@ class PodcastEpisode extends Model {
   }
 
   /**
-   * @param {string} libraryItemId 
+   * @param {string} libraryItemId
    * @returns {oldPodcastEpisode}
    */
   getOldPodcastEpisode(libraryItemId = null) {
@@ -125,40 +125,44 @@ class PodcastEpisode extends Model {
 
   /**
    * Initialize model
-   * @param {import('../Database').sequelize} sequelize 
+   * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
-    super.init({
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-      },
-      index: DataTypes.INTEGER,
-      season: DataTypes.STRING,
-      episode: DataTypes.STRING,
-      episodeType: DataTypes.STRING,
-      title: DataTypes.STRING,
-      subtitle: DataTypes.STRING(1000),
-      description: DataTypes.TEXT,
-      pubDate: DataTypes.STRING,
-      enclosureURL: DataTypes.STRING,
-      enclosureSize: DataTypes.BIGINT,
-      enclosureType: DataTypes.STRING,
-      publishedAt: DataTypes.DATE,
+    super.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true
+        },
+        index: DataTypes.INTEGER,
+        season: DataTypes.STRING,
+        episode: DataTypes.STRING,
+        episodeType: DataTypes.STRING,
+        title: DataTypes.STRING,
+        subtitle: DataTypes.STRING(1000),
+        description: DataTypes.TEXT,
+        pubDate: DataTypes.STRING,
+        enclosureURL: DataTypes.STRING,
+        enclosureSize: DataTypes.BIGINT,
+        enclosureType: DataTypes.STRING,
+        publishedAt: DataTypes.DATE,
 
-      audioFile: DataTypes.JSON,
-      chapters: DataTypes.JSON,
-      extraData: DataTypes.JSON
-    }, {
-      sequelize,
-      modelName: 'podcastEpisode',
-      indexes: [
-        {
-          fields: ['createdAt']
-        }
-      ]
-    })
+        audioFile: DataTypes.JSON,
+        chapters: DataTypes.JSON,
+        extraData: DataTypes.JSON
+      },
+      {
+        sequelize,
+        modelName: 'podcastEpisode',
+        indexes: [
+          {
+            name: 'podcastEpisode_createdAt_podcastId',
+            fields: ['createdAt', 'podcastId']
+          }
+        ]
+      }
+    )
 
     const { podcast } = sequelize.models
     podcast.hasMany(PodcastEpisode, {

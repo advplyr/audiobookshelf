@@ -20,29 +20,29 @@
             </th>
             <th v-if="!numSelected" class="flex-grow sm:flex-grow-0 sm:w-48 sm:max-w-48 text-left group cursor-pointer" @click.stop="sortColumn('displayTitle')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelItem }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('displayTitle') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
             <th v-if="!numSelected" class="w-26 min-w-26 text-left hidden md:table-cell group cursor-pointer" @click.stop="sortColumn('playMethod')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelPlayMethod }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('playMethod') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelPlayMethod }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('playMethod') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
             <th v-if="!numSelected" class="w-24 min-w-24 sm:w-32 sm:min-w-32 group cursor-pointer" @click.stop="sortColumn('timeListening')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelTimeListened }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('timeListening') }" class="material-symbols text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="w-24 min-w-24 group cursor-pointer" @click.stop="sortColumn('currentTime')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-icons text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelLastTime }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('currentTime') }" class="material-symbols text-base pl-px hidden sm:inline-block">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
             <th v-if="!numSelected" class="flex-grow hidden sm:table-cell cursor-pointer group" @click.stop="sortColumn('updatedAt')">
               <div class="inline-flex items-center">
-                {{ $strings.LabelLastUpdate }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('updatedAt') }" class="material-icons text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
+                {{ $strings.LabelLastUpdate }} <span :class="{ 'opacity-0 group-hover:opacity-30': !isSortSelected('updatedAt') }" class="material-symbols text-base pl-px">{{ sortDesc ? 'arrow_drop_down' : 'arrow_drop_up' }}</span>
               </div>
             </th>
           </tr>
@@ -88,7 +88,7 @@
             <ui-dropdown v-model="itemsPerPage" :items="itemsPerPageOptions" small class="w-24 mx-2" @input="updatedItemsPerPage" />
           </div>
           <div class="inline-flex items-center">
-            <p class="text-sm mx-2">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <p class="text-sm mx-2">{{ $getString('LabelPaginationPageXOfY', [currentPage + 1, numPages]) }}</p>
             <ui-icon-btn icon="arrow_back_ios_new" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
             <ui-icon-btn icon="arrow_forward_ios" :size="9" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
           </div>
@@ -100,10 +100,10 @@
       </div>
       <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
 
-      <div class="w-full my-8 h-px bg-white/10" />
+      <div v-if="openListeningSessions.length" class="w-full my-8 h-px bg-white/10" />
 
       <!-- open listening sessions table -->
-      <p v-if="openListeningSessions.length" class="text-lg my-4">Open Listening Sessions</p>
+      <p v-if="openListeningSessions.length" class="text-lg my-4">{{ $strings.HeaderOpenListeningSessions }}</p>
       <div v-if="openListeningSessions.length" class="block max-w-full">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
@@ -132,6 +132,45 @@
             </td>
             <td class="text-center">
               <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
+            </td>
+            <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
+              <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
+            </td>
+            <td class="text-center hidden sm:table-cell">
+              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
+                <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+              </ui-tooltip>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div v-if="openShareListeningSessions.length" class="w-full my-8 h-px bg-white/10" />
+
+      <!-- open share listening sessions table -->
+      <p v-if="openShareListeningSessions.length" class="text-lg my-4">Open Share Listening Sessions</p>
+      <div v-if="openShareListeningSessions.length" class="block max-w-full">
+        <table class="userSessionsTable">
+          <tr class="bg-primary bg-opacity-40">
+            <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+            <th class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
+            <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+            <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+            <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+            <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
+          </tr>
+
+          <tr v-for="session in openShareListeningSessions" :key="`open-${session.id}`" class="cursor-pointer" @click="showSession(session)">
+            <td class="py-1 max-w-48">
+              <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
+              <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
+            </td>
+            <td class="hidden md:table-cell"></td>
+            <td class="hidden md:table-cell">
+              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
+            </td>
+            <td class="hidden sm:table-cell max-w-32 min-w-32">
+              <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
             </td>
             <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
@@ -180,6 +219,7 @@ export default {
       selectedSession: null,
       listeningSessions: [],
       openListeningSessions: [],
+      openShareListeningSessions: [],
       numPages: 0,
       total: 0,
       currentPage: 0,
@@ -250,7 +290,6 @@ export default {
       this.$axios
         .$post(`/api/sessions/batch/delete`, payload)
         .then(() => {
-          this.$toast.success('Sessions removed')
           if (isAllSessions) {
             // If all sessions were removed from the current page then go to the previous page
             if (this.currentPage > 0) {
@@ -263,7 +302,7 @@ export default {
           }
         })
         .catch((error) => {
-          const errorMsg = error.response?.data || 'Failed to remove sessions'
+          const errorMsg = error.response?.data || this.$strings.ToastRemoveFailed
           this.$toast.error(errorMsg)
         })
         .finally(() => {
@@ -318,12 +357,13 @@ export default {
       })
 
       if (!libraryItem) {
-        this.$toast.error('Failed to get library item')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
       if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
-        this.$toast.error('Failed to get podcast episode')
+        console.error('Episode not found in library item', session.episodeId, libraryItem.media.episodes)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
@@ -337,7 +377,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: libraryItem.media.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.audioFile.duration || null,
           coverPath: libraryItem.media.coverPath || null
         }
@@ -455,6 +495,7 @@ export default {
         s.open = true
         return s
       })
+      this.openShareListeningSessions = data.shareSessions || []
     },
     init() {
       this.loadSessions(0)

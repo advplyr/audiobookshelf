@@ -8,12 +8,15 @@ export const state = () => ({
     bookshelfCoverSize: 120,
     collapseSeries: false,
     collapseBookSeries: false,
+    showSubtitles: false,
     useChapterTrack: false,
     seriesSortBy: 'name',
     seriesSortDesc: false,
     seriesFilterBy: 'all',
     authorSortBy: 'name',
-    authorSortDesc: false
+    authorSortDesc: false,
+    jumpForwardAmount: 10,
+    jumpBackwardAmount: 10
   }
 })
 
@@ -23,16 +26,18 @@ export const getters = {
   getToken: (state) => {
     return state.user?.token || null
   },
-  getUserMediaProgress: (state) => (libraryItemId, episodeId = null) => {
-    if (!state.user.mediaProgress) return null
-    return state.user.mediaProgress.find(li => {
-      if (episodeId && li.episodeId !== episodeId) return false
-      return li.libraryItemId == libraryItemId
-    })
-  },
+  getUserMediaProgress:
+    (state) =>
+    (libraryItemId, episodeId = null) => {
+      if (!state.user.mediaProgress) return null
+      return state.user.mediaProgress.find((li) => {
+        if (episodeId && li.episodeId !== episodeId) return false
+        return li.libraryItemId == libraryItemId
+      })
+    },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user.bookmarks) return []
-    return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId)
+    return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
   },
   getUserSetting: (state) => (key) => {
     return state.settings?.[key] || null
@@ -65,6 +70,9 @@ export const getters = {
   getIsSeriesRemovedFromContinueListening: (state) => (seriesId) => {
     if (!state.user || !state.user.seriesHideFromContinueListening || !state.user.seriesHideFromContinueListening.length) return false
     return state.user.seriesHideFromContinueListening.includes(seriesId)
+  },
+  getSizeMultiplier: (state) => {
+    return state.settings.bookshelfCoverSize / 120
   }
 }
 
@@ -82,7 +90,7 @@ export const actions = {
       if (state.settings.orderBy == 'media.metadata.publishedYear') {
         settingsUpdate.orderBy = 'media.metadata.title'
       }
-      const invalidFilters = ['series', 'authors', 'narrators', 'publishers', 'languages', 'progress', 'issues', 'ebooks', 'abridged']
+      const invalidFilters = ['series', 'authors', 'narrators', 'publishers', 'publishedDecades', 'languages', 'progress', 'issues', 'ebooks', 'abridged']
       const filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
       if (invalidFilters.includes(filterByFirstPart)) {
         settingsUpdate.filterBy = 'all'
@@ -147,14 +155,14 @@ export const mutations = {
   },
   setUserToken(state, token) {
     state.user.token = token
-    localStorage.setItem('token', user.token)
+    localStorage.setItem('token', token)
   },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return
     if (!data) {
-      state.user.mediaProgress = state.user.mediaProgress.filter(lip => lip.id != id)
+      state.user.mediaProgress = state.user.mediaProgress.filter((lip) => lip.id != id)
     } else {
-      var indexOf = state.user.mediaProgress.findIndex(lip => lip.id == id)
+      var indexOf = state.user.mediaProgress.findIndex((lip) => lip.id == id)
       if (indexOf >= 0) {
         state.user.mediaProgress.splice(indexOf, 1, data)
       } else {

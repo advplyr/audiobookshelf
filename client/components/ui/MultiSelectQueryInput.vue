@@ -6,13 +6,13 @@
         <div ref="inputWrapper" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-0.5" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
           <div v-for="item in selected" :key="item.id" class="rounded-full px-2 py-0.5 m-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center justify-center relative min-w-12">
             <div v-if="!disabled" class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
-              <span v-if="showEdit" class="material-icons text-base text-white hover:text-warning mr-1" @click.stop="editItem(item)">edit</span>
-              <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.id)">close</span>
+              <span v-if="showEdit" class="material-symbols text-base text-white hover:text-warning mr-1" @click.stop="editItem(item)">edit</span>
+              <span class="material-symbols text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.id)">close</span>
             </div>
             {{ item[textKey] }}
           </div>
           <div v-if="showEdit && !disabled" class="rounded-full cursor-pointer w-6 h-6 mx-0.5 bg-bg flex items-center justify-center">
-            <span class="material-icons text-white hover:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem">add</span>
+            <span class="material-symbols text-white hover:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem">add</span>
           </div>
           <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
@@ -20,12 +20,12 @@
 
       <ul ref="menu" v-show="showMenu" class="absolute z-60 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
-          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="itemsToShow[selectedMenuItemIndex] === item ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+          <li :key="item.id" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="isMenuItemSelected(item) ? 'text-yellow-300' : ''" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
               <span class="font-normal ml-3 block truncate">{{ item.name }}</span>
             </div>
             <span v-if="getIsSelected(item.id)" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
-              <span class="material-icons text-xl">checkmark</span>
+              <span class="material-symbols text-xl">check</span>
             </span>
           </li>
         </template>
@@ -40,7 +40,10 @@
 </template>
 
 <script>
+import menuKeyboardNavigationMixin from '@/mixins/menuKeyboardNavigation'
+
 export default {
+  mixins: [menuKeyboardNavigationMixin],
   props: {
     value: {
       type: Array,
@@ -63,8 +66,7 @@ export default {
       typingTimeout: null,
       isFocused: false,
       menu: null,
-      items: [],
-      selectedMenuItemIndex: null
+      items: []
     }
   },
   watch: {
@@ -124,34 +126,7 @@ export default {
       this.items = results || []
     },
     keydownInput(event) {
-      let items = this.itemsToShow
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault()
-        if (!items.length) return
-        if (event.key === 'ArrowDown') {
-          if (this.selectedMenuItemIndex === null) {
-            this.selectedMenuItemIndex = 0
-          } else {
-            this.selectedMenuItemIndex = Math.min(this.selectedMenuItemIndex + 1, items.length - 1)
-          }
-        } else if (event.key === 'ArrowUp') {
-          if (this.selectedMenuItemIndex === null) {
-            this.selectedMenuItemIndex = items.length - 1
-          } else {
-            this.selectedMenuItemIndex = Math.max(this.selectedMenuItemIndex - 1, 0)
-          }
-        }
-        this.recalcScroll()
-        return
-      } else if (event.key === 'Enter') {
-        if (this.selectedMenuItemIndex !== null) {
-          this.clickedOption(event, items[this.selectedMenuItemIndex])
-        } else {
-          this.submitForm()
-        }
-        return
-      }
-      this.selectedMenuItemIndex = null
+      this.menuNavigationHandler(event)
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
         this.search()
@@ -165,24 +140,6 @@ export default {
         this.$refs.input.style.width = len + 'px'
         this.recalcMenuPos()
       }, 50)
-    },
-    recalcScroll() {
-      if (!this.menu) return
-      var menuItems = this.menu.querySelectorAll('li')
-      if (!menuItems.length) return
-      var selectedItem = menuItems[this.selectedMenuItemIndex]
-      if (!selectedItem) return
-      var menuHeight = this.menu.offsetHeight
-      var itemHeight = selectedItem.offsetHeight
-      var itemTop = selectedItem.offsetTop
-      var itemBottom = itemTop + itemHeight
-      if (itemBottom > this.menu.scrollTop + menuHeight) {
-        let menuPaddingBottom = parseFloat(window.getComputedStyle(this.menu).paddingBottom)
-        this.menu.scrollTop = itemBottom - menuHeight + menuPaddingBottom
-      } else if (itemTop < this.menu.scrollTop) {
-        let menuPaddingTop = parseFloat(window.getComputedStyle(this.menu).paddingTop)
-        this.menu.scrollTop = itemTop - menuPaddingTop
-      }
     },
     recalcMenuPos() {
       if (!this.menu || !this.$refs.inputWrapper) return
@@ -323,9 +280,6 @@ export default {
       this.textInput = null
       this.currentSearch = null
       this.selectedMenuItemIndex = null
-      this.$nextTick(() => {
-        this.blur()
-      })
     },
     submitForm() {
       if (!this.textInput) return

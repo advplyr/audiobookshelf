@@ -43,14 +43,13 @@ class LibraryFile {
     if (globals.SupportedImageTypes.includes(this.metadata.format)) return 'image'
     if (globals.SupportedAudioTypes.includes(this.metadata.format)) return 'audio'
     if (globals.SupportedEbookTypes.includes(this.metadata.format)) return 'ebook'
-    if (globals.SupportedVideoTypes.includes(this.metadata.format)) return 'video'
     if (globals.TextFileTypes.includes(this.metadata.format)) return 'text'
     if (globals.MetadataFileTypes.includes(this.metadata.format)) return 'metadata'
     return 'unknown'
   }
 
   get isMediaFile() {
-    return this.fileType === 'audio' || this.fileType === 'ebook' || this.fileType === 'video'
+    return this.fileType === 'audio' || this.fileType === 'ebook'
   }
 
   get isEBookFile() {

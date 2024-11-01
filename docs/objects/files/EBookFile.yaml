@@ -1,0 +1,17 @@
+components:
+  schemas:
+    ebookFile:
+      type: object
+      properties:
+        ino:
+          $ref: '../../schemas.yaml#/components/schemas/inode'
+        metadata:
+          $ref: '../metadata/FileMetadata.yaml#/components/schemas/fileMetadata'
+        ebookFormat:
+          description: The ebook format of the ebook file.
+          type: string
+          example: epub
+        addedAt:
+          $ref: '../../schemas.yaml#/components/schemas/addedAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'

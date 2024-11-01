@@ -19,11 +19,11 @@ class FolderWatcher extends EventEmitter {
   constructor() {
     super()
 
-    /** @type {{id:string, name:string, folders:import('./objects/Folder')[], paths:string[], watcher:Watcher[]}[]} */
+    /** @type {{id:string, name:string, libraryFolders:import('./models/Folder')[], paths:string[], watcher:Watcher[]}[]} */
     this.libraryWatchers = []
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []
-    this.pendingDelay = 4000
+    this.pendingDelay = 10000
     /** @type {NodeJS.Timeout} */
     this.pendingTimeout = null
     /** @type {Task} */
@@ -42,17 +42,21 @@ class FolderWatcher extends EventEmitter {
   }
 
   get pendingFilePaths() {
-    return this.pendingFileUpdates.map(f => f.path)
+    return this.pendingFileUpdates.map((f) => f.path)
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   buildLibraryWatcher(library) {
-    if (this.libraryWatchers.find(w => w.id === library.id)) {
+    if (this.libraryWatchers.find((w) => w.id === library.id)) {
       Logger.warn('[Watcher] Already watching library', library.name)
       return
     }
     Logger.info(`[Watcher] Initializing watcher for "${library.name}".`)
 
-    const folderPaths = library.folderPaths
+    const folderPaths = library.libraryFolders.map((f) => f.path)
     folderPaths.forEach((fp) => {
       Logger.debug(`[Watcher] Init watcher for library folder path "${fp}"`)
     })
@@ -67,29 +71,39 @@ class FolderWatcher extends EventEmitter {
     watcher
       .on('add', (path) => {
         this.onFileAdded(library.id, filePathToPOSIX(path))
-      }).on('change', (path) => {
+      })
+      .on('change', (path) => {
         // This is triggered from metadata changes, not what we want
-      }).on('unlink', path => {
+      })
+      .on('unlink', (path) => {
         this.onFileRemoved(library.id, filePathToPOSIX(path))
-      }).on('rename', (path, pathNext) => {
+      })
+      .on('rename', (path, pathNext) => {
         this.onFileRename(library.id, filePathToPOSIX(path), filePathToPOSIX(pathNext))
-      }).on('error', (error) => {
+      })
+      .on('error', (error) => {
         Logger.error(`[Watcher] ${error}`)
-      }).on('ready', () => {
+      })
+      .on('ready', () => {
         Logger.info(`[Watcher] "${library.name}" Ready`)
-      }).on('close', () => {
+      })
+      .on('close', () => {
         Logger.debug(`[Watcher] "${library.name}" Closed`)
       })
 
     this.libraryWatchers.push({
       id: library.id,
       name: library.name,
-      folders: library.folders,
-      paths: library.folderPaths,
+      libraryFolders: library.libraryFolders,
+      paths: folderPaths,
       watcher
     })
   }
 
+  /**
+   *
+   * @param {import('./models/Library')[]} libraries
+   */
   initWatcher(libraries) {
     libraries.forEach((lib) => {
       if (!lib.settings.disableWatcher) {
@@ -98,38 +112,43 @@ class FolderWatcher extends EventEmitter {
     })
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   addLibrary(library) {
     if (this.disabled || library.settings.disableWatcher) return
     this.buildLibraryWatcher(library)
   }
 
   /**
-   * 
-   * @param {import('./objects/Library')} library 
+   *
+   * @param {import('./models/Library')} library
    */
   updateLibrary(library) {
     if (this.disabled) return
 
-    const libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
+    const libwatcher = this.libraryWatchers.find((lib) => lib.id === library.id)
     if (libwatcher) {
       // Library watcher was disabled
       if (library.settings.disableWatcher) {
         Logger.info(`[Watcher] updateLibrary: Library "${library.name}" watcher disabled`)
         libwatcher.watcher.close()
-        this.libraryWatchers = this.libraryWatchers.filter(lw => lw.id !== libwatcher.id)
+        this.libraryWatchers = this.libraryWatchers.filter((lw) => lw.id !== libwatcher.id)
         return
       }
 
       libwatcher.name = library.name
 
       // If any folder paths were added or removed then re-init watcher
-      const pathsToAdd = library.folderPaths.filter(path => !libwatcher.paths.includes(path))
-      const pathsRemoved = libwatcher.paths.filter(path => !library.folderPaths.includes(path))
+      const folderPaths = library.libraryFolders.map((f) => f.path)
+      const pathsToAdd = folderPaths.filter((path) => !libwatcher.paths.includes(path))
+      const pathsRemoved = libwatcher.paths.filter((path) => !folderPaths.includes(path))
       if (pathsToAdd.length || pathsRemoved.length) {
         Logger.info(`[Watcher] Re-Initializing watcher for "${library.name}".`)
 
         libwatcher.watcher.close()
-        this.libraryWatchers = this.libraryWatchers.filter(lw => lw.id !== libwatcher.id)
+        this.libraryWatchers = this.libraryWatchers.filter((lw) => lw.id !== libwatcher.id)
         this.buildLibraryWatcher(library)
       }
     } else if (!library.settings.disableWatcher) {
@@ -139,27 +158,31 @@ class FolderWatcher extends EventEmitter {
     }
   }
 
+  /**
+   *
+   * @param {import('./models/Library')} library
+   */
   removeLibrary(library) {
     if (this.disabled) return
-    var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
+    var libwatcher = this.libraryWatchers.find((lib) => lib.id === library.id)
     if (libwatcher) {
       Logger.info(`[Watcher] Removed watcher for "${library.name}"`)
       libwatcher.watcher.close()
-      this.libraryWatchers = this.libraryWatchers.filter(lib => lib.id !== library.id)
+      this.libraryWatchers = this.libraryWatchers.filter((lib) => lib.id !== library.id)
     } else {
       Logger.error(`[Watcher] Library watcher not found for "${library.name}"`)
     }
   }
 
   close() {
-    return this.libraryWatchers.map(lib => lib.watcher.close())
+    return this.libraryWatchers.map((lib) => lib.watcher.close())
   }
 
   /**
    * Watcher detected file added
-   * 
-   * @param {string} libraryId 
-   * @param {string} path 
+   *
+   * @param {string} libraryId
+   * @param {string} path
    */
   onFileAdded(libraryId, path) {
     if (this.checkShouldIgnorePath(path)) {
@@ -176,9 +199,9 @@ class FolderWatcher extends EventEmitter {
 
   /**
    * Watcher detected file removed
-   * 
-   * @param {string} libraryId 
-   * @param {string} path 
+   *
+   * @param {string} libraryId
+   * @param {string} path
    */
   onFileRemoved(libraryId, path) {
     if (this.checkShouldIgnorePath(path)) {
@@ -190,9 +213,9 @@ class FolderWatcher extends EventEmitter {
 
   /**
    * Watcher detected file renamed
-   * 
-   * @param {string} libraryId 
-   * @param {string} path 
+   *
+   * @param {string} libraryId
+   * @param {string} path
    */
   onFileRename(libraryId, pathFrom, pathTo) {
     if (this.checkShouldIgnorePath(pathTo)) {
@@ -203,17 +226,18 @@ class FolderWatcher extends EventEmitter {
   }
 
   /**
-   * Get mtimeMs from an added file every second until it is no longer changing
-   * Times out after 180s
-   * 
-   * @param {string} path 
-   * @param {number} [lastMTimeMs=0] 
-   * @param {number} [loop=0] 
+   * Get mtimeMs from an added file every 3 seconds until it is no longer changing
+   * Times out after 600s
+   *
+   * @param {string} path
+   * @param {number} [lastMTimeMs=0]
+   * @param {number} [loop=0]
    */
   async waitForFileToAdd(path, lastMTimeMs = 0, loop = 0) {
-    // Safety to catch infinite loop (180s)
-    if (loop >= 180) {
-      Logger.warn(`[Watcher] Waiting to add file at "${path}" timeout (loop ${loop}) - proceeding`)
+    // Safety to catch infinite loop (600s)
+    if (loop >= 200) {
+      Logger.warn(`[Watcher] Waiting to add file at "${path}" timeout (loop ${loop}) - bailing`)
+      this.pendingFileUpdates = this.pendingFileUpdates.filter((pfu) => pfu.path !== path)
       return this.filesBeingAdded.delete(path)
     }
 
@@ -222,41 +246,41 @@ class FolderWatcher extends EventEmitter {
       if (lastMTimeMs) Logger.debug(`[Watcher] File finished adding at "${path}"`)
       return this.filesBeingAdded.delete(path)
     }
-    if (lastMTimeMs % 5 === 0) {
+    if (loop % 5 === 0) {
       Logger.debug(`[Watcher] Waiting to add file at "${path}". mtimeMs=${mtimeMs} lastMTimeMs=${lastMTimeMs} (loop ${loop})`)
     }
-    // Wait 1 second
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Wait 3 seconds
+    await new Promise((resolve) => setTimeout(resolve, 3000))
     this.waitForFileToAdd(path, mtimeMs, ++loop)
   }
 
   /**
    * Queue file update
-   * 
-   * @param {string} libraryId 
-   * @param {string} path 
-   * @param {string} type 
+   *
+   * @param {string} libraryId
+   * @param {string} path
+   * @param {string} type
    */
   addFileUpdate(libraryId, path, type) {
     if (this.pendingFilePaths.includes(path)) return
 
     // Get file library
-    const libwatcher = this.libraryWatchers.find(lw => lw.id === libraryId)
+    const libwatcher = this.libraryWatchers.find((lw) => lw.id === libraryId)
     if (!libwatcher) {
       Logger.error(`[Watcher] Invalid library id from watcher ${libraryId}`)
       return
     }
 
     // Get file folder
-    const folder = libwatcher.folders.find(fold => isSameOrSubPath(fold.fullPath, path))
+    const folder = libwatcher.libraryFolders.find((fold) => isSameOrSubPath(fold.path, path))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
     }
 
-    const folderFullPath = filePathToPOSIX(folder.fullPath)
+    const folderPath = filePathToPOSIX(folder.path)
 
-    const relPath = path.replace(folderFullPath, '')
+    const relPath = path.replace(folderPath, '')
 
     if (Path.extname(relPath).toLowerCase() === '.part') {
       Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)
@@ -264,7 +288,7 @@ class FolderWatcher extends EventEmitter {
     }
 
     // Ignore files/folders starting with "."
-    const hasDotPath = relPath.split('/').find(p => p.startsWith('.'))
+    const hasDotPath = relPath.split('/').find((p) => p.startsWith('.'))
     if (hasDotPath) {
       Logger.debug(`[Watcher] Ignoring dot path "${relPath}" | Piece "${hasDotPath}"`)
       return
@@ -277,7 +301,12 @@ class FolderWatcher extends EventEmitter {
         libraryId,
         libraryName: libwatcher.name
       }
-      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', `Scanning file changes in "${libwatcher.name}"`, null, true, taskData)
+      const taskTitleString = {
+        text: `Scanning file changes in "${libwatcher.name}"`,
+        key: 'MessageTaskScanningFileChanges',
+        subs: [libwatcher.name]
+      }
+      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', taskTitleString, null, true, taskData)
     }
     this.pendingFileUpdates.push({
       path,
@@ -298,12 +327,21 @@ class FolderWatcher extends EventEmitter {
     clearTimeout(this.pendingTimeout)
     this.pendingTimeout = setTimeout(() => {
       // Check that files are not still being added
-      if (this.pendingFileUpdates.some(pfu => this.filesBeingAdded.has(pfu.path))) {
+      if (this.pendingFileUpdates.some((pfu) => this.filesBeingAdded.has(pfu.path))) {
         Logger.debug(`[Watcher] Still waiting for pending files "${[...this.filesBeingAdded].join(', ')}"`)
         return this.handlePendingFileUpdatesTimeout()
       }
 
-      LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
+      if (this.pendingFileUpdates.length) {
+        LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
+      } else {
+        const taskFinishedString = {
+          text: 'No files to scan',
+          key: 'MessageTaskNoFilesToScan'
+        }
+        this.pendingTask.setFinished(taskFinishedString)
+        TaskManager.taskFinished(this.pendingTask)
+      }
       this.pendingTask = null
       this.pendingFileUpdates = []
       this.filesBeingAdded.clear()
@@ -311,14 +349,14 @@ class FolderWatcher extends EventEmitter {
   }
 
   checkShouldIgnorePath(path) {
-    return !!this.ignoreDirs.find(dirpath => {
+    return !!this.ignoreDirs.find((dirpath) => {
       return isSameOrSubPath(dirpath, path)
     })
   }
 
   /**
    * Convert to POSIX and remove trailing slash
-   * @param {string} path 
+   * @param {string} path
    * @returns {string}
    */
   cleanDirPath(path) {
@@ -329,11 +367,11 @@ class FolderWatcher extends EventEmitter {
 
   /**
    * Ignore this directory if files are picked up by watcher
-   * @param {string} path 
+   * @param {string} path
    */
   addIgnoreDir(path) {
     path = this.cleanDirPath(path)
-    this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
+    this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter((p) => p !== path)
     if (this.ignoreDirs.includes(path)) {
       // Already ignoring dir
       return
@@ -346,8 +384,8 @@ class FolderWatcher extends EventEmitter {
    * When downloading a podcast episode we dont want the scanner triggering for that podcast
    * when the episode finishes the watcher may have a delayed response so a timeout is added
    * to prevent the watcher from picking up the episode
-   * 
-   * @param {string} path 
+   *
+   * @param {string} path
    */
   removeIgnoreDir(path) {
     path = this.cleanDirPath(path)
@@ -364,9 +402,9 @@ class FolderWatcher extends EventEmitter {
     clearTimeout(this.removeFromIgnoreTimer)
     this.removeFromIgnoreTimer = setTimeout(() => {
       if (this.pendingDirsToRemoveFromIgnore.includes(path)) {
-        this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter(p => p !== path)
+        this.pendingDirsToRemoveFromIgnore = this.pendingDirsToRemoveFromIgnore.filter((p) => p !== path)
         Logger.debug(`[Watcher] removeIgnoreDir: No longer ignoring directory "${path}"`)
-        this.ignoreDirs = this.ignoreDirs.filter(p => p !== path)
+        this.ignoreDirs = this.ignoreDirs.filter((p) => p !== path)
       }
     }, 5000)
   }

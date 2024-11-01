@@ -5,7 +5,7 @@ const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const { removeFile, downloadFile } = require('../utils/fileUtils')
+const { removeFile, downloadFile, sanitizeFilename, filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const opmlGenerator = require('../utils/generators/opmlGenerator')
@@ -13,16 +13,18 @@ const prober = require('../utils/prober')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const TaskManager = require('./TaskManager')
+const CoverManager = require('../managers/CoverManager')
+const NotificationManager = require('../managers/NotificationManager')
 
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
+const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastManager {
-  constructor(watcher, notificationManager) {
+  constructor(watcher) {
     this.watcher = watcher
-    this.notificationManager = notificationManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -69,12 +71,20 @@ class PodcastManager {
       return
     }
 
-    const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
     const taskData = {
       libraryId: podcastEpisodeDownload.libraryId,
       libraryItemId: podcastEpisodeDownload.libraryItemId
     }
-    const task = TaskManager.createAndAddTask('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
+    const taskTitleString = {
+      text: 'Downloading episode',
+      key: 'MessageDownloadingEpisode'
+    }
+    const taskDescriptionString = {
+      text: `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`,
+      key: 'MessageTaskDownloadingEpisodeDescription',
+      subs: [podcastEpisodeDownload.podcastEpisode.title]
+    }
+    const task = TaskManager.createAndAddTask('download-podcast-episode', taskTitleString, taskDescriptionString, false, taskData)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
@@ -117,14 +127,22 @@ class PodcastManager {
       if (!success) {
         await fs.remove(this.currentDownload.targetPath)
         this.currentDownload.setFinished(false)
-        task.setFailed('Failed to download episode')
+        const taskFailedString = {
+          text: 'Failed',
+          key: 'MessageTaskFailed'
+        }
+        task.setFailed(taskFailedString)
       } else {
         Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.podcastEpisode.title}"`)
         this.currentDownload.setFinished(true)
         task.setFinished()
       }
     } else {
-      task.setFailed('Failed to download episode')
+      const taskFailedString = {
+        text: 'Failed',
+        key: 'MessageTaskFailed'
+      }
+      task.setFailed(taskFailedString)
       this.currentDownload.setFinished(false)
     }
 
@@ -185,7 +203,7 @@ class PodcastManager {
 
     if (this.currentDownload.isAutoDownload) {
       // Notifications only for auto downloaded episodes
-      this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
+      NotificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
     return true
@@ -377,19 +395,23 @@ class PodcastManager {
     return matches.sort((a, b) => a.levenshtein - b.levenshtein)
   }
 
+  getParsedOPMLFileFeeds(opmlText) {
+    return opmlParser.parse(opmlText)
+  }
+
   async getOPMLFeeds(opmlText) {
-    var extractedFeeds = opmlParser.parse(opmlText)
-    if (!extractedFeeds || !extractedFeeds.length) {
+    const extractedFeeds = opmlParser.parse(opmlText)
+    if (!extractedFeeds?.length) {
       Logger.error('[PodcastManager] getOPMLFeeds: No RSS feeds found in OPML')
       return {
         error: 'No RSS feeds found in OPML'
       }
     }
 
-    var rssFeedData = []
+    const rssFeedData = []
 
     for (let feed of extractedFeeds) {
-      var feedData = await getPodcastFeed(feed.feedUrl, true)
+      const feedData = await getPodcastFeed(feed.feedUrl, true)
       if (feedData) {
         feedData.metadata.feedUrl = feed.feedUrl
         rssFeedData.push(feedData)
@@ -418,6 +440,169 @@ class PodcastManager {
       currentDownload: _currentDownload?.toJSONForClient(),
       queue: this.downloadQueue.filter((item) => !libraryId || item.libraryId === libraryId).map((item) => item.toJSONForClient())
     }
+  }
+
+  /**
+   *
+   * @param {string[]} rssFeedUrls
+   * @param {import('../models/LibraryFolder')} folder
+   * @param {boolean} autoDownloadEpisodes
+   * @param {import('../managers/CronManager')} cronManager
+   */
+  async createPodcastsFromFeedUrls(rssFeedUrls, folder, autoDownloadEpisodes, cronManager) {
+    const taskTitleString = {
+      text: 'OPML import',
+      key: 'MessageTaskOpmlImport'
+    }
+    const taskDescriptionString = {
+      text: `Creating podcasts from ${rssFeedUrls.length} RSS feeds`,
+      key: 'MessageTaskOpmlImportDescription',
+      subs: [rssFeedUrls.length]
+    }
+    const task = TaskManager.createAndAddTask('opml-import', taskTitleString, taskDescriptionString, true, null)
+    let numPodcastsAdded = 0
+    Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Importing ${rssFeedUrls.length} RSS feeds to folder "${folder.path}"`)
+    for (const feedUrl of rssFeedUrls) {
+      const feed = await getPodcastFeed(feedUrl).catch(() => null)
+      if (!feed?.episodes) {
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringFeed = {
+          text: `Importing RSS feed "${feedUrl}"`,
+          key: 'MessageTaskOpmlImportFeedDescription',
+          subs: [feedUrl]
+        }
+        const taskErrorString = {
+          text: 'Failed to get podcast feed',
+          key: 'MessageTaskOpmlImportFeedFailed'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringFeed, taskErrorString)
+        Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Failed to get podcast feed for "${feedUrl}"`)
+        continue
+      }
+
+      const podcastFilename = sanitizeFilename(feed.metadata.title)
+      const podcastPath = filePathToPOSIX(`${folder.path}/${podcastFilename}`)
+      // Check if a library item with this podcast folder exists already
+      const existingLibraryItem =
+        (await Database.libraryItemModel.count({
+          where: {
+            path: podcastPath
+          }
+        })) > 0
+      if (existingLibraryItem) {
+        Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Podcast already exists at path "${podcastPath}"`)
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringPodcast = {
+          text: `Creating podcast "${feed.metadata.title}"`,
+          key: 'MessageTaskOpmlImportFeedPodcastDescription',
+          subs: [feed.metadata.title]
+        }
+        const taskErrorString = {
+          text: 'Podcast already exists at path',
+          key: 'MessageTaskOpmlImportFeedPodcastExists'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringPodcast, taskErrorString)
+        continue
+      }
+
+      const successCreatingPath = await fs
+        .ensureDir(podcastPath)
+        .then(() => true)
+        .catch((error) => {
+          Logger.error(`[PodcastManager] Failed to ensure podcast dir "${podcastPath}"`, error)
+          return false
+        })
+      if (!successCreatingPath) {
+        Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Failed to create podcast folder at "${podcastPath}"`)
+        const taskTitleStringFeed = {
+          text: 'OPML import feed',
+          key: 'MessageTaskOpmlImportFeed'
+        }
+        const taskDescriptionStringPodcast = {
+          text: `Creating podcast "${feed.metadata.title}"`,
+          key: 'MessageTaskOpmlImportFeedPodcastDescription',
+          subs: [feed.metadata.title]
+        }
+        const taskErrorString = {
+          text: 'Failed to create podcast folder',
+          key: 'MessageTaskOpmlImportFeedPodcastFailed'
+        }
+        TaskManager.createAndEmitFailedTask('opml-import-feed', taskTitleStringFeed, taskDescriptionStringPodcast, taskErrorString)
+        continue
+      }
+
+      const newPodcastMetadata = {
+        title: feed.metadata.title,
+        author: feed.metadata.author,
+        description: feed.metadata.description,
+        releaseDate: '',
+        genres: [...feed.metadata.categories],
+        feedUrl: feed.metadata.feedUrl,
+        imageUrl: feed.metadata.image,
+        itunesPageUrl: '',
+        itunesId: '',
+        itunesArtistId: '',
+        language: '',
+        numEpisodes: feed.numEpisodes
+      }
+
+      const libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
+      const libraryItemPayload = {
+        path: podcastPath,
+        relPath: podcastFilename,
+        folderId: folder.id,
+        libraryId: folder.libraryId,
+        ino: libraryItemFolderStats.ino,
+        mtimeMs: libraryItemFolderStats.mtimeMs || 0,
+        ctimeMs: libraryItemFolderStats.ctimeMs || 0,
+        birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
+        media: {
+          metadata: newPodcastMetadata,
+          autoDownloadEpisodes
+        }
+      }
+
+      const libraryItem = new LibraryItem()
+      libraryItem.setData('podcast', libraryItemPayload)
+
+      // Download and save cover image
+      if (newPodcastMetadata.imageUrl) {
+        // TODO: Scan cover image to library files
+        // Podcast cover will always go into library item folder
+        const coverResponse = await CoverManager.downloadCoverFromUrl(libraryItem, newPodcastMetadata.imageUrl, true)
+        if (coverResponse) {
+          if (coverResponse.error) {
+            Logger.error(`[PodcastManager] createPodcastsFromFeedUrls: Download cover error from "${newPodcastMetadata.imageUrl}": ${coverResponse.error}`)
+          } else if (coverResponse.cover) {
+            libraryItem.media.coverPath = coverResponse.cover
+          }
+        }
+      }
+
+      await Database.createLibraryItem(libraryItem)
+      SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
+
+      // Turn on podcast auto download cron if not already on
+      if (libraryItem.media.autoDownloadEpisodes) {
+        cronManager.checkUpdatePodcastCron(libraryItem)
+      }
+
+      numPodcastsAdded++
+    }
+    const taskFinishedString = {
+      text: `Added ${numPodcastsAdded} podcasts`,
+      key: 'MessageTaskOpmlImportFinished',
+      subs: [numPodcastsAdded]
+    }
+    task.setFinished(taskFinishedString)
+    TaskManager.taskFinished(task)
+    Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Finished OPML import. Created ${numPodcastsAdded} podcasts out of ${rssFeedUrls.length} RSS feed URLs`)
   }
 }
 module.exports = PodcastManager

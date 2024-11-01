@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches-ignore:
-      - 'dependabot/**'  # Don't run dependabot branches, as they are already covered by pull requests
+      - 'dependabot/**' # Don't run dependabot branches, as they are already covered by pull requests
 
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: install pkg
-        run: npm install -g pkg
+      - name: install pkg (using yao-pkg fork for targetting node20)
+        run: npm install -g @yao-pkg/pkg
 
       - name: get client dependencies
         working-directory: client
@@ -33,7 +33,7 @@ jobs:
         run: npm ci --only=production
 
       - name: build binary
-        run: pkg -t node18-linux-x64 -o audiobookshelf .
+        run: pkg -t node20-linux-x64 -o audiobookshelf .
 
       - name: run audiobookshelf
         run: |

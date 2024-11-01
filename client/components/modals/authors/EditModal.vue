@@ -11,7 +11,7 @@
           <div class="w-full h-45 relative">
             <covers-author-image :author="authorCopy" />
             <div v-if="userCanDelete && !processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
-              <span class="absolute top-2 right-2 material-icons text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
+              <span class="absolute top-2 right-2 material-symbols text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
             </div>
           </div>
         </div>
@@ -116,12 +116,12 @@ export default {
             this.$axios
               .$delete(`/api/authors/${this.authorId}`)
               .then(() => {
-                this.$toast.success('Author removed')
+                this.$toast.success(this.$strings.ToastAuthorRemoveSuccess)
                 this.show = false
               })
               .catch((error) => {
                 console.error('Failed to remove author', error)
-                this.$toast.error('Failed to remove author')
+                this.$toast.error(this.$strings.ToastRemoveFailed)
               })
               .finally(() => {
                 this.processing = false
@@ -141,14 +141,14 @@ export default {
         }
       })
       if (!Object.keys(updatePayload).length) {
-        this.$toast.info(this.$strings.MessageNoUpdateNecessary)
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return
       }
       this.processing = true
       var result = await this.$axios.$patch(`/api/authors/${this.authorId}`, updatePayload).catch((error) => {
         console.error('Failed', error)
         const errorMsg = error.response ? error.response.data : null
-        this.$toast.error(errorMsg || this.$strings.ToastAuthorUpdateFailed)
+        this.$toast.error(errorMsg || this.$strings.ToastFailedToUpdate)
         return null
       })
       if (result) {
@@ -158,7 +158,7 @@ export default {
         } else if (result.merged) {
           this.$toast.success(this.$strings.ToastAuthorUpdateMerged)
           this.show = false
-        } else this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+        } else this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.processing = false
     },
@@ -174,7 +174,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error(this.$strings.ToastAuthorImageRemoveFailed)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.processing = false
@@ -182,7 +182,7 @@ export default {
     },
     submitUploadCover() {
       if (!this.imageUrl?.startsWith('http:') && !this.imageUrl?.startsWith('https:')) {
-        this.$toast.error('Invalid image url')
+        this.$toast.error(this.$strings.ToastInvalidImageUrl)
         return
       }
 
@@ -194,14 +194,14 @@ export default {
         .$post(`/api/authors/${this.authorId}/image`, updatePayload)
         .then((data) => {
           this.imageUrl = ''
-          this.$toast.success('Author image updated')
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
 
           this.authorCopy.updatedAt = data.author.updatedAt
           this.authorCopy.imagePath = data.author.imagePath
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error(error.response.data || 'Failed to remove author image')
+          this.$toast.error(error.response.data || this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.processing = false
@@ -209,7 +209,7 @@ export default {
     },
     async searchAuthor() {
       if (!this.authorCopy.name && !this.authorCopy.asin) {
-        this.$toast.error('Must enter an author name')
+        this.$toast.error(this.$strings.ToastNameRequired)
         return
       }
       this.processing = true
@@ -228,17 +228,19 @@ export default {
         return null
       })
       if (!response) {
-        this.$toast.error('Author not found')
+        this.$toast.error(this.$strings.ToastAuthorSearchNotFound)
       } else if (response.updated) {
         if (response.author.imagePath) {
           this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
-        } else this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
+        } else {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
+        }
 
         this.authorCopy = {
           ...response.author
         }
       } else {
-        this.$toast.info('No updates were made for Author')
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.processing = false
     }
