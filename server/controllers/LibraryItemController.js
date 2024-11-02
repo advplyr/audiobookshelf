@@ -342,44 +342,25 @@ class LibraryItemController {
       query: { width, height, format, raw }
     } = req
 
-    const libraryItem = await Database.libraryItemModel.findByPk(req.params.id, {
-      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
-      include: [
-        {
-          model: Database.bookModel,
-          attributes: ['id', 'coverPath', 'tags', 'explicit']
-        },
-        {
-          model: Database.podcastModel,
-          attributes: ['id', 'coverPath', 'tags', 'explicit']
-        }
-      ]
-    })
-    if (!libraryItem) {
-      Logger.warn(`[LibraryItemController] getCover: Library item "${req.params.id}" does not exist`)
-      return res.sendStatus(404)
-    }
-
-    // Check if user can access this library item
-    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
-      return res.sendStatus(403)
-    }
-
-    // Check if library item media has a cover path
-    if (!libraryItem.media.coverPath || !(await fs.pathExists(libraryItem.media.coverPath))) {
-      return res.sendStatus(404)
-    }
-
     if (req.query.ts) res.set('Cache-Control', 'private, max-age=86400')
 
+    const libraryItemId = req.params.id
+    if (!libraryItemId) {
+      return res.sendStatus(400)
+    }
+
     if (raw) {
+      const coverPath = await Database.libraryItemModel.getCoverPath(libraryItemId)
+      if (!coverPath || !(await fs.pathExists(coverPath))) {
+        return res.sendStatus(404)
+      }
       // any value
       if (global.XAccel) {
-        const encodedURI = encodeUriPath(global.XAccel + libraryItem.media.coverPath)
+        const encodedURI = encodeUriPath(global.XAccel + coverPath)
         Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
         return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
-      return res.sendFile(libraryItem.media.coverPath)
+      return res.sendFile(coverPath)
     }
 
     const options = {
@@ -387,7 +368,7 @@ class LibraryItemController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return CacheManager.handleCoverCache(res, libraryItem.id, libraryItem.media.coverPath, options)
+    return CacheManager.handleCoverCache(res, libraryItemId, options)
   }
 
   /**

@@ -4,6 +4,7 @@ const stream = require('stream')
 const Logger = require('../Logger')
 const { resizeImage } = require('../utils/ffmpegHelpers')
 const { encodeUriPath } = require('../utils/fileUtils')
+const Database = require('../Database')
 
 class CacheManager {
   constructor() {
@@ -29,24 +30,24 @@ class CacheManager {
     await fs.ensureDir(this.ItemCachePath)
   }
 
-  async handleCoverCache(res, libraryItemId, coverPath, options = {}) {
+  async handleCoverCache(res, libraryItemId, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    const path = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
-    if (await fs.pathExists(path)) {
+    if (await fs.pathExists(cachePath)) {
       if (global.XAccel) {
-        const encodedURI = encodeUriPath(global.XAccel + path)
+        const encodedURI = encodeUriPath(global.XAccel + cachePath)
         Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
         return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
 
-      const r = fs.createReadStream(path)
+      const r = fs.createReadStream(cachePath)
       const ps = new stream.PassThrough()
       stream.pipeline(r, ps, (err) => {
         if (err) {
@@ -57,7 +58,13 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    const writtenFile = await resizeImage(coverPath, path, width, height)
+    // Cached cover does not exist, generate it
+    const coverPath = await Database.libraryItemModel.getCoverPath(libraryItemId)
+    if (!coverPath || !(await fs.pathExists(coverPath))) {
+      return res.sendStatus(404)
+    }
+
+    const writtenFile = await resizeImage(coverPath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     if (global.XAccel) {
