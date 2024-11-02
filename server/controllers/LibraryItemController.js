@@ -350,7 +350,7 @@ class LibraryItemController {
     }
 
     if (raw) {
-      const coverPath = await Database.getLibraryItemCoverPath(libraryItemId)
+      const coverPath = await Database.libraryItemModel.getCoverPath(libraryItemId)
       if (!coverPath || !(await fs.pathExists(coverPath))) {
         return res.sendStatus(404)
       }

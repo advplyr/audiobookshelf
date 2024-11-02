@@ -808,28 +808,6 @@ class Database {
       return `${normalizedColumn} LIKE ${pattern}`
     }
   }
-
-  async getLibraryItemCoverPath(libraryItemId) {
-    const libraryItem = await this.libraryItemModel.findByPk(libraryItemId, {
-      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
-      include: [
-        {
-          model: this.bookModel,
-          attributes: ['id', 'coverPath']
-        },
-        {
-          model: this.podcastModel,
-          attributes: ['id', 'coverPath']
-        }
-      ]
-    })
-    if (!libraryItem) {
-      Logger.warn(`[Database] getCover: Library item "${libraryItemId}" does not exist`)
-      return null
-    }
-
-    return libraryItem.media.coverPath
-  }
 }
 
 module.exports = new Database()

@@ -23,7 +23,7 @@ class Auth {
 
   /**
    * Checks if the request should not be authenticated.
-   * @param {import('express').Request} req
+   * @param {Request} req
    * @returns {boolean}
    * @private
    */
