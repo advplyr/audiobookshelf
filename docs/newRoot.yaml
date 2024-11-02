@@ -82,6 +82,20 @@ components:
       schema:
         type: string
         format: uuid
+    pathTag:
+      name: tag
+      in: path
+      required: true
+      description: The tag name.
+      schema:
+        type: string
+    pathGenre:
+      name: genre
+      in: path
+      required: true
+      description: The genre name.
+      schema:
+        type: string
     pathCollectionId:
       name: id
       in: path
@@ -1758,7 +1772,7 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: getBookById
-      summary: Get book by ID
+      summary: Get book
       description: Get a book by its ID. This endpoint returns all of the information needed for the book details page and editing.
       tags:
         - Book
@@ -1773,7 +1787,7 @@ paths:
           $ref: '#/components/responses/notFound'
     post:
       operationId: updateBookById
-      summary: Update book by ID
+      summary: Update book
       description: Update a book by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Book
@@ -1823,7 +1837,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteBookById
-      summary: Remove book by ID
+      summary: Remove book
       description: Remove the book and associated entries from the database. This does not delete any files from the filesystem. If files should be deleted, use the `/api/book/{id}/hardDelete` endpoint instead.
       tags:
         - Book
@@ -1843,7 +1857,7 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     delete:
       operationId: hardDeleteBookById
-      summary: Hard delete book by ID
+      summary: Hard delete book
       description: Hard delete the book and associated entries from the database. This deletes the book's files from the filesystem. This action cannot be undone.
       tags:
         - Book
@@ -1863,7 +1877,7 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: downloadBookById
-      summary: Download book by ID
+      summary: Download book
       description: Download the book by its ID. This endpoint will return the book's files as a zip archive.
       tags:
         - Book
@@ -1884,8 +1898,9 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     get:
       operationId: getBookCoverById
-      summary: Get book cover by ID
+      summary: Get book cover
       description: Get the book cover by its ID. This endpoint will return the book's cover image. If no query parameters are provided, the image will be returned in the original format with the original dimensions.
+      security: [] # No security for getting image
       tags:
         - Book
       parameters:
@@ -1927,13 +1942,11 @@ paths:
               schema:
                 type: string
                 format: binary
-        '403':
-          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
     post:
       operationId: uploadBookCoverById
-      summary: Upload book cover by ID
+      summary: Upload book cover
       description: Upload the book cover image to the book by the book ID. This endpoint will replace the book's cover image with the provided image. The image should be in JPEG, PNG, or WebP format. Alternatively, the image can be provided as a URL to download the image from.
       tags:
         - Book
@@ -1974,7 +1987,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateBookCoverById
-      summary: Update book cover by ID
+      summary: Update book cover
       description: Update the book cover to be an existing image in the database. This endpoint will replace the book's cover image with the provided image. The image should be in JPEG, PNG, or WebP format.
       tags:
         - Book
@@ -2006,7 +2019,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteBookCoverById
-      summary: Remove book cover by ID
+      summary: Remove book cover
       description: Remove the book cover image from the book. The cover image file is not deleted but is no longer associated with the book.
       tags:
         - Book
@@ -2030,7 +2043,7 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     post:
       operationId: matchBookById
-      summary: Match book by ID
+      summary: Match book
       description: Match the book selected by ID against an online database. This performs a quick match against the online database and returns the best match. Quick match will apply the cover from the first match and fill empty metadata fields. Metadata fields are not overwritten unless the "Prefer Matched Metadata" setting is enabled or the "force" query is set.
       tags:
         - Book
@@ -2129,7 +2142,7 @@ paths:
       - $ref: '#/components/parameters/pathBookId'
     post:
       operationId: scanBookById
-      summary: Scan book by ID
+      summary: Scan book
       description: Scan the book by its ID. This endpoint will scan the book's files and update the book's metadata based on the files found according to the metadata priority settings.
       tags:
         - Book
@@ -2149,7 +2162,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastById
-      summary: Get podcast by ID
+      summary: Get podcast
       description: Get a podcast by its ID. This endpoint returns all of the information needed for the podcast details page and editing, but does not include file information or podcast episode information.
       tags:
         - Podcast
@@ -2164,7 +2177,7 @@ paths:
           $ref: '#/components/responses/notFound'
     post:
       operationId: updatePodcastById
-      summary: Update podcast by ID
+      summary: Update podcast
       description: Update a podcast by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Podcast
@@ -2221,7 +2234,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deletePodcastById
-      summary: Remove podcast by ID
+      summary: Remove podcast
       description: Remove the podcast and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Podcast
@@ -2241,7 +2254,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     delete:
       operationId: hardDeletePodcastById
-      summary: Hard delete podcast by ID
+      summary: Hard delete podcast
       description: Hard delete the podcast and associated entries from the database. This deletes the podcast's files from the filesystem. This action cannot be undone.
       tags:
         - Podcast
@@ -2261,7 +2274,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: downloadPodcastById
-      summary: Download podcast by ID
+      summary: Download podcast
       description: Download the podcast by its ID. This endpoint will return the podcast's files as a zip archive.
       tags:
         - Podcast
@@ -2319,7 +2332,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastDownloadQueueById
-      summary: Get podcast download queue by ID
+      summary: Get podcast download queue
       description: Get the podcast download queue by its ID. This endpoint will return the podcast's download queue, which includes the episodes that are queued for download.
       tags:
         - Podcast
@@ -2374,7 +2387,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: clearPodcastDownloadQueueById
-      summary: Clear podcast download queue by ID
+      summary: Clear podcast download queue
       description: Clear the podcast download queue by its ID. This endpoint will remove all episodes from the podcast's download queue.
       tags:
         - Podcast
@@ -2400,7 +2413,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastCoverById
-      summary: Get podcast cover by ID
+      summary: Get podcast cover
       description: Get the podcast cover by its ID. This endpoint will return the podcast's cover image. If no query parameters are provided, the image will be returned in the original format with the original dimensions.
       tags:
         - Podcast
@@ -2443,13 +2456,11 @@ paths:
               schema:
                 type: string
                 format: binary
-        '403':
-          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
     post:
       operationId: uploadPodcastCoverById
-      summary: Upload podcast cover by ID
+      summary: Upload podcast cover
       description: Upload the podcast cover image to the podcast by the podcast ID. This endpoint will replace the podcast's cover image with the provided image. The image should be in JPEG, PNG, or WebP format. Alternatively, the image can be provided as a URL to download the image from.
       tags:
         - Podcast
@@ -2490,7 +2501,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updatePodcastCoverById
-      summary: Update podcast cover by ID
+      summary: Update podcast cover
       description: Update the podcast cover to be an existing image in the database. This endpoint will replace the podcast's cover image with the provided image. The image should be in JPEG, PNG, or WebP format.
       tags:
         - Podcast
@@ -2522,7 +2533,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deletePodcastCoverById
-      summary: Remove podcast cover by ID
+      summary: Remove podcast cover
       description: Remove the podcast cover image from the podcast. The cover image file is not deleted but is no longer associated with the podcast.
       tags:
         - Podcast
@@ -2580,7 +2591,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     post:
       operationId: matchPodcastById
-      summary: Match podcast by ID
+      summary: Match podcast
       description: Match the podcast selected by ID against an online database. This returns an array of possible matches. The user can select the best match from the list and select which metadata fields should be kept.
       tags:
         - Podcast
@@ -2628,7 +2639,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastTracksById
-      summary: Get podcast tracks by ID
+      summary: Get podcast tracks
       description: Get the podcast's audio tracks by its ID. This endpoint will return the podcast's audio tracks.
       tags:
         - Podcast
@@ -2645,7 +2656,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updatePodcastTracksById
-      summary: Update podcast tracks by ID
+      summary: Update podcast tracks
       description: Update the podcast's audio tracks based on the provided file IDs. This endpoint will replace the podcast's audio tracks with the provided tracks. The tracks should be in the correct order.
       tags:
         - Podcast
@@ -2679,7 +2690,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     post:
       operationId: scanPodcastById
-      summary: Scan podcast by ID
+      summary: Scan podcast
       description: Scan the podcast by its ID. This endpoint will scan the podcast's files and update the podcast's metadata based on the files found according to the metadata priority settings.
       tags:
         - Podcast
@@ -2699,7 +2710,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastId'
     get:
       operationId: getPodcastEpisodesById
-      summary: Get podcast episodes by ID
+      summary: Get podcast episodes
       description: Get the podcast's episodes by its ID. This endpoint will return the podcast's episodes.
       tags:
         - Podcast
@@ -2761,7 +2772,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastEpisodeId'
     get:
       operationId: getPodcastEpisodeById
-      summary: Get podcast episode by ID
+      summary: Get podcast episode
       description: Get a podcast episode by its ID. This endpoint returns all of the information needed for the podcast episode details page and editing.
       tags:
         - Podcast Episode
@@ -2776,7 +2787,7 @@ paths:
           $ref: '#/components/responses/notFound'
     post:
       operationId: updatePodcastEpisodeById
-      summary: Update podcast episode by ID
+      summary: Update podcast episode
       description: Update a podcast episode by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Podcast Episode
@@ -2818,7 +2829,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deletePodcastEpisodeById
-      summary: Remove podcast episode by ID
+      summary: Remove podcast episode
       description: Remove the podcast episode and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Podcast Episode
@@ -2838,7 +2849,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastEpisodeId'
     delete:
       operationId: hardDeletePodcastEpisodeById
-      summary: Hard delete podcast episode by ID
+      summary: Hard delete podcast episode
       description: Hard delete the podcast episode and associated entries from the database. This deletes the podcast episode's files from the filesystem. This action cannot be undone.
       tags:
         - Podcast Episode
@@ -2858,7 +2869,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastEpisodeId'
     get:
       operationId: downloadPodcastEpisodeById
-      summary: Download podcast episode by ID
+      summary: Download podcast episode
       description: Download the podcast episode by its ID. This endpoint will return the podcast episode file as a raw file.
       tags:
         - Podcast Episode
@@ -2879,7 +2890,7 @@ paths:
       - $ref: '#/components/parameters/pathPodcastEpisodeId'
     post:
       operationId: matchPodcastEpisodeById
-      summary: Match podcast episode by ID
+      summary: Match podcast episode
       description: Match the podcast episode selected by ID against an online database. This returns an array of possible matches. The user can select the best match from the list and select which metadata fields should be kept.
       tags:
         - Podcast Episode
@@ -3030,7 +3041,7 @@ paths:
           $ref: '#/components/responses/notFound'
     post:
       operationId: addPodcastToLibraryById
-      summary: Add podcast to library by ID
+      summary: Add podcast to library
       description: Add a podcast to the library by its ID. This endpoint will add the podcast to the library.
       tags:
         - Library
@@ -3186,7 +3197,7 @@ paths:
       - $ref: '#/components/parameters/pathAuthorId'
     get:
       operationId: getAuthorById
-      summary: Get author by ID
+      summary: Get author
       description: Get an author by its ID. This endpoint returns all of the information needed for the author details page and editing.
       tags:
         - Author
@@ -3201,7 +3212,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateAuthorById
-      summary: Update author by ID
+      summary: Update author
       description: Update an author by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Author
@@ -3235,7 +3246,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteAuthorById
-      summary: Remove author by ID
+      summary: Remove author
       description: Remove the author and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Author
@@ -3255,7 +3266,7 @@ paths:
       - $ref: '#/components/parameters/pathAuthorId'
     get:
       operationId: getAuthorImageById
-      summary: Get author image by ID
+      summary: Get author image
       description: Get the author image by its ID. This endpoint will return the author's image. If no query parameters are provided, the image will be returned in the original format with the original dimensions.
       security: [] # No security for getting image
       tags:
@@ -3305,7 +3316,7 @@ paths:
           $ref: '#/components/responses/notFound'
     post:
       operationId: uploadAuthorImageById
-      summary: Upload author image by ID
+      summary: Upload author image
       description: Upload the author image to the author by the author ID. This endpoint will replace the author's image with the provided image. The image should be in JPEG, PNG, or WebP format. Alternatively, the image can be provided as a URL to download the image from.
       tags:
         - Author
@@ -3346,7 +3357,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteAuthorImageById
-      summary: Remove author image by ID
+      summary: Remove author image
       description: Remove the author image from the author. The image file is not deleted but is no longer associated with the author.
       tags:
         - Author
@@ -3370,7 +3381,7 @@ paths:
       - $ref: '#/components/parameters/pathAuthorId'
     post:
       operationId: matchAuthorById
-      summary: Match author by ID
+      summary: Match author
       description: Match the author selected by ID against an online database.
       tags:
         - Author
@@ -3478,7 +3489,7 @@ paths:
       - $ref: '#/components/parameters/pathLibraryId'
     get:
       operationId: getLibraryById
-      summary: Get library by ID
+      summary: Get library
       description: Get a library by its ID. This endpoint returns all of the information needed for the library details page and editing.
       tags:
         - Library
@@ -3495,7 +3506,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateLibraryById
-      summary: Update library by ID
+      summary: Update library
       description: Update a library by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Library
@@ -3533,7 +3544,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteLibraryById
-      summary: Remove library by ID
+      summary: Remove library
       description: Remove the library and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Library
@@ -3830,7 +3841,7 @@ paths:
       - $ref: '#/components/parameters/pathNarratorId'
     get:
       operationId: getNarratorById
-      summary: Get narrator by ID
+      summary: Get narrator
       description: Get a narrator by its ID. This endpoint returns all of the information needed for the narrator details page and editing.
       tags:
         - Narrator
@@ -3845,7 +3856,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateNarratorById
-      summary: Update narrator by ID
+      summary: Update narrator
       description: Update a narrator by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - Narrator
@@ -3873,7 +3884,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteNarratorById
-      summary: Remove narrator by ID
+      summary: Remove narrator
       description: Remove the narrator and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - Narrator
@@ -3893,7 +3904,7 @@ paths:
       - $ref: '#/components/parameters/pathLibraryId'
     post:
       operationId: scanLibraryById
-      summary: Scan library by ID
+      summary: Scan library
       description: Scan the library by its ID. This will scan the library's folders for new media and update the database with the new media.
       tags:
         - Library
@@ -3935,7 +3946,7 @@ paths:
       - $ref: '#/components/parameters/pathLibraryId'
     post:
       operationId: matchLibraryById
-      summary: Match library by ID
+      summary: Match library
       description: Match all items in the library which do not have an ASIN or ISBN against an online database. If a provider is not specified, the default library provider will be used. Matched items will have missing details filled in by default and data will not be overwritten, unless the "Prefer matched metadata" setting is enabled.
       tags:
         - Library
@@ -4187,7 +4198,7 @@ paths:
       - $ref: '#/components/parameters/pathFeedId'
     get:
       operationId: getFeedById
-      summary: Get feed object by ID
+      summary: Get feed object
       description: Get a feed by its ID. This endpoint returns all of the information needed for the feed details page and editing.
       tags:
         - RSS Feed
@@ -4202,7 +4213,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteFeedById
-      summary: Remove feed by ID
+      summary: Remove feed
       description: Remove the feed and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - RSS Feed
@@ -4372,7 +4383,7 @@ paths:
       - $ref: '#/components/parameters/pathUserId'
     get:
       operationId: getUserById
-      summary: Get user by ID
+      summary: Get user
       description: Get a user by its ID. This endpoint returns all of the information needed for the user details page and editing.
       tags:
         - User
@@ -4389,7 +4400,7 @@ paths:
           $ref: '#/components/responses/notFound'
     patch:
       operationId: updateUserById
-      summary: Update user by ID
+      summary: Update user
       description: Update a user by its ID. The request body should contain only the fields that need to be updated. If a field should be cleared, the field should exist and have a value of `null`. At least one field must be present.
       tags:
         - User
@@ -4433,7 +4444,7 @@ paths:
           $ref: '#/components/responses/notFound'
     delete:
       operationId: deleteUserById
-      summary: Remove user by ID
+      summary: Remove user
       description: Remove the user and associated entries from the database. This does not delete any files from the filesystem.
       tags:
         - User
@@ -5617,7 +5628,7 @@ paths:
       - $ref: '#/components/parameters/pathBackupId'
     get:
       operationId: getBackupById
-      summary: Get backup by ID
+      summary: Get backup
       description: Get a backup by its ID. This endpoint returns all of the information needed for the backup details page.
       tags:
         - Backup
@@ -6217,7 +6228,7 @@ paths:
                       $ref: '#/components/schemas/genre'
         '403':
           $ref: '#/components/responses/forbidden'
-  /api/genre/{gerne}:
+  /api/genre/{genre}:
     parameters:
       - $ref: '#/components/parameters/pathGenre'
     post:
