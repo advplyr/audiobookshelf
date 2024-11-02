@@ -873,11 +873,11 @@ class LibraryItem extends Model {
       attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
       include: [
         {
-          model: this.bookModel,
+          model: this.sequelize.models.book,
           attributes: ['id', 'coverPath']
         },
         {
-          model: this.podcastModel,
+          model: this.sequelize.models.podcast,
           attributes: ['id', 'coverPath']
         }
       ]
