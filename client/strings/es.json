@@ -226,6 +226,7 @@
   "LabelAllUsersExcludingGuests": "Todos los usuarios excepto invitados",
   "LabelAllUsersIncludingGuests": "Todos los usuarios e invitados",
   "LabelAlreadyInYourLibrary": "Ya existe en la Biblioteca",
+  "LabelApiToken": "Token de la API",
   "LabelAppend": "Adjuntar",
   "LabelAudioBitrate": "Tasa de bits del audio (por ejemplo, 128k)",
   "LabelAudioChannels": "Canales de audio (1 o 2)",
