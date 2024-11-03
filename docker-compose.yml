@@ -1,6 +1,4 @@
 ### EXAMPLE DOCKER COMPOSE ###
-version: "3.7"
-
 services:
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
@@ -23,8 +21,7 @@ services:
       # you are running ABS on
       - ./config:/config
     restart: unless-stopped
-    # You can use the following environment variable to run the ABS
+    # You can use the following user directive to run the ABS
     # docker container as a specific user. You will need to change
     # the UID and GID to the correct values for your user.
-    #environment:
-    #  - user=1000:1000
+    # user: 1000:1000
