@@ -18,7 +18,7 @@ class Auth {
   constructor() {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
-    this.ignorePattern = /\/api\/items\/[^/]+\/cover/
+    this.ignorePatterns = [/\/api\/items\/[^/]+\/cover/, /\/api\/authors\/[^/]+\/image/]
   }
 
   /**
@@ -28,7 +28,7 @@ class Auth {
    * @private
    */
   authNotNeeded(req) {
-    return req.method === 'GET' && this.ignorePattern.test(req.originalUrl)
+    return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.originalUrl))
   }
 
   ifAuthNeeded(middleware) {
