@@ -56,7 +56,7 @@ export default {
     },
     imgSrc() {
       if (!this.imagePath) return null
-      return `${this.$config.routerBasePath}/api/authors/${this.authorId}/image?token=${this.userToken}&ts=${this.updatedAt}`
+      return `${this.$config.routerBasePath}/api/authors/${this.authorId}/image?ts=${this.updatedAt}`
     }
   },
   methods: {

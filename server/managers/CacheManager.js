@@ -134,22 +134,22 @@ class CacheManager {
   /**
    *
    * @param {import('express').Response} res
-   * @param {import('../models/Author')} author
+   * @param {String} authorId
    * @param {{ format?: string, width?: number, height?: number }} options
    * @returns
    */
-  async handleAuthorCache(res, author, options = {}) {
+  async handleAuthorCache(res, authorId, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.ImageCachePath, `${author.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    var cachePath = Path.join(this.ImageCachePath, `${authorId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
-    if (await fs.pathExists(path)) {
-      const r = fs.createReadStream(path)
+    if (await fs.pathExists(cachePath)) {
+      const r = fs.createReadStream(cachePath)
       const ps = new stream.PassThrough()
       stream.pipeline(r, ps, (err) => {
         if (err) {
@@ -160,7 +160,12 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    let writtenFile = await resizeImage(author.imagePath, path, width, height)
+    const author = await Database.authorModel.findByPk(authorId)
+    if (!author || !author.imagePath || !(await fs.pathExists(author.imagePath))) {
+      return res.sendStatus(404)
+    }
+
+    let writtenFile = await resizeImage(author.imagePath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     var readStream = fs.createReadStream(writtenFile)
