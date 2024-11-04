@@ -52,6 +52,13 @@ module.exports.parse = (nameString) => {
   }
   if (splitNames.length) splitNames = splitNames.map((a) => a.trim())
 
+  // If names are in Chinese，Japanese and Korean languages, return as is.
+  if (/[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]/.test(splitNames[0])) {
+    return {
+      names: splitNames
+    }
+  }
+
   var names = []
 
   // 1 name FIRST LAST
