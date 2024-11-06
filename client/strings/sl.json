@@ -625,7 +625,7 @@
   "LabelTheme": "Tema",
   "LabelThemeDark": "Temna",
   "LabelThemeLight": "Svetla",
-  "LabelTimeBase": "Odvisna od časa",
+  "LabelTimeBase": "Osnovni čas",
   "LabelTimeDurationXHours": "{0} ur",
   "LabelTimeDurationXMinutes": "{0} minut",
   "LabelTimeDurationXSeconds": "{0} sekund",
