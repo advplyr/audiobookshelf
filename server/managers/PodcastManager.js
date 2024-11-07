@@ -1,6 +1,7 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 
 const fs = require('../libs/fsExtra')
 
@@ -23,9 +24,7 @@ const AudioFile = require('../objects/files/AudioFile')
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastManager {
-  constructor(watcher) {
-    this.watcher = watcher
-
+  constructor() {
     this.downloadQueue = []
     this.currentDownload = null
 
@@ -97,7 +96,7 @@ class PodcastManager {
     }
 
     // Ignores all added files to this dir
-    this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
 
     // Make sure podcast library item folder exists
     if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
@@ -151,7 +150,7 @@ class PodcastManager {
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
     SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
-    this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
     if (this.downloadQueue.length) {
       this.startPodcastEpisodeDownload(this.downloadQueue.shift())

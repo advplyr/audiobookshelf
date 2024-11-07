@@ -409,4 +409,4 @@ class FolderWatcher extends EventEmitter {
     }, 5000)
   }
 }
-module.exports = FolderWatcher
+module.exports = new FolderWatcher()

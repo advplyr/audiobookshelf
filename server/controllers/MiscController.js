@@ -5,6 +5,7 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
@@ -557,10 +558,10 @@ class MiscController {
 
     switch (type) {
       case 'add':
-        this.watcher.onFileAdded(libraryId, path)
+        Watcher.onFileAdded(libraryId, path)
         break
       case 'unlink':
-        this.watcher.onFileRemoved(libraryId, path)
+        Watcher.onFileRemoved(libraryId, path)
         break
       case 'rename':
         const oldPath = req.body.oldPath
@@ -568,7 +569,7 @@ class MiscController {
           Logger.error(`[MiscController] Invalid request body for updateWatchedPath. oldPath is required for rename.`)
           return res.sendStatus(400)
         }
-        this.watcher.onFileRename(libraryId, oldPath, path)
+        Watcher.onFileRename(libraryId, oldPath, path)
         break
       default:
         Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
