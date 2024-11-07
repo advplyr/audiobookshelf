@@ -97,6 +97,7 @@ class PodcastManager {
 
     // Ignores all added files to this dir
     Watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.ignoreFilePathsDownloading.add(this.currentDownload.targetPath)
 
     // Make sure podcast library item folder exists
     if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
@@ -151,6 +152,8 @@ class PodcastManager {
     SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     Watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
+
+    Watcher.ignoreFilePathsDownloading.delete(this.currentDownload.targetPath)
     this.currentDownload = null
     if (this.downloadQueue.length) {
       this.startPodcastEpisodeDownload(this.downloadQueue.shift())

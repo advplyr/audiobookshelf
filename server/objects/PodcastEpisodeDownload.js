@@ -1,6 +1,6 @@
 const Path = require('path')
-const uuidv4 = require("uuid").v4
-const { sanitizeFilename } = require('../utils/fileUtils')
+const uuidv4 = require('uuid').v4
+const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
 const globals = require('../utils/globals')
 
 class PodcastEpisodeDownload {
@@ -60,7 +60,7 @@ class PodcastEpisodeDownload {
     return sanitizeFilename(filename)
   }
   get targetPath() {
-    return Path.join(this.libraryItem.path, this.targetFilename)
+    return filePathToPOSIX(Path.join(this.libraryItem.path, this.targetFilename))
   }
   get targetRelPath() {
     return this.targetFilename
@@ -74,7 +74,8 @@ class PodcastEpisodeDownload {
     this.podcastEpisode = podcastEpisode
 
     const url = podcastEpisode.enclosure.url
-    if (decodeURIComponent(url) !== url) { // Already encoded
+    if (decodeURIComponent(url) !== url) {
+      // Already encoded
       this.url = url
     } else {
       this.url = encodeURI(url)

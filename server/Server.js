@@ -149,6 +149,9 @@ class Server {
       Watcher.disabled = true
     } else {
       Watcher.initWatcher(libraries)
+      Watcher.on('scanFilesChanged', (pendingFileUpdates, pendingTask) => {
+        LibraryScanner.scanFilesChanged(pendingFileUpdates, pendingTask)
+      })
     }
   }
 
