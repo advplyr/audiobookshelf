@@ -191,7 +191,21 @@ class MigrationManager {
     const queryInterface = this.sequelize.getQueryInterface()
     let migrationsMetaTableExists = await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
 
+    // If the table exists, check that the `version` and `maxVersion` rows exist
+    if (migrationsMetaTableExists) {
+      const [{ count }] = await this.sequelize.query("SELECT COUNT(*) as count FROM :migrationsMeta WHERE key IN ('version', 'maxVersion')", {
+        replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+        type: Sequelize.QueryTypes.SELECT
+      })
+      if (count < 2) {
+        Logger.warn(`[MigrationManager] migrationsMeta table exists but is missing 'version' or 'maxVersion' row. Dropping it...`)
+        await queryInterface.dropTable(MigrationManager.MIGRATIONS_META_TABLE)
+        migrationsMetaTableExists = false
+      }
+    }
+
     if (this.isDatabaseNew && migrationsMetaTableExists) {
+      Logger.warn(`[MigrationManager] migrationsMeta table already exists. Dropping it...`)
       // This can happen if database was initialized with force: true
       await queryInterface.dropTable(MigrationManager.MIGRATIONS_META_TABLE)
       migrationsMetaTableExists = false
