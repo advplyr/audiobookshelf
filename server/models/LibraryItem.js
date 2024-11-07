@@ -865,6 +865,33 @@ class LibraryItem extends Model {
 
   /**
    *
+   * @param {string} libraryItemId
+   * @returns {Promise<string>}
+   */
+  static async getCoverPath(libraryItemId) {
+    const libraryItem = await this.findByPk(libraryItemId, {
+      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
+      include: [
+        {
+          model: this.sequelize.models.book,
+          attributes: ['id', 'coverPath']
+        },
+        {
+          model: this.sequelize.models.podcast,
+          attributes: ['id', 'coverPath']
+        }
+      ]
+    })
+    if (!libraryItem) {
+      Logger.warn(`[LibraryItem] getCoverPath: Library item "${libraryItemId}" does not exist`)
+      return null
+    }
+
+    return libraryItem.media.coverPath
+  }
+
+  /**
+   *
    * @param {import('sequelize').FindOptions} options
    * @returns {Promise<Book|Podcast>}
    */

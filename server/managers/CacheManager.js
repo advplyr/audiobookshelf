@@ -4,6 +4,7 @@ const stream = require('stream')
 const Logger = require('../Logger')
 const { resizeImage } = require('../utils/ffmpegHelpers')
 const { encodeUriPath } = require('../utils/fileUtils')
+const Database = require('../Database')
 
 class CacheManager {
   constructor() {
@@ -29,24 +30,24 @@ class CacheManager {
     await fs.ensureDir(this.ItemCachePath)
   }
 
-  async handleCoverCache(res, libraryItemId, coverPath, options = {}) {
+  async handleCoverCache(res, libraryItemId, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    const path = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
-    if (await fs.pathExists(path)) {
+    if (await fs.pathExists(cachePath)) {
       if (global.XAccel) {
-        const encodedURI = encodeUriPath(global.XAccel + path)
+        const encodedURI = encodeUriPath(global.XAccel + cachePath)
         Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
         return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
 
-      const r = fs.createReadStream(path)
+      const r = fs.createReadStream(cachePath)
       const ps = new stream.PassThrough()
       stream.pipeline(r, ps, (err) => {
         if (err) {
@@ -57,7 +58,13 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    const writtenFile = await resizeImage(coverPath, path, width, height)
+    // Cached cover does not exist, generate it
+    const coverPath = await Database.libraryItemModel.getCoverPath(libraryItemId)
+    if (!coverPath || !(await fs.pathExists(coverPath))) {
+      return res.sendStatus(404)
+    }
+
+    const writtenFile = await resizeImage(coverPath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     if (global.XAccel) {
@@ -127,22 +134,22 @@ class CacheManager {
   /**
    *
    * @param {import('express').Response} res
-   * @param {import('../models/Author')} author
+   * @param {String} authorId
    * @param {{ format?: string, width?: number, height?: number }} options
    * @returns
    */
-  async handleAuthorCache(res, author, options = {}) {
+  async handleAuthorCache(res, authorId, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.ImageCachePath, `${author.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    var cachePath = Path.join(this.ImageCachePath, `${authorId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
-    if (await fs.pathExists(path)) {
-      const r = fs.createReadStream(path)
+    if (await fs.pathExists(cachePath)) {
+      const r = fs.createReadStream(cachePath)
       const ps = new stream.PassThrough()
       stream.pipeline(r, ps, (err) => {
         if (err) {
@@ -153,7 +160,12 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    let writtenFile = await resizeImage(author.imagePath, path, width, height)
+    const author = await Database.authorModel.findByPk(authorId)
+    if (!author || !author.imagePath || !(await fs.pathExists(author.imagePath))) {
+      return res.sendStatus(404)
+    }
+
+    let writtenFile = await resizeImage(author.imagePath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     var readStream = fs.createReadStream(writtenFile)

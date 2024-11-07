@@ -238,7 +238,7 @@ class Server {
     // init passport.js
     app.use(passport.initialize())
     // register passport in express-session
-    app.use(passport.session())
+    app.use(this.auth.ifAuthNeeded(passport.session()))
     // config passport.js
     await this.auth.initPassportJs()
 
@@ -268,16 +268,16 @@ class Server {
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
     router.use(express.json({ limit: '5mb' }))
 
+    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
+    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/public', this.publicRouter.router)
+
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     router.use(express.static(distPath))
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
-
-    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
-    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-    router.use('/public', this.publicRouter.router)
 
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
@@ -296,7 +296,7 @@ class Server {
     await this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
-    const dyanimicRoutes = [
+    const dynamicRoutes = [
       '/item/:id',
       '/author/:id',
       '/audiobook/:id/chapters',
@@ -319,7 +319,7 @@ class Server {
       '/playlist/:id',
       '/share/:slug'
     ]
-    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
