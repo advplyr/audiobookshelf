@@ -459,12 +459,29 @@ module.exports = {
       languages: new Set(),
       publishers: new Set(),
       publishedDecades: new Set(),
+      bookCount: 0, // How many books returned from database query
+      authorCount: 0, // How many authors returned from database query
+      seriesCount: 0, // How many series returned from database query
+      podcastCount: 0, // How many podcasts returned from database query
       numIssues: 0
     }
 
     const lastLoadedAt = cachedFilterData ? cachedFilterData.loadedAt : 0
 
     if (mediaType === 'podcast') {
+      // Check how many podcasts are in library to determine if we need to load all of the data
+      // This is done to handle the edge case of podcasts having been deleted and not having
+      // an updatedAt timestamp to trigger a reload of the filter data
+      const podcastCountFromDatabase = await Database.podcastModel.count({
+        include: {
+          model: Database.libraryItemModel,
+          attributes: [],
+          where: {
+            libraryId: libraryId
+          }
+        }
+      })
+
       // To reduce the cold-start load time, first check if any podcasts
       // have an "updatedAt" timestamp since the last time the filter
       // data was loaded. If so, we can skip loading all of the data.
@@ -490,11 +507,14 @@ module.exports = {
       })
 
       if (changedPodcasts === 0) {
-        // If nothing has changed, update the cache to current time for 30 minute
-        // cache time and return the cached data
-        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-        Database.libraryFilterData[libraryId].loadedAt = Date.now()
-        return cachedFilterData
+        // If nothing has changed, check if the number of podcasts in
+        // library is still the same as prior check before updating cache creation time
+
+        if (podcastCountFromDatabase === Database.libraryFilterData[libraryId].podcastCount) {
+          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+          Database.libraryFilterData[libraryId].loadedAt = Date.now()
+          return cachedFilterData
+        }
       }
 
       // Something has changed in the podcasts table, so reload all of the filter data for library
@@ -519,7 +539,32 @@ module.exports = {
           data.languages.add(podcast.language)
         }
       }
+
+      // Set podcast count for later comparison
+      data.podcastCount = podcastCountFromDatabase
     } else {
+      const bookCountFromDatabase = await Database.bookModel.count({
+        include: {
+          model: Database.libraryItemModel,
+          attributes: [],
+          where: {
+            libraryId: libraryId
+          }
+        }
+      })
+
+      const seriesCountFromDatabase = await Database.seriesModel.count({
+        where: {
+          libraryId: libraryId
+        }
+      })
+
+      const authorCountFromDatabase = await Database.authorModel.count({
+        where: {
+          libraryId: libraryId
+        }
+      })
+
       // To reduce the cold-start load time, first check if any library items, series,
       // or authors have an "updatedAt" timestamp since the last time the filter
       // data was loaded. If so, we can skip loading all of the data.
@@ -566,12 +611,19 @@ module.exports = {
       })
 
       if (changedBooks + changedSeries + changedAuthors === 0) {
-        // If nothing has changed, update the cache to current time for 30 minute
-        // cache time and return the cached data
-        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-        Database.libraryFilterData[libraryId].loadedAt = Date.now()
-        return cachedFilterData
+        // If nothing has changed, check if the number of authors, series, and books
+        // matches the prior check before updating cache creation time
+        if (bookCountFromDatabase === Database.libraryFilterData[libraryId].bookCount && seriesCountFromDatabase === Database.libraryFilterData[libraryId].seriesCount && authorCountFromDatabase === Database.libraryFilterData[libraryId].authorCount) {
+          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+          Database.libraryFilterData[libraryId].loadedAt = Date.now()
+          return cachedFilterData
+        }
       }
+
+      // Store the counts for later comparison
+      data.bookCount = bookCountFromDatabase
+      data.seriesCount = seriesCountFromDatabase
+      data.authorCount = authorCountFromDatabase
 
       // Something has changed in one of the tables, so reload all of the filter data for library
       const books = await Database.bookModel.findAll({
