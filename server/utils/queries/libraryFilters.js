@@ -462,7 +462,42 @@ module.exports = {
       numIssues: 0
     }
 
+    const lastLoadedAt = cachedFilterData ? cachedFilterData.loadedAt : 0
+
     if (mediaType === 'podcast') {
+      // To reduce the cold-start load time, first check if any podcasts
+      // have an "updatedAt" timestamp since the last time the filter
+      // data was loaded. If so, we can skip loading all of the data.
+      // Because many items could change, just check the count of items instead
+      // of actually loading the data twice
+      const changedPodcasts = await Database.podcastModel.count({
+        include: {
+          model: Database.libraryItemModel,
+          attributes: [],
+          where: {
+            libraryId: libraryId,
+            updatedAt: {
+              [Sequelize.Op.gt]: new Date(lastLoadedAt)
+            }
+          }
+        },
+        where: {
+          updatedAt: {
+            [Sequelize.Op.gt]: new Date(lastLoadedAt)
+          }
+        },
+        limit: 1
+      })
+
+      if (changedPodcasts === 0) {
+        // If nothing has changed, update the cache to current time for 30 minute
+        // cache time and return the cached data
+        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        Database.libraryFilterData[libraryId].loadedAt = Date.now()
+        return cachedFilterData
+      }
+
+      // Something has changed in the podcasts table, so reload all of the filter data for library
       const podcasts = await Database.podcastModel.findAll({
         include: {
           model: Database.libraryItemModel,
@@ -486,10 +521,10 @@ module.exports = {
       }
     } else {
       // To reduce the cold-start load time, first check if any library items, series,
-      // or authors have had an "updatedAt" timestamp since the last time the filter
+      // or authors have an "updatedAt" timestamp since the last time the filter
       // data was loaded. If so, we can skip loading all of the data.
-      // Because many items could change, just check the count of items.
-      const lastLoadedAt = cachedFilterData ? cachedFilterData.loadedAt : 0
+      // Because many items could change, just check the count of items instead
+      // of actually loading the data twice
 
       const changedBooks = await Database.bookModel.count({
         include: {
