@@ -15,6 +15,8 @@ components:
 security:
   - BearerAuth: []
 paths:
+  /ping:
+    $ref: './controllers/ServerCONTROLLER.yaml#/paths/~1ping'
   /api/authors/{id}:
     $ref: './controllers/AuthorController.yaml#/paths/~1api~1authors~1{id}'
   /api/authors/{id}/image:
@@ -90,3 +92,5 @@ tags:
     description: Notifications endpoints
   - name: Podcasts
     description: Podcast endpoints
+  - name: Server
+    description: Server endpoints
