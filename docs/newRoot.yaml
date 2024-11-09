@@ -3310,8 +3310,6 @@ paths:
               schema:
                 type: string
                 format: binary
-        '403':
-          $ref: '#/components/responses/forbidden'
         '404':
           $ref: '#/components/responses/notFound'
     post:
