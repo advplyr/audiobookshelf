@@ -1059,7 +1059,7 @@ class LibraryItem extends Model {
         ino: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
-        mediaId: DataTypes.UUIDV4,
+        mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
         isFile: DataTypes.BOOLEAN,
         isMissing: DataTypes.BOOLEAN,
