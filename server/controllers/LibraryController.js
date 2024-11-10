@@ -1314,12 +1314,12 @@ class LibraryController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.user.checkCanAccessLibrary(req.params.id)) {
+    if (!req.user.checkCanAccessLibrary(req.params.id.toLowerCase())) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(403)
     }
 
-    const library = await Database.libraryModel.findByIdWithFolders(req.params.id)
+    const library = await Database.libraryModel.findByIdWithFolders(req.params.id.toLowerCase())
     if (!library) {
       return res.status(404).send('Library not found')
     }
