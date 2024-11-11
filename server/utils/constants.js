@@ -49,5 +49,7 @@ module.exports.AudioMimeType = {
   WEBMA: 'audio/webm',
   MKA: 'audio/x-matroska',
   AWB: 'audio/amr-wb',
-  CAF: 'audio/x-caf'
+  CAF: 'audio/x-caf',
+  MPEG: 'audio/mpeg',
+  MPG: 'audio/mpeg'
 }

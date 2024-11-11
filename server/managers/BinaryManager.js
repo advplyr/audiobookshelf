@@ -324,7 +324,7 @@ class BinaryManager {
   defaultRequiredBinaries = [
     new Binary('ffmpeg', 'executable', 'FFMPEG_PATH', ['5.1'], ffbinaries), // ffmpeg executable
     new Binary('ffprobe', 'executable', 'FFPROBE_PATH', ['5.1'], ffbinaries), // ffprobe executable
-    new Binary('libnusqlite3', 'library', 'NUSQLITE3_PATH', ['1.1'], nunicode, false) // nunicode sqlite3 extension
+    new Binary('libnusqlite3', 'library', 'NUSQLITE3_PATH', ['1.2'], nunicode, false) // nunicode sqlite3 extension
   ]
 
   constructor(requiredBinaries = this.defaultRequiredBinaries) {

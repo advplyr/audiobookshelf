@@ -139,7 +139,7 @@ export default {
         slug: this.newFeedSlug,
         metadataDetails: this.metadataDetails
       }
-      if (this.$isDev) payload.serverAddress = `http://localhost:3333${this.$config.routerBasePath}`
+      if (this.$isDev) payload.serverAddress = process.env.serverUrl
 
       console.log('Payload', payload)
       this.$axios

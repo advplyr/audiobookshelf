@@ -29,6 +29,7 @@ module.exports.notificationData = {
       requiresLibrary: true,
       libraryMediaType: 'podcast',
       description: 'Triggered when a podcast episode is auto-downloaded',
+      descriptionKey: 'NotificationOnEpisodeDownloadedDescription',
       variables: ['libraryItemId', 'libraryId', 'podcastTitle', 'podcastAuthor', 'podcastDescription', 'podcastGenres', 'episodeTitle', 'episodeSubtitle', 'episodeDescription', 'libraryName', 'episodeId', 'mediaTags'],
       defaults: {
         title: 'New {{podcastTitle}} Episode!',
@@ -53,6 +54,7 @@ module.exports.notificationData = {
       name: 'onBackupCompleted',
       requiresLibrary: false,
       description: 'Triggered when a backup is completed',
+      descriptionKey: 'NotificationOnBackupCompletedDescription',
       variables: ['completionTime', 'backupPath', 'backupSize', 'backupCount', 'removedOldest'],
       defaults: {
         title: 'Backup Completed',
@@ -70,6 +72,7 @@ module.exports.notificationData = {
       name: 'onBackupFailed',
       requiresLibrary: false,
       description: 'Triggered when a backup fails',
+      descriptionKey: 'NotificationOnBackupFailedDescription',
       variables: ['errorMsg'],
       defaults: {
         title: 'Backup Failed',
@@ -83,6 +86,7 @@ module.exports.notificationData = {
       name: 'onTest',
       requiresLibrary: false,
       description: 'Event for testing the notification system',
+      descriptionKey: 'NotificationOnTestDescription',
       variables: ['version'],
       defaults: {
         title: 'Test Notification on Abs {{version}}',

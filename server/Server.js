@@ -62,7 +62,6 @@ class Server {
       fs.mkdirSync(global.MetadataPath)
     }
 
-    this.watcher = new Watcher()
     this.auth = new Auth()
 
     // Managers
@@ -70,7 +69,7 @@ class Server {
     this.backupManager = new BackupManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher)
+    this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
@@ -147,9 +146,12 @@ class Server {
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
-      this.watcher.disabled = true
+      Watcher.disabled = true
     } else {
-      this.watcher.initWatcher(libraries)
+      Watcher.initWatcher(libraries)
+      Watcher.on('scanFilesChanged', (pendingFileUpdates, pendingTask) => {
+        LibraryScanner.scanFilesChanged(pendingFileUpdates, pendingTask)
+      })
     }
   }
 
@@ -238,11 +240,20 @@ class Server {
     // init passport.js
     app.use(passport.initialize())
     // register passport in express-session
-    app.use(passport.session())
+    app.use(this.auth.ifAuthNeeded(passport.session()))
     // config passport.js
     await this.auth.initPassportJs()
 
     const router = express.Router()
+    // if RouterBasePath is set, modify all requests to include the base path
+    if (global.RouterBasePath) {
+      app.use((req, res, next) => {
+        if (!req.url.startsWith(global.RouterBasePath)) {
+          req.url = `${global.RouterBasePath}${req.url}`
+        }
+        next()
+      })
+    }
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
@@ -259,16 +270,16 @@ class Server {
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
     router.use(express.json({ limit: '5mb' }))
 
+    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
+    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/public', this.publicRouter.router)
+
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     router.use(express.static(distPath))
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
-
-    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
-    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-    router.use('/public', this.publicRouter.router)
 
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
@@ -287,7 +298,7 @@ class Server {
     await this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
-    const dyanimicRoutes = [
+    const dynamicRoutes = [
       '/item/:id',
       '/author/:id',
       '/audiobook/:id/chapters',
@@ -310,7 +321,7 @@ class Server {
       '/playlist/:id',
       '/share/:slug'
     ]
-    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
@@ -340,7 +351,7 @@ class Server {
       Logger.info('Received ping')
       res.json({ success: true })
     })
-    app.get('/healthcheck', (req, res) => res.sendStatus(200))
+    router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -426,7 +437,7 @@ class Server {
    */
   async stop() {
     Logger.info('=== Stopping Server ===')
-    await this.watcher.close()
+    Watcher.close()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {

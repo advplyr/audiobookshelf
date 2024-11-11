@@ -27,7 +27,7 @@ export default {
 
     // Redirect podcast libraries
     const library = libraryData.library
-    if (library.mediaType === 'podcast' && (params.id === 'collections' || params.id === 'series')) {
+    if (library.mediaType === 'podcast' && (params.id === 'collections' || params.id === 'series' || params.id === 'authors')) {
       return redirect(`/library/${libraryId}`)
     }
 

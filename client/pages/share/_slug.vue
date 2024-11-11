@@ -10,7 +10,7 @@
         <p v-if="mediaItemShare.playbackSession.displayAuthor" class="text-lg lg:text-xl text-slate-400 font-semibold text-center mb-1 truncate">{{ mediaItemShare.playbackSession.displayAuthor }}</p>
 
         <div class="w-full pt-16">
-          <player-ui ref="audioPlayer" :chapters="chapters" :paused="isPaused" :loading="!hasLoaded" :is-podcast="false" hide-bookmarks hide-sleep-timer @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" />
+          <player-ui ref="audioPlayer" :chapters="chapters" :current-chapter="currentChapter" :paused="isPaused" :loading="!hasLoaded" :is-podcast="false" hide-bookmarks hide-sleep-timer @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" />
         </div>
       </div>
     </div>
@@ -51,7 +51,8 @@ export default {
       windowHeight: 0,
       listeningTimeSinceSync: 0,
       coverRgb: null,
-      coverBgIsLight: false
+      coverBgIsLight: false,
+      currentTime: 0
     }
   },
   computed: {
@@ -60,16 +61,10 @@ export default {
     },
     coverUrl() {
       if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
-      if (process.env.NODE_ENV === 'development') {
-        return `http://localhost:3333/public/share/${this.mediaItemShare.slug}/cover`
-      }
-      return `/public/share/${this.mediaItemShare.slug}/cover`
+      return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
-        if (process.env.NODE_ENV === 'development') {
-          track.contentUrl = `${process.env.serverUrl}${track.contentUrl}`
-        }
         track.relativeContentUrl = track.contentUrl
         return track
       })
@@ -82,6 +77,9 @@ export default {
     },
     chapters() {
       return this.playbackSession.chapters || []
+    },
+    currentChapter() {
+      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     },
     coverAspectRatio() {
       const coverAspectRatio = this.playbackSession.coverAspectRatio
@@ -154,6 +152,7 @@ export default {
 
       // Update UI
       this.$refs.audioPlayer.setCurrentTime(time)
+      this.currentTime = time
     },
     setDuration() {
       if (!this.localAudioPlayer) return

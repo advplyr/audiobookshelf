@@ -415,7 +415,7 @@ export default {
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
       if (this.$isDev) {
-        src = `http://localhost:3333${this.$config.routerBasePath}${src}`
+        src = `${process.env.serverUrl}${src}`
       }
 
       audioEl.src = src
@@ -486,7 +486,7 @@ export default {
         .then((data) => {
           this.saving = false
           if (data.updated) {
-            this.$toast.success('Chapters updated')
+            this.$toast.success(this.$strings.ToastChaptersUpdated)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -533,7 +533,7 @@ export default {
     },
     findChapters() {
       if (!this.asinInput) {
-        this.$toast.error('Must input an ASIN')
+        this.$toast.error(this.$strings.ToastAsinRequired)
         return
       }
 

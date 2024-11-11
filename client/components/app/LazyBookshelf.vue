@@ -91,6 +91,7 @@ export default {
       if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
       if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollections
       if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylists
+      if (this.page === 'authors') return this.$strings.MessageNoAuthors
       if (this.hasFilter) {
         if (this.filterName === 'Issues') return this.$strings.MessageNoIssues
         else if (this.filterName === 'Feed-open') return this.$strings.MessageBookshelfNoRSSFeeds
@@ -110,6 +111,12 @@ export default {
     },
     seriesFilterBy() {
       return this.$store.getters['user/getUserSetting']('seriesFilterBy')
+    },
+    authorSortBy() {
+      return this.$store.getters['user/getUserSetting']('authorSortBy')
+    },
+    authorSortDesc() {
+      return !!this.$store.getters['user/getUserSetting']('authorSortDesc')
     },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
@@ -217,6 +224,8 @@ export default {
         this.$store.commit('globals/setEditCollection', entity)
       } else if (this.entityName === 'playlists') {
         this.$store.commit('globals/setEditPlaylist', entity)
+      } else if (this.entityName === 'authors') {
+        this.$store.commit('globals/showEditAuthorModal', entity)
       }
     },
     clearSelectedEntities() {
@@ -457,6 +466,9 @@ export default {
         if (this.collapseBookSeries) {
           searchParams.set('collapseseries', 1)
         }
+      } else if (this.page === 'authors') {
+        searchParams.set('sort', this.authorSortBy)
+        searchParams.set('desc', this.authorSortDesc ? 1 : 0)
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -601,6 +613,34 @@ export default {
         this.executeRebuild()
       }
     },
+    authorAdded(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorAdded ${author.id}`, author)
+      this.resetEntities()
+    },
+    authorUpdated(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorUpdated ${author.id}`, author)
+      const indexOf = this.entities.findIndex((ent) => ent && ent.id === author.id)
+      if (indexOf >= 0) {
+        this.entities[indexOf] = author
+        if (this.entityComponentRefs[indexOf]) {
+          this.entityComponentRefs[indexOf].setEntity(author)
+        }
+      }
+    },
+    authorRemoved(author) {
+      if (this.entityName !== 'authors') return
+      console.log(`[LazyBookshelf] authorRemoved ${author.id}`, author)
+      const indexOf = this.entities.findIndex((ent) => ent && ent.id === author.id)
+      if (indexOf >= 0) {
+        this.entities = this.entities.filter((ent) => ent.id !== author.id)
+        this.totalEntities--
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.executeRebuild()
+      }
+    },
+
     shareOpen(mediaItemShare) {
       if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent?.media?.id === mediaItemShare.mediaItemId)
@@ -727,6 +767,9 @@ export default {
         this.$root.socket.on('playlist_added', this.playlistAdded)
         this.$root.socket.on('playlist_updated', this.playlistUpdated)
         this.$root.socket.on('playlist_removed', this.playlistRemoved)
+        this.$root.socket.on('author_added', this.authorAdded)
+        this.$root.socket.on('author_updated', this.authorUpdated)
+        this.$root.socket.on('author_removed', this.authorRemoved)
         this.$root.socket.on('share_open', this.shareOpen)
         this.$root.socket.on('share_closed', this.shareClosed)
       } else {
@@ -756,6 +799,9 @@ export default {
         this.$root.socket.off('playlist_added', this.playlistAdded)
         this.$root.socket.off('playlist_updated', this.playlistUpdated)
         this.$root.socket.off('playlist_removed', this.playlistRemoved)
+        this.$root.socket.off('author_added', this.authorAdded)
+        this.$root.socket.off('author_updated', this.authorUpdated)
+        this.$root.socket.off('author_removed', this.authorRemoved)
         this.$root.socket.off('share_open', this.shareOpen)
         this.$root.socket.off('share_closed', this.shareClosed)
       } else {

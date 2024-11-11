@@ -26,7 +26,7 @@ module.exports = {
     let filterValue = null
     let filterGroup = null
     if (filterBy) {
-      const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'publishers', 'missing', 'languages', 'tracks', 'ebooks']
+      const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'publishers', 'publishedDecades', 'missing', 'languages', 'tracks', 'ebooks']
       const group = searchGroups.find((_group) => filterBy.startsWith(_group + '.'))
       filterGroup = group || filterBy
       filterValue = group ? this.decode(filterBy.replace(`${group}.`, '')) : null
@@ -458,6 +458,7 @@ module.exports = {
       narrators: new Set(),
       languages: new Set(),
       publishers: new Set(),
+      publishedDecades: new Set(),
       numIssues: 0
     }
 
@@ -492,7 +493,7 @@ module.exports = {
             libraryId: libraryId
           }
         },
-        attributes: ['tags', 'genres', 'publisher', 'narrators', 'language']
+        attributes: ['tags', 'genres', 'publisher', 'publishedYear', 'narrators', 'language']
       })
       for (const book of books) {
         if (book.libraryItem.isMissing || book.libraryItem.isInvalid) data.numIssues++
@@ -506,6 +507,11 @@ module.exports = {
           book.narrators.forEach((narrator) => data.narrators.add(narrator))
         }
         if (book.publisher) data.publishers.add(book.publisher)
+        // Check if published year exists and is valid
+        if (book.publishedYear && !isNaN(book.publishedYear) && book.publishedYear > 0 && book.publishedYear < 3000) {
+          const decade = (Math.floor(book.publishedYear / 10) * 10).toString()
+          data.publishedDecades.add(decade)
+        }
         if (book.language) data.languages.add(book.language)
       }
 
@@ -532,6 +538,7 @@ module.exports = {
     data.series = naturalSort(data.series).asc((se) => se.name)
     data.narrators = naturalSort([...data.narrators]).asc()
     data.publishers = naturalSort([...data.publishers]).asc()
+    data.publishedDecades = naturalSort([...data.publishedDecades]).asc()
     data.languages = naturalSort([...data.languages]).asc()
     data.loadedAt = Date.now()
     Database.libraryFilterData[libraryId] = data
