@@ -46,6 +46,7 @@ class PodcastManager {
       var itemDownloads = this.getEpisodeDownloadsInQueue(libraryItemId)
       Logger.info(`[PodcastManager] Clearing downloads in queue for item "${libraryItemId}" (${itemDownloads.length})`)
       this.downloadQueue = this.downloadQueue.filter((d) => d.libraryItemId !== libraryItemId)
+      SocketAuthority.emitter('episode_download_queue_cleared', libraryItemId)
     }
   }
 
