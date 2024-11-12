@@ -63,7 +63,6 @@ class PodcastManager {
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
@@ -149,7 +148,6 @@ class PodcastManager {
     TaskManager.taskFinished(task)
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     Watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
 
