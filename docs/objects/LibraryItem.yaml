@@ -55,6 +55,12 @@ components:
           type: boolean
         mediaType:
           $ref: './mediaTypes/media.yaml#/components/schemas/mediaType'
+        media:
+          type: object
+          description: The media of the library item.
+          oneOf:
+            - $ref: './mediaTypes/Book.yaml#/components/schemas/bookBase'
+            - $ref: './mediaTypes/Podcast.yaml#/components/schemas/Podcast'
     libraryItemMinified:
       type: object
       description: A single item on the server, like a book or podcast. Minified media format.
