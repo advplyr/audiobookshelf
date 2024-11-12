@@ -46,6 +46,7 @@ class PodcastManager {
       var itemDownloads = this.getEpisodeDownloadsInQueue(libraryItemId)
       Logger.info(`[PodcastManager] Clearing downloads in queue for item "${libraryItemId}" (${itemDownloads.length})`)
       this.downloadQueue = this.downloadQueue.filter((d) => d.libraryItemId !== libraryItemId)
+      SocketAuthority.emitter('episode_download_queue_cleared', libraryItemId)
     }
   }
 
@@ -63,7 +64,6 @@ class PodcastManager {
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
@@ -149,7 +149,6 @@ class PodcastManager {
     TaskManager.taskFinished(task)
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     Watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
 
