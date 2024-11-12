@@ -33,17 +33,17 @@ paths:
           in: query
           description: Whether to return Library Item Expanded instead. 0 for false, 1 for true.
           schema:
-            $ref: '/components/schemas/expanded'
+            $ref: '#/components/schemas/expanded'
         - name: include
           in: query
           description: "A comma separated list of what to include with the library item. The options are: progress, rssfeed, authors (for books), and downloads (for podcasts). expanded must be 1 for include to have an effect."
           schema:
-            $ref: '/components/schemas/include'
+            $ref: '#/components/schemas/include'
         - name: episode
           in: query
           description: If requesting progress for a podcast, the episode ID to get progress for.
           schema:
-            $ref: '/components/schemas/episode'
+            $ref: '#/components/schemas/episode'
       responses:
         '200':
           description: OK
