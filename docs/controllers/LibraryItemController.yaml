@@ -1,7 +1,7 @@
 components:
   schemas:
     expanded:
-      type: binary
+      type: integer
       description: Whether to return Library Item Expanded instead. 0 for false, 1 for true.
       format: binary
       example: 0
