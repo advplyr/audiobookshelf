@@ -77,11 +77,12 @@ class Playlist extends Model {
 
     const oldPlaylist = this.sequelize.models.playlist.getOldPlaylist(this)
     const libraryItemIds = oldPlaylist.items.map((i) => i.libraryItemId)
+    const episodeIds = oldPlaylist.items.map((i) => i.episodeId).filter(id => id !== null)
 
     let libraryItems = await this.sequelize.models.libraryItem.getAllOldLibraryItems({
-      id: libraryItemIds
+      id: libraryItemIds,
+      episodeIds: episodeIds
     })
-
     const playlistExpanded = oldPlaylist.toJSONExpanded(libraryItems)
 
     if (include?.includes('rssfeed')) {
@@ -93,6 +94,7 @@ class Playlist extends Model {
 
     return playlistExpanded
   }
+
 
   static createFromOld(oldPlaylist) {
     const playlist = this.getFromOld(oldPlaylist)
