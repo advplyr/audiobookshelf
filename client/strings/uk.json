@@ -928,7 +928,7 @@
   "ToastBackupCreateSuccess": "Резервну копію створено",
   "ToastBackupDeleteFailed": "Не вдалося видалити резервну копію",
   "ToastBackupDeleteSuccess": "Резервну копію видалено",
-  "ToastBackupInvalidMaxKeep": "Невірна кількість резервних копій для зберігання",
+  "ToastBackupInvalidMaxKeep": "Профіль оновленоПрофіль оновлено",
   "ToastBackupInvalidMaxSize": "Невірний максимальний розмір резервної копії",
   "ToastBackupRestoreFailed": "Не вдалося відновити резервну копію",
   "ToastBackupUploadFailed": "Не вдалося завантажити резервну копію",
