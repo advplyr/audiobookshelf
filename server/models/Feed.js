@@ -274,7 +274,7 @@ class Feed extends Model {
         },
         slug: DataTypes.STRING,
         entityType: DataTypes.STRING,
-        entityId: DataTypes.UUIDV4,
+        entityId: DataTypes.UUID,
         entityUpdatedAt: DataTypes.DATE,
         serverAddress: DataTypes.STRING,
         feedURL: DataTypes.STRING,
