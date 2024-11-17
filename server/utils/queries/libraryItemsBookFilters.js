@@ -259,7 +259,7 @@ module.exports = {
     } else if (sortBy === 'media.duration') {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
-      return [['publishedYear', dir]]
+      return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
