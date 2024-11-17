@@ -1,13 +1,20 @@
 <!--
-     For Work In Progress Pull Requests, please use the Draft PR feature,
-     see https://github.blog/2019-02-14-introducing-draft-pull-requests/ for further details.
+For Work In Progress Pull Requests, please use the Draft PR feature,
+see https://github.blog/2019-02-14-introducing-draft-pull-requests/ for further details.
 
-     If you do not follow this template, the PR may be closed without review.
+If you do not follow this template, the PR may be closed without review.
+
+Please ensure all checks pass.
+If you are a new contributor, the workflows will need to be manually approved before they run.
 -->
 
 ## Brief summary
 
-<!-- Please provide a brief summary of what your PR attempts to achieve. Include a reference to the issue this PR addresses. -->
+<!-- Please provide a brief summary of what your PR attempts to achieve. -->
+
+## Which issue is fixed?
+
+<!-- Which issue number does this PR fix? Ex: "Fixes #1234" -->
 
 ## In-depth Description
 
