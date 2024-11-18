@@ -662,7 +662,7 @@ module.exports = {
         },
         attributes: ['id', 'name']
       })
-      series.forEach((s) => data.series.push({ id: s.id, name: s.name }))
+      series.forEach((s) => data.series.push({ id: s.id, name: s.name || 'No Title' }))
 
       const authors = await Database.authorModel.findAll({
         where: {
