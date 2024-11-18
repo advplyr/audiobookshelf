@@ -29,7 +29,12 @@ class BookMetadata {
     this.subtitle = metadata.subtitle
     this.authors = metadata.authors?.map ? metadata.authors.map((a) => ({ ...a })) : []
     this.narrators = metadata.narrators ? [...metadata.narrators].filter((n) => n) : []
-    this.series = metadata.series?.map ? metadata.series.map((s) => ({ ...s })) : []
+    this.series = metadata.series?.map
+      ? metadata.series.map((s) => ({
+          ...s,
+          name: s.name || 'No Title'
+        }))
+      : []
     this.genres = metadata.genres ? [...metadata.genres] : []
     this.publishedYear = metadata.publishedYear || null
     this.publishedDate = metadata.publishedDate || null

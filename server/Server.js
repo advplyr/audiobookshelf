@@ -62,7 +62,6 @@ class Server {
       fs.mkdirSync(global.MetadataPath)
     }
 
-    this.watcher = new Watcher()
     this.auth = new Auth()
 
     // Managers
@@ -70,7 +69,7 @@ class Server {
     this.backupManager = new BackupManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher)
+    this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
     this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
@@ -147,9 +146,12 @@ class Server {
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
-      this.watcher.disabled = true
+      Watcher.disabled = true
     } else {
-      this.watcher.initWatcher(libraries)
+      Watcher.initWatcher(libraries)
+      Watcher.on('scanFilesChanged', (pendingFileUpdates, pendingTask) => {
+        LibraryScanner.scanFilesChanged(pendingFileUpdates, pendingTask)
+      })
     }
   }
 
@@ -435,7 +437,7 @@ class Server {
    */
   async stop() {
     Logger.info('=== Stopping Server ===')
-    await this.watcher.close()
+    Watcher.close()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {

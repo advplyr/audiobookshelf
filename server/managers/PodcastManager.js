@@ -1,6 +1,7 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 
 const fs = require('../libs/fsExtra')
 
@@ -23,9 +24,7 @@ const AudioFile = require('../objects/files/AudioFile')
 const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastManager {
-  constructor(watcher) {
-    this.watcher = watcher
-
+  constructor() {
     this.downloadQueue = []
     this.currentDownload = null
 
@@ -47,6 +46,7 @@ class PodcastManager {
       var itemDownloads = this.getEpisodeDownloadsInQueue(libraryItemId)
       Logger.info(`[PodcastManager] Clearing downloads in queue for item "${libraryItemId}" (${itemDownloads.length})`)
       this.downloadQueue = this.downloadQueue.filter((d) => d.libraryItemId !== libraryItemId)
+      SocketAuthority.emitter('episode_download_queue_cleared', libraryItemId)
     }
   }
 
@@ -64,7 +64,6 @@ class PodcastManager {
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
@@ -97,7 +96,8 @@ class PodcastManager {
     }
 
     // Ignores all added files to this dir
-    this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.ignoreFilePathsDownloading.add(this.currentDownload.targetPath)
 
     // Make sure podcast library item folder exists
     if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
@@ -149,9 +149,10 @@ class PodcastManager {
     TaskManager.taskFinished(task)
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
-    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
-    this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
+    Watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
+
+    Watcher.ignoreFilePathsDownloading.delete(this.currentDownload.targetPath)
     this.currentDownload = null
     if (this.downloadQueue.length) {
       this.startPodcastEpisodeDownload(this.downloadQueue.shift())

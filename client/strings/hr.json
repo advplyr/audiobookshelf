@@ -813,7 +813,7 @@
   "MessagePlaylistCreateFromCollection": "Stvori popis za izvođenje od zbirke",
   "MessagePleaseWait": "Molimo pričekajte...",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast nema adresu RSS izvora za prepoznavanje",
-  "MessagePodcastSearchField": "Unesite upit za pretragu ili URL RSS izvora",
+  "MessagePodcastSearchField": "Upišite izraz za pretraživanje ili URL RSS izvora",
   "MessageQuickEmbedInProgress": "Brzo ugrađivanje u tijeku",
   "MessageQuickEmbedQueue": "Dodano u red za brzo ugrađivanje ({0} u redu izvođenja)",
   "MessageQuickMatchAllEpisodes": "Brzo prepoznavanje svih nastavaka",

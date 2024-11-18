@@ -45,7 +45,7 @@ class PlaylistMediaItem extends Model {
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true
         },
-        mediaItemId: DataTypes.UUIDV4,
+        mediaItemId: DataTypes.UUID,
         mediaItemType: DataTypes.STRING,
         order: DataTypes.INTEGER
       },

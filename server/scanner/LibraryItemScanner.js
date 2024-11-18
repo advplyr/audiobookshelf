@@ -4,7 +4,9 @@ const { LogLevel, ScanResult } = require('../utils/constants')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
 const libraryFilters = require('../utils/queries/libraryFilters')
+const Logger = require('../Logger')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const BookScanner = require('./BookScanner')
@@ -128,6 +130,13 @@ class LibraryItemScanner {
     const libraryFiles = []
     for (let i = 0; i < fileItems.length; i++) {
       const fileItem = fileItems[i]
+
+      if (Watcher.checkShouldIgnoreFilePath(fileItem.fullpath)) {
+        // Skip file if it's pending
+        Logger.info(`[LibraryItemScanner] Skipping watcher pending file "${fileItem.fullpath}" during scan of library item path "${libraryItemPath}"`)
+        continue
+      }
+
       const newLibraryFile = new LibraryFile()
       // fileItem.path is the relative path
       await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)

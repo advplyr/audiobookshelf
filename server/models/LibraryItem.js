@@ -237,35 +237,7 @@ class LibraryItem extends Model {
    * @returns {Promise<boolean>} true if updates were made
    */
   static async fullUpdateFromOld(oldLibraryItem) {
-    const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['id', 'sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
+    const libraryItemExpanded = await this.getExpandedById(oldLibraryItem.id)
     if (!libraryItemExpanded) return false
 
     let hasUpdates = false
@@ -1059,7 +1031,7 @@ class LibraryItem extends Model {
         ino: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
-        mediaId: DataTypes.UUIDV4,
+        mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
         isFile: DataTypes.BOOLEAN,
         isMissing: DataTypes.BOOLEAN,

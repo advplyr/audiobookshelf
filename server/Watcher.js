@@ -2,7 +2,6 @@ const Path = require('path')
 const EventEmitter = require('events')
 const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
-const LibraryScanner = require('./scanner/LibraryScanner')
 const Task = require('./objects/Task')
 const TaskManager = require('./managers/TaskManager')
 
@@ -31,6 +30,8 @@ class FolderWatcher extends EventEmitter {
 
     this.filesBeingAdded = new Set()
 
+    /** @type {Set<string>} */
+    this.ignoreFilePathsDownloading = new Set()
     /** @type {string[]} */
     this.ignoreDirs = []
     /** @type {string[]} */
@@ -333,7 +334,7 @@ class FolderWatcher extends EventEmitter {
       }
 
       if (this.pendingFileUpdates.length) {
-        LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
+        this.emit('scanFilesChanged', this.pendingFileUpdates, this.pendingTask)
       } else {
         const taskFinishedString = {
           text: 'No files to scan',
@@ -348,10 +349,27 @@ class FolderWatcher extends EventEmitter {
     }, this.pendingDelay)
   }
 
+  /**
+   *
+   * @param {string} path
+   * @returns {boolean}
+   */
   checkShouldIgnorePath(path) {
     return !!this.ignoreDirs.find((dirpath) => {
       return isSameOrSubPath(dirpath, path)
     })
+  }
+
+  /**
+   * When scanning a library item folder these files should be ignored
+   * Either a podcast episode downloading or a file that is pending by the watcher
+   *
+   * @param {string} path
+   * @returns {boolean}
+   */
+  checkShouldIgnoreFilePath(path) {
+    if (this.pendingFilePaths.includes(path)) return true
+    return this.ignoreFilePathsDownloading.has(path)
   }
 
   /**
@@ -409,4 +427,4 @@ class FolderWatcher extends EventEmitter {
     }, 5000)
   }
 }
-module.exports = FolderWatcher
+module.exports = new FolderWatcher()

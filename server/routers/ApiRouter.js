@@ -45,8 +45,6 @@ class ApiRouter {
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
-    /** @type {import('../Watcher')} */
-    this.watcher = Server.watcher
     /** @type {import('../managers/PodcastManager')} */
     this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
@@ -216,7 +214,7 @@ class ApiRouter {
     this.router.patch('/authors/:id', AuthorController.middleware.bind(this), AuthorController.update.bind(this))
     this.router.delete('/authors/:id', AuthorController.middleware.bind(this), AuthorController.delete.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
-    this.router.get('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.getImage.bind(this))
+    this.router.get('/authors/:id/image', AuthorController.getImage.bind(this))
     this.router.post('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.uploadImage.bind(this))
     this.router.delete('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.deleteImage.bind(this))
 

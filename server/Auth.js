@@ -18,7 +18,7 @@ class Auth {
   constructor() {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
-    this.ignorePattern = /\/api\/items\/[^/]+\/cover/
+    this.ignorePatterns = [/\/api\/items\/[^/]+\/cover/, /\/api\/authors\/[^/]+\/image/]
   }
 
   /**
@@ -28,7 +28,7 @@ class Auth {
    * @private
    */
   authNotNeeded(req) {
-    return req.method === 'GET' && this.ignorePattern.test(req.originalUrl)
+    return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.originalUrl))
   }
 
   ifAuthNeeded(middleware) {
@@ -990,28 +990,18 @@ class Auth {
         })
       }
     }
-
-    Database.userModel
-      .update(
-        {
-          pash: pw
-        },
-        {
-          where: { id: matchingUser.id }
-        }
-      )
-      .then(() => {
-        Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
-        res.json({
-          success: true
-        })
+    try {
+      await matchingUser.update({ pash: pw })
+      Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
+      res.json({
+        success: true
       })
-      .catch((error) => {
-        Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
-        res.json({
-          error: 'Unknown error'
-        })
+    } catch (error) {
+      Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
+      res.json({
+        error: 'Unknown error'
       })
+    }
   }
 }
 

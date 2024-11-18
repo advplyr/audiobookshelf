@@ -17,6 +17,7 @@ const naturalSort = createNewSortInstance({
 const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
@@ -158,7 +159,7 @@ class LibraryController {
     SocketAuthority.emitter('library_added', library.toOldJSON(), userFilter)
 
     // Add library watcher
-    this.watcher.addLibrary(library)
+    Watcher.addLibrary(library)
 
     res.json(library.toOldJSON())
   }
@@ -440,7 +441,7 @@ class LibraryController {
       req.library.libraryFolders = await req.library.getLibraryFolders()
 
       // Update watcher
-      this.watcher.updateLibrary(req.library)
+      Watcher.updateLibrary(req.library)
 
       hasUpdates = true
     }
@@ -466,7 +467,7 @@ class LibraryController {
    */
   async delete(req, res) {
     // Remove library watcher
-    this.watcher.removeLibrary(req.library)
+    Watcher.removeLibrary(req.library)
 
     // Remove collections for library
     const numCollectionsRemoved = await Database.collectionModel.removeAllForLibrary(req.library.id)
