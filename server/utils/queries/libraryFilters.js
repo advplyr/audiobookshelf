@@ -507,13 +507,15 @@ module.exports = {
       })
 
       if (changedPodcasts === 0) {
-        // If nothing has changed, check if the number of podcasts in
-        // library is still the same as prior check before updating cache creation time
-
-        if (podcastCountFromDatabase === Database.libraryFilterData[libraryId].podcastCount) {
-          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-          Database.libraryFilterData[libraryId].loadedAt = Date.now()
-          return cachedFilterData
+        // Verify that the count exists in the libraryFilterData object
+        if (Database.libraryFilterData[libraryId] && Database.libraryFilterData[libraryId].podcastCount) {
+          // If nothing has changed, check if the number of podcasts in
+          // library is still the same as prior check before updating cache creation time
+          if (podcastCountFromDatabase === Database.libraryFilterData[libraryId].podcastCount) {
+            Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+            Database.libraryFilterData[libraryId].loadedAt = Date.now()
+            return cachedFilterData
+          }
         }
       }
 
@@ -611,12 +613,15 @@ module.exports = {
       })
 
       if (changedBooks + changedSeries + changedAuthors === 0) {
-        // If nothing has changed, check if the number of authors, series, and books
-        // matches the prior check before updating cache creation time
-        if (bookCountFromDatabase === Database.libraryFilterData[libraryId].bookCount && seriesCountFromDatabase === Database.libraryFilterData[libraryId].seriesCount && authorCountFromDatabase === Database.libraryFilterData[libraryId].authorCount) {
-          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-          Database.libraryFilterData[libraryId].loadedAt = Date.now()
-          return cachedFilterData
+        // Verify that the counts exist in the libraryFilterData object
+        if (Database.libraryFilterData[libraryId] && Database.libraryFilterData[libraryId].bookCount && Database.libraryFilterData[libraryId].seriesCount && Database.libraryFilterData[libraryId].authorCount) {
+          // If nothing has changed, check if the number of authors, series, and books
+          // matches the prior check before updating cache creation time
+          if (bookCountFromDatabase === Database.libraryFilterData[libraryId].bookCount && seriesCountFromDatabase === Database.libraryFilterData[libraryId].seriesCount && authorCountFromDatabase === Database.libraryFilterData[libraryId].authorCount) {
+            Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+            Database.libraryFilterData[libraryId].loadedAt = Date.now()
+            return cachedFilterData
+          }
         }
       }
 
