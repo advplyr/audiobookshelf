@@ -34,12 +34,12 @@
 
       <!-- Picker display -->
       <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
-        <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : $strings.LabelUploaderDragAndDrop }}</p>
+        <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : $strings.LabelUploaderDragAndDrop + (isIOS ? '' : ' ' + $strings.LabelUploaderDragAndDropOrFolders) }}</p>
         <p class="text-center text-sm my-5">{{ $strings.MessageOr }}</p>
         <div class="w-full max-w-xl mx-auto">
           <div class="flex">
             <ui-btn class="w-full mx-1" @click="openFilePicker">{{ $strings.ButtonChooseFiles }}</ui-btn>
-            <ui-btn class="w-full mx-1" @click="openFolderPicker">{{ $strings.ButtonChooseAFolder }}</ui-btn>
+            <ui-btn v-if="!isIOS" class="w-full mx-1" @click="openFolderPicker">{{ $strings.ButtonChooseAFolder }} </ui-btn>
           </div>
         </div>
         <div class="pt-8 text-center">
@@ -48,7 +48,7 @@
           </p>
 
           <p class="text-sm text-white text-opacity-70">
-            {{ $strings.NoteUploaderFoldersWithMediaFiles }} <span v-if="selectedLibraryMediaType === 'book'">{{ $strings.NoteUploaderOnlyAudioFiles }}</span>
+            <span v-if="!isIOS">{{ $strings.NoteUploaderFoldersWithMediaFiles }}</span> <span v-if="selectedLibraryMediaType === 'book'">{{ $strings.NoteUploaderOnlyAudioFiles }}</span>
           </p>
         </div>
       </div>
@@ -85,7 +85,7 @@
     </div>
 
     <input ref="fileInput" type="file" multiple :accept="isIOS ? '' : inputAccept" class="hidden" @change="inputChanged" />
-    <input ref="fileFolderInput" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
+    <input ref="fileFolderInput" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" v-if="!isIOS" />
   </div>
 </template>
 
