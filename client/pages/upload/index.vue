@@ -84,7 +84,7 @@
       </div>
     </div>
 
-    <input ref="fileInput" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
+    <input ref="fileInput" type="file" multiple :accept="isIOS ? '' : inputAccept" class="hidden" @change="inputChanged" />
     <input ref="fileFolderInput" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
   </div>
 </template>
@@ -126,6 +126,10 @@ export default {
         extensions = extensions.concat(types.map((t) => `.${t}`))
       })
       return extensions
+    },
+    isIOS() {
+      const ua = window.navigator.userAgent
+      return /iPad|iPhone|iPod/.test(ua) && !window.MSStream
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
