@@ -275,7 +275,7 @@ class Server {
     router.use('/public', this.publicRouter.router)
 
     // Static path to generated nuxt
-    const distPath = Path.join(global.appRoot, '/client/dist')
+    const distPath = Path.join(global.appRoot, '/dist')
     router.use(express.static(distPath))
 
     // Static folder

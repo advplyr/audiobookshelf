@@ -2,13 +2,21 @@
   "name": "audiobookshelf",
   "version": "2.17.2",
   "buildNumber": 1,
-  "description": "Self-hosted audiobook and podcast server",
+  "description": "Self-hosted audiobook and podcast client server",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch server index.js",
     "start": "node index.js",
-    "client": "cd client && npm ci && npm run generate",
-    "prod": "npm run client && npm ci && node prod.js",
+    "client": "npm ci && nuxt generate",
+    "prod": "npm run client && node prod.js",
+    "nuxt:dev": "nuxt",
+    "nuxt:dev2": "nuxt --hostname localhost --port 1337",
+    "nuxt:build": "nuxt build",
+    "nuxt:start": "nuxt start",
+    "nuxt:generate": "nuxt generate",
+    "nuxt:test": "npm run compile-tailwind && cypress run --component --browser chrome",
+    "nuxt:test-visually": "npm run compile-tailwind && cypress open --component --browser chrome",
+    "nuxt:compile-tailwind": "tailwindcss -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css",
     "build-win": "npm run client && pkg -t node20-win-x64 -o ./dist/win/audiobookshelf -C GZip .",
     "build-linux": "build/linuxpackager",
     "docker": "docker buildx build --platform linux/amd64,linux/arm64 --push .  -t advplyr/audiobookshelf",
@@ -21,7 +29,7 @@
   "bin": "prod.js",
   "pkg": {
     "assets": [
-      "client/dist/**/*",
+      "dist/**/*",
       "node_modules/sqlite3/lib/binding/**/*.node",
       "server/migrations/*.js"
     ],
@@ -54,13 +62,36 @@
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.6",
     "ssrf-req-filter": "^1.1.0",
-    "xml2js": "^0.5.0"
+    "xml2js": "^0.5.0",
+    "@nuxtjs/axios": "^5.13.6",
+    "@nuxtjs/proxy": "^2.1.0",
+    "@teckel/vue-pdf": "^4.3.5",
+    "core-js": "^3.16.0",
+    "cron-parser": "^4.7.1",
+    "date-fns": "^2.25.0",
+    "epubjs": "^0.3.88",
+    "fast-average-color": "^9.4.0",
+    "hls.js": "^1.5.7",
+    "libarchive.js": "^1.3.0",
+    "nuxt": "^2.18.1",
+    "nuxt-socket-io": "^1.1.18",
+    "trix": "^1.3.1",
+    "v-click-outside": "^3.1.2",
+    "vue-toastification": "^1.7.11",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
-    "sinon": "^17.0.1"
+    "sinon": "^17.0.1",
+    "@nuxtjs/pwa": "^3.3.5",
+    "autoprefixer": "^10.4.7",
+    "postcss": "^8.3.6",
+    "tailwindcss": "^3.4.1"
+  },
+  "optionalDependencies": {
+    "cypress": "^13.7.3"
   }
 }

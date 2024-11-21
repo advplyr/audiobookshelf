@@ -1,14 +1,13 @@
 .env
 /dev.js
-**/node_modules/
+/node_modules/
 /config/
 /audiobooks/
 /audiobooks2/
 /podcasts/
 /media/
 /metadata/
-/client/.nuxt/
-/client/dist/
+/.nuxt/
 /dist/
 /deploy/
 /coverage/
