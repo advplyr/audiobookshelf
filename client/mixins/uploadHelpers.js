@@ -28,10 +28,8 @@ export default {
       var validOtherFiles = []
       var ignoredFiles = []
       files.forEach((file) => {
-        // var filetype = this.checkFileType(file.name)
         if (!file.filetype) ignoredFiles.push(file)
         else {
-          // file.filetype = filetype
           if (file.filetype === 'audio' || (file.filetype === 'ebook' && mediaType === 'book')) validItemFiles.push(file)
           else validOtherFiles.push(file)
         }
@@ -165,7 +163,7 @@ export default {
 
       var firstBookPath = Path.dirname(firstBookFile.filepath)
 
-      var dirs = firstBookPath.split('/').filter(d => !!d && d !== '.')
+      var dirs = firstBookPath.split('/').filter((d) => !!d && d !== '.')
       if (dirs.length) {
         audiobook.title = dirs.pop()
         if (dirs.length > 1) {
@@ -189,7 +187,7 @@ export default {
       var firstAudioFile = podcast.itemFiles[0]
       if (!firstAudioFile.filepath) return podcast // No path
       var firstPath = Path.dirname(firstAudioFile.filepath)
-      var dirs = firstPath.split('/').filter(d => !!d && d !== '.')
+      var dirs = firstPath.split('/').filter((d) => !!d && d !== '.')
       if (dirs.length) {
         podcast.title = dirs.length > 1 ? dirs[1] : dirs[0]
       } else {
@@ -212,13 +210,15 @@ export default {
       }
       var ignoredFiles = itemData.ignoredFiles
       var index = 1
-      var items = itemData.items.filter((ab) => {
-        if (!ab.itemFiles.length) {
-          if (ab.otherFiles.length) ignoredFiles = ignoredFiles.concat(ab.otherFiles)
-          if (ab.ignoredFiles.length) ignoredFiles = ignoredFiles.concat(ab.ignoredFiles)
-        }
-        return ab.itemFiles.length
-      }).map(ab => this.cleanItem(ab, mediaType, index++))
+      var items = itemData.items
+        .filter((ab) => {
+          if (!ab.itemFiles.length) {
+            if (ab.otherFiles.length) ignoredFiles = ignoredFiles.concat(ab.otherFiles)
+            if (ab.ignoredFiles.length) ignoredFiles = ignoredFiles.concat(ab.ignoredFiles)
+          }
+          return ab.itemFiles.length
+        })
+        .map((ab) => this.cleanItem(ab, mediaType, index++))
       return {
         items,
         ignoredFiles
@@ -259,7 +259,7 @@ export default {
 
       otherFiles.forEach((file) => {
         var dir = Path.dirname(file.filepath)
-        var findItem = Object.values(itemMap).find(b => dir.startsWith(b.path))
+        var findItem = Object.values(itemMap).find((b) => dir.startsWith(b.path))
         if (findItem) {
           findItem.otherFiles.push(file)
         } else {
@@ -270,18 +270,18 @@ export default {
       var items = []
       var index = 1
       // If book media type and all files are audio files then treat each one as an audiobook
-      if (itemMap[''] && !otherFiles.length && mediaType === 'book' && !itemMap[''].itemFiles.some(f => f.filetype !== 'audio')) {
+      if (itemMap[''] && !otherFiles.length && mediaType === 'book' && !itemMap[''].itemFiles.some((f) => f.filetype !== 'audio')) {
         items = itemMap[''].itemFiles.map((audioFile) => {
           return this.cleanItem({ itemFiles: [audioFile], otherFiles: [], ignoredFiles: [] }, mediaType, index++)
         })
       } else {
-        items = Object.values(itemMap).map(i => this.cleanItem(i, mediaType, index++))
+        items = Object.values(itemMap).map((i) => this.cleanItem(i, mediaType, index++))
       }
 
       return {
         items,
         ignoredFiles: ignoredFiles
       }
-    },
+    }
   }
 }
