@@ -1,20 +1,20 @@
 <template>
-  <div id="page-wrapper" class="page p-0 sm:p-6 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
+  <div id="page-wrapper" class="page p-1 sm:p-6 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-6xl mx-auto">
       <!-- Library & folder picker -->
-      <div class="flex my-6 -mx-2">
-        <div class="w-1/5 px-2">
+      <div class="flex flex-wrap my-6 md:-mx-2">
+        <div class="w-full md:w-1/5 px-2">
           <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" :label="$strings.LabelLibrary" :disabled="!!items.length" @input="libraryChanged" />
         </div>
-        <div class="w-3/5 px-2">
+        <div class="w-full md:w-3/5 px-2">
           <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId || !!items.length" :label="$strings.LabelFolder" />
         </div>
-        <div class="w-1/5 px-2">
+        <div class="w-full md:w-1/5 px-2">
           <ui-text-input-with-label :value="selectedLibraryMediaType" readonly :label="$strings.LabelMediaType" />
         </div>
       </div>
 
-      <div v-if="!selectedLibraryIsPodcast" class="flex items-center mb-6">
+      <div v-if="!selectedLibraryIsPodcast" class="flex items-center mb-6 px-2 md:px-0">
         <label class="flex cursor-pointer pt-4">
           <ui-toggle-switch v-model="fetchMetadata.enabled" class="inline-flex" />
           <span class="pl-2 text-base">{{ $strings.LabelAutoFetchMetadata }}</span>
@@ -33,8 +33,8 @@
       </widgets-alert>
 
       <!-- Picker display -->
-      <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
-        <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : $strings.LabelUploaderDragAndDrop + (isIOS ? '' : ' ' + $strings.LabelUploaderDragAndDropOrFolders) }}</p>
+      <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-4 md:px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
+        <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : isIOS ? $strings.LabelUploaderDragAndDropFilesOnly : $strings.LabelUploaderDragAndDrop }}</p>
         <p class="text-center text-sm my-5">{{ $strings.MessageOr }}</p>
         <div class="w-full max-w-xl mx-auto">
           <div class="flex">
