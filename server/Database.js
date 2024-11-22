@@ -406,11 +406,6 @@ class Database {
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
   }
 
-  removeLibrary(libraryId) {
-    if (!this.sequelize) return false
-    return this.models.library.removeById(libraryId)
-  }
-
   createBulkCollectionBooks(collectionBooks) {
     if (!this.sequelize) return false
     return this.models.collectionBook.bulkCreate(collectionBooks)
