@@ -43,7 +43,7 @@ Join us on [Discord](https://discord.gg/HQgCbd6E75)
 
 ### Demo
 
-Check out the web client demo: https://audiobooks.dev/ (thanks for hosting @Vito0912!)
+Check out the web client demo: https://audiobooks.dev/ (thanks for hosting [@Vito0912](https://github.com/Vito0912)!)
 
 Username/password: `demo`/`demo` (user account)
 
