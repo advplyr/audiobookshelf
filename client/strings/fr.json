@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Autoriser la mise à jour des détails existants lorsqu’une correspondance est trouvée",
   "LabelUpdatedAt": "Mis à jour à",
   "LabelUploaderDragAndDrop": "Glisser et déposer des fichiers ou dossiers",
+  "LabelUploaderDragAndDropFilesOnly": "Glisser & déposer des fichiers",
   "LabelUploaderDropFiles": "Déposer des fichiers",
   "LabelUploaderItemFetchMetadataHelp": "Récupérer automatiquement le titre, l’auteur et la série",
   "LabelUseAdvancedOptions": "Utiliser les options avancées",
