@@ -27,10 +27,14 @@ async function up({ context: { queryInterface, logger } }) {
     type: 'UUID'
   })
 
-  logger.info('[2.17.0 migration] Changing mediaItemShares.mediaItemId column to UUID')
-  await queryInterface.changeColumn('mediaItemShares', 'mediaItemId', {
-    type: 'UUID'
-  })
+  if (await queryInterface.tableExists('mediaItemShares')) {
+    logger.info('[2.17.0 migration] Changing mediaItemShares.mediaItemId column to UUID')
+    await queryInterface.changeColumn('mediaItemShares', 'mediaItemId', {
+      type: 'UUID'
+    })
+  } else {
+    logger.info('[2.17.0 migration] mediaItemShares table does not exist, skipping column change')
+  }
 
   logger.info('[2.17.0 migration] Changing playbackSessions.mediaItemId column to UUID')
   await queryInterface.changeColumn('playbackSessions', 'mediaItemId', {

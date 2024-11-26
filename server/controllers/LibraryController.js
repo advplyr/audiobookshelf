@@ -504,8 +504,21 @@ class LibraryController {
       await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
     }
 
+    // Set PlaybackSessions libraryId to null
+    const [sessionsUpdated] = await Database.playbackSessionModel.update(
+      {
+        libraryId: null
+      },
+      {
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    )
+    Logger.info(`[LibraryController] Updated ${sessionsUpdated} playback sessions to remove library id`)
+
     const libraryJson = req.library.toOldJSON()
-    await Database.removeLibrary(req.library.id)
+    await req.library.destroy()
 
     // Re-order libraries
     await Database.libraryModel.resetDisplayOrder()

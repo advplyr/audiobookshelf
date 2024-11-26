@@ -25,7 +25,6 @@
         </template>
       </div>
     </div>
-    <!-- <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p> -->
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
       <form @submit.prevent="submit" class="flex flex-grow">
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
@@ -515,6 +514,10 @@ export default {
       }
     },
     filterSortChanged() {
+      // Save filterKey and sortKey to local storage
+      localStorage.setItem('podcastEpisodesFilter', this.filterKey)
+      localStorage.setItem('podcastEpisodesSortBy', this.sortKey + (this.sortDesc ? '-desc' : ''))
+
       this.init()
     },
     refresh() {
@@ -537,6 +540,11 @@ export default {
     }
   },
   mounted() {
+    this.filterKey = localStorage.getItem('podcastEpisodesFilter') || 'incomplete'
+    const sortBy = localStorage.getItem('podcastEpisodesSortBy') || 'publishedAt-desc'
+    this.sortKey = sortBy.split('-')[0]
+    this.sortDesc = sortBy.split('-')[1] === 'desc'
+
     this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
     this.initListeners()
     this.init()
