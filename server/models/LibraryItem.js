@@ -237,35 +237,7 @@ class LibraryItem extends Model {
    * @returns {Promise<boolean>} true if updates were made
    */
   static async fullUpdateFromOld(oldLibraryItem) {
-    const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['id', 'sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
+    const libraryItemExpanded = await this.getExpandedById(oldLibraryItem.id)
     if (!libraryItemExpanded) return false
 
     let hasUpdates = false
@@ -507,7 +479,7 @@ class LibraryItem extends Model {
           {
             model: this.sequelize.models.series,
             through: {
-              attributes: ['sequence']
+              attributes: ['id', 'sequence']
             }
           }
         ],
@@ -865,6 +837,33 @@ class LibraryItem extends Model {
 
   /**
    *
+   * @param {string} libraryItemId
+   * @returns {Promise<string>}
+   */
+  static async getCoverPath(libraryItemId) {
+    const libraryItem = await this.findByPk(libraryItemId, {
+      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
+      include: [
+        {
+          model: this.sequelize.models.book,
+          attributes: ['id', 'coverPath']
+        },
+        {
+          model: this.sequelize.models.podcast,
+          attributes: ['id', 'coverPath']
+        }
+      ]
+    })
+    if (!libraryItem) {
+      Logger.warn(`[LibraryItem] getCoverPath: Library item "${libraryItemId}" does not exist`)
+      return null
+    }
+
+    return libraryItem.media.coverPath
+  }
+
+  /**
+   *
    * @param {import('sequelize').FindOptions} options
    * @returns {Promise<Book|Podcast>}
    */
@@ -1032,7 +1031,7 @@ class LibraryItem extends Model {
         ino: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
-        mediaId: DataTypes.UUIDV4,
+        mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
         isFile: DataTypes.BOOLEAN,
         isMissing: DataTypes.BOOLEAN,

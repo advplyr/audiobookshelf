@@ -381,16 +381,23 @@ class AuthorController {
    */
   async getImage(req, res) {
     const {
-      query: { width, height, format, raw },
-      author
+      query: { width, height, format, raw }
     } = req
 
-    if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
-      Logger.warn(`[AuthorController] Author "${author.name}" has invalid imagePath: ${author.imagePath}`)
-      return res.sendStatus(404)
-    }
+    const authorId = req.params.id
 
     if (raw) {
+      const author = await Database.authorModel.findByPk(authorId)
+      if (!author) {
+        Logger.warn(`[AuthorController] Author "${authorId}" not found`)
+        return res.sendStatus(404)
+      }
+
+      if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
+        Logger.warn(`[AuthorController] Author "${author.name}" has invalid imagePath: ${author.imagePath}`)
+        return res.sendStatus(404)
+      }
+
       return res.sendFile(author.imagePath)
     }
 
@@ -399,7 +406,7 @@ class AuthorController {
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
-    return CacheManager.handleAuthorCache(res, author, options)
+    return CacheManager.handleAuthorCache(res, authorId, options)
   }
 
   /**

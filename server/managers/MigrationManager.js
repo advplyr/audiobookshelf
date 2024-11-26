@@ -38,6 +38,7 @@ class MigrationManager {
     if (!(await fs.pathExists(this.configPath))) throw new Error(`Config path does not exist: ${this.configPath}`)
 
     this.migrationsDir = path.join(this.configPath, 'migrations')
+    await fs.ensureDir(this.migrationsDir)
 
     this.serverVersion = this.extractVersionFromTag(serverVersion)
     if (!this.serverVersion) throw new Error(`Invalid server version: ${serverVersion}. Expected a version tag like v1.2.3.`)
@@ -129,7 +130,7 @@ class MigrationManager {
 
   async initUmzug(umzugStorage = new SequelizeStorage({ sequelize: this.sequelize })) {
     // This check is for dependency injection in tests
-    const files = (await fs.readdir(this.migrationsDir)).map((file) => path.join(this.migrationsDir, file))
+    const files = (await fs.readdir(this.migrationsDir)).filter((file) => !file.startsWith('.')).map((file) => path.join(this.migrationsDir, file))
 
     const parent = new Umzug({
       migrations: {
@@ -190,7 +191,21 @@ class MigrationManager {
     const queryInterface = this.sequelize.getQueryInterface()
     let migrationsMetaTableExists = await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
 
+    // If the table exists, check that the `version` and `maxVersion` rows exist
+    if (migrationsMetaTableExists) {
+      const [{ count }] = await this.sequelize.query("SELECT COUNT(*) as count FROM :migrationsMeta WHERE key IN ('version', 'maxVersion')", {
+        replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+        type: Sequelize.QueryTypes.SELECT
+      })
+      if (count < 2) {
+        Logger.warn(`[MigrationManager] migrationsMeta table exists but is missing 'version' or 'maxVersion' row. Dropping it...`)
+        await queryInterface.dropTable(MigrationManager.MIGRATIONS_META_TABLE)
+        migrationsMetaTableExists = false
+      }
+    }
+
     if (this.isDatabaseNew && migrationsMetaTableExists) {
+      Logger.warn(`[MigrationManager] migrationsMeta table already exists. Dropping it...`)
       // This can happen if database was initialized with force: true
       await queryInterface.dropTable(MigrationManager.MIGRATIONS_META_TABLE)
       migrationsMetaTableExists = false
@@ -222,8 +237,6 @@ class MigrationManager {
   }
 
   async copyMigrationsToConfigDir() {
-    await fs.ensureDir(this.migrationsDir) // Ensure the target directory exists
-
     if (!(await fs.pathExists(this.migrationsSourceDir))) return
 
     const files = await fs.readdir(this.migrationsSourceDir)

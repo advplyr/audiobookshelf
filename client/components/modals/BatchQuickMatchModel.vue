@@ -116,10 +116,10 @@ export default {
           libraryItemIds: this.selectedBookIds
         })
         .then(() => {
-          this.$toast.info('Batch quick match of ' + this.selectedBookIds.length + ' books started!')
+          this.$toast.info(this.$getString('ToastBatchQuickMatchStarted', [this.selectedBookIds.length]))
         })
         .catch((error) => {
-          this.$toast.error('Batch quick match failed')
+          this.$toast.error(this.$strings.ToastBatchQuickMatchFailed)
           console.error('Failed to batch quick match', error)
         })
         .finally(() => {

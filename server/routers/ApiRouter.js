@@ -45,8 +45,6 @@ class ApiRouter {
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
-    /** @type {import('../Watcher')} */
-    this.watcher = Server.watcher
     /** @type {import('../managers/PodcastManager')} */
     this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
@@ -55,8 +53,6 @@ class ApiRouter {
     this.rssFeedManager = Server.rssFeedManager
     /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
-    /** @type {import('../managers/NotificationManager')} */
-    this.notificationManager = Server.notificationManager
     /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
@@ -98,6 +94,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
     this.router.post('/libraries/:id/remove-metadata', LibraryController.middleware.bind(this), LibraryController.removeAllMetadataFiles.bind(this))
+    this.router.get('/libraries/:id/podcast-titles', LibraryController.middleware.bind(this), LibraryController.getPodcastTitles.bind(this))
 
     //
     // Item Routes
@@ -191,6 +188,7 @@ class ApiRouter {
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
     this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
+    this.router.post('/me/ereader-devices', MeController.updateUserEReaderDevices.bind(this))
 
     //
     // Backup Routes
@@ -216,7 +214,7 @@ class ApiRouter {
     this.router.patch('/authors/:id', AuthorController.middleware.bind(this), AuthorController.update.bind(this))
     this.router.delete('/authors/:id', AuthorController.middleware.bind(this), AuthorController.delete.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
-    this.router.get('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.getImage.bind(this))
+    this.router.get('/authors/:id/image', AuthorController.getImage.bind(this))
     this.router.post('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.uploadImage.bind(this))
     this.router.delete('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.deleteImage.bind(this))
 

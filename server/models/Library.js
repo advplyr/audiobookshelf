@@ -12,6 +12,8 @@ const Logger = require('../Logger')
  * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
  * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
  * @property {string[]} metadataPrecedence
+ * @property {number} markAsFinishedTimeRemaining Time remaining in seconds to mark as finished. (defaults to 10s)
+ * @property {number} markAsFinishedPercentComplete Percent complete to mark as finished (0-100). If this is set it will be used over markAsFinishedTimeRemaining.
  */
 
 class Library extends Model {
@@ -57,7 +59,9 @@ class Library extends Model {
         coverAspectRatio: 1, // Square
         disableWatcher: false,
         autoScanCronExpression: null,
-        podcastSearchRegion: 'us'
+        podcastSearchRegion: 'us',
+        markAsFinishedPercentComplete: null,
+        markAsFinishedTimeRemaining: 10
       }
     } else {
       return {
@@ -70,7 +74,9 @@ class Library extends Model {
         epubsAllowScriptedContent: false,
         hideSingleBookSeries: false,
         onlyShowLaterBooksInContinueSeries: false,
-        metadataPrecedence: this.defaultMetadataPrecedence
+        metadataPrecedence: this.defaultMetadataPrecedence,
+        markAsFinishedPercentComplete: null,
+        markAsFinishedTimeRemaining: 10
       }
     }
   }
@@ -98,19 +104,6 @@ class Library extends Model {
   static findByIdWithFolders(libraryId) {
     return this.findByPk(libraryId, {
       include: this.sequelize.models.libraryFolder
-    })
-  }
-
-  /**
-   * Destroy library by id
-   * @param {string} libraryId
-   * @returns
-   */
-  static removeById(libraryId) {
-    return this.destroy({
-      where: {
-        id: libraryId
-      }
     })
   }
 
@@ -194,6 +187,13 @@ class Library extends Model {
    */
   get lastScanMetadataPrecedence() {
     return this.extraData?.lastScanMetadataPrecedence || []
+  }
+
+  /**
+   * @returns {LibrarySettingsObject}
+   */
+  get librarySettings() {
+    return this.settings || Library.getDefaultLibrarySettingsForMediaType(this.mediaType)
   }
 
   /**

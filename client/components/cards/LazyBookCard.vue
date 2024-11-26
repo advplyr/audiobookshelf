@@ -325,7 +325,7 @@ export default {
     },
     displaySubtitle() {
       if (!this.libraryItem) return '\u00A0'
-      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
+      if (this.collapsedSeries) return `${this.collapsedSeries.numBooks} ${this.$strings.LabelBooks}`
       if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
       if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
       return ''
@@ -816,7 +816,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove series from home', error)
-          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -834,7 +834,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to hide item from home', error)
-          this.$toast.error(this.$strings.ToastFailedToUpdateUser)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false

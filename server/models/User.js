@@ -3,6 +3,53 @@ const sequelize = require('sequelize')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
+const { LRUCache } = require('lru-cache')
+
+class UserCache {
+  constructor() {
+    this.cache = new LRUCache({ max: 100 })
+  }
+
+  getById(id) {
+    const user = this.cache.get(id)
+    return user
+  }
+
+  getByEmail(email) {
+    const user = this.cache.find((u) => u.email === email)
+    return user
+  }
+
+  getByUsername(username) {
+    const user = this.cache.find((u) => u.username === username)
+    return user
+  }
+
+  getByOldId(oldUserId) {
+    const user = this.cache.find((u) => u.extraData?.oldUserId === oldUserId)
+    return user
+  }
+
+  getByOpenIDSub(sub) {
+    const user = this.cache.find((u) => u.extraData?.authOpenIDSub === sub)
+    return user
+  }
+
+  set(user) {
+    user.fromCache = true
+    this.cache.set(user.id, user)
+  }
+
+  delete(userId) {
+    this.cache.delete(userId)
+  }
+
+  maybeInvalidate(user) {
+    if (!user.fromCache) this.delete(user.id)
+  }
+}
+
+const userCache = new UserCache()
 
 const { DataTypes, Model } = sequelize
 
@@ -12,6 +59,23 @@ const { DataTypes, Model } = sequelize
  * @property {string} title
  * @property {number} time
  * @property {number} createdAt
+ */
+
+/**
+ * @typedef ProgressUpdatePayload
+ * @property {string} libraryItemId
+ * @property {string} [episodeId]
+ * @property {number} [duration]
+ * @property {number} [progress]
+ * @property {number} [currentTime]
+ * @property {boolean} [isFinished]
+ * @property {boolean} [hideFromContinueListening]
+ * @property {string} [ebookLocation]
+ * @property {number} [ebookProgress]
+ * @property {string} [finishedAt]
+ * @property {number} [lastUpdate]
+ * @property {number} [markAsFinishedTimeRemaining]
+ * @property {number} [markAsFinishedPercentComplete]
  */
 
 class User extends Model {
@@ -65,6 +129,7 @@ class User extends Model {
     canAccessExplicitContent: 'accessExplicitContent',
     canAccessAllLibraries: 'accessAllLibraries',
     canAccessAllTags: 'accessAllTags',
+    canCreateEReader: 'createEreader',
     tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
@@ -105,6 +170,7 @@ class User extends Model {
       update: type === 'root' || type === 'admin',
       delete: type === 'root',
       upload: type === 'root' || type === 'admin',
+      createEreader: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: type === 'root' || type === 'admin',
@@ -187,7 +253,11 @@ class User extends Model {
    */
   static async getUserByUsername(username) {
     if (!username) return null
-    return this.findOne({
+
+    const cachedUser = userCache.getByUsername(username)
+    if (cachedUser) return cachedUser
+
+    const user = await this.findOne({
       where: {
         username: {
           [sequelize.Op.like]: username
@@ -195,6 +265,10 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
+
+    if (user) userCache.set(user)
+
+    return user
   }
 
   /**
@@ -204,7 +278,11 @@ class User extends Model {
    */
   static async getUserByEmail(email) {
     if (!email) return null
-    return this.findOne({
+
+    const cachedUser = userCache.getByEmail(email)
+    if (cachedUser) return cachedUser
+
+    const user = await this.findOne({
       where: {
         email: {
           [sequelize.Op.like]: email
@@ -212,6 +290,10 @@ class User extends Model {
       },
       include: this.sequelize.models.mediaProgress
     })
+
+    if (user) userCache.set(user)
+
+    return user
   }
 
   /**
@@ -221,9 +303,17 @@ class User extends Model {
    */
   static async getUserById(userId) {
     if (!userId) return null
-    return this.findByPk(userId, {
+
+    const cachedUser = userCache.getById(userId)
+    if (cachedUser) return cachedUser
+
+    const user = await this.findByPk(userId, {
       include: this.sequelize.models.mediaProgress
     })
+
+    if (user) userCache.set(user)
+
+    return user
   }
 
   /**
@@ -235,12 +325,19 @@ class User extends Model {
    */
   static async getUserByIdOrOldId(userId) {
     if (!userId) return null
-    return this.findOne({
+    const cachedUser = userCache.getById(userId) || userCache.getByOldId(userId)
+    if (cachedUser) return cachedUser
+
+    const user = await this.findOne({
       where: {
         [sequelize.Op.or]: [{ id: userId }, { 'extraData.oldUserId': userId }]
       },
       include: this.sequelize.models.mediaProgress
     })
+
+    if (user) userCache.set(user)
+
+    return user
   }
 
   /**
@@ -250,10 +347,18 @@ class User extends Model {
    */
   static async getUserByOpenIDSub(sub) {
     if (!sub) return null
-    return this.findOne({
+
+    const cachedUser = userCache.getByOpenIDSub(sub)
+    if (cachedUser) return cachedUser
+
+    const user = await this.findOne({
       where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
       include: this.sequelize.models.mediaProgress
     })
+
+    if (user) userCache.set(user)
+
+    return user
   }
 
   /**
@@ -506,7 +611,7 @@ class User extends Model {
    */
   getOldMediaProgress(libraryItemId, episodeId = null) {
     const mediaProgress = this.mediaProgresses?.find((mp) => {
-      if (episodeId && mp.mediaItemId === episodeId) return true
+      if (episodeId && mp.mediaItemId !== episodeId) return false
       return mp.extraData?.libraryItemId === libraryItemId
     })
     return mediaProgress?.getOldMediaProgress() || null
@@ -514,19 +619,6 @@ class User extends Model {
 
   /**
    * TODO: Uses old model and should account for the different between ebook/audiobook progress
-   *
-   * @typedef ProgressUpdatePayload
-   * @property {string} libraryItemId
-   * @property {string} [episodeId]
-   * @property {number} [duration]
-   * @property {number} [progress]
-   * @property {number} [currentTime]
-   * @property {boolean} [isFinished]
-   * @property {boolean} [hideFromContinueListening]
-   * @property {string} [ebookLocation]
-   * @property {number} [ebookProgress]
-   * @property {string} [finishedAt]
-   * @property {number} [lastUpdate]
    *
    * @param {ProgressUpdatePayload} progressPayload
    * @returns {Promise<{ mediaProgress: import('./MediaProgress'), error: [string], statusCode: [number] }>}
@@ -617,6 +709,7 @@ class User extends Model {
       mediaProgress = await this.sequelize.models.mediaProgress.create(newMediaProgressPayload)
       this.mediaProgresses.push(mediaProgress)
     }
+    userCache.maybeInvalidate(this)
     return {
       mediaProgress
     }
@@ -797,6 +890,21 @@ class User extends Model {
     }
 
     return hasUpdates
+  }
+
+  async update(values, options) {
+    userCache.maybeInvalidate(this)
+    return await super.update(values, options)
+  }
+
+  async save(options) {
+    userCache.maybeInvalidate(this)
+    return await super.save(options)
+  }
+
+  async destroy(options) {
+    userCache.delete(this.id)
+    await super.destroy(options)
   }
 }
 

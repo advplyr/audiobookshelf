@@ -41,6 +41,13 @@ Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/
 
 Join us on [Discord](https://discord.gg/HQgCbd6E75)
 
+### Demo
+
+Check out the web client demo: https://audiobooks.dev/ (thanks for hosting [@Vito0912](https://github.com/Vito0912)!)
+
+Username/password: `demo`/`demo` (user account)
+
+
 ### Android App (beta)
 
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
@@ -92,29 +99,33 @@ Toggle websockets support.
 Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
 
 ```bash
-server
-{
-        listen 443 ssl;
-        server_name <sub>.<domain>.<tld>;
+server {
+   listen 443 ssl;
+   server_name <sub>.<domain>.<tld>;
 
-        access_log /var/log/nginx/audiobookshelf.access.log;
-        error_log /var/log/nginx/audiobookshelf.error.log;
+   access_log /var/log/nginx/audiobookshelf.access.log;
+   error_log /var/log/nginx/audiobookshelf.error.log;
 
-        ssl_certificate      /path/to/certificate;
-        ssl_certificate_key  /path/to/key;
+   ssl_certificate      /path/to/certificate;
+   ssl_certificate_key  /path/to/key;
 
-        location / {
-                     proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
-                     proxy_set_header  X-Forwarded-Proto $scheme;
-                     proxy_set_header  Host              $host;
-                     proxy_set_header Upgrade            $http_upgrade;
-                     proxy_set_header Connection         "upgrade";
+   location / {
+      proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+      proxy_set_header  X-Forwarded-Proto $scheme;
+      proxy_set_header  Host              $host;
+      proxy_set_header Upgrade            $http_upgrade;
+      proxy_set_header Connection         "upgrade";
 
-                     proxy_http_version                  1.1;
+      proxy_http_version                  1.1;
 
-                     proxy_pass                          http://<URL_to_forward_to>;
-                     proxy_redirect                      http:// https://;
-                   }
+      proxy_pass                          http://<URL_to_forward_to>;
+      proxy_redirect                      http:// https://;
+
+      # Prevent 413 Request Entity Too Large error
+      # by increasing the maximum allowed size of the client request body
+      # For example, set it to 10 GiB
+      client_max_body_size                10240M;
+   }
 }
 ```
 
@@ -335,7 +346,7 @@ This application is built using [NodeJs](https://nodejs.org/).
 
 ### Localization
 
-Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations). <a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/horizontal-auto.svg" alt="Translation status" /> </a>
+Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations). <a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/abs-web-client/horizontal-auto.svg" alt="Translation status" /> </a>
 
 ### Dev Container Setup
 

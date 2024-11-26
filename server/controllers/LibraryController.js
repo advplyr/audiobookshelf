@@ -9,7 +9,6 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const seriesFilters = require('../utils/queries/seriesFilters')
 const fileUtils = require('../utils/fileUtils')
-const { asciiOnlyToLowerCase } = require('../utils/index')
 const { createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -18,6 +17,7 @@ const naturalSort = createNewSortInstance({
 const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
@@ -159,7 +159,7 @@ class LibraryController {
     SocketAuthority.emitter('library_added', library.toOldJSON(), userFilter)
 
     // Add library watcher
-    this.watcher.addLibrary(library)
+    Watcher.addLibrary(library)
 
     res.json(library.toOldJSON())
   }
@@ -236,12 +236,14 @@ class LibraryController {
     for (const key of keysToCheck) {
       if (!req.body[key]) continue
       if (typeof req.body[key] !== 'string') {
+        Logger.error(`[LibraryController] Invalid request. ${key} must be a string`)
         return res.status(400).send(`Invalid request. ${key} must be a string`)
       }
       updatePayload[key] = req.body[key]
     }
     if (req.body.displayOrder !== undefined) {
       if (isNaN(req.body.displayOrder)) {
+        Logger.error(`[LibraryController] Invalid request. displayOrder must be a number`)
         return res.status(400).send('Invalid request. displayOrder must be a number')
       }
       updatePayload.displayOrder = req.body.displayOrder
@@ -256,18 +258,29 @@ class LibraryController {
     }
 
     // Validate settings
+    const defaultLibrarySettings = Database.libraryModel.getDefaultLibrarySettingsForMediaType(req.library.mediaType)
     const updatedSettings = {
-      ...(req.library.settings || Database.libraryModel.getDefaultLibrarySettingsForMediaType(req.library.mediaType))
+      ...(req.library.settings || defaultLibrarySettings)
     }
+    // In case new settings are added in the future, ensure all settings are present
+    for (const key in defaultLibrarySettings) {
+      if (updatedSettings[key] === undefined) {
+        updatedSettings[key] = defaultLibrarySettings[key]
+      }
+    }
+
     let hasUpdates = false
     let hasUpdatedDisableWatcher = false
     let hasUpdatedScanCron = false
     if (req.body.settings) {
       for (const key in req.body.settings) {
-        if (updatedSettings[key] === undefined) continue
+        if (!Object.keys(defaultLibrarySettings).includes(key)) {
+          continue
+        }
 
         if (key === 'metadataPrecedence') {
           if (!Array.isArray(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Settings "metadataPrecedence" must be an array`)
             return res.status(400).send('Invalid request. Settings "metadataPrecedence" must be an array')
           }
           if (JSON.stringify(req.body.settings[key]) !== JSON.stringify(updatedSettings[key])) {
@@ -277,6 +290,7 @@ class LibraryController {
           }
         } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
           if (req.body.settings[key] !== null && typeof req.body.settings[key] !== 'string') {
+            Logger.error(`[LibraryController] Invalid request. Settings "${key}" must be a string`)
             return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -286,8 +300,35 @@ class LibraryController {
             updatedSettings[key] = req.body.settings[key]
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
+        } else if (key === 'markAsFinishedPercentComplete') {
+          if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be a number`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+          } else if (req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 100)) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be between 0 and 100`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 100`)
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            hasUpdates = true
+            updatedSettings[key] = Number(req.body.settings[key])
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
+        } else if (key === 'markAsFinishedTimeRemaining') {
+          if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be a number`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+          } else if (req.body.settings[key] !== null && Number(req.body.settings[key]) < 0) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be greater than or equal to 0`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be greater than or equal to 0`)
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            hasUpdates = true
+            updatedSettings[key] = Number(req.body.settings[key])
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
         } else {
           if (typeof req.body.settings[key] !== typeof updatedSettings[key]) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)
             return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
@@ -329,6 +370,7 @@ class LibraryController {
               return false
             })
           if (!success) {
+            Logger.error(`[LibraryController] Invalid folder directory "${path}"`)
             return res.status(400).send(`Invalid folder directory "${path}"`)
           }
         }
@@ -399,7 +441,7 @@ class LibraryController {
       req.library.libraryFolders = await req.library.getLibraryFolders()
 
       // Update watcher
-      this.watcher.updateLibrary(req.library)
+      Watcher.updateLibrary(req.library)
 
       hasUpdates = true
     }
@@ -425,7 +467,7 @@ class LibraryController {
    */
   async delete(req, res) {
     // Remove library watcher
-    this.watcher.removeLibrary(req.library)
+    Watcher.removeLibrary(req.library)
 
     // Remove collections for library
     const numCollectionsRemoved = await Database.collectionModel.removeAllForLibrary(req.library.id)
@@ -462,8 +504,21 @@ class LibraryController {
       await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
     }
 
+    // Set PlaybackSessions libraryId to null
+    const [sessionsUpdated] = await Database.playbackSessionModel.update(
+      {
+        libraryId: null
+      },
+      {
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    )
+    Logger.info(`[LibraryController] Updated ${sessionsUpdated} playback sessions to remove library id`)
+
     const libraryJson = req.library.toOldJSON()
-    await Database.removeLibrary(req.library.id)
+    await req.library.destroy()
 
     // Re-order libraries
     await Database.libraryModel.resetDisplayOrder()
@@ -493,8 +548,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: undefined,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -503,6 +558,7 @@ class LibraryController {
       collapseseries: req.query.collapseseries === '1',
       include: include.join(',')
     }
+
     payload.offset = payload.page * payload.limit
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
@@ -594,8 +650,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -666,8 +722,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: 0,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      limit: req.query.limit || 0,
+      page: req.query.page || 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -702,8 +758,8 @@ class LibraryController {
     const payload = {
       results: [],
       total: playlistsForUser.length,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     if (payload.limit) {
@@ -734,7 +790,7 @@ class LibraryController {
    * @param {Response} res
    */
   async getUserPersonalizedShelves(req, res) {
-    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
+    const limitPerShelf = req.query.limit || 10
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
@@ -807,8 +863,8 @@ class LibraryController {
       return res.status(400).send('Invalid request. Query param "q" must be a string')
     }
 
-    const limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    const query = asciiOnlyToLowerCase(req.query.q.trim())
+    const limit = req.query.limit || 12
+    const query = req.query.q.trim()
 
     const matches = await libraryItemFilters.search(req.user, req.library, query, limit)
     res.json(matches)
@@ -865,8 +921,40 @@ class LibraryController {
    * @param {Response} res
    */
   async getAuthors(req, res) {
+    const isPaginated = req.query.limit && !isNaN(req.query.limit) && !isNaN(req.query.page)
+
+    const payload = {
+      results: [],
+      total: 0,
+      limit: isPaginated ? Number(req.query.limit) : 0,
+      page: isPaginated ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1',
+      include: req.query.include
+    }
+
+    // create order, limit and offset for pagination
+    let offset = isPaginated ? payload.page * payload.limit : undefined
+    let limit = isPaginated ? payload.limit : undefined
+    let order = undefined
+    const direction = payload.sortDesc ? 'DESC' : 'ASC'
+    if (payload.sortBy === 'name') {
+      order = [[Sequelize.literal('name COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'lastFirst') {
+      order = [[Sequelize.literal('lastFirst COLLATE NOCASE'), direction]]
+    } else if (payload.sortBy === 'addedAt') {
+      order = [['createdAt', direction]]
+    } else if (payload.sortBy === 'updatedAt') {
+      order = [['updatedAt', direction]]
+    } else if (payload.sortBy === 'numBooks') {
+      offset = undefined
+      limit = undefined
+    }
+
     const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
-    const authors = await Database.authorModel.findAll({
+    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
       where: {
         libraryId: req.library.id
       },
@@ -880,10 +968,13 @@ class LibraryController {
           attributes: []
         }
       },
-      order: [[Sequelize.literal('name COLLATE NOCASE'), 'ASC']]
+      order: order,
+      limit: limit,
+      offset: offset,
+      distinct: true
     })
 
-    const oldAuthors = []
+    let oldAuthors = []
 
     for (const author of authors) {
       const oldAuthor = author.toOldJSONExpanded(author.books.length)
@@ -891,9 +982,25 @@ class LibraryController {
       oldAuthors.push(oldAuthor)
     }
 
-    res.json({
-      authors: oldAuthors
-    })
+    // numBooks sort is handled post-query
+    if (payload.sortBy === 'numBooks') {
+      oldAuthors.sort((a, b) => (payload.sortDesc ? b.numBooks - a.numBooks : a.numBooks - b.numBooks))
+      if (isPaginated) {
+        const startIndex = payload.page * payload.limit
+        const endIndex = startIndex + payload.limit
+        oldAuthors = oldAuthors.slice(startIndex, endIndex)
+      }
+    }
+
+    payload.results = oldAuthors
+    if (isPaginated) {
+      payload.total = count
+      res.json(payload)
+    } else {
+      res.json({
+        authors: payload.results
+      })
+    }
   }
 
   /**
@@ -1088,8 +1195,8 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+      limit: req.query.limit || 0,
+      page: req.query.page || 0
     }
 
     const offset = payload.page * payload.limit
@@ -1176,6 +1283,44 @@ class LibraryController {
   }
 
   /**
+   * GET: /api/libraries/:id/podcast-titles
+   *
+   * Get podcast titles with itunesId and libraryItemId for library
+   * Used on the podcast add page in order to check if a podcast is already in the library and redirect to it
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async getPodcastTitles(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to get podcast titles`)
+      return res.sendStatus(403)
+    }
+
+    const podcasts = await Database.podcastModel.findAll({
+      attributes: ['id', 'title', 'itunesId'],
+      include: {
+        model: Database.libraryItemModel,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    })
+
+    res.json({
+      podcasts: podcasts.map((p) => {
+        return {
+          title: p.title,
+          itunesId: p.itunesId,
+          libraryItemId: p.libraryItem.id,
+          libraryId: p.libraryItem.libraryId
+        }
+      })
+    })
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -1192,6 +1337,17 @@ class LibraryController {
       return res.status(404).send('Library not found')
     }
     req.library = library
+
+    // Ensure pagination query params are positive integers
+    for (const queryKey of ['limit', 'page']) {
+      if (req.query[queryKey] !== undefined) {
+        req.query[queryKey] = !isNaN(req.query[queryKey]) ? Number(req.query[queryKey]) : 0
+        if (!Number.isInteger(req.query[queryKey]) || req.query[queryKey] < 0) {
+          return res.status(400).send(`Invalid request. ${queryKey} must be a positive integer`)
+        }
+      }
+    }
+
     next()
   }
 }

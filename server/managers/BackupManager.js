@@ -15,13 +15,12 @@ const { getFileSize } = require('../utils/fileUtils')
 
 const Backup = require('../objects/Backup')
 const CacheManager = require('./CacheManager')
+const NotificationManager = require('./NotificationManager')
 
 class BackupManager {
-  constructor(notificationManager) {
+  constructor() {
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
     this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
-    /** @type {import('./NotificationManager')} */
-    this.notificationManager = notificationManager
 
     this.scheduleTask = null
 
@@ -301,7 +300,7 @@ class BackupManager {
     const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
       Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
       const errorMsg = error?.message || error || 'Unknown Error'
-      this.notificationManager.onBackupFailed(errorMsg)
+      NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -313,7 +312,7 @@ class BackupManager {
     const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
       const errorMsg = error?.message || error || 'Unknown Error'
-      this.notificationManager.onBackupFailed(errorMsg)
+      NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -344,7 +343,7 @@ class BackupManager {
     }
 
     // Notification for backup successfully completed
-    this.notificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
+    NotificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
 
     return true
   }

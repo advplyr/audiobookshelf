@@ -315,9 +315,10 @@ module.exports = {
   async search(user, library, query, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const normalizedQuery = query
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchAuthor = Database.matchExpression('author', normalizedQuery)
+    const textSearchQuery = await Database.createTextSearchQuery(query)
+
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchAuthor = textSearchQuery.matchExpression('author')
 
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
@@ -366,7 +367,7 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search tags
     const tagMatches = []

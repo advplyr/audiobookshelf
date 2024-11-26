@@ -219,7 +219,7 @@ module.exports = {
         mediaWhere[key] = {
           [Sequelize.Op.or]: [null, '']
         }
-      } else if (['genres', 'tags', 'narrators'].includes(value)) {
+      } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value)) {
         mediaWhere[value] = {
           [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
         }
@@ -228,6 +228,12 @@ module.exports = {
       } else if (value === 'series') {
         mediaWhere['$series.id$'] = null
       }
+    } else if (group === 'publishedDecades') {
+      const startYear = parseInt(value)
+      const endYear = parseInt(value, 10) + 9
+      mediaWhere = Sequelize.where(Sequelize.literal('CAST(`book`.`publishedYear` AS INTEGER)'), {
+        [Sequelize.Op.between]: [startYear, endYear]
+      })
     }
 
     return { mediaWhere, replacements }
@@ -253,7 +259,7 @@ module.exports = {
     } else if (sortBy === 'media.duration') {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
-      return [['publishedYear', dir]]
+      return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
@@ -499,7 +505,6 @@ module.exports = {
     }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
-
     let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
 
     // User permissions
@@ -975,10 +980,10 @@ module.exports = {
   async search(user, library, query, limit, offset) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
-    const normalizedQuery = query
+    const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchSubtitle = Database.matchExpression('subtitle', normalizedQuery)
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchSubtitle = textSearchQuery.matchExpression('subtitle')
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
@@ -1041,7 +1046,7 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search narrators
     const narratorMatches = []
@@ -1095,7 +1100,7 @@ module.exports = {
     }
 
     // Search series
-    const matchName = Database.matchExpression('name', normalizedQuery)
+    const matchName = textSearchQuery.matchExpression('name')
     const allSeries = await Database.seriesModel.findAll({
       where: {
         [Sequelize.Op.and]: [
@@ -1136,7 +1141,7 @@ module.exports = {
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(library.id, normalizedQuery, limit, offset)
+    const authorMatches = await authorFilters.search(library.id, textSearchQuery, limit, offset)
 
     return {
       book: itemMatches,

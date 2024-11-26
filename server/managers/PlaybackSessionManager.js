@@ -119,6 +119,7 @@ class PlaybackSessionManager {
    * @returns
    */
   async syncLocalSession(user, sessionJson, deviceInfo) {
+    // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
     const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
@@ -127,6 +128,16 @@ class PlaybackSessionManager {
         id: sessionJson.id,
         success: false,
         error: 'Media item not found'
+      }
+    }
+
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
+    if (!library) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSession: Library not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
+      return {
+        id: sessionJson.id,
+        success: false,
+        error: 'Library not found'
       }
     }
 
@@ -199,7 +210,9 @@ class PlaybackSessionManager {
         const updateResponse = await user.createUpdateMediaProgressFromPayload({
           libraryItemId: libraryItem.id,
           episodeId: session.episodeId,
-          ...session.mediaProgressObject
+          ...session.mediaProgressObject,
+          markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete,
+          markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining
         })
         result.progressSynced = !!updateResponse.mediaProgress
         if (result.progressSynced) {
@@ -211,7 +224,9 @@ class PlaybackSessionManager {
       const updateResponse = await user.createUpdateMediaProgressFromPayload({
         libraryItemId: libraryItem.id,
         episodeId: session.episodeId,
-        ...session.mediaProgressObject
+        ...session.mediaProgressObject,
+        markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete,
+        markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining
       })
       result.progressSynced = !!updateResponse.mediaProgress
       if (result.progressSynced) {
@@ -330,9 +345,16 @@ class PlaybackSessionManager {
    * @returns
    */
   async syncSession(user, session, syncData) {
+    // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
+      return null
+    }
+
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
+    if (!library) {
+      Logger.error(`[PlaybackSessionManager] syncSession Library not found "${libraryItem.libraryId}"`)
       return null
     }
 
@@ -343,9 +365,12 @@ class PlaybackSessionManager {
     const updateResponse = await user.createUpdateMediaProgressFromPayload({
       libraryItemId: libraryItem.id,
       episodeId: session.episodeId,
-      duration: syncData.duration,
+      // duration no longer required (v2.15.1) but used if available
+      duration: syncData.duration || session.duration || 0,
       currentTime: syncData.currentTime,
-      progress: session.progress
+      progress: session.progress,
+      markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining,
+      markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete
     })
     if (updateResponse.mediaProgress) {
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {

@@ -162,7 +162,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to save backup path', error)
-          const errorMsg = error.response?.data || this.$strings.ToastBackupPathUpdateFailed
+          const errorMsg = error.response?.data || this.$strings.ToastFailedToUpdate
           this.$toast.error(errorMsg)
         })
         .finally(() => {

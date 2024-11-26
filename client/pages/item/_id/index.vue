@@ -651,6 +651,11 @@ export default {
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
       }
     },
+    episodeDownloadQueueCleared(libraryItemId) {
+      if (libraryItemId === this.libraryItemId) {
+        this.episodeDownloadsQueued = []
+      }
+    },
     rssFeedOpen(data) {
       if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Opened', data)
@@ -794,6 +799,7 @@ export default {
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   },
   beforeDestroy() {
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
@@ -805,6 +811,7 @@ export default {
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   }
 }
 </script>
