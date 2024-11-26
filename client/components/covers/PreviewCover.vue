@@ -14,7 +14,7 @@
     <div v-if="imageFailed" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-red-100" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div class="w-full h-full border-2 border-error flex flex-col items-center justify-center">
         <img v-if="width > 100" src="/Logo.png" class="mb-2" :style="{ height: 40 * sizeMultiplier + 'px' }" />
-        <p class="text-center text-error" :style="{ fontSize: invalidCoverFontSize + 'rem' }">Invalid Cover</p>
+        <p class="text-center text-error" :style="{ fontSize: invalidCoverFontSize + 'rem' }" aria-hidden="true">Invalid Cover</p>
       </div>
     </div>
 
