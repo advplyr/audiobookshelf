@@ -1,12 +1,28 @@
+const { Request, Response, NextFunction } = require('express')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const fileUtils = require('../utils/fileUtils')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class BackupController {
   constructor() {}
 
+  /**
+   * GET: /api/backups
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   getAll(req, res) {
     res.json({
       backups: this.backupManager.backups.map((b) => b.toJSON()),
@@ -15,10 +31,26 @@ class BackupController {
     })
   }
 
+  /**
+   * POST: /api/backups
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   create(req, res) {
     this.backupManager.requestCreateBackup(res)
   }
 
+  /**
+   * DELETE: /api/backups/:id
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async delete(req, res) {
     await this.backupManager.removeBackup(req.backup)
 
@@ -27,6 +59,14 @@ class BackupController {
     })
   }
 
+  /**
+   * POST: /api/backups/upload
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   upload(req, res) {
     if (!req.files.file) {
       Logger.error('[BackupController] Upload backup invalid')
@@ -41,8 +81,8 @@ class BackupController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async updatePath(req, res) {
     // Validate path is not empty and is a string
@@ -86,10 +126,10 @@ class BackupController {
   }
 
   /**
-   * api/backups/:id/download
+   * GET: /api/backups/:id/download
    *
-   * @param {*} req
-   * @param {*} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   download(req, res) {
     if (global.XAccel) {
@@ -104,17 +144,26 @@ class BackupController {
   }
 
   /**
+   * GET: /api/backups/:id/apply
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   apply(req, res) {
     this.backupManager.requestApplyBackup(this.apiCacheManager, req.backup, res)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to access backups`, req.user)
+      Logger.error(`[BackupController] Non-admin user "${req.user.username}" attempting to access backups`)
       return res.sendStatus(403)
     }
 

@@ -203,23 +203,6 @@ export default {
       // This method returns immediately without waiting for the DOM to update
       return this.coverWidth
     },
-    /*
-    cardHeight() {
-      // This method returns immediately without waiting for the DOM to update
-      return this.coverHeight + this.detailsHeight
-    },
-    detailsHeight() {
-      if (!this.isAlternativeBookshelfView) return 0
-      const lineHeight = 1.5
-      const remSize = 16
-      const baseHeight = this.sizeMultiplier * lineHeight * remSize
-      const titleHeight = 0.9 * baseHeight
-      const line2Height = 0.8 * baseHeight
-      const line3Height = this.displaySortLine ? 0.8 * baseHeight : 0
-      const marginHeight = 8 * 2 * this.sizeMultiplier // py-2
-      return titleHeight + line2Height + line3Height + marginHeight
-    },
-    */
     sizeMultiplier() {
       return this.store.getters['user/getSizeMultiplier']
     },
@@ -244,9 +227,6 @@ export default {
     },
     isPodcast() {
       return this.mediaType === 'podcast' || this.store.getters['libraries/getCurrentLibraryMediaType'] === 'podcast'
-    },
-    isMusic() {
-      return this.mediaType === 'music'
     },
     isExplicit() {
       return this.mediaMetadata.explicit || false
@@ -350,7 +330,7 @@ export default {
     },
     displaySubtitle() {
       if (!this.libraryItem) return '\u00A0'
-      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
+      if (this.collapsedSeries) return `${this.collapsedSeries.numBooks} ${this.$strings.LabelBooks}`
       if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
       if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
       return ''
@@ -358,7 +338,6 @@ export default {
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
-      if (this.isMusic) return this.artist
       if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
@@ -368,14 +347,14 @@ export default {
     },
     displaySortLine() {
       if (this.collapsedSeries) return null
-      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
-      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
-      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
-      if (this.orderBy === 'media.duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
-      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
-      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} Episodes`
+      if (this.orderBy === 'mtimeMs') return this.$getString('LabelFileModifiedDate', [this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)])
+      if (this.orderBy === 'birthtimeMs') return this.$getString('LabelFileBornDate', [this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)])
+      if (this.orderBy === 'addedAt') return this.$getString('LabelAddedDate', [this.$formatDate(this._libraryItem.addedAt, this.dateFormat)])
+      if (this.orderBy === 'media.duration') return this.$strings.LabelDuration + ': ' + this.$elapsedPrettyExtended(this.media.duration, false)
+      if (this.orderBy === 'size') return this.$strings.LabelSize + ': ' + this.$bytesPretty(this._libraryItem.size)
+      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} ` + this.$strings.LabelEpisodes
       if (this.orderBy === 'media.metadata.publishedYear') {
-        if (this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
+        if (this.mediaMetadata.publishedYear) return this.$getString('LabelPublishedDate', [this.mediaMetadata.publishedYear])
         return '\u00A0'
       }
       return null
@@ -386,7 +365,6 @@ export default {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.recentEpisode.id)
     },
     userProgress() {
-      if (this.isMusic) return null
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
@@ -442,7 +420,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.ebookFormat
@@ -489,8 +467,6 @@ export default {
       return this.store.getters['user/getUserSetting']('showDetailsOnHover')
     },
     moreMenuItems() {
-      if (this.isMusic) return []
-
       if (this.recentEpisode) {
         const items = [
           {
@@ -735,7 +711,7 @@ export default {
     toggleFinished(confirmed = false) {
       if (!this.itemIsFinished && this.userProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${this.displayTitle}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [this.displayTitle]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleFinished(true)
@@ -780,18 +756,18 @@ export default {
         .then((data) => {
           var result = data.result
           if (!result) {
-            this.$toast.error(`Re-Scan Failed for "${this.title}"`)
+            this.$toast.error(this.$getString('ToastRescanFailed', [this.displayTitle]))
           } else if (result === 'UPDATED') {
-            this.$toast.success(`Re-Scan complete item was updated`)
+            this.$toast.success(this.$strings.ToastRescanUpdated)
           } else if (result === 'UPTODATE') {
-            this.$toast.success(`Re-Scan complete item was up to date`)
+            this.$toast.success(this.$strings.ToastRescanUpToDate)
           } else if (result === 'REMOVED') {
-            this.$toast.error(`Re-Scan complete item was removed`)
+            this.$toast.error(this.$strings.ToastRescanRemoved)
           }
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
-          this.$toast.error('Failed to scan library item')
+          this.$toast.error(this.$strings.ToastScanFailed)
         })
         .finally(() => {
           this.processing = false
@@ -848,7 +824,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove series from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -866,7 +842,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to hide item from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -881,7 +857,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: this.recentEpisode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -931,11 +907,11 @@ export default {
             axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeletedFailed)
               })
               .finally(() => {
                 this.processing = false
@@ -1041,7 +1017,7 @@ export default {
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
-                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+                  caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
                   duration: episode.audioFile.duration || null,
                   coverPath: this.media.coverPath || null
                 })

@@ -2,9 +2,9 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <!-- <span class="material-symbols text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
+        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
 
-        <ui-tooltip direction="top" :text="$strings.LabelVolume">
+        <ui-tooltip direction="left" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
@@ -13,7 +13,7 @@
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
-              <p class="text-sm sm:text-lg text-warning font-mono font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
+              <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
             </div>
           </button>
         </ui-tooltip>
@@ -43,20 +43,24 @@
         </ui-tooltip>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :hasNextChapter="hasNextChapter" :hasNextItemInQueue="hasNextItemInQueue" @prevChapter="prevChapter" @next="goToNext" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
 
-    <div class="flex">
-      <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
-      <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
-      <div class="flex-grow" />
-      <p class="text-xs sm:text-sm text-gray-300 pt-0.5 px-2 truncate">
-        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
-      </p>
-      <div class="flex-grow" />
-      <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
+    <div class="relative flex items-center justify-between">
+      <div class="flex-grow flex items-center">
+        <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
+        <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
+      </div>
+      <div class="absolute left-1/2 transform -translate-x-1/2">
+        <p class="text-xs sm:text-sm text-gray-300 pt-0.5 px-2 truncate">
+          {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
+        </p>
+      </div>
+      <div class="flex-grow flex items-center justify-end">
+        <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
+      </div>
     </div>
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :playback-rate="playbackRate" :chapters="chapters" @select="selectChapter" />
@@ -82,7 +86,8 @@ export default {
     sleepTimerType: String,
     isPodcast: Boolean,
     hideBookmarks: Boolean,
-    hideSleepTimer: Boolean
+    hideSleepTimer: Boolean,
+    hasNextItemInQueue: Boolean
   },
   data() {
     return {
@@ -145,7 +150,7 @@ export default {
       return Math.round((100 * time) / duration)
     },
     currentChapterName() {
-      return this.currentChapter ? this.currentChapter.title : ''
+      return this.currentChapter?.title || ''
     },
     currentChapterDuration() {
       if (!this.currentChapter) return 0
@@ -177,22 +182,6 @@ export default {
   methods: {
     toggleFullscreen(isFullscreen) {
       this.$store.commit('setPlayerIsFullscreen', isFullscreen)
-
-      var videoPlayerEl = document.getElementById('video-player')
-      if (videoPlayerEl) {
-        if (isFullscreen) {
-          videoPlayerEl.style.width = '100vw'
-          videoPlayerEl.style.height = '100vh'
-          videoPlayerEl.style.top = '0px'
-          videoPlayerEl.style.left = '0px'
-        } else {
-          videoPlayerEl.style.width = '384px'
-          videoPlayerEl.style.height = '216px'
-          videoPlayerEl.style.top = 'unset'
-          videoPlayerEl.style.bottom = '80px'
-          videoPlayerEl.style.left = '16px'
-        }
-      }
     },
     setDuration(duration) {
       this.duration = duration
@@ -239,6 +228,12 @@ export default {
       this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
       this.setPlaybackRate(this.playbackRate)
     },
+    playbackRateChanged(playbackRate) {
+      this.setPlaybackRate(playbackRate)
+      this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
+        console.error('Failed to update settings', err)
+      })
+    },
     setPlaybackRate(playbackRate) {
       this.$emit('setPlaybackRate', playbackRate)
     },
@@ -278,10 +273,13 @@ export default {
         this.seek(this.currentChapter.start)
       }
     },
-    nextChapter() {
-      if (!this.currentChapter || !this.hasNextChapter) return
-      var nextChapter = this.chapters[this.currentChapterIndex + 1]
-      this.seek(nextChapter.start)
+    goToNext() {
+      if (this.hasNextChapter) {
+        const nextChapter = this.chapters[this.currentChapterIndex + 1]
+        this.seek(nextChapter.start)
+      } else if (this.hasNextItemInQueue) {
+        this.$emit('nextItemInQueue')
+      }
     },
     setStreamReady() {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)

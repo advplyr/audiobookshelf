@@ -1,12 +1,10 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
-const Video = require('./mediaTypes/Video')
-const Music = require('./mediaTypes/Music')
 const { areEquivalent, copyValue } = require('../utils/index')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 
@@ -74,14 +72,10 @@ class LibraryItem {
       this.media = new Book(libraryItem.media)
     } else if (this.mediaType === 'podcast') {
       this.media = new Podcast(libraryItem.media)
-    } else if (this.mediaType === 'video') {
-      this.media = new Video(libraryItem.media)
-    } else if (this.mediaType === 'music') {
-      this.media = new Music(libraryItem.media)
     }
     this.media.libraryItemId = this.id
 
-    this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
+    this.libraryFiles = libraryItem.libraryFiles.map((f) => new LibraryFile(f))
 
     // Migration for v2.2.23 to set ebook library files as supplementary
     if (this.isBook && this.media.ebookFile) {
@@ -91,7 +85,6 @@ class LibraryItem {
         }
       }
     }
-
   }
 
   toJSON() {
@@ -115,7 +108,7 @@ class LibraryItem {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toJSON(),
-      libraryFiles: this.libraryFiles.map(f => f.toJSON())
+      libraryFiles: this.libraryFiles.map((f) => f.toJSON())
     }
   }
 
@@ -165,21 +158,24 @@ class LibraryItem {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toJSONExpanded(),
-      libraryFiles: this.libraryFiles.map(f => f.toJSON()),
+      libraryFiles: this.libraryFiles.map((f) => f.toJSON()),
       size: this.size
     }
   }
 
-  get isPodcast() { return this.mediaType === 'podcast' }
-  get isBook() { return this.mediaType === 'book' }
-  get isMusic() { return this.mediaType === 'music' }
+  get isPodcast() {
+    return this.mediaType === 'podcast'
+  }
+  get isBook() {
+    return this.mediaType === 'book'
+  }
   get size() {
     let total = 0
-    this.libraryFiles.forEach((lf) => total += lf.metadata.size)
+    this.libraryFiles.forEach((lf) => (total += lf.metadata.size))
     return total
   }
   get hasAudioFiles() {
-    return this.libraryFiles.some(lf => lf.fileType === 'audio')
+    return this.libraryFiles.some((lf) => lf.fileType === 'audio')
   }
   get hasMediaEntities() {
     return this.media.hasMediaEntities
@@ -201,17 +197,16 @@ class LibraryItem {
 
     for (const key in payload) {
       if (key === 'libraryFiles') {
-        this.libraryFiles = payload.libraryFiles.map(lf => lf.clone())
+        this.libraryFiles = payload.libraryFiles.map((lf) => lf.clone())
 
         // Set cover image
-        const imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
-        const coverMatch = imageFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
+        const imageFiles = this.libraryFiles.filter((lf) => lf.fileType === 'image')
+        const coverMatch = imageFiles.find((iFile) => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
         if (coverMatch) {
           this.media.coverPath = coverMatch.metadata.path
         } else if (imageFiles.length) {
           this.media.coverPath = imageFiles[0].metadata.path
         }
-
       } else if (this[key] !== undefined && key !== 'media') {
         this[key] = payload[key]
       }
@@ -283,46 +278,50 @@ class LibraryItem {
 
     const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
 
-    return fs.writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2)).then(async () => {
-      // Add metadata.json to libraryFiles array if it is new
-      let metadataLibraryFile = this.libraryFiles.find(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-      if (storeMetadataWithItem) {
-        if (!metadataLibraryFile) {
-          metadataLibraryFile = new LibraryFile()
-          await metadataLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
-          this.libraryFiles.push(metadataLibraryFile)
-        } else {
-          const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-          if (fileTimestamps) {
-            metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-            metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-            metadataLibraryFile.metadata.size = fileTimestamps.size
-            metadataLibraryFile.ino = fileTimestamps.ino
+    return fs
+      .writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2))
+      .then(async () => {
+        // Add metadata.json to libraryFiles array if it is new
+        let metadataLibraryFile = this.libraryFiles.find((lf) => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+        if (storeMetadataWithItem) {
+          if (!metadataLibraryFile) {
+            metadataLibraryFile = new LibraryFile()
+            await metadataLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+            this.libraryFiles.push(metadataLibraryFile)
+          } else {
+            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
+            if (fileTimestamps) {
+              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
+              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
+              metadataLibraryFile.metadata.size = fileTimestamps.size
+              metadataLibraryFile.ino = fileTimestamps.ino
+            }
+          }
+          const libraryItemDirTimestamps = await getFileTimestampsWithIno(this.path)
+          if (libraryItemDirTimestamps) {
+            this.mtimeMs = libraryItemDirTimestamps.mtimeMs
+            this.ctimeMs = libraryItemDirTimestamps.ctimeMs
           }
         }
-        const libraryItemDirTimestamps = await getFileTimestampsWithIno(this.path)
-        if (libraryItemDirTimestamps) {
-          this.mtimeMs = libraryItemDirTimestamps.mtimeMs
-          this.ctimeMs = libraryItemDirTimestamps.ctimeMs
-        }
-      }
 
-      Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
+        Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
 
-      return metadataLibraryFile
-    }).catch((error) => {
-      Logger.error(`[LibraryItem] Failed to save json file at "${metadataFilePath}"`, error)
-      return null
-    }).finally(() => {
-      this.isSavingMetadata = false
-    })
+        return metadataLibraryFile
+      })
+      .catch((error) => {
+        Logger.error(`[LibraryItem] Failed to save json file at "${metadataFilePath}"`, error)
+        return null
+      })
+      .finally(() => {
+        this.isSavingMetadata = false
+      })
   }
 
   removeLibraryFile(ino) {
     if (!ino) return false
-    const libraryFile = this.libraryFiles.find(lf => lf.ino === ino)
+    const libraryFile = this.libraryFiles.find((lf) => lf.ino === ino)
     if (libraryFile) {
-      this.libraryFiles = this.libraryFiles.filter(lf => lf.ino !== ino)
+      this.libraryFiles = this.libraryFiles.filter((lf) => lf.ino !== ino)
       this.updatedAt = Date.now()
       return true
     }
@@ -333,11 +332,11 @@ class LibraryItem {
    * Set the EBookFile from a LibraryFile
    * If null then ebookFile will be removed from the book
    * all ebook library files that are not primary are marked as supplementary
-   * 
-   * @param {LibraryFile} [libraryFile] 
+   *
+   * @param {LibraryFile} [libraryFile]
    */
   setPrimaryEbook(ebookLibraryFile = null) {
-    const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile)
+    const ebookLibraryFiles = this.libraryFiles.filter((lf) => lf.isEBookFile)
     for (const libraryFile of ebookLibraryFiles) {
       libraryFile.isSupplementary = ebookLibraryFile?.ino !== libraryFile.ino
     }

@@ -8,7 +8,7 @@
       <div class="flex-grow" />
       <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
-        <span class="material-symbols text-4xl">expand_more</span>
+        <span class="material-symbols text-4xl">&#xe313;</span>
       </div>
     </div>
     <transition name="slide">
@@ -18,7 +18,7 @@
             <th class="text-left px-4">{{ $strings.LabelPath }}</th>
             <th class="text-left w-24 min-w-24">{{ $strings.LabelSize }}</th>
             <th class="text-left px-4 w-24">
-              {{ $strings.LabelRead }} <ui-tooltip :text="$strings.LabelReadEbookWithoutProgress" direction="top" class="inline-block"><span class="material-symbols-outlined text-sm align-middle">info</span></ui-tooltip>
+              {{ $strings.LabelRead }} <ui-tooltip :text="$strings.LabelReadEbookWithoutProgress" direction="top" class="inline-block"><span class="material-symbols text-sm align-middle">info</span></ui-tooltip>
             </th>
             <th v-if="showMoreColumn" class="text-center w-16"></th>
           </tr>

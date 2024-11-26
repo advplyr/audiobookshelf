@@ -166,22 +166,6 @@ export const actions = {
         commit('set', [])
       })
     return true
-  },
-  loadLibraryFilterData({ state, commit, rootState }) {
-    if (!rootState.user || !rootState.user.user) {
-      console.error('libraries/loadLibraryFilterData - User not set')
-      return false
-    }
-
-    this.$axios
-      .$get(`/api/libraries/${state.currentLibraryId}/filterdata`)
-      .then((data) => {
-        commit('setLibraryFilterData', data)
-      })
-      .catch((error) => {
-        console.error('Failed', error)
-        commit('setLibraryFilterData', null)
-      })
   }
 }
 
@@ -256,7 +240,8 @@ export const mutations = {
       series: [],
       narrators: [],
       languages: [],
-      publishers: []
+      publishers: [],
+      publishedDecades: []
     }
     */
     const mediaMetadata = libraryItem.media.metadata
@@ -321,6 +306,16 @@ export const mutations = {
     if (mediaMetadata.publisher && !state.filterData.publishers.includes(mediaMetadata.publisher)) {
       state.filterData.publishers.push(mediaMetadata.publisher)
       state.filterData.publishers.sort((a, b) => a.localeCompare(b))
+    }
+
+    // Add publishedDecades
+    if (mediaMetadata.publishedYear && !isNaN(mediaMetadata.publishedYear)) {
+      const publishedYear = parseInt(mediaMetadata.publishedYear, 10)
+      const decade = (Math.floor(publishedYear / 10) * 10).toString()
+      if (!state.filterData.publishedDecades.includes(decade)) {
+        state.filterData.publishedDecades.push(decade)
+        state.filterData.publishedDecades.sort((a, b) => a - b)
+      }
     }
 
     // Add language

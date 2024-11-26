@@ -18,7 +18,7 @@
               <p class="font-normal ml-3 block truncate">{{ item.text }}</p>
 
               <div v-if="selected.includes(item.value)" class="text-yellow-400 absolute inset-y-0 right-0 my-auto w-5 h-5 mr-3 overflow-hidden">
-                <span class="material-symbols text-xl">checkmark</span>
+                <span class="material-symbols text-xl">check</span>
               </div>
             </li>
           </template>

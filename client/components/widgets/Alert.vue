@@ -1,7 +1,7 @@
 <template>
   <div class="w-full bg-opacity-5 border border-opacity-60 rounded-lg flex items-center relative py-4 pl-16" :class="wrapperClass">
     <div class="absolute top-0 left-4 h-full flex items-center">
-      <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+      <span class="material-symbols text-2xl">{{ icon }}</span>
     </div>
     <slot />
   </div>

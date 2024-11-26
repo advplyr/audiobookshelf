@@ -1,9 +1,22 @@
+const { Request, Response } = require('express')
 const CacheManager = require('../managers/CacheManager')
 
-class CacheController {
-  constructor() { }
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
 
-  // POST: api/cache/purge
+class CacheController {
+  constructor() {}
+
+  /**
+   * POST: /api/cache/purge
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async purgeCache(req, res) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
@@ -12,7 +25,12 @@ class CacheController {
     res.sendStatus(200)
   }
 
-  // POST: api/cache/items/purge
+  /**
+   * POST: /api/cache/items/purge
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async purgeItemsCache(req, res) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)

@@ -53,11 +53,11 @@ export default {
     })
 
     if (!author) {
-      return redirect(`/library/${store.state.libraries.currentLibraryId}/authors`)
+      return redirect(`/library/${store.state.libraries.currentLibraryId}/bookshelf/authors`)
     }
 
-    if (query.library) {
-      store.commit('libraries/setCurrentLibrary', query.library)
+    if (store.state.libraries.currentLibraryId !== author.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', author.libraryId)
     }
 
     return {
@@ -109,7 +109,7 @@ export default {
     authorRemoved(author) {
       if (author.id === this.author.id) {
         console.warn('Author was removed')
-        this.$router.replace(`/library/${this.currentLibraryId}/authors`)
+        this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/authors`)
       }
     }
   },

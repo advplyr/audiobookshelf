@@ -24,7 +24,7 @@
         </div>
         <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-author-card :key="entity.id" :author="entity" @hook:updated="updatedBookCard" class="mx-2e" @edit="editAuthor" />
+            <cards-author-card :key="entity.id" :authorMount="entity" @hook:updated="updatedBookCard" class="mx-2e" @edit="editAuthor" />
           </template>
         </div>
         <div v-if="shelf.type === 'narrators'" class="flex items-center">

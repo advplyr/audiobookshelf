@@ -1,8 +1,10 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('../../../server/libs/fsExtra')
 const EventEmitter = require('events')
+
+const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
 
 global.isWin = process.platform === 'win32'
 
@@ -81,9 +83,10 @@ describe('addCoverAndMetadataToFile', () => {
     ffmpegStub.run = sinon.stub().callsFake(() => {
       ffmpegStub.emit('end')
     })
-    const fsMove = sinon.stub(fs, 'move').resolves()
+    const copyStub = sinon.stub().resolves()
+    const fsRemoveStub = sinon.stub(fs, 'remove').resolves()
 
-    return { audioFilePath, coverFilePath, metadataFilePath, track, mimeType, ffmpegStub, fsMove }
+    return { audioFilePath, coverFilePath, metadataFilePath, track, mimeType, ffmpegStub, copyStub, fsRemoveStub }
   }
 
   let audioFilePath = null
@@ -92,7 +95,8 @@ describe('addCoverAndMetadataToFile', () => {
   let track = null
   let mimeType = null
   let ffmpegStub = null
-  let fsMove = null
+  let copyStub = null
+  let fsRemoveStub = null
   beforeEach(() => {
     const input = createTestSetup()
     audioFilePath = input.audioFilePath
@@ -101,12 +105,13 @@ describe('addCoverAndMetadataToFile', () => {
     track = input.track
     mimeType = input.mimeType
     ffmpegStub = input.ffmpegStub
-    fsMove = input.fsMove
+    copyStub = input.copyStub
+    fsRemoveStub = input.fsRemoveStub
   })
 
   it('should add cover image and metadata to audio file', async () => {
     // Act
-    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub)
+    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
 
     // Assert
     expect(ffmpegStub.input.calledThrice).to.be.true
@@ -125,10 +130,11 @@ describe('addCoverAndMetadataToFile', () => {
 
     expect(ffmpegStub.run.calledOnce).to.be.true
 
-    expect(fsMove.calledOnce).to.be.true
-    expect(fsMove.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
-    expect(fsMove.firstCall.args[1]).to.equal('/path/to/audio/file.mp3')
-    expect(fsMove.firstCall.args[2]).to.deep.equal({ overwrite: true })
+    expect(copyStub.calledOnce).to.be.true
+    expect(copyStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
+    expect(copyStub.firstCall.args[1]).to.equal('/path/to/audio/file.mp3')
+    expect(fsRemoveStub.calledOnce).to.be.true
+    expect(fsRemoveStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
 
     // Restore the stub
     sinon.restore()
@@ -139,7 +145,7 @@ describe('addCoverAndMetadataToFile', () => {
     coverFilePath = null
 
     // Act
-    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub)
+    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
 
     // Assert
     expect(ffmpegStub.input.calledTwice).to.be.true
@@ -157,10 +163,11 @@ describe('addCoverAndMetadataToFile', () => {
 
     expect(ffmpegStub.run.calledOnce).to.be.true
 
-    expect(fsMove.calledOnce).to.be.true
-    expect(fsMove.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
-    expect(fsMove.firstCall.args[1]).to.equal('/path/to/audio/file.mp3')
-    expect(fsMove.firstCall.args[2]).to.deep.equal({ overwrite: true })
+    expect(copyStub.callCount).to.equal(1)
+    expect(copyStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
+    expect(copyStub.firstCall.args[1]).to.equal('/path/to/audio/file.mp3')
+    expect(fsRemoveStub.calledOnce).to.be.true
+    expect(fsRemoveStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.mp3')
 
     // Restore the stub
     sinon.restore()
@@ -174,7 +181,7 @@ describe('addCoverAndMetadataToFile', () => {
 
     // Act
     try {
-      await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub)
+      await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
       expect.fail('Expected an error to be thrown')
     } catch (error) {
       // Assert
@@ -198,7 +205,8 @@ describe('addCoverAndMetadataToFile', () => {
 
     expect(ffmpegStub.run.calledOnce).to.be.true
 
-    expect(fsMove.called).to.be.false
+    expect(copyStub.called).to.be.false
+    expect(fsRemoveStub.called).to.be.false
 
     // Restore the stub
     sinon.restore()
@@ -210,7 +218,7 @@ describe('addCoverAndMetadataToFile', () => {
     audioFilePath = '/path/to/audio/file.m4b'
 
     // Act
-    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub)
+    await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
 
     // Assert
     expect(ffmpegStub.input.calledThrice).to.be.true
@@ -229,10 +237,11 @@ describe('addCoverAndMetadataToFile', () => {
 
     expect(ffmpegStub.run.calledOnce).to.be.true
 
-    expect(fsMove.calledOnce).to.be.true
-    expect(fsMove.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.m4b')
-    expect(fsMove.firstCall.args[1]).to.equal('/path/to/audio/file.m4b')
-    expect(fsMove.firstCall.args[2]).to.deep.equal({ overwrite: true })
+    expect(copyStub.calledOnce).to.be.true
+    expect(copyStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.m4b')
+    expect(copyStub.firstCall.args[1]).to.equal('/path/to/audio/file.m4b')
+    expect(fsRemoveStub.calledOnce).to.be.true
+    expect(fsRemoveStub.firstCall.args[0]).to.equal('/path/to/audio/file.tmp.m4b')
 
     // Restore the stub
     sinon.restore()

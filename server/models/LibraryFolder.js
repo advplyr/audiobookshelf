@@ -42,6 +42,18 @@ class LibraryFolder extends Model {
     })
     LibraryFolder.belongsTo(library)
   }
+
+  /**
+   * TODO: Update to use new model
+   */
+  toOldJSON() {
+    return {
+      id: this.id,
+      fullPath: this.path,
+      libraryId: this.libraryId,
+      addedAt: this.createdAt.valueOf()
+    }
+  }
 }
 
 module.exports = LibraryFolder

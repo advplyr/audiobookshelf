@@ -5,6 +5,13 @@ on:
   push:
     branches-ignore:
       - 'dependabot/**' # Don't run dependabot branches, as they are already covered by pull requests
+    # Only build when files in these directories have been changed
+    paths:
+      - client/**
+      - server/**
+      - test/**
+      - index.js
+      - package.json
 
 jobs:
   build:

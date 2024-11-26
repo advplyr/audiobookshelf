@@ -1,0 +1,20 @@
+name: Close fixed issues on release.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close issues marked as fixed upon a release.
+        uses: gcampbell-msft/fixed-pending-release@7fa1b75a0c04bcd4b375110522878e5f6100cff5
+        with:
+          label: 'awaiting release'
+          removeLabel: true
+          applyToAll: true
+          message: Fixed in [${releaseTag}](${releaseUrl}).

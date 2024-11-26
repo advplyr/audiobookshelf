@@ -31,7 +31,7 @@
               <div :key="author.id" class="w-full py-2">
                 <div class="flex items-center mb-1">
                   <p class="text-sm text-white text-opacity-70 w-36 pr-2 truncate">
-                    {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}</nuxt-link>
+                    {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}</nuxt-link>
                   </p>
                   <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
                     <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
@@ -75,7 +75,7 @@
                     <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.size) / largestItemSize) + '%' }" />
                   </div>
                   <div class="w-4 ml-3">
-                    <p class="text-sm font-bold">{{ $bytesPretty(ab.size) }}</p>
+                    <p class="text-sm font-bold whitespace-nowrap">{{ $bytesPretty(ab.size) }}</p>
                   </div>
                 </div>
               </div>

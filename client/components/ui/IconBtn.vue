@@ -5,7 +5,7 @@
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
       </svg>
     </div>
-    <span v-else :class="outlined ? 'material-symbols-outlined' : 'material-symbols'" :style="{ fontSize }">{{ icon }}</span>
+    <span v-else :class="outlined ? 'material-symbols' : 'material-symbols fill'" :style="{ fontSize }" v-html="icon" />
   </button>
 </template>
 

@@ -8,7 +8,7 @@ const ShareManager = require('../../managers/ShareManager')
 module.exports = {
   /**
    * User permissions to restrict books for explicit content & tags
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionBookWhereQuery(user) {
@@ -21,8 +21,8 @@ module.exports = {
         explicit: false
       })
     }
-    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
-      replacements['userTagsSelected'] = user.itemTagsSelected
+    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
       if (user.permissions.selectedTagsNotAccessible) {
         bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
       } else {
@@ -219,7 +219,7 @@ module.exports = {
         mediaWhere[key] = {
           [Sequelize.Op.or]: [null, '']
         }
-      } else if (['genres', 'tags', 'narrators'].includes(value)) {
+      } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value)) {
         mediaWhere[value] = {
           [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
         }
@@ -228,6 +228,12 @@ module.exports = {
       } else if (value === 'series') {
         mediaWhere['$series.id$'] = null
       }
+    } else if (group === 'publishedDecades') {
+      const startYear = parseInt(value)
+      const endYear = parseInt(value, 10) + 9
+      mediaWhere = Sequelize.where(Sequelize.literal('CAST(`book`.`publishedYear` AS INTEGER)'), {
+        [Sequelize.Op.between]: [startYear, endYear]
+      })
     }
 
     return { mediaWhere, replacements }
@@ -253,7 +259,7 @@ module.exports = {
     } else if (sortBy === 'media.duration') {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
-      return [['publishedYear', dir]]
+      return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
@@ -333,7 +339,7 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @param {string|null} filterGroup
    * @param {string|null} filterValue
    * @param {string} sortBy
@@ -499,7 +505,6 @@ module.exports = {
     }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
-
     let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
 
     // User permissions
@@ -636,8 +641,8 @@ module.exports = {
    * 2. Has no books in progress
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
-   * @param {import('../../objects/Library')} library
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/Library')} library
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @param {number} offset
@@ -672,7 +677,7 @@ module.exports = {
       where: [
         {
           id: {
-            [Sequelize.Op.notIn]: user.seriesHideFromContinueListening
+            [Sequelize.Op.notIn]: user.extraData?.seriesHideFromContinueListening || []
           },
           libraryId
         },
@@ -780,7 +785,7 @@ module.exports = {
    * Random selection of books that are not started
    *  - only includes the first book of a not-started series
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
    * @returns {object} {libraryItems:LibraryItem, count:number}
@@ -911,7 +916,7 @@ module.exports = {
   /**
    * Get book library items in a collection
    * @param {oldCollection} collection
-   * @returns {Promise<LibraryItem[]>}
+   * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
   async getLibraryItemsForCollection(collection) {
     if (!collection?.books?.length) {
@@ -954,31 +959,31 @@ module.exports = {
 
   /**
    * Get library items for series
-   * @param {import('../../objects/entities/Series')} oldSeries
-   * @param {import('../../objects/user/User')} [oldUser]
+   * @param {import('../../models/Series')} series
+   * @param {import('../../models/User')} [user]
    * @returns {Promise<import('../../objects/LibraryItem')[]>}
    */
-  async getLibraryItemsForSeries(oldSeries, oldUser) {
-    const { libraryItems } = await this.getFilteredLibraryItems(oldSeries.libraryId, oldUser, 'series', oldSeries.id, null, null, false, [], null, null)
+  async getLibraryItemsForSeries(series, user) {
+    const { libraryItems } = await this.getFilteredLibraryItems(series.libraryId, user, 'series', series.id, null, null, false, [], null, null)
     return libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
   },
 
   /**
    * Search books, authors, series
-   * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/User')} user
+   * @param {import('../../models/Library')} library
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
-  async search(oldUser, oldLibrary, query, limit, offset) {
-    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(oldUser)
+  async search(user, library, query, limit, offset) {
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
-    const normalizedQuery = await Database.getNormalizedQuery(query)
+    const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchSubtitle = Database.matchExpression('subtitle', normalizedQuery)
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchSubtitle = textSearchQuery.matchExpression('subtitle')
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
@@ -1006,7 +1011,7 @@ module.exports = {
         {
           model: Database.libraryItemModel,
           where: {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         },
         {
@@ -1041,13 +1046,13 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search narrators
     const narratorMatches = []
     const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1064,7 +1069,7 @@ module.exports = {
     const tagMatches = []
     const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1081,7 +1086,7 @@ module.exports = {
     const genreMatches = []
     const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -1095,13 +1100,13 @@ module.exports = {
     }
 
     // Search series
-    const matchName = Database.matchExpression('name', normalizedQuery)
+    const matchName = textSearchQuery.matchExpression('name')
     const allSeries = await Database.seriesModel.findAll({
       where: {
         [Sequelize.Op.and]: [
           Sequelize.literal(matchName),
           {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         ]
       },
@@ -1130,13 +1135,13 @@ module.exports = {
         return Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSON()
       })
       seriesMatches.push({
-        series: series.getOldSeries().toJSON(),
+        series: series.toOldJSON(),
         books
       })
     }
 
     // Search authors
-    const authorMatches = await authorFilters.search(oldLibrary.id, normalizedQuery, limit, offset)
+    const authorMatches = await authorFilters.search(library.id, textSearchQuery, limit, offset)
 
     return {
       book: itemMatches,

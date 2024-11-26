@@ -2,7 +2,7 @@
   <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-1 sm:p-4 mb-4">
     <!-- hack to get icon fonts loaded on init -->
     <div class="h-0 w-0 overflow-hidden opacity-0">
-      <span class="material-symbols-outlined">close</span>
+      <span class="material-symbols">close</span>
       <span class="abs-icons icon-audiobookshelf" />
     </div>
 
@@ -38,7 +38,7 @@
         <!-- next button -->
         <ui-btn small :disabled="yearInReviewVariant >= 2 || processingYearInReview" class="inline-flex items-center font-semibold" @click="yearInReviewVariant++">
           <span class="hidden sm:inline-block pl-2">{{ $strings.ButtonNext }}</span>
-          <span class="material-symbols-outlined text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
+          <span class="material-symbols text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
         </ui-btn>
       </div>
       <stats-year-in-review ref="yearInReview" :variant="yearInReviewVariant" :year="yearInReviewYear" :processing.sync="processingYearInReview" />
@@ -74,7 +74,7 @@
           <!-- next button -->
           <ui-btn small :disabled="yearInReviewServerVariant >= 2 || processingYearInReviewServer" class="inline-flex items-center font-semibold" @click="yearInReviewServerVariant++">
             <span class="hidden sm:inline-block pl-2">{{ $strings.ButtonNext }}</span>
-            <span class="material-symbols-outlined text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
+            <span class="material-symbols text-lg sm:pl-1 py-px sm:py-0">chevron_right</span>
           </ui-btn>
         </div>
       </div>

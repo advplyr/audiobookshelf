@@ -23,7 +23,7 @@
             <div class="w-full flex flex-row items-center justify-center">
               <ui-btn v-if="backup.serverVersion && backup.key" small color="primary" @click="applyBackup(backup)">{{ $strings.ButtonRestore }}</ui-btn>
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
-                <span class="material-symbols-outlined text-2xl text-error">error_outline</span>
+                <span class="material-symbols text-2xl text-error">error_outline</span>
               </ui-tooltip>
 
               <button aria-label="Download Backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
@@ -186,7 +186,7 @@ export default {
   mounted() {
     this.loadBackups()
     if (this.$route.query.backup) {
-      this.$toast.success('Backup applied successfully')
+      this.$toast.success(this.$strings.ToastBackupAppliedSuccess)
     }
   }
 }

@@ -1,12 +1,11 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
-const { asciiOnlyToLowerCase } = require('../index')
 
 module.exports = {
   /**
    * User permissions to restrict podcasts for explicit content & tags
-   * @param {import('../../objects/user/User')} user
+   * @param {import('../../models/User')} user
    * @returns {{ podcastWhere:Sequelize.WhereOptions, replacements:object }}
    */
   getUserPermissionPodcastWhereQuery(user) {
@@ -17,8 +16,9 @@ module.exports = {
         explicit: false
       })
     }
-    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
-      replacements['userTagsSelected'] = user.itemTagsSelected
+
+    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
       if (user.permissions.selectedTagsNotAccessible) {
         podcastWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
       } else {
@@ -29,6 +29,7 @@ module.exports = {
         )
       }
     }
+
     return {
       podcastWhere,
       replacements
@@ -98,7 +99,7 @@ module.exports = {
   /**
    * Get library items for podcast media type using filter and sort
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {[string]} filterGroup
    * @param {[string]} filterValue
    * @param {string} sortBy
@@ -200,7 +201,7 @@ module.exports = {
   /**
    * Get podcast episodes filtered and sorted
    * @param {string} libraryId
-   * @param {oldUser} user
+   * @param {import('../../models/User')} user
    * @param {[string]} filterGroup
    * @param {[string]} filterValue
    * @param {string} sortBy
@@ -304,19 +305,20 @@ module.exports = {
 
   /**
    * Search podcasts
-   * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/User')} user
+   * @param {import('../../models/Library')} library
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{podcast:object[], tags:object[]}}
    */
-  async search(oldUser, oldLibrary, query, limit, offset) {
-    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+  async search(user, library, query, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const normalizedQuery = await Database.getNormalizedQuery(query)
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchAuthor = Database.matchExpression('author', normalizedQuery)
+    const textSearchQuery = await Database.createTextSearchQuery(query)
+
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchAuthor = textSearchQuery.matchExpression('author')
 
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
@@ -344,7 +346,7 @@ module.exports = {
         {
           model: Database.libraryItemModel,
           where: {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         }
       ],
@@ -365,13 +367,13 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search tags
     const tagMatches = []
     const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.tags) WHERE json_valid(p.tags) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -388,7 +390,7 @@ module.exports = {
     const genreMatches = []
     const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.genres) WHERE json_valid(p.genres) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -410,14 +412,14 @@ module.exports = {
 
   /**
    * Most recent podcast episodes not finished
-   * @param {import('../../objects/user/User')} oldUser
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/User')} user
+   * @param {import('../../models/Library')} library
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<object[]>}
    */
-  async getRecentEpisodes(oldUser, oldLibrary, limit, offset) {
-    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(oldUser)
+  async getRecentEpisodes(user, library, limit, offset) {
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
     const episodes = await Database.podcastEpisodeModel.findAll({
       where: {
@@ -434,14 +436,14 @@ module.exports = {
           include: {
             model: Database.libraryItemModel,
             where: {
-              libraryId: oldLibrary.id
+              libraryId: library.id
             }
           }
         },
         {
           model: Database.mediaProgressModel,
           where: {
-            userId: oldUser.id
+            userId: user.id
           },
           required: false
         }

@@ -4,7 +4,7 @@ const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
-const { filePathToPOSIX } = require('./fileUtils')
+const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
 const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
@@ -53,8 +53,9 @@ async function extractCoverArt(filepath, outputpath) {
   await fs.ensureDir(dirname)
 
   return new Promise((resolve) => {
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     var ffmpeg = Ffmpeg(filepath)
-    ffmpeg.addOption(['-map 0:v', '-frames:v 1'])
+    ffmpeg.addOption(['-map 0:v:0', '-frames:v 1'])
     ffmpeg.output(outputpath)
 
     ffmpeg.on('start', (cmd) => {
@@ -76,6 +77,7 @@ module.exports.extractCoverArt = extractCoverArt
 //This should convert based on the output file extension as well
 async function resizeImage(filePath, outputPath, width, height) {
   return new Promise((resolve) => {
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     var ffmpeg = Ffmpeg(filePath)
     ffmpeg.addOption(['-vf', `scale=${width || -1}:${height || -1}`])
     ffmpeg.addOutput(outputPath)
@@ -102,7 +104,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       method: 'GET',
       responseType: 'stream',
       headers: {
-        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
+        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
       timeout: 30000
     }).catch((error) => {
@@ -111,6 +113,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
     if (!response) return resolve(false)
 
+    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
@@ -250,11 +253,12 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @param {string} metadataFilePath - Path to the ffmetadata file.
  * @param {number} track - The track number to embed in the audio file.
  * @param {string} mimeType - The MIME type of the audio file.
- * @param {Ffmpeg} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
  * @param {function(number): void|null} progressCB - A callback function to report progress.
+ * @param {import('../libs/fluentFfmpeg/index').FfmpegCommand} ffmpeg - The Ffmpeg instance to use (optional). Used for dependency injection in tests.
+ * @param {function(string, string): Promise<void>} copyFunc - The function to use for copying files (optional). Used for dependency injection in tests.
  * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
-async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg()) {
+async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg(), copyFunc = copyToExisting) {
   const isMp4 = mimeType === 'audio/mp4'
   const isMp3 = mimeType === 'audio/mpeg'
 
@@ -295,6 +299,12 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         '-metadata:s:v',
         'comment=Cover' // add comment metadata to cover image stream
       ])
+      const ext = Path.extname(coverFilePath).toLowerCase()
+      if (ext === '.webp') {
+        ffmpeg.outputOptions([
+          '-c:v mjpeg' // convert webp images to jpeg
+        ])
+      }
     } else {
       ffmpeg.outputOptions([
         '-map 0:v?' // retain video stream from input file if exists
@@ -316,7 +326,8 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         Logger.debug('[ffmpegHelpers] ffmpeg stderr:', stderr)
         Logger.debug('[ffmpegHelpers] Moving temp file to audio file path:', `"${tempFilePath}"`, '->', `"${audioFilePath}"`)
         try {
-          await fs.move(tempFilePath, audioFilePath, { overwrite: true })
+          await copyFunc(tempFilePath, audioFilePath)
+          await fs.remove(tempFilePath)
           resolve()
         } catch (error) {
           Logger.error(`[ffmpegHelpers] Failed to move temp file to audio file path: "${tempFilePath}" -> "${audioFilePath}"`, error)
@@ -369,9 +380,8 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     copyright: metadata.publisher,
     publisher: metadata.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
+    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join('; ')
   }
-
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
       delete ffmetadata[key]
@@ -390,9 +400,9 @@ module.exports.getFFMetadataObject = getFFMetadataObject
  * @param {number} duration - The total duration of the audio tracks.
  * @param {string} itemCachePath - The path to the item cache.
  * @param {string} outputFilePath - The path to the output file.
- * @param {Object} encodingOptions - The options for encoding the audio.
+ * @param {import('../managers/AbMergeManager').AbMergeEncodeOptions} encodingOptions - The options for encoding the audio.
  * @param {Function} [progressCB=null] - The callback function to track the progress of the merge.
- * @param {Object} [ffmpeg=Ffmpeg()] - The FFmpeg instance to use for merging.
+ * @param {import('../libs/fluentFfmpeg/index').FfmpegCommand} [ffmpeg=Ffmpeg()] - The FFmpeg instance to use for merging.
  * @returns {Promise<void>} A promise that resolves when the audio files are merged successfully.
  */
 async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFilePath, encodingOptions, progressCB = null, ffmpeg = Ffmpeg()) {

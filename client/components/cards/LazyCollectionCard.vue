@@ -57,22 +57,10 @@ export default {
       return this.store.getters['libraries/getBookCoverAspectRatio']
     },
     cardWidth() {
-      return this.width || this.coverHeight * 2
+      return this.width || (this.coverHeight / this.bookCoverAspectRatio) * 2
     },
     coverHeight() {
       return this.height * this.sizeMultiplier
-    },
-    cardHeight() {
-      return this.coverHeight + this.bottomTextHeight
-    },
-    bottomTextHeight() {
-      if (!this.isAlternativeBookshelfView) return 0 // bottom text appears on top of the divider
-      const lineHeight = 1.5
-      const remSize = 16
-      const baseHeight = this.sizeMultiplier * lineHeight * remSize
-      const titleHeight = this.labelFontSize * baseHeight
-      const paddingHeight = 4 * 2 * this.sizeMultiplier // py-1
-      return titleHeight + paddingHeight
     },
     labelFontSize() {
       if (this.width < 160) return 0.75

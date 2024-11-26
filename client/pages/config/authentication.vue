@@ -317,7 +317,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
-          this.$toast.error(this.$strings.ToastServerSettingsUpdateFailed)
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.savingSettings = false

@@ -21,7 +21,8 @@ class CronManager {
 
   /**
    * Initialize library scan crons & podcast download crons
-   * @param {import('../objects/Library')[]} libraries
+   *
+   * @param {import('../models/Library')[]} libraries
    */
   async init(libraries) {
     this.initOpenSessionCleanupCron()
@@ -46,7 +47,7 @@ class CronManager {
 
   /**
    * Initialize library scan crons
-   * @param {import('../objects/Library')[]} libraries
+   * @param {import('../models/Library')[]} libraries
    */
   initLibraryScanCrons(libraries) {
     for (const library of libraries) {
@@ -59,12 +60,12 @@ class CronManager {
   /**
    * Start cron schedule for library
    *
-   * @param {import('../objects/Library')} _library
+   * @param {import('../models/Library')} _library
    */
   startCronForLibrary(_library) {
     Logger.debug(`[CronManager] Init library scan cron for ${_library.name} on schedule ${_library.settings.autoScanCronExpression}`)
     const libScanCron = cron.schedule(_library.settings.autoScanCronExpression, async () => {
-      const library = await Database.libraryModel.getOldById(_library.id)
+      const library = await Database.libraryModel.findByIdWithFolders(_library.id)
       if (!library) {
         Logger.error(`[CronManager] Library not found for scan cron ${_library.id}`)
       } else {
@@ -79,11 +80,19 @@ class CronManager {
     })
   }
 
+  /**
+   *
+   * @param {import('../models/Library')} library
+   */
   removeCronForLibrary(library) {
     Logger.debug(`[CronManager] Removing library scan cron for ${library.name}`)
     this.libraryScanCrons = this.libraryScanCrons.filter((lsc) => lsc.libraryId !== library.id)
   }
 
+  /**
+   *
+   * @param {import('../models/Library')} library
+   */
   updateLibraryScanCron(library) {
     const expression = library.settings.autoScanCronExpression
     const existingCron = this.libraryScanCrons.find((lsc) => lsc.libraryId === library.id)

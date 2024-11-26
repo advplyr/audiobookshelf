@@ -5,11 +5,11 @@
         <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
       </form>
       <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
-        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">search</span>
+        <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">&#xe8b6;</span>
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
       </div>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu">
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
           <p>{{ $strings.MessageThinking }}</p>
@@ -42,7 +42,7 @@
           <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelAuthors }}</p>
           <template v-for="item in authorResults">
             <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.id)}`">
+              <nuxt-link :to="`/author/${item.id}`">
                 <cards-author-search-card :author="item" />
               </nuxt-link>
             </li>
@@ -157,7 +157,7 @@ export default {
       clearTimeout(this.focusTimeout)
       this.focusTimeout = setTimeout(() => {
         this.showMenu = false
-      }, 200)
+      }, 100)
     },
     async runSearch(value) {
       this.lastSearch = value

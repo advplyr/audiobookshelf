@@ -18,6 +18,7 @@ const Task = require('../objects/Task')
 class LibraryScanner {
   constructor() {
     this.cancelLibraryScan = {}
+    /** @type {string[]} - library ids */
     this.librariesScanning = []
 
     this.scanningFilesChanged = false
@@ -26,27 +27,26 @@ class LibraryScanner {
   }
 
   /**
-   * @param {string} libraryId 
+   * @param {string} libraryId
    * @returns {boolean}
    */
   isLibraryScanning(libraryId) {
-    return this.librariesScanning.some(ls => ls.id === libraryId)
+    return this.librariesScanning.some((lid) => lid === libraryId)
   }
 
   /**
-   * 
-   * @param {string} libraryId 
+   *
+   * @param {string} libraryId
    */
   setCancelLibraryScan(libraryId) {
-    const libraryScanning = this.librariesScanning.find(ls => ls.id === libraryId)
-    if (!libraryScanning) return
+    if (!this.isLibraryScanning(libraryId)) return
     this.cancelLibraryScan[libraryId] = true
   }
 
   /**
-   * 
-   * @param {import('../objects/Library')} library 
-   * @param {boolean} [forceRescan] 
+   *
+   * @param {import('../models/Library')} library
+   * @param {boolean} [forceRescan]
    */
   async scan(library, forceRescan = false) {
     if (this.isLibraryScanning(library.id)) {
@@ -54,90 +54,109 @@ class LibraryScanner {
       return
     }
 
-    if (!library.folders.length) {
+    if (!library.libraryFolders.length) {
       Logger.warn(`[LibraryScanner] Library has no folders to scan "${library.name}"`)
       return
     }
 
-    if (library.isBook && library.settings.metadataPrecedence.join() !== library.lastScanMetadataPrecedence?.join()) {
+    const metadataPrecedence = library.settings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
+    if (library.isBook && metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
       const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
-      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${library.settings.metadataPrecedence.join()}]`)
+      Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${metadataPrecedence.join()}]`)
       forceRescan = true
     }
 
     const libraryScan = new LibraryScan()
     libraryScan.setData(library)
     libraryScan.verbose = true
-    this.librariesScanning.push(libraryScan.getScanEmitData)
+    this.librariesScanning.push(libraryScan.libraryId)
 
     const taskData = {
       libraryId: library.id,
       libraryName: library.name,
       libraryMediaType: library.mediaType
     }
-    const task = TaskManager.createAndAddTask('library-scan', `Scanning "${library.name}" library`, null, true, taskData)
+    const taskTitleString = {
+      text: `Scanning "${library.name}" library`,
+      key: 'MessageTaskScanningLibrary',
+      subs: [library.name]
+    }
+    const task = TaskManager.createAndAddTask('library-scan', taskTitleString, null, true, taskData)
 
     Logger.info(`[LibraryScanner] Starting${forceRescan ? ' (forced)' : ''} library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    const canceled = await this.scanLibrary(libraryScan, forceRescan)
+    try {
+      const canceled = await this.scanLibrary(libraryScan, forceRescan)
+      libraryScan.setComplete()
 
-    if (canceled) {
-      Logger.info(`[LibraryScanner] Library scan canceled for "${libraryScan.libraryName}"`)
-      delete this.cancelLibraryScan[libraryScan.libraryId]
+      Logger.info(`[LibraryScanner] Library scan "${libraryScan.id}" ${canceled ? 'canceled after' : 'completed in'} ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
+
+      if (!canceled) {
+        library.lastScan = Date.now()
+        library.lastScanVersion = packageJson.version
+        if (library.isBook) {
+          const newExtraData = library.extraData || {}
+          newExtraData.lastScanMetadataPrecedence = metadataPrecedence
+          library.extraData = newExtraData
+          library.changed('extraData', true)
+        }
+        await library.save()
+      }
+
+      task.data.scanResults = libraryScan.scanResults
+      if (canceled) {
+        const taskFinishedString = {
+          text: 'Task canceled by user',
+          key: 'MessageTaskCanceledByUser'
+        }
+        task.setFinished(taskFinishedString)
+      } else {
+        task.setFinished(null, true)
+      }
+    } catch (err) {
+      libraryScan.setComplete()
+
+      Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}.`, err)
+
+      task.data.scanResults = libraryScan.scanResults
+      const taskFailedString = {
+        text: 'Failed',
+        key: 'MessageTaskFailed'
+      }
+      task.setFailed(taskFailedString)
     }
 
-    libraryScan.setComplete()
+    if (this.cancelLibraryScan[libraryScan.libraryId]) delete this.cancelLibraryScan[libraryScan.libraryId]
+    this.librariesScanning = this.librariesScanning.filter((lid) => lid !== library.id)
 
-    Logger.info(`[LibraryScanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
-    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-
-    if (canceled && !libraryScan.totalResults) {
-      task.setFinished('Scan canceled')
-      TaskManager.taskFinished(task)
-
-      const emitData = libraryScan.getScanEmitData
-      emitData.results = null
-      return
-    }
-
-    library.lastScan = Date.now()
-    library.lastScanVersion = packageJson.version
-    if (library.isBook) {
-      library.lastScanMetadataPrecedence = library.settings.metadataPrecedence
-    }
-    await Database.libraryModel.updateFromOld(library)
-
-    task.setFinished(libraryScan.scanResultsString)
     TaskManager.taskFinished(task)
 
-    if (libraryScan.totalResults) {
-      libraryScan.saveLog()
-    }
+    libraryScan.saveLog()
   }
 
   /**
-   * 
-   * @param {import('./LibraryScan')} libraryScan 
+   *
+   * @param {import('./LibraryScan')} libraryScan
    * @param {boolean} forceRescan
    * @returns {Promise<boolean>} true if scan canceled
    */
   async scanLibrary(libraryScan, forceRescan) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(libraryScan.library.mediaType, libraryScan.libraryId)
+    await libraryFilters.getFilterData(libraryScan.libraryMediaType, libraryScan.libraryId)
 
     /** @type {LibraryItemScanData[]} */
     let libraryItemDataFound = []
 
     // Scan each library folder
-    for (let i = 0; i < libraryScan.folders.length; i++) {
-      const folder = libraryScan.folders[i]
+    for (let i = 0; i < libraryScan.libraryFolders.length; i++) {
+      const folder = libraryScan.libraryFolders[i]
       const itemDataFoundInFolder = await this.scanFolder(libraryScan.library, folder)
-      libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
+      libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.path}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     const existingLibraryItems = await Database.libraryItemModel.findAll({
       where: {
@@ -145,20 +164,16 @@ class LibraryScanner {
       }
     })
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     const libraryItemIdsMissing = []
     let oldLibraryItemsUpdated = []
     for (const existingLibraryItem of existingLibraryItems) {
       // First try to find matching library item with exact file path
-      let libraryItemData = libraryItemDataFound.find(lid => lid.path === existingLibraryItem.path)
+      let libraryItemData = libraryItemDataFound.find((lid) => lid.path === existingLibraryItem.path)
       if (!libraryItemData) {
         // Fallback to finding matching library item with matching inode value
-        libraryItemData = libraryItemDataFound.find(lid =>
-          ItemToItemInoMatch(lid, existingLibraryItem) ||
-          ItemToFileInoMatch(lid, existingLibraryItem) ||
-          ItemToFileInoMatch(existingLibraryItem, lid)
-        )
+        libraryItemData = libraryItemDataFound.find((lid) => ItemToItemInoMatch(lid, existingLibraryItem) || ItemToFileInoMatch(lid, existingLibraryItem) || ItemToFileInoMatch(existingLibraryItem, lid))
         if (libraryItemData) {
           libraryScan.addLog(LogLevel.INFO, `Library item with path "${existingLibraryItem.path}" was not found, but library item inode "${existingLibraryItem.ino}" was found at path "${libraryItemData.path}"`)
         }
@@ -166,7 +181,7 @@ class LibraryScanner {
 
       if (!libraryItemData) {
         // Podcast folder can have no episodes and still be valid
-        if (libraryScan.libraryMediaType === 'podcast' && await fs.pathExists(existingLibraryItem.path)) {
+        if (libraryScan.libraryMediaType === 'podcast' && (await fs.pathExists(existingLibraryItem.path))) {
           libraryScan.addLog(LogLevel.INFO, `Library item "${existingLibraryItem.relPath}" folder exists but has no episodes`)
         } else {
           libraryScan.addLog(LogLevel.WARN, `Library Item "${existingLibraryItem.path}" (inode: ${existingLibraryItem.ino}) is missing`)
@@ -184,7 +199,7 @@ class LibraryScanner {
           }
         }
       } else {
-        libraryItemDataFound = libraryItemDataFound.filter(lidf => lidf !== libraryItemData)
+        libraryItemDataFound = libraryItemDataFound.filter((lidf) => lidf !== libraryItemData)
         let libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
         if (libraryItemDataUpdated || forceRescan) {
           if (forceRescan || libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
@@ -210,16 +225,22 @@ class LibraryScanner {
       // Emit item updates in chunks of 10 to client
       if (oldLibraryItemsUpdated.length === 10) {
         // TODO: Should only emit to clients where library item is accessible
-        SocketAuthority.emitter('items_updated', oldLibraryItemsUpdated.map(li => li.toJSONExpanded()))
+        SocketAuthority.emitter(
+          'items_updated',
+          oldLibraryItemsUpdated.map((li) => li.toJSONExpanded())
+        )
         oldLibraryItemsUpdated = []
       }
 
-      if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+      if (this.shouldCancelScan(libraryScan)) return true
     }
     // Emit item updates to client
     if (oldLibraryItemsUpdated.length) {
       // TODO: Should only emit to clients where library item is accessible
-      SocketAuthority.emitter('items_updated', oldLibraryItemsUpdated.map(li => li.toJSONExpanded()))
+      SocketAuthority.emitter(
+        'items_updated',
+        oldLibraryItemsUpdated.map((li) => li.toJSONExpanded())
+      )
     }
 
     // Authors and series that were removed from books should be removed if they are now empty
@@ -228,18 +249,21 @@ class LibraryScanner {
     // Update missing library items
     if (libraryItemIdsMissing.length) {
       libraryScan.addLog(LogLevel.INFO, `Updating ${libraryItemIdsMissing.length} library items missing`)
-      await Database.libraryItemModel.update({
-        isMissing: true,
-        lastScan: Date.now(),
-        lastScanVersion: packageJson.version
-      }, {
-        where: {
-          id: libraryItemIdsMissing
+      await Database.libraryItemModel.update(
+        {
+          isMissing: true,
+          lastScan: Date.now(),
+          lastScanVersion: packageJson.version
+        },
+        {
+          where: {
+            id: libraryItemIdsMissing
+          }
         }
-      })
+      )
     }
 
-    if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+    if (this.shouldCancelScan(libraryScan)) return true
 
     // Add new library items
     if (libraryItemDataFound.length) {
@@ -256,28 +280,45 @@ class LibraryScanner {
         // Emit new items in chunks of 10 to client
         if (newOldLibraryItems.length === 10) {
           // TODO: Should only emit to clients where library item is accessible
-          SocketAuthority.emitter('items_added', newOldLibraryItems.map(li => li.toJSONExpanded()))
+          SocketAuthority.emitter(
+            'items_added',
+            newOldLibraryItems.map((li) => li.toJSONExpanded())
+          )
           newOldLibraryItems = []
         }
 
-        if (this.cancelLibraryScan[libraryScan.libraryId]) return true
+        if (this.shouldCancelScan(libraryScan)) return true
       }
       // Emit new items to client
       if (newOldLibraryItems.length) {
         // TODO: Should only emit to clients where library item is accessible
-        SocketAuthority.emitter('items_added', newOldLibraryItems.map(li => li.toJSONExpanded()))
+        SocketAuthority.emitter(
+          'items_added',
+          newOldLibraryItems.map((li) => li.toJSONExpanded())
+        )
       }
     }
+
+    libraryScan.addLog(LogLevel.INFO, `Scan completed. ${libraryScan.resultStats}`)
+    return false
+  }
+
+  shouldCancelScan(libraryScan) {
+    if (this.cancelLibraryScan[libraryScan.libraryId]) {
+      libraryScan.addLog(LogLevel.INFO, `Scan canceled. ${libraryScan.resultStats}`)
+      return true
+    }
+    return false
   }
 
   /**
    * Get scan data for library folder
-   * @param {import('../objects/Library')} library 
-   * @param {import('../objects/Folder')} folder 
+   * @param {import('../models/Library')} library
+   * @param {import('../models/LibraryFolder')} folder
    * @returns {LibraryItemScanData[]}
    */
   async scanFolder(library, folder) {
-    const folderPath = fileUtils.filePathToPOSIX(folder.fullPath)
+    const folderPath = fileUtils.filePathToPOSIX(folder.path)
 
     const pathExists = await fs.pathExists(folderPath)
     if (!pathExists) {
@@ -321,27 +362,29 @@ class LibraryScanner {
         continue
       }
 
-      items.push(new LibraryItemScanData({
-        libraryFolderId: folder.id,
-        libraryId: folder.libraryId,
-        mediaType: library.mediaType,
-        ino: libraryItemFolderStats.ino,
-        mtimeMs: libraryItemFolderStats.mtimeMs || 0,
-        ctimeMs: libraryItemFolderStats.ctimeMs || 0,
-        birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-        path: libraryItemData.path,
-        relPath: libraryItemData.relPath,
-        isFile,
-        mediaMetadata: libraryItemData.mediaMetadata || null,
-        libraryFiles: fileObjs
-      }))
+      items.push(
+        new LibraryItemScanData({
+          libraryFolderId: folder.id,
+          libraryId: folder.libraryId,
+          mediaType: library.mediaType,
+          ino: libraryItemFolderStats.ino,
+          mtimeMs: libraryItemFolderStats.mtimeMs || 0,
+          ctimeMs: libraryItemFolderStats.ctimeMs || 0,
+          birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
+          path: libraryItemData.path,
+          relPath: libraryItemData.relPath,
+          isFile,
+          mediaMetadata: libraryItemData.mediaMetadata || null,
+          libraryFiles: fileObjs
+        })
+      )
     }
     return items
   }
 
   /**
    * Scan files changed from Watcher
-   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates 
+   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates
    * @param {Task} pendingTask
    */
   async scanFilesChanged(fileUpdates, pendingTask) {
@@ -366,7 +409,7 @@ class LibraryScanner {
 
     for (const folderId in folderGroups) {
       const libraryId = folderGroups[folderId].libraryId
-      // const library = await Database.libraryModel.getOldById(libraryId)
+
       const library = await Database.libraryModel.findByPk(libraryId, {
         include: {
           model: Database.libraryFolderModel,
@@ -381,7 +424,7 @@ class LibraryScanner {
       }
       const folder = library.libraryFolders[0]
 
-      const relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
+      const relFilePaths = folderGroups[folderId].fileUpdates.map((fileUpdate) => fileUpdate.relPath)
       const fileUpdateGroup = scanUtils.groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths)
 
       if (!Object.keys(fileUpdateGroup).length) {
@@ -417,9 +460,15 @@ class LibraryScanner {
     if (results.added) resultStrs.push(`${results.added} added`)
     if (results.updated) resultStrs.push(`${results.updated} updated`)
     if (results.removed) resultStrs.push(`${results.removed} missing`)
-    let scanResultStr = 'Scan finished with no changes'
+    let scanResultStr = 'No changes needed'
     if (resultStrs.length) scanResultStr = resultStrs.join(', ')
-    pendingTask.setFinished(scanResultStr)
+
+    pendingTask.data.scanResults = {
+      ...results,
+      text: scanResultStr,
+      elapsed: Date.now() - pendingTask.startedAt
+    }
+    pendingTask.setFinished(null, true)
     TaskManager.taskFinished(pendingTask)
 
     this.scanningFilesChanged = false
@@ -432,7 +481,7 @@ class LibraryScanner {
 
   /**
    * Group array of PendingFileUpdate from Watcher by folder
-   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates 
+   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates
    * @returns {Record<string,{libraryId:string, folderId:string, fileUpdates:import('../Watcher').PendingFileUpdate[]}>}
    */
   getFileUpdatesGrouped(fileUpdates) {
@@ -453,9 +502,9 @@ class LibraryScanner {
 
   /**
    * Scan grouped paths for library folder coming from Watcher
-   * @param {import('../models/Library')} library 
-   * @param {import('../models/LibraryFolder')} folder 
-   * @param {Record<string, string[]>} fileUpdateGroup 
+   * @param {import('../models/Library')} library
+   * @param {import('../models/LibraryFolder')} folder
+   * @param {Record<string, string[]>} fileUpdateGroup
    * @returns {Promise<Record<string,number>>}
    */
   async scanFolderUpdates(library, folder, fileUpdateGroup) {
@@ -471,7 +520,7 @@ class LibraryScanner {
     for (const itemDir in updateGroup) {
       if (isSingleMediaFile(fileUpdateGroup, itemDir)) continue // Media in root path
 
-      const itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
+      const itemDirNestedFiles = fileUpdateGroup[itemDir].filter((b) => b.includes('/'))
       if (!itemDirNestedFiles.length) continue
 
       const firstNest = itemDirNestedFiles[0].split('/').shift()
@@ -523,7 +572,15 @@ class LibraryScanner {
 
       const potentialChildDirs = [fullPath]
       for (let i = 0; i < itemDirParts.length; i++) {
-        potentialChildDirs.push(Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir.split('/').slice(0, -1 - i).join('/')))
+        potentialChildDirs.push(
+          Path.posix.join(
+            fileUtils.filePathToPOSIX(folder.path),
+            itemDir
+              .split('/')
+              .slice(0, -1 - i)
+              .join('/')
+          )
+        )
       }
 
       // Check if book dir group is already an item
@@ -535,10 +592,7 @@ class LibraryScanner {
       let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
-        existingLibraryItem =
-          await findLibraryItemByItemToItemInoMatch(library.id, fullPath) ||
-          await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia) ||
-          await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir])
+        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
         if (existingLibraryItem) {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
@@ -564,7 +618,7 @@ class LibraryScanner {
           }
         }
         // Scan library item for updates
-        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
+        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" with id "${existingLibraryItem.id}" - scan for updates`)
         itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
@@ -603,7 +657,7 @@ class LibraryScanner {
 module.exports = new LibraryScanner()
 
 function ItemToFileInoMatch(libraryItem1, libraryItem2) {
-  return libraryItem1.isFile && libraryItem2.libraryFiles.some(lf => lf.ino === libraryItem1.ino)
+  return libraryItem1.isFile && libraryItem2.libraryFiles.some((lf) => lf.ino === libraryItem1.ino)
 }
 
 function ItemToItemInoMatch(libraryItem1, libraryItem2) {
@@ -611,9 +665,7 @@ function ItemToItemInoMatch(libraryItem1, libraryItem2) {
 }
 
 function hasAudioFiles(fileUpdateGroup, itemDir) {
-  return isSingleMediaFile(fileUpdateGroup, itemDir) ?
-    scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) :
-    fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
+  return isSingleMediaFile(fileUpdateGroup, itemDir) ? scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) : fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
 }
 
 function isSingleMediaFile(fileUpdateGroup, itemDir) {
@@ -627,8 +679,7 @@ async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
     libraryId: libraryId,
     ino: ino
   })
-  if (existingLibraryItem)
-    Logger.debug(`[LibraryScanner] Found library item with matching inode "${ino}" at path "${existingLibraryItem.path}"`)
+  if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with matching inode "${ino}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }
 
@@ -637,18 +688,20 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneOld([
+  const existingLibraryItem = await Database.libraryItemModel.findOneOld(
+    [
+      {
+        libraryId: libraryId
+      },
+      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+        [sequelize.Op.gt]: 0
+      })
+    ],
     {
-      libraryId: libraryId
-    },
-    sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
-      [sequelize.Op.gt]: 0
-    })
-  ], {
-    inode: ino
-  })
-  if (existingLibraryItem)
-    Logger.debug(`[LibraryScanner] Found library item with a library file matching inode "${ino}" at path "${existingLibraryItem.path}"`)
+      inode: ino
+    }
+  )
+  if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with a library file matching inode "${ino}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }
 
@@ -667,7 +720,6 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
       [sequelize.Op.in]: itemFileInos
     }
   })
-  if (existingLibraryItem)
-    Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
+  if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }

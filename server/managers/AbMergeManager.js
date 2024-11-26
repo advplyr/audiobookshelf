@@ -3,55 +3,94 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const TaskManager = require('./TaskManager')
 const Task = require('../objects/Task')
-const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const SocketAuthority = require('../SocketAuthority')
-const fileUtils = require('../utils/fileUtils')
+const { isWritable, copyToExisting } = require('../utils/fileUtils')
 const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
+
+/**
+ * @typedef AbMergeEncodeOptions
+ * @property {string} codec
+ * @property {string} channels
+ * @property {string} bitrate
+ */
 
 class AbMergeManager {
   constructor() {
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
 
+    /** @type {Task[]} */
     this.pendingTasks = []
   }
 
+  /**
+   *
+   * @param {string} libraryItemId
+   * @returns {Task|null}
+   */
   getPendingTaskByLibraryItemId(libraryItemId) {
     return this.pendingTasks.find((t) => t.task.data.libraryItemId === libraryItemId)
   }
 
+  /**
+   * Cancel and fail running task
+   *
+   * @param {Task} task
+   * @returns {Promise<void>}
+   */
   cancelEncode(task) {
-    task.setFailed('Task canceled by user')
+    const taskFailedString = {
+      text: 'Task canceled by user',
+      key: 'MessageTaskCanceledByUser'
+    }
+    task.setFailed(taskFailedString)
     return this.removeTask(task, true)
   }
 
-  async startAudiobookMerge(user, libraryItem, options = {}) {
+  /**
+   *
+   * @param {string} userId
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {AbMergeEncodeOptions} [options={}]
+   */
+  async startAudiobookMerge(userId, libraryItem, options = {}) {
     const task = new Task()
 
-    const audiobookDirname = Path.basename(libraryItem.path)
-    const targetFilename = audiobookDirname + '.m4b'
+    const audiobookBaseName = libraryItem.isFile ? Path.basename(libraryItem.path, Path.extname(libraryItem.path)) : Path.basename(libraryItem.path)
+    const targetFilename = audiobookBaseName + '.m4b'
     const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
     const tempFilepath = Path.join(itemCachePath, targetFilename)
     const ffmetadataPath = Path.join(itemCachePath, 'ffmetadata.txt')
+    const libraryItemDir = libraryItem.isFile ? Path.dirname(libraryItem.path) : libraryItem.path
     const taskData = {
       libraryItemId: libraryItem.id,
-      libraryItemPath: libraryItem.path,
-      userId: user.id,
+      libraryItemDir,
+      userId,
       originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
       inos: libraryItem.media.includedAudioFiles.map((f) => f.ino),
       tempFilepath,
       targetFilename,
-      targetFilepath: Path.join(libraryItem.path, targetFilename),
+      targetFilepath: Path.join(libraryItemDir, targetFilename),
       itemCachePath,
       ffmetadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, 1),
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })),
       coverPath: libraryItem.media.coverPath,
       ffmetadataPath,
-      duration: libraryItem.media.duration
+      duration: libraryItem.media.duration,
+      encodeOptions: options
     }
-    const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
-    task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
+
+    const taskTitleString = {
+      text: 'Encoding M4b',
+      key: 'MessageTaskEncodingM4b'
+    }
+    const taskDescriptionString = {
+      text: `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`,
+      key: 'MessageTaskEncodingM4bDescription',
+      subs: [libraryItem.media.metadata.title]
+    }
+    task.setData('encode-m4b', taskTitleString, taskDescriptionString, false, taskData)
     TaskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
@@ -62,11 +101,21 @@ class AbMergeManager {
     this.runAudiobookMerge(libraryItem, task, options || {})
   }
 
+  /**
+   *
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {Task} task
+   * @param {AbMergeEncodeOptions} encodingOptions
+   */
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
     // Make sure the target directory is writable
-    if (!(await fileUtils.isWritable(libraryItem.path))) {
-      Logger.error(`[AbMergeManager] Target directory is not writable: ${libraryItem.path}`)
-      task.setFailed('Target directory is not writable')
+    if (!(await isWritable(task.data.libraryItemDir))) {
+      Logger.error(`[AbMergeManager] Target directory is not writable: ${task.data.libraryItemDir}`)
+      const taskFailedString = {
+        text: 'Target directory is not writable',
+        key: 'MessageTaskTargetDirectoryNotWritable'
+      }
+      task.setFailed(taskFailedString)
       this.removeTask(task, true)
       return
     }
@@ -74,7 +123,11 @@ class AbMergeManager {
     // Create ffmetadata file
     if (!(await ffmpegHelpers.writeFFMetadataFile(task.data.ffmetadataObject, task.data.chapters, task.data.ffmetadataPath))) {
       Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
-      task.setFailed('Failed to write metadata file.')
+      const taskFailedString = {
+        text: 'Failed to write metadata file',
+        key: 'MessageTaskFailedToWriteMetadataFile'
+      }
+      task.setFailed(taskFailedString)
       this.removeTask(task, true)
       return
     }
@@ -105,7 +158,11 @@ class AbMergeManager {
         Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
       } else {
         Logger.error(`[AbMergeManager] mergeAudioFiles failed`, error)
-        task.setFailed('Failed to merge audio files')
+        const taskFailedString = {
+          text: 'Failed to merge audio files',
+          key: 'MessageTaskFailedToMergeAudioFiles'
+        }
+        task.setFailed(taskFailedString)
         this.removeTask(task, true)
       }
       return
@@ -131,26 +188,52 @@ class AbMergeManager {
       if (error.message === 'FFMPEG_CANCELED') {
         Logger.info(`[AbMergeManager] Task cancelled ${task.id}`)
       } else {
-        Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
-        task.setFailed('Failed to write metadata to m4b file')
+        Logger.error(`[AbMergeManager] Failed to embed metadata in file "${task.data.tempFilepath}"`)
+        const taskFailedString = {
+          text: `Failed to embed metadata in file ${Path.basename(task.data.tempFilepath)}`,
+          key: 'MessageTaskFailedToEmbedMetadataInFile',
+          subs: [Path.basename(task.data.tempFilepath)]
+        }
+        task.setFailed(taskFailedString)
         this.removeTask(task, true)
       }
       return
     }
 
     // Move library item tracks to cache
-    for (const trackPath of task.data.originalTrackPaths) {
+    for (const [index, trackPath] of task.data.originalTrackPaths.entries()) {
       const trackFilename = Path.basename(trackPath)
       const moveToPath = Path.join(task.data.itemCachePath, trackFilename)
       Logger.debug(`[AbMergeManager] Backing up original track "${trackPath}" to ${moveToPath}`)
-      await fs.move(trackPath, moveToPath, { overwrite: true }).catch((err) => {
-        Logger.error(`[AbMergeManager] Failed to move track "${trackPath}" to "${moveToPath}"`, err)
-      })
+      if (index === 0) {
+        // copy the first track to the cache directory
+        await fs.copy(trackPath, moveToPath).catch((err) => {
+          Logger.error(`[AbMergeManager] Failed to copy track "${trackPath}" to "${moveToPath}"`, err)
+        })
+      } else {
+        // move the rest of the tracks to the cache directory
+        await fs.move(trackPath, moveToPath, { overwrite: true }).catch((err) => {
+          Logger.error(`[AbMergeManager] Failed to move track "${trackPath}" to "${moveToPath}"`, err)
+        })
+      }
     }
 
-    // Move m4b to target
+    // Move m4b to target, preserving the original track's permissions
     Logger.debug(`[AbMergeManager] Moving m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`)
-    await fs.move(task.data.tempFilepath, task.data.targetFilepath)
+    try {
+      await copyToExisting(task.data.tempFilepath, task.data.originalTrackPaths[0])
+      await fs.rename(task.data.originalTrackPaths[0], task.data.targetFilepath)
+      await fs.remove(task.data.tempFilepath)
+    } catch (err) {
+      Logger.error(`[AbMergeManager] Failed to move m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`, err)
+      const taskFailedString = {
+        text: 'Failed to move m4b file',
+        key: 'MessageTaskFailedToMoveM4bFile'
+      }
+      task.setFailed(taskFailedString)
+      this.removeTask(task, true)
+      return
+    }
 
     // Remove ffmetadata file
     await fs.remove(task.data.ffmetadataPath)
@@ -160,6 +243,12 @@ class AbMergeManager {
     Logger.info(`[AbMergeManager] Ab task finished ${task.id}`)
   }
 
+  /**
+   * Remove ab merge task
+   *
+   * @param {Task} task
+   * @param {boolean} [removeTempFilepath=false]
+   */
   async removeTask(task, removeTempFilepath = false) {
     Logger.info('[AbMergeManager] Removing task ' + task.id)
 

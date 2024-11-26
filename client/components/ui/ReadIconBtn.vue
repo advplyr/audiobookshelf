@@ -24,12 +24,12 @@ export default {
   computed: {},
   methods: {
     clickBtn(e) {
+      e.stopPropagation()
       if (this.disabled) {
         e.preventDefault()
         return
       }
       this.$emit('click')
-      e.stopPropagation()
     }
   },
   mounted() {}

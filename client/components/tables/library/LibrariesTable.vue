@@ -76,8 +76,7 @@ export default {
       var newOrder = libraryOrderData.map((lib) => lib.id).join(',')
       if (currOrder !== newOrder) {
         this.$axios.$post('/api/libraries/order', libraryOrderData).then((response) => {
-          if (response.libraries && response.libraries.length) {
-            this.$toast.success('Library order saved', { timeout: 1500 })
+          if (response.libraries?.length) {
             this.$store.commit('libraries/set', response.libraries)
           }
         })

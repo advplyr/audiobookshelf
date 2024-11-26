@@ -130,7 +130,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to rename genre', error)
-          this.$toast.error('Failed to rename genre')
+          this.$toast.error(this.$strings.ToastRenameFailed)
         })
         .finally(() => {
           this.loading = false
@@ -147,7 +147,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove genre', error)
-          this.$toast.error('Failed to remove genre')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.loading = false

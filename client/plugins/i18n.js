@@ -25,6 +25,7 @@ const languageCodeMap = {
   pl: { label: 'Polski', dateFnsLocale: 'pl' },
   'pt-br': { label: 'Português (Brasil)', dateFnsLocale: 'ptBR' },
   ru: { label: 'Русский', dateFnsLocale: 'ru' },
+  sl: { label: 'Slovenščina', dateFnsLocale: 'sl' },
   sv: { label: 'Svenska', dateFnsLocale: 'sv' },
   uk: { label: 'Українська', dateFnsLocale: 'uk' },
   'vi-vn': { label: 'Tiếng Việt', dateFnsLocale: 'vi' },
@@ -88,10 +89,10 @@ Vue.prototype.$strings = { ...enUsStrings }
  * Get string and substitute
  *
  * @param {string} key
- * @param {string[]} subs
+ * @param {string[]} [subs=[]]
  * @returns {string}
  */
-Vue.prototype.$getString = (key, subs) => {
+Vue.prototype.$getString = (key, subs = []) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs?.length && Array.isArray(subs)) {
     return supplant(Vue.prototype.$strings[key], subs)

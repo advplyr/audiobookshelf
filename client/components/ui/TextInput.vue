@@ -23,10 +23,10 @@
       <span class="material-symbols text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
     </div>
     <div v-if="type === 'password' && isHovering" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
-      <span class="material-symbols-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
+      <span class="material-symbols text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
     </div>
     <div v-else-if="showCopy" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
-      <span class="material-symbols-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
+      <span class="material-symbols text-gray-400 cursor-pointer text-lg" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
     </div>
   </div>
 </template>
@@ -57,7 +57,8 @@ export default {
     inputName: String,
     showCopy: Boolean,
     step: [String, Number],
-    min: [String, Number]
+    min: [String, Number],
+    customInputClass: String
   },
   data() {
     return {
@@ -82,6 +83,7 @@ export default {
       _list.push(`py-${this.paddingY}`)
       if (this.noSpinner) _list.push('no-spinner')
       if (this.textCenter) _list.push('text-center')
+      if (this.customInputClass) _list.push(this.customInputClass)
       return _list.join(' ')
     },
     actualType() {

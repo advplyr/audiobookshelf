@@ -54,11 +54,19 @@
 
 <script>
 export default {
-  async asyncData({ params, redirect }) {
-    if (!params.library) {
-      console.error('No library...', params.library)
-      return redirect('/')
+  async asyncData({ params, redirect, store }) {
+    var libraryId = params.library
+    var libraryData = await store.dispatch('libraries/fetch', libraryId)
+    if (!libraryData) {
+      return redirect('/oops?message=Library not found')
     }
+
+    // Redirect book libraries
+    const library = libraryData.library
+    if (library.mediaType === 'book') {
+      return redirect(`/library/${libraryId}`)
+    }
+
     return {
       libraryId: params.library
     }
@@ -96,14 +104,11 @@ export default {
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
       }
     },
-    episodeDownloadQueueUpdated(downloadQueueDetails) {
-      this.episodeDownloadsQueued = downloadQueueDetails.queue.filter((q) => q.libraryId == this.libraryId)
-    },
     async loadInitialDownloadQueue() {
       this.processing = true
       const queuePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/episode-downloads`).catch((error) => {
         console.error('Failed to get download queue', error)
-        this.$toast.error('Failed to get download queue')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.processing = false
@@ -120,21 +125,15 @@ export default {
       this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
       this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
       this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
-      this.$root.socket.on('episode_download_queue_updated', this.episodeDownloadQueueUpdated)
     }
   },
   mounted() {
-    if (this.libraryId) {
-      this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
-    }
-
     this.loadInitialDownloadQueue()
   },
   beforeDestroy() {
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
-    this.$root.socket.off('episode_download_queue_updated', this.episodeDownloadQueueUpdated)
   }
 }
 </script>

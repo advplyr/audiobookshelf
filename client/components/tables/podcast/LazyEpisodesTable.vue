@@ -25,7 +25,6 @@
         </template>
       </div>
     </div>
-    <!-- <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p> -->
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
       <form @submit.prevent="submit" class="flex flex-grow">
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
@@ -93,17 +92,18 @@ export default {
   },
   computed: {
     contextMenuItems() {
-      if (!this.userIsAdminOrUp) return []
-      return [
-        {
-          text: 'Quick match all episodes',
+      const menuItems = []
+      if (this.userIsAdminOrUp) {
+        menuItems.push({
+          text: this.$strings.MessageQuickMatchAllEpisodes,
           action: 'quick-match-episodes'
-        },
-        {
-          text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
-          action: 'batch-mark-as-finished'
-        }
-      ]
+        })
+      }
+      menuItems.push({
+        text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
+        action: 'batch-mark-as-finished'
+      })
+      return menuItems
     },
     sortItems() {
       return [
@@ -246,7 +246,7 @@ export default {
         message: newIsFinished ? this.$strings.MessageConfirmMarkAllEpisodesFinished : this.$strings.MessageConfirmMarkAllEpisodesNotFinished,
         callback: (confirmed) => {
           if (confirmed) {
-            this.batchUpdateEpisodesFinished(this.episodesSorted, newIsFinished)
+            this.batchUpdateEpisodesFinished(this.episodesCopy, newIsFinished)
           }
         },
         type: 'yesNo'
@@ -261,21 +261,21 @@ export default {
       this.processing = true
 
       const payload = {
-        message: 'Quick matching episodes will overwrite details if a match is found. Only unmatched episodes will be updated. Are you sure?',
+        message: this.$strings.MessageConfirmQuickMatchEpisodes,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
               .$post(`/api/podcasts/${this.libraryItem.id}/match-episodes?override=1`)
               .then((data) => {
                 if (data.numEpisodesUpdated) {
-                  this.$toast.success(`${data.numEpisodesUpdated} episodes updated`)
+                  this.$toast.success(this.$getString('ToastEpisodeUpdateSuccess', [data.numEpisodesUpdated]))
                 } else {
-                  this.$toast.info('No changes were made')
+                  this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
                 }
               })
               .catch((error) => {
                 console.error('Failed to request match episodes', error)
-                this.$toast.error('Failed to match episodes')
+                this.$toast.error(this.$strings.ToastFailedToMatch)
               })
           }
           this.processing = false
@@ -295,7 +295,7 @@ export default {
         episodeId: episode.id,
         title: episode.title,
         subtitle: this.mediaMetadata.title,
-        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+        caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
         duration: episode.audioFile.duration || null,
         coverPath: this.media.coverPath || null
       }
@@ -305,6 +305,7 @@ export default {
       this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)
     },
     batchUpdateEpisodesFinished(episodes, newIsFinished) {
+      if (!episodes.length) return
       this.processing = true
 
       const updateProgressPayloads = episodes.map((episode) => {
@@ -371,7 +372,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: this.mediaMetadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.audioFile.duration || null,
             coverPath: this.media.coverPath || null
           })
@@ -513,6 +514,10 @@ export default {
       }
     },
     filterSortChanged() {
+      // Save filterKey and sortKey to local storage
+      localStorage.setItem('podcastEpisodesFilter', this.filterKey)
+      localStorage.setItem('podcastEpisodesSortBy', this.sortKey + (this.sortDesc ? '-desc' : ''))
+
       this.init()
     },
     refresh() {
@@ -535,6 +540,11 @@ export default {
     }
   },
   mounted() {
+    this.filterKey = localStorage.getItem('podcastEpisodesFilter') || 'incomplete'
+    const sortBy = localStorage.getItem('podcastEpisodesSortBy') || 'publishedAt-desc'
+    this.sortKey = sortBy.split('-')[0]
+    this.sortDesc = sortBy.split('-')[1] === 'desc'
+
     this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
     this.initListeners()
     this.init()

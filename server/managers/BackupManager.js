@@ -14,6 +14,8 @@ const fileUtils = require('../utils/fileUtils')
 const { getFileSize } = require('../utils/fileUtils')
 
 const Backup = require('../objects/Backup')
+const CacheManager = require('./CacheManager')
+const NotificationManager = require('./NotificationManager')
 
 class BackupManager {
   constructor() {
@@ -228,6 +230,9 @@ class BackupManager {
     // Reset api cache, set hooks again
     await apiCacheManager.reset()
 
+    // Clear metadata cache
+    await CacheManager.purgeAll()
+
     res.sendStatus(200)
 
     // Triggers browser refresh for all clients
@@ -294,6 +299,8 @@ class BackupManager {
     // Create backup sqlite file
     const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
       Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
+      const errorMsg = error?.message || error || 'Unknown Error'
+      NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -304,6 +311,8 @@ class BackupManager {
     // Zip sqlite file, /metadata/items, and /metadata/authors folders
     const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
+      const errorMsg = error?.message || error || 'Unknown Error'
+      NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
@@ -324,13 +333,18 @@ class BackupManager {
     }
 
     // Check remove oldest backup
-    if (this.backups.length > this.backupsToKeep) {
+    const removeOldest = this.backups.length > this.backupsToKeep
+    if (removeOldest) {
       this.backups.sort((a, b) => a.createdAt - b.createdAt)
 
       const oldBackup = this.backups.shift()
       Logger.debug(`[BackupManager] Removing old backup ${oldBackup.id}`)
       this.removeBackup(oldBackup)
     }
+
+    // Notification for backup successfully completed
+    NotificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
+
     return true
   }
 
@@ -348,7 +362,6 @@ class BackupManager {
   /**
    * @see https://github.com/TryGhost/node-sqlite3/pull/1116
    * @param {Backup} backup
-   * @promise
    */
   backupSqliteDb(backup) {
     const db = new sqlite3.Database(Database.dbPath)

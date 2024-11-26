@@ -1,26 +1,31 @@
+const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const { toNumber, isUUID } = require('../utils/index')
 
 const ShareManager = require('../managers/ShareManager')
 
+/**
+ * @typedef RequestUserObject
+ * @property {import('../models/User')} user
+ *
+ * @typedef {Request & RequestUserObject} RequestWithUser
+ */
+
 class SessionController {
   constructor() {}
 
-  async findOne(req, res) {
-    return res.json(req.playbackSession)
-  }
-
   /**
    * GET: /api/sessions
+   *
    * @this import('../routers/ApiRouter')
    *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async getAllWithUserData(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[SessionController] getAllWithUserData: Non-admin user requested all session data ${req.user.id}/"${req.user.username}"`)
+      Logger.error(`[SessionController] getAllWithUserData: Non-admin user "${req.user.username}" requested all session data`)
       return res.sendStatus(404)
     }
     // Validate "user" query
@@ -105,9 +110,17 @@ class SessionController {
     res.json(payload)
   }
 
+  /**
+   * GET: /api/sessions/open
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getOpenSessions(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[SessionController] getOpenSessions: Non-admin user requested open session data ${req.user.id}/"${req.user.username}"`)
+      Logger.error(`[SessionController] getOpenSessions: Non-admin user "${req.user.username}" requested open session data`)
       return res.sendStatus(404)
     }
 
@@ -127,25 +140,54 @@ class SessionController {
     })
   }
 
+  /**
+   * GET: /api/session/:id
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async getOpenSession(req, res) {
     const libraryItem = await Database.libraryItemModel.getOldById(req.playbackSession.libraryItemId)
     const sessionForClient = req.playbackSession.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }
 
-  // POST: api/session/:id/sync
+  /**
+   * POST: /api/session/:id/sync
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   sync(req, res) {
     this.playbackSessionManager.syncSessionRequest(req.user, req.playbackSession, req.body, res)
   }
 
-  // POST: api/session/:id/close
+  /**
+   * POST: /api/session/:id/close
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   close(req, res) {
     let syncData = req.body
     if (syncData && !Object.keys(syncData).length) syncData = null
     this.playbackSessionManager.closeSessionRequest(req.user, req.playbackSession, syncData, res)
   }
 
-  // DELETE: api/session/:id
+  /**
+   * DELETE: /api/session/:id
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   async delete(req, res) {
     // if session is open then remove it
     const openSession = this.playbackSessionManager.getSession(req.playbackSession.id)
@@ -164,12 +206,12 @@ class SessionController {
    * @typedef batchDeleteReqBody
    * @property {string[]} sessions
    *
-   * @param {import('express').Request<{}, {}, batchDeleteReqBody, {}>} req
-   * @param {import('express').Response} res
+   * @param {Request<{}, {}, batchDeleteReqBody, {}> & RequestUserObject} req
+   * @param {Response} res
    */
   async batchDelete(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[SessionController] Non-admin user attempted to batch delete sessions "${req.user.username}"`)
+      Logger.error(`[SessionController] Non-admin user "${req.user.username}" attempted to batch delete sessions`)
       return res.sendStatus(403)
     }
     // Validate session ids
@@ -200,16 +242,36 @@ class SessionController {
     }
   }
 
-  // POST: api/session/local
+  /**
+   * POST: /api/session/local
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   syncLocal(req, res) {
     this.playbackSessionManager.syncLocalSessionRequest(req, res)
   }
 
-  // POST: api/session/local-all
+  /**
+   * POST: /api/session/local-all
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
   syncLocalSessions(req, res) {
     this.playbackSessionManager.syncLocalSessionsRequest(req, res)
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   openSessionMiddleware(req, res, next) {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)
@@ -223,6 +285,12 @@ class SessionController {
     next()
   }
 
+  /**
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
   async middleware(req, res, next) {
     const playbackSession = await Database.getPlaybackSession(req.params.id)
     if (!playbackSession) {
@@ -231,10 +299,10 @@ class SessionController {
     }
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[SessionController] User attempted to delete without permission`, req.user)
+      Logger.warn(`[SessionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[SessionController] User attempted to update without permission', req.user.username)
+      Logger.warn(`[SessionController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
 

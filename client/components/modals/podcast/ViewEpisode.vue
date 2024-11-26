@@ -18,6 +18,23 @@
       <p dir="auto" class="text-lg font-semibold mb-6">{{ title }}</p>
       <div v-if="description" dir="auto" class="default-style" v-html="description" />
       <p v-else class="mb-2">{{ $strings.MessageNoDescription }}</p>
+
+      <div class="w-full h-px bg-white/5 my-4" />
+
+      <div class="flex items-center">
+        <div class="flex-grow">
+          <p class="font-semibold text-xs mb-1">{{ $strings.LabelFilename }}</p>
+          <p class="mb-2 text-xs">
+            {{ audioFileFilename }}
+          </p>
+        </div>
+        <div class="flex-grow">
+          <p class="font-semibold text-xs mb-1">{{ $strings.LabelSize }}</p>
+          <p class="mb-2 text-xs">
+            {{ audioFileSize }}
+          </p>
+        </div>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -54,7 +71,7 @@ export default {
       return this.episode.description || ''
     },
     media() {
-      return this.libraryItem ? this.libraryItem.media || {} : {}
+      return this.libraryItem?.media || {}
     },
     mediaMetadata() {
       return this.media.metadata || {}
@@ -64,6 +81,14 @@ export default {
     },
     podcastAuthor() {
       return this.mediaMetadata.author
+    },
+    audioFileFilename() {
+      return this.episode.audioFile?.metadata?.filename || ''
+    },
+    audioFileSize() {
+      const size = this.episode.audioFile?.metadata?.size || 0
+
+      return this.$bytesPretty(size)
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
