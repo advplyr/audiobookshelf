@@ -132,7 +132,8 @@ export default {
     jumpBackward() {
       if (!this.localAudioPlayer || !this.hasLoaded) return
       const currentTime = this.localAudioPlayer.getCurrentTime()
-      this.seek(Math.max(currentTime - 10, 0))
+      const jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount') || 10
+      this.seek(Math.max(currentTime - jumpBackwardAmount, 0))
     },
     setVolume(volume) {
       if (!this.localAudioPlayer || !this.hasLoaded) return
