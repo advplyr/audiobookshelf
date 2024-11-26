@@ -4,7 +4,7 @@
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-3xl mx-auto py-4">
-        <p class="text-xl mb-2 font-semibold px-4 md:px-0">{{ $strings.HeaderLatestEpisodes }}</p>
+        <p class="text-xl mb-2 font-semibold px-4 md:px-0" role="heading" aria-level="2">{{ $strings.HeaderLatestEpisodes }}</p>
         <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
         <template v-for="(episode, index) in episodesMapped">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
@@ -14,9 +14,9 @@
               <div class="flex md:hidden mb-2">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
                 <div class="flex-grow px-2">
-                  <div class="flex items-center">
+                  <div class="flex items-center" role="heading" aria-level="3">
                     <div class="flex" @click.stop>
-                      <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
+                      <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline" :aria-label="episode.title + ' - ' + episode.podcast.metadata.title">{{ episode.podcast.metadata.title }}</nuxt-link>
                     </div>
                     <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                   </div>
@@ -25,9 +25,9 @@
               </div>
               <!-- desktop -->
               <div class="hidden md:block">
-                <div class="flex items-center">
+                <div class="flex items-center" role="heading" aria-level="3">
                   <div class="flex" @click.stop>
-                    <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
+                    <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline" :aria-label="episode.title + ' - ' + episode.podcast.metadata.title">{{ episode.podcast.metadata.title }}</nuxt-link>
                   </div>
                   <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
                 </div>
@@ -35,35 +35,36 @@
               </div>
 
               <div class="flex items-center font-semibold text-gray-200">
-                <div v-if="episode.season || episode.episode">#</div>
-                <div v-if="episode.season">{{ episode.season }}x</div>
-                <div v-if="episode.episode">{{ episode.episode }}</div>
+                <p v-if="episode.season || episode.episode" class="sr-only">{{ (episode.season ? $getString('LabelSeasonNumber', [episode.season]) + ', ' : '') + (episode.episode ? $getString('LabelEpisodeNumber', [episode.episode]) : '')}}</p>
+                <div v-if="episode.season || episode.episode" aria-hidden="true">#</div>
+                <div v-if="episode.season" aria-hidden="true">{{ episode.season }}x</div>
+                <div v-if="episode.episode" aria-hidden="true">{{ episode.episode }}</div>
               </div>
 
               <div dir="auto" class="flex items-center mb-2">
-                <div class="font-semibold text-sm md:text-base">{{ episode.title }}</div>
+                <div class="font-semibold text-sm md:text-base" aria-hidden="true">{{ episode.title }}</div>
                 <widgets-podcast-type-indicator :type="episode.episodeType" />
               </div>
 
               <p dir="auto" class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
 
               <div class="flex items-center">
-                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress?.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
-                  <span v-if="episodeIdStreaming === episode.id" class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-                  <span v-else class="material-symbols fill text-2xl text-success">play_arrow</span>
-                  <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
+                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress?.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)" :aria-label="episodeIdStreaming === episode.id ? streamIsPlaying ? $strings.ButtonPause : $strings.ButtonPlay : ($strings.ButtonPlay + ' (' + getButtonText(episode) + ')')">
+                  <span v-if="episodeIdStreaming === episode.id" class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'" aria-hidden="true">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+                  <span v-else class="material-symbols fill text-2xl text-success" aria-hidden="true">play_arrow</span>
+                  <p class="pl-2 pr-1 text-sm font-semibold" aria-hidden="true">{{ getButtonText(episode) }}</p>
                 </button>
 
                 <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" direction="top">
-                  <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" />
+                  <ui-icon-btn :icon="playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick(episode)" :text="playerQueueEpisodeIdMap[episode.id] ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" />
                 </ui-tooltip>
 
                 <ui-tooltip :text="!!episode.progress?.isFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
-                  <ui-read-icon-btn :disabled="episodesProcessingMap[episode.id]" :is-read="!!episode.progress?.isFinished" borderless class="mx-1 mt-0.5" @click="toggleEpisodeFinished(episode)" />
+                  <ui-read-icon-btn :disabled="episodesProcessingMap[episode.id]" :is-read="!!episode.progress?.isFinished" borderless class="mx-1 mt-0.5" @click="toggleEpisodeFinished(episode)" :text="!!episode.progress?.isFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" />
                 </ui-tooltip>
 
                 <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
-                  <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist(episode)" />
+                  <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist(episode)" :text="$strings.LabelYourPlaylists" />
                 </ui-tooltip>
               </div>
             </div>
