@@ -18,18 +18,18 @@
  */
 async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
-  logger.info('[2.17.3 migration] UPGRADE BEGIN: 2.17.3-use-subfolder-for-oidc-redirect-uris')
+  logger.info('[2.17.4 migration] UPGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris')
 
   const serverSettings = await getServerSettings(queryInterface, logger)
   if (serverSettings.authActiveAuthMethods?.includes('openid')) {
-    logger.info('[2.17.3 migration] OIDC is enabled, adding authOpenIDSubfolderForRedirectURLs to server settings')
+    logger.info('[2.17.4 migration] OIDC is enabled, adding authOpenIDSubfolderForRedirectURLs to server settings')
     serverSettings.authOpenIDSubfolderForRedirectURLs = ''
     await updateServerSettings(queryInterface, logger, serverSettings)
   } else {
-    logger.info('[2.17.3 migration] OIDC is not enabled, no action required')
+    logger.info('[2.17.4 migration] OIDC is not enabled, no action required')
   }
 
-  logger.info('[2.17.3 migration] UPGRADE END: 2.17.3-use-subfolder-for-oidc-redirect-uris')
+  logger.info('[2.17.4 migration] UPGRADE END: 2.17.4-use-subfolder-for-oidc-redirect-uris')
 }
 
 /**
@@ -40,25 +40,25 @@ async function up({ context: { queryInterface, logger } }) {
  */
 async function down({ context: { queryInterface, logger } }) {
   // Downward migration script
-  logger.info('[2.17.3 migration] DOWNGRADE BEGIN: 2.17.3-use-subfolder-for-oidc-redirect-uris ')
+  logger.info('[2.17.4 migration] DOWNGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris ')
 
   // Remove the OIDC subfolder option from the server settings
   const serverSettings = await getServerSettings(queryInterface, logger)
   if (serverSettings.authOpenIDSubfolderForRedirectURLs !== undefined) {
-    logger.info('[2.17.3 migration] Removing authOpenIDSubfolderForRedirectURLs from server settings')
+    logger.info('[2.17.4 migration] Removing authOpenIDSubfolderForRedirectURLs from server settings')
     delete serverSettings.authOpenIDSubfolderForRedirectURLs
     await updateServerSettings(queryInterface, logger, serverSettings)
   } else {
-    logger.info('[2.17.3 migration] authOpenIDSubfolderForRedirectURLs not found in server settings, no action required')
+    logger.info('[2.17.4 migration] authOpenIDSubfolderForRedirectURLs not found in server settings, no action required')
   }
 
-  logger.info('[2.17.3 migration] DOWNGRADE END: 2.17.3-use-subfolder-for-oidc-redirect-uris ')
+  logger.info('[2.17.4 migration] DOWNGRADE END: 2.17.4-use-subfolder-for-oidc-redirect-uris ')
 }
 
 async function getServerSettings(queryInterface, logger) {
   const result = await queryInterface.sequelize.query('SELECT value FROM settings WHERE key = "server-settings";')
   if (!result[0].length) {
-    logger.error('[2.17.3 migration] Server settings not found')
+    logger.error('[2.17.4 migration] Server settings not found')
     throw new Error('Server settings not found')
   }
 
@@ -66,7 +66,7 @@ async function getServerSettings(queryInterface, logger) {
   try {
     serverSettings = JSON.parse(result[0][0].value)
   } catch (error) {
-    logger.error('[2.17.3 migration] Error parsing server settings:', error)
+    logger.error('[2.17.4 migration] Error parsing server settings:', error)
     throw error
   }
 
