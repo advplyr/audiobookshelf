@@ -78,6 +78,7 @@ class ServerSettings {
     this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
     this.authOpenIDGroupClaim = ''
     this.authOpenIDAdvancedPermsClaim = ''
+    this.authOpenIDSubfolderForRedirectURLs = undefined
 
     if (settings) {
       this.construct(settings)
@@ -139,6 +140,7 @@ class ServerSettings {
     this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
     this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
+    this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -240,7 +242,8 @@ class ServerSettings {
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim // Do not return to client
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
     }
   }
 
@@ -286,6 +289,7 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
 
       authOpenIDSamplePermissions: User.getSampleAbsPermissions()
     }
