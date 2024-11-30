@@ -48,6 +48,15 @@
         </div>
         <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareURLWillBe', [demoShareUrl])" />
         <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareExpirationWillBe', [expirationDateString])" />
+        <div class="flex items-center w-full md:w-1/2">
+          <p class="text-sm text-gray-300 py-1 px-1">{{ $strings.LabelDownloadable }}</p>
+          <ui-toggle-switch size="sm" v-model="isDownloadable" />
+          <ui-tooltip :text="$strings.LabelShareDownloadableHelp">
+            <p class="pl-4 text-sm">
+              <span class="material-symbols icon-text text-sm">info</span>
+            </p>
+          </ui-tooltip>
+        </div>
       </template>
       <div class="flex items-center pt-6">
         <div class="flex-grow" />
@@ -81,7 +90,8 @@ export default {
           text: this.$strings.LabelDays,
           value: 'days'
         }
-      ]
+      ],
+      isDownloadable: false
     }
   },
   watch: {
