@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Permitir sobrescribir detalles existentes de los libros seleccionados cuando sean encontrados",
   "LabelUpdatedAt": "Actualizado En",
   "LabelUploaderDragAndDrop": "Arrastre y suelte archivos o carpetas",
+  "LabelUploaderDragAndDropFilesOnly": "Arrastrar y soltar archivos",
   "LabelUploaderDropFiles": "Suelte los Archivos",
   "LabelUploaderItemFetchMetadataHelp": "Buscar título, autor y series automáticamente",
   "LabelUseAdvancedOptions": "Usar opciones avanzadas",
