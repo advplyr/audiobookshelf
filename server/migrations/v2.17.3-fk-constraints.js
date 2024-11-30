@@ -31,19 +31,28 @@ async function up({ context: { queryInterface, logger } }) {
       { field: 'libraryId', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
       { field: 'libraryFolderId', onDelete: 'SET NULL', onUpdate: 'CASCADE' }
     ]
-    await changeConstraints(queryInterface, 'libraryItems', libraryItemsConstraints)
-    logger.info('[2.17.3 migration] Finished updating libraryItems constraints')
+    if (await changeConstraints(queryInterface, 'libraryItems', libraryItemsConstraints)) {
+      logger.info('[2.17.3 migration] Finished updating libraryItems constraints')
+    } else {
+      logger.info('[2.17.3 migration] No changes needed for libraryItems constraints')
+    }
 
     logger.info('[2.17.3 migration] Updating feeds constraints')
     const feedsConstraints = [{ field: 'userId', onDelete: 'SET NULL', onUpdate: 'CASCADE' }]
-    await changeConstraints(queryInterface, 'feeds', feedsConstraints)
-    logger.info('[2.17.3 migration] Finished updating feeds constraints')
+    if (await changeConstraints(queryInterface, 'feeds', feedsConstraints)) {
+      logger.info('[2.17.3 migration] Finished updating feeds constraints')
+    } else {
+      logger.info('[2.17.3 migration] No changes needed for feeds constraints')
+    }
 
     if (await queryInterface.tableExists('mediaItemShares')) {
       logger.info('[2.17.3 migration] Updating mediaItemShares constraints')
       const mediaItemSharesConstraints = [{ field: 'userId', onDelete: 'SET NULL', onUpdate: 'CASCADE' }]
-      await changeConstraints(queryInterface, 'mediaItemShares', mediaItemSharesConstraints)
-      logger.info('[2.17.3 migration] Finished updating mediaItemShares constraints')
+      if (await changeConstraints(queryInterface, 'mediaItemShares', mediaItemSharesConstraints)) {
+        logger.info('[2.17.3 migration] Finished updating mediaItemShares constraints')
+      } else {
+        logger.info('[2.17.3 migration] No changes needed for mediaItemShares constraints')
+      }
     } else {
       logger.info('[2.17.3 migration] mediaItemShares table does not exist, skipping column change')
     }
@@ -54,18 +63,27 @@ async function up({ context: { queryInterface, logger } }) {
       { field: 'libraryId', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
       { field: 'userId', onDelete: 'SET NULL', onUpdate: 'CASCADE' }
     ]
-    await changeConstraints(queryInterface, 'playbackSessions', playbackSessionsConstraints)
-    logger.info('[2.17.3 migration] Finished updating playbackSessions constraints')
+    if (await changeConstraints(queryInterface, 'playbackSessions', playbackSessionsConstraints)) {
+      logger.info('[2.17.3 migration] Finished updating playbackSessions constraints')
+    } else {
+      logger.info('[2.17.3 migration] No changes needed for playbackSessions constraints')
+    }
 
     logger.info('[2.17.3 migration] Updating playlistMediaItems constraints')
     const playlistMediaItemsConstraints = [{ field: 'playlistId', onDelete: 'CASCADE', onUpdate: 'CASCADE' }]
-    await changeConstraints(queryInterface, 'playlistMediaItems', playlistMediaItemsConstraints)
-    logger.info('[2.17.3 migration] Finished updating playlistMediaItems constraints')
+    if (await changeConstraints(queryInterface, 'playlistMediaItems', playlistMediaItemsConstraints)) {
+      logger.info('[2.17.3 migration] Finished updating playlistMediaItems constraints')
+    } else {
+      logger.info('[2.17.3 migration] No changes needed for playlistMediaItems constraints')
+    }
 
     logger.info('[2.17.3 migration] Updating mediaProgresses constraints')
     const mediaProgressesConstraints = [{ field: 'userId', onDelete: 'CASCADE', onUpdate: 'CASCADE' }]
-    await changeConstraints(queryInterface, 'mediaProgresses', mediaProgressesConstraints)
-    logger.info('[2.17.3 migration] Finished updating mediaProgresses constraints')
+    if (await changeConstraints(queryInterface, 'mediaProgresses', mediaProgressesConstraints)) {
+      logger.info('[2.17.3 migration] Finished updating mediaProgresses constraints')
+    } else {
+      logger.info('[2.17.3 migration] No changes needed for mediaProgresses constraints')
+    }
 
     await execQuery(`COMMIT;`)
   } catch (error) {
@@ -103,59 +121,75 @@ async function down({ context: { queryInterface, logger } }) {
  * @property {string} onUpdate - The onUpdate constraint
  */
 
+/**
+ * @typedef SequelizeFKObj
+ * @property {{ model: string, key: string }} references
+ * @property {string} onDelete
+ * @property {string} onUpdate
+ */
+
+/**
+ * @param {Object} fk - The foreign key object from PRAGMA foreign_key_list
+ * @returns {SequelizeFKObj} - The foreign key object formatted for Sequelize
+ */
 const formatFKsPragmaToSequelizeFK = (fk) => {
-  let onDelete = fk['on_delete']
-  let onUpdate = fk['on_update']
-
-  if (fk.from === 'userId' || fk.from === 'libraryId' || fk.from === 'deviceId') {
-    onDelete = 'SET NULL'
-    onUpdate = 'CASCADE'
-  }
-
   return {
     references: {
       model: fk.table,
       key: fk.to
     },
-    constraints: {
-      onDelete,
-      onUpdate
-    }
+    onDelete: fk['on_delete'],
+    onUpdate: fk['on_update']
   }
 }
 
 /**
- * Extends the Sequelize describeTable function to include the foreign keys constraints in sqlite dbs
+ *
  * @param {import('sequelize').QueryInterface} queryInterface
- * @param {String} tableName - The table name
- * @param {ConstraintUpdateObj[]} constraints - constraints to update
+ * @param {string} tableName
+ * @param {ConstraintUpdateObj[]} constraints
+ * @returns {Promise<Record<string, SequelizeFKObj>|null>}
  */
-async function describeTableWithFKs(queryInterface, tableName, constraints) {
+async function getUpdatedForeignKeys(queryInterface, tableName, constraints) {
   const execQuery = queryInterface.sequelize.query.bind(queryInterface.sequelize)
   const quotedTableName = queryInterface.quoteIdentifier(tableName)
 
   const foreignKeys = await execQuery(`PRAGMA foreign_key_list(${quotedTableName});`)
 
+  let hasUpdates = false
   const foreignKeysByColName = foreignKeys.reduce((prev, curr) => {
     const fk = formatFKsPragmaToSequelizeFK(curr)
+
+    const constraint = constraints.find((c) => c.field === curr.from)
+    if (constraint && (constraint.onDelete !== fk.onDelete || constraint.onUpdate !== fk.onUpdate)) {
+      fk.onDelete = constraint.onDelete
+      fk.onUpdate = constraint.onUpdate
+      hasUpdates = true
+    }
+
     return { ...prev, [curr.from]: fk }
   }, {})
 
+  return hasUpdates ? foreignKeysByColName : null
+}
+
+/**
+ * Extends the Sequelize describeTable function to include the updated foreign key constraints
+ *
+ * @param {import('sequelize').QueryInterface} queryInterface
+ * @param {String} tableName
+ * @param {Record<string, SequelizeFKObj>} updatedForeignKeys
+ */
+async function describeTableWithFKs(queryInterface, tableName, updatedForeignKeys) {
   const tableDescription = await queryInterface.describeTable(tableName)
 
   const tableDescriptionWithFks = Object.entries(tableDescription).reduce((prev, [col, attributes]) => {
     let extendedAttributes = attributes
 
-    if (foreignKeysByColName[col]) {
-      // Use the constraints from the constraints array if they exist, otherwise use the existing constraints
-      const onDelete = constraints.find((c) => c.field === col)?.onDelete || foreignKeysByColName[col].constraints.onDelete
-      const onUpdate = constraints.find((c) => c.field === col)?.onUpdate || foreignKeysByColName[col].constraints.onUpdate
-
+    if (updatedForeignKeys[col]) {
       extendedAttributes = {
         ...extendedAttributes,
-        references: foreignKeysByColName[col].references,
-        onDelete,
-        onUpdate
+        ...updatedForeignKeys[col]
       }
     }
     return { ...prev, [col]: extendedAttributes }
@@ -171,8 +205,14 @@ async function describeTableWithFKs(queryInterface, tableName, constraints) {
  * @param {import('sequelize').QueryInterface} queryInterface
  * @param {string} tableName
  * @param {ConstraintUpdateObj[]} constraints
+ * @returns {Promise<boolean>} - Return false if no changes are needed, true otherwise
  */
 async function changeConstraints(queryInterface, tableName, constraints) {
+  const updatedForeignKeys = await getUpdatedForeignKeys(queryInterface, tableName, constraints)
+  if (!updatedForeignKeys) {
+    return false
+  }
+
   const execQuery = queryInterface.sequelize.query.bind(queryInterface.sequelize)
   const quotedTableName = queryInterface.quoteIdentifier(tableName)
 
@@ -180,7 +220,7 @@ async function changeConstraints(queryInterface, tableName, constraints) {
   const quotedBackupTableName = queryInterface.quoteIdentifier(backupTableName)
 
   try {
-    const tableDescriptionWithFks = await describeTableWithFKs(queryInterface, tableName, constraints)
+    const tableDescriptionWithFks = await describeTableWithFKs(queryInterface, tableName, updatedForeignKeys)
 
     const attributes = queryInterface.queryGenerator.attributesToSQL(tableDescriptionWithFks)
 
@@ -210,7 +250,7 @@ async function changeConstraints(queryInterface, tableName, constraints) {
       return Promise.reject(`Foreign key violations detected: ${JSON.stringify(result, null, 2)}`)
     }
 
-    return Promise.resolve()
+    return true
   } catch (error) {
     return Promise.reject(error)
   }
