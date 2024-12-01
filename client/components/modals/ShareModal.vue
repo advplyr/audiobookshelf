@@ -182,7 +182,8 @@ export default {
         slug: this.newShareSlug,
         mediaItemType: 'book',
         mediaItemId: this.libraryItem.media.id,
-        expiresAt: this.expireDurationSeconds ? Date.now() + this.expireDurationSeconds * 1000 : 0
+        expiresAt: this.expireDurationSeconds ? Date.now() + this.expireDurationSeconds * 1000 : 0,
+        isDownloadable: this.isDownloadable
       }
       this.processing = true
       this.$axios
