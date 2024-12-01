@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Дозволити перезапис наявних подробиць обраних книг після віднайдення",
   "LabelUpdatedAt": "Оновлення",
   "LabelUploaderDragAndDrop": "Перетягніть файли або теки",
+  "LabelUploaderDragAndDropFilesOnly": "Перетягніть і скиньте файли",
   "LabelUploaderDropFiles": "Перетягніть файли",
   "LabelUploaderItemFetchMetadataHelp": "Автоматично шукати назву, автора та серію",
   "LabelUseAdvancedOptions": "Використовувати розширені налаштування",
