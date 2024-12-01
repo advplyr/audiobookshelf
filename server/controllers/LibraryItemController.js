@@ -539,12 +539,13 @@ class LibraryItemController {
    */
   async batchUpdate(req, res) {
     const updatePayloads = req.body
-    if (!updatePayloads?.length) {
-      return res.sendStatus(500)
+    if (!Array.isArray(updatePayloads) || !updatePayloads.length) {
+      Logger.error(`[LibraryItemController] Batch update failed. Invalid payload`)
+      return res.sendStatus(400)
     }
 
     // Ensure that each update payload has a unique library item id
-    const libraryItemIds = [...new Set(updatePayloads.map((up) => up.id))]
+    const libraryItemIds = [...new Set(updatePayloads.map((up) => up?.id).filter((id) => id))]
     if (!libraryItemIds.length || libraryItemIds.length !== updatePayloads.length) {
       Logger.error(`[LibraryItemController] Batch update failed. Each update payload must have a unique library item id`)
       return res.sendStatus(400)
