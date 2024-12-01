@@ -400,10 +400,12 @@ class ApiRouter {
     await CacheManager.purgeCoverCache(libraryItemId)
 
     // Remove metadata file if in /metadata/items dir
-    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
-    if (await fs.pathExists(itemMetadataPath)) {
-      Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
-      await fs.remove(itemMetadataPath)
+    if (global.MetadataPath) {
+      const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
+      if (await fs.pathExists(itemMetadataPath)) {
+        Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
+        await fs.remove(itemMetadataPath)
+      }
     }
 
     await Database.libraryItemModel.removeById(libraryItemId)
