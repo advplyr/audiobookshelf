@@ -96,7 +96,7 @@ function groupFilesIntoLibraryItemPaths(mediaType, paths) {
           // This is the last directory, create group
           itemGroup[_path] = [Path.basename(path)]
           return
-        } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) {
+        } else if (dirparts.length === 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[0])) {
           // Next directory is the last and is a CD dir, create group
           itemGroup[_path] = [Path.posix.join(dirparts[0], Path.basename(path))]
           return
