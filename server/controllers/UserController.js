@@ -368,6 +368,19 @@ class UserController {
       await playlist.destroy()
     }
 
+    // Set PlaybackSessions userId to null
+    const [sessionsUpdated] = await Database.playbackSessionModel.update(
+      {
+        userId: null
+      },
+      {
+        where: {
+          userId: user.id
+        }
+      }
+    )
+    Logger.info(`[UserController] Updated ${sessionsUpdated} playback sessions to remove user id`)
+
     const userJson = user.toOldJSONForBrowser()
     await user.destroy()
     SocketAuthority.adminEmitter('user_removed', userJson)

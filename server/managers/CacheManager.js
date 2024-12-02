@@ -86,6 +86,7 @@ class CacheManager {
   }
 
   async purgeEntityCache(entityId, cachePath) {
+    if (!entityId || !cachePath) return []
     return Promise.all(
       (await fs.readdir(cachePath)).reduce((promises, file) => {
         if (file.startsWith(entityId)) {

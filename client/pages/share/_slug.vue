@@ -126,12 +126,14 @@ export default {
       if (!this.localAudioPlayer || !this.hasLoaded) return
       const currentTime = this.localAudioPlayer.getCurrentTime()
       const duration = this.localAudioPlayer.getDuration()
-      this.seek(Math.min(currentTime + 10, duration))
+      const jumpForwardAmount = this.$store.getters['user/getUserSetting']('jumpForwardAmount') || 10
+      this.seek(Math.min(currentTime + jumpForwardAmount, duration))
     },
     jumpBackward() {
       if (!this.localAudioPlayer || !this.hasLoaded) return
       const currentTime = this.localAudioPlayer.getCurrentTime()
-      this.seek(Math.max(currentTime - 10, 0))
+      const jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount') || 10
+      this.seek(Math.max(currentTime - jumpBackwardAmount, 0))
     },
     setVolume(volume) {
       if (!this.localAudioPlayer || !this.hasLoaded) return
@@ -248,6 +250,8 @@ export default {
     }
   },
   mounted() {
+    this.$store.dispatch('user/loadUserSettings')
+
     this.resize()
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)

@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Dopusti prepisivanje postojećih podataka za odabrane knjige kada se prepoznaju",
   "LabelUpdatedAt": "Ažurirano",
   "LabelUploaderDragAndDrop": "Pritisni i prevuci datoteke ili mape",
+  "LabelUploaderDragAndDropFilesOnly": "Pritisni i prevuci datoteke",
   "LabelUploaderDropFiles": "Ispusti datoteke",
   "LabelUploaderItemFetchMetadataHelp": "Automatski dohvati naslov, autora i serijal",
   "LabelUseAdvancedOptions": "Koristi se naprednim opcijama",
