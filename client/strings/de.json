@@ -728,7 +728,7 @@
   "MessageConfirmPurgeCache": "Cache leeren wird das ganze Verzeichnis <code>/metadata/cache</code> löschen. <br /><br />Bist du dir sicher, dass das Cache Verzeichnis gelöscht werden soll?",
   "MessageConfirmPurgeItemsCache": "Durch Elementcache leeren wird das gesamte Verzeichnis unter <code>/metadata/cache/items</code> gelöscht.<br />Bist du dir sicher?",
   "MessageConfirmQuickEmbed": "Warnung! Audiodateien werden bei der Schnelleinbettung nicht gesichert! Achte darauf, dass du eine Sicherungskopie der Audiodateien besitzt. <br><br>Möchtest du fortfahren?",
-  "MessageConfirmQuickMatchEpisodes": "Schnelles Zuordnen von Episoden überschreibt die Details, wenn eine Übereinstimmung gefunden wird. Nur nicht zugeordnete Episoden werden aktualisiert. Bist du sicher?",
+  "MessageConfirmQuickMatchEpisodes": "Schnellabgleich von Episoden überschreibt deren Details wenn ein passender Eintrag gefunden wurde, wird aber nur auf bisher unbearbeitete Episoden angewendet. Wirklich fortfahren?",
   "MessageConfirmReScanLibraryItems": "{0} Elemente werden erneut gescannt! Bist du dir sicher?",
   "MessageConfirmRemoveAllChapters": "Alle Kapitel werden entfernt! Bist du dir sicher?",
   "MessageConfirmRemoveAuthor": "Autor \"{0}\" wird enfernt! Bist du dir sicher?",
