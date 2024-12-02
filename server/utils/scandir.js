@@ -179,7 +179,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
           // This is the last directory, create group
           libraryItemGroup[_path] = [item.name]
           return
-        } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) {
+        } else if (dirparts.length === 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[0])) {
           // Next directory is the last and is a CD dir, create group
           libraryItemGroup[_path] = [Path.posix.join(dirparts[0], item.name)]
           return
