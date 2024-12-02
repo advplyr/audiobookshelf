@@ -40,6 +40,8 @@ class AbsMetadataFileScanner {
         if (key === 'genres' && !abMetadata.genres?.length) continue
         if (key === 'tags' && !abMetadata.tags?.length) continue
         if (key === 'chapters' && !abMetadata.chapters?.length) continue
+        if (key === 'narrators' && !abMetadata.narrators?.length) continue
+        if (key === 'series' && !abMetadata.series?.length) continue
 
         bookMetadata[key] = abMetadata[key]
       }
