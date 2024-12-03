@@ -12,6 +12,10 @@
         <div class="w-full pt-16">
           <player-ui ref="audioPlayer" :chapters="chapters" :current-chapter="currentChapter" :paused="isPaused" :loading="!hasLoaded" :is-podcast="false" hide-bookmarks hide-sleep-timer @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" />
         </div>
+
+        <ui-tooltip v-if="mediaItemShare.isDownloadable" direction="bottom" :text="$strings.LabelDownload" class="absolute top-0 left-0 m-4">
+          <button aria-label="Download" class="text-gray-300 hover:text-white"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
+        </ui-tooltip>
       </div>
     </div>
   </div>
