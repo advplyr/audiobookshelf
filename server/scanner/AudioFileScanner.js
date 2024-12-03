@@ -133,8 +133,8 @@ class AudioFileScanner {
 
     // Look for disc number in folder path e.g. /Book Title/CD01/audiofile.mp3
     const pathdir = Path.dirname(path).split('/').pop()
-    if (pathdir && /^cd\d{1,3}$/i.test(pathdir)) {
-      const discFromFolder = Number(pathdir.replace(/cd/i, ''))
+    if (pathdir && /^(cd|dis[ck])\s*\d{1,3}$/i.test(pathdir)) {
+      const discFromFolder = Number(pathdir.replace(/^(cd|dis[ck])\s*/i, ''))
       if (!isNaN(discFromFolder) && discFromFolder !== null) discNumber = discFromFolder
     }
 
