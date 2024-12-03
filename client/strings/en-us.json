@@ -679,6 +679,8 @@
   "LabelViewPlayerSettings": "View player settings",
   "LabelViewQueue": "View player queue",
   "LabelVolume": "Volume",
+  "LabelWebRedirectURLsDescription": "Authorize these URLs in your OAuth provider to allow redirection back to the web app after login:",
+  "LabelWebRedirectURLsSubfolder": "Subfolder for Redirect URLs",
   "LabelWeekdaysToRun": "Weekdays to run",
   "LabelXBooks": "{0} books",
   "LabelXItems": "{0} items",

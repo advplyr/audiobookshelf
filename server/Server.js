@@ -84,7 +84,6 @@ class Server {
     Logger.logManager = new LogManager()
 
     this.server = null
-    this.io = null
   }
 
   /**
@@ -441,18 +440,11 @@ class Server {
   async stop() {
     Logger.info('=== Stopping Server ===')
     Watcher.close()
-    Logger.info('Watcher Closed')
-
-    return new Promise((resolve) => {
-      SocketAuthority.close((err) => {
-        if (err) {
-          Logger.error('Failed to close server', err)
-        } else {
-          Logger.info('Server successfully closed')
-        }
-        resolve()
-      })
-    })
+    Logger.info('[Server] Watcher Closed')
+    await SocketAuthority.close()
+    Logger.info('[Server] Closing HTTP Server')
+    await new Promise((resolve) => this.server.close(resolve))
+    Logger.info('[Server] HTTP Server Closed')
   }
 }
 module.exports = Server

@@ -679,9 +679,9 @@ class MiscController {
           continue
         }
         let updatedValue = settingsUpdate[key]
-        if (updatedValue === '') updatedValue = null
+        if (updatedValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') updatedValue = null
         let currentValue = currentAuthenticationSettings[key]
-        if (currentValue === '') currentValue = null
+        if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
 
         if (updatedValue !== currentValue) {
           Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
