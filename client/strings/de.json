@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Erlaube das Überschreiben bestehender Details für die ausgewählten Hörbücher, wenn eine Übereinstimmung gefunden wird",
   "LabelUpdatedAt": "Aktualisiert am",
   "LabelUploaderDragAndDrop": "Ziehen und Ablegen von Dateien oder Ordnern",
+  "LabelUploaderDragAndDropFilesOnly": "Dateien per Drag & Drop hierher ziehen",
   "LabelUploaderDropFiles": "Dateien löschen",
   "LabelUploaderItemFetchMetadataHelp": "Automatisches Aktualisieren von Titel, Autor und Serie",
   "LabelUseAdvancedOptions": "Nutze Erweiterte Optionen",

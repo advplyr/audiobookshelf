@@ -663,6 +663,7 @@
   "LabelUpdateDetailsHelp": "Dovoli prepisovanje obstoječih podrobnosti za izbrane knjige, ko se najde ujemanje",
   "LabelUpdatedAt": "Posodobljeno ob",
   "LabelUploaderDragAndDrop": "Povleci in spusti datoteke ali mape",
+  "LabelUploaderDragAndDropFilesOnly": "Povleci in spusti datoteke",
   "LabelUploaderDropFiles": "Spusti datoteke",
   "LabelUploaderItemFetchMetadataHelp": "Samodejno pridobi naslov, avtorja in serijo",
   "LabelUseAdvancedOptions": "Uporabi napredne možnosti",

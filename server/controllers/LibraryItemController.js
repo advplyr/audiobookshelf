@@ -96,6 +96,8 @@ class LibraryItemController {
    * Optional query params:
    * ?hard=1
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -103,14 +105,36 @@ class LibraryItemController {
     const hardDelete = req.query.hard == 1 // Delete from file system
     const libraryItemPath = req.libraryItem.path
 
-    const mediaItemIds = req.libraryItem.mediaType === 'podcast' ? req.libraryItem.media.episodes.map((ep) => ep.id) : [req.libraryItem.media.id]
-    await this.handleDeleteLibraryItem(req.libraryItem.mediaType, req.libraryItem.id, mediaItemIds)
+    const mediaItemIds = []
+    const authorIds = []
+    const seriesIds = []
+    if (req.libraryItem.isPodcast) {
+      mediaItemIds.push(...req.libraryItem.media.episodes.map((ep) => ep.id))
+    } else {
+      mediaItemIds.push(req.libraryItem.media.id)
+      if (req.libraryItem.media.metadata.authors?.length) {
+        authorIds.push(...req.libraryItem.media.metadata.authors.map((au) => au.id))
+      }
+      if (req.libraryItem.media.metadata.series?.length) {
+        seriesIds.push(...req.libraryItem.media.metadata.series.map((se) => se.id))
+      }
+    }
+
+    await this.handleDeleteLibraryItem(req.libraryItem.id, mediaItemIds)
     if (hardDelete) {
       Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
       await fs.remove(libraryItemPath).catch((error) => {
         Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
       })
     }
+
+    if (authorIds.length) {
+      await this.checkRemoveAuthorsWithNoBooks(authorIds)
+    }
+    if (seriesIds.length) {
+      await this.checkRemoveEmptySeries(seriesIds)
+    }
+
     await Database.resetLibraryIssuesFilterData(req.libraryItem.libraryId)
     res.sendStatus(200)
   }
@@ -228,15 +252,6 @@ class LibraryItemController {
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
 
-      if (seriesRemoved.length) {
-        // Check remove empty series
-        Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
-        await this.checkRemoveEmptySeries(
-          libraryItem.media.id,
-          seriesRemoved.map((se) => se.id)
-        )
-      }
-
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(libraryItem)
       }
@@ -248,10 +263,12 @@ class LibraryItemController {
       if (authorsRemoved.length) {
         // Check remove empty authors
         Logger.debug(`[LibraryItemController] Authors were removed from book. Check if authors are now empty.`)
-        await this.checkRemoveAuthorsWithNoBooks(
-          libraryItem.libraryId,
-          authorsRemoved.map((au) => au.id)
-        )
+        await this.checkRemoveAuthorsWithNoBooks(authorsRemoved.map((au) => au.id))
+      }
+      if (seriesRemoved.length) {
+        // Check remove empty series
+        Logger.debug(`[LibraryItemController] Series were removed from book. Check if series are now empty.`)
+        await this.checkRemoveEmptySeries(seriesRemoved.map((se) => se.id))
       }
     }
     res.json({
@@ -466,6 +483,8 @@ class LibraryItemController {
    * Optional query params:
    * ?hard=1
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -493,13 +512,32 @@ class LibraryItemController {
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
       Logger.info(`[LibraryItemController] (${hardDelete ? 'Hard' : 'Soft'}) deleting Library Item "${libraryItem.media.metadata.title}" with id "${libraryItem.id}"`)
-      const mediaItemIds = libraryItem.mediaType === 'podcast' ? libraryItem.media.episodes.map((ep) => ep.id) : [libraryItem.media.id]
-      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+      const mediaItemIds = []
+      const seriesIds = []
+      const authorIds = []
+      if (libraryItem.isPodcast) {
+        mediaItemIds.push(...libraryItem.media.episodes.map((ep) => ep.id))
+      } else {
+        mediaItemIds.push(libraryItem.media.id)
+        if (libraryItem.media.metadata.series?.length) {
+          seriesIds.push(...libraryItem.media.metadata.series.map((se) => se.id))
+        }
+        if (libraryItem.media.metadata.authors?.length) {
+          authorIds.push(...libraryItem.media.metadata.authors.map((au) => au.id))
+        }
+      }
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
           Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
         })
+      }
+      if (seriesIds.length) {
+        await this.checkRemoveEmptySeries(seriesIds)
+      }
+      if (authorIds.length) {
+        await this.checkRemoveAuthorsWithNoBooks(authorIds)
       }
     }
 
@@ -510,46 +548,72 @@ class LibraryItemController {
   /**
    * POST: /api/items/batch/update
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   async batchUpdate(req, res) {
     const updatePayloads = req.body
-    if (!updatePayloads?.length) {
-      return res.sendStatus(500)
+    if (!Array.isArray(updatePayloads) || !updatePayloads.length) {
+      Logger.error(`[LibraryItemController] Batch update failed. Invalid payload`)
+      return res.sendStatus(400)
+    }
+
+    // Ensure that each update payload has a unique library item id
+    const libraryItemIds = [...new Set(updatePayloads.map((up) => up?.id).filter((id) => id))]
+    if (!libraryItemIds.length || libraryItemIds.length !== updatePayloads.length) {
+      Logger.error(`[LibraryItemController] Batch update failed. Each update payload must have a unique library item id`)
+      return res.sendStatus(400)
+    }
+
+    // Get all library items to update
+    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+      id: libraryItemIds
+    })
+    if (updatePayloads.length !== libraryItems.length) {
+      Logger.error(`[LibraryItemController] Batch update failed. Not all library items found`)
+      return res.sendStatus(404)
     }
 
     let itemsUpdated = 0
 
+    const seriesIdsRemoved = []
+    const authorIdsRemoved = []
+
     for (const updatePayload of updatePayloads) {
       const mediaPayload = updatePayload.mediaPayload
-      const libraryItem = await Database.libraryItemModel.getOldById(updatePayload.id)
-      if (!libraryItem) return null
+      const libraryItem = libraryItems.find((li) => li.id === updatePayload.id)
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
 
-      let seriesRemoved = []
-      if (libraryItem.isBook && mediaPayload.metadata?.series) {
-        const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map((se) => se.id)
-        seriesRemoved = libraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+      if (libraryItem.isBook) {
+        if (Array.isArray(mediaPayload.metadata?.series)) {
+          const seriesIdsInUpdate = mediaPayload.metadata.series.map((se) => se.id)
+          const seriesRemoved = libraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+          seriesIdsRemoved.push(...seriesRemoved.map((se) => se.id))
+        }
+        if (Array.isArray(mediaPayload.metadata?.authors)) {
+          const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
+          const authorsRemoved = libraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+          authorIdsRemoved.push(...authorsRemoved.map((au) => au.id))
+        }
       }
 
       if (libraryItem.media.update(mediaPayload)) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
 
-        if (seriesRemoved.length) {
-          // Check remove empty series
-          Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
-          await this.checkRemoveEmptySeries(
-            libraryItem.media.id,
-            seriesRemoved.map((se) => se.id)
-          )
-        }
-
         await Database.updateLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
         itemsUpdated++
       }
+    }
+
+    if (seriesIdsRemoved.length) {
+      await this.checkRemoveEmptySeries(seriesIdsRemoved)
+    }
+    if (authorIdsRemoved.length) {
+      await this.checkRemoveAuthorsWithNoBooks(authorIdsRemoved)
     }
 
     res.json({
