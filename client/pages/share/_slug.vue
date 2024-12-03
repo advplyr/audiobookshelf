@@ -14,7 +14,7 @@
         </div>
 
         <ui-tooltip v-if="mediaItemShare.isDownloadable" direction="bottom" :text="$strings.LabelDownload" class="absolute top-0 left-0 m-4">
-          <button aria-label="Download" class="text-gray-300 hover:text-white"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
+          <button aria-label="Download" class="text-gray-300 hover:text-white" @click="downloadShareItem"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
         </ui-tooltip>
       </div>
     </div>
@@ -66,6 +66,9 @@ export default {
     coverUrl() {
       if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
       return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
+    },
+    downloadUrl() {
+      return `${process.env.serverUrl}/api/items/${this.playbackSession.libraryItemId}/download?share=${this.mediaItemShare.slug}`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
@@ -251,6 +254,9 @@ export default {
     },
     playerFinished() {
       console.log('Player finished')
+    },
+    downloadShareItem() {
+      this.$downloadFile(this.downloadUrl)
     }
   },
   mounted() {
