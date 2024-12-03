@@ -133,33 +133,49 @@ class LibraryItemController {
    * @param {Response} res
    */
   async download(req, res) {
+    const handleDownload = async (req, res) => {
+      const libraryItemPath = req.libraryItem.path
+      const itemTitle = req.libraryItem.media.metadata.title
+
+      Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
+
+      try {
+        // If library item is a single file in root dir then no need to zip
+        if (req.libraryItem.isFile) {
+          // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+          const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
+          if (audioMimeType) {
+            res.setHeader('Content-Type', audioMimeType)
+          }
+          await new Promise((resolve, reject) => res.download(libraryItemPath, req.libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
+        } else {
+          const filename = `${itemTitle}.zip`
+          await zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
+        }
+        Logger.info(`[LibraryItemController] Downloaded item "${itemTitle}" at "${libraryItemPath}"`)
+      } catch (error) {
+        Logger.error(`[LibraryItemController] Download failed for item "${itemTitle}" at "${libraryItemPath}"`, error)
+        res.status(500).send('Failed to download the item')
+      }
+    }
+
+    if (req.query.share) {
+      // Find matching MediaItemShare based on slug
+      const mediaItemShare = await ShareManager.findBySlug(req.query.share)
+      if (mediaItemShare) {
+        // If the isDownloadable bool is true, download the file
+        if (mediaItemShare.isDownloadable) {
+          return handleDownload(req, res)
+        }
+      }
+    }
+
     if (!req.user.canDownload) {
       Logger.warn(`User "${req.user.username}" attempted to download without permission`)
       return res.sendStatus(403)
     }
-    const libraryItemPath = req.libraryItem.path
-    const itemTitle = req.libraryItem.media.metadata.title
 
-    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
-
-    try {
-      // If library item is a single file in root dir then no need to zip
-      if (req.libraryItem.isFile) {
-        // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
-        const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
-        if (audioMimeType) {
-          res.setHeader('Content-Type', audioMimeType)
-        }
-        await new Promise((resolve, reject) => res.download(libraryItemPath, req.libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
-      } else {
-        const filename = `${itemTitle}.zip`
-        await zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
-      }
-      Logger.info(`[LibraryItemController] Downloaded item "${itemTitle}" at "${libraryItemPath}"`)
-    } catch (error) {
-      Logger.error(`[LibraryItemController] Download failed for item "${itemTitle}" at "${libraryItemPath}"`, error)
-      LibraryItemController.handleDownloadError(error, res)
-    }
+    return handleDownload(req, res)
   }
 
   /**
