@@ -679,6 +679,8 @@
   "LabelViewPlayerSettings": "Ver los ajustes del reproductor",
   "LabelViewQueue": "Ver Fila del Reproductor",
   "LabelVolume": "Volumen",
+  "LabelWebRedirectURLsDescription": "Autorice estas URL en su proveedor OAuth para permitir la redirección a la aplicación web después de iniciar sesión:",
+  "LabelWebRedirectURLsSubfolder": "Subcarpeta para URL de redireccionamiento",
   "LabelWeekdaysToRun": "Correr en Días de la Semana",
   "LabelXBooks": "{0} libros",
   "LabelXItems": "{0} elementos",
