@@ -34,7 +34,7 @@ module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
 /**
  * @param {string} mediaType
- * @param {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]} fileItems (see recurseFiles)
+ * @param {import('./fileUtils').FilePathItem[]} fileItems
  * @param {boolean} [audiobooksOnly=false]
  * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
  */
@@ -46,7 +46,9 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
 
   // Step 2: Seperate media files and other files
   //     - Directories without a media file will not be included
+  /** @type {import('./fileUtils').FilePathItem[]} */
   const mediaFileItems = []
+  /** @type {import('./fileUtils').FilePathItem[]} */
   const otherFileItems = []
   itemsFiltered.forEach((item) => {
     if (isMediaFile(mediaType, item.extension, audiobooksOnly)) mediaFileItems.push(item)
