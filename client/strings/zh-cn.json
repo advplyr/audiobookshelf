@@ -679,7 +679,7 @@
   "LabelViewPlayerSettings": "查看播放器设置",
   "LabelViewQueue": "查看播放列表",
   "LabelVolume": "音量",
-  "LabelWebRedirectURLsDescription": "在您的OAuth提供商中授权这些链接，以允许在登录后重定向回Web应用",
+  "LabelWebRedirectURLsDescription": "在你的 OAuth 提供商中授权这些链接，以允许在登录后重定向回 Web 应用程序:",
   "LabelWebRedirectURLsSubfolder": "查了一下GPT，给的回答的{重定向URL的子文件夹},但是不知道这个位置在哪儿，没法确定这个意思是否准确",
   "LabelWeekdaysToRun": "工作日运行",
   "LabelXBooks": "{0} 本书",
