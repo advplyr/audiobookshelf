@@ -680,6 +680,7 @@
   "LabelViewQueue": "查看播放列表",
   "LabelVolume": "音量",
   "LabelWebRedirectURLsDescription": "在您的OAuth提供商中授权这些链接，以允许在登录后重定向回Web应用",
+  "LabelWebRedirectURLsSubfolder": "重定向 URL 的子文件夹",
   "LabelWeekdaysToRun": "工作日运行",
   "LabelXBooks": "{0} 本书",
   "LabelXItems": "{0} 项目",
