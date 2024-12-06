@@ -679,6 +679,8 @@
   "LabelViewPlayerSettings": "Ogled nastavitev predvajalnika",
   "LabelViewQueue": "Ogled čakalno vrsto predvajalnika",
   "LabelVolume": "Glasnost",
+  "LabelWebRedirectURLsDescription": "Avtorizirajte URL-je pri svojem ponudniku OAuth ter s tem omogočite preusmeritev nazaj v spletno aplikacijo po prijavi:",
+  "LabelWebRedirectURLsSubfolder": "Podmapa za URL-je preusmeritve",
   "LabelWeekdaysToRun": "Delovni dnevi predvajanja",
   "LabelXBooks": "{0} knjig",
   "LabelXItems": "{0} elementov",
