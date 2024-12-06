@@ -90,3 +90,5 @@ tags:
     description: Notifications endpoints
   - name: Podcasts
     description: Podcast endpoints
+  - name: LibraryItem
+    description: LibraryItem endpoints
