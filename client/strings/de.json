@@ -679,6 +679,8 @@
   "LabelViewPlayerSettings": "Zeige player Einstellungen",
   "LabelViewQueue": "Player-Warteschlange anzeigen",
   "LabelVolume": "Lautstärke",
+  "LabelWebRedirectURLsDescription": "Autorisieren Sie diese URLs bei ihrem OAuth-Anbieter, um die Weiterleitung zurück zur Webanwendung nach dem Login zu ermöglichen:",
+  "LabelWebRedirectURLsSubfolder": "Unterordner für Weiterleitung-URLs",
   "LabelWeekdaysToRun": "Wochentage für die Ausführung",
   "LabelXBooks": "{0} Bücher",
   "LabelXItems": "{0} Medien",
