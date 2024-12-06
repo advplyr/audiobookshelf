@@ -1,6 +1,7 @@
 const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
+const OpenApiValidator = require('express-openapi-validator')
 const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
@@ -223,6 +224,42 @@ class Server {
 
       next()
     })
+
+    // Install the OpenApiValidator middleware if using a dev environment
+    if (Logger.isDev && false) {
+      // This is a solution to validate the API responses, but is a work in progress.
+      // By default, this is disabled because invalide API requests or responses can cause
+      // crashes in the web client while developing other parts of the application.
+      //
+      // The OpenAPI spec is still a work in progress.
+      //
+      // If you would like to only validate responses or requests, you can adjust the
+      // `validateRequests` and `validateResponses` options accordingly.
+      const apiSpec = Path.join(__dirname, '..', 'docs', 'openapi.json')
+      app.use(
+        OpenApiValidator.middleware({
+          apiSpec: apiSpec,
+          validateRequests: true,
+          validateResponses: {
+            onError: (error, body, req) => {
+              console.log(`Response body fails validation: `, error)
+              console.log(`Emitted from:`, req.originalUrl)
+              console.debug(body)
+            }
+          },
+          formats: [
+            // Define custom format types for OpenAPI spec
+            {
+              name: 'uuid',
+              type: 'string',
+              validate: (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v.toString())
+            }
+          ],
+          unknownFormats: ['li_[a-z0-9]{18}', 'pod_[a-z0-9]{18}', '[0-9]*'],
+          ignoreUndocumented: true
+        })
+      )
+    }
 
     // parse cookies in requests
     app.use(cookieParser())
