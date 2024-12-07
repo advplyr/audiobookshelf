@@ -162,7 +162,7 @@ class RssFeedManager {
       }
     }
 
-    const xml = feed.buildXml()
+    const xml = feed.buildXml(req.originalHostPrefix)
     res.set('Content-Type', 'text/xml')
     res.send(xml)
   }

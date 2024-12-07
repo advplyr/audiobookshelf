@@ -253,6 +253,10 @@ class Server {
     // if RouterBasePath is set, modify all requests to include the base path
     if (global.RouterBasePath) {
       app.use((req, res, next) => {
+        const host = req.get('host')
+        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+        const prefix = req.url.startsWith(global.RouterBasePath) ? global.RouterBasePath : ''
+        req.originalHostPrefix = `${protocol}://${host}${prefix}`
         if (!req.url.startsWith(global.RouterBasePath)) {
           req.url = `${global.RouterBasePath}${req.url}`
         }

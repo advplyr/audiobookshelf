@@ -109,7 +109,7 @@ class Feed {
     const mediaMetadata = media.metadata
     const isPodcast = libraryItem.mediaType === 'podcast'
 
-    const feedUrl = `${serverAddress}/feed/${slug}`
+    const feedUrl = `/feed/${slug}`
     const author = isPodcast ? mediaMetadata.author : mediaMetadata.authorName
 
     this.id = uuidv4()
@@ -128,9 +128,9 @@ class Feed {
     this.meta.title = mediaMetadata.title
     this.meta.description = mediaMetadata.description
     this.meta.author = author
-    this.meta.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = media.coverPath ? `/feed/${slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.feedUrl = feedUrl
-    this.meta.link = `${serverAddress}/item/${libraryItem.id}`
+    this.meta.link = `/item/${libraryItem.id}`
     this.meta.explicit = !!mediaMetadata.explicit
     this.meta.type = mediaMetadata.type
     this.meta.language = mediaMetadata.language
@@ -176,7 +176,7 @@ class Feed {
     this.meta.title = mediaMetadata.title
     this.meta.description = mediaMetadata.description
     this.meta.author = author
-    this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = media.coverPath ? `/feed/${this.slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.explicit = !!mediaMetadata.explicit
     this.meta.type = mediaMetadata.type
     this.meta.language = mediaMetadata.language
@@ -206,7 +206,7 @@ class Feed {
   }
 
   setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
-    const feedUrl = `${serverAddress}/feed/${slug}`
+    const feedUrl = `/feed/${slug}`
 
     const itemsWithTracks = collectionExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
     const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
@@ -227,9 +227,9 @@ class Feed {
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `/feed/${slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.feedUrl = feedUrl
-    this.meta.link = `${serverAddress}/collection/${collectionExpanded.id}`
+    this.meta.link = `/collection/${collectionExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
     this.meta.preventIndexing = preventIndexing
     this.meta.ownerName = ownerName
@@ -272,7 +272,7 @@ class Feed {
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `/feed/${this.slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
@@ -301,7 +301,7 @@ class Feed {
   }
 
   setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
-    const feedUrl = `${serverAddress}/feed/${slug}`
+    const feedUrl = `/feed/${slug}`
 
     let itemsWithTracks = seriesExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
     // Sort series items by series sequence
@@ -326,9 +326,9 @@ class Feed {
     this.meta.title = seriesExpanded.name
     this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover${coverFileExtension}` : `${serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `/feed/${slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.feedUrl = feedUrl
-    this.meta.link = `${serverAddress}/library/${libraryId}/series/${seriesExpanded.id}`
+    this.meta.link = `/library/${libraryId}/series/${seriesExpanded.id}`
     this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
     this.meta.preventIndexing = preventIndexing
     this.meta.ownerName = ownerName
@@ -374,7 +374,7 @@ class Feed {
     this.meta.title = seriesExpanded.name
     this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover${coverFileExtension}` : `${this.serverAddress}/Logo.png`
+    this.meta.imageUrl = this.coverPath ? `/feed/${this.slug}/cover${coverFileExtension}` : `/Logo.png`
     this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
 
     this.episodes = []
@@ -402,12 +402,12 @@ class Feed {
     this.xml = null
   }
 
-  buildXml() {
+  buildXml(originalHostPrefix) {
     if (this.xml) return this.xml
 
-    var rssfeed = new RSS(this.meta.getRSSData())
+    var rssfeed = new RSS(this.meta.getRSSData(originalHostPrefix))
     this.episodes.forEach((ep) => {
-      rssfeed.item(ep.getRSSData())
+      rssfeed.item(ep.getRSSData(originalHostPrefix))
     })
     this.xml = rssfeed.xml()
     return this.xml
