@@ -7,7 +7,7 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
     res.attachment(filename)
 
     const archive = archiver('zip', {
-      zlib: { level: 9 } // Sets the compression level.
+      zlib: { level: 0 } // Sets the compression level.
     })
 
     // listen for all archive data to be written
