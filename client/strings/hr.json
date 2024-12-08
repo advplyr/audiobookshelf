@@ -542,6 +542,7 @@
   "LabelServerYearReview": "Godišnji pregled poslužitelja ({0})",
   "LabelSetEbookAsPrimary": "Postavi kao primarno",
   "LabelSetEbookAsSupplementary": "Postavi kao dopunsko",
+  "LabelSettingsAllowIframe": "Omogući ugrađivanje u iframeu",
   "LabelSettingsAudiobooksOnly": "Samo zvučne knjige",
   "LabelSettingsAudiobooksOnlyHelp": "Ako uključite ovu mogućnost, sustav će zanemariti datoteke e-knjiga ukoliko se ne nalaze u mapi zvučne knjige, gdje će se smatrati dopunskim e-knjigama",
   "LabelSettingsBookshelfViewHelp": "Skeumorfni dizajn sa drvenim policama",
