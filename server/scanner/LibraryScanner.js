@@ -424,8 +424,8 @@ class LibraryScanner {
       }
       const folder = library.libraryFolders[0]
 
-      const relFilePaths = folderGroups[folderId].fileUpdates.map((fileUpdate) => fileUpdate.relPath)
-      const fileUpdateGroup = scanUtils.groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths)
+      const filePathItems = folderGroups[folderId].fileUpdates.map((fileUpdate) => fileUtils.getFilePathItemFromFileUpdate(fileUpdate))
+      const fileUpdateGroup = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType, filePathItems, !!library.settings?.audiobooksOnly)
 
       if (!Object.keys(fileUpdateGroup).length) {
         Logger.info(`[LibraryScanner] No important changes to scan for in folder "${folderId}"`)

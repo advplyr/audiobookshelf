@@ -72,16 +72,17 @@ export const actions = {
     return this.$axios
       .$patch('/api/settings', updatePayload)
       .then((result) => {
-        if (result.success) {
+        if (result.serverSettings) {
           commit('setServerSettings', result.serverSettings)
-          return true
-        } else {
-          return false
         }
+        return result
       })
       .catch((error) => {
         console.error('Failed to update server settings', error)
-        return false
+        const errorMsg = error.response?.data || 'Unknown error'
+        return {
+          error: errorMsg
+        }
       })
   },
   checkForUpdate({ commit }) {

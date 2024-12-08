@@ -79,7 +79,7 @@ class FeedEpisode {
     this.title = episode.title
     this.description = episode.description || ''
     this.enclosure = {
-      url: `${serverAddress}${contentUrl}`,
+      url: `${contentUrl}`,
       type: episode.audioTrack.mimeType,
       size: episode.size
     }
@@ -136,7 +136,7 @@ class FeedEpisode {
     this.title = title
     this.description = mediaMetadata.description || ''
     this.enclosure = {
-      url: `${serverAddress}${contentUrl}`,
+      url: `${contentUrl}`,
       type: audioTrack.mimeType,
       size: audioTrack.metadata.size
     }
@@ -151,15 +151,19 @@ class FeedEpisode {
     this.fullPath = audioTrack.metadata.path
   }
 
-  getRSSData() {
+  getRSSData(hostPrefix) {
     return {
       title: this.title,
       description: this.description || '',
-      url: this.link,
-      guid: this.enclosure.url,
+      url: `${hostPrefix}${this.link}`,
+      guid: `${hostPrefix}${this.enclosure.url}`,
       author: this.author,
       date: this.pubDate,
-      enclosure: this.enclosure,
+      enclosure: {
+        url: `${hostPrefix}${this.enclosure.url}`,
+        type: this.enclosure.type,
+        size: this.enclosure.size
+      },
       custom_elements: [
         { 'itunes:author': this.author },
         { 'itunes:duration': secondsToTimestamp(this.duration) },

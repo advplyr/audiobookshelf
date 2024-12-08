@@ -42,11 +42,6 @@
             </div>
           </div>
 
-          <div class="flex items-center py-2 mb-2">
-            <ui-toggle-switch labeledBy="settings-chromecast-support" v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
-            <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
-          </div>
-
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsScanner }}</h2>
           </div>
@@ -93,6 +88,20 @@
                 <span aria-hidden="true" class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
+          </div>
+
+          <div class="pt-4">
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsWebClient }}</h2>
+          </div>
+
+          <div class="flex items-center py-2">
+            <ui-toggle-switch labeledBy="settings-chromecast-support" v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
+            <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
+          </div>
+
+          <div class="flex items-center py-2 mb-2">
+            <ui-toggle-switch labeledBy="settings-allow-iframe" v-model="newServerSettings.allowIframe" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('allowIframe', val)" />
+            <p class="pl-4" id="settings-allow-iframe">{{ $strings.LabelSettingsAllowIframe }}</p>
           </div>
         </div>
 
@@ -324,21 +333,21 @@ export default {
     },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
-      this.$store
-        .dispatch('updateServerSettings', payload)
-        .then(() => {
-          this.updatingServerSettings = false
+      this.$store.dispatch('updateServerSettings', payload).then((response) => {
+        this.updatingServerSettings = false
 
-          if (payload.language) {
-            // Updating language after save allows for re-rendering
-            this.$setLanguageCode(payload.language)
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to update server settings', error)
-          this.updatingServerSettings = false
-          this.$toast.error(this.$strings.ToastFailedToUpdate)
-        })
+        if (response.error) {
+          console.error('Failed to update server settins', response.error)
+          this.$toast.error(response.error)
+          this.initServerSettings()
+          return
+        }
+
+        if (payload.language) {
+          // Updating language after save allows for re-rendering
+          this.$setLanguageCode(payload.language)
+        }
+      })
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
