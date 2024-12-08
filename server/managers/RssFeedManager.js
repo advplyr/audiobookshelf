@@ -1,3 +1,4 @@
+const { Request, Response } = require('express')
 const Path = require('path')
 
 const Logger = require('../Logger')
@@ -77,6 +78,12 @@ class RssFeedManager {
     return Database.feedModel.findByPkOld(id)
   }
 
+  /**
+   * GET: /feed/:slug
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
   async getFeed(req, res) {
     const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
@@ -167,6 +174,12 @@ class RssFeedManager {
     res.send(xml)
   }
 
+  /**
+   * GET: /feed/:slug/item/:episodeId/*
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
   async getFeedItem(req, res) {
     const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
@@ -183,6 +196,12 @@ class RssFeedManager {
     res.sendFile(episodePath)
   }
 
+  /**
+   * GET: /feed/:slug/cover*
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
   async getFeedCover(req, res) {
     const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
