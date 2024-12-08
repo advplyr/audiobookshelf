@@ -29,9 +29,6 @@ class Feed {
     this.createdAt = null
     this.updatedAt = null
 
-    // Cached xml
-    this.xml = null
-
     if (feed) {
       this.construct(feed)
     }
@@ -202,7 +199,6 @@ class Feed {
     }
 
     this.updatedAt = Date.now()
-    this.xml = null
   }
 
   setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
@@ -297,7 +293,6 @@ class Feed {
     })
 
     this.updatedAt = Date.now()
-    this.xml = null
   }
 
   setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
@@ -399,18 +394,14 @@ class Feed {
     })
 
     this.updatedAt = Date.now()
-    this.xml = null
   }
 
   buildXml(originalHostPrefix) {
-    if (this.xml) return this.xml
-
     var rssfeed = new RSS(this.meta.getRSSData(originalHostPrefix))
     this.episodes.forEach((ep) => {
       rssfeed.item(ep.getRSSData(originalHostPrefix))
     })
-    this.xml = rssfeed.xml()
-    return this.xml
+    return rssfeed.xml()
   }
 
   getAuthorsStringFromLibraryItems(libraryItems) {
