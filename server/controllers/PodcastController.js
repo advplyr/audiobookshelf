@@ -150,6 +150,44 @@ class PodcastController {
     res.json({ podcast })
   }
 
+  async getPodcastsWithExternalFeedsSubscriptions(req, res) {
+    const podcasts = await Database.podcastModel.getAllIWithFeedSubscriptions()
+    res.json({
+      podcasts
+    })
+  }
+
+  async checkPodcastFeed(req, res) {
+    const libraryItem = req.libraryItem
+    const podcast = await getPodcastFeed(libraryItem.media.metadata.feedUrl)
+
+    if (!podcast) {
+      this.podcastManager.setFeedHealthStatus(libraryItem.media.id, false)
+      return res.status(404).send('Podcast RSS feed request failed or invalid response data')
+    }
+
+    this.podcastManager.setFeedHealthStatus(libraryItem.media.id, true)
+    res.json({ podcast })
+  }
+
+  async checkPodcastFeedUrl(req, res) {
+    const podcastId = req.params.id;
+
+    try {
+      const podcast = await Database.podcastModel.findByPk(req.params.id)
+
+      const podcastResult = await getPodcastFeed(podcast.feedURL);
+      const podcastNewStatus = await this.podcastManager.setFeedHealthStatus(podcastId, !!podcastResult);
+
+      Logger.info(podcastNewStatus);
+
+      return res.json(podcastNewStatus);
+    } catch (error) {
+      Logger.error(`[PodcastController] checkPodcastFeed: Error checking podcast feed for podcast ${podcastId}`, error)
+      res.status(500).json({ error: 'An error occurred while checking the podcast feed.' });
+    }
+  }
+
   /**
    * POST: /api/podcasts/opml
    *

@@ -267,7 +267,7 @@ class PodcastManager {
     const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheckDate
     Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.metadata.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
-    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
+    let newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
     Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes?.length || 'N/A'} episodes found`)
 
     if (!newEpisodes) {
@@ -282,13 +282,18 @@ class PodcastManager {
       } else {
         Logger.warn(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.metadata.title}"`)
       }
+      libraryItem.media.metadata.feedHealthy = false
     } else if (newEpisodes.length) {
       delete this.failedCheckMap[libraryItem.id]
       Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes, true)
+      libraryItem.media.metadata.lastSuccessfulFetchAt = Date.now()
+      libraryItem.media.metadata.feedHealthy = true
     } else {
       delete this.failedCheckMap[libraryItem.id]
       Logger.debug(`[PodcastManager] No new episodes for "${libraryItem.media.metadata.title}"`)
+      libraryItem.media.metadata.lastSuccessfulFetchAt = Date.now()
+      libraryItem.media.metadata.feedHealthy = true
     }
 
     libraryItem.media.lastEpisodeCheck = Date.now()
@@ -305,7 +310,7 @@ class PodcastManager {
     }
     const feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
     if (!feed?.episodes) {
-      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`, feed)
+        Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id}, URL: ${podcastLibraryItem.media.metadata.feedUrl})`, feed)
       return false
     }
 
@@ -322,12 +327,18 @@ class PodcastManager {
   async checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload) {
     const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
     Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
-    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, libraryItem.media.lastEpisodeCheck, maxEpisodesToDownload)
-    if (newEpisodes.length) {
+    let newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, libraryItem.media.lastEpisodeCheck, maxEpisodesToDownload)
+    if (!newEpisodes) {
+      libraryItem.media.metadata.feedHealthy = false
+    } else if (newEpisodes.length) {
       Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes, false)
+      libraryItem.media.metadata.lastSuccessfulFetchAt = Date.now()
+      libraryItem.media.metadata.feedHealthy = true
     } else {
       Logger.info(`[PodcastManager] No new episodes found for podcast "${libraryItem.media.metadata.title}"`)
+      libraryItem.media.metadata.lastSuccessfulFetchAt = Date.now()
+      libraryItem.media.metadata.feedHealthy = true
     }
 
     libraryItem.media.lastEpisodeCheck = Date.now()
@@ -336,6 +347,22 @@ class PodcastManager {
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
 
     return newEpisodes
+  }
+
+  async setFeedHealthStatus(podcastId, isHealthy) {
+    const podcast = await Database.podcastModel.findByPk(podcastId)
+
+    if (!podcast) return
+
+    podcast.feedHealthy = isHealthy
+    if (isHealthy) {
+      podcast.lastSuccessfulFetchAt = Date.now()
+    }
+    podcast.lastEpisodeCheck = Date.now()
+    podcast.updatedAt = Date.now()
+    await podcast.save()
+
+    return {lastEpisodeCheck: podcast.lastEpisodeCheck, lastSuccessfulFetchAt: podcast.lastSuccessfulFetchAt, feedHealthy: podcast.feedHealthy}
   }
 
   async findEpisode(rssFeedUrl, searchTitle) {
