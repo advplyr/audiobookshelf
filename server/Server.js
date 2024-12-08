@@ -53,7 +53,6 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
-    global.AllowIframe = process.env.ALLOW_IFRAME === '1'
     global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
@@ -195,7 +194,7 @@ class Server {
     const app = express()
 
     app.use((req, res, next) => {
-      if (!global.AllowIframe) {
+      if (!global.ServerSettings.allowIframe) {
         // Prevent clickjacking by disallowing iframes
         res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
       }

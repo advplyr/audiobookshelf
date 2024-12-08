@@ -24,6 +24,7 @@ class ServerSettings {
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
+    this.allowIframe = false
 
     // Backups
     this.backupPath = Path.join(global.MetadataPath, 'backups')
@@ -99,6 +100,7 @@ class ServerSettings {
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
+    this.allowIframe = !!settings.allowIframe
 
     this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
     this.backupSchedule = settings.backupSchedule || false
@@ -190,6 +192,11 @@ class ServerSettings {
       Logger.info(`[ServerSettings] Using backup path from environment variable ${process.env.BACKUP_PATH}`)
       this.backupPath = process.env.BACKUP_PATH
     }
+
+    if (process.env.ALLOW_IFRAME === '1' && !this.allowIframe) {
+      Logger.info(`[ServerSettings] Using allowIframe from environment variable`)
+      this.allowIframe = true
+    }
   }
 
   toJSON() {
@@ -207,6 +214,7 @@ class ServerSettings {
       metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
+      allowIframe: this.allowIframe,
       backupPath: this.backupPath,
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,

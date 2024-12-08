@@ -126,6 +126,10 @@ class MiscController {
     if (!isObject(settingsUpdate)) {
       return res.status(400).send('Invalid settings update object')
     }
+    if (settingsUpdate.allowIframe == false && process.env.ALLOW_IFRAME === '1') {
+      Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
+      return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
+    }
 
     const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
@@ -137,7 +141,6 @@ class MiscController {
       }
     }
     return res.json({
-      success: true,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
   }
