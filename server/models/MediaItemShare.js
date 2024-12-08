@@ -12,6 +12,7 @@ const { DataTypes, Model } = require('sequelize')
  * @property {Object} extraData
  * @property {Date} createdAt
  * @property {Date} updatedAt
+ * @property {boolean} isDownloadable
  *
  * @typedef {MediaItemShareObject & MediaItemShare} MediaItemShareModel
  */
@@ -25,6 +26,7 @@ const { DataTypes, Model } = require('sequelize')
  * @property {Date} expiresAt
  * @property {Date} createdAt
  * @property {Date} updatedAt
+ * @property {boolean} isDownloadable
  */
 
 class MediaItemShare extends Model {
@@ -40,7 +42,8 @@ class MediaItemShare extends Model {
       slug: this.slug,
       expiresAt: this.expiresAt,
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      isDownloadable: this.isDownloadable
     }
   }
 
@@ -114,7 +117,8 @@ class MediaItemShare extends Model {
         slug: DataTypes.STRING,
         pash: DataTypes.STRING,
         expiresAt: DataTypes.DATE,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+        isDownloadable: DataTypes.BOOLEAN
       },
       {
         sequelize,

@@ -259,7 +259,7 @@ class ShareController {
       return res.sendStatus(403)
     }
 
-    const { slug, expiresAt, mediaItemType, mediaItemId } = req.body
+    const { slug, expiresAt, mediaItemType, mediaItemId, isDownloadable } = req.body
 
     if (!slug?.trim?.() || typeof mediaItemType !== 'string' || typeof mediaItemId !== 'string') {
       return res.status(400).send('Missing or invalid required fields')
@@ -298,7 +298,8 @@ class ShareController {
         expiresAt: expiresAt || null,
         mediaItemId,
         mediaItemType,
-        userId: req.user.id
+        userId: req.user.id,
+        isDownloadable
       })
 
       ShareManager.openMediaItemShare(mediaItemShare)
