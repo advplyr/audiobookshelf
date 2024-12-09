@@ -51,6 +51,8 @@ module.exports = {
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
+    'nuxt-webpack-optimisations',
+    'nuxt-compress',
     '@nuxtjs/pwa'
   ],
 
@@ -112,7 +114,14 @@ module.exports = {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
+  modern: true,
   build: {
+    parallel: true,
+    splitChunks: {
+      layouts: true,
+      pages: true,
+      commons: true
+    },
     postcss: {
       postcssOptions: {
         plugins: {
