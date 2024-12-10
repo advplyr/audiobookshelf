@@ -127,20 +127,20 @@ module.exports = {
           bookListeningMap[ls.displayTitle] += listeningSessionListeningTime
         }
 
-        const authors = ls.mediaMetadata.authors || []
+        const authors = ls.mediaMetadata?.authors || []
         authors.forEach((au) => {
           if (!authorListeningMap[au.name]) authorListeningMap[au.name] = 0
           authorListeningMap[au.name] += listeningSessionListeningTime
         })
 
-        const narrators = ls.mediaMetadata.narrators || []
+        const narrators = ls.mediaMetadata?.narrators || []
         narrators.forEach((narrator) => {
           if (!narratorListeningMap[narrator]) narratorListeningMap[narrator] = 0
           narratorListeningMap[narrator] += listeningSessionListeningTime
         })
 
         // Filter out bad genres like "audiobook" and "audio book"
-        const genres = (ls.mediaMetadata.genres || []).filter((g) => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
+        const genres = (ls.mediaMetadata?.genres || []).filter((g) => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
         genres.forEach((genre) => {
           if (!genreListeningMap[genre]) genreListeningMap[genre] = 0
           genreListeningMap[genre] += listeningSessionListeningTime

@@ -679,6 +679,8 @@
   "LabelViewPlayerSettings": "Переглянути налаштування програвача",
   "LabelViewQueue": "Переглянути чергу відтворення",
   "LabelVolume": "Гучність",
+  "LabelWebRedirectURLsDescription": "Авторизуйте ці URL у вашому OAuth постачальнику, щоб дозволити редирекцію назад до веб-додатку після входу:",
+  "LabelWebRedirectURLsSubfolder": "Підпапка для Redirect URL",
   "LabelWeekdaysToRun": "Виконувати у дні",
   "LabelXBooks": "{0} книг",
   "LabelXItems": "{0} елементів",

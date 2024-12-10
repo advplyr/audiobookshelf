@@ -33,109 +33,8 @@ function checkFilepathIsAudioFile(filepath) {
 module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
 /**
- * TODO: Function needs to be re-done
  * @param {string} mediaType
- * @param {string[]} paths array of relative file paths
- * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
- */
-function groupFilesIntoLibraryItemPaths(mediaType, paths) {
-  // Step 1: Clean path, Remove leading "/", Filter out non-media files in root dir
-  var nonMediaFilePaths = []
-  var pathsFiltered = paths
-    .map((path) => {
-      return path.startsWith('/') ? path.slice(1) : path
-    })
-    .filter((path) => {
-      let parsedPath = Path.parse(path)
-      // Is not in root dir OR is a book media file
-      if (parsedPath.dir) {
-        if (!isMediaFile(mediaType, parsedPath.ext, false)) {
-          // Seperate out non-media files
-          nonMediaFilePaths.push(path)
-          return false
-        }
-        return true
-      } else if (mediaType === 'book' && isMediaFile(mediaType, parsedPath.ext, false)) {
-        // (book media type supports single file audiobooks/ebooks in root dir)
-        return true
-      }
-      return false
-    })
-
-  // Step 2: Sort by least number of directories
-  pathsFiltered.sort((a, b) => {
-    var pathsA = Path.dirname(a).split('/').length
-    var pathsB = Path.dirname(b).split('/').length
-    return pathsA - pathsB
-  })
-
-  // Step 3: Group files in dirs
-  var itemGroup = {}
-  pathsFiltered.forEach((path) => {
-    var dirparts = Path.dirname(path)
-      .split('/')
-      .filter((p) => !!p && p !== '.') //  dirname returns . if no directory
-    var numparts = dirparts.length
-    var _path = ''
-
-    if (!numparts) {
-      // Media file in root
-      itemGroup[path] = path
-    } else {
-      // Iterate over directories in path
-      for (let i = 0; i < numparts; i++) {
-        var dirpart = dirparts.shift()
-        _path = Path.posix.join(_path, dirpart)
-
-        if (itemGroup[_path]) {
-          // Directory already has files, add file
-          var relpath = Path.posix.join(dirparts.join('/'), Path.basename(path))
-          itemGroup[_path].push(relpath)
-          return
-        } else if (!dirparts.length) {
-          // This is the last directory, create group
-          itemGroup[_path] = [Path.basename(path)]
-          return
-        } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) {
-          // Next directory is the last and is a CD dir, create group
-          itemGroup[_path] = [Path.posix.join(dirparts[0], Path.basename(path))]
-          return
-        }
-      }
-    }
-  })
-
-  // Step 4: Add in non-media files if they fit into item group
-  if (nonMediaFilePaths.length) {
-    for (const nonMediaFilePath of nonMediaFilePaths) {
-      const pathDir = Path.dirname(nonMediaFilePath)
-      const filename = Path.basename(nonMediaFilePath)
-      const dirparts = pathDir.split('/')
-      const numparts = dirparts.length
-      let _path = ''
-
-      // Iterate over directories in path
-      for (let i = 0; i < numparts; i++) {
-        const dirpart = dirparts.shift()
-        _path = Path.posix.join(_path, dirpart)
-        if (itemGroup[_path]) {
-          // Directory is a group
-          const relpath = Path.posix.join(dirparts.join('/'), filename)
-          itemGroup[_path].push(relpath)
-        } else if (!dirparts.length) {
-          itemGroup[_path] = [filename]
-        }
-      }
-    }
-  }
-
-  return itemGroup
-}
-module.exports.groupFilesIntoLibraryItemPaths = groupFilesIntoLibraryItemPaths
-
-/**
- * @param {string} mediaType
- * @param {{name:string, path:string, dirpath:string, reldirpath:string, fullpath:string, extension:string, deep:number}[]} fileItems (see recurseFiles)
+ * @param {import('./fileUtils').FilePathItem[]} fileItems
  * @param {boolean} [audiobooksOnly=false]
  * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
  */
@@ -147,7 +46,9 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
 
   // Step 2: Seperate media files and other files
   //     - Directories without a media file will not be included
+  /** @type {import('./fileUtils').FilePathItem[]} */
   const mediaFileItems = []
+  /** @type {import('./fileUtils').FilePathItem[]} */
   const otherFileItems = []
   itemsFiltered.forEach((item) => {
     if (isMediaFile(mediaType, item.extension, audiobooksOnly)) mediaFileItems.push(item)
@@ -179,7 +80,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
           // This is the last directory, create group
           libraryItemGroup[_path] = [item.name]
           return
-        } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) {
+        } else if (dirparts.length === 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[0])) {
           // Next directory is the last and is a CD dir, create group
           libraryItemGroup[_path] = [Path.posix.join(dirparts[0], item.name)]
           return

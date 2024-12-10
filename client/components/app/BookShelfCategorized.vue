@@ -17,7 +17,7 @@
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24e">
       <template v-for="(shelf, index) in supportedShelves">
         <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8e my-6e" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</p>
+          <h2 class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</h2>
         </widgets-item-slider>
       </template>
     </div>

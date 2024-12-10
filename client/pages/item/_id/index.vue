@@ -12,12 +12,12 @@
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
               <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
-                <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="playItem">
+                <button class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" :aria-label="$strings.ButtonPlay" @click.stop.prevent="playItem">
                   <span class="material-symbols fill text-4xl">play_arrow</span>
-                </div>
+                </button>
               </div>
 
-              <span class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" @click="showEditCover">edit</span>
+              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@
             </ui-btn>
 
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
-              <span v-show="!isStreaming" class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
+              <span class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 

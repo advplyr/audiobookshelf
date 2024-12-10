@@ -84,7 +84,6 @@ class Server {
     Logger.logManager = new LogManager()
 
     this.server = null
-    this.io = null
   }
 
   /**
@@ -195,8 +194,10 @@ class Server {
     const app = express()
 
     app.use((req, res, next) => {
-      // Prevent clickjacking by disallowing iframes
-      res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
+      if (!global.ServerSettings.allowIframe) {
+        // Prevent clickjacking by disallowing iframes
+        res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
+      }
 
       /**
        * @temporary
@@ -249,14 +250,17 @@ class Server {
 
     const router = express.Router()
     // if RouterBasePath is set, modify all requests to include the base path
-    if (global.RouterBasePath) {
-      app.use((req, res, next) => {
-        if (!req.url.startsWith(global.RouterBasePath)) {
-          req.url = `${global.RouterBasePath}${req.url}`
-        }
-        next()
-      })
-    }
+    app.use((req, res, next) => {
+      const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
+      const host = req.get('host')
+      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
+      req.originalHostPrefix = `${protocol}://${host}${prefix}`
+      if (!urlStartsWithRouterBasePath) {
+        req.url = `${global.RouterBasePath}${req.url}`
+      }
+      next()
+    })
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
@@ -441,18 +445,11 @@ class Server {
   async stop() {
     Logger.info('=== Stopping Server ===')
     Watcher.close()
-    Logger.info('Watcher Closed')
-
-    return new Promise((resolve) => {
-      SocketAuthority.close((err) => {
-        if (err) {
-          Logger.error('Failed to close server', err)
-        } else {
-          Logger.info('Server successfully closed')
-        }
-        resolve()
-      })
-    })
+    Logger.info('[Server] Watcher Closed')
+    await SocketAuthority.close()
+    Logger.info('[Server] Closing HTTP Server')
+    await new Promise((resolve) => this.server.close(resolve))
+    Logger.info('[Server] HTTP Server Closed')
   }
 }
 module.exports = Server

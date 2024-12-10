@@ -60,42 +60,36 @@ class FeedMeta {
     }
   }
 
-  getRSSData() {
-    const blockTags = [
-      { 'itunes:block': 'yes' },
-      { 'googleplay:block': 'yes' }
-    ]
+  getRSSData(hostPrefix) {
+    const blockTags = [{ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' }]
     return {
       title: this.title,
       description: this.description || '',
       generator: 'Audiobookshelf',
-      feed_url: this.feedUrl,
-      site_url: this.link,
-      image_url: this.imageUrl,
+      feed_url: `${hostPrefix}${this.feedUrl}`,
+      site_url: `${hostPrefix}${this.link}`,
+      image_url: `${hostPrefix}${this.imageUrl}`,
       custom_namespaces: {
-        'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd',
-        'psc': 'http://podlove.org/simple-chapters',
-        'podcast': 'https://podcastindex.org/namespace/1.0',
-        'googleplay': 'http://www.google.com/schemas/play-podcasts/1.0'
+        itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
+        psc: 'http://podlove.org/simple-chapters',
+        podcast: 'https://podcastindex.org/namespace/1.0',
+        googleplay: 'http://www.google.com/schemas/play-podcasts/1.0'
       },
       custom_elements: [
-        { 'language': this.language || 'en' },
-        { 'author': this.author || 'advplyr' },
+        { language: this.language || 'en' },
+        { author: this.author || 'advplyr' },
         { 'itunes:author': this.author || 'advplyr' },
         { 'itunes:summary': this.description || '' },
         { 'itunes:type': this.type },
         {
           'itunes:image': {
             _attr: {
-              href: this.imageUrl
+              href: `${hostPrefix}${this.imageUrl}`
             }
           }
         },
         {
-          'itunes:owner': [
-            { 'itunes:name': this.ownerName || this.author || '' },
-            { 'itunes:email': this.ownerEmail || '' }
-          ]
+          'itunes:owner': [{ 'itunes:name': this.ownerName || this.author || '' }, { 'itunes:email': this.ownerEmail || '' }]
         },
         { 'itunes:explicit': !!this.explicit },
         ...(this.preventIndexing ? blockTags : [])
