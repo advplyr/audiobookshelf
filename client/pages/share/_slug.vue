@@ -68,7 +68,7 @@ export default {
       return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
     },
     downloadUrl() {
-      return `${process.env.serverUrl}/api/items/${this.playbackSession.libraryItemId}/download?share=${this.mediaItemShare.slug}`
+      return `${process.env.serverUrl}/public/share/${this.mediaItemShare.slug}/download`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
