@@ -594,6 +594,8 @@
   "LabelSize": "Розмір",
   "LabelSleepTimer": "Таймер вимкнення",
   "LabelSlug": "Назва",
+  "LabelSortAscending": "По зростанню",
+  "LabelSortDescending": "По спаданню",
   "LabelStart": "Початок",
   "LabelStartTime": "Час початку",
   "LabelStarted": "Почато",
