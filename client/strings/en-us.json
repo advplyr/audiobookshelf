@@ -88,6 +88,8 @@
   "ButtonSaveTracklist": "Save Tracklist",
   "ButtonScan": "Scan",
   "ButtonScanLibrary": "Scan Library",
+  "ButtonScrollLeft": "Scroll Left",
+  "ButtonScrollRight": "Scroll Right",
   "ButtonSearch": "Search",
   "ButtonSelectFolderPath": "Select Folder Path",
   "ButtonSeries": "Series",
