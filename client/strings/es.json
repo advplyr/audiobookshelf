@@ -594,6 +594,8 @@
   "LabelSize": "Tamaño",
   "LabelSleepTimer": "Temporizador de apagado",
   "LabelSlug": "Slug",
+  "LabelSortAscending": "Ascendente",
+  "LabelSortDescending": "Descendente",
   "LabelStart": "Iniciar",
   "LabelStartTime": "Tiempo de Inicio",
   "LabelStarted": "Iniciado",
