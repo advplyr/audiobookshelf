@@ -6,7 +6,7 @@
       <span class="material-symbols text-2xl landscape:text-2xl md:portrait:text-4xl lg:text-4xl">close</span>
     </button>
     <slot name="outer" />
-    <div ref="content" tabindex="0" style="min-width: 380px; min-height: 200px; max-width: 100vw" class="relative text-white" :style="{ height: modalHeight, width: modalWidth, marginTop: contentMarginTop + 'px' }" @mousedown="mousedownModal" @mouseup="mouseupModal" v-click-outside="clickBg">
+    <div ref="content" tabindex="0" style="min-width: 380px; min-height: 200px; max-width: 100vw" class="relative text-white outline-none" :style="{ height: modalHeight, width: modalWidth, marginTop: contentMarginTop + 'px' }" @mousedown="mousedownModal" @mouseup="mouseupModal" v-click-outside="clickBg">
       <slot />
       <div v-if="processing" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-black bg-opacity-60 rounded-lg flex items-center justify-center">
         <ui-loading-indicator />
