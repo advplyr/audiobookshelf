@@ -88,6 +88,8 @@
   "ButtonSaveTracklist": "Speichere die Titelliste",
   "ButtonScan": "Partial-Scan (nur geänderte/neue Medien)",
   "ButtonScanLibrary": "Bibliothek scannen",
+  "ButtonScrollLeft": "Nach Links scrollen",
+  "ButtonScrollRight": "Nach Rechts scrollen",
   "ButtonSearch": "Suchen",
   "ButtonSelectFolderPath": "Ordnerpfad auswählen",
   "ButtonSeries": "Serien",
