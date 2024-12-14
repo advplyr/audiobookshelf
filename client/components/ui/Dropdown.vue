@@ -45,6 +45,9 @@ export default {
     menuMaxHeight: {
       type: String,
       default: '224px'
+    },
+    buttonStyle: {
+      type: String
     }
   },
   data() {
@@ -88,6 +91,7 @@ export default {
     },
     buttonClass() {
       var classes = []
+      if (this.buttonStyle) classes.push(this.buttonStyle)
       if (this.small) classes.push('h-9')
       else classes.push('h-10')
 

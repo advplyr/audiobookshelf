@@ -31,7 +31,7 @@
         <div class="flex-grow" />
 
         <!-- year selector -->
-        <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
+        <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" v-if="availableYears().length >= 1" class="text-sm mr-1 sm:mr-2 max-w-[80px]" button-style="h-[29.55px] mt-[0.25px] !py-0 font-semibold"/>
 
         <!-- refresh button -->
         <ui-btn small :disabled="processingYearInReview" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReview">
@@ -70,7 +70,7 @@
           <div class="flex-grow" />
 
           <!-- year selector -->
-          <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
+          <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" v-if="availableYears().length >= 1" class="text-sm mr-1 sm:mr-2 max-w-[80px]" button-style="h-[29.55px] mt-[0.25px] !py-0 font-semibold"/>
 
           <!-- refresh button -->
           <ui-btn small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReviewServer">
@@ -144,7 +144,7 @@ export default {
           const currentYear = new Date().getFullYear()
 
           const years = []
-          for (let year = oldestYear; year <= currentYear; year++) {
+          for (let year = currentYear; year >= oldestYear; year--) {
             years.push({ value: year, text: year.toString() })
           }
 
