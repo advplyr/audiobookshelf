@@ -30,6 +30,9 @@
         <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewVariant + 1 }}</p>
         <div class="flex-grow" />
 
+        <!-- year selector -->
+        <ui-dropdown v-model="yearInReviewYear" :items="eventOptions()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
+
         <!-- refresh button -->
         <ui-btn small :disabled="processingYearInReview" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReview">
           <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
@@ -66,6 +69,8 @@
           <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewServerVariant + 1 }}</p>
           <div class="flex-grow" />
 
+          <!-- year selector -->
+          <ui-dropdown v-model="yearInReviewYear" :items="eventOptions()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
           <!-- refresh button -->
           <ui-btn small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReviewServer">
             <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
@@ -113,15 +118,39 @@ export default {
       this.$refs.yearInReviewShort.share()
     },
     refreshYearInReviewServer() {
-      this.$refs.yearInReviewServer.refresh()
+      if (this.$refs.yearInReviewServer != null) {
+        this.$refs.yearInReviewServer.refresh()
+      }
     },
     refreshYearInReview() {
-      this.$refs.yearInReview.refresh()
-      this.$refs.yearInReviewShort.refresh()
+      if(this.$refs.yearInReview != null && this.$refs.yearInReviewShort != null) {
+        this.$refs.yearInReview.refresh()
+        this.$refs.yearInReviewShort.refresh()
+      }
     },
     clickShowYearInReview() {
       this.showYearInReview = !this.showYearInReview
-    }
+    },
+    eventOptions() {
+      if(this.$store.getters['libraries/getCurrentLibrary']) {
+        const oldestDate = this.$store.getters['libraries/getCurrentLibrary'].createdAt
+        if (oldestDate) {
+          const date = new Date(oldestDate)
+          const oldestYear = date.getFullYear()
+          const currentYear = new Date().getFullYear()
+
+          const years = []
+          for (let year = oldestYear; year <= currentYear; year++) {
+            years.push({ value: year, text: year.toString() })
+          }
+
+          return years
+        }
+      } else {
+        const currentYear = new Date().getFullYear();
+        return [{ value: currentYear, text: currentYear.toString() }]
+      }
+    },
   },
   beforeMount() {
     this.yearInReviewYear = new Date().getFullYear()
@@ -136,6 +165,14 @@ export default {
     } else {
       console.warn('Navigator.share not supported')
     }
-  }
+  },
+  watch: {
+    yearInReviewYear(newYear, oldYear) {
+      this.$nextTick(() => {
+        this.refreshYearInReview()
+        this.refreshYearInReviewServer()
+      });
+    },
+  },
 }
 </script>
