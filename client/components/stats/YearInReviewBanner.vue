@@ -150,10 +150,9 @@ export default {
 
           return years
         }
-      } else {
-        const currentYear = new Date().getFullYear();
-        return [{ value: currentYear, text: currentYear.toString() }]
       }
+      // Fallback on error
+      return [{ value: this.yearInReviewYear, text: this.yearInReviewYear.toString() }]
     },
   },
   beforeMount() {
