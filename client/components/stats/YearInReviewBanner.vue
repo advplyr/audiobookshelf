@@ -105,6 +105,9 @@ export default {
   computed: {
     isAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
+    },
+    user() {
+      return this.$store.state.user.user
     }
   },
   methods: {
@@ -132,8 +135,8 @@ export default {
       this.showYearInReview = !this.showYearInReview
     },
     eventOptions() {
-      if(this.$store.getters['libraries/getCurrentLibrary']) {
-        const oldestDate = this.$store.getters['libraries/getCurrentLibrary'].createdAt
+      if(this.user) {
+        const oldestDate = this.user.createdAt
         if (oldestDate) {
           const date = new Date(oldestDate)
           const oldestYear = date.getFullYear()
