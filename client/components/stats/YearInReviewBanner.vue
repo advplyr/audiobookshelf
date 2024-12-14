@@ -31,7 +31,7 @@
         <div class="flex-grow" />
 
         <!-- year selector -->
-        <ui-dropdown v-model="yearInReviewYear" small :items="eventOptions()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
+        <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
 
         <!-- refresh button -->
         <ui-btn small :disabled="processingYearInReview" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReview">
@@ -70,7 +70,7 @@
           <div class="flex-grow" />
 
           <!-- year selector -->
-          <ui-dropdown v-model="yearInReviewYear" small :items="eventOptions()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
+          <ui-dropdown v-model="yearInReviewYear" small :items="availableYears()" class="m-6 text-sm mr-1 sm:mr-2 max-w-[100px]"/>
 
           <!-- refresh button -->
           <ui-btn small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReviewServer">
@@ -135,7 +135,7 @@ export default {
     clickShowYearInReview() {
       this.showYearInReview = !this.showYearInReview
     },
-    eventOptions() {
+    availableYears() {
       if(this.user) {
         const oldestDate = this.user.createdAt
         if (oldestDate) {
