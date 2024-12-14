@@ -1,6 +1,21 @@
+const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const oldFeed = require('../objects/Feed')
 const areEquivalent = require('../utils/areEquivalent')
+
+/**
+ * @typedef FeedOptions
+ * @property {boolean} preventIndexing
+ * @property {string} ownerName
+ * @property {string} ownerEmail
+ */
+
+/**
+ * @typedef FeedExpandedProperties
+ * @property {import('./FeedEpisode')} feedEpisodes
+ *
+ * @typedef {Feed & FeedExpandedProperties} FeedExpanded
+ */
 
 class Feed extends Model {
   constructor(values, options) {
@@ -50,6 +65,9 @@ class Feed extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {import('./FeedEpisode')[]} - only set if expanded */
+    this.feedEpisodes
   }
 
   static async getOldFeeds() {
@@ -67,7 +85,15 @@ class Feed extends Model {
    * @returns {oldFeed}
    */
   static getOldFeed(feedExpanded) {
-    const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
+    const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode()) || []
+
+    // Sort episodes by pubDate. Newest to oldest for episodic, oldest to newest for serial
+    if (feedExpanded.podcastType === 'episodic') {
+      episodes.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
+    } else {
+      episodes.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate))
+    }
+
     return new oldFeed({
       id: feedExpanded.id,
       slug: feedExpanded.slug,
@@ -92,7 +118,7 @@ class Feed extends Model {
       },
       serverAddress: feedExpanded.serverAddress,
       feedUrl: feedExpanded.feedURL,
-      episodes: episodes || [],
+      episodes,
       createdAt: feedExpanded.createdAt.valueOf(),
       updatedAt: feedExpanded.updatedAt.valueOf()
     })
@@ -250,10 +276,62 @@ class Feed extends Model {
     }
   }
 
-  getEntity(options) {
-    if (!this.entityType) return Promise.resolve(null)
-    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
-    return this[mixinMethodName](options)
+  /**
+   *
+   * @param {string} userId
+   * @param {string} slug
+   * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
+    const media = libraryItem.media
+
+    const feedObj = {
+      slug,
+      entityType: 'libraryItem',
+      entityId: libraryItem.id,
+      entityUpdatedAt: libraryItem.updatedAt,
+      serverAddress,
+      feedURL: `/feed/${slug}`,
+      imageURL: media.coverPath ? `/feed/${slug}/cover${Path.extname(media.coverPath)}` : `/Logo.png`,
+      siteURL: `/item/${libraryItem.id}`,
+      title: media.title,
+      description: media.description,
+      author: libraryItem.mediaType === 'podcast' ? media.author : media.authorName,
+      podcastType: libraryItem.mediaType === 'podcast' ? media.podcastType : 'serial',
+      language: media.language,
+      preventIndexing: feedOptions.preventIndexing,
+      ownerName: feedOptions.ownerName,
+      ownerEmail: feedOptions.ownerEmail,
+      explicit: media.explicit,
+      coverPath: media.coverPath,
+      userId
+    }
+
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const feed = await this.create(feedObj, { transaction })
+
+      if (libraryItem.mediaType === 'podcast') {
+        feed.feedEpisodes = await feedEpisodeModel.createFromPodcastEpisodes(libraryItem, feed, slug, transaction)
+      } else {
+        feed.feedEpisodes = await feedEpisodeModel.createFromAudiobookTracks(libraryItem, feed, slug, transaction)
+      }
+
+      await transaction.commit()
+
+      return feed
+    } catch (error) {
+      Logger.error(`[Feed] Error creating feed for library item ${libraryItem.id}`, error)
+      await transaction.rollback()
+      return null
+    }
   }
 
   /**
@@ -368,6 +446,60 @@ class Feed extends Model {
         delete instance.dataValues.playlist
       }
     })
+  }
+
+  getEntity(options) {
+    if (!this.entityType) return Promise.resolve(null)
+    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
+    return this[mixinMethodName](options)
+  }
+
+  toOldJSON() {
+    const episodes = this.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
+    return {
+      id: this.id,
+      slug: this.slug,
+      userId: this.userId,
+      entityType: this.entityType,
+      entityId: this.entityId,
+      entityUpdatedAt: this.entityUpdatedAt?.valueOf() || null,
+      coverPath: this.coverPath || null,
+      meta: {
+        title: this.title,
+        description: this.description,
+        author: this.author,
+        imageUrl: this.imageURL,
+        feedUrl: this.feedURL,
+        link: this.siteURL,
+        explicit: this.explicit,
+        type: this.podcastType,
+        language: this.language,
+        preventIndexing: this.preventIndexing,
+        ownerName: this.ownerName,
+        ownerEmail: this.ownerEmail
+      },
+      serverAddress: this.serverAddress,
+      feedUrl: this.feedURL,
+      episodes: episodes || [],
+      createdAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf()
+    }
+  }
+
+  toOldJSONMinified() {
+    return {
+      id: this.id,
+      entityType: this.entityType,
+      entityId: this.entityId,
+      feedUrl: this.feedURL,
+      meta: {
+        title: this.title,
+        description: this.description,
+        preventIndexing: this.preventIndexing,
+        ownerName: this.ownerName,
+        ownerEmail: this.ownerEmail
+      }
+    }
   }
 }
 

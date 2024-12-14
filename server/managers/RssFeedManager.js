@@ -223,25 +223,42 @@ class RssFeedManager {
 
   /**
    *
-   * @param {string} userId
-   * @param {*} libraryItem
    * @param {*} options
-   * @returns
+   * @returns {import('../models/Feed').FeedOptions}
+   */
+  getFeedOptionsFromReqOptions(options) {
+    const metadataDetails = options.metadataDetails || {}
+
+    if (metadataDetails.preventIndexing !== false) {
+      metadataDetails.preventIndexing = true
+    }
+
+    return {
+      preventIndexing: metadataDetails.preventIndexing,
+      ownerName: metadataDetails.ownerName && typeof metadataDetails.ownerName === 'string' ? metadataDetails.ownerName : null,
+      ownerEmail: metadataDetails.ownerEmail && typeof metadataDetails.ownerEmail === 'string' ? metadataDetails.ownerEmail : null
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} options
+   * @returns {Promise<import('../models/Feed').FeedExpanded>}
    */
   async openFeedForItem(userId, libraryItem, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
-    const preventIndexing = options.metadataDetails?.preventIndexing ?? true
-    const ownerName = options.metadataDetails?.ownerName
-    const ownerEmail = options.metadataDetails?.ownerEmail
+    const feedOptions = this.getFeedOptionsFromReqOptions(options)
 
-    const feed = new Feed()
-    feed.setFromItem(userId, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
-
-    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
-    await Database.createFeed(feed)
-    SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
-    return feed
+    Logger.info(`[RssFeedManager] Creating RSS feed for item ${libraryItem.id} "${libraryItem.media.title}"`)
+    const feedExpanded = await Database.feedModel.createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions)
+    if (feedExpanded) {
+      Logger.info(`[RssFeedManager] Opened RSS feed "${feedExpanded.feedURL}"`)
+      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified())
+    }
+    return feedExpanded
   }
 
   /**

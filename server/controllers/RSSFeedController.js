@@ -38,38 +38,43 @@ class RSSFeedController {
    * @param {Response} res
    */
   async openRSSFeedForItem(req, res) {
-    const options = req.body || {}
+    const reqBody = req.body || {}
 
-    const item = await Database.libraryItemModel.getOldById(req.params.itemId)
-    if (!item) return res.sendStatus(404)
+    const itemExpanded = await Database.libraryItemModel.getExpandedById(req.params.itemId)
+    if (!itemExpanded) return res.sendStatus(404)
 
     // Check user can access this library item
-    if (!req.user.checkCanAccessLibraryItem(item)) {
-      Logger.error(`[RSSFeedController] User "${req.user.username}" attempted to open an RSS feed for item "${item.media.metadata.title}" that they don\'t have access to`)
+    if (!req.user.checkCanAccessLibraryItem(itemExpanded)) {
+      Logger.error(`[RSSFeedController] User "${req.user.username}" attempted to open an RSS feed for item "${itemExpanded.media.title}" that they don\'t have access to`)
       return res.sendStatus(403)
     }
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug) {
+    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
 
     // Check item has audio tracks
-    if (!item.media.numTracks) {
-      Logger.error(`[RSSFeedController] Cannot open RSS feed for item "${item.media.metadata.title}" because it has no audio tracks`)
+    if (!itemExpanded.hasAudioTracks()) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed for item "${itemExpanded.media.title}" because it has no audio tracks`)
       return res.status(400).send('Item has no audio tracks')
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
-      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
+    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
 
-    const feed = await this.rssFeedManager.openFeedForItem(req.user.id, item, req.body)
+    const feed = await this.rssFeedManager.openFeedForItem(req.user.id, itemExpanded, reqBody)
+    if (!feed) {
+      Logger.error(`[RSSFeedController] Failed to open RSS feed for item "${itemExpanded.media.title}"`)
+      return res.status(500).send('Failed to open RSS feed')
+    }
+
     res.json({
-      feed: feed.toJSONMinified()
+      feed: feed.toOldJSONMinified()
     })
   }
 
