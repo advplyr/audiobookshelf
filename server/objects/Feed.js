@@ -101,64 +101,6 @@ class Feed {
     return true
   }
 
-  setFromItem(userId, slug, libraryItem, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
-    const media = libraryItem.media
-    const mediaMetadata = media.metadata
-    const isPodcast = libraryItem.mediaType === 'podcast'
-
-    const feedUrl = `/feed/${slug}`
-    const author = isPodcast ? mediaMetadata.author : mediaMetadata.authorName
-
-    this.id = uuidv4()
-    this.slug = slug
-    this.userId = userId
-    this.entityType = 'libraryItem'
-    this.entityId = libraryItem.id
-    this.entityUpdatedAt = libraryItem.updatedAt
-    this.coverPath = media.coverPath || null
-    this.serverAddress = serverAddress
-    this.feedUrl = feedUrl
-
-    const coverFileExtension = this.coverPath ? Path.extname(media.coverPath) : null
-
-    this.meta = new FeedMeta()
-    this.meta.title = mediaMetadata.title
-    this.meta.description = mediaMetadata.description
-    this.meta.author = author
-    this.meta.imageUrl = media.coverPath ? `/feed/${slug}/cover${coverFileExtension}` : `/Logo.png`
-    this.meta.feedUrl = feedUrl
-    this.meta.link = `/item/${libraryItem.id}`
-    this.meta.explicit = !!mediaMetadata.explicit
-    this.meta.type = mediaMetadata.type
-    this.meta.language = mediaMetadata.language
-    this.meta.preventIndexing = preventIndexing
-    this.meta.ownerName = ownerName
-    this.meta.ownerEmail = ownerEmail
-
-    this.episodes = []
-    if (isPodcast) {
-      // PODCAST EPISODES
-      media.episodes.forEach((episode) => {
-        if (episode.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = episode.updatedAt
-
-        const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromPodcastEpisode(libraryItem, serverAddress, slug, episode, this.meta)
-        this.episodes.push(feedEpisode)
-      })
-    } else {
-      // AUDIOBOOK EPISODES
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItem)
-      media.tracks.forEach((audioTrack) => {
-        const feedEpisode = new FeedEpisode()
-        feedEpisode.setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, this.meta, useChapterTitles)
-        this.episodes.push(feedEpisode)
-      })
-    }
-
-    this.createdAt = Date.now()
-    this.updatedAt = Date.now()
-  }
-
   updateFromItem(libraryItem) {
     const media = libraryItem.media
     const mediaMetadata = media.metadata

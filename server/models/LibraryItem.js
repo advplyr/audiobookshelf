@@ -73,6 +73,9 @@ class LibraryItem extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {Book.BookExpanded|Podcast.PodcastExpanded} - only set when expanded */
+    this.media
   }
 
   /**
@@ -1123,6 +1126,24 @@ class LibraryItem extends Model {
         media.destroy()
       }
     })
+  }
+
+  /**
+   * Check if book or podcast library item has audio tracks
+   * Requires expanded library item
+   *
+   * @returns {boolean}
+   */
+  hasAudioTracks() {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
+      return false
+    }
+    if (this.mediaType === 'book') {
+      return this.media.audioFiles?.length > 0
+    } else {
+      return this.media.podcastEpisodes?.length > 0
+    }
   }
 }
 
