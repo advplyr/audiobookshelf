@@ -1,7 +1,6 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const oldFeed = require('../objects/Feed')
-const areEquivalent = require('../utils/areEquivalent')
 const Logger = require('../Logger')
 
 const RSS = require('../libs/rss')
@@ -144,20 +143,6 @@ class Feed extends Model {
   }
 
   /**
-   * Find all library item ids that have an open feed (used in library filter)
-   * @returns {Promise<string[]>} array of library item ids
-   */
-  static async findAllLibraryItemIds() {
-    const feeds = await this.findAll({
-      attributes: ['entityId'],
-      where: {
-        entityType: 'libraryItem'
-      }
-    })
-    return feeds.map((f) => f.entityId).filter((f) => f) || []
-  }
-
-  /**
    * Find feed where and return oldFeed
    * @param {Object} where sequelize where object
    * @returns {Promise<oldFeed>} oldFeed
@@ -172,103 +157,6 @@ class Feed extends Model {
     })
     if (!feedExpanded) return null
     return this.getOldFeed(feedExpanded)
-  }
-
-  static async fullCreateFromOld(oldFeed) {
-    const feedObj = this.getFromOld(oldFeed)
-    const newFeed = await this.create(feedObj)
-
-    if (oldFeed.episodes?.length) {
-      for (const oldFeedEpisode of oldFeed.episodes) {
-        const feedEpisode = this.sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
-        feedEpisode.feedId = newFeed.id
-        await this.sequelize.models.feedEpisode.create(feedEpisode)
-      }
-    }
-  }
-
-  static async fullUpdateFromOld(oldFeed) {
-    const oldFeedEpisodes = oldFeed.episodes || []
-    const feedObj = this.getFromOld(oldFeed)
-
-    const existingFeed = await this.findByPk(feedObj.id, {
-      include: this.sequelize.models.feedEpisode
-    })
-    if (!existingFeed) return false
-
-    let hasUpdates = false
-
-    // Remove and update existing feed episodes
-    for (const feedEpisode of existingFeed.feedEpisodes) {
-      const oldFeedEpisode = oldFeedEpisodes.find((ep) => ep.id === feedEpisode.id)
-      // Episode removed
-      if (!oldFeedEpisode) {
-        feedEpisode.destroy()
-      } else {
-        let episodeHasUpdates = false
-        const oldFeedEpisodeCleaned = this.sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
-        for (const key in oldFeedEpisodeCleaned) {
-          if (!areEquivalent(oldFeedEpisodeCleaned[key], feedEpisode[key])) {
-            episodeHasUpdates = true
-          }
-        }
-        if (episodeHasUpdates) {
-          await feedEpisode.update(oldFeedEpisodeCleaned)
-          hasUpdates = true
-        }
-      }
-    }
-
-    // Add new feed episodes
-    for (const episode of oldFeedEpisodes) {
-      if (!existingFeed.feedEpisodes.some((fe) => fe.id === episode.id)) {
-        await this.sequelize.models.feedEpisode.createFromOld(feedObj.id, episode)
-        hasUpdates = true
-      }
-    }
-
-    let feedHasUpdates = false
-    for (const key in feedObj) {
-      let existingValue = existingFeed[key]
-      if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-      if (!areEquivalent(existingValue, feedObj[key])) {
-        feedHasUpdates = true
-      }
-    }
-
-    if (feedHasUpdates) {
-      await existingFeed.update(feedObj)
-      hasUpdates = true
-    }
-
-    return hasUpdates
-  }
-
-  static getFromOld(oldFeed) {
-    const oldFeedMeta = oldFeed.meta || {}
-    return {
-      id: oldFeed.id,
-      slug: oldFeed.slug,
-      entityType: oldFeed.entityType,
-      entityId: oldFeed.entityId,
-      entityUpdatedAt: oldFeed.entityUpdatedAt,
-      serverAddress: oldFeed.serverAddress,
-      feedURL: oldFeed.feedUrl,
-      coverPath: oldFeed.coverPath || null,
-      imageURL: oldFeedMeta.imageUrl,
-      siteURL: oldFeedMeta.link,
-      title: oldFeedMeta.title,
-      description: oldFeedMeta.description,
-      author: oldFeedMeta.author,
-      podcastType: oldFeedMeta.type || null,
-      language: oldFeedMeta.language || null,
-      ownerName: oldFeedMeta.ownerName || null,
-      ownerEmail: oldFeedMeta.ownerEmail || null,
-      explicit: !!oldFeedMeta.explicit,
-      preventIndexing: !!oldFeedMeta.preventIndexing,
-      userId: oldFeed.userId
-    }
   }
 
   /**

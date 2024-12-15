@@ -48,39 +48,6 @@ class FeedEpisode extends Model {
   }
 
   /**
-   * Create feed episode from old model
-   *
-   * @param {string} feedId
-   * @param {Object} oldFeedEpisode
-   * @returns {Promise<FeedEpisode>}
-   */
-  static createFromOld(feedId, oldFeedEpisode) {
-    const newEpisode = this.getFromOld(oldFeedEpisode)
-    newEpisode.feedId = feedId
-    return this.create(newEpisode)
-  }
-
-  static getFromOld(oldFeedEpisode) {
-    return {
-      id: oldFeedEpisode.id,
-      title: oldFeedEpisode.title,
-      author: oldFeedEpisode.author,
-      description: oldFeedEpisode.description,
-      siteURL: oldFeedEpisode.link,
-      enclosureURL: oldFeedEpisode.enclosure?.url || null,
-      enclosureType: oldFeedEpisode.enclosure?.type || null,
-      enclosureSize: oldFeedEpisode.enclosure?.size || null,
-      pubDate: oldFeedEpisode.pubDate,
-      season: oldFeedEpisode.season || null,
-      episode: oldFeedEpisode.episode || null,
-      episodeType: oldFeedEpisode.episodeType || null,
-      duration: oldFeedEpisode.duration,
-      filePath: oldFeedEpisode.fullPath,
-      explicit: !!oldFeedEpisode.explicit
-    }
-  }
-
-  /**
    *
    * @param {import('./LibraryItem').LibraryItemExpanded} libraryItemExpanded
    * @param {import('./Feed')} feed
