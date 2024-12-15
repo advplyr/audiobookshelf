@@ -11,42 +11,43 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 class RssFeedManager {
   constructor() {}
 
-  async validateFeedEntity(feedObj) {
-    if (feedObj.entityType === 'collection') {
-      const collection = await Database.collectionModel.getOldById(feedObj.entityId)
-      if (!collection) {
-        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
-        return false
-      }
-    } else if (feedObj.entityType === 'libraryItem') {
-      const libraryItemExists = await Database.libraryItemModel.checkExistsById(feedObj.entityId)
-      if (!libraryItemExists) {
-        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
-        return false
-      }
-    } else if (feedObj.entityType === 'series') {
-      const series = await Database.seriesModel.findByPk(feedObj.entityId)
-      if (!series) {
-        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found`)
-        return false
-      }
-    } else {
-      Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Invalid entityType "${feedObj.entityType}"`)
-      return false
-    }
-    return true
-  }
-
   /**
-   * Validate all feeds and remove invalid
+   * Remove invalid feeds (invalid if the entity does not exist)
    */
   async init() {
-    const feeds = await Database.feedModel.getOldFeeds()
+    const feeds = await Database.feedModel.findAll({
+      attributes: ['id', 'entityId', 'entityType', 'title'],
+      include: [
+        {
+          model: Database.libraryItemModel,
+          attributes: ['id']
+        },
+        {
+          model: Database.collectionModel,
+          attributes: ['id']
+        },
+        {
+          model: Database.seriesModel,
+          attributes: ['id']
+        }
+      ]
+    })
+
+    const feedIdsToRemove = []
     for (const feed of feeds) {
-      // Remove invalid feeds
-      if (!(await this.validateFeedEntity(feed))) {
-        await Database.removeFeed(feed.id)
+      if (!feed.entity) {
+        Logger.error(`[RssFeedManager] Removing feed "${feed.title}". Entity not found`)
+        feedIdsToRemove.push(feed.id)
       }
+    }
+
+    if (feedIdsToRemove.length) {
+      Logger.info(`[RssFeedManager] Removing ${feedIdsToRemove.length} invalid feeds`)
+      await Database.feedModel.destroy({
+        where: {
+          id: feedIdsToRemove
+        }
+      })
     }
   }
 
