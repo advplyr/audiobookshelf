@@ -279,11 +279,20 @@ class Feed extends Model {
   static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
     const media = libraryItem.media
 
+    let entityUpdatedAt = libraryItem.updatedAt
+
+    // Podcast feeds should use the most recent episode updatedAt if more recent
+    if (libraryItem.mediaType === 'podcast') {
+      entityUpdatedAt = libraryItem.media.podcastEpisodes.reduce((mostRecent, episode) => {
+        return episode.updatedAt > mostRecent ? episode.updatedAt : mostRecent
+      }, entityUpdatedAt)
+    }
+
     const feedObj = {
       slug,
       entityType: 'libraryItem',
       entityId: libraryItem.id,
-      entityUpdatedAt: libraryItem.updatedAt,
+      entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
       imageURL: media.coverPath ? `/feed/${slug}/cover${Path.extname(media.coverPath)}` : `/Logo.png`,
@@ -336,9 +345,10 @@ class Feed extends Model {
    */
   static async createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions) {
     const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
-    const libraryItemMostRecentlyUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent.libraryItem.updatedAt ? book : mostRecent
-    }).libraryItem.updatedAt
+
+    const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
+      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+    }, collectionExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
 
@@ -355,7 +365,7 @@ class Feed extends Model {
       slug,
       entityType: 'collection',
       entityId: collectionExpanded.id,
-      entityUpdatedAt: libraryItemMostRecentlyUpdatedAt,
+      entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
       imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}` : `/Logo.png`,
@@ -402,9 +412,9 @@ class Feed extends Model {
    */
   static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
     const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
-    const libraryItemMostRecentlyUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent.libraryItem.updatedAt ? book : mostRecent
-    }).libraryItem.updatedAt
+    const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
+      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+    }, seriesExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
 
@@ -421,7 +431,7 @@ class Feed extends Model {
       slug,
       entityType: 'series',
       entityId: seriesExpanded.id,
-      entityUpdatedAt: libraryItemMostRecentlyUpdatedAt,
+      entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
       imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}` : `/Logo.png`,
