@@ -1,6 +1,5 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
-const oldFeed = require('../objects/Feed')
 const Logger = require('../Logger')
 
 const RSS = require('../libs/rss')
@@ -74,60 +73,6 @@ class Feed extends Model {
     this.feedEpisodes
   }
 
-  static async getOldFeeds() {
-    const feeds = await this.findAll({
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    return feeds.map((f) => this.getOldFeed(f))
-  }
-
-  /**
-   * Get old feed from Feed and optionally Feed with FeedEpisodes
-   * @param {Feed} feedExpanded
-   * @returns {oldFeed}
-   */
-  static getOldFeed(feedExpanded) {
-    const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode()) || []
-
-    // Sort episodes by pubDate. Newest to oldest for episodic, oldest to newest for serial
-    if (feedExpanded.podcastType === 'episodic') {
-      episodes.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-    } else {
-      episodes.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate))
-    }
-
-    return new oldFeed({
-      id: feedExpanded.id,
-      slug: feedExpanded.slug,
-      userId: feedExpanded.userId,
-      entityType: feedExpanded.entityType,
-      entityId: feedExpanded.entityId,
-      entityUpdatedAt: feedExpanded.entityUpdatedAt?.valueOf() || null,
-      coverPath: feedExpanded.coverPath || null,
-      meta: {
-        title: feedExpanded.title,
-        description: feedExpanded.description,
-        author: feedExpanded.author,
-        imageUrl: feedExpanded.imageURL,
-        feedUrl: feedExpanded.feedURL,
-        link: feedExpanded.siteURL,
-        explicit: feedExpanded.explicit,
-        type: feedExpanded.podcastType,
-        language: feedExpanded.language,
-        preventIndexing: feedExpanded.preventIndexing,
-        ownerName: feedExpanded.ownerName,
-        ownerEmail: feedExpanded.ownerEmail
-      },
-      serverAddress: feedExpanded.serverAddress,
-      feedUrl: feedExpanded.feedURL,
-      episodes,
-      createdAt: feedExpanded.createdAt.valueOf(),
-      updatedAt: feedExpanded.updatedAt.valueOf()
-    })
-  }
-
   /**
    * @param {string} feedId
    * @returns {Promise<boolean>} - true if feed was removed
@@ -140,23 +85,6 @@ class Feed extends Model {
         }
       })) > 0
     )
-  }
-
-  /**
-   * Find feed where and return oldFeed
-   * @param {Object} where sequelize where object
-   * @returns {Promise<oldFeed>} oldFeed
-   */
-  static async findOneOld(where) {
-    if (!where) return null
-    const feedExpanded = await this.findOne({
-      where,
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    if (!feedExpanded) return null
-    return this.getOldFeed(feedExpanded)
   }
 
   /**
@@ -661,6 +589,17 @@ class Feed extends Model {
       rssfeed.item(ep.getRSSData(hostPrefix))
     })
     return rssfeed.xml()
+  }
+
+  /**
+   *
+   * @param {string} id
+   * @returns {string}
+   */
+  getEpisodePath(id) {
+    const episode = this.feedEpisodes.find((ep) => ep.id === id)
+    if (!episode) return null
+    return episode.filePath
   }
 
   toOldJSON() {

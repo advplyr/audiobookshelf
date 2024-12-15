@@ -112,7 +112,7 @@ class Collection extends Model {
 
         // Map feed if found
         if (c.feeds?.length) {
-          collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(c.feeds[0])
+          collectionExpanded.rssFeed = c.feeds[0].toOldJSON()
         }
 
         return collectionExpanded
@@ -348,7 +348,7 @@ class Collection extends Model {
     if (include?.includes('rssfeed')) {
       const feeds = await this.getFeeds()
       if (feeds?.length) {
-        collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
+        collectionExpanded.rssFeed = feeds[0].toOldJSON()
       }
     }
 

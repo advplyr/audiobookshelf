@@ -55,12 +55,14 @@ class FeedEpisode extends Model {
    * @param {import('./PodcastEpisode')} episode
    */
   static getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode) {
+    const episodeId = uuidv4()
     return {
+      id: episodeId,
       title: episode.title,
       author: feed.author,
       description: episode.description,
       siteURL: feed.siteURL,
-      enclosureURL: `/feed/${slug}/item/${episode.id}/media${Path.extname(episode.audioFile.metadata.filename)}`,
+      enclosureURL: `/feed/${slug}/item/${episodeId}/media${Path.extname(episode.audioFile.metadata.filename)}`,
       enclosureType: episode.audioFile.mimeType,
       enclosureSize: episode.audioFile.metadata.size,
       pubDate: episode.pubDate,

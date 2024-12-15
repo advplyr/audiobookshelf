@@ -762,7 +762,7 @@ class LibraryController {
 
     if (include.includes('rssfeed')) {
       const feedObj = await RssFeedManager.findFeedForEntityId(seriesJson.id)
-      seriesJson.rssFeed = feedObj?.toJSONMinified() || null
+      seriesJson.rssFeed = feedObj?.toOldJSONMinified() || null
     }
 
     res.json(seriesJson)

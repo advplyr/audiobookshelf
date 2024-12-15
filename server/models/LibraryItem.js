@@ -568,7 +568,7 @@ class LibraryItem extends Model {
           oldLibraryItem.media.metadata.series = li.series
         }
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = this.sequelize.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.media.numEpisodes) {
           oldLibraryItem.media.numEpisodes = li.media.numEpisodes

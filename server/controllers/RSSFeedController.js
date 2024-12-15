@@ -25,8 +25,8 @@ class RSSFeedController {
   async getAll(req, res) {
     const feeds = await RssFeedManager.getFeeds()
     res.json({
-      feeds: feeds.map((f) => f.toJSON()),
-      minified: feeds.map((f) => f.toJSONMinified())
+      feeds: feeds.map((f) => f.toOldJSON()),
+      minified: feeds.map((f) => f.toOldJSONMinified())
     })
   }
 
@@ -63,7 +63,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.checkExistsBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -97,7 +97,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.checkExistsBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -140,7 +140,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.checkExistsBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }

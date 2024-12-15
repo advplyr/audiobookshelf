@@ -53,19 +53,29 @@ class RssFeedManager {
   /**
    * Find open feed for an entity (e.g. collection id, playlist id, library item id)
    * @param {string} entityId
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @returns {Promise<import('../models/Feed')>}
    */
   findFeedForEntityId(entityId) {
-    return Database.feedModel.findOneOld({ entityId })
+    return Database.feedModel.findOne({
+      where: {
+        entityId
+      }
+    })
   }
 
   /**
-   * Find open feed for a slug
+   *
    * @param {string} slug
-   * @returns {Promise<objects.Feed>} oldFeed
+   * @returns {Promise<boolean>}
    */
-  findFeedBySlug(slug) {
-    return Database.feedModel.findOneOld({ slug })
+  checkExistsBySlug(slug) {
+    return Database.feedModel
+      .count({
+        where: {
+          slug
+        }
+      })
+      .then((count) => count > 0)
   }
 
   /**
@@ -169,7 +179,17 @@ class RssFeedManager {
    * @param {Response} res
    */
   async getFeedItem(req, res) {
-    const feed = await this.findFeedBySlug(req.params.slug)
+    const feed = await Database.feedModel.findOne({
+      where: {
+        slug: req.params.slug
+      },
+      attributes: ['id', 'slug'],
+      include: {
+        model: Database.feedEpisodeModel,
+        attributes: ['id', 'filePath']
+      }
+    })
+
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
@@ -191,7 +211,12 @@ class RssFeedManager {
    * @param {Response} res
    */
   async getFeedCover(req, res) {
-    const feed = await this.findFeedBySlug(req.params.slug)
+    const feed = await Database.feedModel.findOne({
+      where: {
+        slug: req.params.slug
+      },
+      attributes: ['coverPath']
+    })
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
@@ -338,10 +363,16 @@ class RssFeedManager {
     }
   }
 
-  async getFeeds() {
-    const feeds = await Database.models.feed.getOldFeeds()
-    Logger.info(`[RssFeedManager] Fetched all feeds`)
-    return feeds
+  /**
+   *
+   * @returns {Promise<import('../models/Feed').FeedExpanded[]>}
+   */
+  getFeeds() {
+    return Database.feedModel.findAll({
+      include: {
+        model: Database.feedEpisodeModel
+      }
+    })
   }
 }
 module.exports = new RssFeedManager()

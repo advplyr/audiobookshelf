@@ -51,7 +51,7 @@ class LibraryItemController {
 
       if (includeEntities.includes('rssfeed')) {
         const feedData = await RssFeedManager.findFeedForEntityId(item.id)
-        item.rssFeed = feedData?.toJSONMinified() || null
+        item.rssFeed = feedData?.toOldJSONMinified() || null
       }
 
       if (item.mediaType === 'book' && req.user.isAdminOrUp && includeEntities.includes('share')) {

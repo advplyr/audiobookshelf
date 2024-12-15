@@ -180,8 +180,8 @@ module.exports = {
 
       delete podcast.libraryItem
 
-      if (libraryItem.feeds?.length) {
-        libraryItem.rssFeed = libraryItem.feeds[0]
+      if (podcastExpanded.libraryItem.feeds?.length) {
+        libraryItem.rssFeed = podcastExpanded.libraryItem.feeds[0]
       }
       if (podcast.numEpisodesIncomplete) {
         libraryItem.numEpisodesIncomplete = podcast.numEpisodesIncomplete
