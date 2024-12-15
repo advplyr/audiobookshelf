@@ -10,6 +10,7 @@ const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
 const CacheManager = require('../managers/CacheManager')
+const RssFeedManager = require('../managers/RssFeedManager')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -49,8 +50,6 @@ class ApiRouter {
     this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
-    /** @type {import('../managers/RssFeedManager')} */
-    this.rssFeedManager = Server.rssFeedManager
     /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
     /** @type {import('../managers/EmailManager')} */
@@ -394,7 +393,7 @@ class ApiRouter {
     }
 
     // Close rss feed - remove from db and emit socket event
-    await this.rssFeedManager.closeFeedForEntityId(libraryItemId)
+    await RssFeedManager.closeFeedForEntityId(libraryItemId)
 
     // purge cover cache
     await CacheManager.purgeCoverCache(libraryItemId)
@@ -493,7 +492,7 @@ class ApiRouter {
    * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
-    await this.rssFeedManager.closeFeedForEntityId(series.id)
+    await RssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
 
     // Remove series from library filter data

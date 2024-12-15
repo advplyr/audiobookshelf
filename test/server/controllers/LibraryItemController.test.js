@@ -6,7 +6,6 @@ const Database = require('../../../server/Database')
 const ApiRouter = require('../../../server/routers/ApiRouter')
 const LibraryItemController = require('../../../server/controllers/LibraryItemController')
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
-const RssFeedManager = require('../../../server/managers/RssFeedManager')
 const Logger = require('../../../server/Logger')
 
 describe('LibraryItemController', () => {
@@ -20,8 +19,7 @@ describe('LibraryItemController', () => {
     await Database.buildModels()
 
     apiRouter = new ApiRouter({
-      apiCacheManager: new ApiCacheManager(),
-      rssFeedManager: new RssFeedManager()
+      apiCacheManager: new ApiCacheManager()
     })
 
     sinon.stub(Logger, 'info')

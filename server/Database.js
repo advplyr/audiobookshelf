@@ -444,21 +444,6 @@ class Database {
     return updated
   }
 
-  async createFeed(oldFeed) {
-    if (!this.sequelize) return false
-    await this.models.feed.fullCreateFromOld(oldFeed)
-  }
-
-  updateFeed(oldFeed) {
-    if (!this.sequelize) return false
-    return this.models.feed.fullUpdateFromOld(oldFeed)
-  }
-
-  async removeFeed(feedId) {
-    if (!this.sequelize) return false
-    await this.models.feed.removeById(feedId)
-  }
-
   async createBulkBookAuthors(bookAuthors) {
     if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
