@@ -221,6 +221,22 @@ class RssFeedManager {
     readStream.pipe(res)
   }
 
+  async getFeedItemImage(req, res) {
+    const feed = await this.findFeedBySlug(req.params.slug)
+    if (!feed) {
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
+      res.sendStatus(404)
+      return
+    }
+
+    if (!feed.coverPath) {
+      res.sendStatus(404)
+      return
+    }
+
+    // TODO: ???
+  }
+
   /**
    *
    * @param {*} options
