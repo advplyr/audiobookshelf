@@ -1,7 +1,8 @@
 const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
-const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+
+const RssFeedManager = require('../managers/RssFeedManager')
 
 /**
  * @typedef RequestUserObject
@@ -22,7 +23,7 @@ class RSSFeedController {
    * @param {Response} res
    */
   async getAll(req, res) {
-    const feeds = await this.rssFeedManager.getFeeds()
+    const feeds = await RssFeedManager.getFeeds()
     res.json({
       feeds: feeds.map((f) => f.toJSON()),
       minified: feeds.map((f) => f.toJSONMinified())
@@ -62,12 +63,12 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
 
-    const feed = await this.rssFeedManager.openFeedForItem(req.user.id, itemExpanded, reqBody)
+    const feed = await RssFeedManager.openFeedForItem(req.user.id, itemExpanded, reqBody)
     if (!feed) {
       Logger.error(`[RSSFeedController] Failed to open RSS feed for item "${itemExpanded.media.title}"`)
       return res.status(500).send('Failed to open RSS feed')
@@ -99,7 +100,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -112,7 +113,7 @@ class RSSFeedController {
       return res.status(400).send('Collection has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForCollection(req.user.id, collection, reqBody)
+    const feed = await RssFeedManager.openFeedForCollection(req.user.id, collection, reqBody)
     if (!feed) {
       Logger.error(`[RSSFeedController] Failed to open RSS feed for collection "${collection.name}"`)
       return res.status(500).send('Failed to open RSS feed')
@@ -144,7 +145,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+    if (await RssFeedManager.findFeedBySlug(reqBody.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -157,7 +158,7 @@ class RSSFeedController {
       return res.status(400).send('Series has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForSeries(req.user.id, series, req.body)
+    const feed = await RssFeedManager.openFeedForSeries(req.user.id, series, req.body)
     if (!feed) {
       Logger.error(`[RSSFeedController] Failed to open RSS feed for series "${series.name}"`)
       return res.status(500).send('Failed to open RSS feed')
@@ -176,8 +177,16 @@ class RSSFeedController {
    * @param {RequestWithUser} req
    * @param {Response} res
    */
-  closeRSSFeed(req, res) {
-    this.rssFeedManager.closeRssFeed(req, res)
+  async closeRSSFeed(req, res) {
+    const feed = await Database.feedModel.findByPk(req.params.id)
+    if (!feed) {
+      Logger.error(`[RSSFeedController] Cannot close RSS feed because feed "${req.params.id}" does not exist`)
+      return res.sendStatus(404)
+    }
+
+    await RssFeedManager.handleCloseFeed(feed)
+
+    res.sendStatus(200)
   }
 
   /**

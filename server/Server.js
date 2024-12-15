@@ -71,7 +71,6 @@ class Server {
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
-    this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
@@ -137,7 +136,7 @@ class Server {
 
     await ShareManager.init()
     await this.backupManager.init()
-    await this.rssFeedManager.init()
+    await RssFeedManager.init()
 
     const libraries = await Database.libraryModel.getAllWithFolders()
     await this.cronManager.init(libraries)
@@ -291,14 +290,14 @@ class Server {
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
-      this.rssFeedManager.getFeed(req, res)
+      RssFeedManager.getFeed(req, res)
     })
     router.get('/feed/:slug/cover*', (req, res) => {
-      this.rssFeedManager.getFeedCover(req, res)
+      RssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
-      this.rssFeedManager.getFeedItem(req, res)
+      RssFeedManager.getFeedItem(req, res)
     })
 
     // Auth routes

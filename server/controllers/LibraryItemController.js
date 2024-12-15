@@ -13,6 +13,8 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
+
+const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const ShareManager = require('../managers/ShareManager')
@@ -48,7 +50,7 @@ class LibraryItemController {
       }
 
       if (includeEntities.includes('rssfeed')) {
-        const feedData = await this.rssFeedManager.findFeedForEntityId(item.id)
+        const feedData = await RssFeedManager.findFeedForEntityId(item.id)
         item.rssFeed = feedData?.toJSONMinified() || null
       }
 

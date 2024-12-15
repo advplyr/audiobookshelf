@@ -6,7 +6,6 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
-const Feed = require('../objects/Feed')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RssFeedManager {
@@ -67,15 +66,6 @@ class RssFeedManager {
    */
   findFeedBySlug(slug) {
     return Database.feedModel.findOneOld({ slug })
-  }
-
-  /**
-   * Find open feed for a slug
-   * @param {string} slug
-   * @returns {Promise<objects.Feed>} oldFeed
-   */
-  findFeed(id) {
-    return Database.feedModel.findByPkOld(id)
   }
 
   /**
@@ -303,27 +293,51 @@ class RssFeedManager {
     return feedExpanded
   }
 
+  /**
+   * Close Feed and emit Socket event
+   *
+   * @param {import('../models/Feed')} feed
+   * @returns {Promise<boolean>} - true if feed was closed
+   */
   async handleCloseFeed(feed) {
-    if (!feed) return
-    await Database.removeFeed(feed.id)
-    SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
-    Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
+    if (!feed) return false
+    const wasRemoved = await Database.feedModel.removeById(feed.id)
+    SocketAuthority.emitter('rss_feed_closed', feed.toOldJSONMinified())
+    Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedURL}"`)
+    return wasRemoved
   }
 
-  async closeRssFeed(req, res) {
-    const feed = await this.findFeed(req.params.id)
-    if (!feed) {
-      Logger.error(`[RssFeedManager] RSS feed not found with id "${req.params.id}"`)
-      return res.sendStatus(404)
-    }
-    await this.handleCloseFeed(feed)
-    res.sendStatus(200)
-  }
-
+  /**
+   *
+   * @param {string} entityId
+   * @returns {Promise<boolean>} - true if feed was closed
+   */
   async closeFeedForEntityId(entityId) {
-    const feed = await this.findFeedForEntityId(entityId)
-    if (!feed) return
+    const feed = await Database.feedModel.findOne({
+      where: {
+        entityId
+      }
+    })
+    if (!feed) {
+      Logger.warn(`[RssFeedManager] closeFeedForEntityId: Feed not found for entity id ${entityId}`)
+      return false
+    }
     return this.handleCloseFeed(feed)
+  }
+
+  /**
+   *
+   * @param {string[]} entityIds
+   */
+  async closeFeedsForEntityIds(entityIds) {
+    const feeds = await Database.feedModel.findAll({
+      where: {
+        entityId: entityIds
+      }
+    })
+    for (const feed of feeds) {
+      await this.handleCloseFeed(feed)
+    }
   }
 
   async getFeeds() {
@@ -332,4 +346,4 @@ class RssFeedManager {
     return feeds
   }
 }
-module.exports = RssFeedManager
+module.exports = new RssFeedManager()

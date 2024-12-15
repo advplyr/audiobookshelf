@@ -124,12 +124,18 @@ class Feed extends Model {
     })
   }
 
-  static removeById(feedId) {
-    return this.destroy({
-      where: {
-        id: feedId
-      }
-    })
+  /**
+   * @param {string} feedId
+   * @returns {Promise<boolean>} - true if feed was removed
+   */
+  static async removeById(feedId) {
+    return (
+      (await this.destroy({
+        where: {
+          id: feedId
+        }
+      })) > 0
+    )
   }
 
   /**
@@ -155,22 +161,6 @@ class Feed extends Model {
     if (!where) return null
     const feedExpanded = await this.findOne({
       where,
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    if (!feedExpanded) return null
-    return this.getOldFeed(feedExpanded)
-  }
-
-  /**
-   * Find feed and return oldFeed
-   * @param {string} id
-   * @returns {Promise<oldFeed>} oldFeed
-   */
-  static async findByPkOld(id) {
-    if (!id) return null
-    const feedExpanded = await this.findByPk(id, {
       include: {
         model: this.sequelize.models.feedEpisode
       }
