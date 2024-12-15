@@ -143,61 +143,6 @@ class Feed {
     this.updatedAt = Date.now()
   }
 
-  setFromCollection(userId, slug, collectionExpanded, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
-    const feedUrl = `/feed/${slug}`
-
-    const itemsWithTracks = collectionExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
-    const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)
-
-    this.id = uuidv4()
-    this.slug = slug
-    this.userId = userId
-    this.entityType = 'collection'
-    this.entityId = collectionExpanded.id
-    this.entityUpdatedAt = collectionExpanded.lastUpdate // This will be set to the most recently updated library item
-    this.coverPath = firstItemWithCover?.media.coverPath || null
-    this.serverAddress = serverAddress
-    this.feedUrl = feedUrl
-
-    const coverFileExtension = this.coverPath ? Path.extname(this.coverPath) : null
-
-    this.meta = new FeedMeta()
-    this.meta.title = collectionExpanded.name
-    this.meta.description = collectionExpanded.description || ''
-    this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
-    this.meta.imageUrl = this.coverPath ? `/feed/${slug}/cover${coverFileExtension}` : `/Logo.png`
-    this.meta.feedUrl = feedUrl
-    this.meta.link = `/collection/${collectionExpanded.id}`
-    this.meta.explicit = !!itemsWithTracks.some((li) => li.media.metadata.explicit) // explicit if any item is explicit
-    this.meta.preventIndexing = preventIndexing
-    this.meta.ownerName = ownerName
-    this.meta.ownerEmail = ownerEmail
-
-    this.episodes = []
-
-    // Used for calculating pubdate
-    const earliestItemAddedAt = itemsWithTracks.reduce((earliest, item) => (item.addedAt < earliest ? item.addedAt : earliest), itemsWithTracks[0].addedAt)
-
-    itemsWithTracks.forEach((item, index) => {
-      if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
-
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(item)
-      item.media.tracks.forEach((audioTrack) => {
-        const feedEpisode = new FeedEpisode()
-
-        // Offset pubdate to ensure correct order
-        let trackTimeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset track
-        trackTimeOffset += index * 1000 // Offset item
-        const episodePubDateOverride = date.format(new Date(earliestItemAddedAt + trackTimeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
-        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, useChapterTitles, episodePubDateOverride)
-        this.episodes.push(feedEpisode)
-      })
-    })
-
-    this.createdAt = Date.now()
-    this.updatedAt = Date.now()
-  }
-
   updateFromCollection(collectionExpanded) {
     const itemsWithTracks = collectionExpanded.books.filter((libraryItem) => libraryItem.media.tracks.length)
     const firstItemWithCover = itemsWithTracks.find((item) => item.media.coverPath)

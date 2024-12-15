@@ -1,6 +1,7 @@
 const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
+const Logger = require('../Logger')
 
 class Collection extends Model {
   constructor(values, options) {
@@ -18,6 +19,11 @@ class Collection extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+
+    // Expanded properties
+
+    /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
+    this.books
   }
 
   /**
@@ -217,6 +223,34 @@ class Collection extends Model {
 
     library.hasMany(Collection)
     Collection.belongsTo(library)
+  }
+
+  /**
+   * Get all books in collection expanded with library item
+   *
+   * @returns {Promise<import('./Book').BookExpandedWithLibraryItem[]>}
+   */
+  getBooksExpandedWithLibraryItem() {
+    return this.getBooks({
+      include: [
+        {
+          model: this.sequelize.models.libraryItem
+        },
+        {
+          model: this.sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: this.sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ],
+      order: [Sequelize.literal('`collectionBook.order` ASC')]
+    })
   }
 
   /**

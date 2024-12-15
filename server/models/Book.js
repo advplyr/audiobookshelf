@@ -29,6 +29,12 @@ const Logger = require('../Logger')
  * @property {SeriesExpanded[]} series
  *
  * @typedef {Book & BookExpandedProperties} BookExpanded
+ *
+ * Collections use BookExpandedWithLibraryItem
+ * @typedef BookExpandedWithLibraryItemProperties
+ * @property {import('./LibraryItem')} libraryItem
+ *
+ * @typedef {BookExpanded & BookExpandedWithLibraryItemProperties} BookExpandedWithLibraryItem
  */
 
 /**

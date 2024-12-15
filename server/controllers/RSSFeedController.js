@@ -87,35 +87,39 @@ class RSSFeedController {
    * @param {Response} res
    */
   async openRSSFeedForCollection(req, res) {
-    const options = req.body || {}
+    const reqBody = req.body || {}
 
     const collection = await Database.collectionModel.findByPk(req.params.collectionId)
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug) {
+    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
-      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
+    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
 
-    const collectionExpanded = await collection.getOldJsonExpanded()
-    const collectionItemsWithTracks = collectionExpanded.books.filter((li) => li.media.tracks.length)
+    collection.books = await collection.getBooksExpandedWithLibraryItem()
 
     // Check collection has audio tracks
-    if (!collectionItemsWithTracks.length) {
+    if (!collection.books.some((book) => book.includedAudioFiles.length)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed for collection "${collection.name}" because it has no audio tracks`)
       return res.status(400).send('Collection has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForCollection(req.user.id, collectionExpanded, req.body)
+    const feed = await this.rssFeedManager.openFeedForCollection(req.user.id, collection, reqBody)
+    if (!feed) {
+      Logger.error(`[RSSFeedController] Failed to open RSS feed for collection "${collection.name}"`)
+      return res.status(500).send('Failed to open RSS feed')
+    }
+
     res.json({
-      feed: feed.toJSONMinified()
+      feed: feed.toOldJSONMinified()
     })
   }
 
