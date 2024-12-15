@@ -216,21 +216,19 @@ class FeedEpisode extends Model {
 
   /**
    *
-   * @param {import('./Collection')} collectionExpanded
+   * @param {import('./Book')[]} books
    * @param {import('./Feed')} feed
    * @param {string} slug
    * @param {import('sequelize').Transaction} transaction
    * @returns {Promise<FeedEpisode[]>}
    */
-  static async createFromCollectionBooks(collectionExpanded, feed, slug, transaction) {
-    const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
-
-    const earliestLibraryItemCreatedAt = collectionExpanded.books.reduce((earliest, book) => {
+  static async createFromBooks(books, feed, slug, transaction) {
+    const earliestLibraryItemCreatedAt = books.reduce((earliest, book) => {
       return book.libraryItem.createdAt < earliest.libraryItem.createdAt ? book : earliest
     }).libraryItem.createdAt
 
     const feedEpisodeObjs = []
-    for (const book of booksWithTracks) {
+    for (const book of books) {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(book)
       for (const track of book.trackList) {
         feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(book, earliestLibraryItemCreatedAt, feed, slug, track, useChapterTitles))

@@ -285,24 +285,22 @@ class RssFeedManager {
   /**
    *
    * @param {string} userId
-   * @param {*} seriesExpanded
+   * @param {import('../models/Series')} seriesExpanded
    * @param {*} options
-   * @returns
+   * @returns {Promise<import('../models/Feed').FeedExpanded>}
    */
   async openFeedForSeries(userId, seriesExpanded, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
-    const preventIndexing = options.metadataDetails?.preventIndexing ?? true
-    const ownerName = options.metadataDetails?.ownerName
-    const ownerEmail = options.metadataDetails?.ownerEmail
+    const feedOptions = this.getFeedOptionsFromReqOptions(options)
 
-    const feed = new Feed()
-    feed.setFromSeries(userId, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
-
-    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
-    await Database.createFeed(feed)
-    SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
-    return feed
+    Logger.info(`[RssFeedManager] Creating RSS feed for series "${seriesExpanded.name}"`)
+    const feedExpanded = await Database.feedModel.createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions)
+    if (feedExpanded) {
+      Logger.info(`[RssFeedManager] Opened RSS feed "${feedExpanded.feedURL}"`)
+      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified())
+    }
+    return feedExpanded
   }
 
   async handleCloseFeed(feed) {

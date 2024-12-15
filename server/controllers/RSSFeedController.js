@@ -132,37 +132,39 @@ class RSSFeedController {
    * @param {Response} res
    */
   async openRSSFeedForSeries(req, res) {
-    const options = req.body || {}
+    const reqBody = req.body || {}
 
     const series = await Database.seriesModel.findByPk(req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug) {
+    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
-      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
+    if (await this.rssFeedManager.findFeedBySlug(reqBody.slug)) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${reqBody.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
 
-    const seriesJson = series.toOldJSON()
-
-    // Get books in series that have audio tracks
-    seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)
+    series.books = await series.getBooksExpandedWithLibraryItem()
 
     // Check series has audio tracks
-    if (!seriesJson.books.length) {
-      Logger.error(`[RSSFeedController] Cannot open RSS feed for series "${seriesJson.name}" because it has no audio tracks`)
+    if (!series.books.some((book) => book.includedAudioFiles.length)) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed for series "${series.name}" because it has no audio tracks`)
       return res.status(400).send('Series has no audio tracks')
     }
 
-    const feed = await this.rssFeedManager.openFeedForSeries(req.user.id, seriesJson, req.body)
+    const feed = await this.rssFeedManager.openFeedForSeries(req.user.id, series, req.body)
+    if (!feed) {
+      Logger.error(`[RSSFeedController] Failed to open RSS feed for series "${series.name}"`)
+      return res.status(500).send('Failed to open RSS feed')
+    }
+
     res.json({
-      feed: feed.toJSONMinified()
+      feed: feed.toOldJSONMinified()
     })
   }
 

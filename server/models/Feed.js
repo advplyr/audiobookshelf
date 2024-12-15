@@ -388,7 +388,73 @@ class Feed extends Model {
     const transaction = await this.sequelize.transaction()
     try {
       const feed = await this.create(feedObj, { transaction })
-      feed.feedEpisodes = await feedEpisodeModel.createFromCollectionBooks(collectionExpanded, feed, slug, transaction)
+      feed.feedEpisodes = await feedEpisodeModel.createFromBooks(booksWithTracks, feed, slug, transaction)
+
+      await transaction.commit()
+
+      return feed
+    } catch (error) {
+      Logger.error(`[Feed] Error creating feed for collection ${collectionExpanded.id}`, error)
+      await transaction.rollback()
+      return null
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Series')} seriesExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
+    const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
+    const libraryItemMostRecentlyUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
+      return book.libraryItem.updatedAt > mostRecent.libraryItem.updatedAt ? book : mostRecent
+    }).libraryItem.updatedAt
+
+    const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
+
+    const allBookAuthorNames = booksWithTracks.reduce((authorNames, book) => {
+      const bookAuthorsToAdd = book.authors.filter((author) => !authorNames.includes(author.name)).map((author) => author.name)
+      return authorNames.concat(bookAuthorsToAdd)
+    }, [])
+    let author = allBookAuthorNames.slice(0, 3).join(', ')
+    if (allBookAuthorNames.length > 3) {
+      author += ' & more'
+    }
+
+    const feedObj = {
+      slug,
+      entityType: 'series',
+      entityId: seriesExpanded.id,
+      entityUpdatedAt: libraryItemMostRecentlyUpdatedAt,
+      serverAddress,
+      feedURL: `/feed/${slug}`,
+      imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}` : `/Logo.png`,
+      siteURL: `/library/${booksWithTracks[0].libraryItem.libraryId}/series/${seriesExpanded.id}`,
+      title: seriesExpanded.name,
+      description: seriesExpanded.description || '',
+      author,
+      podcastType: 'serial',
+      preventIndexing: feedOptions.preventIndexing,
+      ownerName: feedOptions.ownerName,
+      ownerEmail: feedOptions.ownerEmail,
+      explicit: booksWithTracks.some((book) => book.explicit), // If any book is explicit, the feed is explicit
+      coverPath: firstBookWithCover?.coverPath || null,
+      userId
+    }
+
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const feed = await this.create(feedObj, { transaction })
+      feed.feedEpisodes = await feedEpisodeModel.createFromBooks(booksWithTracks, feed, slug, transaction)
 
       await transaction.commit()
 
