@@ -1,7 +1,6 @@
 const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
-const Logger = require('../Logger')
 
 class Collection extends Model {
   constructor(values, options) {
@@ -119,6 +118,39 @@ class Collection extends Model {
         return collectionExpanded
       })
       .filter((c) => c)
+  }
+
+  /**
+   *
+   * @param {string} collectionId
+   * @returns {Promise<Collection>}
+   */
+  static async getExpandedById(collectionId) {
+    return this.findByPk(collectionId, {
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.libraryItem
+            },
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        }
+      ],
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
   }
 
   /**

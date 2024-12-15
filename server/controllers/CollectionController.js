@@ -116,6 +116,7 @@ class CollectionController {
     }
 
     // If books array is passed in then update order in collection
+    let collectionBooksUpdated = false
     if (req.body.books?.length) {
       const collectionBooks = await req.collection.getCollectionBooks({
         include: {
@@ -134,8 +135,14 @@ class CollectionController {
           await collectionBooks[i].update({
             order: i + 1
           })
-          wasUpdated = true
+          collectionBooksUpdated = true
         }
+      }
+
+      if (collectionBooksUpdated) {
+        req.collection.changed('updatedAt', true)
+        await req.collection.save()
+        wasUpdated = true
       }
     }
 

@@ -55,6 +55,18 @@ class Series extends Model {
   }
 
   /**
+   *
+   * @param {string} seriesId
+   * @returns {Promise<Series>}
+   */
+  static async getExpandedById(seriesId) {
+    const series = await this.findByPk(seriesId)
+    if (!series) return null
+    series.books = await series.getBooksExpandedWithLibraryItem()
+    return series
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */

@@ -6,7 +6,6 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
-const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 class RssFeedManager {
   constructor() {}
@@ -70,94 +69,92 @@ class RssFeedManager {
   }
 
   /**
+   * Feed requires update if the entity (or child entities) has been updated since the feed was last updated
+   *
+   * @param {import('../models/Feed')} feed
+   * @returns {Promise<boolean>}
+   */
+  async checkFeedRequiresUpdate(feed) {
+    if (feed.entityType === 'libraryItem') {
+      feed.entity = await feed.getEntity({
+        attributes: ['id', 'updatedAt', 'mediaId', 'mediaType']
+      })
+
+      let newEntityUpdatedAt = feed.entity.updatedAt
+
+      if (feed.entity.mediaType === 'podcast') {
+        const mostRecentPodcastEpisode = await Database.podcastEpisodeModel.findOne({
+          where: {
+            podcastId: feed.entity.mediaId
+          },
+          attributes: ['id', 'updatedAt'],
+          order: [['createdAt', 'DESC']]
+        })
+        if (mostRecentPodcastEpisode && mostRecentPodcastEpisode.updatedAt > newEntityUpdatedAt) {
+          newEntityUpdatedAt = mostRecentPodcastEpisode.updatedAt
+        }
+      }
+
+      return newEntityUpdatedAt > feed.entityUpdatedAt
+    } else if (feed.entityType === 'collection' || feed.entityType === 'series') {
+      feed.entity = await feed.getEntity({
+        attributes: ['id', 'updatedAt'],
+        include: {
+          model: Database.bookModel,
+          attributes: ['id'],
+          through: {
+            attributes: []
+          },
+          include: {
+            model: Database.libraryItemModel,
+            attributes: ['id', 'updatedAt']
+          }
+        }
+      })
+
+      let newEntityUpdatedAt = feed.entity.updatedAt
+
+      const mostRecentItemUpdatedAt = feed.entity.books.reduce((mostRecent, book) => {
+        if (book.libraryItem.updatedAt > mostRecent) {
+          return book.libraryItem.updatedAt
+        }
+        return mostRecent
+      }, 0)
+
+      if (mostRecentItemUpdatedAt > newEntityUpdatedAt) {
+        newEntityUpdatedAt = mostRecentItemUpdatedAt
+      }
+
+      return newEntityUpdatedAt > feed.entityUpdatedAt
+    } else {
+      throw new Error('Invalid feed entity type')
+    }
+  }
+
+  /**
    * GET: /feed/:slug
    *
    * @param {Request} req
    * @param {Response} res
    */
   async getFeed(req, res) {
-    const feed = await this.findFeedBySlug(req.params.slug)
+    let feed = await Database.feedModel.findOne({
+      where: {
+        slug: req.params.slug
+      }
+    })
     if (!feed) {
       Logger.warn(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
 
-    // Check if feed needs to be updated
-    if (feed.entityType === 'libraryItem') {
-      const libraryItem = await Database.libraryItemModel.getOldById(feed.entityId)
-
-      let mostRecentlyUpdatedAt = libraryItem.updatedAt
-      if (libraryItem.isPodcast) {
-        libraryItem.media.episodes.forEach((episode) => {
-          if (episode.updatedAt > mostRecentlyUpdatedAt) mostRecentlyUpdatedAt = episode.updatedAt
-        })
-      }
-
-      if (libraryItem && (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt)) {
-        Logger.debug(`[RssFeedManager] Updating RSS feed for item ${libraryItem.id} "${libraryItem.media.metadata.title}"`)
-
-        feed.updateFromItem(libraryItem)
-        await Database.updateFeed(feed)
-      }
-    } else if (feed.entityType === 'collection') {
-      const collection = await Database.collectionModel.findByPk(feed.entityId, {
-        include: Database.collectionBookModel
-      })
-      if (collection) {
-        const collectionExpanded = await collection.getOldJsonExpanded()
-
-        // Find most recently updated item in collection
-        let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
-        // Check for most recently updated book
-        collectionExpanded.books.forEach((libraryItem) => {
-          if (libraryItem.media.tracks.length && libraryItem.updatedAt > mostRecentlyUpdatedAt) {
-            mostRecentlyUpdatedAt = libraryItem.updatedAt
-          }
-        })
-        // Check for most recently added collection book
-        collection.collectionBooks.forEach((collectionBook) => {
-          if (collectionBook.createdAt.valueOf() > mostRecentlyUpdatedAt) {
-            mostRecentlyUpdatedAt = collectionBook.createdAt.valueOf()
-          }
-        })
-        const hasBooksRemoved = collection.collectionBooks.length < feed.episodes.length
-
-        if (!feed.entityUpdatedAt || hasBooksRemoved || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
-          Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
-
-          feed.updateFromCollection(collectionExpanded)
-          await Database.updateFeed(feed)
-        }
-      }
-    } else if (feed.entityType === 'series') {
-      const series = await Database.seriesModel.findByPk(feed.entityId)
-      if (series) {
-        const seriesJson = series.toOldJSON()
-
-        // Get books in series that have audio tracks
-        seriesJson.books = (await libraryItemsBookFilters.getLibraryItemsForSeries(series)).filter((li) => li.media.numTracks)
-
-        // Find most recently updated item in series
-        let mostRecentlyUpdatedAt = seriesJson.updatedAt
-        let totalTracks = 0 // Used to detect series items removed
-        seriesJson.books.forEach((libraryItem) => {
-          totalTracks += libraryItem.media.tracks.length
-          if (libraryItem.media.tracks.length && libraryItem.updatedAt > mostRecentlyUpdatedAt) {
-            mostRecentlyUpdatedAt = libraryItem.updatedAt
-          }
-        })
-        if (totalTracks !== feed.episodes.length) {
-          mostRecentlyUpdatedAt = Date.now()
-        }
-
-        if (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
-          Logger.debug(`[RssFeedManager] Updating RSS feed for series "${seriesJson.name}"`)
-
-          feed.updateFromSeries(seriesJson)
-          await Database.updateFeed(feed)
-        }
-      }
+    const feedRequiresUpdate = await this.checkFeedRequiresUpdate(feed)
+    if (feedRequiresUpdate) {
+      Logger.info(`[RssFeedManager] Feed "${feed.title}" requires update - updating feed`)
+      feed = await feed.updateFeedForEntity()
+    } else {
+      feed.feedEpisodes = await feed.getFeedEpisodes()
     }
 
     const xml = feed.buildXml(req.originalHostPrefix)

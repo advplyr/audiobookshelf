@@ -3,6 +3,7 @@ const { DataTypes, Model } = require('sequelize')
 const uuidv4 = require('uuid').v4
 const Logger = require('../Logger')
 const date = require('../libs/dateAndTime')
+const { secondsToTimestamp } = require('../utils')
 
 class FeedEpisode extends Model {
   constructor(values, options) {
@@ -12,6 +13,8 @@ class FeedEpisode extends Model {
     this.id
     /** @type {string} */
     this.title
+    /** @type {string} */
+    this.author
     /** @type {string} */
     this.description
     /** @type {string} */
@@ -299,6 +302,37 @@ class FeedEpisode extends Model {
       episode: this.episode,
       episodeType: this.episodeType,
       fullPath: this.filePath
+    }
+  }
+
+  /**
+   *
+   * @param {string} hostPrefix
+   */
+  getRSSData(hostPrefix) {
+    return {
+      title: this.title,
+      description: this.description || '',
+      url: `${hostPrefix}${this.siteURL}`,
+      guid: `${hostPrefix}${this.enclosureURL}`,
+      author: this.author,
+      date: this.pubDate,
+      enclosure: {
+        url: `${hostPrefix}${this.enclosureURL}`,
+        type: this.enclosureType,
+        size: this.enclosureSize
+      },
+      custom_elements: [
+        { 'itunes:author': this.author },
+        { 'itunes:duration': secondsToTimestamp(this.duration) },
+        { 'itunes:summary': this.description || '' },
+        {
+          'itunes:explicit': !!this.explicit
+        },
+        { 'itunes:episodeType': this.episodeType },
+        { 'itunes:season': this.season },
+        { 'itunes:episode': this.episode }
+      ]
     }
   }
 }

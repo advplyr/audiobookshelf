@@ -2,6 +2,9 @@ const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const oldFeed = require('../objects/Feed')
 const areEquivalent = require('../utils/areEquivalent')
+const Logger = require('../Logger')
+
+const RSS = require('../libs/rss')
 
 /**
  * @typedef FeedOptions
@@ -65,6 +68,8 @@ class Feed extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    // Expanded properties
 
     /** @type {import('./FeedEpisode')[]} - only set if expanded */
     this.feedEpisodes
@@ -272,11 +277,11 @@ class Feed extends Model {
    * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
    * @param {string} slug
    * @param {string} serverAddress
-   * @param {FeedOptions} feedOptions
+   * @param {FeedOptions} [feedOptions=null]
    *
-   * @returns {Promise<FeedExpanded>}
+   * @returns {Feed}
    */
-  static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
+  static getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions = null) {
     const media = libraryItem.media
 
     let entityUpdatedAt = libraryItem.updatedAt
@@ -302,13 +307,32 @@ class Feed extends Model {
       author: libraryItem.mediaType === 'podcast' ? media.author : media.authorName,
       podcastType: libraryItem.mediaType === 'podcast' ? media.podcastType : 'serial',
       language: media.language,
-      preventIndexing: feedOptions.preventIndexing,
-      ownerName: feedOptions.ownerName,
-      ownerEmail: feedOptions.ownerEmail,
       explicit: media.explicit,
       coverPath: media.coverPath,
       userId
     }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
+    return feedObj
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
+    const feedObj = this.getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
     const feedEpisodeModel = this.sequelize.models.feedEpisode
@@ -339,11 +363,11 @@ class Feed extends Model {
    * @param {import('./Collection')} collectionExpanded
    * @param {string} slug
    * @param {string} serverAddress
-   * @param {FeedOptions} feedOptions
+   * @param {FeedOptions} [feedOptions=null]
    *
-   * @returns {Promise<FeedExpanded>}
+   * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
    */
-  static async createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions) {
+  static getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions = null) {
     const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
 
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
@@ -374,13 +398,35 @@ class Feed extends Model {
       description: collectionExpanded.description || '',
       author,
       podcastType: 'serial',
-      preventIndexing: feedOptions.preventIndexing,
-      ownerName: feedOptions.ownerName,
-      ownerEmail: feedOptions.ownerEmail,
       explicit: booksWithTracks.some((book) => book.explicit), // If any book is explicit, the feed is explicit
       coverPath: firstBookWithCover?.coverPath || null,
       userId
     }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
+    return {
+      feedObj,
+      booksWithTracks
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Collection')} collectionExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions) {
+    const { feedObj, booksWithTracks } = this.getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
     const feedEpisodeModel = this.sequelize.models.feedEpisode
@@ -406,11 +452,11 @@ class Feed extends Model {
    * @param {import('./Series')} seriesExpanded
    * @param {string} slug
    * @param {string} serverAddress
-   * @param {FeedOptions} feedOptions
+   * @param {FeedOptions} [feedOptions=null]
    *
-   * @returns {Promise<FeedExpanded>}
+   * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
    */
-  static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
+  static getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions = null) {
     const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
       return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
@@ -440,13 +486,35 @@ class Feed extends Model {
       description: seriesExpanded.description || '',
       author,
       podcastType: 'serial',
-      preventIndexing: feedOptions.preventIndexing,
-      ownerName: feedOptions.ownerName,
-      ownerEmail: feedOptions.ownerEmail,
       explicit: booksWithTracks.some((book) => book.explicit), // If any book is explicit, the feed is explicit
       coverPath: firstBookWithCover?.coverPath || null,
       userId
     }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
+    return {
+      feedObj,
+      booksWithTracks
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Series')} seriesExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
+    const { feedObj, booksWithTracks } = this.getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
     const feedEpisodeModel = this.sequelize.models.feedEpisode
@@ -460,7 +528,7 @@ class Feed extends Model {
 
       return feed
     } catch (error) {
-      Logger.error(`[Feed] Error creating feed for collection ${collectionExpanded.id}`, error)
+      Logger.error(`[Feed] Error creating feed for series ${seriesExpanded.id}`, error)
       await transaction.rollback()
       return null
     }
@@ -580,10 +648,131 @@ class Feed extends Model {
     })
   }
 
+  /**
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  async updateFeedForEntity() {
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    let feedObj = null
+    let feedEpisodeCreateFunc = null
+    let feedEpisodeCreateFuncEntity = null
+
+    if (this.entityType === 'libraryItem') {
+      /** @type {typeof import('./LibraryItem')} */
+      const libraryItemModel = this.sequelize.models.libraryItem
+
+      const itemExpanded = await libraryItemModel.getExpandedById(this.entityId)
+      feedObj = Feed.getFeedObjForLibraryItem(this.userId, itemExpanded, this.slug, this.serverAddress)
+
+      feedEpisodeCreateFuncEntity = itemExpanded
+      if (itemExpanded.mediaType === 'podcast') {
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromPodcastEpisodes.bind(feedEpisodeModel)
+      } else {
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromAudiobookTracks.bind(feedEpisodeModel)
+      }
+    } else if (this.entityType === 'collection') {
+      /** @type {typeof import('./Collection')} */
+      const collectionModel = this.sequelize.models.collection
+
+      const collectionExpanded = await collectionModel.getExpandedById(this.entityId)
+      const feedObjData = Feed.getFeedObjForCollection(this.userId, collectionExpanded, this.slug, this.serverAddress)
+      feedObj = feedObjData.feedObj
+      feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+    } else if (this.entityType === 'series') {
+      /** @type {typeof import('./Series')} */
+      const seriesModel = this.sequelize.models.series
+
+      const seriesExpanded = await seriesModel.getExpandedById(this.entityId)
+      const feedObjData = Feed.getFeedObjForSeries(this.userId, seriesExpanded, this.slug, this.serverAddress)
+      feedObj = feedObjData.feedObj
+      feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+    } else {
+      Logger.error(`[Feed] Invalid entity type ${this.entityType} for feed ${this.id}`)
+      return null
+    }
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const updatedFeed = await this.update(feedObj, { transaction })
+
+      // Remove existing feed episodes
+      await feedEpisodeModel.destroy({
+        where: {
+          feedId: this.id
+        },
+        transaction
+      })
+
+      // Create new feed episodes
+      updatedFeed.feedEpisodes = await feedEpisodeCreateFunc(feedEpisodeCreateFuncEntity, updatedFeed, this.slug, transaction)
+
+      await transaction.commit()
+
+      return updatedFeed
+    } catch (error) {
+      Logger.error(`[Feed] Error updating feed ${this.entityId}`, error)
+      await transaction.rollback()
+
+      return null
+    }
+  }
+
   getEntity(options) {
     if (!this.entityType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
     return this[mixinMethodName](options)
+  }
+
+  /**
+   *
+   * @param {string} hostPrefix
+   */
+  buildXml(hostPrefix) {
+    const blockTags = [{ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' }]
+    const rssData = {
+      title: this.title,
+      description: this.description || '',
+      generator: 'Audiobookshelf',
+      feed_url: `${hostPrefix}${this.feedURL}`,
+      site_url: `${hostPrefix}${this.siteURL}`,
+      image_url: `${hostPrefix}${this.imageURL}`,
+      custom_namespaces: {
+        itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
+        psc: 'http://podlove.org/simple-chapters',
+        podcast: 'https://podcastindex.org/namespace/1.0',
+        googleplay: 'http://www.google.com/schemas/play-podcasts/1.0'
+      },
+      custom_elements: [
+        { language: this.language || 'en' },
+        { author: this.author || 'advplyr' },
+        { 'itunes:author': this.author || 'advplyr' },
+        { 'itunes:summary': this.description || '' },
+        { 'itunes:type': this.podcastType },
+        {
+          'itunes:image': {
+            _attr: {
+              href: `${hostPrefix}${this.imageURL}`
+            }
+          }
+        },
+        {
+          'itunes:owner': [{ 'itunes:name': this.ownerName || this.author || '' }, { 'itunes:email': this.ownerEmail || '' }]
+        },
+        { 'itunes:explicit': !!this.explicit },
+        ...(this.preventIndexing ? blockTags : [])
+      ]
+    }
+
+    const rssfeed = new RSS(rssData)
+    this.feedEpisodes.forEach((ep) => {
+      rssfeed.item(ep.getRSSData(hostPrefix))
+    })
+    return rssfeed.xml()
   }
 
   toOldJSON() {

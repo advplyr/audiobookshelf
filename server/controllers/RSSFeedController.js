@@ -90,9 +90,6 @@ class RSSFeedController {
   async openRSSFeedForCollection(req, res) {
     const reqBody = req.body || {}
 
-    const collection = await Database.collectionModel.findByPk(req.params.collectionId)
-    if (!collection) return res.sendStatus(404)
-
     // Check request body options exist
     if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
@@ -105,7 +102,8 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    collection.books = await collection.getBooksExpandedWithLibraryItem()
+    const collection = await Database.collectionModel.getExpandedById(req.params.collectionId)
+    if (!collection) return res.sendStatus(404)
 
     // Check collection has audio tracks
     if (!collection.books.some((book) => book.includedAudioFiles.length)) {
@@ -135,9 +133,6 @@ class RSSFeedController {
   async openRSSFeedForSeries(req, res) {
     const reqBody = req.body || {}
 
-    const series = await Database.seriesModel.findByPk(req.params.seriesId)
-    if (!series) return res.sendStatus(404)
-
     // Check request body options exist
     if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
@@ -150,7 +145,8 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    series.books = await series.getBooksExpandedWithLibraryItem()
+    const series = await Database.seriesModel.getExpandedById(req.params.seriesId)
+    if (!series) return res.sendStatus(404)
 
     // Check series has audio tracks
     if (!series.books.some((book) => book.includedAudioFiles.length)) {
