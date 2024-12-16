@@ -583,6 +583,7 @@
   "LabelSettingsStoreMetadataWithItemHelp": "Ve výchozím nastavení jsou soubory metadat uloženy v adresáři /metadata/items, povolením tohoto nastavení budou soubory metadat uloženy ve složkách položek knihovny",
   "LabelSettingsTimeFormat": "Formát času",
   "LabelShare": "Sdílet",
+  "LabelShareOpen": "Otevřít sdílení",
   "LabelShareURL": "Sdílet URL",
   "LabelShowAll": "Zobrazit vše",
   "LabelShowSeconds": "Zobrazit sekundy",
