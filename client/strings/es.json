@@ -88,6 +88,8 @@
   "ButtonSaveTracklist": "Guardar Tracklist",
   "ButtonScan": "Escanear",
   "ButtonScanLibrary": "Escanear Biblioteca",
+  "ButtonScrollLeft": "Desplazarse hacia la izquierda",
+  "ButtonScrollRight": "Desplazarse hacia la derecha",
   "ButtonSearch": "Buscar",
   "ButtonSelectFolderPath": "Seleccionar Ruta de Carpeta",
   "ButtonSeries": "Series",
