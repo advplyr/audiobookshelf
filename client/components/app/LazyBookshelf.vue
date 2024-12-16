@@ -65,7 +65,12 @@ export default {
       tempIsScanning: false,
       cardWidth: 0,
       cardHeight: 0,
-      resizeObserver: null
+      resizeObserver: null,
+      lastScrollTop: 0,
+      lastTimestamp: 0,
+      postScrollTimeout: null,
+      currFirstEntityIndex: -1,
+      currLastEntityIndex: -1
     }
   },
   watch: {
@@ -354,50 +359,53 @@ export default {
       }
     },
     loadPage(page) {
-      this.pagesLoaded[page] = true
-      this.fetchEntites(page)
+      if (!this.pagesLoaded[page]) this.pagesLoaded[page] = this.fetchEntites(page)
+      return this.pagesLoaded[page]
     },
     showHideBookPlaceholder(index, show) {
       var el = document.getElementById(`book-${index}-placeholder`)
       if (el) el.style.display = show ? 'flex' : 'none'
     },
-    mountEntites(fromIndex, toIndex) {
+    mountEntities(fromIndex, toIndex) {
       for (let i = fromIndex; i < toIndex; i++) {
         if (!this.entityIndexesMounted.includes(i)) {
           this.cardsHelpers.mountEntityCard(i)
         }
       }
     },
-    handleScroll(scrollTop) {
-      this.currScrollTop = scrollTop
-      var firstShelfIndex = Math.floor(scrollTop / this.shelfHeight)
-      var lastShelfIndex = Math.ceil((scrollTop + this.bookshelfHeight) / this.shelfHeight)
-      lastShelfIndex = Math.min(this.totalShelves - 1, lastShelfIndex)
-
-      var firstBookIndex = firstShelfIndex * this.entitiesPerShelf
-      var lastBookIndex = lastShelfIndex * this.entitiesPerShelf + this.entitiesPerShelf
-      lastBookIndex = Math.min(this.totalEntities, lastBookIndex)
-
-      var firstBookPage = Math.floor(firstBookIndex / this.booksPerFetch)
-      var lastBookPage = Math.floor(lastBookIndex / this.booksPerFetch)
-      if (!this.pagesLoaded[firstBookPage]) {
-        // console.log('Must load next batch', firstBookPage, 'book index', firstBookIndex)
-        this.loadPage(firstBookPage)
-      }
-      if (!this.pagesLoaded[lastBookPage]) {
-        // console.log('Must load last next batch', lastBookPage, 'book index', lastBookIndex)
-        this.loadPage(lastBookPage)
-      }
-
+    getVisibleIndices(scrollTop) {
+      const firstShelfIndex = Math.floor(scrollTop / this.shelfHeight)
+      const lastShelfIndex = Math.min(Math.ceil((scrollTop + this.bookshelfHeight) / this.shelfHeight), this.totalShelves - 1)
+      const firstEntityIndex = firstShelfIndex * this.entitiesPerShelf
+      const lastEntityIndex = Math.min(lastShelfIndex * this.entitiesPerShelf + this.entitiesPerShelf, this.totalEntities)
+      return { firstEntityIndex, lastEntityIndex }
+    },
+    postScroll() {
+      const { firstEntityIndex, lastEntityIndex } = this.getVisibleIndices(this.currScrollTop)
       this.entityIndexesMounted = this.entityIndexesMounted.filter((_index) => {
-        if (_index < firstBookIndex || _index >= lastBookIndex) {
-          var el = document.getElementById(`book-card-${_index}`)
-          if (el) el.remove()
+        if (_index < firstEntityIndex || _index >= lastEntityIndex) {
+          var el = this.entityComponentRefs[_index]
+          if (el && el.$el) el.$el.remove()
           return false
         }
         return true
       })
-      this.mountEntites(firstBookIndex, lastBookIndex)
+    },
+    handleScroll(scrollTop) {
+      this.currScrollTop = scrollTop
+      const { firstEntityIndex, lastEntityIndex } = this.getVisibleIndices(scrollTop)
+      if (firstEntityIndex === this.currFirstEntityIndex && lastEntityIndex === this.currLastEntityIndex) return
+      this.currFirstEntityIndex = firstEntityIndex
+      this.currLastEntityIndex = lastEntityIndex
+
+      clearTimeout(this.postScrollTimeout)
+      const firstPage = Math.floor(firstEntityIndex / this.booksPerFetch)
+      const lastPage = Math.floor(lastEntityIndex / this.booksPerFetch)
+      Promise.all([this.loadPage(firstPage), this.loadPage(lastPage)])
+        .then(() => this.mountEntities(firstEntityIndex, lastEntityIndex))
+        .catch((error) => console.error('Failed to load page', error))
+
+      this.postScrollTimeout = setTimeout(this.postScroll, 500)
     },
     async resetEntities() {
       if (this.isFetchingEntities) {
@@ -405,8 +413,6 @@ export default {
         return
       }
       this.destroyEntityComponents()
-      this.entityIndexesMounted = []
-      this.entityComponentRefs = {}
       this.pagesLoaded = {}
       this.entities = []
       this.totalShelves = 0
@@ -416,40 +422,21 @@ export default {
       this.initialized = false
 
       this.initSizeData()
-      this.pagesLoaded[0] = true
-      await this.fetchEntites(0)
+      await this.loadPage(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
-      this.mountEntites(0, lastBookIndex)
+      this.mountEntities(0, lastBookIndex)
     },
-    remountEntities() {
-      for (const key in this.entityComponentRefs) {
-        if (this.entityComponentRefs[key]) {
-          this.entityComponentRefs[key].destroy()
-        }
-      }
-      this.entityComponentRefs = {}
-      this.entityIndexesMounted.forEach((i) => {
-        this.cardsHelpers.mountEntityCard(i)
-      })
-    },
-    rebuild() {
+    async rebuild() {
       this.initSizeData()
 
       var lastBookIndex = Math.min(this.totalEntities, this.booksPerFetch)
-      this.entityIndexesMounted = []
-      for (let i = 0; i < lastBookIndex; i++) {
-        this.entityIndexesMounted.push(i)
-        if (!this.entities[i]) {
-          const page = Math.floor(i / this.booksPerFetch)
-          this.loadPage(page)
-        }
-      }
+      this.destroyEntityComponents()
+      await this.loadPage(0)
       var bookshelfEl = document.getElementById('bookshelf')
       if (bookshelfEl) {
         bookshelfEl.scrollTop = 0
       }
-
-      this.$nextTick(this.remountEntities)
+      this.mountEntities(0, lastBookIndex)
     },
     buildSearchParams() {
       if (this.page === 'search' || this.page === 'collections') {
@@ -513,12 +500,29 @@ export default {
       if (wasUpdated) {
         this.resetEntities()
       } else if (settings.bookshelfCoverSize !== this.currentBookWidth) {
-        this.executeRebuild()
+        this.rebuild()
       }
+    },
+    getScrollRate() {
+      const currentTimestamp = Date.now()
+      const timeDelta = currentTimestamp - this.lastTimestamp
+      const scrollDelta = this.currScrollTop - this.lastScrollTop
+      const scrollRate = Math.abs(scrollDelta) / (timeDelta || 1)
+      this.lastScrollTop = this.currScrollTop
+      this.lastTimestamp = currentTimestamp
+      return scrollRate
     },
     scroll(e) {
       if (!e || !e.target) return
-      var { scrollTop } = e.target
+      clearTimeout(this.scrollTimeout)
+      const { scrollTop } = e.target
+      const scrollRate = this.getScrollRate()
+      if (scrollRate > 5) {
+        this.scrollTimeout = setTimeout(() => {
+          this.handleScroll(scrollTop)
+        }, 25)
+        return
+      }
       this.handleScroll(scrollTop)
     },
     libraryItemAdded(libraryItem) {
@@ -667,13 +671,14 @@ export default {
     },
     updatePagesLoaded() {
       let numPages = Math.ceil(this.totalEntities / this.booksPerFetch)
+      this.pagesLoaded = {}
       for (let page = 0; page < numPages; page++) {
         let numEntities = Math.min(this.totalEntities - page * this.booksPerFetch, this.booksPerFetch)
-        this.pagesLoaded[page] = true
+        this.pagesLoaded[page] = Promise.resolve()
         for (let i = 0; i < numEntities; i++) {
           const index = page * this.booksPerFetch + i
           if (!this.entities[index]) {
-            this.pagesLoaded[page] = false
+            if (this.pagesLoaded[page]) delete this.pagesLoaded[page]
             break
           }
         }
@@ -688,7 +693,6 @@ export default {
       var entitiesPerShelfBefore = this.entitiesPerShelf
 
       var { clientHeight, clientWidth } = bookshelf
-      // console.log('Init bookshelf width', clientWidth, 'window width', window.innerWidth)
       this.mountWindowWidth = window.innerWidth
       this.bookshelfHeight = clientHeight
       this.bookshelfWidth = clientWidth
@@ -713,10 +717,9 @@ export default {
       this.initSizeData(bookshelf)
       this.checkUpdateSearchParams()
 
-      this.pagesLoaded[0] = true
-      await this.fetchEntites(0)
+      await this.loadPage(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
-      this.mountEntites(0, lastBookIndex)
+      this.mountEntities(0, lastBookIndex)
 
       // Set last scroll position for this bookshelf page
       if (this.$store.state.lastBookshelfScrollData[this.page] && window.bookshelf) {
@@ -747,7 +750,7 @@ export default {
         var bookshelf = document.getElementById('bookshelf')
         if (bookshelf) {
           this.init(bookshelf)
-          bookshelf.addEventListener('scroll', this.scroll)
+          bookshelf.addEventListener('scroll', this.scroll, { passive: true })
         }
       })
 
@@ -810,10 +813,14 @@ export default {
     },
     destroyEntityComponents() {
       for (const key in this.entityComponentRefs) {
-        if (this.entityComponentRefs[key] && this.entityComponentRefs[key].destroy) {
-          this.entityComponentRefs[key].destroy()
+        const ref = this.entityComponentRefs[key]
+        if (ref && ref.destroy) {
+          if (ref.$el) ref.$el.remove()
+          ref.destroy()
         }
       }
+      this.entityComponentRefs = {}
+      this.entityIndexesMounted = []
     },
     scan() {
       this.tempIsScanning = true
