@@ -406,6 +406,7 @@
   "LabelLess": "Méně",
   "LabelLibrariesAccessibleToUser": "Knihovny přístupné uživateli",
   "LabelLibrary": "Knihovna",
+  "LabelLibraryFilterSublistEmpty": "Žádné {0}",
   "LabelLibraryItem": "Položka knihovny",
   "LabelLibraryName": "Název knihovny",
   "LabelLimit": "Omezit",
