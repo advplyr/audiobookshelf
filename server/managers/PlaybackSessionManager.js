@@ -178,8 +178,8 @@ class PlaybackSessionManager {
       // This makes sure that the client's metadata is preferred over the library's metadata, if available, to make a non-breaking change
       if(session.mediaMetadata == null) {
         // Only sync important metadata
-        const { title, subtitle, narrators, authors, author, series, genres } = libraryItem?.media?.metadata || {}
-        session.mediaMetadata = { title, subtitle, narrators, authors, series, genres, author}
+        const { title, subtitle, narrators, authors, author, series, genres, type } = libraryItem?.media?.metadata || {}
+        session.mediaMetadata = { title, subtitle, narrators, authors, author, series, genres, type }
       }
       if(session.displayTitle == null || session.displayTitle === '') {
         session.displayTitle = libraryItem?.media?.metadata?.title ?? ''
