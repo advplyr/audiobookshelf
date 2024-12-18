@@ -1,13 +1,13 @@
 <template>
   <div class="">
     <div class="w-full relative sm:w-80">
-      <form @submit.prevent="submitSearch">
+      <form role="search" @submit.prevent="submitSearch">
         <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
       </form>
-      <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
+      <button :aria-hidden="!search" class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
         <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">&#xe8b6;</span>
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
-      </div>
+      </button>
     </div>
     <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
