@@ -7,6 +7,7 @@ const Database = require('../Database')
 
 const { PlayMethod } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
+const zipHelpers = require('../utils/zipHelpers')
 
 const PlaybackSession = require('../objects/PlaybackSession')
 const ShareManager = require('../managers/ShareManager')
@@ -211,6 +212,75 @@ class ShareController {
   }
 
   /**
+   * Public route
+   *
+   * GET: /api/share/:slug/download
+   * Downloads media item share
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
+  async downloadMediaItemShare(req, res) {
+    const { slug } = req.params
+
+    // Find matching MediaItemShare based on slug
+    const mediaItemShare = await ShareManager.findBySlug(slug)
+    // If the file isDownloadable, download the file
+    if (mediaItemShare.isDownloadable) {
+      // Get mediaItemId and type
+      const { mediaItemId, mediaItemType } = mediaItemShare
+
+      // Get the library item from the mediaItemId
+      const libraryItem = await Database.libraryItemModel.findOne({
+        where: {
+          mediaId: mediaItemId
+        }
+      })
+
+      const itemPath = libraryItem.path
+      const itemRelPath = libraryItem.relPath
+      let itemTitle
+
+      // Get the title based on the mediaItemType
+      if (mediaItemType === 'podcastEpisode') {
+        const podcastEpisode = await Database.podcastEpisodeModel.findOne({
+          where: {
+            id: mediaItemId
+          }
+        })
+        itemTitle = podcastEpisode.title
+      } else if (mediaItemType === 'book') {
+        const book = await Database.bookModel.findOne({
+          where: {
+            id: mediaItemId
+          }
+        })
+        itemTitle = book.title
+      }
+
+      Logger.info(`[ShareController] Requested download for book "${itemTitle}" at "${itemPath}"`)
+
+      try {
+        if (libraryItem.isFile) {
+          const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(itemPath))
+          if (audioMimeType) {
+            res.setHeader('Content-Type', audioMimeType)
+          }
+          await new Promise((resolve, reject) => res.download(itemPath, itemRelPath, (error) => (error ? reject(error) : resolve())))
+        } else {
+          const filename = `${itemTitle}.zip`
+          await zipHelpers.zipDirectoryPipe(itemPath, filename, res)
+        }
+
+        Logger.info(`[ShareController] Downloaded item "${itemTitle}" at "${itemPath}"`)
+      } catch (error) {
+        Logger.error(`[ShareController] Download failed for item "${itemTitle}" at "${itemPath}"`, error)
+        res.status(500).send('Failed to download the item')
+      }
+    }
+  }
+
+  /**
    * Public route - requires share_session_id cookie
    *
    * PATCH: /api/share/:slug/progress
@@ -259,7 +329,7 @@ class ShareController {
       return res.sendStatus(403)
     }
 
-    const { slug, expiresAt, mediaItemType, mediaItemId } = req.body
+    const { slug, expiresAt, mediaItemType, mediaItemId, isDownloadable } = req.body
 
     if (!slug?.trim?.() || typeof mediaItemType !== 'string' || typeof mediaItemId !== 'string') {
       return res.status(400).send('Missing or invalid required fields')
@@ -298,7 +368,8 @@ class ShareController {
         expiresAt: expiresAt || null,
         mediaItemId,
         mediaItemType,
-        userId: req.user.id
+        userId: req.user.id,
+        isDownloadable
       })
 
       ShareManager.openMediaItemShare(mediaItemShare)
