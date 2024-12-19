@@ -10,6 +10,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
+const PluginManager = require('./managers/PluginManager')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -938,6 +939,7 @@ class Auth {
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
+      pluginExtensions: PluginManager.pluginExtensions,
       Source: global.Source
     }
   }

@@ -33,6 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
+const PluginController = require('../controllers/PluginController')
 
 const { getTitleIgnorePrefix } = require('../utils/index')
 
@@ -319,6 +320,11 @@ class ApiRouter {
     //
     this.router.post('/share/mediaitem', ShareController.createMediaItemShare.bind(this))
     this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
+
+    //
+    // Plugin routes
+    //
+    this.router.post('/plugins/action', PluginController.handleAction.bind(this))
 
     //
     // Misc Routes

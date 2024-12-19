@@ -364,6 +364,9 @@ export default {
     showCollectionsButton() {
       return this.isBook && this.userCanUpdate
     },
+    pluginExtensions() {
+      return this.$store.getters['getPluginExtensions']('item.detail.actions')
+    },
     contextMenuItems() {
       const items = []
 
@@ -426,6 +429,18 @@ export default {
         items.push({
           text: this.$strings.ButtonDelete,
           action: 'delete'
+        })
+      }
+
+      if (this.pluginExtensions.length) {
+        this.pluginExtensions.forEach((plugin) => {
+          const pluginSlug = plugin.slug
+          plugin.extensions.forEach((pext) => {
+            items.push({
+              text: pext.label,
+              action: `plugin-${pluginSlug}-action-${pext.name}`
+            })
+          })
         })
       }
 
@@ -763,7 +778,31 @@ export default {
       } else if (action === 'share') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
+      } else if (action.startsWith('plugin-')) {
+        const actionStrSplit = action.replace('plugin-', '').split('-action-')
+        const pluginSlug = actionStrSplit[0]
+        const pluginAction = actionStrSplit[1]
+        console.log('Plugin action for', pluginSlug, 'with action', pluginAction)
+        this.onPluginAction(pluginSlug, pluginAction)
       }
+    },
+    onPluginAction(pluginSlug, pluginAction) {
+      this.$axios
+        .$post(`/api/plugins/action`, {
+          pluginSlug,
+          pluginAction,
+          target: 'item.detail.actions',
+          data: {
+            entityId: this.libraryItemId,
+            entityType: 'libraryItem'
+          }
+        })
+        .then((data) => {
+          console.log('Plugin action response', data)
+        })
+        .catch((error) => {
+          console.error('Plugin action failed', error)
+        })
     }
   },
   mounted() {

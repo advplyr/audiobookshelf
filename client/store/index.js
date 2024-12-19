@@ -28,7 +28,8 @@ export const state = () => ({
   openModal: null,
   innerModalOpen: false,
   lastBookshelfScrollData: {},
-  routerBasePath: '/'
+  routerBasePath: '/',
+  pluginExtensions: []
 })
 
 export const getters = {
@@ -61,6 +62,19 @@ export const getters = {
   getHomeBookshelfView: (state) => {
     if (!state.serverSettings || isNaN(state.serverSettings.homeBookshelfView)) return Constants.BookshelfView.STANDARD
     return state.serverSettings.homeBookshelfView
+  },
+  getPluginExtensions: (state) => (target) => {
+    return state.pluginExtensions
+      .map((pext) => {
+        const extensionsMatchingTarget = pext.extensions.filter((ext) => ext.target === target)
+        if (!extensionsMatchingTarget.length) return null
+        return {
+          name: pext.name,
+          slug: pext.slug,
+          extensions: extensionsMatchingTarget
+        }
+      })
+      .filter(Boolean)
   }
 }
 
@@ -239,5 +253,8 @@ export const mutations = {
   },
   setInnerModalOpen(state, val) {
     state.innerModalOpen = val
+  },
+  setPluginExtensions(state, val) {
+    state.pluginExtensions = val
   }
 }

@@ -1,0 +1,52 @@
+{
+  "name": "Example Plugin",
+  "slug": "example",
+  "version": "1.0.0",
+  "description": "This is an example plugin",
+  "extensions": [
+    {
+      "target": "item.detail.actions",
+      "name": "itemActionExample",
+      "label": "Item Example Action",
+      "labelKey": "ItemExampleAction"
+    }
+  ],
+  "config": {
+    "title": "Example Plugin Configuration",
+    "titleKey": "ExamplePluginConfiguration",
+    "description": "This is an example plugin",
+    "descriptionKey": "ExamplePluginConfigurationDescription",
+    "formFields": [
+      {
+        "name": "apiKey",
+        "label": "API Key",
+        "labelKey": "LabelApiKey",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "requestAddress",
+        "label": "Request Address",
+        "labelKey": "LabelRequestAddress",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "enable",
+        "label": "Enable",
+        "labelKey": "LabelEnable",
+        "type": "checkbox"
+      }
+    ]
+  },
+  "localization": {
+    "en-us": {
+      "ItemExampleAction": "Item Example Action",
+      "LabelApiKey": "API Key",
+      "LabelEnable": "Enable",
+      "ExamplePluginConfiguration": "Example Plugin Configuration",
+      "ExamplePluginConfigurationDescription": "This is an example plugin",
+      "LabelRequestAddress": "Request Address"
+    }
+  }
+}
