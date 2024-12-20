@@ -42,6 +42,7 @@ Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map((code) => 
 
 // iTunes search API uses ISO 3166 country codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 const podcastSearchRegionMap = {
+  au: { label: 'Australia' },
   br: { label: 'Brasil' },
   be: { label: 'België / Belgique / Belgien' },
   cz: { label: 'Česko' },
@@ -57,6 +58,7 @@ const podcastSearchRegionMap = {
   hu: { label: 'Magyarország' },
   nl: { label: 'Nederland' },
   no: { label: 'Norge' },
+  nz: { label: 'New Zealand' },
   at: { label: 'Österreich' },
   pl: { label: 'Polska' },
   pt: { label: 'Portugal' },
