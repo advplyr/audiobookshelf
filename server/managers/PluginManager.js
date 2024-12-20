@@ -1,28 +1,31 @@
 const Path = require('path')
 const Logger = require('../Logger')
+const Database = require('../Database')
 const PluginAbstract = require('../PluginAbstract')
 const fs = require('fs').promises
+
+/**
+ * @typedef PluginContext
+ * @property {import('../../server/Logger')} Logger
+ * @property {import('../../server/Database')} Database
+ */
 
 class PluginManager {
   constructor() {
     this.plugins = []
   }
 
-  get pluginExtensions() {
-    return this.plugins
-      .filter((plugin) => plugin.manifest.extensions?.length)
-      .map((plugin) => {
-        return {
-          name: plugin.manifest.name,
-          slug: plugin.manifest.slug,
-          extensions: plugin.manifest.extensions
-        }
-      })
+  get pluginData() {
+    return this.plugins.map((plugin) => plugin.manifest)
   }
 
+  /**
+   * @returns {PluginContext}
+   */
   get pluginContext() {
     return {
-      Logger
+      Logger,
+      Database
     }
   }
 
@@ -59,23 +62,27 @@ class PluginManager {
 
     // TODO: Validate manifest json
 
-    let pluginContents = null
+    let pluginInstance = null
     try {
-      pluginContents = require(Path.join(pluginPath, indexFile.name))
+      pluginInstance = require(Path.join(pluginPath, indexFile.name))
     } catch (error) {
       Logger.error(`Error loading plugin ${pluginPath}`, error)
       return null
     }
 
+    if (typeof pluginInstance.init !== 'function') {
+      Logger.error(`Plugin ${pluginPath} does not have an init function`)
+      return null
+    }
+
     return {
       manifest: manifestJson,
-      contents: pluginContents
+      instance: pluginInstance
     }
   }
 
   async loadPlugins() {
     const pluginDirs = await fs.readdir(global.PluginsPath, { withFileTypes: true, recursive: true }).then((files) => files.filter((file) => file.isDirectory()))
-    console.log('pluginDirs', pluginDirs)
 
     for (const pluginDir of pluginDirs) {
       Logger.info(`[PluginManager] Loading plugin ${pluginDir.name}`)
@@ -91,9 +98,9 @@ class PluginManager {
     await this.loadPlugins()
 
     for (const plugin of this.plugins) {
-      if (plugin.contents.init) {
+      if (plugin.instance.init) {
         Logger.info(`[PluginManager] Initializing plugin ${plugin.manifest.name}`)
-        plugin.contents.init(this.pluginContext)
+        plugin.instance.init(this.pluginContext)
       }
     }
   }
@@ -111,9 +118,22 @@ class PluginManager {
       return
     }
 
-    if (plugin.contents.onAction) {
+    if (plugin.instance.onAction) {
       Logger.info(`[PluginManager] Calling onAction for plugin ${plugin.manifest.name}`)
-      plugin.contents.onAction(this.pluginContext, actionName, target, data)
+      plugin.instance.onAction(this.pluginContext, actionName, target, data)
+    }
+  }
+
+  onConfigSave(pluginSlug, config) {
+    const plugin = this.plugins.find((plugin) => plugin.manifest.slug === pluginSlug)
+    if (!plugin) {
+      Logger.error(`[PluginManager] Plugin ${pluginSlug} not found`)
+      return
+    }
+
+    if (plugin.instance.onConfigSave) {
+      Logger.info(`[PluginManager] Calling onConfigSave for plugin ${plugin.manifest.name}`)
+      plugin.instance.onConfigSave(this.pluginContext, config)
     }
   }
 

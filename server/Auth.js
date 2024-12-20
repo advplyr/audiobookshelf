@@ -939,7 +939,7 @@ class Auth {
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
-      pluginExtensions: PluginManager.pluginExtensions,
+      plugins: PluginManager.pluginData,
       Source: global.Source
     }
   }

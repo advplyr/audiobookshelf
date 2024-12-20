@@ -109,6 +109,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'config-plugins',
+          title: 'Plugins',
+          path: '/config/plugins'
         }
       ]
 

@@ -12,8 +12,6 @@
     }
   ],
   "config": {
-    "title": "Example Plugin Configuration",
-    "titleKey": "ExamplePluginConfiguration",
     "description": "This is an example plugin",
     "descriptionKey": "ExamplePluginConfigurationDescription",
     "formFields": [
@@ -44,7 +42,6 @@
       "ItemExampleAction": "Item Example Action",
       "LabelApiKey": "API Key",
       "LabelEnable": "Enable",
-      "ExamplePluginConfiguration": "Example Plugin Configuration",
       "ExamplePluginConfigurationDescription": "This is an example plugin",
       "LabelRequestAddress": "Request Address"
     }

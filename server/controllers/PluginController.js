@@ -20,5 +20,19 @@ class PluginController {
     PluginManager.onAction(pluginSlug, actionName, target, data)
     res.sendStatus(200)
   }
+
+  /**
+   * POST: /api/plugins/config
+   *
+   * @param {*} req
+   * @param {*} res
+   */
+  handleConfigSave(req, res) {
+    const pluginSlug = req.body.pluginSlug
+    const config = req.body.config
+    Logger.info(`[PluginController] Saving config for plugin ${pluginSlug}`, config)
+    PluginManager.onConfigSave(pluginSlug, config)
+    res.sendStatus(200)
+  }
 }
 module.exports = new PluginController()
