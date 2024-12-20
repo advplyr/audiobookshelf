@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button :aria-labelledby="labeledBy" role="checkbox" type="button" class="border rounded-full border-black-100 flex items-center cursor-pointer justify-start" :style="{ width: buttonWidth + 'px' }" :aria-checked="toggleValue" :class="className" @click="clickToggle">
+    <button :aria-labelledby="labeledBy" :aria-label="label" role="checkbox" type="button" class="border rounded-full border-black-100 flex items-center cursor-pointer justify-start" :style="{ width: buttonWidth + 'px' }" :aria-checked="toggleValue" :class="className" @click="clickToggle">
       <span class="rounded-full border border-black-50 shadow transform transition-transform duration-100" :style="{ width: cursorHeightWidth + 'px', height: cursorHeightWidth + 'px' }" :class="switchClassName"></span>
     </button>
   </div>
@@ -20,6 +20,7 @@ export default {
     },
     disabled: Boolean,
     labeledBy: String,
+    label: String,
     size: {
       type: String,
       default: 'md'

@@ -6,9 +6,9 @@
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsGeneral }}</h2>
           </div>
-          <div class="flex items-end py-2">
-            <ui-toggle-switch labeledBy="settings-store-cover-with-items" v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsStoreCoversWithItemHelp">
+          <div role="article" :aria-label="$strings.LabelSettingsStoreCoversWithItemHelp" class="flex items-end py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsStoreCoversWithItem" v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsStoreCoversWithItemHelp">
               <p class="pl-4">
                 <span id="settings-store-cover-with-items">{{ $strings.LabelSettingsStoreCoversWithItem }}</span>
                 <span class="material-symbols icon-text">info</span>
@@ -16,9 +16,9 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-store-metadata-with-items" v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsStoreMetadataWithItemHelp">
+          <div role="article" :aria-label="$strings.LabelSettingsStoreMetadataWithItemHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsStoreMetadataWithItem" v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsStoreMetadataWithItemHelp">
               <p class="pl-4">
                 <span id="settings-store-metadata-with-items">{{ $strings.LabelSettingsStoreMetadataWithItem }}</span>
                 <span class="material-symbols icon-text">info</span>
@@ -26,9 +26,9 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-sorting-ignore-prefixes" v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsSortingIgnorePrefixesHelp">
+          <div role="article" :aria-label="$strings.LabelSettingsSortingIgnorePrefixesHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsSortingIgnorePrefixes" v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsSortingIgnorePrefixesHelp">
               <p class="pl-4">
                 <span id="settings-sorting-ignore-prefixes">{{ $strings.LabelSettingsSortingIgnorePrefixes }}</span>
                 <span class="material-symbols icon-text">info</span>
