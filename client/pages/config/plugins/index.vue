@@ -8,16 +8,18 @@
           </a>
         </ui-tooltip>
       </template>
+      <div class="py-4">
+        <p v-if="!plugins.length" class="text-gray-300">No plugins installed</p>
 
-      <h2 class="text-xl font-medium">Installed Plugins</h2>
-      <template v-for="plugin in plugins">
-        <nuxt-link :key="plugin.id" :to="`/config/plugins/${plugin.id}`" class="flex items-center bg-primary rounded-md shadow-sm p-4 my-4 space-x-4">
-          <p class="text-lg">{{ plugin.name }}</p>
-          <p class="text-sm text-gray-300">{{ plugin.description }}</p>
-          <div class="flex-grow" />
-          <span class="material-symbols text-4xl">chevron_right</span>
-        </nuxt-link>
-      </template>
+        <template v-for="plugin in plugins">
+          <nuxt-link :key="plugin.id" :to="`/config/plugins/${plugin.id}`" class="flex items-center bg-primary rounded-md shadow-sm p-4 my-4 space-x-4">
+            <p class="text-lg">{{ plugin.name }}</p>
+            <p class="text-sm text-gray-300">{{ plugin.description }}</p>
+            <div class="flex-grow" />
+            <span class="material-symbols text-4xl">chevron_right</span>
+          </nuxt-link>
+        </template>
+      </div>
     </app-settings-content>
   </div>
 </template>
