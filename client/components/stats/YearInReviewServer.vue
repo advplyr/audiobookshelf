@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div v-if="processing" class="max-w-[800px] h-80 md:h-[800px] mx-auto flex items-center justify-center">
+    <div v-if="processing" role="img" :aria-label="$strings.MessageLoading" class="max-w-[800px] h-80 md:h-[800px] mx-auto flex items-center justify-center">
       <widgets-loading-spinner />
     </div>
-    <img v-else-if="dataUrl" :src="dataUrl" class="mx-auto" />
+    <img v-else-if="dataUrl" :src="dataUrl" class="mx-auto" :aria-label="$getString('LabelServerYearReview', [variant + 1])" />
   </div>
 </template>
 

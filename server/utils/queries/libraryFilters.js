@@ -54,7 +54,7 @@ module.exports = {
         items: libraryItems.map((li) => {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.mediaItemShare) {
             oldLibraryItem.mediaItemShare = li.mediaItemShare
@@ -91,7 +91,7 @@ module.exports = {
         libraryItems: libraryItems.map((li) => {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
             oldLibraryItem.media.size = li.size
@@ -109,7 +109,7 @@ module.exports = {
         libraryItems: libraryItems.map((li) => {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
             oldLibraryItem.media.size = li.size
@@ -138,7 +138,7 @@ module.exports = {
       libraryItems: libraryItems.map((li) => {
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.series) {
           oldLibraryItem.media.metadata.series = li.series
@@ -168,7 +168,7 @@ module.exports = {
         items: libraryItems.map((li) => {
           const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
-            oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.mediaItemShare) {
             oldLibraryItem.mediaItemShare = li.mediaItemShare
@@ -279,7 +279,7 @@ module.exports = {
       const oldSeries = s.toOldJSON()
 
       if (s.feeds?.length) {
-        oldSeries.rssFeed = Database.feedModel.getOldFeed(s.feeds[0]).toJSONMinified()
+        oldSeries.rssFeed = s.feeds[0].toOldJSONMinified()
       }
 
       // TODO: Sort books by sequence in query
@@ -375,7 +375,7 @@ module.exports = {
       libraryItems: libraryItems.map((li) => {
         const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(li).toJSONMinified()
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = Database.feedModel.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.mediaItemShare) {
           oldLibraryItem.mediaItemShare = li.mediaItemShare

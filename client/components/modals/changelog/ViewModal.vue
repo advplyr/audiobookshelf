@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="changelog" :width="800" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">Changelog</p>
+        <h1 class="text-3xl text-white truncate">Changelog</h1>
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">
@@ -13,7 +13,7 @@
           </p>
           <div class="custom-text" v-html="getChangelog(release)" />
         </div>
-        <div v-if="release !== releasesToShow[releasesToShow.length - 1]" class="border-b border-black-300 my-8" />
+        <div v-if="release !== releasesToShow[releasesToShow.length - 1]" :key="`${release.name}-divider`" class="border-b border-black-300 my-8" />
       </template>
     </div>
   </modals-modal>
