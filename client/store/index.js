@@ -69,8 +69,8 @@ export const getters = {
         const extensionsMatchingTarget = pext.extensions?.filter((ext) => ext.target === target) || []
         if (!extensionsMatchingTarget.length) return null
         return {
+          id: pext.id,
           name: pext.name,
-          slug: pext.slug,
           extensions: extensionsMatchingTarget
         }
       })

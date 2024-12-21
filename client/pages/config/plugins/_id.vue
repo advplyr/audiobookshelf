@@ -1,14 +1,14 @@
 <template>
   <div>
-    <app-settings-content :header-text="`Plugin: ${plugin.name}`">
+    <app-settings-content :header-text="`Plugin: ${pluginManifest.name}`">
       <template #header-prefix>
         <nuxt-link to="/config/plugins" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center mr-2">
           <span class="material-symbols text-2xl">arrow_back</span>
         </nuxt-link>
       </template>
       <template #header-items>
-        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
-          <a href="https://www.audiobookshelf.org/guides" target="_blank" class="inline-flex">
+        <ui-tooltip v-if="pluginManifest.documentationUrl" :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a :href="pluginManifest.documentationUrl" target="_blank" class="inline-flex">
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
@@ -38,16 +38,24 @@
 
 <script>
 export default {
-  asyncData({ store, redirect, params }) {
+  async asyncData({ store, redirect, params, app }) {
     if (!store.getters['user/getIsAdminOrUp']) {
       redirect('/')
     }
-    const plugin = store.state.plugins.find((plugin) => plugin.id === params.id)
-    if (!plugin) {
+    const pluginConfigData = await app.$axios.$get(`/api/plugins/${params.id}/config`).catch((error) => {
+      console.error('Failed to get plugin config', error)
+      return null
+    })
+    if (!pluginConfigData?.config) {
+      redirect('/config/plugins')
+    }
+    const pluginManifest = store.state.plugins.find((plugin) => plugin.id === params.id)
+    if (!pluginManifest) {
       redirect('/config/plugins')
     }
     return {
-      plugin
+      pluginManifest,
+      pluginConfig: pluginConfigData.config
     }
   },
   data() {
@@ -56,11 +64,11 @@ export default {
     }
   },
   computed: {
-    pluginConfig() {
-      return this.plugin.config
+    pluginManifestConfig() {
+      return this.pluginManifest.config
     },
     pluginLocalization() {
-      return this.plugin.localization || {}
+      return this.pluginManifest.localization || {}
     },
     localizedStrings() {
       const localeKey = this.$languageCodes.current
@@ -68,14 +76,14 @@ export default {
       return this.pluginLocalization[localeKey] || {}
     },
     configDescription() {
-      if (this.pluginConfig.descriptionKey && this.localizedStrings[this.pluginConfig.descriptionKey]) {
-        return this.localizedStrings[this.pluginConfig.descriptionKey]
+      if (this.pluginManifestConfig.descriptionKey && this.localizedStrings[this.pluginManifestConfig.descriptionKey]) {
+        return this.localizedStrings[this.pluginManifestConfig.descriptionKey]
       }
 
-      return this.pluginConfig.description
+      return this.pluginManifestConfig.description
     },
     configFormFields() {
-      return this.pluginConfig.formFields || []
+      return this.pluginManifestConfig.formFields || []
     }
   },
   methods: {
@@ -101,21 +109,37 @@ export default {
       this.processing = true
 
       this.$axios
-        .$post(`/api/plugins/${this.plugin.id}/config`, payload)
+        .$post(`/api/plugins/${this.pluginManifest.id}/config`, payload)
         .then(() => {
           console.log('Plugin configuration saved')
         })
         .catch((error) => {
-          console.error('Error saving plugin configuration', error)
-          this.$toast.error('Error saving plugin configuration')
+          const errorMsg = error.response?.data || 'Error saving plugin configuration'
+          console.error('Failed to save config:', error)
+          this.$toast.error(errorMsg)
         })
         .finally(() => {
           this.processing = false
         })
+    },
+    initializeForm() {
+      this.configFormFields.forEach((field) => {
+        if (this.pluginConfig[field.name] === undefined) {
+          return
+        }
+
+        const value = this.pluginConfig[field.name]
+        if (field.type === 'checkbox') {
+          document.getElementById(field.name).checked = value
+        } else {
+          document.getElementById(field.name).value = value
+        }
+      })
     }
   },
   mounted() {
-    console.log('Plugin', this.plugin)
+    console.log('Plugin manifest', this.pluginManifest, 'config', this.pluginConfig)
+    this.initializeForm()
   },
   beforeDestroy() {}
 }

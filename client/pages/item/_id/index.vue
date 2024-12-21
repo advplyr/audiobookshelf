@@ -437,7 +437,8 @@ export default {
           plugin.extensions.forEach((pext) => {
             items.push({
               text: pext.label,
-              action: `plugin-${plugin.id}-action-${pext.name}`
+              action: `plugin-${plugin.id}-action-${pext.name}`,
+              icon: 'extension'
             })
           })
         })
@@ -781,7 +782,6 @@ export default {
         const actionStrSplit = action.replace('plugin-', '').split('-action-')
         const pluginId = actionStrSplit[0]
         const pluginAction = actionStrSplit[1]
-        console.log('Plugin action for', pluginId, 'with action', pluginAction)
         this.onPluginAction(pluginId, pluginAction)
       }
     },
@@ -799,7 +799,9 @@ export default {
           console.log('Plugin action response', data)
         })
         .catch((error) => {
-          console.error('Plugin action failed', error)
+          const errorMsg = error.response?.data || 'Plugin action failed'
+          console.error('Plugin action failed:', error)
+          this.$toast.error(errorMsg)
         })
     }
   },

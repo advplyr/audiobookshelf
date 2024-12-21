@@ -156,7 +156,7 @@ class Server {
     // Initialize plugins
     await PluginManager.init()
     // TODO: Prevents circular dependency for SocketAuthority
-    this.auth.pluginData = PluginManager.pluginData
+    this.auth.pluginManifests = PluginManager.pluginManifests
   }
 
   /**

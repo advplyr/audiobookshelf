@@ -1,8 +1,10 @@
 {
   "id": "e6205690-916c-4add-9a2b-2548266996ef",
   "name": "Example",
-  "slug": "example",
   "version": "1.0.0",
+  "owner": "advplyr",
+  "repositoryUrl": "https://github.com/example/example-plugin",
+  "documentationUrl": "https://example.com",
   "description": "This is an example plugin",
   "extensions": [
     {
@@ -13,16 +15,9 @@
     }
   ],
   "config": {
-    "description": "This is an example plugin",
+    "description": "This is a description on how to configure the plugin",
     "descriptionKey": "ExamplePluginConfigurationDescription",
     "formFields": [
-      {
-        "name": "apiKey",
-        "label": "API Key",
-        "labelKey": "LabelApiKey",
-        "type": "text",
-        "required": false
-      },
       {
         "name": "requestAddress",
         "label": "Request Address",
@@ -41,10 +36,17 @@
   "localization": {
     "en-us": {
       "ItemExampleAction": "Item Example Action",
-      "LabelApiKey": "API Key",
       "LabelEnable": "Enable",
-      "ExamplePluginConfigurationDescription": "This is an example plugin",
+      "ExamplePluginConfigurationDescription": "This is a description on how to configure the plugin",
       "LabelRequestAddress": "Request Address"
     }
-  }
+  },
+  "releases": [
+    {
+      "version": "1.0.0",
+      "changelog": "Initial release",
+      "timestamp": "2022-01-01T00:00:00Z",
+      "sourceUrl": ""
+    }
+  ]
 }

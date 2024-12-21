@@ -16,7 +16,7 @@ const Logger = require('./Logger')
  */
 class Auth {
   constructor() {
-    this.pluginData = []
+    this.pluginManifests = []
 
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
@@ -940,7 +940,7 @@ class Auth {
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
-      plugins: this.pluginData,
+      plugins: this.pluginManifests,
       Source: global.Source
     }
   }

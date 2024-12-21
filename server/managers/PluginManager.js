@@ -12,10 +12,22 @@ const { isUUID, parseSemverStrict } = require('../utils')
  * @property {import('../Database')} Database
  * @property {import('../SocketAuthority')} SocketAuthority
  * @property {import('../managers/TaskManager')} TaskManager
+ * @property {import('../models/Plugin')} pluginInstance
+ */
+
+/**
+ * @typedef PluginData
+ * @property {string} id
+ * @property {Object} manifest
+ * @property {import('../models/Plugin')} instance
+ * @property {Function} init
+ * @property {Function} onAction
+ * @property {Function} onConfigSave
  */
 
 class PluginManager {
   constructor() {
+    /** @type {PluginData[]} */
     this.plugins = []
   }
 
@@ -23,20 +35,32 @@ class PluginManager {
     return Path.posix.join(global.MetadataPath, 'plugins')
   }
 
-  get pluginData() {
+  get pluginManifests() {
     return this.plugins.map((plugin) => plugin.manifest)
   }
 
   /**
+   *
+   * @param {import('../models/Plugin')} pluginInstance
    * @returns {PluginContext}
    */
-  get pluginContext() {
+  getPluginContext(pluginInstance) {
     return {
       Logger,
       Database,
       SocketAuthority,
-      TaskManager
+      TaskManager,
+      pluginInstance
     }
+  }
+
+  /**
+   *
+   * @param {string} id
+   * @returns {PluginData}
+   */
+  getPluginDataById(id) {
+    return this.plugins.find((plugin) => plugin.manifest.id === id)
   }
 
   /**
@@ -45,7 +69,7 @@ class PluginManager {
    *
    * @param {string} dirname
    * @param {string} pluginPath
-   * @returns {Promise<{manifest: Object, contents: any}>}
+   * @returns {Promise<PluginData>}
    */
   async loadPlugin(dirname, pluginPath) {
     const pluginFiles = await fsExtra.readdir(pluginPath, { withFileTypes: true }).then((files) => files.filter((file) => !file.isDirectory()))
@@ -88,26 +112,25 @@ class PluginManager {
       return null
     }
 
-    let pluginInstance = null
+    let pluginContents = null
     try {
-      pluginInstance = require(Path.join(pluginPath, indexFile.name))
+      pluginContents = require(Path.join(pluginPath, indexFile.name))
     } catch (error) {
       Logger.error(`Error loading plugin ${pluginPath}`, error)
       return null
     }
 
-    if (typeof pluginInstance.init !== 'function') {
+    if (typeof pluginContents.init !== 'function') {
       Logger.error(`Plugin ${pluginPath} does not have an init function`)
       return null
     }
 
     return {
+      id: manifestJson.id,
       manifest: manifestJson,
-      instance: {
-        init: pluginInstance.init,
-        onAction: pluginInstance.onAction,
-        onConfigSave: pluginInstance.onConfigSave
-      }
+      init: pluginContents.init,
+      onAction: pluginContents.onAction,
+      onConfigSave: pluginContents.onConfigSave
     }
   }
 
@@ -154,8 +177,9 @@ class PluginManager {
         } else {
           Logger.debug(`[PluginManager] Plugin "${plugin.manifest.name}" already exists in the database with version "${plugin.manifest.version}"`)
         }
+        plugin.instance = existingPlugin
       } else {
-        await Database.pluginModel.create({
+        plugin.instance = await Database.pluginModel.create({
           id: plugin.manifest.id,
           name: plugin.manifest.name,
           version: plugin.manifest.version
@@ -183,81 +207,49 @@ class PluginManager {
     await this.loadPlugins()
 
     for (const plugin of this.plugins) {
-      if (plugin.instance.init) {
-        Logger.info(`[PluginManager] Initializing plugin ${plugin.manifest.name}`)
-        plugin.instance.init(this.pluginContext)
-      }
+      Logger.info(`[PluginManager] Initializing plugin ${plugin.manifest.name}`)
+      plugin.init(this.getPluginContext(plugin.instance))
     }
   }
 
   /**
    *
-   * @param {string} pluginId
+   * @param {PluginData} plugin
    * @param {string} actionName
    * @param {string} target
    * @param {Object} data
-   * @returns
+   * @returns {Promise<boolean|{error:string}>}
    */
-  onAction(pluginId, actionName, target, data) {
-    const plugin = this.plugins.find((plugin) => plugin.manifest.id === pluginId)
-    if (!plugin) {
-      Logger.error(`[PluginManager] Plugin ${pluginId} not found`)
-      return
+  onAction(plugin, actionName, target, data) {
+    if (!plugin.onAction) {
+      Logger.error(`[PluginManager] onAction not implemented for plugin ${plugin.manifest.name}`)
+      return false
     }
 
     const pluginExtension = plugin.manifest.extensions.find((extension) => extension.name === actionName)
     if (!pluginExtension) {
       Logger.error(`[PluginManager] Extension ${actionName} not found for plugin ${plugin.manifest.name}`)
-      return
+      return false
     }
 
-    if (plugin.instance.onAction) {
-      Logger.info(`[PluginManager] Calling onAction for plugin ${plugin.manifest.name}`)
-      plugin.instance.onAction(this.pluginContext, actionName, target, data)
-    }
+    Logger.info(`[PluginManager] Calling onAction for plugin ${plugin.manifest.name}`)
+    return plugin.onAction(this.getPluginContext(plugin.instance), actionName, target, data)
   }
 
   /**
    *
-   * @param {string} pluginId
+   * @param {PluginData} plugin
    * @param {Object} config
+   * @returns {Promise<boolean|{error:string}>}
    */
-  onConfigSave(pluginId, config) {
-    const plugin = this.plugins.find((plugin) => plugin.manifest.id === pluginId)
-    if (!plugin) {
-      Logger.error(`[PluginManager] Plugin ${pluginId} not found`)
-      return
+  onConfigSave(plugin, config) {
+    if (!plugin.onConfigSave) {
+      Logger.error(`[PluginManager] onConfigSave not implemented for plugin ${plugin.manifest.name}`)
+      return false
     }
 
-    if (plugin.instance.onConfigSave) {
-      Logger.info(`[PluginManager] Calling onConfigSave for plugin ${plugin.manifest.name}`)
-      plugin.instance.onConfigSave(this.pluginContext, config)
-    }
-  }
-
-  pluginExists(name) {
-    return this.plugins.some((plugin) => plugin.name === name)
-  }
-
-  registerPlugin(plugin) {
-    if (!plugin.name) {
-      throw new Error('The plugin name and package are required')
-    }
-
-    if (this.pluginExists(plugin.name)) {
-      throw new Error(`Cannot add existing plugin ${plugin.name}`)
-    }
-
-    try {
-      // Try to load the plugin
-      const pluginPath = Path.join(this.pluginMetadataPath, plugin.name)
-      const packageContents = require(pluginPath)
-      console.log('packageContents', packageContents)
-      packageContents.init()
-      this.plugins.push(packageContents)
-    } catch (error) {
-      console.log(`Cannot load plugin ${plugin.name}`, error)
-    }
+    Logger.info(`[PluginManager] Calling onConfigSave for plugin ${plugin.manifest.name}`)
+    return plugin.onConfigSave(this.getPluginContext(plugin.instance), config)
   }
 }
 module.exports = new PluginManager()
