@@ -10,6 +10,8 @@ class Plugin extends Model {
     this.name
     /** @type {string} */
     this.version
+    /** @type {boolean} */
+    this.isMissing
     /** @type {Object} */
     this.config
     /** @type {Object} */
@@ -34,6 +36,10 @@ class Plugin extends Model {
         },
         name: DataTypes.STRING,
         version: DataTypes.STRING,
+        isMissing: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        },
         config: DataTypes.JSON,
         extraData: DataTypes.JSON
       },

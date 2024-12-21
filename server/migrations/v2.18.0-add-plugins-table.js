@@ -31,6 +31,7 @@ async function up({ context: { queryInterface, logger } }) {
       },
       name: DataTypes.STRING,
       version: DataTypes.STRING,
+      isMissing: DataTypes.BOOLEAN,
       config: DataTypes.JSON,
       extraData: DataTypes.JSON,
       createdAt: DataTypes.DATE,

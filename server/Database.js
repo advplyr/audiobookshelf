@@ -152,6 +152,11 @@ class Database {
     return this.models.device
   }
 
+  /** @type {typeof import('./models/Plugin')} */
+  get pluginModel() {
+    return this.models.plugin
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}

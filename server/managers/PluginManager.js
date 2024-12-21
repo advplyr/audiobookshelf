@@ -2,8 +2,8 @@ const Path = require('path')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const PluginAbstract = require('../PluginAbstract')
-const fs = require('fs').promises
 const fsExtra = require('../libs/fsExtra')
+const { isUUID, parseSemverStrict } = require('../utils')
 
 /**
  * @typedef PluginContext
@@ -35,11 +35,14 @@ class PluginManager {
   }
 
   /**
+   * Validate and load a plugin from a directory
+   * TODO: Validatation
    *
+   * @param {string} dirname
    * @param {string} pluginPath
    * @returns {Promise<{manifest: Object, contents: PluginAbstract}>}
    */
-  async loadPlugin(pluginPath) {
+  async loadPlugin(dirname, pluginPath) {
     const pluginFiles = await fsExtra.readdir(pluginPath, { withFileTypes: true }).then((files) => files.filter((file) => !file.isDirectory()))
 
     if (!pluginFiles.length) {
@@ -66,6 +69,19 @@ class PluginManager {
     }
 
     // TODO: Validate manifest json
+    if (!isUUID(manifestJson.id)) {
+      Logger.error(`Invalid plugin ID in manifest for plugin ${pluginPath}`)
+      return null
+    }
+    if (!parseSemverStrict(manifestJson.version)) {
+      Logger.error(`Invalid plugin version in manifest for plugin ${pluginPath}`)
+      return null
+    }
+    // TODO: Enforcing plugin name to be the same as the directory name? Ensures plugins are identifiable in the file system. May have issues with unicode characters.
+    if (dirname !== manifestJson.name) {
+      Logger.error(`Plugin directory name "${dirname}" does not match manifest name "${manifestJson.name}"`)
+      return null
+    }
 
     let pluginInstance = null
     try {
@@ -86,21 +102,74 @@ class PluginManager {
     }
   }
 
-  async loadPlugins() {
+  /**
+   * Get all plugins from the /metadata/plugins directory
+   */
+  async getPluginsFromFileSystem() {
     await fsExtra.ensureDir(this.pluginMetadataPath)
 
+    // Get all directories in the plugins directory
     const pluginDirs = await fsExtra.readdir(this.pluginMetadataPath, { withFileTypes: true, recursive: true }).then((files) => files.filter((file) => file.isDirectory()))
 
+    const pluginsFound = []
     for (const pluginDir of pluginDirs) {
-      Logger.info(`[PluginManager] Loading plugin ${pluginDir.name}`)
-      const plugin = await this.loadPlugin(Path.join(this.pluginMetadataPath, pluginDir.name))
+      Logger.debug(`[PluginManager] Checking if directory "${pluginDir.name}" is a plugin`)
+      const plugin = await this.loadPlugin(pluginDir.name, Path.join(this.pluginMetadataPath, pluginDir.name))
       if (plugin) {
-        Logger.info(`[PluginManager] Loaded plugin ${plugin.manifest.name}`)
-        this.plugins.push(plugin)
+        Logger.debug(`[PluginManager] Found plugin "${plugin.manifest.name}"`)
+        pluginsFound.push(plugin)
       }
     }
+    return pluginsFound
   }
 
+  /**
+   * Load plugins from the /metadata/plugins directory and update the database
+   */
+  async loadPlugins() {
+    const pluginsFound = await this.getPluginsFromFileSystem()
+
+    const existingPlugins = await Database.pluginModel.findAll()
+
+    // Add new plugins or update existing plugins
+    for (const plugin of pluginsFound) {
+      const existingPlugin = existingPlugins.find((p) => p.id === plugin.manifest.id)
+      if (existingPlugin) {
+        // TODO: Should automatically update?
+        if (existingPlugin.version !== plugin.manifest.version) {
+          Logger.info(`[PluginManager] Updating plugin "${plugin.manifest.name}" version from "${existingPlugin.version}" to version "${plugin.manifest.version}"`)
+          await existingPlugin.update({ version: plugin.manifest.version, isMissing: false })
+        } else if (existingPlugin.isMissing) {
+          Logger.info(`[PluginManager] Plugin "${plugin.manifest.name}" was missing but is now found`)
+          await existingPlugin.update({ isMissing: false })
+        } else {
+          Logger.debug(`[PluginManager] Plugin "${plugin.manifest.name}" already exists in the database with version "${plugin.manifest.version}"`)
+        }
+      } else {
+        await Database.pluginModel.create({
+          id: plugin.manifest.id,
+          name: plugin.manifest.name,
+          version: plugin.manifest.version
+        })
+        Logger.info(`[PluginManager] Added plugin "${plugin.manifest.name}" to the database`)
+      }
+    }
+
+    // Mark missing plugins
+    for (const plugin of existingPlugins) {
+      const foundPlugin = pluginsFound.find((p) => p.manifest.id === plugin.id)
+      if (!foundPlugin && !plugin.isMissing) {
+        Logger.info(`[PluginManager] Plugin "${plugin.name}" not found or invalid - marking as missing`)
+        await plugin.update({ isMissing: true })
+      }
+    }
+
+    this.plugins = pluginsFound
+  }
+
+  /**
+   * Load and initialize all plugins
+   */
   async init() {
     await this.loadPlugins()
 
