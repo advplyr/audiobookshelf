@@ -1,5 +1,6 @@
 {
-  "name": "Example Plugin",
+  "id": "e6205690-916c-4add-9a2b-2548266996ef",
+  "name": "Example",
   "slug": "example",
   "version": "1.0.0",
   "description": "This is an example plugin",

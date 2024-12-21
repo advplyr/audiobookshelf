@@ -1,14 +1,17 @@
 const Path = require('path')
 const Logger = require('../Logger')
 const Database = require('../Database')
-const PluginAbstract = require('../PluginAbstract')
+const SocketAuthority = require('../SocketAuthority')
+const TaskManager = require('../managers/TaskManager')
 const fsExtra = require('../libs/fsExtra')
 const { isUUID, parseSemverStrict } = require('../utils')
 
 /**
  * @typedef PluginContext
- * @property {import('../../server/Logger')} Logger
- * @property {import('../../server/Database')} Database
+ * @property {import('../Logger')} Logger
+ * @property {import('../Database')} Database
+ * @property {import('../SocketAuthority')} SocketAuthority
+ * @property {import('../managers/TaskManager')} TaskManager
  */
 
 class PluginManager {
@@ -30,7 +33,9 @@ class PluginManager {
   get pluginContext() {
     return {
       Logger,
-      Database
+      Database,
+      SocketAuthority,
+      TaskManager
     }
   }
 
@@ -40,7 +45,7 @@ class PluginManager {
    *
    * @param {string} dirname
    * @param {string} pluginPath
-   * @returns {Promise<{manifest: Object, contents: PluginAbstract}>}
+   * @returns {Promise<{manifest: Object, contents: any}>}
    */
   async loadPlugin(dirname, pluginPath) {
     const pluginFiles = await fsExtra.readdir(pluginPath, { withFileTypes: true }).then((files) => files.filter((file) => !file.isDirectory()))
@@ -98,7 +103,11 @@ class PluginManager {
 
     return {
       manifest: manifestJson,
-      instance: pluginInstance
+      instance: {
+        init: pluginInstance.init,
+        onAction: pluginInstance.onAction,
+        onConfigSave: pluginInstance.onConfigSave
+      }
     }
   }
 
@@ -181,10 +190,18 @@ class PluginManager {
     }
   }
 
-  onAction(pluginSlug, actionName, target, data) {
-    const plugin = this.plugins.find((plugin) => plugin.manifest.slug === pluginSlug)
+  /**
+   *
+   * @param {string} pluginId
+   * @param {string} actionName
+   * @param {string} target
+   * @param {Object} data
+   * @returns
+   */
+  onAction(pluginId, actionName, target, data) {
+    const plugin = this.plugins.find((plugin) => plugin.manifest.id === pluginId)
     if (!plugin) {
-      Logger.error(`[PluginManager] Plugin ${pluginSlug} not found`)
+      Logger.error(`[PluginManager] Plugin ${pluginId} not found`)
       return
     }
 
@@ -200,10 +217,15 @@ class PluginManager {
     }
   }
 
-  onConfigSave(pluginSlug, config) {
-    const plugin = this.plugins.find((plugin) => plugin.manifest.slug === pluginSlug)
+  /**
+   *
+   * @param {string} pluginId
+   * @param {Object} config
+   */
+  onConfigSave(pluginId, config) {
+    const plugin = this.plugins.find((plugin) => plugin.manifest.id === pluginId)
     if (!plugin) {
-      Logger.error(`[PluginManager] Plugin ${pluginSlug} not found`)
+      Logger.error(`[PluginManager] Plugin ${pluginId} not found`)
       return
     }
 

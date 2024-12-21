@@ -434,11 +434,10 @@ export default {
 
       if (this.pluginExtensions.length) {
         this.pluginExtensions.forEach((plugin) => {
-          const pluginSlug = plugin.slug
           plugin.extensions.forEach((pext) => {
             items.push({
               text: pext.label,
-              action: `plugin-${pluginSlug}-action-${pext.name}`
+              action: `plugin-${plugin.id}-action-${pext.name}`
             })
           })
         })
@@ -780,16 +779,15 @@ export default {
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
       } else if (action.startsWith('plugin-')) {
         const actionStrSplit = action.replace('plugin-', '').split('-action-')
-        const pluginSlug = actionStrSplit[0]
+        const pluginId = actionStrSplit[0]
         const pluginAction = actionStrSplit[1]
-        console.log('Plugin action for', pluginSlug, 'with action', pluginAction)
-        this.onPluginAction(pluginSlug, pluginAction)
+        console.log('Plugin action for', pluginId, 'with action', pluginAction)
+        this.onPluginAction(pluginId, pluginAction)
       }
     },
-    onPluginAction(pluginSlug, pluginAction) {
+    onPluginAction(pluginId, pluginAction) {
       this.$axios
-        .$post(`/api/plugins/action`, {
-          pluginSlug,
+        .$post(`/api/plugins/${pluginId}/action`, {
           pluginAction,
           target: 'item.detail.actions',
           data: {

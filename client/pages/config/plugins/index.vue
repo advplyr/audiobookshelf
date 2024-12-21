@@ -11,7 +11,7 @@
 
       <h2 class="text-xl font-medium">Installed Plugins</h2>
       <template v-for="plugin in plugins">
-        <nuxt-link :key="plugin.slug" :to="`/config/plugins/${plugin.slug}`" class="flex items-center bg-primary rounded-md shadow-sm p-4 my-4 space-x-4">
+        <nuxt-link :key="plugin.id" :to="`/config/plugins/${plugin.id}`" class="flex items-center bg-primary rounded-md shadow-sm p-4 my-4 space-x-4">
           <p class="text-lg">{{ plugin.name }}</p>
           <p class="text-sm text-gray-300">{{ plugin.description }}</p>
           <div class="flex-grow" />

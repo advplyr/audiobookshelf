@@ -42,7 +42,7 @@ export default {
     if (!store.getters['user/getIsAdminOrUp']) {
       redirect('/')
     }
-    const plugin = store.state.plugins.find((plugin) => plugin.slug === params.slug)
+    const plugin = store.state.plugins.find((plugin) => plugin.id === params.id)
     if (!plugin) {
       redirect('/config/plugins')
     }
@@ -95,14 +95,13 @@ export default {
       console.log('Form data', formData)
 
       const payload = {
-        pluginSlug: this.plugin.slug,
         config: formData
       }
 
       this.processing = true
 
       this.$axios
-        .$post(`/api/plugins/config`, payload)
+        .$post(`/api/plugins/${this.plugin.id}/config`, payload)
         .then(() => {
           console.log('Plugin configuration saved')
         })

@@ -324,8 +324,8 @@ class ApiRouter {
     //
     // Plugin routes
     //
-    this.router.post('/plugins/action', PluginController.handleAction.bind(this))
-    this.router.post('/plugins/config', PluginController.handleConfigSave.bind(this))
+    this.router.post('/plugins/:id/action', PluginController.handleAction.bind(this))
+    this.router.post('/plugins/:id/config', PluginController.handleConfigSave.bind(this))
 
     //
     // Misc Routes
