@@ -13,7 +13,6 @@ if (isDev) {
   if (devEnv.SkipBinariesCheck) process.env.SKIP_BINARIES_CHECK = '1'
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
-  if (devEnv.PluginsPath) process.env.PLUGINS_PATH = devEnv.PluginsPath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
 }
@@ -22,11 +21,10 @@ const PORT = process.env.PORT || 80
 const HOST = process.env.HOST
 const CONFIG_PATH = process.env.CONFIG_PATH || '/config'
 const METADATA_PATH = process.env.METADATA_PATH || '/metadata'
-const PLUGINS_PATH = process.env.PLUGINS_PATH || '/plugins'
 const SOURCE = process.env.SOURCE || 'docker'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
 
 console.log('Config', CONFIG_PATH, METADATA_PATH)
 
-const Server = new server(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, PLUGINS_PATH, ROUTER_BASE_PATH)
+const Server = new server(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH)
 Server.start()

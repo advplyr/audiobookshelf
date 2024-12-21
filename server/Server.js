@@ -44,7 +44,7 @@ const expressSession = require('express-session')
 const MemoryStore = require('./libs/memorystore')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, PLUGINS_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -52,7 +52,6 @@ class Server {
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
-    global.PluginsPath = fileUtils.filePathToPOSIX(Path.normalize(PLUGINS_PATH))
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
     global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'

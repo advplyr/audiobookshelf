@@ -3,6 +3,7 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 const PluginAbstract = require('../PluginAbstract')
 const fs = require('fs').promises
+const fsExtra = require('../libs/fsExtra')
 
 /**
  * @typedef PluginContext
@@ -13,6 +14,10 @@ const fs = require('fs').promises
 class PluginManager {
   constructor() {
     this.plugins = []
+  }
+
+  get pluginMetadataPath() {
+    return Path.posix.join(global.MetadataPath, 'plugins')
   }
 
   get pluginData() {
@@ -35,7 +40,7 @@ class PluginManager {
    * @returns {Promise<{manifest: Object, contents: PluginAbstract}>}
    */
   async loadPlugin(pluginPath) {
-    const pluginFiles = await fs.readdir(pluginPath, { withFileTypes: true }).then((files) => files.filter((file) => !file.isDirectory()))
+    const pluginFiles = await fsExtra.readdir(pluginPath, { withFileTypes: true }).then((files) => files.filter((file) => !file.isDirectory()))
 
     if (!pluginFiles.length) {
       Logger.error(`No files found in plugin ${pluginPath}`)
@@ -54,7 +59,7 @@ class PluginManager {
 
     let manifestJson = null
     try {
-      manifestJson = await fs.readFile(Path.join(pluginPath, manifestFile.name), 'utf8').then((data) => JSON.parse(data))
+      manifestJson = await fsExtra.readFile(Path.join(pluginPath, manifestFile.name), 'utf8').then((data) => JSON.parse(data))
     } catch (error) {
       Logger.error(`Error parsing manifest file for plugin ${pluginPath}`, error)
       return null
@@ -82,11 +87,13 @@ class PluginManager {
   }
 
   async loadPlugins() {
-    const pluginDirs = await fs.readdir(global.PluginsPath, { withFileTypes: true, recursive: true }).then((files) => files.filter((file) => file.isDirectory()))
+    await fsExtra.ensureDir(this.pluginMetadataPath)
+
+    const pluginDirs = await fsExtra.readdir(this.pluginMetadataPath, { withFileTypes: true, recursive: true }).then((files) => files.filter((file) => file.isDirectory()))
 
     for (const pluginDir of pluginDirs) {
       Logger.info(`[PluginManager] Loading plugin ${pluginDir.name}`)
-      const plugin = await this.loadPlugin(Path.join(global.PluginsPath, pluginDir.name))
+      const plugin = await this.loadPlugin(Path.join(this.pluginMetadataPath, pluginDir.name))
       if (plugin) {
         Logger.info(`[PluginManager] Loaded plugin ${plugin.manifest.name}`)
         this.plugins.push(plugin)
@@ -152,7 +159,7 @@ class PluginManager {
 
     try {
       // Try to load the plugin
-      const pluginPath = Path.join(global.PluginsPath, plugin.name)
+      const pluginPath = Path.join(this.pluginMetadataPath, plugin.name)
       const packageContents = require(pluginPath)
       console.log('packageContents', packageContents)
       packageContents.init()
