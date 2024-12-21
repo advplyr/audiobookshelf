@@ -305,6 +305,7 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/Plugin').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
