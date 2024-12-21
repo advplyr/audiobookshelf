@@ -57,9 +57,10 @@ export default {
         for (let entry of entries) {
           this.cardWidth = entry.borderBoxSize[0].inlineSize
           this.cardHeight = entry.borderBoxSize[0].blockSize
-          this.resizeObserver.disconnect()
-          this.$refs.bookshelf.removeChild(instance.$el)
         }
+        this.coverHeight = instance.coverHeight
+        this.resizeObserver.disconnect()
+        this.$refs.bookshelf.removeChild(instance.$el)
       })
       instance.$el.style.visibility = 'hidden'
       instance.$el.style.position = 'absolute'

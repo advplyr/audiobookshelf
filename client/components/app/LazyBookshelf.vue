@@ -2,6 +2,10 @@
   <div id="bookshelf" ref="bookshelf" class="w-full overflow-y-auto" :style="{ fontSize: sizeMultiplier + 'rem' }">
     <template v-for="shelf in totalShelves">
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4e sm:px-8e relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
+        <!-- Card skeletons -->
+        <template v-for="entityIndex in entitiesInShelf(shelf)">
+          <div :key="entityIndex" class="w-full h-full absolute rounded z-5 top-0 left-0 bg-primary" :style="{ transform: entityTransform(entityIndex), width: cardWidth + 'px', height: coverHeight + 'px' }" />
+        </template>
         <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6e" />
       </div>
     </template>
@@ -65,6 +69,7 @@ export default {
       tempIsScanning: false,
       cardWidth: 0,
       cardHeight: 0,
+      coverHeight: 0,
       resizeObserver: null,
       lastScrollTop: 0,
       lastTimestamp: 0,
@@ -833,6 +838,14 @@ export default {
         .finally(() => {
           this.tempIsScanning = false
         })
+    },
+    entitiesInShelf(shelf) {
+      return shelf == this.totalShelves ? this.totalEntities % this.entitiesPerShelf : this.entitiesPerShelf
+    },
+    entityTransform(entityIndex) {
+      const shelfOffsetY = this.shelfPaddingHeight * this.sizeMultiplier
+      const shelfOffsetX = (entityIndex - 1) * this.totalEntityCardWidth + this.bookshelfMarginLeft
+      return `translate3d(${shelfOffsetX}px, ${shelfOffsetY}px, 0px)`
     }
   },
   async mounted() {
