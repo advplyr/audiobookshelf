@@ -1217,7 +1217,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
-    Scanner.matchLibraryItems(req.library)
+    Scanner.matchLibraryItems(this, req.library)
     res.sendStatus(200)
   }
 

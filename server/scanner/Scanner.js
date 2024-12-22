@@ -13,36 +13,58 @@ const LibraryScanner = require('./LibraryScanner')
 const CoverManager = require('../managers/CoverManager')
 const TaskManager = require('../managers/TaskManager')
 
+/**
+ * @typedef QuickMatchOptions
+ * @property {string} [provider]
+ * @property {string} [title]
+ * @property {string} [author]
+ * @property {string} [isbn] - This override is currently unused in Abs clients
+ * @property {string} [asin] - This override is currently unused in Abs clients
+ * @property {boolean} [overrideCover]
+ * @property {boolean} [overrideDetails]
+ */
+
 class Scanner {
   constructor() {}
 
-  async quickMatchLibraryItem(libraryItem, options = {}) {
-    var provider = options.provider || 'google'
-    var searchTitle = options.title || libraryItem.media.metadata.title
-    var searchAuthor = options.author || libraryItem.media.metadata.authorName
-    var overrideDefaults = options.overrideDefaults || false
+  /**
+   *
+   * @param {import('../routers/ApiRouter')} apiRouterCtx
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {QuickMatchOptions} options
+   * @returns {Promise<{updated: boolean, libraryItem: import('../objects/LibraryItem')}>}
+   */
+  async quickMatchLibraryItem(apiRouterCtx, libraryItem, options = {}) {
+    const provider = options.provider || 'google'
+    const searchTitle = options.title || libraryItem.media.metadata.title
+    const searchAuthor = options.author || libraryItem.media.metadata.authorName
 
-    // Set to override existing metadata if scannerPreferMatchedMetadata setting is true and
-    // the overrideDefaults option is not set or set to false.
-    if (overrideDefaults == false && Database.serverSettings.scannerPreferMatchedMetadata) {
+    // If overrideCover and overrideDetails is not sent in options than use the server setting to determine if we should override
+    if (options.overrideCover === undefined && options.overrideDetails === undefined && Database.serverSettings.scannerPreferMatchedMetadata) {
       options.overrideCover = true
       options.overrideDetails = true
     }
 
-    var updatePayload = {}
-    var hasUpdated = false
+    let updatePayload = {}
+    let hasUpdated = false
+
+    let existingAuthors = [] // Used for checking if authors or series are now empty
+    let existingSeries = []
 
     if (libraryItem.isBook) {
-      var searchISBN = options.isbn || libraryItem.media.metadata.isbn
-      var searchASIN = options.asin || libraryItem.media.metadata.asin
+      existingAuthors = libraryItem.media.metadata.authors.map((a) => a.id)
+      existingSeries = libraryItem.media.metadata.series.map((s) => s.id)
 
-      var results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
+      const searchISBN = options.isbn || libraryItem.media.metadata.isbn
+      const searchASIN = options.asin || libraryItem.media.metadata.asin
+
+      const results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
         }
       }
-      var matchData = results[0]
+      const matchData = results[0]
 
       // Update cover if not set OR overrideCover flag
       if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
@@ -58,13 +80,13 @@ class Scanner {
       updatePayload = await this.quickMatchBookBuildUpdatePayload(libraryItem, matchData, options)
     } else if (libraryItem.isPodcast) {
       // Podcast quick match
-      var results = await PodcastFinder.search(searchTitle)
+      const results = await PodcastFinder.search(searchTitle)
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
         }
       }
-      var matchData = results[0]
+      const matchData = results[0]
 
       // Update cover if not set OR overrideCover flag
       if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
@@ -95,6 +117,19 @@ class Scanner {
 
       await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+
+      // Check if any authors or series are now empty and should be removed
+      if (libraryItem.isBook) {
+        const authorsRemoved = existingAuthors.filter((aid) => !libraryItem.media.metadata.authors.find((au) => au.id === aid))
+        const seriesRemoved = existingSeries.filter((sid) => !libraryItem.media.metadata.series.find((se) => se.id === sid))
+
+        if (authorsRemoved.length) {
+          await apiRouterCtx.checkRemoveAuthorsWithNoBooks(authorsRemoved)
+        }
+        if (seriesRemoved.length) {
+          await apiRouterCtx.checkRemoveEmptySeries(seriesRemoved)
+        }
+      }
     }
 
     return {
@@ -149,6 +184,13 @@ class Scanner {
     return updatePayload
   }
 
+  /**
+   *
+   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {*} matchData
+   * @param {QuickMatchOptions} options
+   * @returns
+   */
   async quickMatchBookBuildUpdatePayload(libraryItem, matchData, options) {
     // Update media metadata if not set OR overrideDetails flag
     const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn']
@@ -307,12 +349,13 @@ class Scanner {
   /**
    * Quick match library items
    *
+   * @param {import('../routers/ApiRouter')} apiRouterCtx
    * @param {import('../models/Library')} library
    * @param {import('../objects/LibraryItem')[]} libraryItems
    * @param {LibraryScan} libraryScan
    * @returns {Promise<boolean>} false if scan canceled
    */
-  async matchLibraryItemsChunk(library, libraryItems, libraryScan) {
+  async matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan) {
     for (let i = 0; i < libraryItems.length; i++) {
       const libraryItem = libraryItems[i]
 
@@ -327,7 +370,7 @@ class Scanner {
       }
 
       Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.metadata.title}" (${i + 1} of ${libraryItems.length})`)
-      const result = await this.quickMatchLibraryItem(libraryItem, { provider: library.provider })
+      const result = await this.quickMatchLibraryItem(apiRouterCtx, libraryItem, { provider: library.provider })
       if (result.warning) {
         Logger.warn(`[Scanner] matchLibraryItems: Match warning ${result.warning} for library item "${libraryItem.media.metadata.title}"`)
       } else if (result.updated) {
@@ -346,9 +389,10 @@ class Scanner {
   /**
    * Quick match all library items for library
    *
+   * @param {import('../routers/ApiRouter')} apiRouterCtx
    * @param {import('../models/Library')} library
    */
-  async matchLibraryItems(library) {
+  async matchLibraryItems(apiRouterCtx, library) {
     if (library.mediaType === 'podcast') {
       Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
       return
@@ -388,7 +432,7 @@ class Scanner {
       hasMoreChunks = libraryItems.length === limit
       let oldLibraryItems = libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
 
-      const shouldContinue = await this.matchLibraryItemsChunk(library, oldLibraryItems, libraryScan)
+      const shouldContinue = await this.matchLibraryItemsChunk(apiRouterCtx, library, oldLibraryItems, libraryScan)
       if (!shouldContinue) {
         isCanceled = true
         break

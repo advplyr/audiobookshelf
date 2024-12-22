@@ -342,7 +342,6 @@ class RssFeedManager {
       }
     })
     if (!feed) {
-      Logger.warn(`[RssFeedManager] closeFeedForEntityId: Feed not found for entity id ${entityId}`)
       return false
     }
     return this.handleCloseFeed(feed)
