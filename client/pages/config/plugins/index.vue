@@ -12,11 +12,13 @@
         <p v-if="!plugins.length" class="text-gray-300">No plugins installed</p>
 
         <template v-for="plugin in plugins">
-          <nuxt-link :key="plugin.id" :to="`/config/plugins/${plugin.id}`" class="flex items-center bg-primary rounded-md shadow-sm p-4 my-4 space-x-4">
-            <p class="text-lg">{{ plugin.name }}</p>
-            <p class="text-sm text-gray-300">{{ plugin.description }}</p>
-            <div class="flex-grow" />
-            <span class="material-symbols text-4xl">chevron_right</span>
+          <nuxt-link :key="plugin.id" :to="`/config/plugins/${plugin.id}`" class="block w-full rounded bg-primary/40 hover:bg-primary/60 text-gray-300 hover:text-white p-4 my-2">
+            <div class="flex items-center space-x-4">
+              <p class="text-lg">{{ plugin.name }}</p>
+              <p class="text-sm text-gray-300">{{ plugin.description }}</p>
+              <div class="flex-grow" />
+              <span class="material-symbols">arrow_forward</span>
+            </div>
           </nuxt-link>
         </template>
       </div>

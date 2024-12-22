@@ -940,7 +940,17 @@ class Auth {
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
-      plugins: this.pluginManifests,
+      // TODO: Should be better handled by the PluginManager
+      // restrict plugin extensions that are not allowed for the user type
+      plugins: this.pluginManifests.map((manifest) => {
+        const manifestExtensions = (manifest.extensions || []).filter((ext) => {
+          if (ext.restrictToAccountTypes?.length) {
+            return ext.restrictToAccountTypes.includes(user.type)
+          }
+          return true
+        })
+        return { ...manifest, extensions: manifestExtensions }
+      }),
       Source: global.Source
     }
   }

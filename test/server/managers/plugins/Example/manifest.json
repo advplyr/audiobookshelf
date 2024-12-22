@@ -6,6 +6,7 @@
   "repositoryUrl": "https://github.com/example/example-plugin",
   "documentationUrl": "https://example.com",
   "description": "This is an example plugin",
+  "descriptionKey": "ExamplePluginDescription",
   "extensions": [
     {
       "target": "item.detail.actions",
@@ -22,8 +23,7 @@
         "name": "requestAddress",
         "label": "Request Address",
         "labelKey": "LabelRequestAddress",
-        "type": "text",
-        "required": true
+        "type": "text"
       },
       {
         "name": "enable",
@@ -34,7 +34,8 @@
     ]
   },
   "localization": {
-    "en-us": {
+    "de": {
+      "ExamplePluginDescription": "Dies ist ein Beispiel-Plugin",
       "ItemExampleAction": "Item Example Action",
       "LabelEnable": "Enable",
       "ExamplePluginConfigurationDescription": "This is a description on how to configure the plugin",
@@ -46,7 +47,7 @@
       "version": "1.0.0",
       "changelog": "Initial release",
       "timestamp": "2022-01-01T00:00:00Z",
-      "sourceUrl": ""
+      "downloadUrl": ""
     }
   ]
 }

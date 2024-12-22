@@ -12,10 +12,14 @@
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
+
+        <div class="flex-grow" />
+
+        <a v-if="repositoryUrl" :href="repositoryUrl" target="_blank" class="abs-btn outline-none rounded-md shadow-md relative border border-gray-600 text-center bg-primary text-white px-4 py-1 text-sm inline-flex items-center space-x-2"><span>Source</span><span class="material-symbols text-base">open_in_new</span> </a>
       </template>
 
       <div class="py-4">
-        <p class="mb-4">{{ configDescription }}</p>
+        <p v-if="configDescription" class="mb-4">{{ configDescription }}</p>
 
         <form v-if="configFormFields.length" @submit.prevent="handleFormSubmit">
           <template v-for="field in configFormFields">
@@ -46,7 +50,7 @@ export default {
       console.error('Failed to get plugin config', error)
       return null
     })
-    if (!pluginConfigData?.config) {
+    if (!pluginConfigData) {
       redirect('/config/plugins')
     }
     const pluginManifest = store.state.plugins.find((plugin) => plugin.id === params.id)
@@ -84,6 +88,9 @@ export default {
     },
     configFormFields() {
       return this.pluginManifestConfig.formFields || []
+    },
+    repositoryUrl() {
+      return this.pluginManifest.repositoryUrl
     }
   },
   methods: {
@@ -123,6 +130,7 @@ export default {
         })
     },
     initializeForm() {
+      if (!this.pluginConfig) return
       this.configFormFields.forEach((field) => {
         if (this.pluginConfig[field.name] === undefined) {
           return

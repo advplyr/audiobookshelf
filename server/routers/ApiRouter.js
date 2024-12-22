@@ -47,8 +47,6 @@ class ApiRouter {
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
-    /** @type {import('../managers/PodcastManager')} */
-    this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
     /** @type {import('../managers/CronManager')} */

@@ -3,6 +3,9 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 const SocketAuthority = require('../SocketAuthority')
 const TaskManager = require('../managers/TaskManager')
+const ShareManager = require('../managers/ShareManager')
+const RssFeedManager = require('../managers/RssFeedManager')
+const PodcastManager = require('../managers/PodcastManager')
 const fsExtra = require('../libs/fsExtra')
 const { isUUID, parseSemverStrict } = require('../utils')
 
@@ -13,6 +16,9 @@ const { isUUID, parseSemverStrict } = require('../utils')
  * @property {import('../SocketAuthority')} SocketAuthority
  * @property {import('../managers/TaskManager')} TaskManager
  * @property {import('../models/Plugin')} pluginInstance
+ * @property {import('../managers/ShareManager')} ShareManager
+ * @property {import('../managers/RssFeedManager')} RssFeedManager
+ * @property {import('../managers/PodcastManager')} PodcastManager
  */
 
 /**
@@ -50,7 +56,10 @@ class PluginManager {
       Database,
       SocketAuthority,
       TaskManager,
-      pluginInstance
+      pluginInstance,
+      ShareManager,
+      RssFeedManager,
+      PodcastManager
     }
   }
 

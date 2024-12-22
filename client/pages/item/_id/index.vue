@@ -786,13 +786,35 @@ export default {
       }
     },
     onPluginAction(pluginId, pluginAction) {
+      const plugin = this.pluginExtensions.find((p) => p.id === pluginId)
+      const extension = plugin.extensions.find((ext) => ext.name === pluginAction)
+
+      if (extension.prompt) {
+        const payload = {
+          message: extension.prompt.message,
+          formFields: extension.prompt.formFields || [],
+          callback: (confirmed, promptData) => {
+            if (confirmed) {
+              this.sendPluginAction(pluginId, pluginAction, promptData)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+      } else {
+        this.sendPluginAction(pluginId, pluginAction)
+      }
+    },
+    sendPluginAction(pluginId, pluginAction, promptData = null) {
       this.$axios
         .$post(`/api/plugins/${pluginId}/action`, {
           pluginAction,
           target: 'item.detail.actions',
           data: {
             entityId: this.libraryItemId,
-            entityType: 'libraryItem'
+            entityType: 'libraryItem',
+            userId: this.$store.state.user.user.id,
+            promptData
           }
         })
         .then((data) => {
