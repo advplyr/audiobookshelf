@@ -151,10 +151,14 @@ class Server {
       })
     }
 
-    // Initialize plugins
-    await PluginManager.init()
-    // TODO: Prevents circular dependency for SocketAuthority
-    this.auth.pluginManifests = PluginManager.pluginManifests
+    if (process.env.ALLOW_PLUGINS === '1') {
+      Logger.info(`[Server] Experimental plugin support enabled`)
+
+      // Initialize plugins
+      await PluginManager.init()
+      // TODO: Prevents circular dependency for SocketAuthority
+      this.auth.pluginManifests = PluginManager.pluginManifests
+    }
   }
 
   /**

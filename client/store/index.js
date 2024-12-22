@@ -29,7 +29,8 @@ export const state = () => ({
   innerModalOpen: false,
   lastBookshelfScrollData: {},
   routerBasePath: '/',
-  plugins: []
+  plugins: [],
+  pluginsEnabled: false
 })
 
 export const getters = {
@@ -64,6 +65,7 @@ export const getters = {
     return state.serverSettings.homeBookshelfView
   },
   getPluginExtensions: (state) => (target) => {
+    if (!state.pluginsEnabled) return []
     return state.plugins
       .map((pext) => {
         const extensionsMatchingTarget = pext.extensions?.filter((ext) => ext.target === target) || []
@@ -256,5 +258,6 @@ export const mutations = {
   },
   setPlugins(state, val) {
     state.plugins = val
+    state.pluginsEnabled = true
   }
 }

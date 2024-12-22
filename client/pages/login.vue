@@ -170,7 +170,10 @@ export default {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
       this.$store.commit('libraries/setEReaderDevices', ereaderDevices)
-      this.$store.commit('setPlugins', plugins)
+      if (plugins !== undefined) {
+        this.$store.commit('setPlugins', plugins)
+      }
+
       this.$setServerLanguageCode(serverSettings.language)
 
       if (serverSettings.chromecastEnabled) {

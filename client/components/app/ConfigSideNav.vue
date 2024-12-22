@@ -109,13 +109,16 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
-        },
-        {
+        }
+      ]
+
+      if (this.$store.state.pluginsEnabled) {
+        configRoutes.push({
           id: 'config-plugins',
           title: 'Plugins',
           path: '/config/plugins'
-        }
-      ]
+        })
+      }
 
       if (this.currentLibraryId) {
         configRoutes.push({

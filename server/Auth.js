@@ -935,14 +935,12 @@ class Auth {
    */
   async getUserLoginResponsePayload(user) {
     const libraryIds = await Database.libraryModel.getAllLibraryIds()
-    return {
-      user: user.toOldJSONForBrowser(),
-      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
-      serverSettings: Database.serverSettings.toJSONForBrowser(),
-      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
+
+    let plugins = undefined
+    if (process.env.ALLOW_PLUGINS === '1') {
       // TODO: Should be better handled by the PluginManager
       // restrict plugin extensions that are not allowed for the user type
-      plugins: this.pluginManifests.map((manifest) => {
+      plugins = this.pluginManifests.map((manifest) => {
         const manifestExtensions = (manifest.extensions || []).filter((ext) => {
           if (ext.restrictToAccountTypes?.length) {
             return ext.restrictToAccountTypes.includes(user.type)
@@ -950,7 +948,15 @@ class Auth {
           return true
         })
         return { ...manifest, extensions: manifestExtensions }
-      }),
+      })
+    }
+
+    return {
+      user: user.toOldJSONForBrowser(),
+      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
+      serverSettings: Database.serverSettings.toJSONForBrowser(),
+      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
+      plugins,
       Source: global.Source
     }
   }
