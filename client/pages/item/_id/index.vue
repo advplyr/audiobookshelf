@@ -793,6 +793,7 @@ export default {
         const payload = {
           message: extension.prompt.message,
           formFields: extension.prompt.formFields || [],
+          yesButtonText: this.$strings.ButtonSubmit,
           callback: (confirmed, promptData) => {
             if (confirmed) {
               this.sendPluginAction(pluginId, pluginAction, promptData)
