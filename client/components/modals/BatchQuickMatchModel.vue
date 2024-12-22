@@ -54,8 +54,7 @@ export default {
       options: {
         provider: undefined,
         overrideDetails: true,
-        overrideCover: true,
-        overrideDefaults: true
+        overrideCover: true
       }
     }
   },
@@ -99,8 +98,8 @@ export default {
     init() {
       // If we don't have a set provider (first open of dialog) or we've switched library, set
       // the selected provider to the current library default provider
-      if (!this.options.provider || this.options.lastUsedLibrary != this.currentLibraryId) {
-        this.options.lastUsedLibrary = this.currentLibraryId
+      if (!this.options.provider || this.lastUsedLibrary != this.currentLibraryId) {
+        this.lastUsedLibrary = this.currentLibraryId
         this.options.provider = this.libraryProvider
       }
     },
