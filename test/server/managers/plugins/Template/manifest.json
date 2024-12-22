@@ -1,0 +1,20 @@
+{
+  "id": "e6205690-916c-4add-9a2b-2548266996eg",
+  "name": "Template",
+  "version": "1.0.0",
+  "owner": "advplyr",
+  "repositoryUrl": "https://github.com/advplr/abs-report-for-review-plugin",
+  "documentationUrl": "https://audiobookshelf.org/guides",
+  "description": "This is a minimal template for an abs plugin",
+  "extensions": [],
+  "config": {},
+  "localization": {},
+  "releases": [
+    {
+      "version": "1.0.0",
+      "changelog": "Initial release",
+      "timestamp": "2022-01-01T00:00:00Z",
+      "downloadUrl": ""
+    }
+  ]
+}
