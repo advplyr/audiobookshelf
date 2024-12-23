@@ -53,7 +53,17 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
-    global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
+
+    if (process.env.DISABLE_SSRF_REQUEST_FILTER === '1') {
+      Logger.info(`[Server] SSRF Request Filter Disabled`)
+      global.DisableSsrfRequestFilter = () => true
+    } else if (process.env.SSRF_REQUEST_FILTER_WHITELIST?.length) {
+      const whitelistedUrls = process.env.SSRF_REQUEST_FILTER_WHITELIST.split(',').map((url) => url.trim())
+      if (whitelistedUrls.length) {
+        Logger.info(`[Server] SSRF Request Filter Whitelisting: ${whitelistedUrls.join(',')}`)
+        global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
+      }
+    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
