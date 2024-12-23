@@ -161,6 +161,16 @@ class PluginManager {
         pluginsFound.push(plugin)
       }
     }
+    if (process.env.EXTERNAL_PLUGIN_PATH) {
+      const pluginName = Path.basename(process.env.EXTERNAL_PLUGIN_PATH)
+      const plugin = await this.loadPlugin(pluginName, process.env.EXTERNAL_PLUGIN_PATH)
+      if (plugin) {
+        Logger.debug(`[PluginManager] Found external plugin "${plugin.manifest.name}"`)
+        pluginsFound.push(plugin)
+      } else {
+        Logger.error(`[PluginManager] External plugin not found or invalid`)
+      }
+    }
     return pluginsFound
   }
 

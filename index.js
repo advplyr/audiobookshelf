@@ -14,6 +14,7 @@ if (isDev) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.AllowPlugins) process.env.ALLOW_PLUGINS = '1'
+  if (devEnv.ExternalPluginPath) process.env.EXTERNAL_PLUGIN_PATH = devEnv.ExternalPluginPath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
 }
