@@ -146,31 +146,20 @@ class PluginManager {
   /**
    * Get all plugins from the /metadata/plugins directory
    */
-  async getPluginsFromFileSystem() {
-    await fsExtra.ensureDir(this.pluginMetadataPath)
-
+  async getPluginsFromDirPath(pluginsPath) {
     // Get all directories in the plugins directory
-    const pluginDirs = await fsExtra.readdir(this.pluginMetadataPath, { withFileTypes: true, recursive: true }).then((files) => files.filter((file) => file.isDirectory()))
+    const pluginDirs = await fsExtra.readdir(pluginsPath, { withFileTypes: true }).then((files) => files.filter((file) => file.isDirectory()))
 
     const pluginsFound = []
     for (const pluginDir of pluginDirs) {
       Logger.debug(`[PluginManager] Checking if directory "${pluginDir.name}" is a plugin`)
-      const plugin = await this.loadPlugin(pluginDir.name, Path.join(this.pluginMetadataPath, pluginDir.name))
+      const plugin = await this.loadPlugin(pluginDir.name, Path.join(pluginsPath, pluginDir.name))
       if (plugin) {
         Logger.debug(`[PluginManager] Found plugin "${plugin.manifest.name}"`)
         pluginsFound.push(plugin)
       }
     }
-    if (process.env.EXTERNAL_PLUGIN_PATH) {
-      const pluginName = Path.basename(process.env.EXTERNAL_PLUGIN_PATH)
-      const plugin = await this.loadPlugin(pluginName, process.env.EXTERNAL_PLUGIN_PATH)
-      if (plugin) {
-        Logger.debug(`[PluginManager] Found external plugin "${plugin.manifest.name}"`)
-        pluginsFound.push(plugin)
-      } else {
-        Logger.error(`[PluginManager] External plugin not found or invalid`)
-      }
-    }
+
     return pluginsFound
   }
 
@@ -178,7 +167,18 @@ class PluginManager {
    * Load plugins from the /metadata/plugins directory and update the database
    */
   async loadPlugins() {
-    const pluginsFound = await this.getPluginsFromFileSystem()
+    await fsExtra.ensureDir(this.pluginMetadataPath)
+
+    const pluginsFound = await this.getPluginsFromDirPath(this.pluginMetadataPath)
+
+    if (process.env.DEV_PLUGINS_PATH) {
+      const devPluginsFound = await this.getPluginsFromDirPath(process.env.DEV_PLUGINS_PATH)
+      if (!devPluginsFound.length) {
+        Logger.warn(`[PluginManager] No plugins found in DEV_PLUGINS_PATH: ${process.env.DEV_PLUGINS_PATH}`)
+      } else {
+        pluginsFound.push(...devPluginsFound)
+      }
+    }
 
     const existingPlugins = await Database.pluginModel.findAll()
 
