@@ -68,6 +68,9 @@ export default {
     cardHeight() {
       return this.height * this.sizeMultiplier
     },
+    coverHeight() {
+      return this.cardHeight
+    },
     userToken() {
       return this.store.getters['user/getToken']
     },

@@ -57,9 +57,10 @@ export default {
         for (let entry of entries) {
           this.cardWidth = entry.borderBoxSize[0].inlineSize
           this.cardHeight = entry.borderBoxSize[0].blockSize
-          this.resizeObserver.disconnect()
-          this.$refs.bookshelf.removeChild(instance.$el)
         }
+        this.coverHeight = instance.coverHeight
+        this.resizeObserver.disconnect()
+        this.$refs.bookshelf.removeChild(instance.$el)
       })
       instance.$el.style.visibility = 'hidden'
       instance.$el.style.position = 'absolute'
@@ -131,10 +132,7 @@ export default {
       this.entityComponentRefs[index] = instance
 
       instance.$mount()
-      const shelfOffsetY = this.shelfPaddingHeight * this.sizeMultiplier
-      const row = index % this.entitiesPerShelf
-      const shelfOffsetX = row * this.totalEntityCardWidth + this.bookshelfMarginLeft
-      instance.$el.style.transform = `translate3d(${shelfOffsetX}px, ${shelfOffsetY}px, 0px)`
+      instance.$el.style.transform = this.entityTransform((index % this.entitiesPerShelf) + 1)
       instance.$el.classList.add('absolute', 'top-0', 'left-0')
       shelfEl.appendChild(instance.$el)
 
