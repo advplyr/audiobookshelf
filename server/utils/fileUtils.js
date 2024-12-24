@@ -277,8 +277,8 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
         'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
       timeout: 30000,
-      httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
-      httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
+      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url),
+      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
     })
       .then((response) => {
         // Validate content type
