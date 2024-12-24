@@ -13,6 +13,8 @@ if (isDev) {
   if (devEnv.SkipBinariesCheck) process.env.SKIP_BINARIES_CHECK = '1'
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
+  if (devEnv.AllowPlugins) process.env.ALLOW_PLUGINS = '1'
+  if (devEnv.DevPluginsPath) process.env.DEV_PLUGINS_PATH = devEnv.DevPluginsPath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
 }

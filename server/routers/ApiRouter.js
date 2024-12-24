@@ -33,6 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
+const PluginController = require('../controllers/PluginController')
 
 const { getTitleIgnorePrefix } = require('../utils/index')
 
@@ -46,8 +47,6 @@ class ApiRouter {
     this.abMergeManager = Server.abMergeManager
     /** @type {import('../managers/BackupManager')} */
     this.backupManager = Server.backupManager
-    /** @type {import('../managers/PodcastManager')} */
-    this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
     /** @type {import('../managers/CronManager')} */
@@ -319,6 +318,13 @@ class ApiRouter {
     //
     this.router.post('/share/mediaitem', ShareController.createMediaItemShare.bind(this))
     this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
+
+    //
+    // Plugin routes
+    //
+    this.router.get('/plugins/:id/config', PluginController.middleware.bind(this), PluginController.getConfig.bind(this))
+    this.router.post('/plugins/:id/action', PluginController.middleware.bind(this), PluginController.handleAction.bind(this))
+    this.router.post('/plugins/:id/config', PluginController.middleware.bind(this), PluginController.handleConfigSave.bind(this))
 
     //
     // Misc Routes

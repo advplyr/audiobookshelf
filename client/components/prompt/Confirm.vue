@@ -7,6 +7,14 @@
 
         <ui-checkbox v-if="checkboxLabel" v-model="checkboxValue" checkbox-bg="bg" :label="checkboxLabel" label-class="pl-2 text-base" class="mb-6 px-1" />
 
+        <div v-if="formFields.length" class="mb-6 space-y-2">
+          <template v-for="field in formFields">
+            <ui-select-input v-if="field.type === 'select'" :key="field.name" v-model="formData[field.name]" :label="field.label" :items="field.options" class="px-1" />
+            <ui-textarea-with-label v-else-if="field.type === 'textarea'" :key="field.name" v-model="formData[field.name]" :label="field.label" class="px-1" />
+            <ui-text-input-with-label v-else-if="field.type === 'text'" :key="field.name" v-model="formData[field.name]" :label="field.label" class="px-1" />
+          </template>
+        </div>
+
         <div class="flex px-1 items-center">
           <ui-btn v-if="isYesNo" color="primary" @click="nevermind">{{ $strings.ButtonCancel }}</ui-btn>
           <div class="flex-grow" />
@@ -25,7 +33,8 @@ export default {
     return {
       el: null,
       content: null,
-      checkboxValue: false
+      checkboxValue: false,
+      formData: {}
     }
   },
   watch: {
@@ -60,6 +69,9 @@ export default {
     },
     persistent() {
       return !!this.confirmPromptOptions.persistent
+    },
+    formFields() {
+      return this.confirmPromptOptions.formFields || []
     },
     checkboxLabel() {
       return this.confirmPromptOptions.checkboxLabel
@@ -100,11 +112,31 @@ export default {
       this.show = false
     },
     confirm() {
-      if (this.callback) this.callback(true, this.checkboxValue)
+      if (this.callback) {
+        if (this.formFields.length) {
+          const formFieldData = {
+            ...this.formData
+          }
+
+          this.callback(true, formFieldData)
+        } else {
+          this.callback(true, this.checkboxValue)
+        }
+      }
       this.show = false
     },
     setShow() {
       this.checkboxValue = this.checkboxDefaultValue
+
+      if (this.formFields.length) {
+        this.formFields.forEach((field) => {
+          let defaultValue = ''
+          if (field.type === 'boolean') defaultValue = false
+          if (field.type === 'select') defaultValue = field.options[0].value
+          this.$set(this.formData, field.name, defaultValue)
+        })
+      }
+
       this.$eventBus.$emit('showing-prompt', true)
       document.body.appendChild(this.el)
       setTimeout(() => {

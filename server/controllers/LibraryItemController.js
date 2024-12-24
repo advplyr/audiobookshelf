@@ -18,6 +18,7 @@ const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const ShareManager = require('../managers/ShareManager')
+const PodcastManager = require('../managers/PodcastManager')
 
 /**
  * @typedef RequestUserObject
@@ -59,10 +60,10 @@ class LibraryItemController {
       }
 
       if (item.mediaType === 'podcast' && includeEntities.includes('downloads')) {
-        const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
+        const downloadsInQueue = PodcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
         item.episodeDownloadsQueued = downloadsInQueue.map((d) => d.toJSONForClient())
-        if (this.podcastManager.currentDownload?.libraryItemId === req.libraryItem.id) {
-          item.episodesDownloading = [this.podcastManager.currentDownload.toJSONForClient()]
+        if (PodcastManager.currentDownload?.libraryItemId === req.libraryItem.id) {
+          item.episodesDownloading = [PodcastManager.currentDownload.toJSONForClient()]
         }
       }
 

@@ -31,6 +31,7 @@
             </div>
           </template>
           <button v-else :key="index" role="menuitem" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-pointer w-full" @click.stop="clickAction(item.action)">
+            <span v-if="item.icon" class="material-symbols text-base mr-1">{{ item.icon }}</span>
             <p class="text-left">{{ item.text }}</p>
           </button>
         </template>

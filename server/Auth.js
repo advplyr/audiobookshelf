@@ -16,6 +16,8 @@ const Logger = require('./Logger')
  */
 class Auth {
   constructor() {
+    this.pluginManifests = []
+
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
     this.ignorePatterns = [/\/api\/items\/[^/]+\/cover/, /\/api\/authors\/[^/]+\/image/]
@@ -933,11 +935,28 @@ class Auth {
    */
   async getUserLoginResponsePayload(user) {
     const libraryIds = await Database.libraryModel.getAllLibraryIds()
+
+    let plugins = undefined
+    if (process.env.ALLOW_PLUGINS === '1') {
+      // TODO: Should be better handled by the PluginManager
+      // restrict plugin extensions that are not allowed for the user type
+      plugins = this.pluginManifests.map((manifest) => {
+        const manifestExtensions = (manifest.extensions || []).filter((ext) => {
+          if (ext.restrictToAccountTypes?.length) {
+            return ext.restrictToAccountTypes.includes(user.type)
+          }
+          return true
+        })
+        return { ...manifest, extensions: manifestExtensions }
+      })
+    }
+
     return {
       user: user.toOldJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
+      plugins,
       Source: global.Source
     }
   }

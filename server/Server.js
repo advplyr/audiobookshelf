@@ -28,7 +28,6 @@ const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
 const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
-const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
@@ -36,6 +35,7 @@ const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
+const PluginManager = require('./managers/PluginManager')
 
 //Import the main Passport and Express-Session library
 const passport = require('passport')
@@ -79,9 +79,8 @@ class Server {
     this.backupManager = new BackupManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
-    this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
+    this.cronManager = new CronManager(this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
 
@@ -160,6 +159,15 @@ class Server {
       Watcher.on('scanFilesChanged', (pendingFileUpdates, pendingTask) => {
         LibraryScanner.scanFilesChanged(pendingFileUpdates, pendingTask)
       })
+    }
+
+    if (process.env.ALLOW_PLUGINS === '1') {
+      Logger.info(`[Server] Experimental plugin support enabled`)
+
+      // Initialize plugins
+      await PluginManager.init()
+      // TODO: Prevents circular dependency for SocketAuthority
+      this.auth.pluginManifests = PluginManager.pluginManifests
     }
   }
 

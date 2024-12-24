@@ -11,6 +11,7 @@ const { validateUrl } = require('../utils/index')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
+const PodcastManager = require('../managers/PodcastManager')
 
 const LibraryItem = require('../objects/LibraryItem')
 
@@ -114,7 +115,7 @@ class PodcastController {
 
     if (payload.episodesToDownload?.length) {
       Logger.info(`[PodcastController] Podcast created now starting ${payload.episodesToDownload.length} episode downloads`)
-      this.podcastManager.downloadPodcastEpisodes(libraryItem, payload.episodesToDownload)
+      PodcastManager.downloadPodcastEpisodes(libraryItem, payload.episodesToDownload)
     }
 
     // Turn on podcast auto download cron if not already on
@@ -169,7 +170,7 @@ class PodcastController {
     }
 
     res.json({
-      feeds: this.podcastManager.getParsedOPMLFileFeeds(req.body.opmlText)
+      feeds: PodcastManager.getParsedOPMLFileFeeds(req.body.opmlText)
     })
   }
 
@@ -203,7 +204,7 @@ class PodcastController {
       return res.status(404).send('Folder not found')
     }
     const autoDownloadEpisodes = !!req.body.autoDownloadEpisodes
-    this.podcastManager.createPodcastsFromFeedUrls(rssFeeds, folder, autoDownloadEpisodes, this.cronManager)
+    PodcastManager.createPodcastsFromFeedUrls(rssFeeds, folder, autoDownloadEpisodes, this.cronManager)
 
     res.sendStatus(200)
   }
@@ -230,7 +231,7 @@ class PodcastController {
 
     const maxEpisodesToDownload = !isNaN(req.query.limit) ? Number(req.query.limit) : 3
 
-    var newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload)
+    var newEpisodes = await PodcastManager.checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload)
     res.json({
       episodes: newEpisodes || []
     })
@@ -238,8 +239,6 @@ class PodcastController {
 
   /**
    * GET: /api/podcasts/:id/clear-queue
-   *
-   * @this {import('../routers/ApiRouter')}
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -249,14 +248,12 @@ class PodcastController {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempting to clear download queue`)
       return res.sendStatus(403)
     }
-    this.podcastManager.clearDownloadQueue(req.params.id)
+    PodcastManager.clearDownloadQueue(req.params.id)
     res.sendStatus(200)
   }
 
   /**
    * GET: /api/podcasts/:id/downloads
-   *
-   * @this {import('../routers/ApiRouter')}
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -264,7 +261,7 @@ class PodcastController {
   getEpisodeDownloads(req, res) {
     var libraryItem = req.libraryItem
 
-    var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
+    var downloadsInQueue = PodcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
     res.json({
       downloads: downloadsInQueue.map((d) => d.toJSONForClient())
     })
@@ -290,8 +287,6 @@ class PodcastController {
   /**
    * POST: /api/podcasts/:id/download-episodes
    *
-   * @this {import('../routers/ApiRouter')}
-   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -306,7 +301,7 @@ class PodcastController {
       return res.sendStatus(400)
     }
 
-    this.podcastManager.downloadPodcastEpisodes(libraryItem, episodes)
+    PodcastManager.downloadPodcastEpisodes(libraryItem, episodes)
     res.sendStatus(200)
   }
 

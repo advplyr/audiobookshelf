@@ -19,6 +19,7 @@ const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
 const RssFeedManager = require('../managers/RssFeedManager')
+const PodcastManager = require('../managers/PodcastManager')
 
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
@@ -219,7 +220,7 @@ class LibraryController {
    * @param {Response} res
    */
   async getEpisodeDownloadQueue(req, res) {
-    const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
+    const libraryDownloadQueueDetails = PodcastManager.getDownloadQueueDetails(req.library.id)
     res.json(libraryDownloadQueueDetails)
   }
 
@@ -1288,7 +1289,7 @@ class LibraryController {
       }
     })
 
-    const opmlText = this.podcastManager.generateOPMLFileText(podcasts)
+    const opmlText = PodcastManager.generateOPMLFileText(podcasts)
     res.type('application/xml')
     res.send(opmlText)
   }

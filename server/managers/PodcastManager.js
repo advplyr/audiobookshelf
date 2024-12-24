@@ -586,4 +586,4 @@ class PodcastManager {
     Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Finished OPML import. Created ${numPodcastsAdded} podcasts out of ${rssFeedUrls.length} RSS feed URLs`)
   }
 }
-module.exports = PodcastManager
+module.exports = new PodcastManager()
