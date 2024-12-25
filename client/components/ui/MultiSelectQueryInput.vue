@@ -1,20 +1,20 @@
 <template>
   <div class="w-full">
-    <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</p>
+    <label :for="identifier" class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</label>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
-        <div ref="inputWrapper" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-0.5" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
-          <div v-for="item in selected" :key="item.id" class="rounded-full px-2 py-0.5 m-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center justify-center relative min-w-12">
+        <div ref="inputWrapper" role="list" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-0.5" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
+          <div v-for="item in selected" :key="item.id" role="listitem" class="rounded-full px-2 py-0.5 m-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center justify-center relative min-w-12">
             <div v-if="!disabled" class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer" :class="{ 'opacity-100': inputFocused }">
-              <span v-if="showEdit" class="material-symbols text-base text-white hover:text-warning focus:text-warning mr-1" @click.stop="editItem(item)" @keydown.enter.stop.prevent="editItem(item)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">edit</span>
-              <span class="material-symbols text-white hover:text-error focus:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.id)" @keydown.enter.stop="removeItem(item.id)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">close</span>
+              <button v-if="showEdit" type="button" :aria-label="$strings.ButtonEdit" class="material-symbols text-base text-white hover:text-warning focus:text-warning mr-1" @click.stop="editItem(item)" @keydown.enter.stop.prevent="editItem(item)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">edit</button>
+              <button type="button" :aria-label="$strings.ButtonRemove" class="material-symbols text-white hover:text-error focus:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.id)" @keydown.enter.stop="removeItem(item.id)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">close</button>
             </div>
             {{ item[textKey] }}
           </div>
           <div v-if="showEdit && !disabled" class="rounded-full cursor-pointer w-6 h-6 mx-0.5 bg-bg flex items-center justify-center">
-            <span class="material-symbols text-white hover:text-success focus:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem" @keydown.enter.stop="addItem" tabindex="0">add</span>
+            <button type="button" :aria-label="$strings.ButtonAdd" class="material-symbols text-white hover:text-success focus:text-success pt-px pr-px" style="font-size: 1.1rem" @click.stop="addItem" @keydown.enter.stop="addItem" tabindex="0">add</button>
           </div>
-          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
+          <input v-show="!readonly" v-model="textInput" ref="input" :id="identifier" :disabled="disabled" class="h-full bg-primary focus:outline-none px-1 w-6" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" @paste="inputPaste" />
         </div>
       </form>
 
@@ -103,6 +103,9 @@ export default {
     },
     filterData() {
       return this.$store.state.libraries.filterData || {}
+    },
+    identifier() {
+      return Math.random().toString(36).substring(2)
     }
   },
   methods: {
