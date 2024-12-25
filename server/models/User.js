@@ -611,7 +611,7 @@ class User extends Model {
    */
   getOldMediaProgress(libraryItemId, episodeId = null) {
     const mediaProgress = this.mediaProgresses?.find((mp) => {
-      if (episodeId && mp.mediaItemId === episodeId) return true
+      if (episodeId && mp.mediaItemId !== episodeId) return false
       return mp.extraData?.libraryItemId === libraryItemId
     })
     return mediaProgress?.getOldMediaProgress() || null

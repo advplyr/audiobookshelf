@@ -262,7 +262,7 @@ class LibraryItem {
    * @returns {Promise<LibraryFile>} null if not saved
    */
   async saveMetadata() {
-    if (this.isSavingMetadata) return null
+    if (this.isSavingMetadata || !global.MetadataPath) return null
 
     this.isSavingMetadata = true
 

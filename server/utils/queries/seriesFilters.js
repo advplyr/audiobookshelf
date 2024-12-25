@@ -182,7 +182,7 @@ module.exports = {
       }
 
       if (s.feeds?.length) {
-        oldSeries.rssFeed = Database.feedModel.getOldFeed(s.feeds[0]).toJSONMinified()
+        oldSeries.rssFeed = s.feeds[0].toOldJSONMinified()
       }
 
       // TODO: Sort books by sequence in query

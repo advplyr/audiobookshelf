@@ -73,6 +73,9 @@ class LibraryItem extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {Book.BookExpanded|Podcast.PodcastExpanded} - only set when expanded */
+    this.media
   }
 
   /**
@@ -237,35 +240,7 @@ class LibraryItem extends Model {
    * @returns {Promise<boolean>} true if updates were made
    */
   static async fullUpdateFromOld(oldLibraryItem) {
-    const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['id', 'sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
+    const libraryItemExpanded = await this.getExpandedById(oldLibraryItem.id)
     if (!libraryItemExpanded) return false
 
     let hasUpdates = false
@@ -507,7 +482,7 @@ class LibraryItem extends Model {
           {
             model: this.sequelize.models.series,
             through: {
-              attributes: ['sequence']
+              attributes: ['id', 'sequence']
             }
           }
         ],
@@ -593,7 +568,7 @@ class LibraryItem extends Model {
           oldLibraryItem.media.metadata.series = li.series
         }
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = this.sequelize.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.media.numEpisodes) {
           oldLibraryItem.media.numEpisodes = li.media.numEpisodes
@@ -1059,7 +1034,7 @@ class LibraryItem extends Model {
         ino: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
-        mediaId: DataTypes.UUIDV4,
+        mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
         isFile: DataTypes.BOOLEAN,
         isMissing: DataTypes.BOOLEAN,
@@ -1151,6 +1126,24 @@ class LibraryItem extends Model {
         media.destroy()
       }
     })
+  }
+
+  /**
+   * Check if book or podcast library item has audio tracks
+   * Requires expanded library item
+   *
+   * @returns {boolean}
+   */
+  hasAudioTracks() {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
+      return false
+    }
+    if (this.mediaType === 'book') {
+      return this.media.audioFiles?.length > 0
+    } else {
+      return this.media.podcastEpisodes?.length > 0
+    }
   }
 }
 

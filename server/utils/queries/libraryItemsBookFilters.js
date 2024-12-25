@@ -259,7 +259,7 @@ module.exports = {
     } else if (sortBy === 'media.duration') {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
-      return [['publishedYear', dir]]
+      return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
@@ -615,8 +615,8 @@ module.exports = {
         }
       }
 
-      if (libraryItem.feeds?.length) {
-        libraryItem.rssFeed = libraryItem.feeds[0]
+      if (bookExpanded.libraryItem.feeds?.length) {
+        libraryItem.rssFeed = bookExpanded.libraryItem.feeds[0]
       }
 
       if (includeMediaItemShare) {
@@ -766,8 +766,8 @@ module.exports = {
           name: s.name,
           sequence: s.bookSeries[bookIndex].sequence
         }
-        if (libraryItem.feeds?.length) {
-          libraryItem.rssFeed = libraryItem.feeds[0]
+        if (s.bookSeries[bookIndex].book.libraryItem.feeds?.length) {
+          libraryItem.rssFeed = s.bookSeries[bookIndex].book.libraryItem.feeds[0]
         }
         libraryItem.media = book
         return libraryItem
@@ -900,8 +900,8 @@ module.exports = {
       delete book.libraryItem
       libraryItem.media = book
 
-      if (libraryItem.feeds?.length) {
-        libraryItem.rssFeed = libraryItem.feeds[0]
+      if (bookExpanded.libraryItem.feeds?.length) {
+        libraryItem.rssFeed = bookExpanded.libraryItem.feeds[0]
       }
 
       return libraryItem

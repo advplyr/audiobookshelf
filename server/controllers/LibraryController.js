@@ -18,6 +18,8 @@ const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
+const RssFeedManager = require('../managers/RssFeedManager')
+
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
@@ -400,19 +402,48 @@ class LibraryController {
                   model: Database.podcastEpisodeModel,
                   attributes: ['id']
                 }
+              },
+              {
+                model: Database.bookModel,
+                attributes: ['id'],
+                include: [
+                  {
+                    model: Database.bookAuthorModel,
+                    attributes: ['authorId']
+                  },
+                  {
+                    model: Database.bookSeriesModel,
+                    attributes: ['seriesId']
+                  }
+                ]
               }
             ]
           })
           Logger.info(`[LibraryController] Removed folder "${folder.path}" from library "${req.library.name}" with ${libraryItemsInFolder.length} library items`)
+          const seriesIds = []
+          const authorIds = []
           for (const libraryItem of libraryItemsInFolder) {
             let mediaItemIds = []
             if (req.library.isPodcast) {
               mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
             } else {
               mediaItemIds.push(libraryItem.mediaId)
+              if (libraryItem.media.bookAuthors.length) {
+                authorIds.push(...libraryItem.media.bookAuthors.map((ba) => ba.authorId))
+              }
+              if (libraryItem.media.bookSeries.length) {
+                seriesIds.push(...libraryItem.media.bookSeries.map((bs) => bs.seriesId))
+              }
             }
             Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.path}"`)
-            await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+            await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+          }
+
+          if (authorIds.length) {
+            await this.checkRemoveAuthorsWithNoBooks(authorIds)
+          }
+          if (seriesIds.length) {
+            await this.checkRemoveEmptySeries(seriesIds)
           }
 
           // Remove folder
@@ -501,11 +532,24 @@ class LibraryController {
         mediaItemIds.push(libraryItem.mediaId)
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${req.library.name}"`)
-      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
     }
 
+    // Set PlaybackSessions libraryId to null
+    const [sessionsUpdated] = await Database.playbackSessionModel.update(
+      {
+        libraryId: null
+      },
+      {
+        where: {
+          libraryId: req.library.id
+        }
+      }
+    )
+    Logger.info(`[LibraryController] Updated ${sessionsUpdated} playback sessions to remove library id`)
+
     const libraryJson = req.library.toOldJSON()
-    await Database.removeLibrary(req.library.id)
+    await req.library.destroy()
 
     // Re-order libraries
     await Database.libraryModel.resetDisplayOrder()
@@ -567,6 +611,8 @@ class LibraryController {
    * DELETE: /api/libraries/:id/issues
    * Remove all library items missing or invalid
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
@@ -592,6 +638,20 @@ class LibraryController {
             model: Database.podcastEpisodeModel,
             attributes: ['id']
           }
+        },
+        {
+          model: Database.bookModel,
+          attributes: ['id'],
+          include: [
+            {
+              model: Database.bookAuthorModel,
+              attributes: ['authorId']
+            },
+            {
+              model: Database.bookSeriesModel,
+              attributes: ['seriesId']
+            }
+          ]
         }
       ]
     })
@@ -602,15 +662,30 @@ class LibraryController {
     }
 
     Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
+    const authorIds = []
+    const seriesIds = []
     for (const libraryItem of libraryItemsWithIssues) {
       let mediaItemIds = []
       if (req.library.isPodcast) {
         mediaItemIds = libraryItem.media.podcastEpisodes.map((pe) => pe.id)
       } else {
         mediaItemIds.push(libraryItem.mediaId)
+        if (libraryItem.media.bookAuthors.length) {
+          authorIds.push(...libraryItem.media.bookAuthors.map((ba) => ba.authorId))
+        }
+        if (libraryItem.media.bookSeries.length) {
+          seriesIds.push(...libraryItem.media.bookSeries.map((bs) => bs.seriesId))
+        }
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" with issue`)
-      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+    }
+
+    if (authorIds.length) {
+      await this.checkRemoveAuthorsWithNoBooks(authorIds)
+    }
+    if (seriesIds.length) {
+      await this.checkRemoveEmptySeries(seriesIds)
     }
 
     // Set numIssues to 0 for library filter data
@@ -686,8 +761,8 @@ class LibraryController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
-      seriesJson.rssFeed = feedObj?.toJSONMinified() || null
+      const feedObj = await RssFeedManager.findFeedForEntityId(seriesJson.id)
+      seriesJson.rssFeed = feedObj?.toOldJSONMinified() || null
     }
 
     res.json(seriesJson)
@@ -1142,7 +1217,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
-    Scanner.matchLibraryItems(req.library)
+    Scanner.matchLibraryItems(this, req.library)
     res.sendStatus(200)
   }
 

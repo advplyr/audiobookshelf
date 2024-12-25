@@ -1,6 +1,22 @@
+const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
-const oldFeed = require('../objects/Feed')
-const areEquivalent = require('../utils/areEquivalent')
+const Logger = require('../Logger')
+
+const RSS = require('../libs/rss')
+
+/**
+ * @typedef FeedOptions
+ * @property {boolean} preventIndexing
+ * @property {string} ownerName
+ * @property {string} ownerEmail
+ */
+
+/**
+ * @typedef FeedExpandedProperties
+ * @property {import('./FeedEpisode')} feedEpisodes
+ *
+ * @typedef {Feed & FeedExpandedProperties} FeedExpanded
+ */
 
 class Feed extends Model {
   constructor(values, options) {
@@ -50,210 +66,288 @@ class Feed extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
-  }
 
-  static async getOldFeeds() {
-    const feeds = await this.findAll({
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    return feeds.map((f) => this.getOldFeed(f))
+    // Expanded properties
+
+    /** @type {import('./FeedEpisode')[]} - only set if expanded */
+    this.feedEpisodes
   }
 
   /**
-   * Get old feed from Feed and optionally Feed with FeedEpisodes
-   * @param {Feed} feedExpanded
-   * @returns {oldFeed}
+   * @param {string} feedId
+   * @returns {Promise<boolean>} - true if feed was removed
    */
-  static getOldFeed(feedExpanded) {
-    const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
-    return new oldFeed({
-      id: feedExpanded.id,
-      slug: feedExpanded.slug,
-      userId: feedExpanded.userId,
-      entityType: feedExpanded.entityType,
-      entityId: feedExpanded.entityId,
-      entityUpdatedAt: feedExpanded.entityUpdatedAt?.valueOf() || null,
-      coverPath: feedExpanded.coverPath || null,
-      meta: {
-        title: feedExpanded.title,
-        description: feedExpanded.description,
-        author: feedExpanded.author,
-        imageUrl: feedExpanded.imageURL,
-        feedUrl: feedExpanded.feedURL,
-        link: feedExpanded.siteURL,
-        explicit: feedExpanded.explicit,
-        type: feedExpanded.podcastType,
-        language: feedExpanded.language,
-        preventIndexing: feedExpanded.preventIndexing,
-        ownerName: feedExpanded.ownerName,
-        ownerEmail: feedExpanded.ownerEmail
-      },
-      serverAddress: feedExpanded.serverAddress,
-      feedUrl: feedExpanded.feedURL,
-      episodes: episodes || [],
-      createdAt: feedExpanded.createdAt.valueOf(),
-      updatedAt: feedExpanded.updatedAt.valueOf()
-    })
-  }
-
-  static removeById(feedId) {
-    return this.destroy({
-      where: {
-        id: feedId
-      }
-    })
+  static async removeById(feedId) {
+    return (
+      (await this.destroy({
+        where: {
+          id: feedId
+        }
+      })) > 0
+    )
   }
 
   /**
-   * Find all library item ids that have an open feed (used in library filter)
-   * @returns {Promise<string[]>} array of library item ids
+   *
+   * @param {string} userId
+   * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} [feedOptions=null]
+   *
+   * @returns {Feed}
    */
-  static async findAllLibraryItemIds() {
-    const feeds = await this.findAll({
-      attributes: ['entityId'],
-      where: {
-        entityType: 'libraryItem'
-      }
-    })
-    return feeds.map((f) => f.entityId).filter((f) => f) || []
-  }
+  static getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions = null) {
+    const media = libraryItem.media
 
-  /**
-   * Find feed where and return oldFeed
-   * @param {Object} where sequelize where object
-   * @returns {Promise<oldFeed>} oldFeed
-   */
-  static async findOneOld(where) {
-    if (!where) return null
-    const feedExpanded = await this.findOne({
-      where,
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    if (!feedExpanded) return null
-    return this.getOldFeed(feedExpanded)
-  }
+    let entityUpdatedAt = libraryItem.updatedAt
 
-  /**
-   * Find feed and return oldFeed
-   * @param {string} id
-   * @returns {Promise<oldFeed>} oldFeed
-   */
-  static async findByPkOld(id) {
-    if (!id) return null
-    const feedExpanded = await this.findByPk(id, {
-      include: {
-        model: this.sequelize.models.feedEpisode
-      }
-    })
-    if (!feedExpanded) return null
-    return this.getOldFeed(feedExpanded)
-  }
-
-  static async fullCreateFromOld(oldFeed) {
-    const feedObj = this.getFromOld(oldFeed)
-    const newFeed = await this.create(feedObj)
-
-    if (oldFeed.episodes?.length) {
-      for (const oldFeedEpisode of oldFeed.episodes) {
-        const feedEpisode = this.sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
-        feedEpisode.feedId = newFeed.id
-        await this.sequelize.models.feedEpisode.create(feedEpisode)
-      }
+    // Podcast feeds should use the most recent episode updatedAt if more recent
+    if (libraryItem.mediaType === 'podcast') {
+      entityUpdatedAt = libraryItem.media.podcastEpisodes.reduce((mostRecent, episode) => {
+        return episode.updatedAt > mostRecent ? episode.updatedAt : mostRecent
+      }, entityUpdatedAt)
     }
+
+    const feedObj = {
+      slug,
+      entityType: 'libraryItem',
+      entityId: libraryItem.id,
+      entityUpdatedAt,
+      serverAddress,
+      feedURL: `/feed/${slug}`,
+      imageURL: media.coverPath ? `/feed/${slug}/cover${Path.extname(media.coverPath)}` : `/Logo.png`,
+      siteURL: `/item/${libraryItem.id}`,
+      title: media.title,
+      description: media.description,
+      author: libraryItem.mediaType === 'podcast' ? media.author : media.authorName,
+      podcastType: libraryItem.mediaType === 'podcast' ? media.podcastType : 'serial',
+      language: media.language,
+      explicit: media.explicit,
+      coverPath: media.coverPath,
+      userId
+    }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
+    return feedObj
   }
 
-  static async fullUpdateFromOld(oldFeed) {
-    const oldFeedEpisodes = oldFeed.episodes || []
-    const feedObj = this.getFromOld(oldFeed)
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
+    const feedObj = this.getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions)
 
-    const existingFeed = await this.findByPk(feedObj.id, {
-      include: this.sequelize.models.feedEpisode
-    })
-    if (!existingFeed) return false
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
 
-    let hasUpdates = false
+    const transaction = await this.sequelize.transaction()
+    try {
+      const feed = await this.create(feedObj, { transaction })
 
-    // Remove and update existing feed episodes
-    for (const feedEpisode of existingFeed.feedEpisodes) {
-      const oldFeedEpisode = oldFeedEpisodes.find((ep) => ep.id === feedEpisode.id)
-      // Episode removed
-      if (!oldFeedEpisode) {
-        feedEpisode.destroy()
+      if (libraryItem.mediaType === 'podcast') {
+        feed.feedEpisodes = await feedEpisodeModel.createFromPodcastEpisodes(libraryItem, feed, slug, transaction)
       } else {
-        let episodeHasUpdates = false
-        const oldFeedEpisodeCleaned = this.sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
-        for (const key in oldFeedEpisodeCleaned) {
-          if (!areEquivalent(oldFeedEpisodeCleaned[key], feedEpisode[key])) {
-            episodeHasUpdates = true
-          }
-        }
-        if (episodeHasUpdates) {
-          await feedEpisode.update(oldFeedEpisodeCleaned)
-          hasUpdates = true
-        }
+        feed.feedEpisodes = await feedEpisodeModel.createFromAudiobookTracks(libraryItem, feed, slug, transaction)
       }
+
+      await transaction.commit()
+
+      return feed
+    } catch (error) {
+      Logger.error(`[Feed] Error creating feed for library item ${libraryItem.id}`, error)
+      await transaction.rollback()
+      return null
     }
-
-    // Add new feed episodes
-    for (const episode of oldFeedEpisodes) {
-      if (!existingFeed.feedEpisodes.some((fe) => fe.id === episode.id)) {
-        await this.sequelize.models.feedEpisode.createFromOld(feedObj.id, episode)
-        hasUpdates = true
-      }
-    }
-
-    let feedHasUpdates = false
-    for (const key in feedObj) {
-      let existingValue = existingFeed[key]
-      if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-      if (!areEquivalent(existingValue, feedObj[key])) {
-        feedHasUpdates = true
-      }
-    }
-
-    if (feedHasUpdates) {
-      await existingFeed.update(feedObj)
-      hasUpdates = true
-    }
-
-    return hasUpdates
   }
 
-  static getFromOld(oldFeed) {
-    const oldFeedMeta = oldFeed.meta || {}
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Collection')} collectionExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} [feedOptions=null]
+   *
+   * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
+   */
+  static getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions = null) {
+    const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
+
+    const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
+      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+    }, collectionExpanded.updatedAt)
+
+    const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
+
+    const allBookAuthorNames = booksWithTracks.reduce((authorNames, book) => {
+      const bookAuthorsToAdd = book.authors.filter((author) => !authorNames.includes(author.name)).map((author) => author.name)
+      return authorNames.concat(bookAuthorsToAdd)
+    }, [])
+    let author = allBookAuthorNames.slice(0, 3).join(', ')
+    if (allBookAuthorNames.length > 3) {
+      author += ' & more'
+    }
+
+    const feedObj = {
+      slug,
+      entityType: 'collection',
+      entityId: collectionExpanded.id,
+      entityUpdatedAt,
+      serverAddress,
+      feedURL: `/feed/${slug}`,
+      imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}` : `/Logo.png`,
+      siteURL: `/collection/${collectionExpanded.id}`,
+      title: collectionExpanded.name,
+      description: collectionExpanded.description || '',
+      author,
+      podcastType: 'serial',
+      explicit: booksWithTracks.some((book) => book.explicit), // If any book is explicit, the feed is explicit
+      coverPath: firstBookWithCover?.coverPath || null,
+      userId
+    }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
     return {
-      id: oldFeed.id,
-      slug: oldFeed.slug,
-      entityType: oldFeed.entityType,
-      entityId: oldFeed.entityId,
-      entityUpdatedAt: oldFeed.entityUpdatedAt,
-      serverAddress: oldFeed.serverAddress,
-      feedURL: oldFeed.feedUrl,
-      coverPath: oldFeed.coverPath || null,
-      imageURL: oldFeedMeta.imageUrl,
-      siteURL: oldFeedMeta.link,
-      title: oldFeedMeta.title,
-      description: oldFeedMeta.description,
-      author: oldFeedMeta.author,
-      podcastType: oldFeedMeta.type || null,
-      language: oldFeedMeta.language || null,
-      ownerName: oldFeedMeta.ownerName || null,
-      ownerEmail: oldFeedMeta.ownerEmail || null,
-      explicit: !!oldFeedMeta.explicit,
-      preventIndexing: !!oldFeedMeta.preventIndexing,
-      userId: oldFeed.userId
+      feedObj,
+      booksWithTracks
     }
   }
 
-  getEntity(options) {
-    if (!this.entityType) return Promise.resolve(null)
-    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
-    return this[mixinMethodName](options)
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Collection')} collectionExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions) {
+    const { feedObj, booksWithTracks } = this.getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions)
+
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const feed = await this.create(feedObj, { transaction })
+      feed.feedEpisodes = await feedEpisodeModel.createFromBooks(booksWithTracks, feed, slug, transaction)
+
+      await transaction.commit()
+
+      return feed
+    } catch (error) {
+      Logger.error(`[Feed] Error creating feed for collection ${collectionExpanded.id}`, error)
+      await transaction.rollback()
+      return null
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Series')} seriesExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} [feedOptions=null]
+   *
+   * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
+   */
+  static getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions = null) {
+    const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
+    const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
+      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+    }, seriesExpanded.updatedAt)
+
+    const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
+
+    const allBookAuthorNames = booksWithTracks.reduce((authorNames, book) => {
+      const bookAuthorsToAdd = book.authors.filter((author) => !authorNames.includes(author.name)).map((author) => author.name)
+      return authorNames.concat(bookAuthorsToAdd)
+    }, [])
+    let author = allBookAuthorNames.slice(0, 3).join(', ')
+    if (allBookAuthorNames.length > 3) {
+      author += ' & more'
+    }
+
+    const feedObj = {
+      slug,
+      entityType: 'series',
+      entityId: seriesExpanded.id,
+      entityUpdatedAt,
+      serverAddress,
+      feedURL: `/feed/${slug}`,
+      imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}` : `/Logo.png`,
+      siteURL: `/library/${booksWithTracks[0].libraryItem.libraryId}/series/${seriesExpanded.id}`,
+      title: seriesExpanded.name,
+      description: seriesExpanded.description || '',
+      author,
+      podcastType: 'serial',
+      explicit: booksWithTracks.some((book) => book.explicit), // If any book is explicit, the feed is explicit
+      coverPath: firstBookWithCover?.coverPath || null,
+      userId
+    }
+
+    if (feedOptions) {
+      feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.ownerName = feedOptions.ownerName
+      feedObj.ownerEmail = feedOptions.ownerEmail
+    }
+
+    return {
+      feedObj,
+      booksWithTracks
+    }
+  }
+
+  /**
+   *
+   * @param {string} userId
+   * @param {import('./Series')} seriesExpanded
+   * @param {string} slug
+   * @param {string} serverAddress
+   * @param {FeedOptions} feedOptions
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
+    const { feedObj, booksWithTracks } = this.getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions)
+
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const feed = await this.create(feedObj, { transaction })
+      feed.feedEpisodes = await feedEpisodeModel.createFromBooks(booksWithTracks, feed, slug, transaction)
+
+      await transaction.commit()
+
+      return feed
+    } catch (error) {
+      Logger.error(`[Feed] Error creating feed for series ${seriesExpanded.id}`, error)
+      await transaction.rollback()
+      return null
+    }
   }
 
   /**
@@ -274,7 +368,7 @@ class Feed extends Model {
         },
         slug: DataTypes.STRING,
         entityType: DataTypes.STRING,
-        entityId: DataTypes.UUIDV4,
+        entityId: DataTypes.UUID,
         entityUpdatedAt: DataTypes.DATE,
         serverAddress: DataTypes.STRING,
         feedURL: DataTypes.STRING,
@@ -368,6 +462,192 @@ class Feed extends Model {
         delete instance.dataValues.playlist
       }
     })
+  }
+
+  /**
+   *
+   * @returns {Promise<FeedExpanded>}
+   */
+  async updateFeedForEntity() {
+    /** @type {typeof import('./FeedEpisode')} */
+    const feedEpisodeModel = this.sequelize.models.feedEpisode
+
+    let feedObj = null
+    let feedEpisodeCreateFunc = null
+    let feedEpisodeCreateFuncEntity = null
+
+    if (this.entityType === 'libraryItem') {
+      /** @type {typeof import('./LibraryItem')} */
+      const libraryItemModel = this.sequelize.models.libraryItem
+
+      const itemExpanded = await libraryItemModel.getExpandedById(this.entityId)
+      feedObj = Feed.getFeedObjForLibraryItem(this.userId, itemExpanded, this.slug, this.serverAddress)
+
+      feedEpisodeCreateFuncEntity = itemExpanded
+      if (itemExpanded.mediaType === 'podcast') {
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromPodcastEpisodes.bind(feedEpisodeModel)
+      } else {
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromAudiobookTracks.bind(feedEpisodeModel)
+      }
+    } else if (this.entityType === 'collection') {
+      /** @type {typeof import('./Collection')} */
+      const collectionModel = this.sequelize.models.collection
+
+      const collectionExpanded = await collectionModel.getExpandedById(this.entityId)
+      const feedObjData = Feed.getFeedObjForCollection(this.userId, collectionExpanded, this.slug, this.serverAddress)
+      feedObj = feedObjData.feedObj
+      feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+    } else if (this.entityType === 'series') {
+      /** @type {typeof import('./Series')} */
+      const seriesModel = this.sequelize.models.series
+
+      const seriesExpanded = await seriesModel.getExpandedById(this.entityId)
+      const feedObjData = Feed.getFeedObjForSeries(this.userId, seriesExpanded, this.slug, this.serverAddress)
+      feedObj = feedObjData.feedObj
+      feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+    } else {
+      Logger.error(`[Feed] Invalid entity type ${this.entityType} for feed ${this.id}`)
+      return null
+    }
+
+    const transaction = await this.sequelize.transaction()
+    try {
+      const updatedFeed = await this.update(feedObj, { transaction })
+
+      // Remove existing feed episodes
+      await feedEpisodeModel.destroy({
+        where: {
+          feedId: this.id
+        },
+        transaction
+      })
+
+      // Create new feed episodes
+      updatedFeed.feedEpisodes = await feedEpisodeCreateFunc(feedEpisodeCreateFuncEntity, updatedFeed, this.slug, transaction)
+
+      await transaction.commit()
+
+      return updatedFeed
+    } catch (error) {
+      Logger.error(`[Feed] Error updating feed ${this.entityId}`, error)
+      await transaction.rollback()
+
+      return null
+    }
+  }
+
+  getEntity(options) {
+    if (!this.entityType) return Promise.resolve(null)
+    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
+    return this[mixinMethodName](options)
+  }
+
+  /**
+   *
+   * @param {string} hostPrefix
+   */
+  buildXml(hostPrefix) {
+    const blockTags = [{ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' }]
+    const rssData = {
+      title: this.title,
+      description: this.description || '',
+      generator: 'Audiobookshelf',
+      feed_url: `${hostPrefix}${this.feedURL}`,
+      site_url: `${hostPrefix}${this.siteURL}`,
+      image_url: `${hostPrefix}${this.imageURL}`,
+      custom_namespaces: {
+        itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
+        psc: 'http://podlove.org/simple-chapters',
+        podcast: 'https://podcastindex.org/namespace/1.0',
+        googleplay: 'http://www.google.com/schemas/play-podcasts/1.0'
+      },
+      custom_elements: [
+        { language: this.language || 'en' },
+        { author: this.author || 'advplyr' },
+        { 'itunes:author': this.author || 'advplyr' },
+        { 'itunes:summary': this.description || '' },
+        { 'itunes:type': this.podcastType },
+        {
+          'itunes:image': {
+            _attr: {
+              href: `${hostPrefix}${this.imageURL}`
+            }
+          }
+        },
+        {
+          'itunes:owner': [{ 'itunes:name': this.ownerName || this.author || '' }, { 'itunes:email': this.ownerEmail || '' }]
+        },
+        { 'itunes:explicit': !!this.explicit },
+        ...(this.preventIndexing ? blockTags : [])
+      ]
+    }
+
+    const rssfeed = new RSS(rssData)
+    this.feedEpisodes.forEach((ep) => {
+      rssfeed.item(ep.getRSSData(hostPrefix))
+    })
+    return rssfeed.xml()
+  }
+
+  /**
+   *
+   * @param {string} id
+   * @returns {string}
+   */
+  getEpisodePath(id) {
+    const episode = this.feedEpisodes.find((ep) => ep.id === id)
+    if (!episode) return null
+    return episode.filePath
+  }
+
+  toOldJSON() {
+    const episodes = this.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
+    return {
+      id: this.id,
+      slug: this.slug,
+      userId: this.userId,
+      entityType: this.entityType,
+      entityId: this.entityId,
+      entityUpdatedAt: this.entityUpdatedAt?.valueOf() || null,
+      coverPath: this.coverPath || null,
+      meta: {
+        title: this.title,
+        description: this.description,
+        author: this.author,
+        imageUrl: this.imageURL,
+        feedUrl: this.feedURL,
+        link: this.siteURL,
+        explicit: this.explicit,
+        type: this.podcastType,
+        language: this.language,
+        preventIndexing: this.preventIndexing,
+        ownerName: this.ownerName,
+        ownerEmail: this.ownerEmail
+      },
+      serverAddress: this.serverAddress,
+      feedUrl: this.feedURL,
+      episodes: episodes || [],
+      createdAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf()
+    }
+  }
+
+  toOldJSONMinified() {
+    return {
+      id: this.id,
+      entityType: this.entityType,
+      entityId: this.entityId,
+      feedUrl: this.feedURL,
+      meta: {
+        title: this.title,
+        description: this.description,
+        preventIndexing: this.preventIndexing,
+        ownerName: this.ownerName,
+        ownerEmail: this.ownerEmail
+      }
+    }
   }
 }
 

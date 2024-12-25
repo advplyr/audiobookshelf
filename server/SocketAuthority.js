@@ -14,7 +14,7 @@ const Auth = require('./Auth')
 class SocketAuthority {
   constructor() {
     this.Server = null
-    this.io = null
+    this.socketIoServers = []
 
     /** @type {Object.<string, SocketClient>} */
     this.clients = {}
@@ -89,82 +89,104 @@ class SocketAuthority {
    *
    * @param {Function} callback
    */
-  close(callback) {
-    Logger.info('[SocketAuthority] Shutting down')
-    // This will close all open socket connections, and also close the underlying http server
-    if (this.io) this.io.close(callback)
-    else callback()
+  async close() {
+    Logger.info('[SocketAuthority] closing...')
+    const closePromises = this.socketIoServers.map((io) => {
+      return new Promise((resolve) => {
+        Logger.info(`[SocketAuthority] Closing Socket.IO server: ${io.path}`)
+        io.close(() => {
+          Logger.info(`[SocketAuthority] Socket.IO server closed: ${io.path}`)
+          resolve()
+        })
+      })
+    })
+    await Promise.all(closePromises)
+    Logger.info('[SocketAuthority] closed')
+    this.socketIoServers = []
   }
 
   initialize(Server) {
     this.Server = Server
 
-    this.io = new SocketIO.Server(this.Server.server, {
+    const socketIoOptions = {
       cors: {
         origin: '*',
         methods: ['GET', 'POST']
-      },
-      path: `${global.RouterBasePath}/socket.io`
-    })
-
-    this.io.on('connection', (socket) => {
-      this.clients[socket.id] = {
-        id: socket.id,
-        socket,
-        connected_at: Date.now()
       }
-      socket.sheepClient = this.clients[socket.id]
+    }
 
-      Logger.info('[SocketAuthority] Socket Connected', socket.id)
+    const ioServer = new SocketIO.Server(Server.server, socketIoOptions)
+    ioServer.path = '/socket.io'
+    this.socketIoServers.push(ioServer)
 
-      // Required for associating a User with a socket
-      socket.on('auth', (token) => this.authenticateSocket(socket, token))
+    if (global.RouterBasePath) {
+      // open a separate socket.io server for the router base path, keeping the original server open for legacy clients
+      const ioBasePath = `${global.RouterBasePath}/socket.io`
+      const ioBasePathServer = new SocketIO.Server(Server.server, { ...socketIoOptions, path: ioBasePath })
+      ioBasePathServer.path = ioBasePath
+      this.socketIoServers.push(ioBasePathServer)
+    }
 
-      // Scanning
-      socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
-
-      // Logs
-      socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
-      socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
-
-      // Sent automatically from socket.io clients
-      socket.on('disconnect', (reason) => {
-        Logger.removeSocketListener(socket.id)
-
-        const _client = this.clients[socket.id]
-        if (!_client) {
-          Logger.warn(`[SocketAuthority] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
-        } else if (!_client.user) {
-          Logger.info(`[SocketAuthority] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
-          delete this.clients[socket.id]
-        } else {
-          Logger.debug('[SocketAuthority] User Offline ' + _client.user.username)
-          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
-
-          const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[SocketAuthority] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
-          delete this.clients[socket.id]
+    this.socketIoServers.forEach((io) => {
+      io.on('connection', (socket) => {
+        this.clients[socket.id] = {
+          id: socket.id,
+          socket,
+          connected_at: Date.now()
         }
-      })
+        socket.sheepClient = this.clients[socket.id]
 
-      //
-      // Events for testing
-      //
-      socket.on('message_all_users', (payload) => {
-        // admin user can send a message to all authenticated users
-        //   displays on the web app as a toast
-        const client = this.clients[socket.id] || {}
-        if (client.user?.isAdminOrUp) {
-          this.emitter('admin_message', payload.message || '')
-        } else {
-          Logger.error(`[SocketAuthority] Non-admin user sent the message_all_users event`)
-        }
-      })
-      socket.on('ping', () => {
-        const client = this.clients[socket.id] || {}
-        const user = client.user || {}
-        Logger.debug(`[SocketAuthority] Received ping from socket ${user.username || 'No User'}`)
-        socket.emit('pong')
+        Logger.info(`[SocketAuthority] Socket Connected to ${io.path}`, socket.id)
+
+        // Required for associating a User with a socket
+        socket.on('auth', (token) => this.authenticateSocket(socket, token))
+
+        // Scanning
+        socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
+
+        // Logs
+        socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+        socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
+
+        // Sent automatically from socket.io clients
+        socket.on('disconnect', (reason) => {
+          Logger.removeSocketListener(socket.id)
+
+          const _client = this.clients[socket.id]
+          if (!_client) {
+            Logger.warn(`[SocketAuthority] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
+          } else if (!_client.user) {
+            Logger.info(`[SocketAuthority] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
+            delete this.clients[socket.id]
+          } else {
+            Logger.debug('[SocketAuthority] User Offline ' + _client.user.username)
+            this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
+
+            const disconnectTime = Date.now() - _client.connected_at
+            Logger.info(`[SocketAuthority] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
+            delete this.clients[socket.id]
+          }
+        })
+
+        //
+        // Events for testing
+        //
+        socket.on('message_all_users', (payload) => {
+          // admin user can send a message to all authenticated users
+          //   displays on the web app as a toast
+          const client = this.clients[socket.id] || {}
+          if (client.user?.isAdminOrUp) {
+            this.emitter('admin_message', payload.message || '')
+          } else {
+            Logger.error(`[SocketAuthority] Non-admin user sent the message_all_users event`)
+          }
+        })
+        socket.on('ping', () => {
+          const client = this.clients[socket.id] || {}
+          const user = client.user || {}
+          Logger.debug(`[SocketAuthority] Received ping from socket ${user.username || 'No User'}`)
+          socket.emit('pong')
+        })
       })
     })
   }

@@ -37,7 +37,7 @@
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
-          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerSettings')">
+          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
             <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
@@ -64,6 +64,8 @@
     </div>
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :playback-rate="playbackRate" :chapters="chapters" @select="selectChapter" />
+
+    <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
 </template>
 
@@ -96,6 +98,7 @@ export default {
       audioEl: null,
       seekLoading: false,
       showChaptersModal: false,
+      showPlayerSettingsModal: false,
       currentTime: 0,
       duration: 0
     }
@@ -314,6 +317,9 @@ export default {
     showChapters() {
       if (!this.chapters.length) return
       this.showChaptersModal = !this.showChaptersModal
+    },
+    showPlayerSettings() {
+      this.showPlayerSettingsModal = !this.showPlayerSettingsModal
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1

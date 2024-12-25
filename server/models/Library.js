@@ -108,19 +108,6 @@ class Library extends Model {
   }
 
   /**
-   * Destroy library by id
-   * @param {string} libraryId
-   * @returns
-   */
-  static removeById(libraryId) {
-    return this.destroy({
-      where: {
-        id: libraryId
-      }
-    })
-  }
-
-  /**
    * Get all library ids
    * @returns {Promise<string[]>} array of library ids
    */

@@ -53,7 +53,17 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
-    global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
+
+    if (process.env.DISABLE_SSRF_REQUEST_FILTER === '1') {
+      Logger.info(`[Server] SSRF Request Filter Disabled`)
+      global.DisableSsrfRequestFilter = () => true
+    } else if (process.env.SSRF_REQUEST_FILTER_WHITELIST?.length) {
+      const whitelistedUrls = process.env.SSRF_REQUEST_FILTER_WHITELIST.split(',').map((url) => url.trim())
+      if (whitelistedUrls.length) {
+        Logger.info(`[Server] SSRF Request Filter Whitelisting: ${whitelistedUrls.join(',')}`)
+        global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
+      }
+    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -71,7 +81,6 @@ class Server {
     this.playbackSessionManager = new PlaybackSessionManager()
     this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
-    this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
@@ -84,7 +93,6 @@ class Server {
     Logger.logManager = new LogManager()
 
     this.server = null
-    this.io = null
   }
 
   /**
@@ -138,7 +146,7 @@ class Server {
 
     await ShareManager.init()
     await this.backupManager.init()
-    await this.rssFeedManager.init()
+    await RssFeedManager.init()
 
     const libraries = await Database.libraryModel.getAllWithFolders()
     await this.cronManager.init(libraries)
@@ -194,18 +202,23 @@ class Server {
 
     const app = express()
 
-    /**
-     * @temporary
-     * This is necessary for the ebook & cover API endpoint in the mobile apps
-     * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
-     * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
-     * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
-     * @see https://ionicframework.com/docs/troubleshooting/cors
-     *
-     * Running in development allows cors to allow testing the mobile apps in the browser
-     * or env variable ALLOW_CORS = '1'
-     */
     app.use((req, res, next) => {
+      if (!global.ServerSettings.allowIframe) {
+        // Prevent clickjacking by disallowing iframes
+        res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
+      }
+
+      /**
+       * @temporary
+       * This is necessary for the ebook & cover API endpoint in the mobile apps
+       * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
+       * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+       * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
+       * @see https://ionicframework.com/docs/troubleshooting/cors
+       *
+       * Running in development allows cors to allow testing the mobile apps in the browser
+       * or env variable ALLOW_CORS = '1'
+       */
       if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
@@ -246,14 +259,17 @@ class Server {
 
     const router = express.Router()
     // if RouterBasePath is set, modify all requests to include the base path
-    if (global.RouterBasePath) {
-      app.use((req, res, next) => {
-        if (!req.url.startsWith(global.RouterBasePath)) {
-          req.url = `${global.RouterBasePath}${req.url}`
-        }
-        next()
-      })
-    }
+    app.use((req, res, next) => {
+      const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
+      const host = req.get('host')
+      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
+      req.originalHostPrefix = `${protocol}://${host}${prefix}`
+      if (!urlStartsWithRouterBasePath) {
+        req.url = `${global.RouterBasePath}${req.url}`
+      }
+      next()
+    })
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
@@ -284,14 +300,14 @@ class Server {
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
-      this.rssFeedManager.getFeed(req, res)
+      RssFeedManager.getFeed(req, res)
     })
     router.get('/feed/:slug/cover*', (req, res) => {
-      this.rssFeedManager.getFeedCover(req, res)
+      RssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
-      this.rssFeedManager.getFeedItem(req, res)
+      RssFeedManager.getFeedItem(req, res)
     })
 
     // Auth routes
@@ -438,18 +454,11 @@ class Server {
   async stop() {
     Logger.info('=== Stopping Server ===')
     Watcher.close()
-    Logger.info('Watcher Closed')
-
-    return new Promise((resolve) => {
-      SocketAuthority.close((err) => {
-        if (err) {
-          Logger.error('Failed to close server', err)
-        } else {
-          Logger.info('Server successfully closed')
-        }
-        resolve()
-      })
-    })
+    Logger.info('[Server] Watcher Closed')
+    await SocketAuthority.close()
+    Logger.info('[Server] Closing HTTP Server')
+    await new Promise((resolve) => this.server.close(resolve))
+    Logger.info('[Server] HTTP Server Closed')
   }
 }
 module.exports = Server

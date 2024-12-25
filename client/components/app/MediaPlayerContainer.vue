@@ -53,7 +53,6 @@
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
-      @showPlayerSettings="showPlayerSettingsModal = true"
     />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
@@ -61,8 +60,6 @@
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
     <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" />
-
-    <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
 </template>
 
@@ -81,7 +78,6 @@ export default {
       currentTime: 0,
       showSleepTimerModal: false,
       showPlayerQueueItemsModal: false,
-      showPlayerSettingsModal: false,
       sleepTimerSet: false,
       sleepTimerRemaining: 0,
       sleepTimerType: null,

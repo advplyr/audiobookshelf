@@ -10,6 +10,7 @@ const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
 const CacheManager = require('../managers/CacheManager')
+const RssFeedManager = require('../managers/RssFeedManager')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -49,8 +50,6 @@ class ApiRouter {
     this.podcastManager = Server.podcastManager
     /** @type {import('../managers/AudioMetadataManager')} */
     this.audioMetadataManager = Server.audioMetadataManager
-    /** @type {import('../managers/RssFeedManager')} */
-    this.rssFeedManager = Server.rssFeedManager
     /** @type {import('../managers/CronManager')} */
     this.cronManager = Server.cronManager
     /** @type {import('../managers/EmailManager')} */
@@ -348,11 +347,10 @@ class ApiRouter {
   //
   /**
    * Remove library item and associated entities
-   * @param {string} mediaType
    * @param {string} libraryItemId
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
    */
-  async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
+  async handleDeleteLibraryItem(libraryItemId, mediaItemIds) {
     const numProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: mediaItemIds
@@ -360,29 +358,6 @@ class ApiRouter {
     })
     if (numProgressRemoved > 0) {
       Logger.info(`[ApiRouter] Removed ${numProgressRemoved} media progress entries for library item "${libraryItemId}"`)
-    }
-
-    // TODO: Remove open sessions for library item
-
-    // Remove series if empty
-    if (mediaType === 'book') {
-      // TODO: update filter data
-      const bookSeries = await Database.bookSeriesModel.findAll({
-        where: {
-          bookId: mediaItemIds[0]
-        },
-        include: {
-          model: Database.seriesModel,
-          include: {
-            model: Database.bookModel
-          }
-        }
-      })
-      for (const bs of bookSeries) {
-        if (bs.series.books.length === 1) {
-          await this.removeEmptySeries(bs.series)
-        }
-      }
     }
 
     // remove item from playlists
@@ -418,15 +393,18 @@ class ApiRouter {
     }
 
     // Close rss feed - remove from db and emit socket event
-    await this.rssFeedManager.closeFeedForEntityId(libraryItemId)
+    await RssFeedManager.closeFeedForEntityId(libraryItemId)
 
     // purge cover cache
     await CacheManager.purgeCoverCache(libraryItemId)
 
-    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
-    if (await fs.pathExists(itemMetadataPath)) {
-      Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
-      await fs.remove(itemMetadataPath)
+    // Remove metadata file if in /metadata/items dir
+    if (global.MetadataPath) {
+      const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
+      if (await fs.pathExists(itemMetadataPath)) {
+        Logger.info(`[ApiRouter] Removing item metadata at "${itemMetadataPath}"`)
+        await fs.remove(itemMetadataPath)
+      }
     }
 
     await Database.libraryItemModel.removeById(libraryItemId)
@@ -437,32 +415,27 @@ class ApiRouter {
   }
 
   /**
-   * Used when a series is removed from a book
-   * Series is removed if it only has 1 book
+   * After deleting book(s), remove empty series
    *
-   * @param {string} bookId
    * @param {string[]} seriesIds
    */
-  async checkRemoveEmptySeries(bookId, seriesIds) {
+  async checkRemoveEmptySeries(seriesIds) {
     if (!seriesIds?.length) return
 
-    const bookSeries = await Database.bookSeriesModel.findAll({
+    const series = await Database.seriesModel.findAll({
       where: {
-        bookId,
-        seriesId: seriesIds
+        id: seriesIds
       },
-      include: [
-        {
-          model: Database.seriesModel,
-          include: {
-            model: Database.bookModel
-          }
-        }
-      ]
+      attributes: ['id', 'name', 'libraryId'],
+      include: {
+        model: Database.bookModel,
+        attributes: ['id']
+      }
     })
-    for (const bs of bookSeries) {
-      if (bs.series.books.length === 1) {
-        await this.removeEmptySeries(bs.series)
+
+    for (const s of series) {
+      if (!s.books.length) {
+        await this.removeEmptySeries(s)
       }
     }
   }
@@ -471,11 +444,10 @@ class ApiRouter {
    * Remove authors with no books and unset asin, description and imagePath
    * Note: Other implementation is in BookScanner.checkAuthorsRemovedFromBooks (can be merged)
    *
-   * @param {string} libraryId
    * @param {string[]} authorIds
    * @returns {Promise<void>}
    */
-  async checkRemoveAuthorsWithNoBooks(libraryId, authorIds) {
+  async checkRemoveAuthorsWithNoBooks(authorIds) {
     if (!authorIds?.length) return
 
     const bookAuthorsToRemove = (
@@ -495,10 +467,10 @@ class ApiRouter {
           },
           sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
         ],
-        attributes: ['id', 'name'],
+        attributes: ['id', 'name', 'libraryId'],
         raw: true
       })
-    ).map((au) => ({ id: au.id, name: au.name }))
+    ).map((au) => ({ id: au.id, name: au.name, libraryId: au.libraryId }))
 
     if (bookAuthorsToRemove.length) {
       await Database.authorModel.destroy({
@@ -506,7 +478,7 @@ class ApiRouter {
           id: bookAuthorsToRemove.map((au) => au.id)
         }
       })
-      bookAuthorsToRemove.forEach(({ id, name }) => {
+      bookAuthorsToRemove.forEach(({ id, name, libraryId }) => {
         Database.removeAuthorFromFilterData(libraryId, id)
         // TODO: Clients were expecting full author in payload but its unnecessary
         SocketAuthority.emitter('author_removed', { id, libraryId })
@@ -520,7 +492,7 @@ class ApiRouter {
    * @param {import('../models/Series')} series
    */
   async removeEmptySeries(series) {
-    await this.rssFeedManager.closeFeedForEntityId(series.id)
+    await RssFeedManager.closeFeedForEntityId(series.id)
     Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
 
     // Remove series from library filter data

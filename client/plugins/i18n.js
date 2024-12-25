@@ -7,6 +7,7 @@ const defaultCode = 'en-us'
 const languageCodeMap = {
   bg: { label: 'Български', dateFnsLocale: 'bg' },
   bn: { label: 'বাংলা', dateFnsLocale: 'bn' },
+  ca: { label: 'Català', dateFnsLocale: 'ca' },
   cs: { label: 'Čeština', dateFnsLocale: 'cs' },
   da: { label: 'Dansk', dateFnsLocale: 'da' },
   de: { label: 'Deutsch', dateFnsLocale: 'de' },
@@ -41,6 +42,7 @@ Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map((code) => 
 
 // iTunes search API uses ISO 3166 country codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 const podcastSearchRegionMap = {
+  au: { label: 'Australia' },
   br: { label: 'Brasil' },
   be: { label: 'België / Belgique / Belgien' },
   cz: { label: 'Česko' },
@@ -56,6 +58,7 @@ const podcastSearchRegionMap = {
   hu: { label: 'Magyarország' },
   nl: { label: 'Nederland' },
   no: { label: 'Norge' },
+  nz: { label: 'New Zealand' },
   at: { label: 'Österreich' },
   pl: { label: 'Polska' },
   pt: { label: 'Portugal' },

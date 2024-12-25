@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="w-44 fixed left-0 top-16 bg-bg bg-opacity-100 md:bg-opacity-70 shadow-lg border-r border-white border-opacity-5 py-3 transform transition-transform mb-12 overflow-y-auto" :class="wrapperClass + ' ' + (streamLibraryItem ? 'h-[calc(100%-270px)]' : 'h-[calc(100%-110px)]')" v-click-outside="clickOutside">
+  <div role="toolbar" aria-orientation="vertical" aria-label="Config Sidebar">
+    <div role="navigation" aria-label="Config Navigation" class="w-44 fixed left-0 top-16 bg-bg bg-opacity-100 md:bg-opacity-70 shadow-lg border-r border-white border-opacity-5 py-3 transform transition-transform mb-12 overflow-y-auto" :class="wrapperClass + ' ' + (streamLibraryItem ? 'h-[calc(100%-270px)]' : 'h-[calc(100%-110px)]')" v-click-outside="clickOutside">
       <div v-show="isMobilePortrait" class="flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
         <span class="material-symbols text-2xl">arrow_back</span>
       </div>

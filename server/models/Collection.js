@@ -18,6 +18,11 @@ class Collection extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+
+    // Expanded properties
+
+    /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
+    this.books
   }
 
   /**
@@ -107,12 +112,45 @@ class Collection extends Model {
 
         // Map feed if found
         if (c.feeds?.length) {
-          collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(c.feeds[0])
+          collectionExpanded.rssFeed = c.feeds[0].toOldJSON()
         }
 
         return collectionExpanded
       })
       .filter((c) => c)
+  }
+
+  /**
+   *
+   * @param {string} collectionId
+   * @returns {Promise<Collection>}
+   */
+  static async getExpandedById(collectionId) {
+    return this.findByPk(collectionId, {
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.libraryItem
+            },
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        }
+      ],
+      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+    })
   }
 
   /**
@@ -220,6 +258,34 @@ class Collection extends Model {
   }
 
   /**
+   * Get all books in collection expanded with library item
+   *
+   * @returns {Promise<import('./Book').BookExpandedWithLibraryItem[]>}
+   */
+  getBooksExpandedWithLibraryItem() {
+    return this.getBooks({
+      include: [
+        {
+          model: this.sequelize.models.libraryItem
+        },
+        {
+          model: this.sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: this.sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ],
+      order: [Sequelize.literal('`collectionBook.order` ASC')]
+    })
+  }
+
+  /**
    * Get old collection toJSONExpanded, items filtered for user permissions
    *
    * @param {import('./User')|null} user
@@ -282,7 +348,7 @@ class Collection extends Model {
     if (include?.includes('rssfeed')) {
       const feeds = await this.getFeeds()
       if (feeds?.length) {
-        collectionExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
+        collectionExpanded.rssFeed = feeds[0].toOldJSON()
       }
     }
 
