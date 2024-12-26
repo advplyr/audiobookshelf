@@ -4,7 +4,7 @@
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4e sm:px-8e relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
         <!-- Card skeletons -->
         <template v-for="entityIndex in entitiesInShelf(shelf)">
-          <div :key="entityIndex" class="w-full h-full absolute rounded z-5 top-0 left-0 bg-primary" :style="{ transform: entityTransform(entityIndex), width: cardWidth + 'px', height: coverHeight + 'px' }" />
+          <div :key="entityIndex" class="w-full h-full absolute rounded z-5 top-0 left-0 bg-primary box-shadow-book" :style="{ transform: entityTransform(entityIndex), width: cardWidth + 'px', height: coverHeight + 'px' }" />
         </template>
         <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6e" />
       </div>
@@ -181,9 +181,6 @@ export default {
     bookWidth() {
       return this.cardWidth
     },
-    bookHeight() {
-      return this.cardHeight
-    },
     shelfPadding() {
       if (this.bookshelfWidth < 640) return 32 * this.sizeMultiplier
       return 64 * this.sizeMultiplier
@@ -193,9 +190,6 @@ export default {
     },
     entityWidth() {
       return this.cardWidth
-    },
-    entityHeight() {
-      return this.cardHeight
     },
     shelfPaddingHeight() {
       return 16
@@ -840,7 +834,7 @@ export default {
         })
     },
     entitiesInShelf(shelf) {
-      return shelf == this.totalShelves ? this.totalEntities % this.entitiesPerShelf : this.entitiesPerShelf
+      return shelf == this.totalShelves ? this.totalEntities % this.entitiesPerShelf || this.entitiesPerShelf : this.entitiesPerShelf
     },
     entityTransform(entityIndex) {
       const shelfOffsetY = this.shelfPaddingHeight * this.sizeMultiplier
