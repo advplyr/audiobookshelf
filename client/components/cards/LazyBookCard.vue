@@ -19,7 +19,7 @@
         </div>
 
         <!-- Cover Image -->
-        <img cy-id="coverImage" v-show="libraryItem" :alt="`${displayTitle}, ${$strings.LabelCover}`" ref="cover" aria-hidden="true" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+        <img cy-id="coverImage" v-if="libraryItem" :alt="`${displayTitle}, ${$strings.LabelCover}`" ref="cover" aria-hidden="true" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
 
         <!-- Placeholder Cover Title & Author -->
         <div cy-id="placeholderTitle" v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em' }">
