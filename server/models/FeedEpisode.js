@@ -138,7 +138,7 @@ class FeedEpisode extends Model {
 
     const contentUrl = `/feed/${slug}/item/${episodeId}/media${Path.extname(audioTrack.metadata.filename)}`
 
-    let title = audioTrack.title
+    let title = Path.basename(audioTrack.metadata.filename, Path.extname(audioTrack.metadata.filename))
     if (book.trackList.length == 1) {
       // If audiobook is a single file, use book title instead of chapter/file title
       title = book.title
