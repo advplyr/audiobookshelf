@@ -19,12 +19,13 @@
           <ui-text-input v-model="currentShareUrl" show-copy readonly class="text-base h-10" />
         </div>
         <div class="w-full py-2 px-1">
-          <p v-if="currentShare.expiresAt" class="text-base">{{ $getString('MessageShareExpiresIn', [currentShareTimeRemaining]) }}</p>
+          <p v-if="currentShare.isDownloadable" class="text-sm mb-2">{{ $strings.LabelDownloadable }}</p>
+          <p v-if="currentShare.expiresAt">{{ $getString('MessageShareExpiresIn', [currentShareTimeRemaining]) }}</p>
           <p v-else>{{ $strings.LabelPermanent }}</p>
         </div>
       </template>
       <template v-else>
-        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4 mb-2">
           <div class="w-full sm:w-48">
             <label class="px-1 text-sm font-semibold block">{{ $strings.LabelSlug }}</label>
             <ui-text-input v-model="newShareSlug" class="text-base h-10" />
@@ -46,9 +47,7 @@
             </div>
           </div>
         </div>
-        <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareURLWillBe', [demoShareUrl])" />
-        <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareExpirationWillBe', [expirationDateString])" />
-        <div class="flex items-center w-full md:w-1/2">
+        <div class="flex items-center w-full md:w-1/2 mb-4">
           <p class="text-sm text-gray-300 py-1 px-1">{{ $strings.LabelDownloadable }}</p>
           <ui-toggle-switch size="sm" v-model="isDownloadable" />
           <ui-tooltip :text="$strings.LabelShareDownloadableHelp">
@@ -57,6 +56,8 @@
             </p>
           </ui-tooltip>
         </div>
+        <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareURLWillBe', [demoShareUrl])" />
+        <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareExpirationWillBe', [expirationDateString])" />
       </template>
       <div class="flex items-center pt-6">
         <div class="flex-grow" />

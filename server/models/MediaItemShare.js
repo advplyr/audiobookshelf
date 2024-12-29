@@ -32,6 +32,34 @@ const { DataTypes, Model } = require('sequelize')
 class MediaItemShare extends Model {
   constructor(values, options) {
     super(values, options)
+
+    /** @type {UUIDV4} */
+    this.id
+    /** @type {UUIDV4} */
+    this.mediaItemId
+    /** @type {string} */
+    this.mediaItemType
+    /** @type {string} */
+    this.slug
+    /** @type {string} */
+    this.pash
+    /** @type {UUIDV4} */
+    this.userId
+    /** @type {Date} */
+    this.expiresAt
+    /** @type {Object} */
+    this.extraData
+    /** @type {Date} */
+    this.createdAt
+    /** @type {Date} */
+    this.updatedAt
+    /** @type {boolean} */
+    this.isDownloadable
+
+    // Expanded properties
+
+    /** @type {import('./Book')|import('./PodcastEpisode')} */
+    this.mediaItem
   }
 
   toJSONForClient() {

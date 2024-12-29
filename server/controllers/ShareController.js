@@ -212,7 +212,7 @@ class ShareController {
   }
 
   /**
-   * Public route
+   * Public route - requires share_session_id cookie
    *
    * GET: /api/share/:slug/download
    * Downloads media item share
@@ -221,62 +221,52 @@ class ShareController {
    * @param {Response} res
    */
   async downloadMediaItemShare(req, res) {
+    if (!req.cookies.share_session_id) {
+      return res.status(404).send('Share session not set')
+    }
+
     const { slug } = req.params
+    const mediaItemShare = ShareManager.findBySlug(slug)
+    if (!mediaItemShare) {
+      return res.status(404)
+    }
+    if (!mediaItemShare.isDownloadable) {
+      return res.status(403).send('Download is not allowed for this item')
+    }
 
-    // Find matching MediaItemShare based on slug
-    const mediaItemShare = await ShareManager.findBySlug(slug)
-    // If the file isDownloadable, download the file
-    if (mediaItemShare.isDownloadable) {
-      // Get mediaItemId and type
-      const { mediaItemId, mediaItemType } = mediaItemShare
+    const playbackSession = ShareManager.findPlaybackSessionBySessionId(req.cookies.share_session_id)
+    if (!playbackSession || playbackSession.mediaItemShareId !== mediaItemShare.id) {
+      return res.status(404).send('Share session not found')
+    }
 
-      // Get the library item from the mediaItemId
-      const libraryItem = await Database.libraryItemModel.findOne({
-        where: {
-          mediaId: mediaItemId
+    const libraryItem = await Database.libraryItemModel.findByPk(playbackSession.libraryItemId, {
+      attributes: ['id', 'path', 'relPath', 'isFile']
+    })
+    if (!libraryItem) {
+      return res.status(404).send('Library item not found')
+    }
+
+    const itemPath = libraryItem.path
+    const itemTitle = playbackSession.displayTitle
+
+    Logger.info(`[ShareController] Requested download for book "${itemTitle}" at "${itemPath}"`)
+
+    try {
+      if (libraryItem.isFile) {
+        const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(itemPath))
+        if (audioMimeType) {
+          res.setHeader('Content-Type', audioMimeType)
         }
-      })
-
-      const itemPath = libraryItem.path
-      const itemRelPath = libraryItem.relPath
-      let itemTitle
-
-      // Get the title based on the mediaItemType
-      if (mediaItemType === 'podcastEpisode') {
-        const podcastEpisode = await Database.podcastEpisodeModel.findOne({
-          where: {
-            id: mediaItemId
-          }
-        })
-        itemTitle = podcastEpisode.title
-      } else if (mediaItemType === 'book') {
-        const book = await Database.bookModel.findOne({
-          where: {
-            id: mediaItemId
-          }
-        })
-        itemTitle = book.title
+        await new Promise((resolve, reject) => res.download(itemPath, libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
+      } else {
+        const filename = `${itemTitle}.zip`
+        await zipHelpers.zipDirectoryPipe(itemPath, filename, res)
       }
 
-      Logger.info(`[ShareController] Requested download for book "${itemTitle}" at "${itemPath}"`)
-
-      try {
-        if (libraryItem.isFile) {
-          const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(itemPath))
-          if (audioMimeType) {
-            res.setHeader('Content-Type', audioMimeType)
-          }
-          await new Promise((resolve, reject) => res.download(itemPath, itemRelPath, (error) => (error ? reject(error) : resolve())))
-        } else {
-          const filename = `${itemTitle}.zip`
-          await zipHelpers.zipDirectoryPipe(itemPath, filename, res)
-        }
-
-        Logger.info(`[ShareController] Downloaded item "${itemTitle}" at "${itemPath}"`)
-      } catch (error) {
-        Logger.error(`[ShareController] Download failed for item "${itemTitle}" at "${itemPath}"`, error)
-        res.status(500).send('Failed to download the item')
-      }
+      Logger.info(`[ShareController] Downloaded item "${itemTitle}" at "${itemPath}"`)
+    } catch (error) {
+      Logger.error(`[ShareController] Download failed for item "${itemTitle}" at "${itemPath}"`, error)
+      res.status(500).send('Failed to download the item')
     }
   }
 
