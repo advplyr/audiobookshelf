@@ -12,6 +12,10 @@
         <div class="w-full pt-16">
           <player-ui ref="audioPlayer" :chapters="chapters" :current-chapter="currentChapter" :paused="isPaused" :loading="!hasLoaded" :is-podcast="false" hide-bookmarks hide-sleep-timer @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" />
         </div>
+
+        <ui-tooltip v-if="mediaItemShare.isDownloadable" direction="bottom" :text="$strings.LabelDownload" class="absolute top-0 left-0 m-4">
+          <button aria-label="Download" class="text-gray-300 hover:text-white" @click="downloadShareItem"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
+        </ui-tooltip>
       </div>
     </div>
   </div>
@@ -62,6 +66,9 @@ export default {
     coverUrl() {
       if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
       return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
+    },
+    downloadUrl() {
+      return `${process.env.serverUrl}/public/share/${this.mediaItemShare.slug}/download`
     },
     audioTracks() {
       return (this.playbackSession.audioTracks || []).map((track) => {
@@ -247,6 +254,9 @@ export default {
     },
     playerFinished() {
       console.log('Player finished')
+    },
+    downloadShareItem() {
+      this.$downloadFile(this.downloadUrl)
     }
   },
   mounted() {
