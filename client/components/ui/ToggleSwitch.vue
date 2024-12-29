@@ -1,7 +1,7 @@
 <template>
   <div>
-    <button :aria-labelledby="labeledBy" role="checkbox" type="button" class="border rounded-full border-black-100 flex items-center cursor-pointer w-10 justify-start" :aria-checked="toggleValue" :class="className" @click="clickToggle">
-      <span class="rounded-full border w-5 h-5 border-black-50 shadow transform transition-transform duration-100" :class="switchClassName"></span>
+    <button :aria-labelledby="labeledBy" :aria-label="label" role="checkbox" type="button" class="border rounded-full border-black-100 flex items-center cursor-pointer justify-start" :style="{ width: buttonWidth + 'px' }" :aria-checked="toggleValue" :class="className" @click="clickToggle">
+      <span class="rounded-full border border-black-50 shadow transform transition-transform duration-100" :style="{ width: cursorHeightWidth + 'px', height: cursorHeightWidth + 'px' }" :class="switchClassName"></span>
     </button>
   </div>
 </template>
@@ -19,7 +19,12 @@ export default {
       default: 'primary'
     },
     disabled: Boolean,
-    labeledBy: String
+    labeledBy: String,
+    label: String,
+    size: {
+      type: String,
+      default: 'md'
+    }
   },
   computed: {
     toggleValue: {
@@ -37,6 +42,13 @@ export default {
     switchClassName() {
       var bgColor = this.disabled ? 'bg-gray-300' : 'bg-white'
       return this.toggleValue ? 'translate-x-5 ' + bgColor : bgColor
+    },
+    cursorHeightWidth() {
+      if (this.size === 'sm') return 16
+      return 20
+    },
+    buttonWidth() {
+      return this.cursorHeightWidth * 2
     }
   },
   methods: {

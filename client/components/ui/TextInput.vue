@@ -57,7 +57,8 @@ export default {
     inputName: String,
     showCopy: Boolean,
     step: [String, Number],
-    min: [String, Number]
+    min: [String, Number],
+    customInputClass: String
   },
   data() {
     return {
@@ -82,6 +83,7 @@ export default {
       _list.push(`py-${this.paddingY}`)
       if (this.noSpinner) _list.push('no-spinner')
       if (this.textCenter) _list.push('text-center')
+      if (this.customInputClass) _list.push(this.customInputClass)
       return _list.join(' ')
     },
     actualType() {

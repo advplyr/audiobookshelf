@@ -395,6 +395,58 @@ class MeController {
   }
 
   /**
+   * POST: /api/me/ereader-devices
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async updateUserEReaderDevices(req, res) {
+    if (!req.body.ereaderDevices || !Array.isArray(req.body.ereaderDevices)) {
+      return res.status(400).send('Invalid payload. ereaderDevices array required')
+    }
+
+    const userEReaderDevices = req.body.ereaderDevices
+    for (const device of userEReaderDevices) {
+      if (!device.name || !device.email) {
+        return res.status(400).send('Invalid payload. ereaderDevices array items must have name and email')
+      } else if (device.availabilityOption !== 'specificUsers' || device.users?.length !== 1 || device.users[0] !== req.user.id) {
+        return res.status(400).send('Invalid payload. ereaderDevices array items must have availabilityOption "specificUsers" and only the current user')
+      }
+    }
+
+    const otherDevices = Database.emailSettings.ereaderDevices.filter((device) => {
+      return !Database.emailSettings.checkUserCanAccessDevice(device, req.user) || device.users?.length !== 1
+    })
+
+    const ereaderDevices = otherDevices.concat(userEReaderDevices)
+
+    // Check for duplicate names
+    const nameSet = new Set()
+    const hasDupes = ereaderDevices.some((device) => {
+      if (nameSet.has(device.name)) {
+        return true // Duplicate found
+      }
+      nameSet.add(device.name)
+      return false
+    })
+
+    if (hasDupes) {
+      return res.status(400).send('Invalid payload. Duplicate "name" field found.')
+    }
+
+    const updated = Database.emailSettings.update({ ereaderDevices })
+    if (updated) {
+      await Database.updateSetting(Database.emailSettings)
+      SocketAuthority.clientEmitter(req.user.id, 'ereader-devices-updated', {
+        ereaderDevices: Database.emailSettings.ereaderDevices
+      })
+    }
+    res.json({
+      ereaderDevices: Database.emailSettings.getEReaderDevices(req.user)
+    })
+  }
+
+  /**
    * GET: /api/me/stats/year/:year
    *
    * @param {import('express').Request} req

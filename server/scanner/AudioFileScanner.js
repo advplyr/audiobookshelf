@@ -4,6 +4,7 @@ const prober = require('../utils/prober')
 const { LogLevel } = require('../utils/constants')
 const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
 const parseNameString = require('../utils/parsers/parseNameString')
+const parseSeriesString = require('../utils/parsers/parseSeriesString')
 const LibraryItem = require('../models/LibraryItem')
 const AudioFile = require('../objects/files/AudioFile')
 
@@ -132,8 +133,8 @@ class AudioFileScanner {
 
     // Look for disc number in folder path e.g. /Book Title/CD01/audiofile.mp3
     const pathdir = Path.dirname(path).split('/').pop()
-    if (pathdir && /^cd\d{1,3}$/i.test(pathdir)) {
-      const discFromFolder = Number(pathdir.replace(/cd/i, ''))
+    if (pathdir && /^(cd|dis[ck])\s*\d{1,3}$/i.test(pathdir)) {
+      const discFromFolder = Number(pathdir.replace(/^(cd|dis[ck])\s*/i, ''))
       if (!isNaN(discFromFolder) && discFromFolder !== null) discNumber = discFromFolder
     }
 
@@ -256,6 +257,7 @@ class AudioFileScanner {
       },
       {
         tag: 'tagSeries',
+        altTag: 'tagGrouping',
         key: 'series'
       },
       {
@@ -276,8 +278,10 @@ class AudioFileScanner {
     const audioFileMetaTags = firstScannedFile.metaTags
     MetadataMapArray.forEach((mapping) => {
       let value = audioFileMetaTags[mapping.tag]
+      let isAltTag = false
       if (!value && mapping.altTag) {
         value = audioFileMetaTags[mapping.altTag]
+        isAltTag = true
       }
 
       if (value && typeof value === 'string') {
@@ -290,12 +294,28 @@ class AudioFileScanner {
         } else if (mapping.key === 'genres') {
           bookMetadata.genres = this.parseGenresString(value)
         } else if (mapping.key === 'series') {
-          bookMetadata.series = [
-            {
-              name: value,
-              sequence: audioFileMetaTags.tagSeriesPart || null
+          // If series was embedded in the grouping tag, then parse it with semicolon separator and sequence in the same string
+          // e.g. "Test Series; Series Name #1; Other Series #2"
+          if (isAltTag) {
+            const series = value
+              .split(';')
+              .map((seriesWithPart) => {
+                seriesWithPart = seriesWithPart.trim()
+                return parseSeriesString.parse(seriesWithPart)
+              })
+              .filter(Boolean)
+            if (series.length) {
+              bookMetadata.series = series
             }
-          ]
+          } else {
+            // Original embed used "series" and "series-part" tags
+            bookMetadata.series = [
+              {
+                name: value,
+                sequence: audioFileMetaTags.tagSeriesPart || null
+              }
+            ]
+          }
         } else {
           bookMetadata[mapping.key] = value
         }
@@ -475,16 +495,26 @@ class AudioFileScanner {
 
         audioFiles.forEach((file) => {
           if (file.duration) {
-            const afChapters =
-              file.chapters?.map((c) => ({
-                ...c,
-                id: c.id + currChapterId,
-                start: c.start + currStartTime,
-                end: c.end + currStartTime
-              })) ?? []
+            // Multi-file audiobook may include the previous and next chapters embedded with close to 0 duration
+            // Filter these out and log a warning
+            // See https://github.com/advplyr/audiobookshelf/issues/3361
+            const afChaptersCleaned =
+              file.chapters?.filter((c) => {
+                if (c.end - c.start < 0.1) {
+                  libraryScan.addLog(LogLevel.WARN, `Chapter "${c.title}" has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
+                  return false
+                }
+                return true
+              }) || []
+            const afChapters = afChaptersCleaned.map((c) => ({
+              ...c,
+              id: c.id + currChapterId,
+              start: c.start + currStartTime,
+              end: c.end + currStartTime
+            }))
             chapters = chapters.concat(afChapters)
 
-            currChapterId += file.chapters?.length ?? 0
+            currChapterId += afChaptersCleaned.length ?? 0
             currStartTime += file.duration
           }
         })

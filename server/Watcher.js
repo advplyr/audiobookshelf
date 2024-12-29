@@ -2,7 +2,6 @@ const Path = require('path')
 const EventEmitter = require('events')
 const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
-const LibraryScanner = require('./scanner/LibraryScanner')
 const Task = require('./objects/Task')
 const TaskManager = require('./managers/TaskManager')
 
@@ -19,7 +18,7 @@ class FolderWatcher extends EventEmitter {
   constructor() {
     super()
 
-    /** @type {{id:string, name:string, folders:import('./objects/Folder')[], paths:string[], watcher:Watcher[]}[]} */
+    /** @type {{id:string, name:string, libraryFolders:import('./models/Folder')[], paths:string[], watcher:Watcher[]}[]} */
     this.libraryWatchers = []
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []
@@ -31,6 +30,8 @@ class FolderWatcher extends EventEmitter {
 
     this.filesBeingAdded = new Set()
 
+    /** @type {Set<string>} */
+    this.ignoreFilePathsDownloading = new Set()
     /** @type {string[]} */
     this.ignoreDirs = []
     /** @type {string[]} */
@@ -122,9 +123,8 @@ class FolderWatcher extends EventEmitter {
   }
 
   /**
-   * TODO: Update to new library model
    *
-   * @param {import('./objects/Library')} library
+   * @param {import('./models/Library')} library
    */
   updateLibrary(library) {
     if (this.disabled) return
@@ -190,7 +190,9 @@ class FolderWatcher extends EventEmitter {
       return
     }
     Logger.debug('[Watcher] File Added', path)
-    this.addFileUpdate(libraryId, path, 'added')
+    if (!this.addFileUpdate(libraryId, path, 'added')) {
+      return
+    }
 
     if (!this.filesBeingAdded.has(path)) {
       this.filesBeingAdded.add(path)
@@ -261,22 +263,23 @@ class FolderWatcher extends EventEmitter {
    * @param {string} libraryId
    * @param {string} path
    * @param {string} type
+   * @returns {boolean} - If file was added to pending updates
    */
   addFileUpdate(libraryId, path, type) {
-    if (this.pendingFilePaths.includes(path)) return
+    if (this.pendingFilePaths.includes(path)) return false
 
     // Get file library
     const libwatcher = this.libraryWatchers.find((lw) => lw.id === libraryId)
     if (!libwatcher) {
       Logger.error(`[Watcher] Invalid library id from watcher ${libraryId}`)
-      return
+      return false
     }
 
     // Get file folder
     const folder = libwatcher.libraryFolders.find((fold) => isSameOrSubPath(fold.path, path))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
-      return
+      return false
     }
 
     const folderPath = filePathToPOSIX(folder.path)
@@ -285,14 +288,14 @@ class FolderWatcher extends EventEmitter {
 
     if (Path.extname(relPath).toLowerCase() === '.part') {
       Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)
-      return
+      return false
     }
 
     // Ignore files/folders starting with "."
     const hasDotPath = relPath.split('/').find((p) => p.startsWith('.'))
     if (hasDotPath) {
       Logger.debug(`[Watcher] Ignoring dot path "${relPath}" | Piece "${hasDotPath}"`)
-      return
+      return false
     }
 
     Logger.debug(`[Watcher] Modified file in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
@@ -302,7 +305,12 @@ class FolderWatcher extends EventEmitter {
         libraryId,
         libraryName: libwatcher.name
       }
-      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', `Scanning file changes in "${libwatcher.name}"`, null, true, taskData)
+      const taskTitleString = {
+        text: `Scanning file changes in "${libwatcher.name}"`,
+        key: 'MessageTaskScanningFileChanges',
+        subs: [libwatcher.name]
+      }
+      this.pendingTask = TaskManager.createAndAddTask('watcher-scan', taskTitleString, null, true, taskData)
     }
     this.pendingFileUpdates.push({
       path,
@@ -313,6 +321,7 @@ class FolderWatcher extends EventEmitter {
     })
 
     this.handlePendingFileUpdatesTimeout()
+    return true
   }
 
   /**
@@ -329,9 +338,13 @@ class FolderWatcher extends EventEmitter {
       }
 
       if (this.pendingFileUpdates.length) {
-        LibraryScanner.scanFilesChanged(this.pendingFileUpdates, this.pendingTask)
+        this.emit('scanFilesChanged', this.pendingFileUpdates, this.pendingTask)
       } else {
-        this.pendingTask.setFinished('Scan abandoned. No files to scan.')
+        const taskFinishedString = {
+          text: 'No files to scan',
+          key: 'MessageTaskNoFilesToScan'
+        }
+        this.pendingTask.setFinished(taskFinishedString)
         TaskManager.taskFinished(this.pendingTask)
       }
       this.pendingTask = null
@@ -340,10 +353,27 @@ class FolderWatcher extends EventEmitter {
     }, this.pendingDelay)
   }
 
+  /**
+   *
+   * @param {string} path
+   * @returns {boolean}
+   */
   checkShouldIgnorePath(path) {
     return !!this.ignoreDirs.find((dirpath) => {
       return isSameOrSubPath(dirpath, path)
     })
+  }
+
+  /**
+   * When scanning a library item folder these files should be ignored
+   * Either a podcast episode downloading or a file that is pending by the watcher
+   *
+   * @param {string} path
+   * @returns {boolean}
+   */
+  checkShouldIgnoreFilePath(path) {
+    if (this.pendingFilePaths.includes(path)) return true
+    return this.ignoreFilePathsDownloading.has(path)
   }
 
   /**
@@ -401,4 +431,4 @@ class FolderWatcher extends EventEmitter {
     }, 5000)
   }
 }
-module.exports = FolderWatcher
+module.exports = new FolderWatcher()

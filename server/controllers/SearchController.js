@@ -3,7 +3,6 @@ const Logger = require('../Logger')
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
-const MusicFinder = require('../finders/MusicFinder')
 const Database = require('../Database')
 const { isValidASIN } = require('../utils')
 

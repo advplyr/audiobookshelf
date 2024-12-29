@@ -186,7 +186,7 @@ export default {
   mounted() {
     this.loadBackups()
     if (this.$route.query.backup) {
-      this.$toast.success('Backup applied successfully')
+      this.$toast.success(this.$strings.ToastBackupAppliedSuccess)
     }
   }
 }

@@ -55,7 +55,7 @@ async function extractCoverArt(filepath, outputpath) {
   return new Promise((resolve) => {
     /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     var ffmpeg = Ffmpeg(filepath)
-    ffmpeg.addOption(['-map 0:v', '-frames:v 1'])
+    ffmpeg.addOption(['-map 0:v:0', '-frames:v 1'])
     ffmpeg.output(outputpath)
 
     ffmpeg.on('start', (cmd) => {
@@ -299,6 +299,12 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         '-metadata:s:v',
         'comment=Cover' // add comment metadata to cover image stream
       ])
+      const ext = Path.extname(coverFilePath).toLowerCase()
+      if (ext === '.webp') {
+        ffmpeg.outputOptions([
+          '-c:v mjpeg' // convert webp images to jpeg
+        ])
+      }
     } else {
       ffmpeg.outputOptions([
         '-map 0:v?' // retain video stream from input file if exists
@@ -374,9 +380,8 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     copyright: metadata.publisher,
     publisher: metadata.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join(', ')
+    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join('; ')
   }
-
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
       delete ffmetadata[key]

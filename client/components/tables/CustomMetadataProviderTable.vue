@@ -45,7 +45,7 @@ export default {
   methods: {
     removeProvider(provider) {
       const payload = {
-        message: `Are you sure you want remove custom metadata provider "${provider.name}"?`,
+        message: this.$getString('MessageConfirmDeleteMetadataProvider', [provider.name]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$emit('update:processing', true)
@@ -53,12 +53,12 @@ export default {
             this.$axios
               .$delete(`/api/custom-metadata-providers/${provider.id}`)
               .then(() => {
-                this.$toast.success('Provider removed')
+                this.$toast.success(this.$strings.ToastProviderRemoveSuccess)
                 this.$emit('removed', provider.id)
               })
               .catch((error) => {
                 console.error('Failed to remove provider', error)
-                this.$toast.error('Failed to remove provider')
+                this.$toast.error(this.$strings.ToastRemoveFailed)
               })
               .finally(() => {
                 this.$emit('update:processing', false)

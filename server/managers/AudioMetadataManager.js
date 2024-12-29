@@ -97,8 +97,17 @@ class AudioMetadataMangaer {
       },
       duration: libraryItem.media.duration
     }
-    const taskDescription = `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`
-    task.setData('embed-metadata', 'Embedding Metadata', taskDescription, false, taskData)
+
+    const taskTitleString = {
+      text: 'Embedding Metadata',
+      key: 'MessageTaskEmbeddingMetadata'
+    }
+    const taskDescriptionString = {
+      text: `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`,
+      key: 'MessageTaskEmbeddingMetadataDescription',
+      subs: [libraryItem.media.metadata.title]
+    }
+    task.setData('embed-metadata', taskTitleString, taskDescriptionString, false, taskData)
 
     if (this.tasksRunning.length >= this.MAX_CONCURRENT_TASKS) {
       Logger.info(`[AudioMetadataManager] Queueing embed metadata for audiobook "${libraryItem.media.metadata.title}"`)
@@ -112,6 +121,10 @@ class AudioMetadataMangaer {
     }
   }
 
+  /**
+   *
+   * @param {import('../objects/Task')} task
+   */
   async runMetadataEmbed(task) {
     this.tasksRunning.push(task)
     TaskManager.addTask(task)
@@ -123,7 +136,11 @@ class AudioMetadataMangaer {
     Logger.debug(`[AudioMetadataManager] Target directory ${task.data.libraryItemDir} writable: ${targetDirWritable}`)
     if (!targetDirWritable) {
       Logger.error(`[AudioMetadataManager] Target directory is not writable: ${task.data.libraryItemDir}`)
-      task.setFailed('Target directory is not writable')
+      const taskFailedString = {
+        text: 'Target directory is not writable',
+        key: 'MessageTaskTargetDirectoryNotWritable'
+      }
+      task.setFailed(taskFailedString)
       this.handleTaskFinished(task)
       return
     }
@@ -134,7 +151,12 @@ class AudioMetadataMangaer {
         await fs.access(af.path, fs.constants.W_OK)
       } catch (err) {
         Logger.error(`[AudioMetadataManager] Audio file is not writable: ${af.path}`)
-        task.setFailed(`Audio file "${Path.basename(af.path)}" is not writable`)
+        const taskFailedString = {
+          text: `Audio file "${Path.basename(af.path)}" is not writable`,
+          key: 'MessageTaskAudioFileNotWritable',
+          subs: [Path.basename(af.path)]
+        }
+        task.setFailed(taskFailedString)
         this.handleTaskFinished(task)
         return
       }
@@ -148,7 +170,11 @@ class AudioMetadataMangaer {
         cacheDirCreated = true
       } catch (err) {
         Logger.error(`[AudioMetadataManager] Failed to create cache directory ${task.data.itemCachePath}`, err)
-        task.setFailed('Failed to create cache directory')
+        const taskFailedString = {
+          text: 'Failed to create cache directory',
+          key: 'MessageTaskFailedToCreateCacheDirectory'
+        }
+        task.setFailed(taskFailedString)
         this.handleTaskFinished(task)
         return
       }
@@ -159,7 +185,11 @@ class AudioMetadataMangaer {
     const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, ffmetadataPath)
     if (!success) {
       Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
-      task.setFailed('Failed to write metadata file.')
+      const taskFailedString = {
+        text: 'Failed to write metadata file',
+        key: 'MessageTaskFailedToWriteMetadataFile'
+      }
+      task.setFailed(taskFailedString)
       this.handleTaskFinished(task)
       return
     }
@@ -181,7 +211,12 @@ class AudioMetadataMangaer {
           Logger.debug(`[AudioMetadataManager] Backed up audio file at "${backupFilePath}"`)
         } catch (err) {
           Logger.error(`[AudioMetadataManager] Failed to backup audio file "${af.path}"`, err)
-          task.setFailed(`Failed to backup audio file "${Path.basename(af.path)}"`)
+          const taskFailedString = {
+            text: `Failed to backup audio file "${Path.basename(af.path)}"`,
+            key: 'MessageTaskFailedToBackupAudioFile',
+            subs: [Path.basename(af.path)]
+          }
+          task.setFailed(taskFailedString)
           this.handleTaskFinished(task)
           return
         }
@@ -195,7 +230,12 @@ class AudioMetadataMangaer {
         Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
       } catch (err) {
         Logger.error(`[AudioMetadataManager] Failed to tag audio file "${af.path}"`, err)
-        task.setFailed(`Failed to tag audio file "${Path.basename(af.path)}"`)
+        const taskFailedString = {
+          text: `Failed to embed metadata in file "${Path.basename(af.path)}"`,
+          key: 'MessageTaskFailedToEmbedMetadataInFile',
+          subs: [Path.basename(af.path)]
+        }
+        task.setFailed(taskFailedString)
         this.handleTaskFinished(task)
         return
       }

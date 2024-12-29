@@ -70,6 +70,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           tags: ${{ github.event.inputs.tags || steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           context: .
           platforms: linux/amd64,linux/arm64
           push: true

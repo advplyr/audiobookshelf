@@ -25,7 +25,7 @@
           <tr v-for="feed in feeds" :key="feed.id" class="cursor-pointer h-12" @click="showFeed(feed)">
             <!--  -->
             <td>
-              <img :src="coverUrl(feed)" class="h-full w-full" />
+              <img :src="coverUrl(feed)" class="h-auto w-full" />
             </td>
             <!--  -->
             <td class="w-48 max-w-64 min-w-24 text-left truncate">
@@ -126,7 +126,7 @@ export default {
     },
     coverUrl(feed) {
       if (!feed.coverPath) return `${this.$config.routerBasePath}/Logo.png`
-      return `${feed.feedUrl}/cover`
+      return `${this.$config.routerBasePath}${feed.feedUrl}/cover`
     },
     async loadFeeds() {
       const data = await this.$axios.$get(`/api/feeds`).catch((err) => {

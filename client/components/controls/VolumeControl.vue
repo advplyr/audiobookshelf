@@ -4,10 +4,10 @@
       <span class="material-symbols text-2xl sm:text-3xl">{{ volumeIcon }}</span>
     </button>
     <transition name="menux">
-      <div v-show="isOpen" class="volumeMenu h-6 absolute bottom-2 w-28 px-2 bg-bg shadow-sm rounded-lg" style="left: -116px">
-        <div ref="volumeTrack" class="h-1 w-full bg-gray-500 my-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
-          <div class="bg-gray-100 h-full absolute left-0 top-0 pointer-events-none rounded-full" :style="{ width: volume * trackWidth + 'px' }" />
-          <div class="w-2.5 h-2.5 bg-white shadow-sm rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ left: cursorLeft + 'px', top: '-3px' }" />
+      <div v-show="isOpen" class="volumeMenu h-28 absolute bottom-2 w-6 py-2 bg-bg shadow-sm rounded-lg" style="top: -116px">
+        <div ref="volumeTrack" class="w-1 h-full bg-gray-500 mx-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
+          <div class="bg-gray-100 w-full absolute left-0 bottom-0 pointer-events-none rounded-full" :style="{ height: volume * trackHeight + 'px' }" />
+          <div class="w-2.5 h-2.5 bg-white shadow-sm rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ bottom: cursorBottom + 'px', left: '-3px' }" />
         </div>
       </div>
     </transition>
@@ -24,10 +24,10 @@ export default {
       isOpen: false,
       isDragging: false,
       isHovering: false,
-      posX: 0,
+      posY: 0,
       lastValue: 0.5,
       isMute: false,
-      trackWidth: 112 - 20,
+      trackHeight: 112 - 20,
       openTimeout: null
     }
   },
@@ -45,9 +45,9 @@ export default {
         this.$emit('input', val)
       }
     },
-    cursorLeft() {
-      var left = this.trackWidth * this.volume
-      return left - 3
+    cursorBottom() {
+      var bottom = this.trackHeight * this.volume
+      return bottom - 3
     },
     volumeIcon() {
       if (this.volume <= 0) return 'volume_mute'
@@ -89,17 +89,10 @@ export default {
       }, 600)
     },
     mousemove(e) {
-      var diff = this.posX - e.x
-      this.posX = e.x
-      var volShift = 0
-      if (diff < 0) {
-        // Volume up
-        volShift = diff / this.trackWidth
-      } else {
-        // volume down
-        volShift = diff / this.trackWidth
-      }
-      var newVol = this.volume - volShift
+      var diff = this.posY - e.y
+      this.posY = e.y
+      var volShift = diff / this.trackHeight
+      var newVol = this.volume + volShift
       newVol = Math.min(Math.max(0, newVol), 1)
       this.volume = newVol
       e.preventDefault()
@@ -113,8 +106,8 @@ export default {
     },
     mousedownTrack(e) {
       this.isDragging = true
-      this.posX = e.x
-      var vol = e.offsetX / this.trackWidth
+      this.posY = e.y
+      var vol = 1 - e.offsetY / this.trackHeight
       vol = Math.min(Math.max(vol, 0), 1)
       this.volume = vol
       document.body.addEventListener('mousemove', this.mousemove)
@@ -137,7 +130,7 @@ export default {
       this.clickVolumeIcon()
     },
     clickVolumeTrack(e) {
-      var vol = e.offsetX / this.trackWidth
+      var vol = 1 - e.offsetY / this.trackHeight
       vol = Math.min(Math.max(vol, 0), 1)
       this.volume = vol
     }
@@ -147,7 +140,7 @@ export default {
       this.isMute = true
     }
     const storageVolume = localStorage.getItem('volume')
-    if (storageVolume) {
+    if (storageVolume && !isNaN(storageVolume)) {
       this.volume = parseFloat(storageVolume)
     }
   },

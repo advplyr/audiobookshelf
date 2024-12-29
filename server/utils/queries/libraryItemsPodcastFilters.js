@@ -180,8 +180,8 @@ module.exports = {
 
       delete podcast.libraryItem
 
-      if (libraryItem.feeds?.length) {
-        libraryItem.rssFeed = libraryItem.feeds[0]
+      if (podcastExpanded.libraryItem.feeds?.length) {
+        libraryItem.rssFeed = podcastExpanded.libraryItem.feeds[0]
       }
       if (podcast.numEpisodesIncomplete) {
         libraryItem.numEpisodesIncomplete = podcast.numEpisodesIncomplete
@@ -306,18 +306,19 @@ module.exports = {
   /**
    * Search podcasts
    * @param {import('../../models/User')} user
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/Library')} library
    * @param {string} query
    * @param {number} limit
    * @param {number} offset
    * @returns {{podcast:object[], tags:object[]}}
    */
-  async search(user, oldLibrary, query, limit, offset) {
+  async search(user, library, query, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const normalizedQuery = query
-    const matchTitle = Database.matchExpression('title', normalizedQuery)
-    const matchAuthor = Database.matchExpression('author', normalizedQuery)
+    const textSearchQuery = await Database.createTextSearchQuery(query)
+
+    const matchTitle = textSearchQuery.matchExpression('title')
+    const matchAuthor = textSearchQuery.matchExpression('author')
 
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
@@ -345,7 +346,7 @@ module.exports = {
         {
           model: Database.libraryItemModel,
           where: {
-            libraryId: oldLibrary.id
+            libraryId: library.id
           }
         }
       ],
@@ -366,13 +367,13 @@ module.exports = {
       })
     }
 
-    const matchJsonValue = Database.matchExpression('json_each.value', normalizedQuery)
+    const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search tags
     const tagMatches = []
     const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.tags) WHERE json_valid(p.tags) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -389,7 +390,7 @@ module.exports = {
     const genreMatches = []
     const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM podcasts p, libraryItems li, json_each(p.genres) WHERE json_valid(p.genres) AND ${matchJsonValue} AND p.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
-        libraryId: oldLibrary.id,
+        libraryId: library.id,
         limit,
         offset
       },
@@ -412,12 +413,12 @@ module.exports = {
   /**
    * Most recent podcast episodes not finished
    * @param {import('../../models/User')} user
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/Library')} library
    * @param {number} limit
    * @param {number} offset
    * @returns {Promise<object[]>}
    */
-  async getRecentEpisodes(user, oldLibrary, limit, offset) {
+  async getRecentEpisodes(user, library, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
     const episodes = await Database.podcastEpisodeModel.findAll({
@@ -435,7 +436,7 @@ module.exports = {
           include: {
             model: Database.libraryItemModel,
             where: {
-              libraryId: oldLibrary.id
+              libraryId: library.id
             }
           }
         },

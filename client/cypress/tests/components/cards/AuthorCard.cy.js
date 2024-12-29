@@ -5,14 +5,14 @@ import Tooltip from '@/components/ui/Tooltip.vue'
 import LoadingSpinner from '@/components/widgets/LoadingSpinner.vue'
 
 describe('AuthorCard', () => {
-  const author = {
+  const authorMount = {
     id: 1,
     name: 'John Doe',
     numBooks: 5
   }
 
   const propsData = {
-    author,
+    authorMount,
     nameBelow: false
   }
 

@@ -1,6 +1,6 @@
 <template>
-  <div :style="{ minWidth: cardWidth + 'px', maxWidth: cardWidth + 'px' }">
-    <nuxt-link :to="`/author/${author.id}`">
+  <article class="pb-3e" :style="{ minWidth: cardWidth + 'px', maxWidth: cardWidth + 'px' }">
+    <nuxt-link :to="`/author/${author?.id}`">
       <div cy-id="card" @mouseover="mouseover" @mouseleave="mouseleave">
         <div cy-id="imageArea" :style="{ height: cardHeight + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
           <!-- Image or placeholder -->
@@ -34,13 +34,13 @@
         </div>
       </div>
     </nuxt-link>
-  </div>
+  </article>
 </template>
 
 <script>
 export default {
   props: {
-    author: {
+    authorMount: {
       type: Object,
       default: () => {}
     },
@@ -57,7 +57,8 @@ export default {
   data() {
     return {
       searching: false,
-      isHovering: false
+      isHovering: false,
+      author: null
     }
   },
   computed: {
@@ -67,35 +68,41 @@ export default {
     cardHeight() {
       return this.height * this.sizeMultiplier
     },
+    coverHeight() {
+      return this.cardHeight
+    },
     userToken() {
-      return this.$store.getters['user/getToken']
+      return this.store.getters['user/getToken']
     },
     _author() {
       return this.author || {}
     },
     authorId() {
-      return this._author.id
+      return this._author?.id || ''
     },
     name() {
-      return this._author.name || ''
+      return this._author?.name || ''
     },
     asin() {
-      return this._author.asin || ''
+      return this._author?.asin || ''
     },
     numBooks() {
-      return this._author.numBooks || 0
+      return this._author?.numBooks || 0
+    },
+    store() {
+      return this.$store || this.$nuxt.$store
     },
     userCanUpdate() {
-      return this.$store.getters['user/getUserCanUpdate']
+      return this.store.getters['user/getUserCanUpdate']
     },
     currentLibraryId() {
-      return this.$store.state.libraries.currentLibraryId
+      return this.store.state.libraries.currentLibraryId
     },
     libraryProvider() {
-      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+      return this.store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     },
     sizeMultiplier() {
-      return this.$store.getters['user/getSizeMultiplier']
+      return this.store.getters['user/getSizeMultiplier']
     }
   },
   methods: {
@@ -121,24 +128,54 @@ export default {
         return null
       })
       if (!response) {
-        this.$toast.error(`Author ${this.name} not found`)
+        this.$toast.error(this.$getString('ToastAuthorNotFound', [this.name]))
       } else if (response.updated) {
-        if (response.author.imagePath) this.$toast.success(`Author ${response.author.name} was updated`)
-        else this.$toast.success(`Author ${response.author.name} was updated (no image found)`)
+        if (response.author.imagePath) {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+        } else {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
+        }
       } else {
-        this.$toast.info(`No updates were made for Author ${response.author.name}`)
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       this.searching = false
     },
     setSearching(isSearching) {
       this.searching = isSearching
-    }
+    },
+    setEntity(author) {
+      this.removeListeners()
+      this.author = author
+      this.addListeners()
+    },
+    addListeners() {
+      if (this.author) {
+        this.$eventBus.$on(`searching-author-${this.authorId}`, this.setSearching)
+      }
+    },
+    removeListeners() {
+      if (this.author) {
+        this.$eventBus.$off(`searching-author-${this.authorId}`, this.setSearching)
+      }
+    },
+    destroy() {
+      // destroy the vue listeners, etc
+      this.$destroy()
+
+      // remove the element from the DOM
+      if (this.$el && this.$el.parentNode) {
+        this.$el.parentNode.removeChild(this.$el)
+      } else if (this.$el && this.$el.remove) {
+        this.$el.remove()
+      }
+    },
+    setSelectionMode(val) {}
   },
   mounted() {
-    this.$eventBus.$on(`searching-author-${this.authorId}`, this.setSearching)
+    if (this.authorMount) this.setEntity(this.authorMount)
   },
   beforeDestroy() {
-    this.$eventBus.$off(`searching-author-${this.authorId}`, this.setSearching)
+    this.removeListeners()
   }
 }
 </script>

@@ -3,13 +3,13 @@
     <div class="w-full border border-black-200 p-4 my-8">
       <div class="flex flex-wrap items-center">
         <div>
-          <p class="text-lg">Remove metadata files in library item folders</p>
-          <p class="max-w-sm text-sm pt-2 text-gray-300">Remove all metadata.json or metadata.abs files in your {{ mediaType }} folders</p>
+          <p class="text-lg">{{ $strings.LabelRemoveMetadataFile }}</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $getString('LabelRemoveMetadataFileHelp', [mediaType]) }}</p>
         </div>
         <div class="flex-grow" />
         <div>
-          <ui-btn class="mb-4 block" @click.stop="removeAllMetadataClick('json')">Remove all metadata.json</ui-btn>
-          <ui-btn @click.stop="removeAllMetadataClick('abs')">Remove all metadata.abs</ui-btn>
+          <ui-btn class="mb-4 block" @click.stop="removeAllMetadataClick('json')">{{ $strings.LabelRemoveAllMetadataJson }}</ui-btn>
+          <ui-btn @click.stop="removeAllMetadataClick('abs')">{{ $strings.LabelRemoveAllMetadataAbs }}</ui-btn>
         </div>
       </div>
     </div>
@@ -43,7 +43,7 @@ export default {
   methods: {
     removeAllMetadataClick(ext) {
       const payload = {
-        message: `Are you sure you want to remove all metadata.${ext} files in your library item folders?`,
+        message: this.$getString('MessageConfirmRemoveMetadataFiles', [ext]),
         persistent: true,
         callback: (confirmed) => {
           if (confirmed) {
@@ -60,16 +60,16 @@ export default {
         .$post(`/api/libraries/${this.libraryId}/remove-metadata?ext=${ext}`)
         .then((data) => {
           if (!data.found) {
-            this.$toast.info(`No metadata.${ext} files were found in library`)
+            this.$toast.info(this.$getString('ToastMetadataFilesRemovedNoneFound', [ext]))
           } else if (!data.removed) {
-            this.$toast.success(`No metadata.${ext} files removed`)
+            this.$toast.success(this.$getString('ToastMetadataFilesRemovedNoneRemoved', [ext]))
           } else {
-            this.$toast.success(`Successfully removed ${data.removed} metadata.${ext} files`)
+            this.$toast.success(this.$getString('ToastMetadataFilesRemovedSuccess', [data.removed, ext]))
           }
         })
         .catch((error) => {
           console.error('Failed to remove metadata files', error)
-          this.$toast.error('Failed to remove metadata files')
+          this.$toast.error(this.$getString('ToastMetadataFilesRemovedError', [ext]))
         })
         .finally(() => {
           this.$emit('update:processing', false)

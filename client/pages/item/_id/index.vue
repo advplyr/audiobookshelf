@@ -12,12 +12,12 @@
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
               <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
-                <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="playItem">
+                <button class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" :aria-label="$strings.ButtonPlay" @click.stop.prevent="playItem">
                   <span class="material-symbols fill text-4xl">play_arrow</span>
-                </div>
+                </button>
               </div>
 
-              <span class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" @click="showEditCover">edit</span>
+              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
             </div>
           </div>
         </div>
@@ -39,16 +39,11 @@
                 ><span :key="index" v-if="index < seriesList.length - 1">, </span>
               </template>
 
-              <template v-if="!isVideo">
-                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
-                <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-                </p>
-                <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              </template>
+              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
+              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
+                by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+              </p>
+              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -92,7 +87,7 @@
             </ui-btn>
 
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
-              <span v-show="!isStreaming" class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
+              <span class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 
@@ -101,26 +96,26 @@
             </ui-tooltip>
 
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
-              <span class="material-symbols text-2xl -ml-2 pr-2 text-white">auto_stories</span>
+              <span class="material-symbols text-2xl -ml-2 pr-2 text-white" aria-hidden="true">auto_stories</span>
               {{ $strings.ButtonRead }}
             </ui-btn>
 
             <ui-tooltip v-if="userCanUpdate" :text="$strings.LabelEdit" direction="top">
-              <ui-icon-btn icon="&#xe3c9;" outlined class="mx-0.5" @click="editClick" />
+              <ui-icon-btn icon="&#xe3c9;" outlined class="mx-0.5" :aria-label="$strings.LabelEdit" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast && !isMusic" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
             <!-- Only admin or root user can download new episodes -->
             <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
-              <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
+              <ui-icon-btn icon="search" class="mx-0.5" :aria-label="$strings.LabelFindEpisodes" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
             <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
-                <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+                <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" :aria-label="$strings.LabelMore" @click.stop.prevent="clickShowMenu">
                   <span class="material-symbols text-2xl">&#xe5d3;</span>
                 </button>
               </template>
@@ -220,12 +215,6 @@ export default {
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
-    isVideo() {
-      return this.libraryItem.mediaType === 'video'
-    },
-    isMusic() {
-      return this.libraryItem.mediaType === 'music'
-    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -240,8 +229,6 @@ export default {
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
-      if (this.isMusic) return !!this.audioFile
-      if (this.isVideo) return !!this.videoFile
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
     },
@@ -292,9 +279,6 @@ export default {
     authors() {
       return this.mediaMetadata.authors || []
     },
-    musicArtists() {
-      return this.mediaMetadata.artists || []
-    },
     series() {
       return this.mediaMetadata.series || []
     },
@@ -309,7 +293,7 @@ export default {
       })
     },
     duration() {
-      if (!this.tracks.length && !this.audioFile) return 0
+      if (!this.tracks.length) return 0
       return this.media.duration
     },
     libraryFiles() {
@@ -321,18 +305,10 @@ export default {
     ebookFile() {
       return this.media.ebookFile
     },
-    videoFile() {
-      return this.media.videoFile
-    },
-    audioFile() {
-      // Music track
-      return this.media.audioFile
-    },
     description() {
       return this.mediaMetadata.description || ''
     },
     userMediaProgress() {
-      if (this.isMusic) return null
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userIsFinished() {
@@ -484,23 +460,23 @@ export default {
         this.$axios
           .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
           .then(() => {
-            this.$toast.success('Episode download queue cleared')
+            this.$toast.success(this.$strings.ToastEpisodeDownloadQueueClearSuccess)
             this.episodeDownloadQueued = []
           })
           .catch((error) => {
             console.error('Failed to clear queue', error)
-            this.$toast.error('Failed to clear queue')
+            this.$toast.error(this.$strings.ToastEpisodeDownloadQueueClearFailed)
           })
       }
     },
     async findEpisodesClick() {
       if (!this.mediaMetadata.feedUrl) {
-        return this.$toast.error('Podcast does not have an RSS Feed')
+        return this.$toast.error(this.$strings.ToastNoRSSFeed)
       }
       this.fetchingRSSFeed = true
       var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
-        this.$toast.error('Failed to get podcast feed')
+        this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
       })
       this.fetchingRSSFeed = false
@@ -509,7 +485,7 @@ export default {
       console.log('Podcast feed', payload)
       const podcastfeed = payload.podcast
       if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
-        this.$toast.info('No episodes found in RSS feed')
+        this.$toast.info(this.$strings.ToastPodcastNoEpisodesInFeed)
         return
       }
 
@@ -578,7 +554,7 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+              caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
@@ -622,13 +598,12 @@ export default {
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-      if (confirm(`Are you sure you want to reset your progress?`)) {
+      if (confirm(this.$strings.MessageConfirmResetProgress)) {
         this.resettingProgress = true
         this.$axios
           .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
-            this.$toast.success(`Your progress was reset`)
             this.resettingProgress = false
           })
           .catch((error) => {
@@ -661,6 +636,11 @@ export default {
       if (episodeDownload.libraryItemId === this.libraryItemId) {
         this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
+      }
+    },
+    episodeDownloadQueueCleared(libraryItemId) {
+      if (libraryItemId === this.libraryItemId) {
+        this.episodeDownloadsQueued = []
       }
     },
     rssFeedOpen(data) {
@@ -722,12 +702,12 @@ export default {
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
                 this.$router.replace(`/library/${this.libraryId}`)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeleteFailed)
               })
           }
         },
@@ -801,6 +781,7 @@ export default {
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   },
   beforeDestroy() {
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
@@ -812,6 +793,7 @@ export default {
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   }
 }
 </script>

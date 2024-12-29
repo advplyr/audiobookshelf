@@ -4,6 +4,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
+const RssFeedManager = require('../managers/RssFeedManager')
 const Collection = require('../objects/Collection')
 
 /**
@@ -115,6 +116,7 @@ class CollectionController {
     }
 
     // If books array is passed in then update order in collection
+    let collectionBooksUpdated = false
     if (req.body.books?.length) {
       const collectionBooks = await req.collection.getCollectionBooks({
         include: {
@@ -133,8 +135,14 @@ class CollectionController {
           await collectionBooks[i].update({
             order: i + 1
           })
-          wasUpdated = true
+          collectionBooksUpdated = true
         }
+      }
+
+      if (collectionBooksUpdated) {
+        req.collection.changed('updatedAt', true)
+        await req.collection.save()
+        wasUpdated = true
       }
     }
 
@@ -148,6 +156,8 @@ class CollectionController {
   /**
    * DELETE: /api/collections/:id
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -155,7 +165,7 @@ class CollectionController {
     const jsonExpanded = await req.collection.getOldJsonExpanded()
 
     // Close rss feed - remove from db and emit socket event
-    await this.rssFeedManager.closeFeedForEntityId(req.collection.id)
+    await RssFeedManager.closeFeedForEntityId(req.collection.id)
 
     await req.collection.destroy()
 

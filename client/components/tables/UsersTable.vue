@@ -120,6 +120,7 @@ export default {
           this.users = res.users.sort((a, b) => {
             return a.createdAt - b.createdAt
           })
+          this.$emit('numUsers', this.users.length)
         })
         .catch((error) => {
           console.error('Failed', error)

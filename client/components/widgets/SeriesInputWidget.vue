@@ -71,8 +71,6 @@ export default {
       this.showSeriesForm = true
     },
     submitSeriesForm() {
-      console.log('submit series form', this.value, this.selectedSeries)
-
       if (!this.selectedSeries.name) {
         this.$toast.error('Must enter a series')
         return

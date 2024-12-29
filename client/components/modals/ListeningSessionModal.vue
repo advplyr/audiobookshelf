@@ -100,7 +100,7 @@
 
       <div class="flex items-center">
         <ui-btn v-if="!isOpenSession && !isMediaItemShareSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
-        <ui-btn v-else-if="!isMediaItemShareSession" small color="error" @click.stop="closeSessionClick">Close Open Session</ui-btn>
+        <ui-btn v-else-if="!isMediaItemShareSession" small color="error" @click.stop="closeSessionClick">{{ $strings.ButtonCloseSession }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -206,14 +206,13 @@ export default {
       this.$axios
         .$post(`/api/session/${this._session.id}/close`)
         .then(() => {
-          this.$toast.success('Session closed')
           this.show = false
           this.$emit('closedSession')
         })
         .catch((error) => {
           console.error('Failed to close session', error)
           const errMsg = error.response?.data || ''
-          this.$toast.error(errMsg || 'Failed to close open session')
+          this.$toast.error(errMsg || this.$strings.ToastSessionCloseFailed)
         })
         .finally(() => {
           this.processing = false

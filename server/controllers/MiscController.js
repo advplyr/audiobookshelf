@@ -5,6 +5,7 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const Watcher = require('../Watcher')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
@@ -44,11 +45,11 @@ class MiscController {
     const files = Object.values(req.files)
     const { title, author, series, folder: folderId, library: libraryId } = req.body
 
-    const library = await Database.libraryModel.getOldById(libraryId)
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
-    const folder = library.folders.find((fold) => fold.id === folderId)
+    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
     if (!folder) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
@@ -63,7 +64,7 @@ class MiscController {
     // before sanitizing all the directory parts to remove illegal chars and finally prepending
     // the base folder path
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
-    const outputDirectory = Path.join(...[folder.fullPath, ...cleanedOutputDirectoryParts])
+    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
     await fs.ensureDir(outputDirectory)
 
@@ -125,6 +126,10 @@ class MiscController {
     if (!isObject(settingsUpdate)) {
       return res.status(400).send('Invalid settings update object')
     }
+    if (settingsUpdate.allowIframe == false && process.env.ALLOW_IFRAME === '1') {
+      Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
+      return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
+    }
 
     const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
@@ -136,7 +141,6 @@ class MiscController {
       }
     }
     return res.json({
-      success: true,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
   }
@@ -557,10 +561,10 @@ class MiscController {
 
     switch (type) {
       case 'add':
-        this.watcher.onFileAdded(libraryId, path)
+        Watcher.onFileAdded(libraryId, path)
         break
       case 'unlink':
-        this.watcher.onFileRemoved(libraryId, path)
+        Watcher.onFileRemoved(libraryId, path)
         break
       case 'rename':
         const oldPath = req.body.oldPath
@@ -568,7 +572,7 @@ class MiscController {
           Logger.error(`[MiscController] Invalid request body for updateWatchedPath. oldPath is required for rename.`)
           return res.sendStatus(400)
         }
-        this.watcher.onFileRename(libraryId, oldPath, path)
+        Watcher.onFileRename(libraryId, oldPath, path)
         break
       default:
         Logger.error(`[MiscController] Invalid type for updateWatchedPath. type: "${type}"`)
@@ -678,9 +682,9 @@ class MiscController {
           continue
         }
         let updatedValue = settingsUpdate[key]
-        if (updatedValue === '') updatedValue = null
+        if (updatedValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') updatedValue = null
         let currentValue = currentAuthenticationSettings[key]
-        if (currentValue === '') currentValue = null
+        if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
 
         if (updatedValue !== currentValue) {
           Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)

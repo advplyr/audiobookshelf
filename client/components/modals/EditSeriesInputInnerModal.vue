@@ -1,8 +1,8 @@
 <template>
-  <div ref="wrapper" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 rounded-lg items-center justify-center" style="z-index: 61" @click="clickClose">
-    <div class="absolute top-3 right-3 md:top-5 md:right-5 h-8 w-8 md:h-12 md:w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300">
+  <div ref="wrapper" role="dialog" aria-modal="true" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 rounded-lg items-center justify-center" style="z-index: 61" @click="clickClose">
+    <button type="button" class="absolute top-3 right-3 md:top-5 md:right-5 h-8 w-8 md:h-12 md:w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300" aria-label="Close modal">
       <span class="material-symbols text-2xl md:text-4xl">close</span>
-    </div>
+    </button>
     <div ref="content" class="text-white">
       <form v-if="selectedSeries" @submit.prevent="submitSeriesForm">
         <div class="bg-bg rounded-lg px-2 py-6 sm:p-6 md:p-8" @click.stop>

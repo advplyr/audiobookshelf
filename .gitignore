@@ -7,6 +7,7 @@
 /podcasts/
 /media/
 /metadata/
+/plugins/
 /client/.nuxt/
 /client/dist/
 /dist/
@@ -16,6 +17,7 @@
 /ffmpeg*
 /ffprobe*
 /unicode*
+/libnusqlite3*
 
 sw.*
 .DS_STORE
