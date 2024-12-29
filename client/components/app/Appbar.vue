@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-16 bg-primary relative">
-    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
+    <div id="appbar" role="toolbar" aria-label="Appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
           <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
@@ -264,7 +264,6 @@ export default {
       libraryItems.forEach((item) => {
         let subtitle = ''
         if (item.mediaType === 'book') subtitle = item.media.metadata.authors.map((au) => au.name).join(', ')
-        else if (item.mediaType === 'music') subtitle = item.media.metadata.artists.join(', ')
         queueItems.push({
           libraryItemId: item.id,
           libraryId: item.libraryId,
@@ -332,13 +331,13 @@ export default {
                 libraryItemIds: this.selectedMediaItems.map((i) => i.id)
               })
               .then(() => {
-                this.$toast.success('Batch delete success')
+                this.$toast.success(this.$strings.ToastBatchDeleteSuccess)
                 this.$store.commit('globals/resetSelectedMediaItems', [])
                 this.$eventBus.$emit('bookshelf_clear_selection')
               })
               .catch((error) => {
                 console.error('Batch delete failed', error)
-                this.$toast.error('Batch delete failed')
+                this.$toast.error(this.$strings.ToastBatchDeleteFailed)
               })
               .finally(() => {
                 this.$store.commit('setProcessingBatch', false)

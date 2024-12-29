@@ -1,28 +1,30 @@
 <template>
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
-    <button type="button" class="relative w-full h-full bg-bg border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
-      <span class="flex items-center justify-between">
-        <span class="block truncate text-xs" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
-      </span>
+    <div class="relative h-7">
+      <button type="button" class="relative w-full h-full bg-bg border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="menu" :aria-expanded="showMenu" @click.prevent="showMenu = !showMenu">
+        <span class="flex items-center justify-between">
+          <span class="block truncate text-xs" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
+        </span>
+      </button>
       <span v-if="selected === 'all'" class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
         <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
         </svg>
       </span>
-      <div v-else class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-gray-400 hover:text-gray-200" @mousedown.stop @mouseup.stop @click.stop.prevent="clearSelected">
+      <button v-else :aria-label="$strings.ButtonClearFilter" class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer text-gray-400 hover:text-gray-200" @mousedown.stop @mouseup.stop @click.stop.prevent="clearSelected">
         <span class="material-symbols" style="font-size: 1.1rem">close</span>
-      </div>
-    </button>
+      </button>
+    </div>
 
     <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none text-sm libraryFilterMenu">
-      <ul v-show="!sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
+      <ul v-show="!sublist" class="h-full w-full" role="menu">
         <template v-for="item in selectItems">
-          <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="option" @click="clickedOption(item)">
+          <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="menuitem" :aria-haspopup="item.sublist ? '' : 'menu'" @click="clickedOption(item)">
             <div class="flex items-center justify-between">
               <span class="font-normal ml-3 block truncate text-sm">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
-              <span class="material-symbols text-2xl">arrow_right</span>
+              <span class="material-symbols text-2xl" :aria-label="$strings.LabelMore">arrow_right</span>
             </div>
             <!-- selected checkmark icon -->
             <div v-if="item.value === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
@@ -31,8 +33,8 @@
           </li>
         </template>
       </ul>
-      <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
-        <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-white/5" role="option" @click="sublist = null">
+      <ul v-show="sublist" class="h-full w-full" role="menu">
+        <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-white/5" role="menuitem" @click="sublist = null">
           <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
             <span class="material-symbols text-2xl">arrow_left</span>
           </div>
@@ -40,13 +42,13 @@
             <span class="font-normal block truncate">{{ $strings.ButtonBack }}</span>
           </div>
         </li>
-        <li v-if="!sublistItems.length" class="text-gray-400 select-none relative px-2" role="option">
+        <li v-if="!sublistItems.length" class="text-gray-400 select-none relative px-2" role="menuitem">
           <div class="flex items-center justify-center">
             <span class="font-normal block truncate py-2">{{ $getString('LabelLibraryFilterSublistEmpty', [selectedSublistText]) }}</span>
           </div>
         </li>
         <template v-for="item in sublistItems">
-          <li :key="item.value" class="select-none relative px-2 cursor-pointer hover:bg-white/5" :class="`${sublist}.${item.value}` === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="option" @click="clickedSublistOption(item.value)">
+          <li :key="item.value" class="select-none relative px-2 cursor-pointer hover:bg-white/5" :class="`${sublist}.${item.value}` === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="menuitem" @click="clickedSublistOption(item.value)">
             <div class="flex items-center">
               <span class="font-normal truncate py-2 text-xs">{{ item.text }}</span>
             </div>
@@ -97,9 +99,6 @@ export default {
     },
     isPodcast() {
       return this.libraryMediaType === 'podcast'
-    },
-    isMusic() {
-      return this.libraryMediaType === 'music'
     },
     seriesItems() {
       return [
@@ -193,6 +192,12 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelPublishedDecade,
+          textPlural: this.$strings.LabelPublishedDecades,
+          value: 'publishedDecades',
+          sublist: true
+        },
+        {
           text: this.$strings.LabelLanguage,
           textPlural: this.$strings.LabelLanguages,
           value: 'languages',
@@ -274,35 +279,9 @@ export default {
         }
       ]
     },
-    musicItems() {
-      return [
-        {
-          text: this.$strings.LabelAll,
-          value: 'all'
-        },
-        {
-          text: this.$strings.LabelGenre,
-          textPlural: this.$strings.LabelGenres,
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: this.$strings.LabelTag,
-          textPlural: this.$strings.LabelTags,
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: this.$strings.ButtonIssues,
-          value: 'issues',
-          sublist: false
-        }
-      ]
-    },
     selectItems() {
       if (this.isSeries) return this.seriesItems
       if (this.isPodcast) return this.podcastItems
-      if (this.isMusic) return this.musicItems
       return this.bookItems
     },
     selectedItemSublist() {
@@ -366,6 +345,9 @@ export default {
     },
     publishers() {
       return this.filterData.publishers || []
+    },
+    publishedDecades() {
+      return this.filterData.publishedDecades || []
     },
     progress() {
       return [
@@ -434,20 +416,16 @@ export default {
           name: 'ISBN'
         },
         {
-          id: 'subtitle',
-          name: this.$strings.LabelSubtitle
-        },
-        {
           id: 'authors',
           name: this.$strings.LabelAuthor
         },
         {
-          id: 'publishedYear',
-          name: this.$strings.LabelPublishYear
+          id: 'chapters',
+          name: this.$strings.LabelChapters
         },
         {
-          id: 'series',
-          name: this.$strings.LabelSeries
+          id: 'cover',
+          name: this.$strings.LabelCover
         },
         {
           id: 'description',
@@ -458,24 +436,32 @@ export default {
           name: this.$strings.LabelGenres
         },
         {
-          id: 'tags',
-          name: this.$strings.LabelTags
+          id: 'language',
+          name: this.$strings.LabelLanguage
         },
         {
           id: 'narrators',
           name: this.$strings.LabelNarrator
         },
         {
+          id: 'publishedYear',
+          name: this.$strings.LabelPublishYear
+        },
+        {
           id: 'publisher',
           name: this.$strings.LabelPublisher
         },
         {
-          id: 'language',
-          name: this.$strings.LabelLanguage
+          id: 'series',
+          name: this.$strings.LabelSeries
         },
         {
-          id: 'cover',
-          name: this.$strings.LabelCover
+          id: 'subtitle',
+          name: this.$strings.LabelSubtitle
+        },
+        {
+          id: 'tags',
+          name: this.$strings.LabelTags
         }
       ]
     },

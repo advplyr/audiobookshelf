@@ -1,6 +1,6 @@
 const Path = require('path')
-const uuidv4 = require("uuid").v4
-const { sanitizeFilename } = require('../utils/fileUtils')
+const uuidv4 = require('uuid').v4
+const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
 const globals = require('../utils/globals')
 
 class PodcastEpisodeDownload {
@@ -53,6 +53,20 @@ class PodcastEpisodeDownload {
     if (globals.SupportedAudioTypes.includes(extname)) return extname
     return 'mp3'
   }
+  get enclosureType() {
+    const enclosureType = this.podcastEpisode?.enclosure?.type
+    return typeof enclosureType === 'string' ? enclosureType : null
+  }
+  /**
+   * RSS feed may have an episode with file extension of mp3 but the specified enclosure type is not mpeg.
+   * @see https://github.com/advplyr/audiobookshelf/issues/3711
+   *
+   * @returns {boolean}
+   */
+  get isMp3() {
+    if (this.enclosureType && !this.enclosureType.includes('mpeg')) return false
+    return this.fileExtension === 'mp3'
+  }
 
   get targetFilename() {
     const appendage = this.appendEpisodeId ? ` (${this.podcastEpisode.id})` : ''
@@ -60,7 +74,7 @@ class PodcastEpisodeDownload {
     return sanitizeFilename(filename)
   }
   get targetPath() {
-    return Path.join(this.libraryItem.path, this.targetFilename)
+    return filePathToPOSIX(Path.join(this.libraryItem.path, this.targetFilename))
   }
   get targetRelPath() {
     return this.targetFilename
@@ -74,7 +88,8 @@ class PodcastEpisodeDownload {
     this.podcastEpisode = podcastEpisode
 
     const url = podcastEpisode.enclosure.url
-    if (decodeURIComponent(url) !== url) { // Already encoded
+    if (decodeURIComponent(url) !== url) {
+      // Already encoded
       this.url = url
     } else {
       this.url = encodeURI(url)

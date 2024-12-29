@@ -105,7 +105,7 @@ export default {
       }
       const updatePayload = this.getUpdatePayload(episodeData)
       if (!Object.keys(updatePayload).length) {
-        return this.$toast.info('No updates are necessary')
+        return this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
       }
       console.log('Episode update payload', updatePayload)
 
@@ -126,7 +126,7 @@ export default {
     },
     submitForm() {
       if (!this.episodeTitle || !this.episodeTitle.length) {
-        this.$toast.error('Must enter an episode title')
+        this.$toast.error(this.$strings.ToastTitleRequired)
         return
       }
       this.searchedTitle = this.episodeTitle

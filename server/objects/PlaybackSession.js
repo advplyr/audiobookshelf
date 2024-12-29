@@ -4,7 +4,6 @@ const serverVersion = require('../../package.json').version
 const BookMetadata = require('./metadata/BookMetadata')
 const PodcastMetadata = require('./metadata/PodcastMetadata')
 const DeviceInfo = require('./DeviceInfo')
-const VideoMetadata = require('./metadata/VideoMetadata')
 
 class PlaybackSession {
   constructor(session) {
@@ -41,7 +40,6 @@ class PlaybackSession {
     // Not saved in DB
     this.lastSave = 0
     this.audioTracks = []
-    this.videoTrack = null
     this.stream = null
     // Used for share sessions
     this.shareSessionId = null
@@ -84,8 +82,8 @@ class PlaybackSession {
 
   /**
    * Session data to send to clients
-   * @param {[oldLibraryItem]} libraryItem optional
-   * @returns {object}
+   * @param {Object} [libraryItem] - old library item
+   * @returns
    */
   toJSONForClient(libraryItem) {
     return {
@@ -114,7 +112,6 @@ class PlaybackSession {
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map((at) => at.toJSON?.() || { ...at }),
-      videoTrack: this.videoTrack?.toJSON() || null,
       libraryItem: libraryItem?.toJSONExpanded() || null
     }
   }
@@ -157,8 +154,6 @@ class PlaybackSession {
         this.mediaMetadata = new BookMetadata(session.mediaMetadata)
       } else if (this.mediaType === 'podcast') {
         this.mediaMetadata = new PodcastMetadata(session.mediaMetadata)
-      } else if (this.mediaType === 'video') {
-        this.mediaMetadata = new VideoMetadata(session.mediaMetadata)
       }
     }
     this.displayTitle = session.displayTitle || ''
@@ -224,11 +219,7 @@ class PlaybackSession {
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
 
-    if (episodeId) {
-      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
-    } else {
-      this.duration = libraryItem.media.duration
-    }
+    this.setDuration(libraryItem, episodeId)
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
@@ -244,6 +235,14 @@ class PlaybackSession {
     this.updatedAt = Date.now()
   }
 
+  setDuration(libraryItem, episodeId) {
+    if (episodeId) {
+      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
+    } else {
+      this.duration = libraryItem.media.duration
+    }
+  }
+
   addListeningTime(timeListened) {
     if (!timeListened || isNaN(timeListened)) return
 
@@ -255,12 +254,6 @@ class PlaybackSession {
 
     this.timeListening += Number.parseFloat(timeListened)
     this.updatedAt = Date.now()
-  }
-
-  // New date since start of listening session
-  checkDateRollover() {
-    if (!this.date) return false
-    return date.format(new Date(), 'YYYY-MM-DD') !== this.date
   }
 }
 module.exports = PlaybackSession

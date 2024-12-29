@@ -84,13 +84,6 @@ class Playlist extends Model {
 
     const playlistExpanded = oldPlaylist.toJSONExpanded(libraryItems)
 
-    if (include?.includes('rssfeed')) {
-      const feeds = await this.getFeeds()
-      if (feeds?.length) {
-        playlistExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
-      }
-    }
-
     return playlistExpanded
   }
 

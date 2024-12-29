@@ -54,7 +54,7 @@
           </table>
           <div class="flex items-center justify-end py-1">
             <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
-            <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <p class="text-sm mx-1">{{ $getString('LabelPaginationPageXOfY', [currentPage + 1, numPages]) }}</p>
             <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
           </div>
         </div>
@@ -127,12 +127,13 @@ export default {
       })
 
       if (!libraryItem) {
-        this.$toast.error('Failed to get library item')
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
       if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
-        this.$toast.error('Failed to get podcast episode')
+        console.error('Episode not found in library item', session.episodeId, libraryItem.media.episodes)
+        this.$toast.error(this.$strings.ToastFailedToLoadData)
         this.processingGoToTimestamp = false
         return
       }
@@ -146,7 +147,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: libraryItem.media.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.audioFile.duration || null,
           coverPath: libraryItem.media.coverPath || null
         }

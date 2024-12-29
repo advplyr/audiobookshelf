@@ -120,7 +120,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to updated narrator', error)
-          this.$toast.error('Failed to update narrator')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
           this.loading = false
         })
     },
@@ -138,7 +138,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove narrator', error)
-          this.$toast.error('Failed to remove narrator')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
           this.loading = false
         })
     },

@@ -97,8 +97,8 @@
     <div class="flex justify-center flex-wrap">
       <template v-for="libraryItem in libraryItemCopies">
         <div :key="libraryItem.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px">
-          <widgets-book-details-edit v-if="libraryItem.mediaType === 'book'" :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
-          <widgets-podcast-details-edit v-else :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
+          <widgets-book-details-edit v-if="libraryItem.mediaType === 'book'" :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" @change="handleItemChange" />
+          <widgets-podcast-details-edit v-else :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" @change="handleItemChange" />
         </div>
       </template>
     </div>
@@ -108,7 +108,7 @@
 
     <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamLibraryItem ? '165px' : '0px' }">
       <div class="flex-grow" />
-      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
+      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" :disabled="!hasChanges" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
     </div>
   </div>
 </template>
@@ -170,7 +170,8 @@ export default {
         abridged: false
       },
       appendableKeys: ['authors', 'genres', 'tags', 'narrators', 'series'],
-      openMapOptions: false
+      openMapOptions: false,
+      itemsWithChanges: []
     }
   },
   computed: {
@@ -221,9 +222,19 @@ export default {
     },
     hasSelectedBatchUsage() {
       return Object.values(this.selectedBatchUsage).some((b) => !!b)
+    },
+    hasChanges() {
+      return this.itemsWithChanges.length > 0
     }
   },
   methods: {
+    handleItemChange(itemChange) {
+      if (!itemChange.hasChanges) {
+        this.itemsWithChanges = this.itemsWithChanges.filter((id) => id !== itemChange.libraryItemId)
+      } else if (!this.itemsWithChanges.includes(itemChange.libraryItemId)) {
+        this.itemsWithChanges.push(itemChange.libraryItemId)
+      }
+    },
     blurBatchForm() {
       if (this.$refs.seriesSelect && this.$refs.seriesSelect.isFocused) {
         this.$refs.seriesSelect.forceBlur()
@@ -283,38 +294,10 @@ export default {
     removedSeriesItem(item) {},
     newNarratorItem(item) {},
     removedNarratorItem(item) {},
-    newTagItem(item) {
-      // if (item && !this.newTagItems.includes(item)) {
-      //   this.newTagItems.push(item)
-      // }
-    },
-    removedTagItem(item) {
-      // If newly added, remove if not used on any other items
-      // if (item && this.newTagItems.includes(item)) {
-      //   var usedByOtherAb = this.libraryItemCopies.find((ab) => {
-      //     return ab.tags && ab.tags.includes(item)
-      //   })
-      //   if (!usedByOtherAb) {
-      //     this.newTagItems = this.newTagItems.filter((t) => t !== item)
-      //   }
-      // }
-    },
-    newGenreItem(item) {
-      // if (item && !this.newGenreItems.includes(item)) {
-      //   this.newGenreItems.push(item)
-      // }
-    },
-    removedGenreItem(item) {
-      // If newly added, remove if not used on any other items
-      // if (item && this.newGenreItems.includes(item)) {
-      //   var usedByOtherAb = this.libraryItemCopies.find((ab) => {
-      //     return ab.book.genres && ab.book.genres.includes(item)
-      //   })
-      //   if (!usedByOtherAb) {
-      //     this.newGenreItems = this.newGenreItems.filter((t) => t !== item)
-      //   }
-      // }
-    },
+    newTagItem(item) {},
+    removedTagItem(item) {},
+    newGenreItem(item) {},
+    removedGenreItem(item) {},
     init() {
       // TODO: Better deep cloning of library items
       this.libraryItemCopies = this.libraryItems.map((li) => {
@@ -366,7 +349,7 @@ export default {
         }
       }
       if (!updates.length) {
-        return this.$toast.warning('No updates were made')
+        return this.$toast.warning(this.$strings.ToastNoUpdatesNecessary)
       }
 
       console.log('Pushing updates', updates)
@@ -376,6 +359,7 @@ export default {
         .then((data) => {
           this.isProcessing = false
           if (data.updates) {
+            this.itemsWithChanges = []
             this.$toast.success(`Successfully updated ${data.updates} items`)
             this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
@@ -387,10 +371,28 @@ export default {
           this.$toast.error('Failed to batch update')
           this.isProcessing = false
         })
+    },
+    beforeUnload(e) {
+      if (!e || !this.hasChanges) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.hasChanges) {
+      next(false)
+      window.location = to.path
+    } else {
+      next()
     }
   },
   mounted() {
     this.init()
+
+    window.addEventListener('beforeunload', this.beforeUnload)
+  },
+  beforeDestroy() {
+    window.removeEventListener('beforeunload', this.beforeUnload)
   }
 }
 </script>

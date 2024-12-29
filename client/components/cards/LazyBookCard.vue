@@ -1,5 +1,5 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-sm z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <article ref="card" :id="`book-card-${index}`" tabindex="0" :aria-label="displayTitle" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-sm z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
       <!-- When cover image does not fill -->
       <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
@@ -14,21 +14,21 @@
       </div>
 
       <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
-        <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: 0.5 + 'em' }">
+        <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" aria-hidden="true" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: 0.5 + 'em' }">
           <p :style="{ fontSize: 0.8 + 'em' }" class="text-gray-300 text-center">{{ title }}</p>
         </div>
 
         <!-- Cover Image -->
-        <img cy-id="coverImage" v-show="libraryItem" ref="cover" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+        <img cy-id="coverImage" v-if="libraryItem" :alt="`${displayTitle}, ${$strings.LabelCover}`" ref="cover" aria-hidden="true" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
 
         <!-- Placeholder Cover Title & Author -->
         <div cy-id="placeholderTitle" v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em' }">
           <div>
-            <p cy-id="placeholderTitleText" class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'em' }">{{ titleCleaned }}</p>
+            <p cy-id="placeholderTitleText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'em' }">{{ titleCleaned }}</p>
           </div>
         </div>
         <div cy-id="placeholderAuthor" v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em', bottom: authorBottom + 'em' }">
-          <p cy-id="placeholderAuthorText" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
+          <p cy-id="placeholderAuthorText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
         </div>
 
         <div v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #78350f">
@@ -93,11 +93,11 @@
 
         <!-- rss feed icon -->
         <div cy-id="rssFeed" v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 + 'em' }">
-          <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">rss_feed</span>
+          <span class="material-symbols" aria-hidden="true" :style="{ fontSize: 1.5 + 'em' }">rss_feed</span>
         </div>
         <!-- media item shared icon -->
         <div cy-id="mediaItemShare" v-if="mediaItemShare && !isSelectionMode && !isHovering" class="absolute text-success left-0 z-10" :style="{ padding: 0.375 + 'em', top: rssFeed ? '2em' : '0px' }">
-          <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">public</span>
+          <span class="material-symbols" aria-hidden="true" :style="{ fontSize: 1.5 + 'em' }">public</span>
         </div>
 
         <!-- Series sequence -->
@@ -114,7 +114,7 @@
 
         <!-- Podcast Num Episodes -->
         <div cy-id="numEpisodes" v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', width: 1.25 + 'em', height: 1.25 + 'em' }">
-          <p :style="{ fontSize: 0.8 + 'em' }">{{ numEpisodes }}</p>
+          <p :style="{ fontSize: 0.8 + 'em' }" role="status" :aria-label="$strings.LabelNumberOfEpisodes">{{ numEpisodes }}</p>
         </div>
 
         <!-- Podcast Num Episodes -->
@@ -128,7 +128,7 @@
     <div cy-id="detailBottom" :id="`description-area-${index}`" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="relative mt-2e mb-2e left-0 z-50 w-full">
       <div :style="{ fontSize: 0.9 + 'em' }">
         <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
-          <p cy-id="title" ref="displayTitle" class="truncate">{{ displayTitle }}</p>
+          <p cy-id="title" ref="displayTitle" aria-hidden="true" class="truncate">{{ displayTitle }}</p>
           <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
@@ -138,7 +138,7 @@
       <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p cy-id="line3" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>
-  </div>
+  </article>
 </template>
 
 <script>
@@ -225,9 +225,6 @@ export default {
     },
     isPodcast() {
       return this.mediaType === 'podcast' || this.store.getters['libraries/getCurrentLibraryMediaType'] === 'podcast'
-    },
-    isMusic() {
-      return this.mediaType === 'music'
     },
     isExplicit() {
       return this.mediaMetadata.explicit || false
@@ -328,7 +325,7 @@ export default {
     },
     displaySubtitle() {
       if (!this.libraryItem) return '\u00A0'
-      if (this.collapsedSeries) return this.collapsedSeries.numBooks === 1 ? '1 book' : `${this.collapsedSeries.numBooks} books`
+      if (this.collapsedSeries) return `${this.collapsedSeries.numBooks} ${this.$strings.LabelBooks}`
       if (this.mediaMetadata.subtitle) return this.mediaMetadata.subtitle
       if (this.mediaMetadata.seriesName) return this.mediaMetadata.seriesName
       return ''
@@ -336,7 +333,6 @@ export default {
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
-      if (this.isMusic) return this.artist
       if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
@@ -346,14 +342,14 @@ export default {
     },
     displaySortLine() {
       if (this.collapsedSeries) return null
-      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
-      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
-      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
-      if (this.orderBy === 'media.duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
-      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
-      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} Episodes`
+      if (this.orderBy === 'mtimeMs') return this.$getString('LabelFileModifiedDate', [this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)])
+      if (this.orderBy === 'birthtimeMs') return this.$getString('LabelFileBornDate', [this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)])
+      if (this.orderBy === 'addedAt') return this.$getString('LabelAddedDate', [this.$formatDate(this._libraryItem.addedAt, this.dateFormat)])
+      if (this.orderBy === 'media.duration') return this.$strings.LabelDuration + ': ' + this.$elapsedPrettyExtended(this.media.duration, false)
+      if (this.orderBy === 'size') return this.$strings.LabelSize + ': ' + this.$bytesPretty(this._libraryItem.size)
+      if (this.orderBy === 'media.numTracks') return `${this.numEpisodes} ` + this.$strings.LabelEpisodes
       if (this.orderBy === 'media.metadata.publishedYear') {
-        if (this.mediaMetadata.publishedYear) return 'Published ' + this.mediaMetadata.publishedYear
+        if (this.mediaMetadata.publishedYear) return this.$getString('LabelPublishedDate', [this.mediaMetadata.publishedYear])
         return '\u00A0'
       }
       return null
@@ -364,7 +360,6 @@ export default {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.recentEpisode.id)
     },
     userProgress() {
-      if (this.isMusic) return null
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
@@ -420,7 +415,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.ebookFormat
@@ -464,8 +459,6 @@ export default {
       return this.store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
-      if (this.isMusic) return []
-
       if (this.recentEpisode) {
         const items = [
           {
@@ -710,7 +703,7 @@ export default {
     toggleFinished(confirmed = false) {
       if (!this.itemIsFinished && this.userProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${this.displayTitle}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [this.displayTitle]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleFinished(true)
@@ -755,18 +748,18 @@ export default {
         .then((data) => {
           var result = data.result
           if (!result) {
-            this.$toast.error(`Re-Scan Failed for "${this.title}"`)
+            this.$toast.error(this.$getString('ToastRescanFailed', [this.displayTitle]))
           } else if (result === 'UPDATED') {
-            this.$toast.success(`Re-Scan complete item was updated`)
+            this.$toast.success(this.$strings.ToastRescanUpdated)
           } else if (result === 'UPTODATE') {
-            this.$toast.success(`Re-Scan complete item was up to date`)
+            this.$toast.success(this.$strings.ToastRescanUpToDate)
           } else if (result === 'REMOVED') {
-            this.$toast.error(`Re-Scan complete item was removed`)
+            this.$toast.error(this.$strings.ToastRescanRemoved)
           }
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
-          this.$toast.error('Failed to scan library item')
+          this.$toast.error(this.$strings.ToastScanFailed)
         })
         .finally(() => {
           this.processing = false
@@ -823,7 +816,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove series from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -841,7 +834,7 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to hide item from home', error)
-          this.$toast.error('Failed to update user')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {
           this.processing = false
@@ -856,7 +849,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+          caption: this.recentEpisode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -906,11 +899,11 @@ export default {
             axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
-                this.$toast.success('Item deleted')
+                this.$toast.success(this.$strings.ToastItemDeletedSuccess)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)
-                this.$toast.error('Failed to delete item')
+                this.$toast.error(this.$strings.ToastItemDeletedFailed)
               })
               .finally(() => {
                 this.processing = false
@@ -1016,7 +1009,7 @@ export default {
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
-                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
+                  caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
                   duration: episode.audioFile.duration || null,
                   coverPath: this.media.coverPath || null
                 })

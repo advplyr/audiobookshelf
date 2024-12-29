@@ -1,9 +1,9 @@
 <template>
-  <div class="w-20 bg-bg h-full fixed left-0 box-shadow-side z-50" style="min-width: 80px" :style="{ top: offsetTop + 'px' }">
+  <div role="toolbar" aria-orientation="vertical" aria-label="Library Sidebar" class="w-20 bg-bg h-full fixed left-0 box-shadow-side z-50" style="min-width: 80px" :style="{ top: offsetTop + 'px' }">
     <!-- ugly little workaround to cover up the shadow overlapping the bookshelf toolbar -->
     <div v-if="isShowingBookshelfToolbar" class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
 
-    <div id="siderail-buttons-container" :class="{ 'player-open': streamLibraryItem }" class="w-full overflow-y-auto overflow-x-hidden">
+    <div id="siderail-buttons-container" role="navigation" aria-label="Library Navigation" :class="{ 'player-open': streamLibraryItem }" class="w-full overflow-y-auto overflow-x-hidden">
       <nuxt-link :to="`/library/${currentLibraryId}`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -58,7 +58,7 @@
         <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
           <path
             fill="currentColor"
@@ -93,14 +93,6 @@
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonAdd }}</p>
 
         <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-      </nuxt-link>
-
-      <nuxt-link v-if="isMusicLibrary" :to="`/library/${currentLibraryId}/bookshelf/albums`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isMusicAlbumsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-        <span class="material-symbols text-xl">album</span>
-
-        <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">Albums</p>
-
-        <div v-show="isMusicAlbumsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastDownloadQueuePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
@@ -172,9 +164,6 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    isMusicLibrary() {
-      return this.currentLibraryMediaType === 'music'
-    },
     isPodcastDownloadQueuePage() {
       return this.$route.name === 'library-library-podcast-download-queue'
     },
@@ -184,9 +173,6 @@ export default {
     isPodcastLatestPage() {
       return this.$route.name === 'library-library-podcast-latest'
     },
-    isMusicAlbumsPage() {
-      return this.paramId === 'albums'
-    },
     homePage() {
       return this.$route.name === 'library-library'
     },
@@ -194,7 +180,7 @@ export default {
       return this.$route.name === 'library-library-series-id' || this.paramId === 'series'
     },
     isAuthorsPage() {
-      return this.$route.name === 'library-library-authors'
+      return this.libraryBookshelfPage && this.paramId === 'authors'
     },
     isNarratorsPage() {
       return this.$route.name === 'library-library-narrators'

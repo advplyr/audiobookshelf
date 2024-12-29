@@ -111,7 +111,6 @@ export default {
     },
     updateLibrary(library) {
       this.mapLibraryToCopy(library)
-      console.log('Updated library', this.libraryCopy)
     },
     getNewLibraryData() {
       return {
@@ -128,7 +127,9 @@ export default {
           autoScanCronExpression: null,
           hideSingleBookSeries: false,
           onlyShowLaterBooksInContinueSeries: false,
-          metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+          metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata'],
+          markAsFinishedPercentComplete: null,
+          markAsFinishedTimeRemaining: 10
         }
       }
     },
@@ -156,11 +157,11 @@ export default {
     },
     validate() {
       if (!this.libraryCopy.name) {
-        this.$toast.error('Library must have a name')
+        this.$toast.error(this.$strings.ToastNameRequired)
         return false
       }
       if (!this.libraryCopy.folders.length) {
-        this.$toast.error('Library must have at least 1 path')
+        this.$toast.error(this.$strings.ToastMustHaveAtLeastOnePath)
         return false
       }
 
@@ -205,7 +206,7 @@ export default {
     submitUpdateLibrary() {
       var newLibraryPayload = this.getLibraryUpdatePayload()
       if (!Object.keys(newLibraryPayload).length) {
-        this.$toast.info('No updates are necessary')
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return
       }
 
@@ -222,7 +223,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error(this.$strings.ToastLibraryUpdateFailed)
+            this.$toast.error(this.$strings.ToastFailedToUpdate)
           }
           this.processing = false
         })
@@ -236,7 +237,6 @@ export default {
           this.show = false
           this.$toast.success(this.$getString('ToastLibraryCreateSuccess', [res.name]))
           if (!this.$store.state.libraries.currentLibraryId) {
-            console.log('Setting initially library id', res.id)
             // First library added
             this.$store.dispatch('libraries/fetch', res.id)
           }

@@ -2,9 +2,9 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <!-- <span class="material-symbols text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
+        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
 
-        <ui-tooltip direction="top" :text="$strings.LabelVolume">
+        <ui-tooltip direction="left" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
@@ -13,7 +13,7 @@
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
-              <p class="text-sm sm:text-lg text-warning font-mono font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
+              <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
             </div>
           </button>
         </ui-tooltip>
@@ -37,7 +37,7 @@
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
-          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerSettings')">
+          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
             <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
@@ -48,18 +48,24 @@
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
 
-    <div class="flex">
-      <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
-      <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
-      <div class="flex-grow" />
-      <p class="text-xs sm:text-sm text-gray-300 pt-0.5 px-2 truncate">
-        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
-      </p>
-      <div class="flex-grow" />
-      <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
+    <div class="relative flex items-center justify-between">
+      <div class="flex-grow flex items-center">
+        <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
+        <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
+      </div>
+      <div class="absolute left-1/2 transform -translate-x-1/2">
+        <p class="text-xs sm:text-sm text-gray-300 pt-0.5 px-2 truncate">
+          {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
+        </p>
+      </div>
+      <div class="flex-grow flex items-center justify-end">
+        <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
+      </div>
     </div>
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :playback-rate="playbackRate" :chapters="chapters" @select="selectChapter" />
+
+    <modals-player-settings-modal v-model="showPlayerSettingsModal" />
   </div>
 </template>
 
@@ -92,6 +98,7 @@ export default {
       audioEl: null,
       seekLoading: false,
       showChaptersModal: false,
+      showPlayerSettingsModal: false,
       currentTime: 0,
       duration: 0
     }
@@ -178,22 +185,6 @@ export default {
   methods: {
     toggleFullscreen(isFullscreen) {
       this.$store.commit('setPlayerIsFullscreen', isFullscreen)
-
-      var videoPlayerEl = document.getElementById('video-player')
-      if (videoPlayerEl) {
-        if (isFullscreen) {
-          videoPlayerEl.style.width = '100vw'
-          videoPlayerEl.style.height = '100vh'
-          videoPlayerEl.style.top = '0px'
-          videoPlayerEl.style.left = '0px'
-        } else {
-          videoPlayerEl.style.width = '384px'
-          videoPlayerEl.style.height = '216px'
-          videoPlayerEl.style.top = 'unset'
-          videoPlayerEl.style.bottom = '80px'
-          videoPlayerEl.style.left = '16px'
-        }
-      }
     },
     setDuration(duration) {
       this.duration = duration
@@ -239,6 +230,12 @@ export default {
       if (this.playbackRate <= 0.5) return
       this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
       this.setPlaybackRate(this.playbackRate)
+    },
+    playbackRateChanged(playbackRate) {
+      this.setPlaybackRate(playbackRate)
+      this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
+        console.error('Failed to update settings', err)
+      })
     },
     setPlaybackRate(playbackRate) {
       this.$emit('setPlaybackRate', playbackRate)
@@ -320,6 +317,9 @@ export default {
     showChapters() {
       if (!this.chapters.length) return
       this.showChaptersModal = !this.showChaptersModal
+    },
+    showPlayerSettings() {
+      this.showPlayerSettingsModal = !this.showPlayerSettingsModal
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1

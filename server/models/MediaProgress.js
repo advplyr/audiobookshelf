@@ -1,4 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
+const Logger = require('../Logger')
+const { isNullOrNaN } = require('../utils')
 
 class MediaProgress extends Model {
   constructor(values, options) {
@@ -91,7 +93,7 @@ class MediaProgress extends Model {
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true
         },
-        mediaItemId: DataTypes.UUIDV4,
+        mediaItemId: DataTypes.UUID,
         mediaItemType: DataTypes.STRING,
         duration: DataTypes.FLOAT,
         currentTime: DataTypes.FLOAT,
@@ -183,10 +185,16 @@ class MediaProgress extends Model {
     }
   }
 
+  get progress() {
+    // Value between 0 and 1
+    if (!this.duration) return 0
+    return Math.max(0, Math.min(this.currentTime / this.duration, 1))
+  }
+
   /**
    * Apply update to media progress
    *
-   * @param {Object} progress
+   * @param {import('./User').ProgressUpdatePayload} progressPayload
    * @returns {Promise<MediaProgress>}
    */
   applyProgressUpdate(progressPayload) {
@@ -219,13 +227,32 @@ class MediaProgress extends Model {
     }
 
     const timeRemaining = this.duration - this.currentTime
-    // Set to finished if time remaining is less than 5 seconds
-    if (!this.isFinished && this.duration && timeRemaining < 5) {
+
+    // Check if progress is far enough to mark as finished
+    //   - If markAsFinishedPercentComplete is provided, use that otherwise use markAsFinishedTimeRemaining (default 10 seconds)
+    let shouldMarkAsFinished = false
+    if (this.duration) {
+      if (!isNullOrNaN(progressPayload.markAsFinishedPercentComplete) && progressPayload.markAsFinishedPercentComplete > 0) {
+        const markAsFinishedPercentComplete = Number(progressPayload.markAsFinishedPercentComplete) / 100
+        shouldMarkAsFinished = markAsFinishedPercentComplete < this.progress
+        if (shouldMarkAsFinished) {
+          Logger.debug(`[MediaProgress] Marking media progress as finished because progress (${this.progress}) is greater than ${markAsFinishedPercentComplete}`)
+        }
+      } else {
+        const markAsFinishedTimeRemaining = isNullOrNaN(progressPayload.markAsFinishedTimeRemaining) ? 10 : Number(progressPayload.markAsFinishedTimeRemaining)
+        shouldMarkAsFinished = timeRemaining < markAsFinishedTimeRemaining
+        if (shouldMarkAsFinished) {
+          Logger.debug(`[MediaProgress] Marking media progress as finished because time remaining (${timeRemaining}) is less than ${markAsFinishedTimeRemaining} seconds`)
+        }
+      }
+    }
+
+    if (!this.isFinished && shouldMarkAsFinished) {
       this.isFinished = true
       this.finishedAt = this.finishedAt || Date.now()
       this.extraData.progress = 1
       this.changed('extraData', true)
-    } else if (this.isFinished && this.changed('currentTime') && this.currentTime < this.duration) {
+    } else if (this.isFinished && this.changed('currentTime') && !shouldMarkAsFinished) {
       this.isFinished = false
       this.finishedAt = null
     }

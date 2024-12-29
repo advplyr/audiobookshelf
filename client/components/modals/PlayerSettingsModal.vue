@@ -59,12 +59,19 @@ export default {
     setJumpBackwardAmount(val) {
       this.jumpBackwardAmount = val
       this.$store.dispatch('user/updateUserSettings', { jumpBackwardAmount: val })
+    },
+    settingsUpdated() {
+      this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack')
+      this.jumpForwardAmount = this.$store.getters['user/getUserSetting']('jumpForwardAmount')
+      this.jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount')
     }
   },
   mounted() {
-    this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack')
-    this.jumpForwardAmount = this.$store.getters['user/getUserSetting']('jumpForwardAmount')
-    this.jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount')
+    this.settingsUpdated()
+    this.$eventBus.$on('user-settings', this.settingsUpdated)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off('user-settings', this.settingsUpdated)
   }
 }
 </script>

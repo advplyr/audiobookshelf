@@ -415,7 +415,7 @@ export default {
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
       if (this.$isDev) {
-        src = `http://localhost:3333${this.$config.routerBasePath}${src}`
+        src = `${process.env.serverUrl}${src}`
       }
 
       audioEl.src = src
@@ -486,7 +486,7 @@ export default {
         .then((data) => {
           this.saving = false
           if (data.updated) {
-            this.$toast.success('Chapters updated')
+            this.$toast.success(this.$strings.ToastChaptersUpdated)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -499,7 +499,7 @@ export default {
         .catch((error) => {
           this.saving = false
           console.error('Failed to update chapters', error)
-          this.$toast.error('Failed to update chapters')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
         })
     },
     applyChapterNamesOnly() {
@@ -533,7 +533,7 @@ export default {
     },
     findChapters() {
       if (!this.asinInput) {
-        this.$toast.error('Must input an ASIN')
+        this.$toast.error(this.$strings.ToastAsinRequired)
         return
       }
 
@@ -560,7 +560,7 @@ export default {
         .catch((error) => {
           this.findingChapters = false
           console.error('Failed to get chapter data', error)
-          this.$toast.error('Failed to find chapters')
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
           this.showFindChaptersModal = false
         })
     },
@@ -611,7 +611,7 @@ export default {
         .$post(`/api/items/${this.libraryItem.id}/chapters`, payload)
         .then((data) => {
           if (data.updated) {
-            this.$toast.success('Chapters removed')
+            this.$toast.success(this.$strings.ToastChaptersRemoved)
             if (this.previousRoute) {
               this.$router.push(this.previousRoute)
             } else {
@@ -623,20 +623,32 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to remove chapters', error)
-          this.$toast.error('Failed to remove chapters')
+          this.$toast.error(this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.saving = false
         })
+    },
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItem.id) {
+        if (!!libraryItem.media.metadata.asin && this.mediaMetadata.asin !== libraryItem.media.metadata.asin) {
+          this.asinInput = libraryItem.media.metadata.asin
+        }
+        this.libraryItem = libraryItem
+      }
     }
   },
   mounted() {
     this.regionInput = localStorage.getItem('audibleRegion') || 'US'
     this.asinInput = this.mediaMetadata.asin || null
     this.initChapters()
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   },
   beforeDestroy() {
     this.destroyAudioEl()
+
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   }
 }
 </script>

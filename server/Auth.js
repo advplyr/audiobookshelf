@@ -18,6 +18,26 @@ class Auth {
   constructor() {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
+    this.ignorePatterns = [/\/api\/items\/[^/]+\/cover/, /\/api\/authors\/[^/]+\/image/]
+  }
+
+  /**
+   * Checks if the request should not be authenticated.
+   * @param {Request} req
+   * @returns {boolean}
+   * @private
+   */
+  authNotNeeded(req) {
+    return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.originalUrl))
+  }
+
+  ifAuthNeeded(middleware) {
+    return (req, res, next) => {
+      if (this.authNotNeeded(req)) {
+        return next()
+      }
+      middleware(req, res, next)
+    }
   }
 
   /**
@@ -111,7 +131,7 @@ class Auth {
         {
           client: openIdClient,
           params: {
-            redirect_uri: '/auth/openid/callback',
+            redirect_uri: `${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`,
             scope: 'openid profile email'
           }
         },
@@ -460,9 +480,9 @@ class Auth {
           //   for the request to mobile-redirect and as such the session is not shared
           this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
 
-          redirectUri = new URL('/auth/openid/mobile-redirect', hostUrl).toString()
+          redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
         } else {
-          redirectUri = new URL('/auth/openid/callback', hostUrl).toString()
+          redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`, hostUrl).toString()
 
           if (req.query.state) {
             Logger.debug(`[Auth] Invalid state - not allowed on web openid flow`)
@@ -713,7 +733,7 @@ class Auth {
                 const host = req.get('host')
                 // TODO: ABS does currently not support subfolders for installation
                 // If we want to support it we need to include a config for the serverurl
-                postLogoutRedirectUri = `${protocol}://${host}/login`
+                postLogoutRedirectUri = `${protocol}://${host}${global.RouterBasePath}/login`
               }
               // else for openid-mobile we keep postLogoutRedirectUri on null
               //  nice would be to redirect to the app here, but for example Authentik does not implement
@@ -970,28 +990,18 @@ class Auth {
         })
       }
     }
-
-    Database.userModel
-      .update(
-        {
-          pash: pw
-        },
-        {
-          where: { id: matchingUser.id }
-        }
-      )
-      .then(() => {
-        Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
-        res.json({
-          success: true
-        })
+    try {
+      await matchingUser.update({ pash: pw })
+      Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
+      res.json({
+        success: true
       })
-      .catch((error) => {
-        Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
-        res.json({
-          error: 'Unknown error'
-        })
+    } catch (error) {
+      Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
+      res.json({
+        error: 'Unknown error'
       })
+    }
   }
 }
 

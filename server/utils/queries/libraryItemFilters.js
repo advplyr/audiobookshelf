@@ -173,16 +173,16 @@ module.exports = {
   /**
    * Search library items
    * @param {import('../../models/User')} user
-   * @param {import('../../objects/Library')} oldLibrary
+   * @param {import('../../models/Library')} library
    * @param {string} query
    * @param {number} limit
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[], podcast:object[]}}
    */
-  search(user, oldLibrary, query, limit) {
-    if (oldLibrary.isBook) {
-      return libraryItemsBookFilters.search(user, oldLibrary, query, limit, 0)
+  search(user, library, query, limit) {
+    if (library.isBook) {
+      return libraryItemsBookFilters.search(user, library, query, limit, 0)
     } else {
-      return libraryItemsPodcastFilters.search(user, oldLibrary, query, limit, 0)
+      return libraryItemsPodcastFilters.search(user, library, query, limit, 0)
     }
   },
 

@@ -11,8 +11,6 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
 
-const ShareManager = require('../managers/ShareManager')
-
 /**
  * @typedef LibraryFileObject
  * @property {string} ino
@@ -75,6 +73,9 @@ class LibraryItem extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {Book.BookExpanded|Podcast.PodcastExpanded} - only set when expanded */
+    this.media
   }
 
   /**
@@ -239,35 +240,7 @@ class LibraryItem extends Model {
    * @returns {Promise<boolean>} true if updates were made
    */
   static async fullUpdateFromOld(oldLibraryItem) {
-    const libraryItemExpanded = await this.findByPk(oldLibraryItem.id, {
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['id', 'sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
+    const libraryItemExpanded = await this.getExpandedById(oldLibraryItem.id)
     if (!libraryItemExpanded) return false
 
     let hasUpdates = false
@@ -367,7 +340,23 @@ class LibraryItem extends Model {
         if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
         if (!areEquivalent(updatedMedia[key], existingValue, true)) {
-          Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
+          if (key === 'chapters') {
+            // Handle logging of chapters separately because the object is large
+            const chaptersRemoved = libraryItemExpanded.media.chapters.filter((ch) => !updatedMedia.chapters.some((uch) => uch.id === ch.id))
+            if (chaptersRemoved.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters removed: ${chaptersRemoved.map((ch) => ch.title).join(', ')}`)
+            }
+            const chaptersAdded = updatedMedia.chapters.filter((uch) => !libraryItemExpanded.media.chapters.some((ch) => ch.id === uch.id))
+            if (chaptersAdded.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters added: ${chaptersAdded.map((ch) => ch.title).join(', ')}`)
+            }
+            if (!chaptersRemoved.length && !chaptersAdded.length) {
+              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters updated`)
+            }
+          } else {
+            Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from %j to %j`, existingValue, updatedMedia[key]))
+          }
+
           hasMediaUpdates = true
         }
       }
@@ -493,7 +482,7 @@ class LibraryItem extends Model {
           {
             model: this.sequelize.models.series,
             through: {
-              attributes: ['sequence']
+              attributes: ['id', 'sequence']
             }
           }
         ],
@@ -559,14 +548,14 @@ class LibraryItem extends Model {
 
   /**
    * Get library items using filter and sort
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {object} options
    * @returns {{ libraryItems:oldLibraryItem[], count:number }}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
-    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, user, options)
+    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     return {
@@ -579,7 +568,7 @@ class LibraryItem extends Model {
           oldLibraryItem.media.metadata.series = li.series
         }
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = this.sequelize.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.media.numEpisodes) {
           oldLibraryItem.media.numEpisodes = li.media.numEpisodes
@@ -602,7 +591,7 @@ class LibraryItem extends Model {
 
   /**
    * Get home page data personalized shelves
-   * @param {oldLibrary} library
+   * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {string[]} include
    * @param {number} limit
@@ -775,7 +764,7 @@ class LibraryItem extends Model {
 
   /**
    * Get book library items for author, optional use user permissions
-   * @param {oldAuthor} author
+   * @param {import('./Author')} author
    * @param {import('./User')} user
    * @returns {Promise<oldLibraryItem[]>}
    */
@@ -847,6 +836,33 @@ class LibraryItem extends Model {
     })
     if (!libraryItem) return null
     return this.getOldLibraryItem(libraryItem)
+  }
+
+  /**
+   *
+   * @param {string} libraryItemId
+   * @returns {Promise<string>}
+   */
+  static async getCoverPath(libraryItemId) {
+    const libraryItem = await this.findByPk(libraryItemId, {
+      attributes: ['id', 'mediaType', 'mediaId', 'libraryId'],
+      include: [
+        {
+          model: this.sequelize.models.book,
+          attributes: ['id', 'coverPath']
+        },
+        {
+          model: this.sequelize.models.podcast,
+          attributes: ['id', 'coverPath']
+        }
+      ]
+    })
+    if (!libraryItem) {
+      Logger.warn(`[LibraryItem] getCoverPath: Library item "${libraryItemId}" does not exist`)
+      return null
+    }
+
+    return libraryItem.media.coverPath
   }
 
   /**
@@ -1018,7 +1034,7 @@ class LibraryItem extends Model {
         ino: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
-        mediaId: DataTypes.UUIDV4,
+        mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
         isFile: DataTypes.BOOLEAN,
         isMissing: DataTypes.BOOLEAN,
@@ -1110,6 +1126,24 @@ class LibraryItem extends Model {
         media.destroy()
       }
     })
+  }
+
+  /**
+   * Check if book or podcast library item has audio tracks
+   * Requires expanded library item
+   *
+   * @returns {boolean}
+   */
+  hasAudioTracks() {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
+      return false
+    }
+    if (this.mediaType === 'book') {
+      return this.media.audioFiles?.length > 0
+    } else {
+      return this.media.podcastEpisodes?.length > 0
+    }
   }
 }
 

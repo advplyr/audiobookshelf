@@ -85,6 +85,25 @@ describe('BinaryManager', () => {
       expect(exitStub.calledOnce).to.be.true
       expect(exitStub.calledWith(1)).to.be.true
     })
+
+    it('should not exit if binaries are not found but not required', async () => {
+      const ffmpegBinary = new Binary('ffmpeg', 'executable', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      const ffprobeBinary = new Binary('ffprobe', 'executable', 'FFPROBE_PATH', ['5.1'], ffbinaries, false)
+      const requiredBinaries = [ffmpegBinary]
+      const missingBinaries = [ffprobeBinary]
+      const missingBinariesAfterInstall = [ffprobeBinary]
+      findStub.onFirstCall().resolves(missingBinaries)
+      findStub.onSecondCall().resolves(missingBinariesAfterInstall)
+      binaryManager.requiredBinaries = requiredBinaries
+
+      await binaryManager.init()
+
+      expect(findStub.calledTwice).to.be.true
+      expect(installStub.calledOnce).to.be.true
+      expect(removeOldBinariesStub.calledOnce).to.be.true
+      expect(errorStub.called).to.be.false
+      expect(exitStub.called).to.be.false
+    })
   })
 
   describe('findRequiredBinaries', () => {
@@ -296,6 +315,7 @@ describe('Binary', () => {
   describe('isGood', () => {
     let binary
     let fsPathExistsStub
+    let fsReadFileStub
     let execStub
 
     const binaryPath = '/path/to/binary'
@@ -305,11 +325,13 @@ describe('Binary', () => {
     beforeEach(() => {
       binary = new Binary('ffmpeg', 'executable', 'FFMPEG_PATH', goodVersions, ffbinaries)
       fsPathExistsStub = sinon.stub(fs, 'pathExists')
+      fsReadFileStub = sinon.stub(fs, 'readFile')
       execStub = sinon.stub(binary, 'exec')
     })
 
     afterEach(() => {
       fsPathExistsStub.restore()
+      fsReadFileStub.restore()
       execStub.restore()
     })
 
@@ -388,6 +410,53 @@ describe('Binary', () => {
       expect(execStub.calledOnce).to.be.true
       expect(execStub.calledWith(execCommand)).to.be.true
     })
+
+    it('should check library version file', async () => {
+      const binary = new Binary('libavcodec', 'library', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      fsReadFileStub.resolves('5.1.2 ')
+      fsPathExistsStub.onFirstCall().resolves(true)
+      fsPathExistsStub.onSecondCall().resolves(true)
+
+      const result = await binary.isGood(binaryPath)
+
+      expect(result).to.be.true
+      expect(fsPathExistsStub.calledTwice).to.be.true
+      expect(fsPathExistsStub.firstCall.args[0]).to.be.equal(binaryPath)
+      expect(fsPathExistsStub.secondCall.args[0]).to.be.equal(binaryPath + '.ver')
+      expect(fsReadFileStub.calledOnce).to.be.true
+      expect(fsReadFileStub.calledWith(binaryPath + '.ver'), 'utf8').to.be.true
+    })
+
+    it('should return false if library version file does not exist', async () => {
+      const binary = new Binary('libavcodec', 'library', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      fsReadFileStub.resolves('5.1.2 ')
+      fsPathExistsStub.onFirstCall().resolves(true)
+      fsPathExistsStub.onSecondCall().resolves(false)
+
+      const result = await binary.isGood(binaryPath)
+
+      expect(result).to.be.false
+      expect(fsPathExistsStub.calledTwice).to.be.true
+      expect(fsPathExistsStub.firstCall.args[0]).to.be.equal(binaryPath)
+      expect(fsPathExistsStub.secondCall.args[0]).to.be.equal(binaryPath + '.ver')
+      expect(fsReadFileStub.called).to.be.false
+    })
+
+    it('should return false if library version does not match a valid version', async () => {
+      const binary = new Binary('libavcodec', 'library', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      fsReadFileStub.resolves('5.2.1 ')
+      fsPathExistsStub.onFirstCall().resolves(true)
+      fsPathExistsStub.onSecondCall().resolves(true)
+
+      const result = await binary.isGood(binaryPath)
+
+      expect(result).to.be.false
+      expect(fsPathExistsStub.calledTwice).to.be.true
+      expect(fsPathExistsStub.firstCall.args[0]).to.be.equal(binaryPath)
+      expect(fsPathExistsStub.secondCall.args[0]).to.be.equal(binaryPath + '.ver')
+      expect(fsReadFileStub.calledOnce).to.be.true
+      expect(fsReadFileStub.calledWith(binaryPath + '.ver'), 'utf8').to.be.true
+    })
   })
 
   describe('getFileName', () => {
@@ -450,6 +519,45 @@ describe('Binary', () => {
       const result = binary.getFileName()
 
       expect(result).to.equal('ffmpeg')
+    })
+  })
+
+  describe('download', () => {
+    let binary
+    let downloadBinaryStub
+    let fsWriteFileStub
+
+    beforeEach(() => {
+      binary = new Binary('ffmpeg', 'executable', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      downloadBinaryStub = sinon.stub(binary.source, 'downloadBinary')
+      fsWriteFileStub = sinon.stub(fs, 'writeFile')
+    })
+
+    afterEach(() => {
+      downloadBinaryStub.restore()
+      fsWriteFileStub.restore()
+    })
+
+    it('should call downloadBinary with the correct parameters', async () => {
+      const destination = '/path/to/destination'
+
+      await binary.download(destination)
+
+      expect(downloadBinaryStub.calledOnce).to.be.true
+      expect(downloadBinaryStub.calledWith('ffmpeg', '5.1', destination)).to.be.true
+    })
+
+    it('should write a version file for libraries', async () => {
+      const binary = new Binary('libavcodec', 'library', 'FFMPEG_PATH', ['5.1'], ffbinaries)
+      const destination = '/path/to/destination'
+      const versionFilePath = path.join(destination, binary.fileName) + '.ver'
+
+      await binary.download(destination)
+
+      expect(downloadBinaryStub.calledOnce).to.be.true
+      expect(downloadBinaryStub.calledWith('libavcodec', '5.1', destination)).to.be.true
+      expect(fsWriteFileStub.calledOnce).to.be.true
+      expect(fsWriteFileStub.calledWith(versionFilePath, '5.1')).to.be.true
     })
   })
 })

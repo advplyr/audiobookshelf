@@ -1,4 +1,11 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
+
+/**
+ * @typedef TaskString
+ * @property {string} text
+ * @property {string} key
+ * @property {string[]} [subs]
+ */
 
 class Task {
   constructor() {
@@ -11,10 +18,25 @@ class Task {
 
     /** @type {string} */
     this.title = null
+    /** @type {string} - Used for translation */
+    this.titleKey = null
+    /** @type {string[]} - Used for translation */
+    this.titleSubs = null
+
     /** @type {string} */
     this.description = null
+    /** @type {string} - Used for translation */
+    this.descriptionKey = null
+    /** @type {string[]} - Used for translation */
+    this.descriptionSubs = null
+
     /** @type {string} */
     this.error = null
+    /** @type {string} - Used for translation */
+    this.errorKey = null
+    /** @type {string[]} - Used for translation */
+    this.errorSubs = null
+
     /** @type {boolean} client should keep the task visible after success */
     this.showSuccess = false
 
@@ -35,8 +57,14 @@ class Task {
       action: this.action,
       data: this.data ? { ...this.data } : {},
       title: this.title,
+      titleKey: this.titleKey,
+      titleSubs: this.titleSubs,
       description: this.description,
+      descriptionKey: this.descriptionKey,
+      descriptionSubs: this.descriptionSubs,
       error: this.error,
+      errorKey: this.errorKey,
+      errorSubs: this.errorSubs,
       showSuccess: this.showSuccess,
       isFailed: this.isFailed,
       isFinished: this.isFinished,
@@ -47,30 +75,36 @@ class Task {
 
   /**
    * Set initial task data
-   * 
-   * @param {string} action 
-   * @param {string} title 
-   * @param {string} description 
-   * @param {boolean} showSuccess 
-   * @param {Object} [data] 
+   *
+   * @param {string} action
+   * @param {TaskString} titleString
+   * @param {TaskString|null} descriptionString
+   * @param {boolean} showSuccess
+   * @param {Object} [data]
    */
-  setData(action, title, description, showSuccess, data = {}) {
+  setData(action, titleString, descriptionString, showSuccess, data = {}) {
     this.id = uuidv4()
     this.action = action
     this.data = { ...data }
-    this.title = title
-    this.description = description
+    this.title = titleString.text
+    this.titleKey = titleString.key || null
+    this.titleSubs = titleString.subs || null
+    this.description = descriptionString?.text || null
+    this.descriptionKey = descriptionString?.key || null
+    this.descriptionSubs = descriptionString?.subs || null
     this.showSuccess = showSuccess
     this.startedAt = Date.now()
   }
 
   /**
    * Set task as failed
-   * 
-   * @param {string} message error message
+   *
+   * @param {TaskString} messageString
    */
-  setFailed(message) {
-    this.error = message
+  setFailed(messageString) {
+    this.error = messageString.text
+    this.errorKey = messageString.key || null
+    this.errorSubs = messageString.subs || null
     this.isFailed = true
     this.failedAt = Date.now()
     this.setFinished()
@@ -78,12 +112,19 @@ class Task {
 
   /**
    * Set task as finished
-   * 
-   * @param {string} [newDescription] update description
+   *
+   * @param {TaskString} [newDescriptionString] update description
+   * @param {boolean} [clearDescription] clear description
    */
-  setFinished(newDescription = null) {
-    if (newDescription) {
-      this.description = newDescription
+  setFinished(newDescriptionString = null, clearDescription = false) {
+    if (newDescriptionString) {
+      this.description = newDescriptionString.text
+      this.descriptionKey = newDescriptionString.key || null
+      this.descriptionSubs = newDescriptionString.subs || null
+    } else if (clearDescription) {
+      this.description = null
+      this.descriptionKey = null
+      this.descriptionSubs = null
     }
     this.isFinished = true
     this.finishedAt = Date.now()

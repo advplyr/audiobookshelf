@@ -3,10 +3,10 @@
     <div class="flex items-center py-3e">
       <slot />
       <div class="flex-grow" />
-      <button cy-id="leftScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
+      <button cy-id="leftScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollLeft" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
         <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
       </button>
-      <button cy-id="rightScrollButton" v-if="isScrollable" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
+      <button cy-id="rightScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollRight" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
         <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
       </button>
     </div>
@@ -65,7 +65,7 @@ export default {
         },
         authors: {
           component: 'cards-author-card',
-          itemPropName: 'author',
+          itemPropName: 'author-mount',
           itemIdFunc: (item) => item.id
         },
         narrators: {

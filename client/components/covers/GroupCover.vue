@@ -121,6 +121,8 @@ export default {
 
       var img = document.createElement('img')
       img.src = src
+      img.alt = `${this.name}, ${this.$strings.LabelCover}`
+      img.ariaHidden = true
       img.className = 'absolute top-0 left-0 w-full h-full'
       img.style.objectFit = showCoverBg ? 'contain' : 'cover'
 

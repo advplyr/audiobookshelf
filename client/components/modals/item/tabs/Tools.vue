@@ -33,18 +33,18 @@
             <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
 
-          <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">Quick Embed</ui-btn>
+          <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">{{ $strings.ButtonQuickEmbed }}</ui-btn>
         </div>
       </div>
 
       <!-- queued alert -->
       <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mt-4">
-        <p class="text-lg">Queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+        <p class="text-lg">{{ $getString('MessageQuickEmbedQueue', [queuedEmbedLIds.length]) }}</p>
       </widgets-alert>
 
       <!-- processing alert -->
       <widgets-alert v-if="isEmbedTaskRunning" type="warning" class="mt-4">
-        <p class="text-lg">Currently embedding metadata</p>
+        <p class="text-lg">{{ $strings.MessageQuickEmbedInProgress }}</p>
       </widgets-alert>
     </div>
 
@@ -113,7 +113,7 @@ export default {
   methods: {
     quickEmbed() {
       const payload = {
-        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        message: this.$strings.MessageConfirmQuickEmbed,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios

@@ -5,8 +5,8 @@
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedGeneral }}</p>
 
         <div class="w-full relative">
-          <ui-text-input v-model="feed.feedUrl" readonly />
-          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feed.feedUrl)">content_copy</span>
+          <ui-text-input :value="feedUrl" readonly />
+          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feedUrl)">content_copy</span>
         </div>
 
         <div v-if="feed.meta" class="mt-5">
@@ -70,6 +70,9 @@ export default {
     },
     _feed() {
       return this.feed || {}
+    },
+    feedUrl() {
+      return this.feed ? `${window.origin}${this.$config.routerBasePath}${this.feed.feedUrl}` : ''
     }
   },
   methods: {

@@ -51,16 +51,16 @@ class PlaybackSessionManager {
     deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
     if (clientDeviceInfo?.deviceId) {
-      const existingDevice = await Database.getDeviceByDeviceId(clientDeviceInfo.deviceId)
+      const existingDevice = await Database.deviceModel.getOldDeviceByDeviceId(clientDeviceInfo.deviceId)
       if (existingDevice) {
         if (existingDevice.update(deviceInfo)) {
-          await Database.updateDevice(existingDevice)
+          await Database.deviceModel.updateFromOld(existingDevice)
         }
         return existingDevice
       }
     }
 
-    await Database.createDevice(deviceInfo)
+    await Database.deviceModel.createFromOld(deviceInfo)
 
     return deviceInfo
   }
@@ -119,6 +119,7 @@ class PlaybackSessionManager {
    * @returns
    */
   async syncLocalSession(user, sessionJson, deviceInfo) {
+    // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
     const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
@@ -127,6 +128,16 @@ class PlaybackSessionManager {
         id: sessionJson.id,
         success: false,
         error: 'Media item not found'
+      }
+    }
+
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
+    if (!library) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSession: Library not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
+      return {
+        id: sessionJson.id,
+        success: false,
+        error: 'Library not found'
       }
     }
 
@@ -164,6 +175,7 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
+      session.setDuration(libraryItem, sessionJson.episodeId)
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {
@@ -198,7 +210,9 @@ class PlaybackSessionManager {
         const updateResponse = await user.createUpdateMediaProgressFromPayload({
           libraryItemId: libraryItem.id,
           episodeId: session.episodeId,
-          ...session.mediaProgressObject
+          ...session.mediaProgressObject,
+          markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete,
+          markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining
         })
         result.progressSynced = !!updateResponse.mediaProgress
         if (result.progressSynced) {
@@ -210,7 +224,9 @@ class PlaybackSessionManager {
       const updateResponse = await user.createUpdateMediaProgressFromPayload({
         libraryItemId: libraryItem.id,
         episodeId: session.episodeId,
-        ...session.mediaProgressObject
+        ...session.mediaProgressObject,
+        markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete,
+        markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining
       })
       result.progressSynced = !!updateResponse.mediaProgress
       if (result.progressSynced) {
@@ -293,37 +309,27 @@ class PlaybackSessionManager {
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user.id, mediaPlayer, deviceInfo, userStartTime, episodeId)
 
-    if (libraryItem.mediaType === 'video') {
-      if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id}`)
-        newPlaybackSession.videoTrack = libraryItem.media.getVideoTrack()
-        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
-      } else {
-        // HLS not supported for video yet
-      }
+    let audioTracks = []
+    if (shouldDirectPlay) {
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
+      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
+      newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
-      let audioTracks = []
-      if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
-        audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
-        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
-      } else {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
-        const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
-        await stream.generatePlaylist()
-        stream.start() // Start transcode
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
+      const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
+      await stream.generatePlaylist()
+      stream.start() // Start transcode
 
-        audioTracks = [stream.getAudioTrack()]
-        newPlaybackSession.stream = stream
-        newPlaybackSession.playMethod = PlayMethod.TRANSCODE
+      audioTracks = [stream.getAudioTrack()]
+      newPlaybackSession.stream = stream
+      newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 
-        stream.on('closed', () => {
-          Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}" (Device: ${newPlaybackSession.deviceDescription})`)
-          newPlaybackSession.stream = null
-        })
-      }
-      newPlaybackSession.audioTracks = audioTracks
+      stream.on('closed', () => {
+        Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}" (Device: ${newPlaybackSession.deviceDescription})`)
+        newPlaybackSession.stream = null
+      })
     }
+    newPlaybackSession.audioTracks = audioTracks
 
     this.sessions.push(newPlaybackSession)
     SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))
@@ -339,9 +345,16 @@ class PlaybackSessionManager {
    * @returns
    */
   async syncSession(user, session, syncData) {
+    // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
+      return null
+    }
+
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
+    if (!library) {
+      Logger.error(`[PlaybackSessionManager] syncSession Library not found "${libraryItem.libraryId}"`)
       return null
     }
 
@@ -352,9 +365,12 @@ class PlaybackSessionManager {
     const updateResponse = await user.createUpdateMediaProgressFromPayload({
       libraryItemId: libraryItem.id,
       episodeId: session.episodeId,
-      duration: syncData.duration,
+      // duration no longer required (v2.15.1) but used if available
+      duration: syncData.duration || session.duration || 0,
       currentTime: syncData.currentTime,
-      progress: session.progress
+      progress: session.progress,
+      markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining,
+      markAsFinishedPercentComplete: library.librarySettings.markAsFinishedPercentComplete
     })
     if (updateResponse.mediaProgress) {
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {

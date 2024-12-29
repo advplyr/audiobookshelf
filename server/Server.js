@@ -23,7 +23,6 @@ const HlsRouter = require('./routers/HlsRouter')
 const PublicRouter = require('./routers/PublicRouter')
 
 const LogManager = require('./managers/LogManager')
-const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -41,6 +40,7 @@ const LibraryScanner = require('./scanner/LibraryScanner')
 //Import the main Passport and Express-Session library
 const passport = require('passport')
 const expressSession = require('express-session')
+const MemoryStore = require('./libs/memorystore')
 
 class Server {
   constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -53,7 +53,17 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
-    global.DisableSsrfRequestFilter = process.env.DISABLE_SSRF_REQUEST_FILTER === '1'
+
+    if (process.env.DISABLE_SSRF_REQUEST_FILTER === '1') {
+      Logger.info(`[Server] SSRF Request Filter Disabled`)
+      global.DisableSsrfRequestFilter = () => true
+    } else if (process.env.SSRF_REQUEST_FILTER_WHITELIST?.length) {
+      const whitelistedUrls = process.env.SSRF_REQUEST_FILTER_WHITELIST.split(',').map((url) => url.trim())
+      if (whitelistedUrls.length) {
+        Logger.info(`[Server] SSRF Request Filter Whitelisting: ${whitelistedUrls.join(',')}`)
+        global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
+      }
+    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -62,18 +72,15 @@ class Server {
       fs.mkdirSync(global.MetadataPath)
     }
 
-    this.watcher = new Watcher()
     this.auth = new Auth()
 
     // Managers
-    this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
-    this.backupManager = new BackupManager(this.notificationManager)
+    this.backupManager = new BackupManager()
     this.abMergeManager = new AbMergeManager()
     this.playbackSessionManager = new PlaybackSessionManager()
-    this.podcastManager = new PodcastManager(this.watcher, this.notificationManager)
+    this.podcastManager = new PodcastManager()
     this.audioMetadataManager = new AudioMetadataMangaer()
-    this.rssFeedManager = new RssFeedManager()
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
@@ -86,7 +93,6 @@ class Server {
     Logger.logManager = new LogManager()
 
     this.server = null
-    this.io = null
   }
 
   /**
@@ -140,7 +146,7 @@ class Server {
 
     await ShareManager.init()
     await this.backupManager.init()
-    await this.rssFeedManager.init()
+    await RssFeedManager.init()
 
     const libraries = await Database.libraryModel.getAllWithFolders()
     await this.cronManager.init(libraries)
@@ -148,9 +154,12 @@ class Server {
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
-      this.watcher.disabled = true
+      Watcher.disabled = true
     } else {
-      this.watcher.initWatcher(libraries)
+      Watcher.initWatcher(libraries)
+      Watcher.on('scanFilesChanged', (pendingFileUpdates, pendingTask) => {
+        LibraryScanner.scanFilesChanged(pendingFileUpdates, pendingTask)
+      })
     }
   }
 
@@ -181,7 +190,7 @@ class Server {
      * @see https://nodejs.org/api/process.html#event-unhandledrejection
      */
     process.on('unhandledRejection', async (reason, promise) => {
-      await Logger.fatal(`[Server] Unhandled rejection: ${reason}, promise:`, util.format('%O', promise))
+      await Logger.fatal('[Server] Unhandled rejection:', reason, '\npromise:', util.format('%O', promise))
       process.exit(1)
     })
   }
@@ -193,18 +202,23 @@ class Server {
 
     const app = express()
 
-    /**
-     * @temporary
-     * This is necessary for the ebook & cover API endpoint in the mobile apps
-     * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
-     * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
-     * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
-     * @see https://ionicframework.com/docs/troubleshooting/cors
-     *
-     * Running in development allows cors to allow testing the mobile apps in the browser
-     * or env variable ALLOW_CORS = '1'
-     */
     app.use((req, res, next) => {
+      if (!global.ServerSettings.allowIframe) {
+        // Prevent clickjacking by disallowing iframes
+        res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
+      }
+
+      /**
+       * @temporary
+       * This is necessary for the ebook & cover API endpoint in the mobile apps
+       * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
+       * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+       * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
+       * @see https://ionicframework.com/docs/troubleshooting/cors
+       *
+       * Running in development allows cors to allow testing the mobile apps in the browser
+       * or env variable ALLOW_CORS = '1'
+       */
       if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
@@ -232,17 +246,30 @@ class Server {
         cookie: {
           // also send the cookie if were are not on https (not every use has https)
           secure: false
-        }
+        },
+        store: new MemoryStore(86400000, 86400000, 1000)
       })
     )
     // init passport.js
     app.use(passport.initialize())
     // register passport in express-session
-    app.use(passport.session())
+    app.use(this.auth.ifAuthNeeded(passport.session()))
     // config passport.js
     await this.auth.initPassportJs()
 
     const router = express.Router()
+    // if RouterBasePath is set, modify all requests to include the base path
+    app.use((req, res, next) => {
+      const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
+      const host = req.get('host')
+      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
+      req.originalHostPrefix = `${protocol}://${host}${prefix}`
+      if (!urlStartsWithRouterBasePath) {
+        req.url = `${global.RouterBasePath}${req.url}`
+      }
+      next()
+    })
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
@@ -259,6 +286,10 @@ class Server {
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
     router.use(express.json({ limit: '5mb' }))
 
+    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
+    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/public', this.publicRouter.router)
+
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     router.use(express.static(distPath))
@@ -266,28 +297,24 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
-    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-    router.use('/public', this.publicRouter.router)
-
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
-      this.rssFeedManager.getFeed(req, res)
+      RssFeedManager.getFeed(req, res)
     })
     router.get('/feed/:slug/cover*', (req, res) => {
-      this.rssFeedManager.getFeedCover(req, res)
+      RssFeedManager.getFeedCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
-      this.rssFeedManager.getFeedItem(req, res)
+      RssFeedManager.getFeedItem(req, res)
     })
 
     // Auth routes
     await this.auth.initAuthRoutes(router)
 
     // Client dynamic routes
-    const dyanimicRoutes = [
+    const dynamicRoutes = [
       '/item/:id',
       '/author/:id',
       '/audiobook/:id/chapters',
@@ -310,7 +337,7 @@ class Server {
       '/playlist/:id',
       '/share/:slug'
     ]
-    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
@@ -340,7 +367,7 @@ class Server {
       Logger.info('Received ping')
       res.json({ success: true })
     })
-    app.get('/healthcheck', (req, res) => res.sendStatus(200))
+    router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -426,19 +453,12 @@ class Server {
    */
   async stop() {
     Logger.info('=== Stopping Server ===')
-    await this.watcher.close()
-    Logger.info('Watcher Closed')
-
-    return new Promise((resolve) => {
-      SocketAuthority.close((err) => {
-        if (err) {
-          Logger.error('Failed to close server', err)
-        } else {
-          Logger.info('Server successfully closed')
-        }
-        resolve()
-      })
-    })
+    Watcher.close()
+    Logger.info('[Server] Watcher Closed')
+    await SocketAuthority.close()
+    Logger.info('[Server] Closing HTTP Server')
+    await new Promise((resolve) => this.server.close(resolve))
+    Logger.info('[Server] HTTP Server Closed')
   }
 }
 module.exports = Server

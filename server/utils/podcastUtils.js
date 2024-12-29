@@ -59,8 +59,8 @@ function extractPodcastMetadata(channel) {
 
   if (channel['description']) {
     const rawDescription = extractFirstArrayItem(channel, 'description') || ''
-    metadata.description = htmlSanitizer.sanitize(rawDescription)
-    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    metadata.description = htmlSanitizer.sanitize(rawDescription.trim())
+    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
 
   const arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
@@ -103,8 +103,8 @@ function extractEpisodeData(item) {
   // Supposed to be the plaintext description but not always followed
   if (item['description']) {
     const rawDescription = extractFirstArrayItem(item, 'description') || ''
-    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
-    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription.trim())
+    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
 
   if (item['pubDate']) {
@@ -228,6 +228,13 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
 
+  let userAgent = 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
+  // Workaround for CBC RSS feeds rejecting our user agent string
+  // See: https://github.com/advplyr/audiobookshelf/issues/3322
+  if (feedUrl.startsWith('https://www.cbc.ca')) {
+    userAgent = 'audiobookshelf (+https://audiobookshelf.org; like iTMS) - CBC'
+  }
+
   return axios({
     url: feedUrl,
     method: 'GET',
@@ -235,10 +242,10 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
-      'User-Agent': 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
+      'User-Agent': userAgent
     },
-    httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl),
-    httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl)
+    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
+    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
   })
     .then(async (data) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
