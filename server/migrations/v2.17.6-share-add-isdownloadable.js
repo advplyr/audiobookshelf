@@ -1,7 +1,3 @@
-'use strict'
-
-const { DataTypes } = require('sequelize')
-
 /**
  * @typedef MigrationContext
  * @property {import('sequelize').QueryInterface} queryInterface - a Sequelize QueryInterface object.
@@ -29,7 +25,7 @@ async function up({ context: { queryInterface, logger } }) {
     if (!tableDescription.isDownloadable) {
       logger.info(`${loggerPrefix} Adding isDownloadable column to mediaItemShares table`)
       await queryInterface.addColumn('mediaItemShares', 'isDownloadable', {
-        type: DataTypes.BOOLEAN,
+        type: queryInterface.sequelize.Sequelize.DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: false
       })
