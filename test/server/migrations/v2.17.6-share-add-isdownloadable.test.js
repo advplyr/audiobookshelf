@@ -14,7 +14,14 @@ describe('Migration v2.17.6-share-add-isDownloadable', () => {
       addColumn: sinon.stub().resolves(),
       removeColumn: sinon.stub().resolves(),
       tableExists: sinon.stub().resolves(true),
-      describeTable: sinon.stub().resolves({ isDownloadable: undefined })
+      describeTable: sinon.stub().resolves({ isDownloadable: undefined }),
+      sequelize: {
+        Sequelize: {
+          DataTypes: {
+            BOOLEAN: DataTypes.BOOLEAN
+          }
+        }
+      }
     }
 
     logger = {
