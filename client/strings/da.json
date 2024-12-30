@@ -640,7 +640,6 @@
   "ToastBookmarkUpdateSuccess": "Bogmærke opdateret",
   "ToastChaptersHaveErrors": "Kapitler har fejl",
   "ToastChaptersMustHaveTitles": "Kapitler skal have titler",
-  "ToastCollectionItemsRemoveSuccess": "Element(er) fjernet fra samlingen",
   "ToastCollectionRemoveSuccess": "Samling fjernet",
   "ToastCollectionUpdateSuccess": "Samling opdateret",
   "ToastItemCoverUpdateSuccess": "Varens omslag opdateret",

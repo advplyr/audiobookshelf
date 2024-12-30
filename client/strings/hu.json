@@ -945,7 +945,6 @@
   "ToastChaptersMustHaveTitles": "A fejezeteknek címekkel kell rendelkezniük",
   "ToastChaptersRemoved": "Fejezetek eltávolítva",
   "ToastChaptersUpdated": "Fejezetek frissítve",
-  "ToastCollectionItemsRemoveSuccess": "Elem(ek) eltávolítva a gyűjteményből",
   "ToastCollectionRemoveSuccess": "Gyűjtemény eltávolítva",
   "ToastCollectionUpdateSuccess": "Gyűjtemény frissítve",
   "ToastCoverUpdateFailed": "A borító frissítése nem sikerült",

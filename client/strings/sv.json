@@ -705,7 +705,6 @@
   "ToastBookmarkUpdateSuccess": "Bokmärket har uppdaterats",
   "ToastChaptersHaveErrors": "Kapitlen har fel",
   "ToastChaptersMustHaveTitles": "Kapitel måste ha titlar",
-  "ToastCollectionItemsRemoveSuccess": "Objekt borttagna från samlingen",
   "ToastCollectionRemoveSuccess": "Samlingen har raderats",
   "ToastCollectionUpdateSuccess": "Samlingen har uppdaterats",
   "ToastItemCoverUpdateSuccess": "Objektets omslag uppdaterat",

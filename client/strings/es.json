@@ -959,8 +959,6 @@
   "ToastChaptersRemoved": "Capítulos eliminados",
   "ToastChaptersUpdated": "Capítulos actualizados",
   "ToastCollectionItemsAddFailed": "Artículo(s) añadido(s) a la colección fallido(s)",
-  "ToastCollectionItemsAddSuccess": "Artículo(s) añadido(s) a la colección correctamente",
-  "ToastCollectionItemsRemoveSuccess": "Elementos(s) removidos de la colección",
   "ToastCollectionRemoveSuccess": "Colección removida",
   "ToastCollectionUpdateSuccess": "Colección actualizada",
   "ToastCoverUpdateFailed": "Error al actualizar la cubierta",

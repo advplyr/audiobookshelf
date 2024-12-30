@@ -666,8 +666,6 @@
   "ToastChaptersMustHaveTitles": "Skyriai turi turėti pavadinimus",
   "ToastChaptersRemoved": "Skyriai pašalinti",
   "ToastCollectionItemsAddFailed": "Nepavyko pridėti į kolekciją",
-  "ToastCollectionItemsAddSuccess": "Pridėta į kolekciją",
-  "ToastCollectionItemsRemoveSuccess": "Elementai pašalinti iš kolekcijos",
   "ToastCollectionRemoveSuccess": "Kolekcija pašalinta",
   "ToastCollectionUpdateSuccess": "Kolekcija atnaujinta",
   "ToastCoverUpdateFailed": "Viršelio atnaujinimas nepavyko",

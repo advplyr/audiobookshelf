@@ -961,8 +961,6 @@
   "ToastChaptersRemoved": "Chapters removed",
   "ToastChaptersUpdated": "Chapters updated",
   "ToastCollectionItemsAddFailed": "Item(s) added to collection failed",
-  "ToastCollectionItemsAddSuccess": "Item(s) added to collection success",
-  "ToastCollectionItemsRemoveSuccess": "Item(s) removed from collection",
   "ToastCollectionRemoveSuccess": "Collection removed",
   "ToastCollectionUpdateSuccess": "Collection updated",
   "ToastCoverUpdateFailed": "Cover update failed",
