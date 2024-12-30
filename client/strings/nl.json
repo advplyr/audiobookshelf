@@ -946,8 +946,6 @@
   "ToastChaptersRemoved": "Hoofdstukken verwijderd",
   "ToastChaptersUpdated": "Hoofdstukken bijgewerkt",
   "ToastCollectionItemsAddFailed": "Item(s) toegevoegd aan collectie mislukt",
-  "ToastCollectionItemsAddSuccess": "Item(s) toegevoegd aan collectie gelukt",
-  "ToastCollectionItemsRemoveSuccess": "Onderdeel (of onderdelen) verwijderd uit collectie",
   "ToastCollectionRemoveSuccess": "Collectie verwijderd",
   "ToastCollectionUpdateSuccess": "Collectie bijgewerkt",
   "ToastCoverUpdateFailed": "Cover update mislukt",

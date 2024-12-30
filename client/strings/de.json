@@ -959,8 +959,6 @@
   "ToastChaptersRemoved": "Kapitel entfernt",
   "ToastChaptersUpdated": "Kapitel aktualisiert",
   "ToastCollectionItemsAddFailed": "Das Hinzufügen von Element(en) zur Sammlung ist fehlgeschlagen",
-  "ToastCollectionItemsAddSuccess": "Element(e) erfolgreich zur Sammlung hinzugefügt",
-  "ToastCollectionItemsRemoveSuccess": "Medien aus der Sammlung entfernt",
   "ToastCollectionRemoveSuccess": "Sammlung entfernt",
   "ToastCollectionUpdateSuccess": "Sammlung aktualisiert",
   "ToastCoverUpdateFailed": "Cover-Update fehlgeschlagen",

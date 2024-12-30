@@ -882,8 +882,6 @@
   "ToastChaptersRemoved": "Kapitler fjernet",
   "ToastChaptersUpdated": "Kapitler oppdatert",
   "ToastCollectionItemsAddFailed": "Feil med å legge til element(er)",
-  "ToastCollectionItemsAddSuccess": "Element(er) lagt til samlingen",
-  "ToastCollectionItemsRemoveSuccess": "Gjenstand(er) fjernet fra samling",
   "ToastCollectionRemoveSuccess": "Samling fjernet",
   "ToastCollectionUpdateSuccess": "samlingupdated",
   "ToastCoverUpdateFailed": "Oppdatering av bilde feilet",

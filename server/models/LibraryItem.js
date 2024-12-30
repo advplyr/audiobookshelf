@@ -123,7 +123,7 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Currently unused because this is too slow and uses too much mem
+   *
    * @param {import('sequelize').WhereOptions} [where]
    * @returns {Array<objects.LibraryItem>} old library items
    */

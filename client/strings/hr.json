@@ -959,8 +959,6 @@
   "ToastChaptersRemoved": "Poglavlja uklonjena",
   "ToastChaptersUpdated": "Poglavlja su ažurirana",
   "ToastCollectionItemsAddFailed": "Neuspješno dodavanje stavki u zbirku",
-  "ToastCollectionItemsAddSuccess": "Uspješno dodavanje stavki u zbirku",
-  "ToastCollectionItemsRemoveSuccess": "Stavke izbrisane iz zbirke",
   "ToastCollectionRemoveSuccess": "Zbirka izbrisana",
   "ToastCollectionUpdateSuccess": "Zbirka ažurirana",
   "ToastCoverUpdateFailed": "Ažuriranje naslovnice nije uspjelo",
