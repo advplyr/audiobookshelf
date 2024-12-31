@@ -16,6 +16,11 @@ class PlaylistMediaItem extends Model {
     this.playlistId
     /** @type {Date} */
     this.createdAt
+
+    // Expanded properties
+
+    /** @type {import('./Book')|import('./PodcastEpisode')} - only set when expanded */
+    this.mediaItem
   }
 
   static removeByIds(playlistId, mediaItemId) {
