@@ -121,7 +121,7 @@ class PlaylistController {
   /**
    * @deprecated - Use /api/libraries/:libraryId/playlists
    * This is not used by Abs web client or mobile apps
-   * TODO: Remove this endpoint or refactor it and make it the primary
+   * TODO: Remove this endpoint or make it the primary
    *
    * GET: /api/playlists
    * Get all playlists for user
@@ -130,7 +130,7 @@ class PlaylistController {
    * @param {Response} res
    */
   async findAllForUser(req, res) {
-    const playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id, req.params.libraryId)
+    const playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id)
     res.json({
       playlists: playlistsForUser
     })

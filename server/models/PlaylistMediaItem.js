@@ -23,15 +23,6 @@ class PlaylistMediaItem extends Model {
     this.mediaItem
   }
 
-  static removeByIds(playlistId, mediaItemId) {
-    return this.destroy({
-      where: {
-        playlistId,
-        mediaItemId
-      }
-    })
-  }
-
   getMediaItem(options) {
     if (!this.mediaItemType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaItemType)}`
