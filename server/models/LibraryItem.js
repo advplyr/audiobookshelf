@@ -10,6 +10,7 @@ const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtil
 const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
 const Podcast = require('./Podcast')
+const { Op } = require('sequelize');
 
 /**
  * @typedef LibraryFileObject
@@ -127,9 +128,13 @@ class LibraryItem extends Model {
    * @param {import('sequelize').WhereOptions} [where]
    * @returns {Array<objects.LibraryItem>} old library items
    */
-  static async getAllOldLibraryItems(where = null) {
+  static async getAllOldLibraryItems({ id: libraryItemIds, episodeIds }) {
     let libraryItems = await this.findAll({
-      where,
+      where: {
+        id: {
+          [Op.in]: libraryItemIds
+        }
+      },
       include: [
         {
           model: this.sequelize.models.book,
@@ -150,11 +155,14 @@ class LibraryItem extends Model {
         },
         {
           model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
+          include: {
+            model: this.sequelize.models.podcastEpisode,
+            where: {
+              id: {
+                [Op.in]: episodeIds
+              }
             }
-          ]
+          }
         }
       ]
     })
