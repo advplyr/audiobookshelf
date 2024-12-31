@@ -35,6 +35,9 @@ class CollectionController {
     if (!reqBody.name || !reqBody.libraryId) {
       return res.status(400).send('Invalid collection data')
     }
+    if (reqBody.description && typeof reqBody.description !== 'string') {
+      return res.status(400).send('Invalid collection description')
+    }
     const libraryItemIds = (reqBody.books || []).filter((b) => !!b && typeof b == 'string')
     if (!libraryItemIds.length) {
       return res.status(400).send('Invalid collection data. No books')
