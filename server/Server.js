@@ -56,23 +56,24 @@ class Server {
     global.AllowCors = process.env.ALLOW_CORS === '1'
 
     if (process.env.EXP_PROXY_SUPPORT === '1') {
-      Logger.info(`[Server] Experimental Proxy Support Enabled, SSRF Request Filter was Disabled`);
+      // https://github.com/advplyr/audiobookshelf/pull/3754
+      Logger.info(`[Server] Experimental Proxy Support Enabled, SSRF Request Filter was Disabled`)
       global.DisableSsrfRequestFilter = () => true
-      
-      axios.defaults.maxRedirects = 0;
+
+      axios.defaults.maxRedirects = 0
       axios.interceptors.response.use(
-        response => response,
-        error => {
+        (response) => response,
+        (error) => {
           if ([301, 302].includes(error.response?.status)) {
             return axios({
               ...error.config,
-              url: error.response.headers.location,
-            });
+              url: error.response.headers.location
+            })
           }
-    
-          return Promise.reject(error);
+
+          return Promise.reject(error)
         }
-      );
+      )
     } else if (process.env.DISABLE_SSRF_REQUEST_FILTER === '1') {
       Logger.info(`[Server] SSRF Request Filter Disabled`)
       global.DisableSsrfRequestFilter = () => true
