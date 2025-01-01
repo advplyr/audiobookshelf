@@ -53,9 +53,10 @@ class FeedEpisode extends Model {
    * @param {import('./Feed')} feed
    * @param {string} slug
    * @param {import('./PodcastEpisode')} episode
+   * @param {string} [existingEpisodeId]
    */
-  static getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode) {
-    const episodeId = uuidv4()
+  static getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisodeId = null) {
+    const episodeId = existingEpisodeId || uuidv4()
     return {
       id: episodeId,
       title: episode.title,
@@ -94,11 +95,18 @@ class FeedEpisode extends Model {
       libraryItemExpanded.media.podcastEpisodes.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate))
     }
 
+    let numExisting = 0
     for (const episode of libraryItemExpanded.media.podcastEpisodes) {
-      feedEpisodeObjs.push(this.getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode))
+      // Check for existing episode by filepath
+      const existingEpisode = feed.feedEpisodes?.find((feedEpisode) => {
+        return feedEpisode.filePath === episode.audioFile.metadata.path
+      })
+      numExisting = existingEpisode ? numExisting + 1 : numExisting
+
+      feedEpisodeObjs.push(this.getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisode?.id))
     }
-    Logger.info(`[FeedEpisode] Creating ${feedEpisodeObjs.length} episodes for feed ${feed.id}`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction })
+    Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
@@ -127,11 +135,12 @@ class FeedEpisode extends Model {
    * @param {string} slug
    * @param {import('./Book').AudioFileObject} audioTrack
    * @param {boolean} useChapterTitles
+   * @param {string} [existingEpisodeId]
    */
-  static getFeedEpisodeObjFromAudiobookTrack(book, pubDateStart, feed, slug, audioTrack, useChapterTitles) {
+  static getFeedEpisodeObjFromAudiobookTrack(book, pubDateStart, feed, slug, audioTrack, useChapterTitles, existingEpisodeId = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     let timeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset pubdate to ensure correct order
-    let episodeId = uuidv4()
+    let episodeId = existingEpisodeId || uuidv4()
 
     // e.g. Track 1 will have a pub date before Track 2
     const audiobookPubDate = date.format(new Date(pubDateStart.valueOf() + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
@@ -179,11 +188,18 @@ class FeedEpisode extends Model {
     const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItemExpanded.media)
 
     const feedEpisodeObjs = []
+    let numExisting = 0
     for (const track of libraryItemExpanded.media.trackList) {
-      feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(libraryItemExpanded.media, libraryItemExpanded.createdAt, feed, slug, track, useChapterTitles))
+      // Check for existing episode by filepath
+      const existingEpisode = feed.feedEpisodes?.find((episode) => {
+        return episode.filePath === track.metadata.path
+      })
+      numExisting = existingEpisode ? numExisting + 1 : numExisting
+
+      feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(libraryItemExpanded.media, libraryItemExpanded.createdAt, feed, slug, track, useChapterTitles, existingEpisode?.id))
     }
-    Logger.info(`[FeedEpisode] Creating ${feedEpisodeObjs.length} episodes for feed ${feed.id}`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction })
+    Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
@@ -200,14 +216,21 @@ class FeedEpisode extends Model {
     }).libraryItem.createdAt
 
     const feedEpisodeObjs = []
+    let numExisting = 0
     for (const book of books) {
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(book)
       for (const track of book.trackList) {
-        feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(book, earliestLibraryItemCreatedAt, feed, slug, track, useChapterTitles))
+        // Check for existing episode by filepath
+        const existingEpisode = feed.feedEpisodes?.find((episode) => {
+          return episode.filePath === track.metadata.path
+        })
+        numExisting = existingEpisode ? numExisting + 1 : numExisting
+
+        feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(book, earliestLibraryItemCreatedAt, feed, slug, track, useChapterTitles, existingEpisode?.id))
       }
     }
-    Logger.info(`[FeedEpisode] Creating ${feedEpisodeObjs.length} episodes for feed ${feed.id}`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction })
+    Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
