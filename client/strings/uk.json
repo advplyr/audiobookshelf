@@ -959,8 +959,6 @@
   "ToastChaptersRemoved": "Розділи видалені",
   "ToastChaptersUpdated": "Розділи оновлені",
   "ToastCollectionItemsAddFailed": "Не вдалося додати елемент(и) до колекції",
-  "ToastCollectionItemsAddSuccess": "Елемент(и) успішно додано до колекції",
-  "ToastCollectionItemsRemoveSuccess": "Елемент(и) видалено з добірки",
   "ToastCollectionRemoveSuccess": "Добірку видалено",
   "ToastCollectionUpdateSuccess": "Добірку оновлено",
   "ToastCoverUpdateFailed": "Не вдалося оновити обкладинку",

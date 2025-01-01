@@ -951,8 +951,6 @@
   "ToastChaptersRemoved": "অধ্যায়গুলো মুছে ফেলা হয়েছে",
   "ToastChaptersUpdated": "অধ্যায় আপডেট করা হয়েছে",
   "ToastCollectionItemsAddFailed": "আইটেম(গুলি) সংগ্রহে যোগ করা ব্যর্থ হয়েছে",
-  "ToastCollectionItemsAddSuccess": "আইটেম(গুলি) সংগ্রহে যোগ করা সফল হয়েছে",
-  "ToastCollectionItemsRemoveSuccess": "আইটেম(গুলি) সংগ্রহ থেকে সরানো হয়েছে",
   "ToastCollectionRemoveSuccess": "সংগ্রহ সরানো হয়েছে",
   "ToastCollectionUpdateSuccess": "সংগ্রহ আপডেট করা হয়েছে",
   "ToastCoverUpdateFailed": "কভার আপডেট ব্যর্থ হয়েছে",

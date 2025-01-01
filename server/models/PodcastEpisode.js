@@ -170,6 +170,62 @@ class PodcastEpisode extends Model {
     })
     PodcastEpisode.belongsTo(podcast)
   }
+
+  /**
+   * AudioTrack object used in old model
+   *
+   * @returns {import('./Book').AudioFileObject|null}
+   */
+  get track() {
+    if (!this.audioFile) return null
+    const track = structuredClone(this.audioFile)
+    track.startOffset = 0
+    track.title = this.audioFile.metadata.title
+    return track
+  }
+
+  toOldJSON(libraryItemId) {
+    let enclosure = null
+    if (this.enclosureURL) {
+      enclosure = {
+        url: this.enclosureURL,
+        type: this.enclosureType,
+        length: this.enclosureSize !== null ? String(this.enclosureSize) : null
+      }
+    }
+
+    return {
+      libraryItemId: libraryItemId,
+      podcastId: this.podcastId,
+      id: this.id,
+      oldEpisodeId: this.extraData?.oldEpisodeId || null,
+      index: this.index,
+      season: this.season,
+      episode: this.episode,
+      episodeType: this.episodeType,
+      title: this.title,
+      subtitle: this.subtitle,
+      description: this.description,
+      enclosure,
+      guid: this.extraData?.guid || null,
+      pubDate: this.pubDate,
+      chapters: this.chapters?.map((ch) => ({ ...ch })) || [],
+      audioFile: this.audioFile || null,
+      publishedAt: this.publishedAt?.valueOf() || null,
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf()
+    }
+  }
+
+  toOldJSONExpanded(libraryItemId) {
+    const json = this.toOldJSON(libraryItemId)
+
+    json.audioTrack = this.track
+    json.size = this.audioFile?.metadata.size || 0
+    json.duration = this.audioFile?.duration || 0
+
+    return json
+  }
 }
 
 module.exports = PodcastEpisode

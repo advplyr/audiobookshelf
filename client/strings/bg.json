@@ -729,7 +729,6 @@
   "ToastBookmarkUpdateSuccess": "Отметката е обновена",
   "ToastChaptersHaveErrors": "Главите имат грешки",
   "ToastChaptersMustHaveTitles": "Главите трябва да имат заглавия",
-  "ToastCollectionItemsRemoveSuccess": "Елемент(и) премахнати от колекция",
   "ToastCollectionRemoveSuccess": "Колекцията е премахната",
   "ToastCollectionUpdateSuccess": "Колекцията е обновена",
   "ToastItemCoverUpdateSuccess": "Корицата на елемента е обновена",
