@@ -98,10 +98,21 @@ class RssFeedManager {
             podcastId: feed.entity.mediaId
           },
           attributes: ['id', 'updatedAt'],
-          order: [['createdAt', 'DESC']]
+          order: [['updatedAt', 'DESC']]
         })
+
         if (mostRecentPodcastEpisode && mostRecentPodcastEpisode.updatedAt > newEntityUpdatedAt) {
           newEntityUpdatedAt = mostRecentPodcastEpisode.updatedAt
+        }
+      } else {
+        const book = await Database.bookModel.findOne({
+          where: {
+            id: feed.entity.mediaId
+          },
+          attributes: ['id', 'updatedAt']
+        })
+        if (book && book.updatedAt > newEntityUpdatedAt) {
+          newEntityUpdatedAt = book.updatedAt
         }
       }
 
@@ -111,7 +122,7 @@ class RssFeedManager {
         attributes: ['id', 'updatedAt'],
         include: {
           model: Database.bookModel,
-          attributes: ['id'],
+          attributes: ['id', 'updatedAt'],
           through: {
             attributes: []
           },
@@ -125,8 +136,9 @@ class RssFeedManager {
       let newEntityUpdatedAt = feed.entity.updatedAt
 
       const mostRecentItemUpdatedAt = feed.entity.books.reduce((mostRecent, book) => {
-        if (book.libraryItem.updatedAt > mostRecent) {
-          return book.libraryItem.updatedAt
+        let updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+        if (updatedAt > mostRecent) {
+          return updatedAt
         }
         return mostRecent
       }, 0)
