@@ -1,5 +1,5 @@
 <template>
-  <article cy-id="card" ref="card" :id="`series-card-${index}`" tabindex="0" :aria-label="displayTitle" :style="{ width: cardWidth + 'px' }" class="absolute rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div cy-id="card" ref="card" :id="`series-card-${index}`" tabindex="0" :style="{ width: cardWidth + 'px' }" class="absolute rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div cy-id="covers-area" class="relative" :style="{ height: coverHeight + 'px' }">
       <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
       <div class="w-full h-full bg-primary relative rounded overflow-hidden z-0">
@@ -21,14 +21,14 @@
 
     <div cy-id="standardBottomText" v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em 0.5em` }">
-        <p cy-id="standardBottomDisplayTitle" class="truncate" aria-hidden="true" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
+        <p cy-id="standardBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
       </div>
     </div>
     <div cy-id="detailBottomText" v-else class="relative z-30 left-0 right-0 mx-auto py-1e rounded-md text-center">
-      <p cy-id="detailBottomDisplayTitle" class="truncate" aria-hidden="true" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
+      <p cy-id="detailBottomDisplayTitle" class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ displayTitle }}</p>
       <p cy-id="detailBottomSortLine" v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displaySortLine }}</p>
     </div>
-  </article>
+  </div>
 </template>
 
 <script>
