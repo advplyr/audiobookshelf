@@ -70,28 +70,27 @@ class LibraryController {
           if (typeof value === "number") {
             combinedStats[key] = (combinedStats[key] || 0) + value;
           } else if (typeof value === "object") {
-           for (const [subKey, subValue] of Object.entries(value)) {
-             for (const keyType of ['size', 'count', 'duration']) {
-               if (subValue[keyType] !== undefined) {
-                 if (combinedStats[key] === undefined) combinedStats[key] = [];
-                 // Insert the current value into the combined stats if its size is bigger than the ten biggest sizes
-                 if (Object.entries(combinedStats[key]).length < 10) {
-                   combinedStats[key].push(subValue);
-                   // Sort the array of sizes
-                   combinedStats[key].sort((a, b) => b[keyType] - a[keyType]);
-                 } else {
-                   if (subValue[keyType] > combinedStats[key][9][keyType]) {
-                     combinedStats[key].pop();
-                     combinedStats[key].push(subValue);
-                     combinedStats[key].sort((a, b) => b[keyType] - a[keyType]);
-                   }
-                 }
-                 break;
-               }
-             }
+            if (!combinedStats[key]) combinedStats[key] = [];
 
-           }
+            combinedStats[key].push(...Object.values(value));
           }
+        }
+      }
+
+      // Process arrays to keep top 10 entries based on 'size', 'count', or 'duration'
+      for (const key in combinedStats) {
+        if (Array.isArray(combinedStats[key])) {
+          combinedStats[key] = combinedStats[key]
+            .sort((a, b) => {
+              const props = ['size', 'count', 'duration'];
+              for (const prop of props) {
+                if (a[prop] !== undefined && b[prop] !== undefined) {
+                  return b[prop] - a[prop];
+                }
+              }
+              return 0;
+            })
+            .slice(0, 10);
         }
       }
 
