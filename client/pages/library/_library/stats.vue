@@ -1,6 +1,8 @@
 <template>
   <div class="page relative" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="library-stats" is-home />
+    <ui-btn class="text-xs" :padding-x="1.5" :padding-y="1" @click="toggleStats">
+      {{ showAllLibraryStats ? currentLibraryName : 'Show all Libraries' }}</ui-btn>
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <div class="w-full max-w-4xl mx-auto">
         <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
@@ -24,7 +26,7 @@
               </div>
             </template>
           </div>
-          <div v-if="isBookLibrary" class="w-80 my-6 mx-auto">
+          <div v-if="isBookLibrary || showAllLibraryStats" class="w-80 my-6 mx-auto">
             <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop10Authors }}</h1>
             <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
             <template v-for="(author, index) in top10Authors">
@@ -102,11 +104,18 @@ export default {
   },
   data() {
     return {
-      libraryStats: null
+      libraryStats: null,
+      showAllLibraryStats: false
     }
   },
   watch: {
     currentLibraryId(newVal, oldVal) {
+      if (newVal) {
+        this.init()
+      }
+    },
+    showAllLibraryStats(newVal) {
+      console.log('showAllLibraryStats', newVal)
       if (newVal) {
         this.init()
       }
@@ -167,11 +176,26 @@ export default {
   },
   methods: {
     async init() {
-      this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
-        console.error('Failed to get library stats', err)
-        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
-        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
-      })
+      this.libraryStats = null
+      if (this.showAllLibraryStats === true) {
+        this.libraryStats = (await this.$axios.$get(`/api/libraries/stats`).catch((err) => {
+          console.error('Failed to get library stats', err)
+          var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+          this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+        }))['combined']
+      } else {
+        this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
+          console.error('Failed to get library stats', err)
+          var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+          this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+        })
+      }
+    },
+    toggleStats() {
+      this.showAllLibraryStats = !this.showAllLibraryStats;
+      this.$nextTick(() => {
+        this.init();
+      });
     }
   },
   mounted() {
