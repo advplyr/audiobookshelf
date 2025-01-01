@@ -22,6 +22,7 @@ async function up({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
   await addIndex(queryInterface, logger, 'libraryItems', ['libraryId', 'mediaType', 'size'])
+  await addIndex(queryInterface, logger, 'books', ['duration'])
 
   logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)
 }
@@ -37,6 +38,7 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
   await removeIndex(queryInterface, logger, 'libraryItems', ['libraryId', 'mediaType', 'size'])
+  await removeIndex(queryInterface, logger, 'books', ['duration'])
 
   logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
 }
