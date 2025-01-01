@@ -758,7 +758,6 @@
   "MessageItemsSelected": "{0} onderdelen geselecteerd",
   "MessageItemsUpdated": "{0} onderdelen bijgewerkt",
   "MessageJoinUsOn": "Doe mee op",
-  "MessageListeningSessionsInTheLastYear": "{0} luistersessies in het laatste jaar",
   "MessageLoading": "Aan het laden...",
   "MessageLoadingFolders": "Mappen aan het laden...",
   "MessageLogsDescription": "Logs worden opgeslagen in <code>/metadata/logs</code> als JSON-bestanden. Crashlogs worden opgeslagen in <code>/metadata/logs/crash_logs.txt</code>.",

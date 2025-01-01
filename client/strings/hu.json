@@ -764,7 +764,6 @@
   "MessageItemsSelected": "{0} kiválasztott elem",
   "MessageItemsUpdated": "{0} frissített elem",
   "MessageJoinUsOn": "Csatlakozzon hozzánk a",
-  "MessageListeningSessionsInTheLastYear": "{0} hallgatási munkamenet az elmúlt évben",
   "MessageLoading": "Betöltés...",
   "MessageLoadingFolders": "Mappák betöltése...",
   "MessageLogsDescription": "A naplók a <code>/metadata/logs</code> mappában JSON-fájlokként tárolódnak. Az összeomlási naplók a <code>/metadata/logs/crash_logs.txt</code> fájlban tárolódnak.",

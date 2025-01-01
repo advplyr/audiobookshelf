@@ -771,7 +771,6 @@
   "MessageItemsSelected": "{0} ausgewählte Medien",
   "MessageItemsUpdated": "{0} Medien aktualisiert",
   "MessageJoinUsOn": "Besuche uns auf",
-  "MessageListeningSessionsInTheLastYear": "{0} Ereignisse im letzten Jahr",
   "MessageLoading": "Wird geladen …",
   "MessageLoadingFolders": "Lade Ordner...",
   "MessageLogsDescription": "Die Logs werdern in <code>/metadata/logs</code> als JSON Dateien gespeichert. Crash logs werden in <code>/metadata/logs/crash_logs.txt</code> gespeichert.",

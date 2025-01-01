@@ -765,7 +765,6 @@
   "MessageItemsSelected": "{0} éléments sélectionnés",
   "MessageItemsUpdated": "{0} éléments mis à jour",
   "MessageJoinUsOn": "Rejoignez-nous sur",
-  "MessageListeningSessionsInTheLastYear": "{0} sessions d’écoute l’an dernier",
   "MessageLoading": "Chargement…",
   "MessageLoadingFolders": "Chargement des dossiers…",
   "MessageLogsDescription": "Les journaux sont stockés dans <code>/metadata/logs</code> sous forme de fichiers JSON. Les journaux d’incidents sont stockés dans <code>/metadata/logs/crash_logs.txt</code>.",
