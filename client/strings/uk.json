@@ -771,7 +771,6 @@
   "MessageItemsSelected": "Обрано елементів: {0}",
   "MessageItemsUpdated": "Оновлено елементів: {0}",
   "MessageJoinUsOn": "Приєднуйтесь до",
-  "MessageListeningSessionsInTheLastYear": "Сесій прослуховування минулого року: {0}",
   "MessageLoading": "Завантаження...",
   "MessageLoadingFolders": "Завантаження тек...",
   "MessageLogsDescription": "Журнали зберігаються у <code>/metadata/logs</code> як JSON-файли. Журнали збоїв зберігаються у <code>/metadata/logs/crash_logs.txt</code>.",

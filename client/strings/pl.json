@@ -657,7 +657,6 @@
   "MessageInsertChapterBelow": "Wstaw rozdział poniżej",
   "MessageItemsSelected": "{0} zaznaczone elementy",
   "MessageJoinUsOn": "Dołącz do nas na",
-  "MessageListeningSessionsInTheLastYear": "Sesje słuchania w ostatnim roku: {0}",
   "MessageLoading": "Ładowanie...",
   "MessageLoadingFolders": "Ładowanie folderów...",
   "MessageLogsDescription": "Logi zapisane są w <code>/metadata/logs</code> jako pliki JSON. Logi awaryjne są zapisane w <code>/metadata/logs/crash_logs.txt</code>.",

@@ -771,7 +771,6 @@
   "MessageItemsSelected": "{0} izbranih elementov",
   "MessageItemsUpdated": "Št. posodobljenih elementov: {0}",
   "MessageJoinUsOn": "Pridružite se nam",
-  "MessageListeningSessionsInTheLastYear": "{0} sej poslušanja v zadnjem letu",
   "MessageLoading": "Nalagam...",
   "MessageLoadingFolders": "Nalagam mape...",
   "MessageLogsDescription": "Dnevniki so shranjeni v <code>/metadata/logs</code> kot datoteke JSON. Dnevniki zrušitev so shranjeni v <code>/metadata/logs/crash_logs.txt</code>.",

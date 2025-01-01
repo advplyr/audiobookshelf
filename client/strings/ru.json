@@ -771,7 +771,6 @@
   "MessageItemsSelected": "{0} Элементов выделено",
   "MessageItemsUpdated": "{0} Элементов обновлено",
   "MessageJoinUsOn": "Присоединяйтесь к нам в",
-  "MessageListeningSessionsInTheLastYear": "{0} сеансов прослушивания в прошлом году",
   "MessageLoading": "Загрузка...",
   "MessageLoadingFolders": "Загрузка каталогов...",
   "MessageLogsDescription": "Журналы хранятся в <code>/metadata/logs</code> в виде JSON-файлов. Журналы сбоев хранятся в <code>/metadata/logs/crash_logs.txt</code>.",

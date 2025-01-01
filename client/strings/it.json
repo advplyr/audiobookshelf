@@ -762,7 +762,6 @@
   "MessageItemsSelected": "{0} oggetti Selezionati",
   "MessageItemsUpdated": "{0} Oggetti aggiornati",
   "MessageJoinUsOn": "Unisciti a noi su",
-  "MessageListeningSessionsInTheLastYear": "{0} sessioni di ascolto nell'ultimo anno",
   "MessageLoading": "Caricamento…",
   "MessageLoadingFolders": "Caricamento Cartelle...",
   "MessageLogsDescription": "I log vengono archiviati nel percorso <code>/metadata/logs</code> as JSON files. I registri degli arresti anomali vengono archiviati nel percorso <code>/metadata/logs/crash_logs.txt</code>.",
