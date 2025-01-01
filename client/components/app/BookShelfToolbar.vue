@@ -87,6 +87,12 @@
 
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
+      <!-- library stats page -->
+      <template v-else-if="isLibraryStatsPage">
+        <div class="flex-grow" />
+        <ui-btn color="primary" small @click="updateLibraryStats">
+          {{ this.showAllLibraryStats ? currentLibraryName : $strings.LabelShowAll }}</ui-btn>
+      </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
         <div class="flex-grow" />
@@ -131,7 +137,8 @@ export default {
       totalEntities: 0,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false
+      processingAuthors: false,
+      showAllLibraryStats: false
     }
   },
   computed: {
@@ -235,6 +242,9 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
+    currentLibraryName() {
+      return this.$store.getters['libraries/getCurrentLibraryName']
+    },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     },
@@ -258,6 +268,9 @@ export default {
     },
     isPlaylistsPage() {
       return this.page === 'playlists'
+    },
+    isLibraryStatsPage() {
+      return this.page === 'library-stats'
     },
     isHomePage() {
       return this.$route.name === 'library-library'
@@ -605,6 +618,12 @@ export default {
     },
     updateAuthorSort() {
       this.saveSettings()
+    },
+    updateLibraryStats() {
+      this.$emit('library-stats-updated', !this.showAllLibraryStats)
+      this.$nextTick(() => {
+        this.showAllLibraryStats = !this.showAllLibraryStats
+      })
     },
     saveSettings() {
       this.$store.dispatch('user/updateUserSettings', this.settings)

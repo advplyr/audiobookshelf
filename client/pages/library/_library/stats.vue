@@ -1,8 +1,6 @@
 <template>
   <div class="page relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar page="library-stats" is-home />
-    <ui-btn class="text-xs" :padding-x="1.5" :padding-y="1" @click="toggleStats">
-      {{ showAllLibraryStats ? currentLibraryName : 'Show all Libraries' }}</ui-btn>
+    <app-book-shelf-toolbar page="library-stats" is-home @library-stats-updated="toggleStats" />
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <div class="w-full max-w-4xl mx-auto">
         <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
@@ -164,9 +162,6 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    currentLibraryName() {
-      return this.$store.getters['libraries/getCurrentLibraryName']
-    },
     currentLibraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
@@ -191,8 +186,8 @@ export default {
         })
       }
     },
-    toggleStats() {
-      this.showAllLibraryStats = !this.showAllLibraryStats;
+    toggleStats(value) {
+      this.showAllLibraryStats = value;
       this.$nextTick(() => {
         this.init();
       });
