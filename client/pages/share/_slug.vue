@@ -110,6 +110,84 @@ export default {
     }
   },
   methods: {
+    mediaSessionPlay() {
+      console.log('Media session play')
+      this.play()
+    },
+    mediaSessionPause() {
+      console.log('Media session pause')
+      this.pause()
+    },
+    mediaSessionStop() {
+      console.log('Media session stop')
+      this.pause()
+    },
+    mediaSessionSeekBackward() {
+      console.log('Media session seek backward')
+      this.jumpBackward()
+    },
+    mediaSessionSeekForward() {
+      console.log('Media session seek forward')
+      this.jumpForward()
+    },
+    mediaSessionSeekTo(e) {
+      console.log('Media session seek to', e)
+      if (e.seekTime !== null && !isNaN(e.seekTime)) {
+        this.seek(e.seekTime)
+      }
+    },
+    mediaSessionPreviousTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.prevChapter()
+      }
+    },
+    mediaSessionNextTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.nextChapter()
+      }
+    },
+    updateMediaSessionPlaybackState() {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
+      }
+    },
+    setMediaSession() {
+      // https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API
+      if ('mediaSession' in navigator) {
+        const chapterInfo = []
+        if (this.chapters.length > 0) {
+          this.chapters.forEach((chapter) => {
+            chapterInfo.push({
+              title: chapter.title,
+              startTime: chapter.start
+            })
+          })
+        }
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: this.mediaItemShare.playbackSession.displayTitle || 'No title',
+          artist: this.mediaItemShare.playbackSession.displayAuthor || 'Unknown',
+          artwork: [
+            {
+              src: this.coverUrl
+            }
+          ],
+          chapterInfo
+        })
+        console.log('Set media session metadata', navigator.mediaSession.metadata)
+
+        navigator.mediaSession.setActionHandler('play', this.mediaSessionPlay)
+        navigator.mediaSession.setActionHandler('pause', this.mediaSessionPause)
+        navigator.mediaSession.setActionHandler('stop', this.mediaSessionStop)
+        navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
+        navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
+        navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
+        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionSeekBackward)
+        navigator.mediaSession.setActionHandler('nexttrack', this.mediaSessionSeekForward)
+      } else {
+        console.warn('Media session not available')
+      }
+    },
     async coverImageLoaded(e) {
       if (!this.playbackSession.coverPath) return
       const fac = new FastAverageColor()
@@ -126,8 +204,19 @@ export default {
         })
     },
     playPause() {
+      if (this.isPlaying) {
+        this.pause()
+      } else {
+        this.play()
+      }
+    },
+    play() {
       if (!this.localAudioPlayer || !this.hasLoaded) return
-      this.localAudioPlayer.playPause()
+      this.localAudioPlayer.play()
+    },
+    pause() {
+      if (!this.localAudioPlayer || !this.hasLoaded) return
+      this.localAudioPlayer.pause()
     },
     jumpForward() {
       if (!this.localAudioPlayer || !this.hasLoaded) return
@@ -213,6 +302,7 @@ export default {
       } else {
         this.stopPlayInterval()
       }
+      this.updateMediaSessionPlaybackState()
     },
     playerTimeUpdate(time) {
       this.setCurrentTime(time)
@@ -276,6 +366,8 @@ export default {
     this.localAudioPlayer.on('timeupdate', this.playerTimeUpdate.bind(this))
     this.localAudioPlayer.on('error', this.playerError.bind(this))
     this.localAudioPlayer.on('finished', this.playerFinished.bind(this))
+
+    this.setMediaSession()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
