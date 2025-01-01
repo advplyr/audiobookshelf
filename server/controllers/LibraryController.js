@@ -42,26 +42,70 @@ class LibraryController {
   /**
    * GET: /api/libraries/stats
    * Get stats for all libraries and respond with JSON
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
+   * @param {RequestWithUser} req
+   * @param {Response} res
    */
   async allStats(req, res) {
     try {
-      const allLibrariesIds = await Database.libraryModel.getAllLibraryIds();
       const allStats = [];
+      const combinedStats = { sizes: {}, top: {} }; // Clear structure for combined stats
+      let libraries = await Database.libraryModel.getAllWithFolders();
+      const librariesAccessible = req.user.permissions?.librariesAccessible || [];
 
-      for (let i = 0; i < allLibrariesIds.length; i++) {
-        const library = await Database.libraryModel.getOldById(allLibrariesIds[i]);
-        req.library = library
-        const libraryStats = await libraryHelpers.getLibraryStats(req);
-        allStats.push({ library: library, stats: libraryStats });
+      if (librariesAccessible.length) {
+        libraries = libraries.filter((lib) => librariesAccessible.includes(lib.id));
       }
 
-      res.json(allStats);
+      for (const library of libraries) {
+        req.library = library;
+
+        // Fetch stats for the current library
+        const libraryStats = await libraryHelpers.getLibraryStats(req);
+
+        // Add the libraries id to the stats
+        libraryStats.id = library.id;
+
+        // Add this library's stats to the array of individual stats
+        allStats.push(libraryStats);
+
+        // Combine all stats
+        for (const [key, value] of Object.entries(libraryStats)) {
+          if (typeof value === "number") {
+            combinedStats[key] = (combinedStats[key] || 0) + value;
+          } else if (typeof value === "object") {
+           for (const [subKey, subValue] of Object.entries(value)) {
+             if (subValue['size'] !== undefined) {
+               if (combinedStats[key] === undefined) combinedStats[key] = [];
+               // Insert the current value into the combined stats if its size is bigger than the ten biggest sizes
+                console.log(subValue['size'])
+               if (Object.entries(combinedStats[key]).length < 10) {
+                 combinedStats[key].push(subValue);
+                 // Sort the array of sizes
+                 combinedStats[key].sort((a, b) => b["size"] - a["size"]);
+               } else {
+                 if (subValue['size'] > combinedStats[key][9]['size']) {
+                   combinedStats[key].pop();
+                   combinedStats[key].push(subValue);
+                   combinedStats[key].sort((a, b) => b["size"] - a["size"]);
+                 }
+               }
+             }
+           }
+          }
+        }
+      }
+
+      // Respond with the aggregated stats
+      res.json({
+        libraries: allStats, // Individual library stats
+        combined: combinedStats // Combined aggregated stats
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   }
+
+
 
   /**
    * POST: /api/libraries
