@@ -62,11 +62,8 @@ class LibraryController {
         // Fetch stats for the current library
         const libraryStats = await libraryHelpers.getLibraryStats(req);
 
-        // Add the libraries id to the stats
-        libraryStats.id = library.id;
-
         // Add this library's stats to the array of individual stats
-        allStats.push(libraryStats);
+        allStats.push({ [library.id]: libraryStats });
 
         // Combine all stats
         for (const [key, value] of Object.entries(libraryStats)) {
