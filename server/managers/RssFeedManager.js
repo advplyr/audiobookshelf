@@ -122,7 +122,7 @@ class RssFeedManager {
         attributes: ['id', 'updatedAt'],
         include: {
           model: Database.bookModel,
-          attributes: ['id', 'updatedAt'],
+          attributes: ['id', 'audioFiles', 'updatedAt'],
           through: {
             attributes: []
           },
@@ -133,14 +133,16 @@ class RssFeedManager {
         }
       })
 
+      const totalBookTracks = feed.entity.books.reduce((total, book) => total + book.includedAudioFiles.length, 0)
+      if (feed.feedEpisodes.length !== totalBookTracks) {
+        return true
+      }
+
       let newEntityUpdatedAt = feed.entity.updatedAt
 
       const mostRecentItemUpdatedAt = feed.entity.books.reduce((mostRecent, book) => {
         let updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
-        if (updatedAt > mostRecent) {
-          return updatedAt
-        }
-        return mostRecent
+        return updatedAt > mostRecent ? updatedAt : mostRecent
       }, 0)
 
       if (mostRecentItemUpdatedAt > newEntityUpdatedAt) {
@@ -163,6 +165,9 @@ class RssFeedManager {
     let feed = await Database.feedModel.findOne({
       where: {
         slug: req.params.slug
+      },
+      include: {
+        model: Database.feedEpisodeModel
       }
     })
     if (!feed) {
@@ -175,8 +180,6 @@ class RssFeedManager {
     if (feedRequiresUpdate) {
       Logger.info(`[RssFeedManager] Feed "${feed.title}" requires update - updating feed`)
       feed = await feed.updateFeedForEntity()
-    } else {
-      feed.feedEpisodes = await feed.getFeedEpisodes()
     }
 
     const xml = feed.buildXml(req.originalHostPrefix)

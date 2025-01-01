@@ -190,7 +190,8 @@ class Feed extends Model {
     const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
 
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+      const updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+      return updatedAt > mostRecent ? updatedAt : mostRecent
     }, collectionExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
@@ -278,7 +279,8 @@ class Feed extends Model {
   static getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions = null) {
     const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+      const updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+      return updatedAt > mostRecent ? updatedAt : mostRecent
     }, seriesExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
@@ -474,8 +476,6 @@ class Feed extends Model {
   async updateFeedForEntity() {
     /** @type {typeof import('./FeedEpisode')} */
     const feedEpisodeModel = this.sequelize.models.feedEpisode
-
-    this.feedEpisodes = await this.getFeedEpisodes()
 
     let feedObj = null
     let feedEpisodeCreateFunc = null
