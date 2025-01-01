@@ -48,7 +48,7 @@ class LibraryController {
   async allStats(req, res) {
     try {
       const allStats = [];
-      const combinedStats = { sizes: {}, top: {} }; // Clear structure for combined stats
+      const combinedStats = {};
       let libraries = await Database.libraryModel.getAllWithFolders();
       const librariesAccessible = req.user.permissions?.librariesAccessible || [];
 
@@ -74,22 +74,25 @@ class LibraryController {
             combinedStats[key] = (combinedStats[key] || 0) + value;
           } else if (typeof value === "object") {
            for (const [subKey, subValue] of Object.entries(value)) {
-             if (subValue['size'] !== undefined) {
-               if (combinedStats[key] === undefined) combinedStats[key] = [];
-               // Insert the current value into the combined stats if its size is bigger than the ten biggest sizes
-                console.log(subValue['size'])
-               if (Object.entries(combinedStats[key]).length < 10) {
-                 combinedStats[key].push(subValue);
-                 // Sort the array of sizes
-                 combinedStats[key].sort((a, b) => b["size"] - a["size"]);
-               } else {
-                 if (subValue['size'] > combinedStats[key][9]['size']) {
-                   combinedStats[key].pop();
+             for (const keyType of ['size', 'count', 'duration']) {
+               if (subValue[keyType] !== undefined) {
+                 if (combinedStats[key] === undefined) combinedStats[key] = [];
+                 // Insert the current value into the combined stats if its size is bigger than the ten biggest sizes
+                 if (Object.entries(combinedStats[key]).length < 10) {
                    combinedStats[key].push(subValue);
-                   combinedStats[key].sort((a, b) => b["size"] - a["size"]);
+                   // Sort the array of sizes
+                   combinedStats[key].sort((a, b) => b[keyType] - a[keyType]);
+                 } else {
+                   if (subValue[keyType] > combinedStats[key][9][keyType]) {
+                     combinedStats[key].pop();
+                     combinedStats[key].push(subValue);
+                     combinedStats[key].sort((a, b) => b[keyType] - a[keyType]);
+                   }
                  }
+                 break;
                }
              }
+
            }
           }
         }
