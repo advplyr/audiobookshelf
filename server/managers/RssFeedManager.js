@@ -98,10 +98,21 @@ class RssFeedManager {
             podcastId: feed.entity.mediaId
           },
           attributes: ['id', 'updatedAt'],
-          order: [['createdAt', 'DESC']]
+          order: [['updatedAt', 'DESC']]
         })
+
         if (mostRecentPodcastEpisode && mostRecentPodcastEpisode.updatedAt > newEntityUpdatedAt) {
           newEntityUpdatedAt = mostRecentPodcastEpisode.updatedAt
+        }
+      } else {
+        const book = await Database.bookModel.findOne({
+          where: {
+            id: feed.entity.mediaId
+          },
+          attributes: ['id', 'updatedAt']
+        })
+        if (book && book.updatedAt > newEntityUpdatedAt) {
+          newEntityUpdatedAt = book.updatedAt
         }
       }
 
@@ -111,7 +122,7 @@ class RssFeedManager {
         attributes: ['id', 'updatedAt'],
         include: {
           model: Database.bookModel,
-          attributes: ['id'],
+          attributes: ['id', 'audioFiles', 'updatedAt'],
           through: {
             attributes: []
           },
@@ -122,13 +133,16 @@ class RssFeedManager {
         }
       })
 
+      const totalBookTracks = feed.entity.books.reduce((total, book) => total + book.includedAudioFiles.length, 0)
+      if (feed.feedEpisodes.length !== totalBookTracks) {
+        return true
+      }
+
       let newEntityUpdatedAt = feed.entity.updatedAt
 
       const mostRecentItemUpdatedAt = feed.entity.books.reduce((mostRecent, book) => {
-        if (book.libraryItem.updatedAt > mostRecent) {
-          return book.libraryItem.updatedAt
-        }
-        return mostRecent
+        let updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+        return updatedAt > mostRecent ? updatedAt : mostRecent
       }, 0)
 
       if (mostRecentItemUpdatedAt > newEntityUpdatedAt) {
@@ -151,6 +165,9 @@ class RssFeedManager {
     let feed = await Database.feedModel.findOne({
       where: {
         slug: req.params.slug
+      },
+      include: {
+        model: Database.feedEpisodeModel
       }
     })
     if (!feed) {
@@ -163,8 +180,6 @@ class RssFeedManager {
     if (feedRequiresUpdate) {
       Logger.info(`[RssFeedManager] Feed "${feed.title}" requires update - updating feed`)
       feed = await feed.updateFeedForEntity()
-    } else {
-      feed.feedEpisodes = await feed.getFeedEpisodes()
     }
 
     const xml = feed.buildXml(req.originalHostPrefix)

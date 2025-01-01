@@ -193,46 +193,46 @@ export default {
     buildData() {
       this.data = []
 
-      var maxValue = 0
-      var minValue = 0
-      Object.values(this.daysListening).forEach((val) => {
-        if (val > maxValue) maxValue = val
-        if (!minValue || val < minValue) minValue = val
-      })
-      const range = maxValue - minValue + 0.01
+      let maxValue = 0
+      let minValue = 0
 
+      const dates = []
       for (let i = 0; i < this.daysToShow + 1; i++) {
-        const col = Math.floor(i / 7)
-        const row = i % 7
-
         const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
-        const datePretty = this.$formatJsDate(date, 'MMM d, yyyy')
-        const monthString = this.$formatJsDate(date, 'MMM')
-        const value = this.daysListening[dateString] || 0
-        const x = col * 13
-        const y = row * 13
+        const dateObj = {
+          col: Math.floor(i / 7),
+          row: i % 7,
+          date,
+          dateString,
+          datePretty: this.$formatJsDate(date, 'MMM d, yyyy'),
+          monthString: this.$formatJsDate(date, 'MMM'),
+          dayOfMonth: Number(dateString.split('-').pop()),
+          yearString: dateString.split('-').shift(),
+          value: this.daysListening[dateString] || 0
+        }
+        dates.push(dateObj)
 
-        var bgColor = this.bgColors[0]
-        var outlineColor = this.outlineColors[0]
-        if (value) {
+        if (dateObj.value) {
+          if (dateObj.value > maxValue) maxValue = dateObj.value
+          if (!minValue || dateObj.value < minValue) minValue = dateObj.value
+        }
+      }
+      const range = maxValue - minValue + 0.01
+
+      for (const dateObj of dates) {
+        let bgColor = this.bgColors[0]
+        let outlineColor = this.outlineColors[0]
+        if (dateObj.value) {
           outlineColor = this.outlineColors[1]
-          var percentOfAvg = (value - minValue) / range
-          var bgIndex = Math.floor(percentOfAvg * 4) + 1
+          const percentOfAvg = (dateObj.value - minValue) / range
+          const bgIndex = Math.floor(percentOfAvg * 4) + 1
           bgColor = this.bgColors[bgIndex] || 'red'
         }
 
         this.data.push({
-          date,
-          dateString,
-          datePretty,
-          monthString,
-          dayOfMonth: Number(dateString.split('-').pop()),
-          yearString: dateString.split('-').shift(),
-          value,
-          col,
-          row,
-          style: `transform:translate(${x}px,${y}px);background-color:${bgColor};outline:1px solid ${outlineColor};outline-offset:-1px;`
+          ...dateObj,
+          style: `transform:translate(${dateObj.col * 13}px,${dateObj.row * 13}px);background-color:${bgColor};outline:1px solid ${outlineColor};outline-offset:-1px;`
         })
       }
 

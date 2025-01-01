@@ -735,7 +735,6 @@
   "ToastCachePurgeSuccess": "Cache apagado com sucesso",
   "ToastChaptersHaveErrors": "Capítulos com erro",
   "ToastChaptersMustHaveTitles": "Capítulos precisam ter títulos",
-  "ToastCollectionItemsRemoveSuccess": "Item(ns) removidos da coleção",
   "ToastCollectionRemoveSuccess": "Coleção removida",
   "ToastCollectionUpdateSuccess": "Coleção atualizada",
   "ToastDeleteFileFailed": "Falha ao apagar arquivo",

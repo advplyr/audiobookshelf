@@ -107,6 +107,9 @@ class Feed extends Model {
       entityUpdatedAt = libraryItem.media.podcastEpisodes.reduce((mostRecent, episode) => {
         return episode.updatedAt > mostRecent ? episode.updatedAt : mostRecent
       }, entityUpdatedAt)
+    } else if (libraryItem.media.updatedAt > entityUpdatedAt) {
+      // Book feeds will use Book.updatedAt if more recent
+      entityUpdatedAt = libraryItem.media.updatedAt
     }
 
     const feedObj = {
@@ -187,7 +190,8 @@ class Feed extends Model {
     const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
 
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+      const updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+      return updatedAt > mostRecent ? updatedAt : mostRecent
     }, collectionExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
@@ -275,7 +279,8 @@ class Feed extends Model {
   static getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions = null) {
     const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
-      return book.libraryItem.updatedAt > mostRecent ? book.libraryItem.updatedAt : mostRecent
+      const updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
+      return updatedAt > mostRecent ? updatedAt : mostRecent
     }, seriesExpanded.updatedAt)
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
@@ -516,16 +521,23 @@ class Feed extends Model {
     try {
       const updatedFeed = await this.update(feedObj, { transaction })
 
-      // Remove existing feed episodes
-      await feedEpisodeModel.destroy({
-        where: {
-          feedId: this.id
-        },
-        transaction
-      })
+      const existingFeedEpisodeIds = this.feedEpisodes.map((ep) => ep.id)
 
       // Create new feed episodes
       updatedFeed.feedEpisodes = await feedEpisodeCreateFunc(feedEpisodeCreateFuncEntity, updatedFeed, this.slug, transaction)
+
+      const newFeedEpisodeIds = updatedFeed.feedEpisodes.map((ep) => ep.id)
+      const feedEpisodeIdsToRemove = existingFeedEpisodeIds.filter((epid) => !newFeedEpisodeIds.includes(epid))
+
+      if (feedEpisodeIdsToRemove.length) {
+        Logger.info(`[Feed] Removing ${feedEpisodeIdsToRemove.length} episodes from feed ${this.id}`)
+        await feedEpisodeModel.destroy({
+          where: {
+            id: feedEpisodeIdsToRemove
+          },
+          transaction
+        })
+      }
 
       await transaction.commit()
 

@@ -11,3 +11,5 @@ Please add a record of every database migration that you create to this file. Th
 | v2.17.3        | v2.17.3-fk-constraints                       | Changes the foreign key constraints for tables due to sequelize bug dropping constraints in v2.17.0 migration |
 | v2.17.4        | v2.17.4-use-subfolder-for-oidc-redirect-uris | Save subfolder to OIDC redirect URIs to support existing installations                                        |
 | v2.17.5        | v2.17.5-remove-host-from-feed-urls           | removes the host (serverAddress) from URL columns in the feeds and feedEpisodes tables                        |
+| v2.17.6        | v2.17.6-share-add-isdownloadable             | Adds the isDownloadable column to the mediaItemShares table                                                   |
+| v2.17.7        | v2.17.7-add-indices                          | Adds indices to the libraryItems and books tables to reduce query times                                       |

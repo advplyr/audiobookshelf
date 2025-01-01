@@ -727,7 +727,6 @@
   "ToastBookmarkUpdateSuccess": "書籤已更新",
   "ToastChaptersHaveErrors": "章節有錯誤",
   "ToastChaptersMustHaveTitles": "章節必須有標題",
-  "ToastCollectionItemsRemoveSuccess": "項目從收藏夾移除",
   "ToastCollectionRemoveSuccess": "收藏夾已刪除",
   "ToastCollectionUpdateSuccess": "收藏夾已更新",
   "ToastItemCoverUpdateSuccess": "項目封面已更新",

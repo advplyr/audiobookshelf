@@ -959,8 +959,6 @@
   "ToastChaptersRemoved": "Удалены главы",
   "ToastChaptersUpdated": "Обновленные главы",
   "ToastCollectionItemsAddFailed": "Не удалось добавить элемент(ы) в коллекцию",
-  "ToastCollectionItemsAddSuccess": "Элемент(ы) добавлены в коллекцию",
-  "ToastCollectionItemsRemoveSuccess": "Элемент(ы), удалены из коллекции",
   "ToastCollectionRemoveSuccess": "Коллекция удалена",
   "ToastCollectionUpdateSuccess": "Коллекция обновлена",
   "ToastCoverUpdateFailed": "Не удалось обновить обложку",
