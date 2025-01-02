@@ -197,6 +197,18 @@ export default {
       let maxValue = 0
       let minValue = 0
 
+      const wholeYearDays = (52 * 7 + this.dayOfWeekToday);
+      const wholeYear = this.$addDaysToToday(-wholeYearDays + 1)
+
+      for (let i = 0; i < wholeYearDays; i++) {
+        const date = i === 0 ? wholeYear : this.$addDaysToDate(wholeYear, i)
+        const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
+        console.log(dateString)
+        if ((this.daysListening[dateString] || 0) > 0) {
+          this.daysListenedInTheLastYear++
+        }
+      }
+
       const dates = []
       for (let i = 0; i < this.daysToShow + 1; i++) {
         const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
@@ -215,7 +227,6 @@ export default {
         dates.push(dateObj)
 
         if (dateObj.value > 0) {
-          this.daysListenedInTheLastYear++
           if (dateObj.value > maxValue) maxValue = dateObj.value
           if (!minValue || dateObj.value < minValue) minValue = dateObj.value
         }
