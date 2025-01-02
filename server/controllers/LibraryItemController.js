@@ -234,32 +234,27 @@ class LibraryItemController {
       }
     }
 
-    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
-
     // Book specific - Get all series being removed from this item
     let seriesRemoved = []
     if (req.libraryItem.isBook && mediaPayload.metadata?.series) {
       const seriesIdsInUpdate = mediaPayload.metadata.series?.map((se) => se.id) || []
-      seriesRemoved = oldLibraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+      seriesRemoved = req.libraryItem.media.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
     }
 
     let authorsRemoved = []
     if (req.libraryItem.isBook && mediaPayload.metadata?.authors) {
       const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
-      authorsRemoved = oldLibraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+      authorsRemoved = req.libraryItem.media.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
     }
 
-    const hasUpdates = oldLibraryItem.media.update(mediaPayload) || mediaPayload.url
+    const hasUpdates = (await req.libraryItem.media.updateFromRequest(mediaPayload)) || mediaPayload.url
     if (hasUpdates) {
-      oldLibraryItem.updatedAt = Date.now()
-
       if (isPodcastAutoDownloadUpdated) {
-        this.cronManager.checkUpdatePodcastCron(oldLibraryItem)
+        this.cronManager.checkUpdatePodcastCron(req.libraryItem)
       }
 
-      Logger.debug(`[LibraryItemController] Updated library item media ${oldLibraryItem.media.metadata.title}`)
-      await Database.updateLibraryItem(oldLibraryItem)
-      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+      Logger.debug(`[LibraryItemController] Updated library item media ${req.libraryItem.media.title}`)
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
 
       if (authorsRemoved.length) {
         // Check remove empty authors
@@ -274,7 +269,7 @@ class LibraryItemController {
     }
     res.json({
       updated: hasUpdates,
-      libraryItem: oldLibraryItem
+      libraryItem: req.libraryItem.toOldJSON()
     })
   }
 

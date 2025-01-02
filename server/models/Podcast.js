@@ -1,5 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
-const { getTitlePrefixAtEnd } = require('../utils')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
+const Logger = require('../Logger')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -197,6 +198,82 @@ class Podcast extends Model {
       explicit: !!this.explicit,
       podcastType: this.podcastType
     }
+  }
+
+  /**
+   *
+   * @param {Object} payload - Old podcast object
+   * @returns {Promise<boolean>}
+   */
+  async updateFromRequest(payload) {
+    if (!payload) return false
+
+    let hasUpdates = false
+
+    if (payload.metadata) {
+      const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
+      stringKeys.forEach((key) => {
+        let newKey = key
+        if (key === 'type') {
+          newKey = 'podcastType'
+        } else if (key === 'feedUrl') {
+          newKey = 'feedURL'
+        } else if (key === 'imageUrl') {
+          newKey = 'imageURL'
+        } else if (key === 'itunesPageUrl') {
+          newKey = 'itunesPageURL'
+        }
+        if (typeof payload.metadata[key] === 'string' && payload.metadata[key] !== this[newKey]) {
+          this[newKey] = payload.metadata[key]
+          if (key === 'title') {
+            this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
+          }
+
+          hasUpdates = true
+        }
+      })
+
+      if (payload.metadata.explicit !== undefined && payload.metadata.explicit !== this.explicit) {
+        this.explicit = !!payload.metadata.explicit
+        hasUpdates = true
+      }
+
+      if (Array.isArray(payload.metadata.genres) && !payload.metadata.genres.some((item) => typeof item !== 'string') && JSON.stringify(this.genres) !== JSON.stringify(payload.metadata.genres)) {
+        this.genres = payload.metadata.genres
+        this.changed('genres', true)
+        hasUpdates = true
+      }
+    }
+
+    if (Array.isArray(payload.tags) && !payload.tags.some((item) => typeof item !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
+      this.tags = payload.tags
+      this.changed('tags', true)
+      hasUpdates = true
+    }
+
+    if (payload.autoDownloadEpisodes !== undefined && payload.autoDownloadEpisodes !== this.autoDownloadEpisodes) {
+      this.autoDownloadEpisodes = !!payload.autoDownloadEpisodes
+      hasUpdates = true
+    }
+    if (typeof payload.autoDownloadSchedule === 'string' && payload.autoDownloadSchedule !== this.autoDownloadSchedule) {
+      this.autoDownloadSchedule = payload.autoDownloadSchedule
+      hasUpdates = true
+    }
+
+    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload']
+    numberKeys.forEach((key) => {
+      if (typeof payload[key] === 'number' && payload[key] !== this[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    })
+
+    if (hasUpdates) {
+      Logger.debug(`[Podcast] changed keys:`, this.changed())
+      await this.save()
+    }
+
+    return hasUpdates
   }
 
   /**

@@ -215,6 +215,10 @@ class CronManager {
     this.podcastCrons = this.podcastCrons.filter((pc) => pc.expression !== podcastCron.expression)
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem - this can be the old model
+   */
   checkUpdatePodcastCron(libraryItem) {
     // Remove from old cron by library item id
     const existingCron = this.podcastCrons.find((pc) => pc.libraryItemIds.includes(libraryItem.id))
@@ -230,7 +234,10 @@ class CronManager {
       const cronMatchingExpression = this.podcastCrons.find((pc) => pc.expression === libraryItem.media.autoDownloadSchedule)
       if (cronMatchingExpression) {
         cronMatchingExpression.libraryItemIds.push(libraryItem.id)
-        Logger.info(`[CronManager] Added podcast "${libraryItem.media.metadata.title}" to auto dl episode cron "${cronMatchingExpression.expression}"`)
+
+        // TODO: Update after old model removed
+        const podcastTitle = libraryItem.media.title || libraryItem.media.metadata?.title
+        Logger.info(`[CronManager] Added podcast "${podcastTitle}" to auto dl episode cron "${cronMatchingExpression.expression}"`)
       } else {
         this.startPodcastCron(libraryItem.media.autoDownloadSchedule, [libraryItem.id])
       }

@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
-const { getTitlePrefixAtEnd } = require('../utils')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const parseNameString = require('../utils/parsers/parseNameString')
 
 /**
@@ -423,6 +423,116 @@ class Book extends Model {
       explicit: !!this.explicit,
       abridged: !!this.abridged
     }
+  }
+
+  /**
+   *
+   * @param {Object} payload - old book object
+   * @returns {Promise<boolean>}
+   */
+  async updateFromRequest(payload) {
+    if (!payload) return false
+
+    let hasUpdates = false
+
+    if (payload.metadata) {
+      const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
+      metadataStringKeys.forEach((key) => {
+        if (typeof payload.metadata[key] === 'string' && this[key] !== payload.metadata[key]) {
+          this[key] = payload.metadata[key] || null
+
+          if (key === 'title') {
+            this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
+          }
+
+          hasUpdates = true
+        }
+      })
+      if (payload.metadata.explicit !== undefined && this.explicit !== !!payload.metadata.explicit) {
+        this.explicit = !!payload.metadata.explicit
+        hasUpdates = true
+      }
+      if (payload.metadata.abridged !== undefined && this.abridged !== !!payload.metadata.abridged) {
+        this.abridged = !!payload.metadata.abridged
+        hasUpdates = true
+      }
+      const arrayOfStringsKeys = ['narrators', 'genres']
+      arrayOfStringsKeys.forEach((key) => {
+        if (Array.isArray(payload.metadata[key]) && !payload.metadata[key].some((item) => typeof item !== 'string') && JSON.stringify(this[key]) !== JSON.stringify(payload.metadata[key])) {
+          this[key] = payload.metadata[key]
+          this.changed(key, true)
+          hasUpdates = true
+        }
+      })
+    }
+
+    if (Array.isArray(payload.tags) && !payload.tags.some((tag) => typeof tag !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
+      this.tags = payload.tags
+      this.changed('tags', true)
+      hasUpdates = true
+    }
+
+    // TODO: Remove support for updating audioFiles, chapters and ebookFile here
+    const arrayOfObjectsKeys = ['audioFiles', 'chapters']
+    arrayOfObjectsKeys.forEach((key) => {
+      if (Array.isArray(payload[key]) && !payload[key].some((item) => typeof item !== 'object') && JSON.stringify(this[key]) !== JSON.stringify(payload[key])) {
+        this[key] = payload[key]
+        this.changed(key, true)
+        hasUpdates = true
+      }
+    })
+    if (payload.ebookFile && JSON.stringify(this.ebookFile) !== JSON.stringify(payload.ebookFile)) {
+      this.ebookFile = payload.ebookFile
+      this.changed('ebookFile', true)
+      hasUpdates = true
+    }
+
+    if (hasUpdates) {
+      Logger.debug(`[Book] "${this.title}" changed keys:`, this.changed())
+      await this.save()
+    }
+
+    if (Array.isArray(payload.metadata?.authors)) {
+      const authorsRemoved = this.authors.filter((au) => !payload.metadata.authors.some((a) => a.id === au.id))
+      const newAuthors = payload.metadata.authors.filter((a) => !this.authors.some((au) => au.id === a.id))
+
+      for (const author of authorsRemoved) {
+        await this.sequelize.models.bookAuthor.removeByIds(author.id, this.id)
+        Logger.debug(`[Book] "${this.title}" Removed author ${author.id}`)
+        hasUpdates = true
+      }
+      for (const author of newAuthors) {
+        await this.sequelize.models.bookAuthor.create({ bookId: this.id, authorId: author.id })
+        Logger.debug(`[Book] "${this.title}" Added author ${author.id}`)
+        hasUpdates = true
+      }
+    }
+
+    if (Array.isArray(payload.metadata?.series)) {
+      const seriesRemoved = this.series.filter((se) => !payload.metadata.series.some((s) => s.id === se.id))
+      const newSeries = payload.metadata.series.filter((s) => !this.series.some((se) => se.id === s.id))
+
+      for (const series of seriesRemoved) {
+        await this.sequelize.models.bookSeries.removeByIds(series.id, this.id)
+        Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
+        hasUpdates = true
+      }
+      for (const series of newSeries) {
+        await this.sequelize.models.bookSeries.create({ bookId: this.id, seriesId: series.id, sequence: series.sequence })
+        Logger.debug(`[Book] "${this.title}" Added series ${series.id}`)
+        hasUpdates = true
+      }
+      for (const series of payload.metadata.series) {
+        const existingSeries = this.series.find((se) => se.id === series.id)
+        if (existingSeries && existingSeries.bookSeries.sequence !== series.sequence) {
+          await existingSeries.bookSeries.update({ sequence: series.sequence })
+          Logger.debug(`[Book] "${this.title}" Updated series ${series.id} sequence ${series.sequence}`)
+          hasUpdates = true
+        }
+      }
+    }
+
+    return hasUpdates
   }
 
   /**
