@@ -42,11 +42,14 @@ export default {
       rendition: null,
       chapters: [],
       ereaderSettings: {
+        flow: 'paginated', // rendition.snappaginated | scrolled
+        spread: 'auto', // none | auto
+        snap: false, // false | true -- note this is opposite to intuition (upstream problem)
+
         theme: 'dark',
         font: 'serif',
         fontScale: 100,
         lineSpacing: 115,
-        spread: 'auto',
         textStroke: 0
       }
     }
@@ -127,6 +130,11 @@ export default {
   },
   methods: {
     updateSettings(settings) {
+      var resnapping = false
+      if (this.ereaderSettings.snap != settings.snap) {
+        resnapping = true
+      }
+
       this.ereaderSettings = settings
 
       if (!this.rendition) return
@@ -136,7 +144,11 @@ export default {
       const fontScale = settings.fontScale || 100
       this.rendition.themes.fontSize(`${fontScale}%`)
       this.rendition.themes.font(settings.font)
-      this.rendition.spread(settings.spread || 'auto')
+      this.rendition.flow(this.ereaderSettings.flow)
+      this.rendition.spread(this.ereaderSettings.spread)
+      if (resnapping) {
+        // TODO: Appears not to be part of upstream API?
+      }
     },
     prev() {
       if (!this.rendition?.manager) return
@@ -324,10 +336,10 @@ export default {
         width: this.readerWidth,
         height: this.readerHeight * 0.8,
         allowScriptedContent: this.allowScriptedContent,
-        spread: 'auto',
-        snap: true,
         manager: 'continuous',
-        flow: 'paginated'
+        spread: this.ereaderSettings.spread,
+        snap: this.ereaderSettings.snap,
+        flow: this.ereaderSettings.flow
       })
 
       // load saved progress
