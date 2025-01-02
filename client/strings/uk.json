@@ -758,6 +758,7 @@
   "MessageConfirmResetProgress": "Ви впевнені, що хочете скинути свій прогрес?",
   "MessageConfirmSendEbookToDevice": "Ви дійсно хочете відправити на пристрій \"{2}\" електроні книги: {0}, \"{1}\"?",
   "MessageConfirmUnlinkOpenId": "Ви впевнені, що хочете відв'язати цього користувача від OpenID?",
+  "MessageDaysListenedInTheLastYear": "{0} днів, прослуханих за останній рік",
   "MessageDownloadingEpisode": "Завантаження епізоду",
   "MessageDragFilesIntoTrackOrder": "Перетягніть файли до правильного порядку",
   "MessageEmbedFailed": "Не вдалося вбудувати!",
