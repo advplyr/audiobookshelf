@@ -1000,7 +1000,7 @@
   "ToastLibraryScanFailedToStart": "Error al iniciar el escaneo",
   "ToastLibraryScanStarted": "Se inició el escaneo de la biblioteca",
   "ToastLibraryUpdateSuccess": "Biblioteca \"{0}\" actualizada",
-  "ToastMatchAllAuthorsFailed": "No coincide con todos los autores",
+  "ToastMatchAllAuthorsFailed": "No se pudo encontrar a todos los autores",
   "ToastMetadataFilesRemovedError": "Error al eliminar metadatos de {0} archivo(s)",
   "ToastMetadataFilesRemovedNoneFound": "No hay metadatos.{0} archivo(s) encontrado(s) en la biblioteca",
   "ToastMetadataFilesRemovedNoneRemoved": "Sin metadatos.{0} archivo(s) eliminado(s)",
