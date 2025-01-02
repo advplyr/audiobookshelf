@@ -177,9 +177,6 @@ class LibraryItem {
   get hasAudioFiles() {
     return this.libraryFiles.some((lf) => lf.fileType === 'audio')
   }
-  get hasMediaEntities() {
-    return this.media.hasMediaEntities
-  }
 
   // Data comes from scandir library item data
   // TODO: Remove this function. Only used when creating a new podcast now

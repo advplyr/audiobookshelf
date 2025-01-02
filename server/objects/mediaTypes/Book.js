@@ -100,9 +100,6 @@ class Book {
     }
     return total
   }
-  get hasMediaEntities() {
-    return !!this.tracks.length || this.ebookFile
-  }
   get includedAudioFiles() {
     return this.audioFiles.filter((af) => !af.exclude)
   }
@@ -129,8 +126,6 @@ class Book {
 
   update(payload) {
     const json = this.toJSON()
-    delete json.audiobooks // do not update media entities here
-    delete json.ebooks
 
     let hasUpdates = false
     for (const key in json) {

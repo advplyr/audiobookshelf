@@ -124,9 +124,6 @@ class Podcast {
     this.episodes.forEach((ep) => (total += ep.size))
     return total
   }
-  get hasMediaEntities() {
-    return !!this.episodes.length
-  }
   get duration() {
     let total = 0
     this.episodes.forEach((ep) => (total += ep.duration))
