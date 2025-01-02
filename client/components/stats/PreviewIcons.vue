@@ -14,7 +14,7 @@
       <span class="material-symbols text-5xl pt-1">podcasts</span>
       <div class="px-1">
         <p class="text-4.5xl leading-none font-bold">{{ $formatNumber(numAudioTracks) }}</p>
-        <p class="text-xs md:text-sm text-white text-opacity-80">Episodes</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelEpisodes }}</p>
       </div>
     </div>
 

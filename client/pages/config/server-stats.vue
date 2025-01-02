@@ -1,16 +1,16 @@
 <template>
 
   <div>
-    <app-settings-content v-if="serverStats != null" header-text="All Stats">
+    <app-settings-content v-if="serverStats != null" :header-text="$strings.HeaderAllStats">
       <stats-preview-icons :library-stats="serverStats['combined']['all']" media-type="overview"/>
     </app-settings-content>
 
-    <app-settings-content v-if="serverStats != null && bookLibraryListStats.length >= 1" header-text="Book Libraries">
+    <app-settings-content v-if="serverStats != null && bookLibraryListStats.length >= 1" :header-text="$strings.HeaderBookLibraries">
       <stats-preview-icons :library-stats="serverStats['combined']['books']" media-type="book"/>
 
       <table class="tracksTable max-w-3xl mx-auto mt-8">
         <tr>
-          <th class="text-left">Name</th>
+          <th class="text-left">{{ $strings.LabelName }}</th>
           <th class="text-left">{{ $strings.LabelStatsItemsInLibrary }}</th>
           <th class="text-left">{{ $strings.LabelStatsOverallHours }}</th>
           <th class="text-left">{{ $strings.LabelStatsAuthors }}</th>
@@ -19,7 +19,11 @@
         </tr>
         <tr v-for="library in bookLibraryListStats">
           <td>
-            <p class="text-sm md:text-base text-gray-100">{{ library.name }}</p>
+            <p class="text-sm md:text-base text-gray-100">
+              <nuxt-link :to="`/library/${library.id}/stats`" class="hover:underline">
+                {{ library.name }}
+              </nuxt-link>
+            </p>
           </td>
           <td>
             <p class="text-sm md:text-base text-gray-100">{{ library.stats.totalItems }}</p>
@@ -41,20 +45,24 @@
 
     </app-settings-content>
 
-    <app-settings-content v-if="serverStats != null && podcastLibraryListStats.length >= 1" header-text="Podcast Libraries">
+    <app-settings-content v-if="serverStats != null && podcastLibraryListStats.length >= 1" :header-text="$strings.HeaderPodcastLibraries">
       <stats-preview-icons :library-stats="serverStats['combined']['podcasts']" media-type="podcast"/>
 
       <table class="tracksTable max-w-3xl mx-auto mt-8">
         <tr>
-          <th class="text-left">Name</th>
+          <th class="text-left">{{ $strings.LabelName }}</th>
           <th class="text-left">{{ $strings.LabelStatsItemsInLibrary }}</th>
-          <th class="text-left">Episodes</th>
+          <th class="text-left">{{ $strings.LabelEpisodes }}</th>
           <th class="text-left">{{ $strings.LabelStatsOverallHours }}</th>
           <th class="text-left">{{ $strings.LabelSize }}</th>
         </tr>
         <tr v-for="library in podcastLibraryListStats">
           <td>
-            <p class="text-sm md:text-base text-gray-100">{{ library.name }}</p>
+            <p class="text-sm md:text-base text-gray-100">
+              <nuxt-link :to="`/library/${library.id}/stats`" class="hover:underline">
+                {{ library.name }}
+              </nuxt-link>
+            </p>
           </td>
           <td>
             <p class="text-sm md:text-base text-gray-100">{{ library.stats.totalItems }}</p>
