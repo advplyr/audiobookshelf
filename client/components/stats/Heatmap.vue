@@ -203,7 +203,6 @@ export default {
       for (let i = 0; i < wholeYearDays; i++) {
         const date = i === 0 ? wholeYear : this.$addDaysToDate(wholeYear, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
-        console.log(dateString)
         if ((this.daysListening[dateString] || 0) > 0) {
           this.daysListenedInTheLastYear++
         }
