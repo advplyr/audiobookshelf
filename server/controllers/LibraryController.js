@@ -48,7 +48,11 @@ class LibraryController {
   async allStats(req, res) {
     try {
       const allStats = [];
-      const combinedStats = {};
+      const combinedStats = {
+        all: {},
+        books: {},
+        podcasts: {}
+      };
       let libraries = await Database.libraryModel.getAllWithFolders();
       const librariesAccessible = req.user.permissions?.librariesAccessible || [];
 
@@ -63,41 +67,54 @@ class LibraryController {
         const libraryStats = await libraryHelpers.getLibraryStats(req);
 
         // Add this library's stats to the array of individual stats
-        allStats.push({ [library.id]: libraryStats });
+        allStats.push({
+          'id': library.id,
+          'name': library.name,
+          'type': library.mediaType,
+          'stats': libraryStats
+        });
 
-        // Combine all stats
-        for (const [key, value] of Object.entries(libraryStats)) {
-          if (typeof value === "number") {
-            combinedStats[key] = (combinedStats[key] || 0) + value;
-          } else if (typeof value === "object") {
-            if (!combinedStats[key]) combinedStats[key] = [];
+        // Combine stats for all categories
+        const categories = ['all'];
+        if (library.mediaType === 'book') categories.push('books');
+        if (library.mediaType === 'podcast') categories.push('podcasts');
 
-            combinedStats[key].push(...Object.values(value));
+        // Process each relevant category
+        categories.forEach(category => {
+          for (const [key, value] of Object.entries(libraryStats)) {
+            if (typeof value === "number") {
+              combinedStats[category][key] = (combinedStats[category][key] || 0) + value;
+            } else if (typeof value === "object") {
+              if (!combinedStats[category][key]) combinedStats[category][key] = [];
+              combinedStats[category][key].push(...Object.values(value));
+            }
+          }
+        });
+      }
+
+      // Process arrays to keep top 10 entries for all categories
+      Object.keys(combinedStats).forEach(category => {
+        for (const key in combinedStats[category]) {
+          if (Array.isArray(combinedStats[category][key])) {
+            combinedStats[category][key] = combinedStats[category][key]
+              .sort((a, b) => {
+                const props = ['size', 'count', 'duration'];
+                for (const prop of props) {
+                  if (a[prop] !== undefined && b[prop] !== undefined) {
+                    return b[prop] - a[prop];
+                  }
+                }
+                return 0;
+              })
+              .slice(0, 10);
           }
         }
-      }
-
-      // Process arrays to keep top 10 entries based on 'size', 'count', or 'duration'
-      for (const key in combinedStats) {
-        if (Array.isArray(combinedStats[key])) {
-          combinedStats[key] = combinedStats[key]
-            .sort((a, b) => {
-              const props = ['size', 'count', 'duration'];
-              for (const prop of props) {
-                if (a[prop] !== undefined && b[prop] !== undefined) {
-                  return b[prop] - a[prop];
-                }
-              }
-              return 0;
-            })
-            .slice(0, 10);
-        }
-      }
+      });
 
       // Respond with the aggregated stats
       res.json({
-        libraries: allStats, // Individual library stats
-        combined: combinedStats // Combined aggregated stats
+        libraries: allStats,
+        combined: combinedStats
       });
     } catch (error) {
       res.status(500).json({ error: error.message });

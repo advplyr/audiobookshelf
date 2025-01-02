@@ -10,6 +10,14 @@
       </div>
     </div>
 
+    <div v-if="!isBookLibrary && !isOverView" class="flex p-2">
+      <span class="material-symbols text-5xl pt-1">podcasts</span>
+      <div class="px-1">
+        <p class="text-4.5xl leading-none font-bold">{{ $formatNumber(numAudioTracks) }}</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">Episodes</p>
+      </div>
+    </div>
+
     <div class="flex p-2">
       <span class="material-symbols text-5xl py-1">show_chart</span>
       <div class="px-1">
@@ -36,7 +44,7 @@
       </div>
     </div>
 
-    <div class="flex p-2">
+    <div v-if="isBookLibrary || isOverView" class="flex p-2">
       <span class="material-symbols text-5xl pt-1">audio_file</span>
       <div class="px-1">
         <p class="text-4.5xl leading-none font-bold">{{ $formatNumber(numAudioTracks) }}</p>
@@ -52,17 +60,21 @@ export default {
     libraryStats: {
       type: Object,
       default: () => {}
-    }
+    },
+    mediaType: null
   },
   data() {
     return {}
   },
   computed: {
     currentLibraryMediaType() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+      return this.mediaType || this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
     isBookLibrary() {
       return this.currentLibraryMediaType === 'book'
+    },
+    isOverView(){
+      return this.mediaType === 'overview'
     },
     user() {
       return this.$store.state.user.user
