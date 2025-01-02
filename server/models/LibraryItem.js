@@ -73,6 +73,9 @@ class LibraryItem extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {Book.BookExpanded|Podcast.PodcastExpanded} - only set when expanded */
+    this.media
   }
 
   /**
@@ -120,7 +123,7 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Currently unused because this is too slow and uses too much mem
+   *
    * @param {import('sequelize').WhereOptions} [where]
    * @returns {Array<objects.LibraryItem>} old library items
    */
@@ -565,7 +568,7 @@ class LibraryItem extends Model {
           oldLibraryItem.media.metadata.series = li.series
         }
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = this.sequelize.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
         }
         if (li.media.numEpisodes) {
           oldLibraryItem.media.numEpisodes = li.media.numEpisodes
@@ -1059,6 +1062,9 @@ class LibraryItem extends Model {
             fields: ['libraryId', 'mediaType']
           },
           {
+            fields: ['libraryId', 'mediaType', 'size']
+          },
+          {
             fields: ['libraryId', 'mediaId', 'mediaType']
           },
           {
@@ -1123,6 +1129,24 @@ class LibraryItem extends Model {
         media.destroy()
       }
     })
+  }
+
+  /**
+   * Check if book or podcast library item has audio tracks
+   * Requires expanded library item
+   *
+   * @returns {boolean}
+   */
+  hasAudioTracks() {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
+      return false
+    }
+    if (this.mediaType === 'book') {
+      return this.media.audioFiles?.length > 0
+    } else {
+      return this.media.podcastEpisodes?.length > 0
+    }
   }
 }
 

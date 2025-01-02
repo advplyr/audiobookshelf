@@ -904,8 +904,6 @@
   "ToastChaptersRemoved": "Capítols eliminats",
   "ToastChaptersUpdated": "Capítols actualitzats",
   "ToastCollectionItemsAddFailed": "Error en afegir elements a la col·lecció",
-  "ToastCollectionItemsAddSuccess": "Elements afegits a la col·lecció",
-  "ToastCollectionItemsRemoveSuccess": "Elements eliminats de la col·lecció",
   "ToastCollectionRemoveSuccess": "Col·lecció eliminada",
   "ToastCollectionUpdateSuccess": "Col·lecció actualitzada",
   "ToastCoverUpdateFailed": "Error en actualitzar la portada",

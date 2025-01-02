@@ -16,15 +16,6 @@ class CollectionBook extends Model {
     this.createdAt
   }
 
-  static removeByIds(collectionId, bookId) {
-    return this.destroy({
-      where: {
-        bookId,
-        collectionId
-      }
-    })
-  }
-
   static init(sequelize) {
     super.init(
       {

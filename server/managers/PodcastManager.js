@@ -25,7 +25,9 @@ const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastManager {
   constructor() {
+    /** @type {PodcastEpisodeDownload[]} */
     this.downloadQueue = []
+    /** @type {PodcastEpisodeDownload} */
     this.currentDownload = null
 
     this.failedCheckMap = {}
@@ -63,6 +65,11 @@ class PodcastManager {
     }
   }
 
+  /**
+   *
+   * @param {PodcastEpisodeDownload} podcastEpisodeDownload
+   * @returns
+   */
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
@@ -106,7 +113,7 @@ class PodcastManager {
     }
 
     let success = false
-    if (this.currentDownload.urlFileExtension === 'mp3') {
+    if (this.currentDownload.isMp3) {
       // Download episode and tag it
       success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
         Logger.error(`[PodcastManager] Podcast Episode download failed`, error)

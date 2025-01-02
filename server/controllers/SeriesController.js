@@ -2,6 +2,9 @@ const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+
+const RssFeedManager = require('../managers/RssFeedManager')
+
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 /**
@@ -51,8 +54,8 @@ class SeriesController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
-      seriesJson.rssFeed = feedObj?.toJSONMinified() || null
+      const feedObj = await RssFeedManager.findFeedForEntityId(seriesJson.id)
+      seriesJson.rssFeed = feedObj?.toOldJSONMinified() || null
     }
 
     res.json(seriesJson)

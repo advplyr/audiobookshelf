@@ -190,7 +190,9 @@ class FolderWatcher extends EventEmitter {
       return
     }
     Logger.debug('[Watcher] File Added', path)
-    this.addFileUpdate(libraryId, path, 'added')
+    if (!this.addFileUpdate(libraryId, path, 'added')) {
+      return
+    }
 
     if (!this.filesBeingAdded.has(path)) {
       this.filesBeingAdded.add(path)
@@ -261,22 +263,23 @@ class FolderWatcher extends EventEmitter {
    * @param {string} libraryId
    * @param {string} path
    * @param {string} type
+   * @returns {boolean} - If file was added to pending updates
    */
   addFileUpdate(libraryId, path, type) {
-    if (this.pendingFilePaths.includes(path)) return
+    if (this.pendingFilePaths.includes(path)) return false
 
     // Get file library
     const libwatcher = this.libraryWatchers.find((lw) => lw.id === libraryId)
     if (!libwatcher) {
       Logger.error(`[Watcher] Invalid library id from watcher ${libraryId}`)
-      return
+      return false
     }
 
     // Get file folder
     const folder = libwatcher.libraryFolders.find((fold) => isSameOrSubPath(fold.path, path))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
-      return
+      return false
     }
 
     const folderPath = filePathToPOSIX(folder.path)
@@ -285,14 +288,14 @@ class FolderWatcher extends EventEmitter {
 
     if (Path.extname(relPath).toLowerCase() === '.part') {
       Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)
-      return
+      return false
     }
 
     // Ignore files/folders starting with "."
     const hasDotPath = relPath.split('/').find((p) => p.startsWith('.'))
     if (hasDotPath) {
       Logger.debug(`[Watcher] Ignoring dot path "${relPath}" | Piece "${hasDotPath}"`)
-      return
+      return false
     }
 
     Logger.debug(`[Watcher] Modified file in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
@@ -318,6 +321,7 @@ class FolderWatcher extends EventEmitter {
     })
 
     this.handlePendingFileUpdatesTimeout()
+    return true
   }
 
   /**

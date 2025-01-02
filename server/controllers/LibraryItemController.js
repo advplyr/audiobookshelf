@@ -13,6 +13,8 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
+
+const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const ShareManager = require('../managers/ShareManager')
@@ -48,8 +50,8 @@ class LibraryItemController {
       }
 
       if (includeEntities.includes('rssfeed')) {
-        const feedData = await this.rssFeedManager.findFeedForEntityId(item.id)
-        item.rssFeed = feedData?.toJSONMinified() || null
+        const feedData = await RssFeedManager.findFeedForEntityId(item.id)
+        item.rssFeed = feedData?.toOldJSONMinified() || null
       }
 
       if (item.mediaType === 'book' && req.user.isAdminOrUp && includeEntities.includes('share')) {
@@ -454,10 +456,24 @@ class LibraryItemController {
    * @param {Response} res
    */
   async match(req, res) {
-    var libraryItem = req.libraryItem
+    const libraryItem = req.libraryItem
+    const reqBody = req.body || {}
 
-    var options = req.body || {}
-    var matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
+    const options = {}
+    const matchOptions = ['provider', 'title', 'author', 'isbn', 'asin']
+    for (const key of matchOptions) {
+      if (reqBody[key] && typeof reqBody[key] === 'string') {
+        options[key] = reqBody[key]
+      }
+    }
+    if (reqBody.overrideCover !== undefined) {
+      options.overrideCover = !!reqBody.overrideCover
+    }
+    if (reqBody.overrideDetails !== undefined) {
+      options.overrideDetails = !!reqBody.overrideDetails
+    }
+
+    var matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
     res.json(matchResult)
   }
 
@@ -640,7 +656,6 @@ class LibraryItemController {
     let itemsUpdated = 0
     let itemsUnmatched = 0
 
-    const options = req.body.options || {}
     if (!req.body.libraryItemIds?.length) {
       return res.sendStatus(400)
     }
@@ -654,8 +669,20 @@ class LibraryItemController {
 
     res.sendStatus(200)
 
+    const reqBodyOptions = req.body.options || {}
+    const options = {}
+    if (reqBodyOptions.provider && typeof reqBodyOptions.provider === 'string') {
+      options.provider = reqBodyOptions.provider
+    }
+    if (reqBodyOptions.overrideCover !== undefined) {
+      options.overrideCover = !!reqBodyOptions.overrideCover
+    }
+    if (reqBodyOptions.overrideDetails !== undefined) {
+      options.overrideDetails = !!reqBodyOptions.overrideDetails
+    }
+
     for (const libraryItem of libraryItems) {
-      const matchResult = await Scanner.quickMatchLibraryItem(libraryItem, options)
+      const matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {

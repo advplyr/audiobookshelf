@@ -18,6 +18,8 @@ const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
+const RssFeedManager = require('../managers/RssFeedManager')
+
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
@@ -759,8 +761,8 @@ class LibraryController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
-      seriesJson.rssFeed = feedObj?.toJSONMinified() || null
+      const feedObj = await RssFeedManager.findFeedForEntityId(seriesJson.id)
+      seriesJson.rssFeed = feedObj?.toOldJSONMinified() || null
     }
 
     res.json(seriesJson)
@@ -1215,7 +1217,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
     }
-    Scanner.matchLibraryItems(req.library)
+    Scanner.matchLibraryItems(this, req.library)
     res.sendStatus(200)
   }
 

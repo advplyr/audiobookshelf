@@ -29,6 +29,12 @@ const Logger = require('../Logger')
  * @property {SeriesExpanded[]} series
  *
  * @typedef {Book & BookExpandedProperties} BookExpanded
+ *
+ * Collections use BookExpandedWithLibraryItem
+ * @typedef BookExpandedWithLibraryItemProperties
+ * @property {import('./LibraryItem')} libraryItem
+ *
+ * @typedef {BookExpanded & BookExpandedWithLibraryItemProperties} BookExpandedWithLibraryItem
  */
 
 /**
@@ -106,6 +112,9 @@ class Book extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+
+    /** @type {import('./Author')[]} - optional if expanded */
+    this.authors
   }
 
   static getOldBook(libraryItemExpanded) {
@@ -312,13 +321,39 @@ class Book extends Model {
           // },
           {
             fields: ['publishedYear']
+          },
+          {
+            fields: ['duration']
           }
-          // {
-          //   fields: ['duration']
-          // }
         ]
       }
     )
+  }
+
+  /**
+   * Comma separated array of author names
+   * Requires authors to be loaded
+   *
+   * @returns {string}
+   */
+  get authorName() {
+    if (this.authors === undefined) {
+      Logger.error(`[Book] authorName: Cannot get authorName because authors are not loaded`)
+      return ''
+    }
+    return this.authors.map((au) => au.name).join(', ')
+  }
+  get includedAudioFiles() {
+    return this.audioFiles.filter((af) => !af.exclude)
+  }
+  get trackList() {
+    let startOffset = 0
+    return this.includedAudioFiles.map((af) => {
+      const track = structuredClone(af)
+      track.startOffset = startOffset
+      startOffset += track.duration
+      return track
+    })
   }
 }
 
