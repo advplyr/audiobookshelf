@@ -758,6 +758,7 @@
   "MessageConfirmResetProgress": "Ali ste prepričani, da želite ponastaviti svoj napredek?",
   "MessageConfirmSendEbookToDevice": "Ali ste prepričani, da želite poslati {0} e-knjigo \"{1}\" v napravo \"{2}\"?",
   "MessageConfirmUnlinkOpenId": "Ali ste prepričani, da želite prekiniti povezavo tega uporabnika z OpenID?",
+  "MessageDaysListenedInTheLastYear": "{0} dni poslušanja v zadnjem letu",
   "MessageDownloadingEpisode": "Prenašam epizodo",
   "MessageDragFilesIntoTrackOrder": "Povlecite datoteke v pravilen vrstni red posnetkov",
   "MessageEmbedFailed": "Vdelava ni uspela!",
