@@ -1,4 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
+const Logger = require('../Logger')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -47,6 +49,8 @@ class Podcast extends Model {
     this.lastEpisodeCheck
     /** @type {number} */
     this.maxEpisodesToKeep
+    /** @type {number} */
+    this.maxNewEpisodesToDownload
     /** @type {string} */
     this.coverPath
     /** @type {string[]} */
@@ -57,6 +61,9 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {import('./PodcastEpisode')[]} */
+    this.podcastEpisodes
   }
 
   static getOldPodcast(libraryItemExpanded) {
@@ -119,25 +126,6 @@ class Podcast extends Model {
     }
   }
 
-  getAbsMetadataJson() {
-    return {
-      tags: this.tags || [],
-      title: this.title,
-      author: this.author,
-      description: this.description,
-      releaseDate: this.releaseDate,
-      genres: this.genres || [],
-      feedURL: this.feedURL,
-      imageURL: this.imageURL,
-      itunesPageURL: this.itunesPageURL,
-      itunesId: this.itunesId,
-      itunesArtistId: this.itunesArtistId,
-      language: this.language,
-      explicit: !!this.explicit,
-      podcastType: this.podcastType
-    }
-  }
-
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
@@ -178,6 +166,210 @@ class Podcast extends Model {
         modelName: 'podcast'
       }
     )
+  }
+
+  get hasMediaFiles() {
+    return !!this.podcastEpisodes?.length
+  }
+
+  get hasAudioTracks() {
+    return this.hasMediaFiles
+  }
+
+  get size() {
+    if (!this.podcastEpisodes?.length) return 0
+    return this.podcastEpisodes.reduce((total, episode) => total + episode.size, 0)
+  }
+
+  getAbsMetadataJson() {
+    return {
+      tags: this.tags || [],
+      title: this.title,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: this.genres || [],
+      feedURL: this.feedURL,
+      imageURL: this.imageURL,
+      itunesPageURL: this.itunesPageURL,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      language: this.language,
+      explicit: !!this.explicit,
+      podcastType: this.podcastType
+    }
+  }
+
+  /**
+   *
+   * @param {Object} payload - Old podcast object
+   * @returns {Promise<boolean>}
+   */
+  async updateFromRequest(payload) {
+    if (!payload) return false
+
+    let hasUpdates = false
+
+    if (payload.metadata) {
+      const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
+      stringKeys.forEach((key) => {
+        let newKey = key
+        if (key === 'type') {
+          newKey = 'podcastType'
+        } else if (key === 'feedUrl') {
+          newKey = 'feedURL'
+        } else if (key === 'imageUrl') {
+          newKey = 'imageURL'
+        } else if (key === 'itunesPageUrl') {
+          newKey = 'itunesPageURL'
+        }
+        if (typeof payload.metadata[key] === 'string' && payload.metadata[key] !== this[newKey]) {
+          this[newKey] = payload.metadata[key]
+          if (key === 'title') {
+            this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
+          }
+
+          hasUpdates = true
+        }
+      })
+
+      if (payload.metadata.explicit !== undefined && payload.metadata.explicit !== this.explicit) {
+        this.explicit = !!payload.metadata.explicit
+        hasUpdates = true
+      }
+
+      if (Array.isArray(payload.metadata.genres) && !payload.metadata.genres.some((item) => typeof item !== 'string') && JSON.stringify(this.genres) !== JSON.stringify(payload.metadata.genres)) {
+        this.genres = payload.metadata.genres
+        this.changed('genres', true)
+        hasUpdates = true
+      }
+    }
+
+    if (Array.isArray(payload.tags) && !payload.tags.some((item) => typeof item !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
+      this.tags = payload.tags
+      this.changed('tags', true)
+      hasUpdates = true
+    }
+
+    if (payload.autoDownloadEpisodes !== undefined && payload.autoDownloadEpisodes !== this.autoDownloadEpisodes) {
+      this.autoDownloadEpisodes = !!payload.autoDownloadEpisodes
+      hasUpdates = true
+    }
+    if (typeof payload.autoDownloadSchedule === 'string' && payload.autoDownloadSchedule !== this.autoDownloadSchedule) {
+      this.autoDownloadSchedule = payload.autoDownloadSchedule
+      hasUpdates = true
+    }
+
+    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload']
+    numberKeys.forEach((key) => {
+      if (typeof payload[key] === 'number' && payload[key] !== this[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    })
+
+    if (hasUpdates) {
+      Logger.debug(`[Podcast] changed keys:`, this.changed())
+      await this.save()
+    }
+
+    return hasUpdates
+  }
+
+  /**
+   * Old model kept metadata in a separate object
+   */
+  oldMetadataToJSON() {
+    return {
+      title: this.title,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: [...(this.genres || [])],
+      feedUrl: this.feedURL,
+      imageUrl: this.imageURL,
+      itunesPageUrl: this.itunesPageURL,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      explicit: this.explicit,
+      language: this.language,
+      type: this.podcastType
+    }
+  }
+
+  oldMetadataToJSONExpanded() {
+    const oldMetadataJSON = this.oldMetadataToJSON()
+    oldMetadataJSON.titleIgnorePrefix = getTitlePrefixAtEnd(this.title)
+    return oldMetadataJSON
+  }
+
+  /**
+   * The old model stored episodes with the podcast object
+   *
+   * @param {string} libraryItemId
+   */
+  toOldJSON(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.podcastEpisodes) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because episodes are not provided`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSON(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      episodes: this.podcastEpisodes.map((episode) => episode.toOldJSON(libraryItemId)),
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
+    }
+  }
+
+  toOldJSONMinified() {
+    return {
+      id: this.id,
+      // Minified metadata and expanded metadata are the same
+      metadata: this.oldMetadataToJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      numEpisodes: this.podcastEpisodes?.length || 0,
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      size: this.size
+    }
+  }
+
+  toOldJSONExpanded(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.podcastEpisodes) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because episodes are not provided`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId)),
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      size: this.size
+    }
   }
 }
 

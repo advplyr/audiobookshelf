@@ -34,8 +34,13 @@ class AudioMetadataMangaer {
     return this.tasksQueued.some((t) => t.data.libraryItemId === libraryItemId) || this.tasksRunning.some((t) => t.data.libraryItemId === libraryItemId)
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @returns
+   */
   getMetadataObjectForApi(libraryItem) {
-    return ffmpegHelpers.getFFMetadataObject(libraryItem, libraryItem.media.includedAudioFiles.length)
+    return ffmpegHelpers.getFFMetadataObject(libraryItem.toOldJSONExpanded(), libraryItem.media.includedAudioFiles.length)
   }
 
   /**

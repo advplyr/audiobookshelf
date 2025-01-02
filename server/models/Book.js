@@ -1,5 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
+const parseNameString = require('../utils/parsers/parseNameString')
 
 /**
  * @typedef EBookFileObject
@@ -113,8 +115,12 @@ class Book extends Model {
     /** @type {Date} */
     this.createdAt
 
+    // Expanded properties
+
     /** @type {import('./Author')[]} - optional if expanded */
     this.authors
+    /** @type {import('./Series')[]} - optional if expanded */
+    this.series
   }
 
   static getOldBook(libraryItemExpanded) {
@@ -241,32 +247,6 @@ class Book extends Model {
     }
   }
 
-  getAbsMetadataJson() {
-    return {
-      tags: this.tags || [],
-      chapters: this.chapters?.map((c) => ({ ...c })) || [],
-      title: this.title,
-      subtitle: this.subtitle,
-      authors: this.authors.map((a) => a.name),
-      narrators: this.narrators,
-      series: this.series.map((se) => {
-        const sequence = se.bookSeries?.sequence || ''
-        if (!sequence) return se.name
-        return `${se.name} #${sequence}`
-      }),
-      genres: this.genres || [],
-      publishedYear: this.publishedYear,
-      publishedDate: this.publishedDate,
-      publisher: this.publisher,
-      description: this.description,
-      isbn: this.isbn,
-      asin: this.asin,
-      language: this.language,
-      explicit: !!this.explicit,
-      abridged: !!this.abridged
-    }
-  }
-
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
@@ -343,9 +323,50 @@ class Book extends Model {
     }
     return this.authors.map((au) => au.name).join(', ')
   }
+
+  /**
+   * Comma separated array of author names in Last, First format
+   * Requires authors to be loaded
+   *
+   * @returns {string}
+   */
+  get authorNameLF() {
+    if (this.authors === undefined) {
+      Logger.error(`[Book] authorNameLF: Cannot get authorNameLF because authors are not loaded`)
+      return ''
+    }
+
+    // Last, First
+    if (!this.authors.length) return ''
+    return this.authors.map((au) => parseNameString.nameToLastFirst(au.name)).join(', ')
+  }
+
+  /**
+   * Comma separated array of series with sequence
+   * Requires series to be loaded
+   *
+   * @returns {string}
+   */
+  get seriesName() {
+    if (this.series === undefined) {
+      Logger.error(`[Book] seriesName: Cannot get seriesName because series are not loaded`)
+      return ''
+    }
+
+    if (!this.series.length) return ''
+    return this.series
+      .map((se) => {
+        const sequence = se.bookSeries?.sequence || ''
+        if (!sequence) return se.name
+        return `${se.name} #${sequence}`
+      })
+      .join(', ')
+  }
+
   get includedAudioFiles() {
     return this.audioFiles.filter((af) => !af.exclude)
   }
+
   get trackList() {
     let startOffset = 0
     return this.includedAudioFiles.map((af) => {
@@ -354,6 +375,299 @@ class Book extends Model {
       startOffset += track.duration
       return track
     })
+  }
+
+  get hasMediaFiles() {
+    return !!this.hasAudioTracks || !!this.ebookFile
+  }
+
+  get hasAudioTracks() {
+    return !!this.includedAudioFiles.length
+  }
+
+  /**
+   * Total file size of all audio files and ebook file
+   *
+   * @returns {number}
+   */
+  get size() {
+    let total = 0
+    this.audioFiles.forEach((af) => (total += af.metadata.size))
+    if (this.ebookFile) {
+      total += this.ebookFile.metadata.size
+    }
+    return total
+  }
+
+  getAbsMetadataJson() {
+    return {
+      tags: this.tags || [],
+      chapters: this.chapters?.map((c) => ({ ...c })) || [],
+      title: this.title,
+      subtitle: this.subtitle,
+      authors: this.authors.map((a) => a.name),
+      narrators: this.narrators,
+      series: this.series.map((se) => {
+        const sequence = se.bookSeries?.sequence || ''
+        if (!sequence) return se.name
+        return `${se.name} #${sequence}`
+      }),
+      genres: this.genres || [],
+      publishedYear: this.publishedYear,
+      publishedDate: this.publishedDate,
+      publisher: this.publisher,
+      description: this.description,
+      isbn: this.isbn,
+      asin: this.asin,
+      language: this.language,
+      explicit: !!this.explicit,
+      abridged: !!this.abridged
+    }
+  }
+
+  /**
+   *
+   * @param {Object} payload - old book object
+   * @returns {Promise<boolean>}
+   */
+  async updateFromRequest(payload) {
+    if (!payload) return false
+
+    let hasUpdates = false
+
+    if (payload.metadata) {
+      const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
+      metadataStringKeys.forEach((key) => {
+        if (typeof payload.metadata[key] === 'string' && this[key] !== payload.metadata[key]) {
+          this[key] = payload.metadata[key] || null
+
+          if (key === 'title') {
+            this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
+          }
+
+          hasUpdates = true
+        }
+      })
+      if (payload.metadata.explicit !== undefined && this.explicit !== !!payload.metadata.explicit) {
+        this.explicit = !!payload.metadata.explicit
+        hasUpdates = true
+      }
+      if (payload.metadata.abridged !== undefined && this.abridged !== !!payload.metadata.abridged) {
+        this.abridged = !!payload.metadata.abridged
+        hasUpdates = true
+      }
+      const arrayOfStringsKeys = ['narrators', 'genres']
+      arrayOfStringsKeys.forEach((key) => {
+        if (Array.isArray(payload.metadata[key]) && !payload.metadata[key].some((item) => typeof item !== 'string') && JSON.stringify(this[key]) !== JSON.stringify(payload.metadata[key])) {
+          this[key] = payload.metadata[key]
+          this.changed(key, true)
+          hasUpdates = true
+        }
+      })
+    }
+
+    if (Array.isArray(payload.tags) && !payload.tags.some((tag) => typeof tag !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
+      this.tags = payload.tags
+      this.changed('tags', true)
+      hasUpdates = true
+    }
+
+    // TODO: Remove support for updating audioFiles, chapters and ebookFile here
+    const arrayOfObjectsKeys = ['audioFiles', 'chapters']
+    arrayOfObjectsKeys.forEach((key) => {
+      if (Array.isArray(payload[key]) && !payload[key].some((item) => typeof item !== 'object') && JSON.stringify(this[key]) !== JSON.stringify(payload[key])) {
+        this[key] = payload[key]
+        this.changed(key, true)
+        hasUpdates = true
+      }
+    })
+    if (payload.ebookFile && JSON.stringify(this.ebookFile) !== JSON.stringify(payload.ebookFile)) {
+      this.ebookFile = payload.ebookFile
+      this.changed('ebookFile', true)
+      hasUpdates = true
+    }
+
+    if (hasUpdates) {
+      Logger.debug(`[Book] "${this.title}" changed keys:`, this.changed())
+      await this.save()
+    }
+
+    if (Array.isArray(payload.metadata?.authors)) {
+      const authorsRemoved = this.authors.filter((au) => !payload.metadata.authors.some((a) => a.id === au.id))
+      const newAuthors = payload.metadata.authors.filter((a) => !this.authors.some((au) => au.id === a.id))
+
+      for (const author of authorsRemoved) {
+        await this.sequelize.models.bookAuthor.removeByIds(author.id, this.id)
+        Logger.debug(`[Book] "${this.title}" Removed author ${author.id}`)
+        hasUpdates = true
+      }
+      for (const author of newAuthors) {
+        await this.sequelize.models.bookAuthor.create({ bookId: this.id, authorId: author.id })
+        Logger.debug(`[Book] "${this.title}" Added author ${author.id}`)
+        hasUpdates = true
+      }
+    }
+
+    if (Array.isArray(payload.metadata?.series)) {
+      const seriesRemoved = this.series.filter((se) => !payload.metadata.series.some((s) => s.id === se.id))
+      const newSeries = payload.metadata.series.filter((s) => !this.series.some((se) => se.id === s.id))
+
+      for (const series of seriesRemoved) {
+        await this.sequelize.models.bookSeries.removeByIds(series.id, this.id)
+        Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
+        hasUpdates = true
+      }
+      for (const series of newSeries) {
+        await this.sequelize.models.bookSeries.create({ bookId: this.id, seriesId: series.id, sequence: series.sequence })
+        Logger.debug(`[Book] "${this.title}" Added series ${series.id}`)
+        hasUpdates = true
+      }
+      for (const series of payload.metadata.series) {
+        const existingSeries = this.series.find((se) => se.id === series.id)
+        if (existingSeries && existingSeries.bookSeries.sequence !== series.sequence) {
+          await existingSeries.bookSeries.update({ sequence: series.sequence })
+          Logger.debug(`[Book] "${this.title}" Updated series ${series.id} sequence ${series.sequence}`)
+          hasUpdates = true
+        }
+      }
+    }
+
+    return hasUpdates
+  }
+
+  /**
+   * Old model kept metadata in a separate object
+   */
+  oldMetadataToJSON() {
+    const authors = this.authors.map((au) => ({ id: au.id, name: au.name }))
+    const series = this.series.map((se) => ({ id: se.id, name: se.name, sequence: se.bookSeries.sequence }))
+    return {
+      title: this.title,
+      subtitle: this.subtitle,
+      authors,
+      narrators: [...(this.narrators || [])],
+      series,
+      genres: [...(this.genres || [])],
+      publishedYear: this.publishedYear,
+      publishedDate: this.publishedDate,
+      publisher: this.publisher,
+      description: this.description,
+      isbn: this.isbn,
+      asin: this.asin,
+      language: this.language,
+      explicit: this.explicit,
+      abridged: this.abridged
+    }
+  }
+
+  oldMetadataToJSONMinified() {
+    return {
+      title: this.title,
+      titleIgnorePrefix: getTitlePrefixAtEnd(this.title),
+      subtitle: this.subtitle,
+      authorName: this.authorName,
+      authorNameLF: this.authorNameLF,
+      narratorName: (this.narrators || []).join(', '),
+      seriesName: this.seriesName,
+      genres: [...(this.genres || [])],
+      publishedYear: this.publishedYear,
+      publishedDate: this.publishedDate,
+      publisher: this.publisher,
+      description: this.description,
+      isbn: this.isbn,
+      asin: this.asin,
+      language: this.language,
+      explicit: this.explicit,
+      abridged: this.abridged
+    }
+  }
+
+  oldMetadataToJSONExpanded() {
+    const oldMetadataJSON = this.oldMetadataToJSON()
+    oldMetadataJSON.titleIgnorePrefix = getTitlePrefixAtEnd(this.title)
+    oldMetadataJSON.authorName = this.authorName
+    oldMetadataJSON.authorNameLF = this.authorNameLF
+    oldMetadataJSON.narratorName = (this.narrators || []).join(', ')
+    oldMetadataJSON.seriesName = this.seriesName
+    return oldMetadataJSON
+  }
+
+  /**
+   * The old model stored a minified series and authors array with the book object.
+   * Minified series is { id, name, sequence }
+   * Minified author is { id, name }
+   *
+   * @param {string} libraryItemId
+   */
+  toOldJSON(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Book] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.authors) {
+      throw new Error(`[Book] Cannot convert to old JSON because authors are not loaded`)
+    }
+    if (!this.series) {
+      throw new Error(`[Book] Cannot convert to old JSON because series are not loaded`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSON(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      audioFiles: structuredClone(this.audioFiles),
+      chapters: structuredClone(this.chapters),
+      ebookFile: structuredClone(this.ebookFile)
+    }
+  }
+
+  toOldJSONMinified() {
+    if (!this.authors) {
+      throw new Error(`[Book] Cannot convert to old JSON because authors are not loaded`)
+    }
+    if (!this.series) {
+      throw new Error(`[Book] Cannot convert to old JSON because series are not loaded`)
+    }
+
+    return {
+      id: this.id,
+      metadata: this.oldMetadataToJSONMinified(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      numTracks: this.trackList.length,
+      numAudioFiles: this.audioFiles?.length || 0,
+      numChapters: this.chapters?.length || 0,
+      duration: this.duration,
+      size: this.size,
+      ebookFormat: this.ebookFile?.ebookFormat
+    }
+  }
+
+  toOldJSONExpanded(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Book] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.authors) {
+      throw new Error(`[Book] Cannot convert to old JSON because authors are not loaded`)
+    }
+    if (!this.series) {
+      throw new Error(`[Book] Cannot convert to old JSON because series are not loaded`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      audioFiles: structuredClone(this.audioFiles),
+      chapters: structuredClone(this.chapters),
+      ebookFile: structuredClone(this.ebookFile),
+      duration: this.duration,
+      size: this.size,
+      tracks: structuredClone(this.trackList)
+    }
   }
 }
 

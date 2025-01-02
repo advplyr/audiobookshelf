@@ -124,9 +124,6 @@ class Podcast {
     this.episodes.forEach((ep) => (total += ep.size))
     return total
   }
-  get hasMediaEntities() {
-    return !!this.episodes.length
-  }
   get duration() {
     let total = 0
     this.episodes.forEach((ep) => (total += ep.duration))
@@ -179,20 +176,6 @@ class Podcast {
     if (this.coverPath === coverPath) return false
     this.coverPath = coverPath
     return true
-  }
-
-  removeFileWithInode(inode) {
-    const hasEpisode = this.episodes.some((ep) => ep.audioFile.ino === inode)
-    if (hasEpisode) {
-      this.episodes = this.episodes.filter((ep) => ep.audioFile.ino !== inode)
-    }
-    return hasEpisode
-  }
-
-  findFileWithInode(inode) {
-    var episode = this.episodes.find((ep) => ep.audioFile.ino === inode)
-    if (episode) return episode.audioFile
-    return null
   }
 
   setData(mediaData) {
