@@ -327,20 +327,5 @@ class LibraryItem {
     }
     return false
   }
-
-  /**
-   * Set the EBookFile from a LibraryFile
-   * If null then ebookFile will be removed from the book
-   * all ebook library files that are not primary are marked as supplementary
-   *
-   * @param {LibraryFile} [libraryFile]
-   */
-  setPrimaryEbook(ebookLibraryFile = null) {
-    const ebookLibraryFiles = this.libraryFiles.filter((lf) => lf.isEBookFile)
-    for (const libraryFile of ebookLibraryFiles) {
-      libraryFile.isSupplementary = ebookLibraryFile?.ino !== libraryFile.ino
-    }
-    this.media.setEbookFile(ebookLibraryFile)
-  }
 }
 module.exports = LibraryItem

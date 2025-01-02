@@ -181,20 +181,6 @@ class Podcast {
     return true
   }
 
-  removeFileWithInode(inode) {
-    const hasEpisode = this.episodes.some((ep) => ep.audioFile.ino === inode)
-    if (hasEpisode) {
-      this.episodes = this.episodes.filter((ep) => ep.audioFile.ino !== inode)
-    }
-    return hasEpisode
-  }
-
-  findFileWithInode(inode) {
-    var episode = this.episodes.find((ep) => ep.audioFile.ino === inode)
-    if (episode) return episode.audioFile
-    return null
-  }
-
   setData(mediaData) {
     this.metadata = new PodcastMetadata()
     if (mediaData.metadata) {

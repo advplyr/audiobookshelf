@@ -1152,11 +1152,47 @@ class LibraryItem extends Model {
       Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
       return false
     }
-    if (this.mediaType === 'book') {
+    if (this.isBook) {
       return this.media.audioFiles?.length > 0
     } else {
       return this.media.podcastEpisodes?.length > 0
     }
+  }
+
+  /**
+   *
+   * @param {string} ino
+   * @returns {import('./Book').AudioFileObject}
+   */
+  getAudioFileWithIno(ino) {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] getAudioFileWithIno: Library item "${this.id}" does not have media`)
+      return null
+    }
+    if (this.isBook) {
+      return this.media.audioFiles.find((af) => af.ino === ino)
+    } else {
+      return this.media.podcastEpisodes.find((pe) => pe.audioFile?.ino === ino)?.audioFile
+    }
+  }
+
+  /**
+   *
+   * @param {string} ino
+   * @returns {LibraryFile}
+   */
+  getLibraryFileWithIno(ino) {
+    const libraryFile = this.libraryFiles.find((lf) => lf.ino === ino)
+    if (!libraryFile) return null
+    return new LibraryFile(libraryFile)
+  }
+
+  getLibraryFiles() {
+    return this.libraryFiles.map((lf) => new LibraryFile(lf))
+  }
+
+  getLibraryFilesJson() {
+    return this.libraryFiles.map((lf) => new LibraryFile(lf).toJSON())
   }
 
   toOldJSON() {
@@ -1184,7 +1220,8 @@ class LibraryItem extends Model {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toOldJSON(this.id),
-      libraryFiles: structuredClone(this.libraryFiles)
+      // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
+      libraryFiles: this.getLibraryFilesJson()
     }
   }
 
@@ -1237,7 +1274,8 @@ class LibraryItem extends Model {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toOldJSONExpanded(this.id),
-      libraryFiles: structuredClone(this.libraryFiles),
+      // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
+      libraryFiles: this.getLibraryFilesJson(),
       size: this.size
     }
   }

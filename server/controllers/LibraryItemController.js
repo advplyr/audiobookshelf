@@ -32,7 +32,7 @@ const ShareManager = require('../managers/ShareManager')
  * @typedef {RequestWithUser & RequestEntityObject} LibraryItemControllerRequest
  *
  * @typedef RequestLibraryFileObject
- * @property {import('../models/LibraryItem').LibraryFileObject} libraryFile
+ * @property {import('../objects/files/LibraryFile')} libraryFile
  *
  * @typedef {RequestWithUser & RequestEntityObject & RequestLibraryFileObject} LibraryItemControllerRequestWithFile
  */
@@ -83,6 +83,10 @@ class LibraryItemController {
   }
 
   /**
+   * PATCH: /api/items/:id
+   *
+   * @deprecated
+   * Use the updateMedia /api/items/:id/media endpoint instead or updateCover /api/items/:id/cover
    *
    * @param {LibraryItemControllerRequest} req
    * @param {Response} res
@@ -288,10 +292,10 @@ class LibraryItemController {
     let result = null
     if (req.body?.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
-      result = await CoverManager.downloadCoverFromUrl(req.oldLibraryItem, req.body.url)
+      result = await CoverManager.downloadCoverFromUrlNew(req.body.url, req.libraryItem.id, req.libraryItem.isFile ? null : req.libraryItem.path)
     } else if (req.files?.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
-      result = await CoverManager.uploadCover(req.oldLibraryItem, req.files.cover)
+      result = await CoverManager.uploadCover(req.libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
@@ -303,8 +307,15 @@ class LibraryItemController {
     }
 
     if (updateAndReturnJson) {
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+      req.libraryItem.media.coverPath = result.cover
+      req.libraryItem.media.changed('coverPath', true)
+      await req.libraryItem.media.save()
+
+      // client uses updatedAt timestamp in URL to force refresh cover
+      req.libraryItem.changed('updatedAt', true)
+      await req.libraryItem.save()
+
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
       res.json({
         success: true,
         cover: result.cover
@@ -323,13 +334,20 @@ class LibraryItemController {
       return res.status(400).send('Invalid request no cover path')
     }
 
-    const validationResult = await CoverManager.validateCoverPath(req.body.cover, req.oldLibraryItem)
+    const validationResult = await CoverManager.validateCoverPath(req.body.cover, req.libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
     if (validationResult.updated) {
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+      req.libraryItem.media.coverPath = validationResult.cover
+      req.libraryItem.media.changed('coverPath', true)
+      await req.libraryItem.media.save()
+
+      // client uses updatedAt timestamp in URL to force refresh cover
+      req.libraryItem.changed('updatedAt', true)
+      await req.libraryItem.save()
+
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     }
     res.json({
       success: true,
@@ -345,10 +363,17 @@ class LibraryItemController {
    */
   async removeCover(req, res) {
     if (req.libraryItem.media.coverPath) {
-      req.oldLibraryItem.updateMediaCover('')
+      req.libraryItem.media.coverPath = null
+      req.libraryItem.media.changed('coverPath', true)
+      await req.libraryItem.media.save()
+
+      // client uses updatedAt timestamp in URL to force refresh cover
+      req.libraryItem.changed('updatedAt', true)
+      await req.libraryItem.save()
+
       await CacheManager.purgeCoverCache(req.libraryItem.id)
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     }
 
     res.sendStatus(200)
@@ -451,11 +476,32 @@ class LibraryItemController {
       Logger.error(`[LibraryItemController] updateTracks invalid orderedFileData ${req.libraryItem.id}`)
       return res.sendStatus(400)
     }
+    // Ensure that each orderedFileData has a valid ino and is in the book audioFiles
+    if (orderedFileData.some((fileData) => !fileData?.ino || !req.libraryItem.media.audioFiles.some((af) => af.ino === fileData.ino))) {
+      Logger.error(`[LibraryItemController] updateTracks invalid orderedFileData ${req.libraryItem.id}`)
+      return res.sendStatus(400)
+    }
 
-    req.oldLibraryItem.media.updateAudioTracks(orderedFileData)
-    await Database.updateLibraryItem(req.oldLibraryItem)
-    SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
-    res.json(req.oldLibraryItem.toJSON())
+    let index = 1
+    const updatedAudioFiles = orderedFileData.map((fileData) => {
+      const audioFile = req.libraryItem.media.audioFiles.find((af) => af.ino === fileData.ino)
+      audioFile.manuallyVerified = true
+      audioFile.exclude = !!fileData.exclude
+      if (audioFile.exclude) {
+        audioFile.index = -1
+      } else {
+        audioFile.index = index++
+      }
+      return audioFile
+    })
+    updatedAudioFiles.sort((a, b) => a.index - b.index)
+
+    req.libraryItem.media.audioFiles = updatedAudioFiles
+    req.libraryItem.media.changed('audioFiles', true)
+    await req.libraryItem.media.save()
+
+    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    res.json(req.libraryItem.toOldJSON())
   }
 
   /**
@@ -787,7 +833,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    res.json(this.audioMetadataManager.getMetadataObjectForApi(req.oldLibraryItem))
+    res.json(this.audioMetadataManager.getMetadataObjectForApi(req.libraryItem))
   }
 
   /**
@@ -802,26 +848,51 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
-    if (req.libraryItem.isMissing || !req.libraryItem.isBook || !req.libraryItem.media.includedAudioFiles.length) {
+    if (req.libraryItem.isMissing || !req.libraryItem.isBook || !req.libraryItem.media.hasAudioTracks) {
       Logger.error(`[LibraryItemController] Invalid library item`)
       return res.sendStatus(500)
     }
 
-    if (!req.body.chapters) {
+    if (!Array.isArray(req.body.chapters) || req.body.chapters.some((c) => !c.title || typeof c.title !== 'string' || c.start === undefined || typeof c.start !== 'number' || c.end === undefined || typeof c.end !== 'number')) {
       Logger.error(`[LibraryItemController] Invalid payload`)
       return res.sendStatus(400)
     }
 
     const chapters = req.body.chapters || []
-    const wasUpdated = req.oldLibraryItem.media.updateChapters(chapters)
-    if (wasUpdated) {
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+
+    let hasUpdates = false
+    if (chapters.length !== req.libraryItem.media.chapters.length) {
+      req.libraryItem.media.chapters = chapters.map((c, index) => {
+        return {
+          id: index,
+          title: c.title,
+          start: c.start,
+          end: c.end
+        }
+      })
+      hasUpdates = true
+    } else {
+      for (const [index, chapter] of chapters.entries()) {
+        const currentChapter = req.libraryItem.media.chapters[index]
+        if (currentChapter.title !== chapter.title || currentChapter.start !== chapter.start || currentChapter.end !== chapter.end) {
+          currentChapter.title = chapter.title
+          currentChapter.start = chapter.start
+          currentChapter.end = chapter.end
+          hasUpdates = true
+        }
+      }
+    }
+
+    if (hasUpdates) {
+      req.libraryItem.media.changed('chapters', true)
+      await req.libraryItem.media.save()
+
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     }
 
     res.json({
       success: true,
-      updated: wasUpdated
+      updated: hasUpdates
     })
   }
 
@@ -829,7 +900,7 @@ class LibraryItemController {
    * GET: /api/items/:id/ffprobe/:fileid
    * FFProbe JSON result from audio file
    *
-   * @param {LibraryItemControllerRequestWithFile} req
+   * @param {LibraryItemControllerRequest} req
    * @param {Response} res
    */
   async getFFprobeData(req, res) {
@@ -837,18 +908,14 @@ class LibraryItemController {
       Logger.error(`[LibraryItemController] Non-admin user "${req.user.username}" attempted to get ffprobe data`)
       return res.sendStatus(403)
     }
-    if (req.libraryFile.fileType !== 'audio') {
-      Logger.error(`[LibraryItemController] Invalid filetype "${req.libraryFile.fileType}" for fileid "${req.params.fileid}". Expected audio file`)
-      return res.sendStatus(400)
-    }
 
-    const audioFile = req.oldLibraryItem.media.findFileWithInode(req.params.fileid)
+    const audioFile = req.libraryItem.getAudioFileWithIno(req.params.fileid)
     if (!audioFile) {
       Logger.error(`[LibraryItemController] Audio file not found with inode value ${req.params.fileid}`)
       return res.sendStatus(404)
     }
 
-    const ffprobeData = await AudioFileScanner.probeAudioFile(audioFile)
+    const ffprobeData = await AudioFileScanner.probeAudioFile(audioFile.metadata.path)
     res.json(ffprobeData)
   }
 
@@ -889,17 +956,35 @@ class LibraryItemController {
     await fs.remove(libraryFile.metadata.path).catch((error) => {
       Logger.error(`[LibraryItemController] Failed to delete library file at "${libraryFile.metadata.path}"`, error)
     })
-    req.oldLibraryItem.removeLibraryFile(req.params.fileid)
 
-    if (req.oldLibraryItem.media.removeFileWithInode(req.params.fileid)) {
-      // If book has no more media files then mark it as missing
-      if (req.libraryItem.mediaType === 'book' && !req.libraryItem.media.hasMediaFiles) {
-        req.oldLibraryItem.setMissing()
+    req.libraryItem.libraryFiles = req.libraryItem.libraryFiles.filter((lf) => lf.ino !== req.params.fileid)
+    req.libraryItem.changed('libraryFiles', true)
+
+    if (req.libraryItem.isBook) {
+      if (req.libraryItem.media.audioFiles.some((af) => af.ino === req.params.fileid)) {
+        req.libraryItem.media.audioFiles = req.libraryItem.media.audioFiles.filter((af) => af.ino !== req.params.fileid)
+        req.libraryItem.media.changed('audioFiles', true)
+      } else if (req.libraryItem.media.ebookFile?.ino === req.params.fileid) {
+        req.libraryItem.media.ebookFile = null
+        req.libraryItem.media.changed('ebookFile', true)
       }
+      if (!req.libraryItem.media.hasMediaFiles) {
+        req.libraryItem.isMissing = true
+      }
+    } else if (req.libraryItem.media.podcastEpisodes.some((ep) => ep.audioFile.ino === req.params.fileid)) {
+      const episodeToRemove = req.libraryItem.media.podcastEpisodes.find((ep) => ep.audioFile.ino === req.params.fileid)
+      await episodeToRemove.destroy()
+
+      req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.audioFile.ino !== req.params.fileid)
     }
-    req.oldLibraryItem.updatedAt = Date.now()
-    await Database.updateLibraryItem(req.oldLibraryItem)
-    SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+
+    if (req.libraryItem.media.changed()) {
+      await req.libraryItem.media.save()
+    }
+
+    await req.libraryItem.save()
+
+    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     res.sendStatus(200)
   }
 
@@ -961,13 +1046,13 @@ class LibraryItemController {
   async getEBookFile(req, res) {
     let ebookFile = null
     if (req.params.fileid) {
-      ebookFile = req.oldLibraryItem.libraryFiles.find((lf) => lf.ino === req.params.fileid)
+      ebookFile = req.libraryItem.getLibraryFileWithIno(req.params.fileid)
       if (!ebookFile?.isEBookFile) {
         Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
         return res.status(400).send('Invalid ebook file id')
       }
     } else {
-      ebookFile = req.oldLibraryItem.media.ebookFile
+      ebookFile = req.libraryItem.media.ebookFile
     }
 
     if (!ebookFile) {
@@ -999,28 +1084,55 @@ class LibraryItemController {
    * if an ebook file is the primary ebook, then it will be changed to supplementary
    * if an ebook file is supplementary, then it will be changed to primary
    *
-   * @param {LibraryItemControllerRequest} req
+   * @param {LibraryItemControllerRequestWithFile} req
    * @param {Response} res
    */
   async updateEbookFileStatus(req, res) {
-    const ebookLibraryFile = req.oldLibraryItem.libraryFiles.find((lf) => lf.ino === req.params.fileid)
-    if (!ebookLibraryFile?.isEBookFile) {
+    if (!req.libraryItem.isBook) {
+      Logger.error(`[LibraryItemController] Invalid media type for ebook file status update`)
+      return res.sendStatus(400)
+    }
+    if (!req.libraryFile?.isEBookFile) {
       Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
       return res.status(400).send('Invalid ebook file id')
     }
 
+    const ebookLibraryFile = req.libraryFile
+    let primaryEbookFile = null
+
+    const ebookLibraryFileInos = req.libraryItem
+      .getLibraryFiles()
+      .filter((lf) => lf.isEBookFile)
+      .map((lf) => lf.ino)
+
     if (ebookLibraryFile.isSupplementary) {
       Logger.info(`[LibraryItemController] Updating ebook file "${ebookLibraryFile.metadata.filename}" to primary`)
-      req.oldLibraryItem.setPrimaryEbook(ebookLibraryFile)
+
+      primaryEbookFile = ebookLibraryFile.toJSON()
+      delete primaryEbookFile.isSupplementary
+      delete primaryEbookFile.fileType
+      primaryEbookFile.ebookFormat = ebookLibraryFile.metadata.format
     } else {
       Logger.info(`[LibraryItemController] Updating ebook file "${ebookLibraryFile.metadata.filename}" to supplementary`)
-      ebookLibraryFile.isSupplementary = true
-      req.oldLibraryItem.setPrimaryEbook(null)
     }
 
-    req.oldLibraryItem.updatedAt = Date.now()
-    await Database.updateLibraryItem(req.oldLibraryItem)
-    SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+    req.libraryItem.media.ebookFile = primaryEbookFile
+    req.libraryItem.media.changed('ebookFile', true)
+    await req.libraryItem.media.save()
+
+    req.libraryItem.libraryFiles = req.libraryItem.libraryFiles.map((lf) => {
+      if (ebookLibraryFileInos.includes(lf.ino)) {
+        lf.isSupplementary = lf.ino !== primaryEbookFile?.ino
+      }
+      return lf
+    })
+    req.libraryItem.changed('libraryFiles', true)
+
+    req.libraryItem.isMissing = !req.libraryItem.media.hasMediaFiles
+
+    await req.libraryItem.save()
+
+    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     res.sendStatus(200)
   }
 
@@ -1042,7 +1154,7 @@ class LibraryItemController {
 
     // For library file routes, get the library file
     if (req.params.fileid) {
-      req.libraryFile = req.oldLibraryItem.libraryFiles.find((lf) => lf.ino === req.params.fileid)
+      req.libraryFile = req.libraryItem.getLibraryFileWithIno(req.params.fileid)
       if (!req.libraryFile) {
         Logger.error(`[LibraryItemController] Library file "${req.params.fileid}" does not exist for library item`)
         return res.sendStatus(404)
