@@ -27,7 +27,6 @@ const ShareManager = require('../managers/ShareManager')
  *
  * @typedef RequestEntityObject
  * @property {import('../models/LibraryItem')} libraryItem
- * @property {Object} oldLibraryItem - To be removed
  *
  * @typedef {RequestWithUser & RequestEntityObject} LibraryItemControllerRequest
  *
@@ -97,13 +96,14 @@ class LibraryItemController {
       await CacheManager.purgeCoverCache(req.libraryItem.id)
     }
 
-    const hasUpdates = req.oldLibraryItem.update(req.body)
+    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
+    const hasUpdates = oldLibraryItem.update(req.body)
     if (hasUpdates) {
       Logger.debug(`[LibraryItemController] Updated now saving`)
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+      await Database.updateLibraryItem(oldLibraryItem)
+      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
     }
-    res.json(req.oldLibraryItem.toJSON())
+    res.json(oldLibraryItem.toJSON())
   }
 
   /**
@@ -234,30 +234,32 @@ class LibraryItemController {
       }
     }
 
+    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
+
     // Book specific - Get all series being removed from this item
     let seriesRemoved = []
     if (req.libraryItem.isBook && mediaPayload.metadata?.series) {
       const seriesIdsInUpdate = mediaPayload.metadata.series?.map((se) => se.id) || []
-      seriesRemoved = req.oldLibraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+      seriesRemoved = oldLibraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
     }
 
     let authorsRemoved = []
     if (req.libraryItem.isBook && mediaPayload.metadata?.authors) {
       const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
-      authorsRemoved = req.oldLibraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+      authorsRemoved = oldLibraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
     }
 
-    const hasUpdates = req.oldLibraryItem.media.update(mediaPayload) || mediaPayload.url
+    const hasUpdates = oldLibraryItem.media.update(mediaPayload) || mediaPayload.url
     if (hasUpdates) {
-      req.oldLibraryItem.updatedAt = Date.now()
+      oldLibraryItem.updatedAt = Date.now()
 
       if (isPodcastAutoDownloadUpdated) {
-        this.cronManager.checkUpdatePodcastCron(req.oldLibraryItem)
+        this.cronManager.checkUpdatePodcastCron(oldLibraryItem)
       }
 
-      Logger.debug(`[LibraryItemController] Updated library item media ${req.oldLibraryItem.media.metadata.title}`)
-      await Database.updateLibraryItem(req.oldLibraryItem)
-      SocketAuthority.emitter('item_updated', req.oldLibraryItem.toJSONExpanded())
+      Logger.debug(`[LibraryItemController] Updated library item media ${oldLibraryItem.media.metadata.title}`)
+      await Database.updateLibraryItem(oldLibraryItem)
+      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
 
       if (authorsRemoved.length) {
         // Check remove empty authors
@@ -272,7 +274,7 @@ class LibraryItemController {
     }
     res.json({
       updated: hasUpdates,
-      libraryItem: req.oldLibraryItem
+      libraryItem: oldLibraryItem
     })
   }
 
@@ -527,7 +529,8 @@ class LibraryItemController {
       options.overrideDetails = !!reqBody.overrideDetails
     }
 
-    var matchResult = await Scanner.quickMatchLibraryItem(this, req.oldLibraryItem, options)
+    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
+    var matchResult = await Scanner.quickMatchLibraryItem(this, oldLibraryItem, options)
     res.json(matchResult)
   }
 
@@ -1144,7 +1147,6 @@ class LibraryItemController {
    */
   async middleware(req, res, next) {
     req.libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
-    req.oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item

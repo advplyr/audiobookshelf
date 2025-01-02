@@ -83,12 +83,10 @@ describe('LibraryItemController', () => {
 
     it('should remove authors and series with no books on library item delete', async () => {
       const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItem1Id)
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
 
       const fakeReq = {
         query: {},
-        libraryItem,
-        oldLibraryItem
+        libraryItem
       }
       const fakeRes = {
         sendStatus: sinon.spy()
@@ -159,7 +157,6 @@ describe('LibraryItemController', () => {
 
     it('should remove authors and series with no books on library item update media', async () => {
       const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItem1Id)
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
 
       // Update library item 1 remove all authors and series
       const fakeReq = {
@@ -170,8 +167,7 @@ describe('LibraryItemController', () => {
             series: []
           }
         },
-        libraryItem,
-        oldLibraryItem
+        libraryItem
       }
       const fakeRes = {
         json: sinon.spy()
