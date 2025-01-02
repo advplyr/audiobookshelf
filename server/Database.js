@@ -406,21 +406,6 @@ class Database {
     return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
   }
 
-  createBulkCollectionBooks(collectionBooks) {
-    if (!this.sequelize) return false
-    return this.models.collectionBook.bulkCreate(collectionBooks)
-  }
-
-  createPlaylistMediaItem(playlistMediaItem) {
-    if (!this.sequelize) return false
-    return this.models.playlistMediaItem.create(playlistMediaItem)
-  }
-
-  createBulkPlaylistMediaItems(playlistMediaItems) {
-    if (!this.sequelize) return false
-    return this.models.playlistMediaItem.bulkCreate(playlistMediaItems)
-  }
-
   async createLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
     await oldLibraryItem.saveMetadata()

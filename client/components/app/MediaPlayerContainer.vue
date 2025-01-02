@@ -374,19 +374,27 @@ export default {
         return
       }
 
+      // https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API
       if ('mediaSession' in navigator) {
-        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
-        const artwork = [
-          {
-            src: coverImageSrc
-          }
-        ]
+        const chapterInfo = []
+        if (this.chapters.length) {
+          this.chapters.forEach((chapter) => {
+            chapterInfo.push({
+              title: chapter.title,
+              startTime: chapter.start
+            })
+          })
+        }
 
         navigator.mediaSession.metadata = new MediaMetadata({
           title: this.title,
           artist: this.playerHandler.displayAuthor || this.mediaMetadata.authorName || 'Unknown',
           album: this.mediaMetadata.seriesName || '',
-          artwork
+          artwork: [
+            {
+              src: this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
+            }
+          ]
         })
         console.log('Set media session metadata', navigator.mediaSession.metadata)
 

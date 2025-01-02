@@ -1,5 +1,5 @@
 <template>
-  <article class="pb-3e" :style="{ minWidth: cardWidth + 'px', maxWidth: cardWidth + 'px' }">
+  <div class="pb-3e" :style="{ minWidth: cardWidth + 'px', maxWidth: cardWidth + 'px' }">
     <nuxt-link :to="`/author/${author?.id}`">
       <div cy-id="card" @mouseover="mouseover" @mouseleave="mouseleave">
         <div cy-id="imageArea" :style="{ height: cardHeight + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
@@ -34,7 +34,7 @@
         </div>
       </div>
     </nuxt-link>
-  </article>
+  </div>
 </template>
 
 <script>
@@ -67,6 +67,9 @@ export default {
     },
     cardHeight() {
       return this.height * this.sizeMultiplier
+    },
+    coverHeight() {
+      return this.cardHeight
     },
     userToken() {
       return this.store.getters['user/getToken']

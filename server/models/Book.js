@@ -321,10 +321,10 @@ class Book extends Model {
           // },
           {
             fields: ['publishedYear']
+          },
+          {
+            fields: ['duration']
           }
-          // {
-          //   fields: ['duration']
-          // }
         ]
       }
     )
