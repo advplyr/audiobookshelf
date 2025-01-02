@@ -867,54 +867,6 @@ class LibraryItem extends Model {
 
   /**
    *
-   * @param {import('sequelize').FindOptions} options
-   * @returns {Promise<Book|Podcast>}
-   */
-  getMedia(options) {
-    if (!this.mediaType) return Promise.resolve(null)
-    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`
-    return this[mixinMethodName](options)
-  }
-
-  /**
-   *
-   * @returns {Promise<Book|Podcast>}
-   */
-  getMediaExpanded() {
-    if (this.mediaType === 'podcast') {
-      return this.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.podcastEpisode
-          }
-        ]
-      })
-    } else {
-      return this.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: this.sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          }
-        ],
-        order: [
-          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
-        ]
-      })
-    }
-  }
-
-  /**
-   *
    * @returns {Promise}
    */
   async saveMetadataFile() {
@@ -1131,6 +1083,64 @@ class LibraryItem extends Model {
     })
   }
 
+  get isBook() {
+    return this.mediaType === 'book'
+  }
+  get isPodcast() {
+    return this.mediaType === 'podcast'
+  }
+  get hasAudioTracks() {
+    return this.media.hasAudioTracks()
+  }
+
+  /**
+   *
+   * @param {import('sequelize').FindOptions} options
+   * @returns {Promise<Book|Podcast>}
+   */
+  getMedia(options) {
+    if (!this.mediaType) return Promise.resolve(null)
+    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`
+    return this[mixinMethodName](options)
+  }
+
+  /**
+   *
+   * @returns {Promise<Book|Podcast>}
+   */
+  getMediaExpanded() {
+    if (this.mediaType === 'podcast') {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+  }
+
   /**
    * Check if book or podcast library item has audio tracks
    * Requires expanded library item
@@ -1146,6 +1156,89 @@ class LibraryItem extends Model {
       return this.media.audioFiles?.length > 0
     } else {
       return this.media.podcastEpisodes?.length > 0
+    }
+  }
+
+  toOldJSON() {
+    if (!this.media) {
+      throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
+    }
+
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      lastScan: this.lastScan?.valueOf(),
+      scanVersion: this.lastScanVersion,
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSON(this.id),
+      libraryFiles: structuredClone(this.libraryFiles)
+    }
+  }
+
+  toOldJSONMinified() {
+    if (!this.media) {
+      throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
+    }
+
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSONMinified(),
+      numFiles: this.libraryFiles.length,
+      size: this.size
+    }
+  }
+
+  toOldJSONExpanded() {
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      lastScan: this.lastScan?.valueOf(),
+      scanVersion: this.lastScanVersion,
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSONExpanded(this.id),
+      libraryFiles: structuredClone(this.libraryFiles),
+      size: this.size
     }
   }
 }

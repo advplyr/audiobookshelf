@@ -39,7 +39,7 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('../controllers/SessionController').RequestWithUser} req
+   * @param {import('../controllers/LibraryItemController').LibraryItemControllerRequest} req
    * @param {Object} [clientDeviceInfo]
    * @returns {Promise<DeviceInfo>}
    */
@@ -67,14 +67,14 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('../controllers/SessionController').RequestWithUser} req
+   * @param {import('../controllers/LibraryItemController').LibraryItemControllerRequest} req
    * @param {import('express').Response} res
    * @param {string} [episodeId]
    */
   async startSessionRequest(req, res, episodeId) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
-    const { libraryItem, body: options } = req
+    const { oldLibraryItem: libraryItem, body: options } = req
     const session = await this.startSession(req.user, deviceInfo, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
   }

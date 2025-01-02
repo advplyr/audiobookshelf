@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
+const { getTitlePrefixAtEnd } = require('../utils')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -47,6 +48,8 @@ class Podcast extends Model {
     this.lastEpisodeCheck
     /** @type {number} */
     this.maxEpisodesToKeep
+    /** @type {number} */
+    this.maxNewEpisodesToDownload
     /** @type {string} */
     this.coverPath
     /** @type {string[]} */
@@ -57,6 +60,9 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    /** @type {import('./PodcastEpisode')[]} */
+    this.podcastEpisodes
   }
 
   static getOldPodcast(libraryItemExpanded) {
@@ -119,25 +125,6 @@ class Podcast extends Model {
     }
   }
 
-  getAbsMetadataJson() {
-    return {
-      tags: this.tags || [],
-      title: this.title,
-      author: this.author,
-      description: this.description,
-      releaseDate: this.releaseDate,
-      genres: this.genres || [],
-      feedURL: this.feedURL,
-      imageURL: this.imageURL,
-      itunesPageURL: this.itunesPageURL,
-      itunesId: this.itunesId,
-      itunesArtistId: this.itunesArtistId,
-      language: this.language,
-      explicit: !!this.explicit,
-      podcastType: this.podcastType
-    }
-  }
-
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
@@ -178,6 +165,134 @@ class Podcast extends Model {
         modelName: 'podcast'
       }
     )
+  }
+
+  get hasMediaFiles() {
+    return !!this.podcastEpisodes?.length
+  }
+
+  get hasAudioTracks() {
+    return this.hasMediaFiles
+  }
+
+  get size() {
+    if (!this.podcastEpisodes?.length) return 0
+    return this.podcastEpisodes.reduce((total, episode) => total + episode.size, 0)
+  }
+
+  getAbsMetadataJson() {
+    return {
+      tags: this.tags || [],
+      title: this.title,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: this.genres || [],
+      feedURL: this.feedURL,
+      imageURL: this.imageURL,
+      itunesPageURL: this.itunesPageURL,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      language: this.language,
+      explicit: !!this.explicit,
+      podcastType: this.podcastType
+    }
+  }
+
+  /**
+   * Old model kept metadata in a separate object
+   */
+  oldMetadataToJSON() {
+    return {
+      title: this.title,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: [...(this.genres || [])],
+      feedUrl: this.feedURL,
+      imageUrl: this.imageURL,
+      itunesPageUrl: this.itunesPageURL,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      explicit: this.explicit,
+      language: this.language,
+      type: this.podcastType
+    }
+  }
+
+  oldMetadataToJSONExpanded() {
+    const oldMetadataJSON = this.oldMetadataToJSON()
+    oldMetadataJSON.titleIgnorePrefix = getTitlePrefixAtEnd(this.title)
+    return oldMetadataJSON
+  }
+
+  /**
+   * The old model stored episodes with the podcast object
+   *
+   * @param {string} libraryItemId
+   */
+  toOldJSON(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.podcastEpisodes) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because episodes are not provided`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSON(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      episodes: this.podcastEpisodes.map((episode) => episode.toOldJSON(libraryItemId)),
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
+    }
+  }
+
+  toOldJSONMinified() {
+    return {
+      id: this.id,
+      // Minified metadata and expanded metadata are the same
+      metadata: this.oldMetadataToJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      numEpisodes: this.podcastEpisodes?.length || 0,
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      size: this.size
+    }
+  }
+
+  toOldJSONExpanded(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+    if (!this.podcastEpisodes) {
+      throw new Error(`[Podcast] Cannot convert to old JSON because episodes are not provided`)
+    }
+
+    return {
+      id: this.id,
+      libraryItemId: libraryItemId,
+      metadata: this.oldMetadataToJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...(this.tags || [])],
+      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId)),
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
+      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      size: this.size
+    }
   }
 }
 

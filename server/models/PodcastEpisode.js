@@ -53,42 +53,6 @@ class PodcastEpisode extends Model {
     this.updatedAt
   }
 
-  /**
-   * @param {string} libraryItemId
-   * @returns {oldPodcastEpisode}
-   */
-  getOldPodcastEpisode(libraryItemId = null) {
-    let enclosure = null
-    if (this.enclosureURL) {
-      enclosure = {
-        url: this.enclosureURL,
-        type: this.enclosureType,
-        length: this.enclosureSize !== null ? String(this.enclosureSize) : null
-      }
-    }
-    return new oldPodcastEpisode({
-      libraryItemId: libraryItemId || null,
-      podcastId: this.podcastId,
-      id: this.id,
-      oldEpisodeId: this.extraData?.oldEpisodeId || null,
-      index: this.index,
-      season: this.season,
-      episode: this.episode,
-      episodeType: this.episodeType,
-      title: this.title,
-      subtitle: this.subtitle,
-      description: this.description,
-      enclosure,
-      guid: this.extraData?.guid || null,
-      pubDate: this.pubDate,
-      chapters: this.chapters,
-      audioFile: this.audioFile,
-      publishedAt: this.publishedAt?.valueOf() || null,
-      addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf()
-    })
-  }
-
   static createFromOld(oldEpisode) {
     const podcastEpisode = this.getFromOld(oldEpisode)
     return this.create(podcastEpisode)
@@ -184,7 +148,51 @@ class PodcastEpisode extends Model {
     return track
   }
 
+  get size() {
+    return this.audioFile?.metadata.size || 0
+  }
+
+  /**
+   * @param {string} libraryItemId
+   * @returns {oldPodcastEpisode}
+   */
+  getOldPodcastEpisode(libraryItemId = null) {
+    let enclosure = null
+    if (this.enclosureURL) {
+      enclosure = {
+        url: this.enclosureURL,
+        type: this.enclosureType,
+        length: this.enclosureSize !== null ? String(this.enclosureSize) : null
+      }
+    }
+    return new oldPodcastEpisode({
+      libraryItemId: libraryItemId || null,
+      podcastId: this.podcastId,
+      id: this.id,
+      oldEpisodeId: this.extraData?.oldEpisodeId || null,
+      index: this.index,
+      season: this.season,
+      episode: this.episode,
+      episodeType: this.episodeType,
+      title: this.title,
+      subtitle: this.subtitle,
+      description: this.description,
+      enclosure,
+      guid: this.extraData?.guid || null,
+      pubDate: this.pubDate,
+      chapters: this.chapters,
+      audioFile: this.audioFile,
+      publishedAt: this.publishedAt?.valueOf() || null,
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf()
+    })
+  }
+
   toOldJSON(libraryItemId) {
+    if (!libraryItemId) {
+      throw new Error(`[PodcastEpisode] Cannot convert to old JSON because libraryItemId is not provided`)
+    }
+
     let enclosure = null
     if (this.enclosureURL) {
       enclosure = {
@@ -209,8 +217,8 @@ class PodcastEpisode extends Model {
       enclosure,
       guid: this.extraData?.guid || null,
       pubDate: this.pubDate,
-      chapters: this.chapters?.map((ch) => ({ ...ch })) || [],
-      audioFile: this.audioFile || null,
+      chapters: structuredClone(this.chapters),
+      audioFile: structuredClone(this.audioFile),
       publishedAt: this.publishedAt?.valueOf() || null,
       addedAt: this.createdAt.valueOf(),
       updatedAt: this.updatedAt.valueOf()
@@ -221,7 +229,7 @@ class PodcastEpisode extends Model {
     const json = this.toOldJSON(libraryItemId)
 
     json.audioTrack = this.track
-    json.size = this.audioFile?.metadata.size || 0
+    json.size = this.size
     json.duration = this.audioFile?.duration || 0
 
     return json
