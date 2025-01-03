@@ -249,10 +249,6 @@ class LibraryItem {
     this.updatedAt = Date.now()
   }
 
-  getDirectPlayTracklist(episodeId) {
-    return this.media.getDirectPlayTracklist(episodeId)
-  }
-
   /**
    * Save metadata.json file
    * TODO: Move to new LibraryItem model

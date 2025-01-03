@@ -74,7 +74,7 @@ class PlaybackSessionManager {
   async startSessionRequest(req, res, episodeId) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
-    const { oldLibraryItem: libraryItem, body: options } = req
+    const { libraryItem, body: options } = req
     const session = await this.startSession(req.user, deviceInfo, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
   }
@@ -279,7 +279,7 @@ class PlaybackSessionManager {
    *
    * @param {import('../models/User')} user
    * @param {DeviceInfo} deviceInfo
-   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {string|null} episodeId
    * @param {{forceDirectPlay?:boolean, forceTranscode?:boolean, mediaPlayer:string, supportedMimeTypes?:string[]}} options
    * @returns {Promise<PlaybackSession>}
@@ -292,7 +292,7 @@ class PlaybackSessionManager {
       await this.closeSession(user, session, null)
     }
 
-    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
+    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options.supportedMimeTypes, episodeId))
     const mediaPlayer = options.mediaPlayer || 'unknown'
 
     const mediaItemId = episodeId || libraryItem.media.id
@@ -300,7 +300,7 @@ class PlaybackSessionManager {
     let userStartTime = 0
     if (userProgress) {
       if (userProgress.isFinished) {
-        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.metadata.title}"`)
+        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.title}"`)
         // Keep userStartTime as 0 so the client restarts the media
       } else {
         userStartTime = Number.parseFloat(userProgress.currentTime) || 0
@@ -312,7 +312,7 @@ class PlaybackSessionManager {
     let audioTracks = []
     if (shouldDirectPlay) {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
-      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
+      audioTracks = libraryItem.getTrackList(episodeId)
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)

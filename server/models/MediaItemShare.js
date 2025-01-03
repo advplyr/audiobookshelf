@@ -76,42 +76,26 @@ class MediaItemShare extends Model {
   }
 
   /**
+   * Expanded book that includes library settings
    *
    * @param {string} mediaItemId
    * @param {string} mediaItemType
-   * @returns {Promise<import('../objects/LibraryItem')>}
+   * @returns {Promise<import('./LibraryItem').LibraryItemExpanded>}
    */
-  static async getMediaItemsOldLibraryItem(mediaItemId, mediaItemType) {
+  static async getMediaItemsLibraryItem(mediaItemId, mediaItemType) {
+    /** @type {typeof import('./LibraryItem')} */
+    const libraryItemModel = this.sequelize.models.libraryItem
+
     if (mediaItemType === 'book') {
-      const book = await this.sequelize.models.book.findByPk(mediaItemId, {
-        include: [
-          {
-            model: this.sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: this.sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          },
-          {
-            model: this.sequelize.models.libraryItem,
-            include: {
-              model: this.sequelize.models.library,
-              attributes: ['settings']
-            }
-          }
-        ]
-      })
-      const libraryItem = book.libraryItem
-      libraryItem.media = book
-      delete book.libraryItem
-      const oldLibraryItem = this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
-      oldLibraryItem.librarySettings = libraryItem.library.settings
-      return oldLibraryItem
+      const libraryItem = await libraryItemModel.findOneExpanded(
+        { mediaId: mediaItemId },
+        {
+          model: this.sequelize.models.library,
+          attributes: ['settings']
+        }
+      )
+
+      return libraryItem
     }
     return null
   }

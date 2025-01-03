@@ -62,6 +62,13 @@ const parseNameString = require('../utils/parsers/parseNameString')
  * @property {ChapterObject[]} chapters
  * @property {Object} metaTags
  * @property {string} mimeType
+ *
+ * @typedef AudioTrackProperties
+ * @property {string} title
+ * @property {string} contentUrl
+ * @property {number} startOffset
+ *
+ * @typedef {AudioFileObject & AudioTrackProperties} AudioTrack
  */
 
 class Book extends Model {
@@ -367,22 +374,65 @@ class Book extends Model {
     return this.audioFiles.filter((af) => !af.exclude)
   }
 
-  get trackList() {
-    let startOffset = 0
-    return this.includedAudioFiles.map((af) => {
-      const track = structuredClone(af)
-      track.startOffset = startOffset
-      startOffset += track.duration
-      return track
-    })
-  }
-
   get hasMediaFiles() {
     return !!this.hasAudioTracks || !!this.ebookFile
   }
 
   get hasAudioTracks() {
     return !!this.includedAudioFiles.length
+  }
+
+  /**
+   * Supported mime types are sent from the web client and are retrieved using the browser Audio player "canPlayType" function.
+   *
+   * @param {string[]} supportedMimeTypes
+   * @returns {boolean}
+   */
+  checkCanDirectPlay(supportedMimeTypes) {
+    if (!Array.isArray(supportedMimeTypes)) {
+      Logger.error(`[Book] checkCanDirectPlay: supportedMimeTypes is not an array`, supportedMimeTypes)
+      return false
+    }
+    return this.includedAudioFiles.every((af) => supportedMimeTypes.includes(af.mimeType))
+  }
+
+  /**
+   * Get the track list to be used in client audio players
+   * AudioTrack is the AudioFile with startOffset, contentUrl and title
+   *
+   * @param {string} libraryItemId
+   * @returns {AudioTrack[]}
+   */
+  getTracklist(libraryItemId) {
+    let startOffset = 0
+    return this.includedAudioFiles.map((af) => {
+      const track = structuredClone(af)
+      track.title = af.metadata.filename
+      track.startOffset = startOffset
+      track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
+      startOffset += track.duration
+      return track
+    })
+  }
+
+  /**
+   *
+   * @returns {ChapterObject[]}
+   */
+  getChapters() {
+    return structuredClone(this.chapters) || []
+  }
+
+  getPlaybackTitle() {
+    return this.title
+  }
+
+  getPlaybackAuthor() {
+    return this.authorName
+  }
+
+  getPlaybackDuration() {
+    return this.duration
   }
 
   /**
@@ -635,7 +685,7 @@ class Book extends Model {
       metadata: this.oldMetadataToJSONMinified(),
       coverPath: this.coverPath,
       tags: [...(this.tags || [])],
-      numTracks: this.trackList.length,
+      numTracks: this.includedAudioFiles.length,
       numAudioFiles: this.audioFiles?.length || 0,
       numChapters: this.chapters?.length || 0,
       duration: this.duration,
@@ -666,7 +716,7 @@ class Book extends Model {
       ebookFile: structuredClone(this.ebookFile),
       duration: this.duration,
       size: this.size,
-      tracks: structuredClone(this.trackList)
+      tracks: this.getTracklist(libraryItemId)
     }
   }
 }
