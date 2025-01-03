@@ -6,8 +6,10 @@ const globals = require('../utils/globals')
 class PodcastEpisodeDownload {
   constructor() {
     this.id = null
+    /** @type {import('../objects/entities/PodcastEpisode')} */
     this.podcastEpisode = null
     this.url = null
+    /** @type {import('../models/LibraryItem')} */
     this.libraryItem = null
     this.libraryId = null
 
@@ -27,7 +29,7 @@ class PodcastEpisodeDownload {
       id: this.id,
       episodeDisplayTitle: this.podcastEpisode?.title ?? null,
       url: this.url,
-      libraryItemId: this.libraryItem?.id || null,
+      libraryItemId: this.libraryItemId,
       libraryId: this.libraryId || null,
       isFinished: this.isFinished,
       failed: this.failed,
@@ -35,8 +37,8 @@ class PodcastEpisodeDownload {
       startedAt: this.startedAt,
       createdAt: this.createdAt,
       finishedAt: this.finishedAt,
-      podcastTitle: this.libraryItem?.media.metadata.title ?? null,
-      podcastExplicit: !!this.libraryItem?.media.metadata.explicit,
+      podcastTitle: this.libraryItem?.media.title ?? null,
+      podcastExplicit: !!this.libraryItem?.media.explicit,
       season: this.podcastEpisode?.season ?? null,
       episode: this.podcastEpisode?.episode ?? null,
       episodeType: this.podcastEpisode?.episodeType ?? 'full',
@@ -80,9 +82,16 @@ class PodcastEpisodeDownload {
     return this.targetFilename
   }
   get libraryItemId() {
-    return this.libraryItem ? this.libraryItem.id : null
+    return this.libraryItem?.id || null
   }
 
+  /**
+   *
+   * @param {import('../objects/entities/PodcastEpisode')} podcastEpisode - old model
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} isAutoDownload
+   * @param {*} libraryId
+   */
   setData(podcastEpisode, libraryItem, isAutoDownload, libraryId) {
     this.id = uuidv4()
     this.podcastEpisode = podcastEpisode

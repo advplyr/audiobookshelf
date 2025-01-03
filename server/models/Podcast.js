@@ -259,6 +259,10 @@ class Podcast extends Model {
       this.autoDownloadSchedule = payload.autoDownloadSchedule
       hasUpdates = true
     }
+    if (typeof payload.lastEpisodeCheck === 'number' && payload.lastEpisodeCheck !== this.lastEpisodeCheck?.valueOf()) {
+      this.lastEpisodeCheck = payload.lastEpisodeCheck
+      hasUpdates = true
+    }
 
     const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload']
     numberKeys.forEach((key) => {
@@ -346,6 +350,31 @@ class Podcast extends Model {
     }
 
     return episode.duration
+  }
+
+  /**
+   *
+   * @returns {number} - Unix timestamp
+   */
+  getLatestEpisodePublishedAt() {
+    return this.podcastEpisodes.reduce((latest, episode) => {
+      if (episode.publishedAt?.valueOf() > latest) {
+        return episode.publishedAt.valueOf()
+      }
+      return latest
+    }, 0)
+  }
+
+  /**
+   * Used for checking if an rss feed episode is already in the podcast
+   *
+   * @param {Object} feedEpisode - object from rss feed
+   * @returns {boolean}
+   */
+  checkHasEpisodeByFeedEpisode(feedEpisode) {
+    const guid = feedEpisode.guid
+    const url = feedEpisode.enclosure.url
+    return this.podcastEpisodes.some((ep) => ep.checkMatchesGuidOrEnclosureUrl(guid, url))
   }
 
   /**

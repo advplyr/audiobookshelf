@@ -52,11 +52,16 @@ class PodcastManager {
     }
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} episodesToDownload
+   * @param {*} isAutoDownload
+   */
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    let index = Math.max(...libraryItem.media.episodes.filter((ep) => ep.index == null || isNaN(ep.index)).map((ep) => Number(ep.index))) + 1
     for (const ep of episodesToDownload) {
       const newPe = new PodcastEpisode()
-      newPe.setData(ep, index++)
+      newPe.setData(ep, null)
       newPe.libraryItemId = libraryItem.id
       newPe.podcastId = libraryItem.media.id
       const newPeDl = new PodcastEpisodeDownload()
@@ -263,16 +268,21 @@ class PodcastManager {
     return newAudioFile
   }
 
-  // Returns false if auto download episodes was disabled (disabled if reaches max failed checks)
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @returns {Promise<boolean>} - Returns false if auto download episodes was disabled (disabled if reaches max failed checks)
+   */
   async runEpisodeCheck(libraryItem) {
-    const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
-    const latestEpisodePublishedAt = libraryItem.media.latestEpisodePublished
-    Logger.info(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.metadata.title}" | Last check: ${lastEpisodeCheckDate} | ${latestEpisodePublishedAt ? `Latest episode pubDate: ${new Date(latestEpisodePublishedAt)}` : 'No latest episode'}`)
+    const lastEpisodeCheck = libraryItem.media.lastEpisodeCheck?.valueOf() || 0
+    const latestEpisodePublishedAt = libraryItem.media.getLatestEpisodePublishedAt()
+
+    Logger.info(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.title}" | Last check: ${new Date(lastEpisodeCheck)} | ${latestEpisodePublishedAt ? `Latest episode pubDate: ${new Date(latestEpisodePublishedAt)}` : 'No latest episode'}`)
 
     // Use latest episode pubDate if exists OR fallback to using lastEpisodeCheckDate
     //    lastEpisodeCheckDate will be the current time when adding a new podcast
     const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheckDate
-    Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.metadata.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
+    Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
     var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
     Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes?.length || 'N/A'} episodes found`)
@@ -283,36 +293,47 @@ class PodcastManager {
       if (!this.failedCheckMap[libraryItem.id]) this.failedCheckMap[libraryItem.id] = 0
       this.failedCheckMap[libraryItem.id]++
       if (this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
-        Logger.error(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.metadata.title}" - disabling auto download`)
+        Logger.error(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}" - disabling auto download`)
         libraryItem.media.autoDownloadEpisodes = false
         delete this.failedCheckMap[libraryItem.id]
       } else {
-        Logger.warn(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.metadata.title}"`)
+        Logger.warn(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}"`)
       }
     } else if (newEpisodes.length) {
       delete this.failedCheckMap[libraryItem.id]
-      Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
+      Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes, true)
     } else {
       delete this.failedCheckMap[libraryItem.id]
-      Logger.debug(`[PodcastManager] No new episodes for "${libraryItem.media.metadata.title}"`)
+      Logger.debug(`[PodcastManager] No new episodes for "${libraryItem.media.title}"`)
     }
 
-    libraryItem.media.lastEpisodeCheck = Date.now()
-    libraryItem.updatedAt = Date.now()
-    await Database.updateLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    libraryItem.media.lastEpisodeCheck = new Date()
+    await libraryItem.media.save()
+
+    libraryItem.changed('updatedAt', true)
+    await libraryItem.save()
+
+    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+
     return libraryItem.media.autoDownloadEpisodes
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} podcastLibraryItem
+   * @param {number} dateToCheckForEpisodesAfter - Unix timestamp
+   * @param {number} maxNewEpisodes
+   * @returns
+   */
   async checkPodcastForNewEpisodes(podcastLibraryItem, dateToCheckForEpisodesAfter, maxNewEpisodes = 3) {
-    if (!podcastLibraryItem.media.metadata.feedUrl) {
-      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`)
+    if (!podcastLibraryItem.media.feedURL) {
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id})`)
       return false
     }
-    const feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
+    const feed = await getPodcastFeed(podcastLibraryItem.media.feedURL)
     if (!feed?.episodes) {
-      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`, feed)
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id})`, feed)
       return false
     }
 
@@ -326,21 +347,32 @@ class PodcastManager {
     return newEpisodes
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} maxEpisodesToDownload
+   * @returns
+   */
   async checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload) {
-    const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
-    Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
-    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, libraryItem.media.lastEpisodeCheck, maxEpisodesToDownload)
+    const lastEpisodeCheck = libraryItem.media.lastEpisodeCheck?.valueOf() || 0
+    const lastEpisodeCheckDate = lastEpisodeCheck > 0 ? libraryItem.media.lastEpisodeCheck : 'Never'
+    Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.title}" - Last episode check: ${lastEpisodeCheckDate}`)
+
+    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, lastEpisodeCheck, maxEpisodesToDownload)
     if (newEpisodes.length) {
-      Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
+      Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes, false)
     } else {
-      Logger.info(`[PodcastManager] No new episodes found for podcast "${libraryItem.media.metadata.title}"`)
+      Logger.info(`[PodcastManager] No new episodes found for podcast "${libraryItem.media.title}"`)
     }
 
-    libraryItem.media.lastEpisodeCheck = Date.now()
-    libraryItem.updatedAt = Date.now()
-    await Database.updateLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    libraryItem.media.lastEpisodeCheck = new Date()
+    await libraryItem.media.save()
+
+    libraryItem.changed('updatedAt', true)
+    await libraryItem.save()
+
+    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
 
     return newEpisodes
   }

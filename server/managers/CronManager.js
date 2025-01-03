@@ -181,7 +181,7 @@ class CronManager {
     // Get podcast library items to check
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = await Database.libraryItemModel.getOldById(libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[CronManager] Library item ${libraryItemId} not found for episode check cron ${expression}`)
         podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter((lid) => lid !== libraryItemId) // Filter it out
