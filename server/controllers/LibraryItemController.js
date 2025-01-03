@@ -971,6 +971,7 @@ class LibraryItemController {
       }
     } else if (req.libraryItem.media.podcastEpisodes.some((ep) => ep.audioFile.ino === req.params.fileid)) {
       const episodeToRemove = req.libraryItem.media.podcastEpisodes.find((ep) => ep.audioFile.ino === req.params.fileid)
+      await Database.playlistModel.removeMediaItemsFromPlaylists([episodeToRemove.id])
       await episodeToRemove.destroy()
 
       req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.audioFile.ino !== req.params.fileid)
