@@ -112,15 +112,15 @@ class FeedEpisode extends Model {
   /**
    * If chapters for an audiobook match the audio tracks then use chapter titles instead of audio file names
    *
+   * @param {import('./Book').AudioTrack[]} trackList
    * @param {import('./Book')} book
    * @returns {boolean}
    */
-  static checkUseChapterTitlesForEpisodes(book) {
-    const tracks = book.trackList || []
+  static checkUseChapterTitlesForEpisodes(trackList, book) {
     const chapters = book.chapters || []
-    if (tracks.length !== chapters.length) return false
-    for (let i = 0; i < tracks.length; i++) {
-      if (Math.abs(chapters[i].start - tracks[i].startOffset) >= 1) {
+    if (trackList.length !== chapters.length) return false
+    for (let i = 0; i < trackList.length; i++) {
+      if (Math.abs(chapters[i].start - trackList[i].startOffset) >= 1) {
         return false
       }
     }
@@ -148,7 +148,7 @@ class FeedEpisode extends Model {
     const contentUrl = `/feed/${slug}/item/${episodeId}/media${Path.extname(audioTrack.metadata.filename)}`
 
     let title = Path.basename(audioTrack.metadata.filename, Path.extname(audioTrack.metadata.filename))
-    if (book.trackList.length == 1) {
+    if (book.includedAudioFiles.length == 1) {
       // If audiobook is a single file, use book title instead of chapter/file title
       title = book.title
     } else {
@@ -185,11 +185,12 @@ class FeedEpisode extends Model {
    * @returns {Promise<FeedEpisode[]>}
    */
   static async createFromAudiobookTracks(libraryItemExpanded, feed, slug, transaction) {
-    const useChapterTitles = this.checkUseChapterTitlesForEpisodes(libraryItemExpanded.media)
+    const trackList = libraryItemExpanded.getTrackList()
+    const useChapterTitles = this.checkUseChapterTitlesForEpisodes(trackList, libraryItemExpanded.media)
 
     const feedEpisodeObjs = []
     let numExisting = 0
-    for (const track of libraryItemExpanded.media.trackList) {
+    for (const track of trackList) {
       // Check for existing episode by filepath
       const existingEpisode = feed.feedEpisodes?.find((episode) => {
         return episode.filePath === track.metadata.path
@@ -204,7 +205,7 @@ class FeedEpisode extends Model {
 
   /**
    *
-   * @param {import('./Book')[]} books
+   * @param {import('./Book').BookExpandedWithLibraryItem[]} books
    * @param {import('./Feed')} feed
    * @param {string} slug
    * @param {import('sequelize').Transaction} transaction
@@ -218,8 +219,9 @@ class FeedEpisode extends Model {
     const feedEpisodeObjs = []
     let numExisting = 0
     for (const book of books) {
-      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(book)
-      for (const track of book.trackList) {
+      const trackList = book.libraryItem.getTrackList()
+      const useChapterTitles = this.checkUseChapterTitlesForEpisodes(trackList, book)
+      for (const track of trackList) {
         // Check for existing episode by filepath
         const existingEpisode = feed.feedEpisodes?.find((episode) => {
           return episode.filePath === track.metadata.path

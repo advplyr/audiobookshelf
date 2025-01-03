@@ -150,27 +150,5 @@ class Book {
     this.coverPath = coverPath
     return true
   }
-
-  // Only checks container format
-  checkCanDirectPlay(payload) {
-    var supportedMimeTypes = payload.supportedMimeTypes || []
-    return !this.tracks.some((t) => !supportedMimeTypes.includes(t.mimeType))
-  }
-
-  getDirectPlayTracklist() {
-    return this.tracks
-  }
-
-  getPlaybackTitle() {
-    return this.metadata.title
-  }
-
-  getPlaybackAuthor() {
-    return this.metadata.authorName
-  }
-
-  getChapters() {
-    return this.chapters?.map((ch) => ({ ...ch })) || []
-  }
 }
 module.exports = Book

@@ -498,6 +498,57 @@ class LibraryItem extends Model {
   }
 
   /**
+   *
+   * @param {import('sequelize').WhereOptions} where
+   * @param {import('sequelize').IncludeOptions} [include]
+   * @returns {Promise<LibraryItemExpanded>}
+   */
+  static async findOneExpanded(where, include = null) {
+    const libraryItem = await this.findOne({
+      where,
+      include
+    })
+    if (!libraryItem) {
+      Logger.error(`[LibraryItem] Library item not found`)
+      return null
+    }
+
+    if (libraryItem.mediaType === 'podcast') {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['id', 'sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+
+    if (!libraryItem.media) return null
+    return libraryItem
+  }
+
+  /**
    * Get old library item by id
    * @param {string} libraryItemId
    * @returns {oldLibraryItem}
@@ -1174,6 +1225,22 @@ class LibraryItem extends Model {
     } else {
       return this.media.podcastEpisodes.find((pe) => pe.audioFile?.ino === ino)?.audioFile
     }
+  }
+
+  /**
+   * Get the track list to be used in client audio players
+   * AudioTrack is the AudioFile with startOffset and contentUrl
+   * Podcasts must have an episodeId to get the track list
+   *
+   * @param {string} [episodeId]
+   * @returns {import('./Book').AudioTrack[]}
+   */
+  getTrackList(episodeId) {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] getTrackList: Library item "${this.id}" does not have media`)
+      return []
+    }
+    return this.media.getTracklist(this.id, episodeId)
   }
 
   /**

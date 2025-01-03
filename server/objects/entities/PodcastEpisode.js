@@ -168,16 +168,6 @@ class PodcastEpisode {
     return hasUpdates
   }
 
-  // Only checks container format
-  checkCanDirectPlay(payload) {
-    const supportedMimeTypes = payload.supportedMimeTypes || []
-    return supportedMimeTypes.includes(this.audioFile.mimeType)
-  }
-
-  getDirectPlayTracklist() {
-    return this.tracks
-  }
-
   checkEqualsEnclosureUrl(url) {
     if (!this.enclosure?.url) return false
     return this.enclosure.url == url

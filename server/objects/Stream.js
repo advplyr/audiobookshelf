@@ -18,6 +18,7 @@ class Stream extends EventEmitter {
 
     this.id = sessionId
     this.user = user
+    /** @type {import('../models/LibraryItem')} */
     this.libraryItem = libraryItem
     this.episodeId = episodeId
 
@@ -40,31 +41,25 @@ class Stream extends EventEmitter {
     this.furthestSegmentCreated = 0
   }
 
-  get isPodcast() {
-    return this.libraryItem.mediaType === 'podcast'
-  }
+  /**
+   * @returns {import('../models/PodcastEpisode') | null}
+   */
   get episode() {
-    if (!this.isPodcast) return null
-    return this.libraryItem.media.episodes.find((ep) => ep.id === this.episodeId)
-  }
-  get libraryItemId() {
-    return this.libraryItem.id
+    if (!this.libraryItem.isPodcast) return null
+    return this.libraryItem.media.podcastEpisodes.find((ep) => ep.id === this.episodeId)
   }
   get mediaTitle() {
-    if (this.episode) return this.episode.title || ''
-    return this.libraryItem.media.metadata.title || ''
+    return this.libraryItem.media.getPlaybackTitle(this.episodeId)
   }
   get totalDuration() {
-    if (this.episode) return this.episode.duration
-    return this.libraryItem.media.duration
+    return this.libraryItem.media.getPlaybackDuration(this.episodeId)
   }
   get tracks() {
-    if (this.episode) return this.episode.tracks
-    return this.libraryItem.media.tracks
+    return this.libraryItem.getTrackList(this.episodeId)
   }
   get tracksAudioFileType() {
     if (!this.tracks.length) return null
-    return this.tracks[0].metadata.format
+    return this.tracks[0].metadata.ext.slice(1)
   }
   get tracksMimeType() {
     if (!this.tracks.length) return null
@@ -116,8 +111,8 @@ class Stream extends EventEmitter {
     return {
       id: this.id,
       userId: this.user.id,
-      libraryItem: this.libraryItem.toJSONExpanded(),
-      episode: this.episode ? this.episode.toJSONExpanded() : null,
+      libraryItem: this.libraryItem.toOldJSONExpanded(),
+      episode: this.episode ? this.episode.toOldJSONExpanded(this.libraryItem.id) : null,
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,
