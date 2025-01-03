@@ -14,6 +14,7 @@ const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
+const NotificationManager = require('../managers/NotificationManager')
 
 class LibraryScanner {
   constructor() {
@@ -284,6 +285,7 @@ class LibraryScanner {
             'items_added',
             newOldLibraryItems.map((li) => li.toJSONExpanded())
           )
+          NotificationManager.onItemsAdded(newOldLibraryItems)
           newOldLibraryItems = []
         }
 
@@ -296,6 +298,7 @@ class LibraryScanner {
           'items_added',
           newOldLibraryItems.map((li) => li.toJSONExpanded())
         )
+        NotificationManager.onItemsAdded(newOldLibraryItems)
       }
     }
 
@@ -647,6 +650,7 @@ class LibraryScanner {
       if (newLibraryItem) {
         const oldNewLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
         SocketAuthority.emitter('item_added', oldNewLibraryItem.toJSONExpanded())
+        NotificationManager.onItemsAdded([oldNewLibraryItem])
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
