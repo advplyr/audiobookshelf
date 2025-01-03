@@ -971,7 +971,20 @@ class LibraryItemController {
       }
     } else if (req.libraryItem.media.podcastEpisodes.some((ep) => ep.audioFile.ino === req.params.fileid)) {
       const episodeToRemove = req.libraryItem.media.podcastEpisodes.find((ep) => ep.audioFile.ino === req.params.fileid)
+      // Remove episode from all playlists
       await Database.playlistModel.removeMediaItemsFromPlaylists([episodeToRemove.id])
+
+      // Remove episode media progress
+      const numProgressRemoved = await Database.mediaProgressModel.destroy({
+        where: {
+          mediaItemId: episodeToRemove.id
+        }
+      })
+      if (numProgressRemoved > 0) {
+        Logger.info(`[LibraryItemController] Removed media progress for episode ${episodeToRemove.id}`)
+      }
+
+      // Remove episode
       await episodeToRemove.destroy()
 
       req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.audioFile.ino !== req.params.fileid)
