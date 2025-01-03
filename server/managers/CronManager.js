@@ -5,11 +5,10 @@ const Database = require('../Database')
 const LibraryScanner = require('../scanner/LibraryScanner')
 
 const ShareManager = require('./ShareManager')
+const PodcastManager = require('./PodcastManager')
 
 class CronManager {
-  constructor(podcastManager, playbackSessionManager) {
-    /** @type {import('./PodcastManager')} */
-    this.podcastManager = podcastManager
+  constructor(playbackSessionManager) {
     /** @type {import('./PlaybackSessionManager')} */
     this.playbackSessionManager = playbackSessionManager
 
@@ -163,7 +162,7 @@ class CronManager {
         task
       })
     } catch (error) {
-      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.podcastEpisodeSchedule}`, error)
+      Logger.error(`[CronManager] Failed to schedule podcast cron ${this.serverSettings.podcastEpisodeSchedule}`, error)
     }
   }
 
@@ -192,7 +191,7 @@ class CronManager {
 
     // Run episode checks
     for (const libraryItem of libraryItems) {
-      const keepAutoDownloading = await this.podcastManager.runEpisodeCheck(libraryItem)
+      const keepAutoDownloading = await PodcastManager.runEpisodeCheck(libraryItem)
       if (!keepAutoDownloading) {
         // auto download was disabled
         podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter((lid) => lid !== libraryItem.id) // Filter it out

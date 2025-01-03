@@ -1,0 +1,53 @@
+{
+  "id": "e6205690-916c-4add-9a2b-2548266996ef",
+  "name": "Example",
+  "version": "1.0.0",
+  "owner": "advplyr",
+  "repositoryUrl": "https://github.com/example/example-plugin",
+  "documentationUrl": "https://example.com",
+  "description": "This is an example plugin",
+  "descriptionKey": "ExamplePluginDescription",
+  "extensions": [
+    {
+      "target": "item.detail.actions",
+      "name": "itemActionExample",
+      "label": "Item Example Action",
+      "labelKey": "ItemExampleAction"
+    }
+  ],
+  "config": {
+    "description": "This is a description on how to configure the plugin",
+    "descriptionKey": "ExamplePluginConfigurationDescription",
+    "formFields": [
+      {
+        "name": "requestAddress",
+        "label": "Request Address",
+        "labelKey": "LabelRequestAddress",
+        "type": "text"
+      },
+      {
+        "name": "enable",
+        "label": "Enable",
+        "labelKey": "LabelEnable",
+        "type": "checkbox"
+      }
+    ]
+  },
+  "localization": {
+    "de": {
+      "ExamplePluginDescription": "Dies ist ein Beispiel-Plugin",
+      "ItemExampleAction": "Item Example Action",
+      "LabelEnable": "Enable",
+      "ExamplePluginConfigurationDescription": "This is a description on how to configure the plugin",
+      "LabelRequestAddress": "Request Address"
+    }
+  },
+  "releases": [
+    {
+      "version": "1.0.0",
+      "changelog": "Initial release",
+      "timestamp": "2022-01-01T00:00:00Z",
+      "downloadUrl": ""
+    }
+  ]
+}

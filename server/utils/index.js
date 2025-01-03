@@ -243,3 +243,21 @@ module.exports.isValidASIN = (str) => {
   if (!str || typeof str !== 'string') return false
   return /^[A-Z0-9]{10}$/.test(str)
 }
+
+/**
+ * Parse semver string that must be in format "major.minor.patch" all numbers
+ *
+ * @param {string} version
+ * @returns {{major: number, minor: number, patch: number} | null}
+ */
+module.exports.parseSemverStrict = (version) => {
+  if (typeof version !== 'string') {
+    return null
+  }
+  const [major, minor, patch] = version.split('.').map(Number)
+
+  if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
+    return null
+  }
+  return { major, minor, patch }
+}

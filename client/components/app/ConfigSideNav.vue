@@ -112,6 +112,14 @@ export default {
         }
       ]
 
+      if (this.$store.state.pluginsEnabled) {
+        configRoutes.push({
+          id: 'config-plugins',
+          title: 'Plugins',
+          path: '/config/plugins'
+        })
+      }
+
       if (this.currentLibraryId) {
         configRoutes.push({
           id: 'library-stats',

@@ -364,6 +364,9 @@ export default {
     showCollectionsButton() {
       return this.isBook && this.userCanUpdate
     },
+    pluginExtensions() {
+      return this.$store.getters['getPluginExtensions']('item.detail.actions')
+    },
     contextMenuItems() {
       const items = []
 
@@ -426,6 +429,18 @@ export default {
         items.push({
           text: this.$strings.ButtonDelete,
           action: 'delete'
+        })
+      }
+
+      if (this.pluginExtensions.length) {
+        this.pluginExtensions.forEach((plugin) => {
+          plugin.extensions.forEach((pext) => {
+            items.push({
+              text: pext.label,
+              action: `plugin-${plugin.id}-action-${pext.name}`,
+              icon: 'extension'
+            })
+          })
         })
       }
 
@@ -763,7 +778,54 @@ export default {
       } else if (action === 'share') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
+      } else if (action.startsWith('plugin-')) {
+        const actionStrSplit = action.replace('plugin-', '').split('-action-')
+        const pluginId = actionStrSplit[0]
+        const pluginAction = actionStrSplit[1]
+        this.onPluginAction(pluginId, pluginAction)
       }
+    },
+    onPluginAction(pluginId, pluginAction) {
+      const plugin = this.pluginExtensions.find((p) => p.id === pluginId)
+      const extension = plugin.extensions.find((ext) => ext.name === pluginAction)
+
+      if (extension.prompt) {
+        const payload = {
+          message: extension.prompt.message,
+          formFields: extension.prompt.formFields || [],
+          yesButtonText: this.$strings.ButtonSubmit,
+          callback: (confirmed, promptData) => {
+            if (confirmed) {
+              this.sendPluginAction(pluginId, pluginAction, promptData)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+      } else {
+        this.sendPluginAction(pluginId, pluginAction)
+      }
+    },
+    sendPluginAction(pluginId, pluginAction, promptData = null) {
+      this.$axios
+        .$post(`/api/plugins/${pluginId}/action`, {
+          pluginAction,
+          target: 'item.detail.actions',
+          data: {
+            entityId: this.libraryItemId,
+            entityType: 'libraryItem',
+            userId: this.$store.state.user.user.id,
+            promptData
+          }
+        })
+        .then((data) => {
+          console.log('Plugin action response', data)
+        })
+        .catch((error) => {
+          const errorMsg = error.response?.data || 'Plugin action failed'
+          console.error('Plugin action failed:', error)
+          this.$toast.error(errorMsg)
+        })
     }
   },
   mounted() {

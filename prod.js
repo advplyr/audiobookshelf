@@ -16,8 +16,8 @@ const server = require('./server/Server')
 
 global.appRoot = __dirname
 
-var inputConfig = options.config ? Path.resolve(options.config) : null
-var inputMetadata = options.metadata ? Path.resolve(options.metadata) : null
+const inputConfig = options.config ? Path.resolve(options.config) : null
+const inputMetadata = options.metadata ? Path.resolve(options.metadata) : null
 
 const PORT = options.port || process.env.PORT || 3333
 const HOST = options.host || process.env.HOST

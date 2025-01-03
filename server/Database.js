@@ -152,6 +152,11 @@ class Database {
     return this.models.device
   }
 
+  /** @type {typeof import('./models/Plugin')} */
+  get pluginModel() {
+    return this.models.plugin
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -305,6 +310,7 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/Plugin').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
