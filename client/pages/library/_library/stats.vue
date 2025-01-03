@@ -24,7 +24,7 @@
               </div>
             </template>
           </div>
-          <div v-if="isBookLibrary || showAllLibraryStats" class="w-80 my-6 mx-auto">
+          <div v-if="isBookLibrary" class="w-80 my-6 mx-auto">
             <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop10Authors }}</h1>
             <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
             <template v-for="(author, index) in top10Authors">
