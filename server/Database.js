@@ -695,6 +695,27 @@ class Database {
       await book.destroy()
     }
 
+    const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({
+      include: [
+        {
+          model: this.bookModel,
+          attributes: ['id']
+        },
+        {
+          model: this.podcastEpisodeModel,
+          attributes: ['id']
+        }
+      ],
+      where: {
+        '$book.id$': null,
+        '$podcastEpisode.id$': null
+      }
+    })
+    for (const playlistMediaItem of playlistMediaItemsWithNoMediaItem) {
+      Logger.warn(`Found playlistMediaItem with no book or podcastEpisode - removing it`)
+      await playlistMediaItem.destroy()
+    }
+
     // Remove empty series
     const emptySeries = await this.seriesModel.findAll({
       include: {
