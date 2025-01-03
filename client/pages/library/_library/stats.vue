@@ -1,6 +1,6 @@
 <template>
   <div class="page relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar page="library-stats" is-home @library-stats-updated="toggleStats" />
+    <app-book-shelf-toolbar page="library-stats" is-home />
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <div class="w-full max-w-4xl mx-auto">
         <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
@@ -102,18 +102,11 @@ export default {
   },
   data() {
     return {
-      libraryStats: null,
-      showAllLibraryStats: false
+      libraryStats: null
     }
   },
   watch: {
     currentLibraryId(newVal, oldVal) {
-      if (newVal) {
-        this.init()
-      }
-    },
-    showAllLibraryStats(newVal) {
-      console.log('showAllLibraryStats', newVal)
       if (newVal) {
         this.init()
       }
@@ -171,26 +164,11 @@ export default {
   },
   methods: {
     async init() {
-      this.libraryStats = null
-      if (this.showAllLibraryStats === true) {
-        this.libraryStats = (await this.$axios.$get(`/api/libraries/stats`).catch((err) => {
-          console.error('Failed to get library stats', err)
-          var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
-          this.$toast.error(`Failed to get library stats: ${errorMsg}`)
-        }))['combined']
-      } else {
-        this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
-          console.error('Failed to get library stats', err)
-          var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
-          this.$toast.error(`Failed to get library stats: ${errorMsg}`)
-        })
-      }
-    },
-    toggleStats(value) {
-      this.showAllLibraryStats = value;
-      this.$nextTick(() => {
-        this.init();
-      });
+      this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
+        console.error('Failed to get library stats', err)
+        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+      })
     }
   },
   mounted() {

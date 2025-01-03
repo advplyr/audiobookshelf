@@ -20,9 +20,9 @@
         <tr v-for="library in bookLibraryListStats">
           <td>
             <p class="text-sm md:text-base text-gray-100">
-              <nuxt-link :to="`/library/${library.id}/stats`" class="hover:underline">
+              <a :href="'/library/' + library.id + '/stats'" class="hover:underline" @click.prevent="switchLibrary(library.id)">
                 {{ library.name }}
-              </nuxt-link>
+              </a>
             </p>
           </td>
           <td>
@@ -59,9 +59,9 @@
         <tr v-for="library in podcastLibraryListStats">
           <td>
             <p class="text-sm md:text-base text-gray-100">
-              <nuxt-link :to="`/library/${library.id}/stats`" class="hover:underline">
+              <a :href="'/library/' + library.id + '/stats'" class="hover:underline" @click.prevent="switchLibrary(library.id)">
                 {{ library.name }}
-              </nuxt-link>
+              </a>
             </p>
           </td>
           <td>
@@ -141,10 +141,6 @@ export default {
         if (a['type'] > b['type']) return 1
         return 0
       })
-
-
-      console.log(this.bookLibraryIndex)
-      console.log(this.podcastLibraryIndex)
     },
     totalHours(duration) {
       return Math.round(duration / (60 * 60))
@@ -159,6 +155,11 @@ export default {
     totalSizeMod(size) {
       return this.totalSizePretty(size).split(' ')[1]
     },
+    async switchLibrary(libraryId) {
+      await this.$store.dispatch('libraries/fetch', libraryId);
+
+      await this.$router.push(`/library/${libraryId}/stats`)
+    }
   },
   mounted() {
     this.init()
