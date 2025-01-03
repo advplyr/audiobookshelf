@@ -8,8 +8,8 @@ const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
 const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
-  // return path.replace(/'/g, '\'\\\'\'')
-  return filePathToPOSIX(path).replace(/ /g, '\\ ').replace(/'/g, "\\'")
+  // A ' within a quoted string is escaped with '\'' in ffmpeg (see https://www.ffmpeg.org/ffmpeg-utils.html#Quoting-and-escaping)
+  return filePathToPOSIX(path).replace(/'/g, "'\\''")
 }
 
 // Returns first track start time
@@ -33,7 +33,7 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
 
   var tracksToInclude = tracks.filter((t) => t.index >= trackToStartWithIndex)
   var trackPaths = tracksToInclude.map((t) => {
-    var line = 'file ' + escapeSingleQuotes(t.metadata.path) + '\n' + `duration ${t.duration}`
+    var line = "file '" + escapeSingleQuotes(t.metadata.path) + "'\n" + `duration ${t.duration}`
     return line
   })
   var inputstr = trackPaths.join('\n\n')
