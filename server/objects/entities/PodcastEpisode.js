@@ -167,10 +167,5 @@ class PodcastEpisode {
     }
     return hasUpdates
   }
-
-  checkEqualsEnclosureUrl(url) {
-    if (!this.enclosure?.url) return false
-    return this.enclosure.url == url
-  }
 }
 module.exports = PodcastEpisode

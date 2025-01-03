@@ -97,6 +97,11 @@ async function resizeImage(filePath, outputPath, width, height) {
 }
 module.exports.resizeImage = resizeImage
 
+/**
+ *
+ * @param {import('../objects/PodcastEpisodeDownload')} podcastEpisodeDownload
+ * @returns
+ */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
     const response = await axios({
@@ -118,21 +123,22 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
 
-    const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
+    /** @type {import('../models/Podcast')} */
+    const podcast = podcastEpisodeDownload.libraryItem.media
     const podcastEpisode = podcastEpisodeDownload.podcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
     const taggings = {
-      album: podcastMetadata.title,
-      'album-sort': podcastMetadata.title,
-      artist: podcastMetadata.author,
-      'artist-sort': podcastMetadata.author,
+      album: podcast.title,
+      'album-sort': podcast.title,
+      artist: podcast.author,
+      'artist-sort': podcast.author,
       comment: podcastEpisode.description,
       subtitle: podcastEpisode.subtitle,
       disc: podcastEpisode.season,
-      genre: podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
-      language: podcastMetadata.language,
-      MVNM: podcastMetadata.title,
+      genre: podcast.genres.length ? podcast.genres.join(';') : null,
+      language: podcast.language,
+      MVNM: podcast.title,
       MVIN: podcastEpisode.episode,
       track: podcastEpisode.episode,
       'series-part': podcastEpisode.episode,
@@ -141,9 +147,9 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       year: podcastEpisode.pubYear,
       date: podcastEpisode.pubDate,
       releasedate: podcastEpisode.pubDate,
-      'itunes-id': podcastMetadata.itunesId,
-      'podcast-type': podcastMetadata.type,
-      'episode-type': podcastMetadata.episodeType
+      'itunes-id': podcast.itunesId,
+      'podcast-type': podcast.podcastType,
+      'episode-type': podcastEpisode.episodeType
     }
 
     for (const tag in taggings) {

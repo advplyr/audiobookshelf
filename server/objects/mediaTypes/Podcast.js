@@ -193,11 +193,6 @@ class Podcast {
   checkHasEpisode(episodeId) {
     return this.episodes.some((ep) => ep.id === episodeId)
   }
-  checkHasEpisodeByFeedEpisode(feedEpisode) {
-    const guid = feedEpisode.guid
-    const url = feedEpisode.enclosure.url
-    return this.episodes.some((ep) => (ep.guid && ep.guid === guid) || ep.checkEqualsEnclosureUrl(url))
-  }
 
   addPodcastEpisode(podcastEpisode) {
     this.episodes.push(podcastEpisode)

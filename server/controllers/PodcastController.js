@@ -19,6 +19,11 @@ const LibraryItem = require('../objects/LibraryItem')
  * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObject} RequestWithUser
+ *
+ * @typedef RequestEntityObject
+ * @property {import('../models/LibraryItem')} libraryItem
+ *
+ * @typedef {RequestWithUser & RequestEntityObject} RequestWithLibraryItem
  */
 
 class PodcastController {
@@ -111,11 +116,6 @@ class PodcastController {
     SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
 
     res.json(libraryItem.toJSONExpanded())
-
-    if (payload.episodesToDownload?.length) {
-      Logger.info(`[PodcastController] Podcast created now starting ${payload.episodesToDownload.length} episode downloads`)
-      this.podcastManager.downloadPodcastEpisodes(libraryItem, payload.episodesToDownload)
-    }
 
     // Turn on podcast auto download cron if not already on
     if (libraryItem.media.autoDownloadEpisodes) {
@@ -213,7 +213,7 @@ class PodcastController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async checkNewEpisodes(req, res) {
@@ -222,15 +222,14 @@ class PodcastController {
       return res.sendStatus(403)
     }
 
-    var libraryItem = req.libraryItem
-    if (!libraryItem.media.metadata.feedUrl) {
-      Logger.error(`[PodcastController] checkNewEpisodes no feed url for item ${libraryItem.id}`)
-      return res.status(500).send('Podcast has no rss feed url')
+    if (!req.libraryItem.media.feedURL) {
+      Logger.error(`[PodcastController] checkNewEpisodes no feed url for item ${req.libraryItem.id}`)
+      return res.status(400).send('Podcast has no rss feed url')
     }
 
     const maxEpisodesToDownload = !isNaN(req.query.limit) ? Number(req.query.limit) : 3
 
-    var newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload)
+    const newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(req.libraryItem, maxEpisodesToDownload)
     res.json({
       episodes: newEpisodes || []
     })
@@ -258,23 +257,28 @@ class PodcastController {
    *
    * @this {import('../routers/ApiRouter')}
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   getEpisodeDownloads(req, res) {
-    var libraryItem = req.libraryItem
-
-    var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
+    const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
     res.json({
       downloads: downloadsInQueue.map((d) => d.toJSONForClient())
     })
   }
 
+  /**
+   * GET: /api/podcasts/:id/search-episode
+   * Search for an episode in a podcast
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
   async findEpisode(req, res) {
-    const rssFeedUrl = req.libraryItem.media.metadata.feedUrl
+    const rssFeedUrl = req.libraryItem.media.feedURL
     if (!rssFeedUrl) {
       Logger.error(`[PodcastController] findEpisode: Podcast has no feed url`)
-      return res.status(500).send('Podcast does not have an RSS feed URL')
+      return res.status(400).send('Podcast does not have an RSS feed URL')
     }
 
     const searchTitle = req.query.title
@@ -292,7 +296,7 @@ class PodcastController {
    *
    * @this {import('../routers/ApiRouter')}
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async downloadEpisodes(req, res) {
@@ -300,13 +304,13 @@ class PodcastController {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to download episodes`)
       return res.sendStatus(403)
     }
-    const libraryItem = req.libraryItem
+
     const episodes = req.body
-    if (!episodes?.length) {
+    if (!Array.isArray(episodes) || !episodes.length) {
       return res.sendStatus(400)
     }
 
-    this.podcastManager.downloadPodcastEpisodes(libraryItem, episodes)
+    this.podcastManager.downloadPodcastEpisodes(req.libraryItem, episodes)
     res.sendStatus(200)
   }
 
@@ -315,7 +319,7 @@ class PodcastController {
    *
    * @this {import('../routers/ApiRouter')}
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async quickMatchEpisodes(req, res) {
@@ -325,10 +329,11 @@ class PodcastController {
     }
 
     const overrideDetails = req.query.override === '1'
-    const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
+    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
+    const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(oldLibraryItem, { overrideDetails })
     if (episodesUpdated) {
-      await Database.updateLibraryItem(req.libraryItem)
-      SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+      await Database.updateLibraryItem(oldLibraryItem)
+      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
     }
 
     res.json({
@@ -339,58 +344,76 @@ class PodcastController {
   /**
    * PATCH: /api/podcasts/:id/episode/:episodeId
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async updateEpisode(req, res) {
-    const libraryItem = req.libraryItem
-
-    var episodeId = req.params.episodeId
-    if (!libraryItem.media.checkHasEpisode(episodeId)) {
+    /** @type {import('../models/PodcastEpisode')} */
+    const episode = req.libraryItem.media.podcastEpisodes.find((ep) => ep.id === req.params.episodeId)
+    if (!episode) {
       return res.status(404).send('Episode not found')
     }
 
-    if (libraryItem.media.updateEpisode(episodeId, req.body)) {
-      await Database.updateLibraryItem(libraryItem)
-      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    const updatePayload = {}
+    const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
+    for (const key in req.body) {
+      if (supportedStringKeys.includes(key) && typeof req.body[key] === 'string') {
+        updatePayload[key] = req.body[key]
+      } else if (key === 'chapters' && Array.isArray(req.body[key]) && req.body[key].every((ch) => typeof ch === 'object' && ch.title && ch.start)) {
+        updatePayload[key] = req.body[key]
+      } else if (key === 'publishedAt' && typeof req.body[key] === 'number') {
+        updatePayload[key] = req.body[key]
+      }
     }
 
-    res.json(libraryItem.toJSONExpanded())
+    if (Object.keys(updatePayload).length) {
+      episode.set(updatePayload)
+      if (episode.changed()) {
+        Logger.info(`[PodcastController] Updated episode "${episode.title}" keys`, episode.changed())
+        await episode.save()
+
+        SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      } else {
+        Logger.info(`[PodcastController] No changes to episode "${episode.title}"`)
+      }
+    }
+
+    res.json(req.libraryItem.toOldJSONExpanded())
   }
 
   /**
    * GET: /api/podcasts/:id/episode/:episodeId
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async getEpisode(req, res) {
     const episodeId = req.params.episodeId
-    const libraryItem = req.libraryItem
 
-    const episode = libraryItem.media.episodes.find((ep) => ep.id === episodeId)
+    /** @type {import('../models/PodcastEpisode')} */
+    const episode = req.libraryItem.media.podcastEpisodes.find((ep) => ep.id === episodeId)
     if (!episode) {
-      Logger.error(`[PodcastController] getEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      Logger.error(`[PodcastController] getEpisode episode ${episodeId} not found for item ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
 
-    res.json(episode)
+    res.json(episode.toOldJSON(req.libraryItem.id))
   }
 
   /**
    * DELETE: /api/podcasts/:id/episode/:episodeId
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async removeEpisode(req, res) {
     const episodeId = req.params.episodeId
-    const libraryItem = req.libraryItem
     const hardDelete = req.query.hard === '1'
 
-    const episode = libraryItem.media.episodes.find((ep) => ep.id === episodeId)
+    /** @type {import('../models/PodcastEpisode')} */
+    const episode = req.libraryItem.media.podcastEpisodes.find((ep) => ep.id === episodeId)
     if (!episode) {
-      Logger.error(`[PodcastController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      Logger.error(`[PodcastController] removeEpisode episode ${episodeId} not found for item ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
 
@@ -407,36 +430,8 @@ class PodcastController {
         })
     }
 
-    // Remove episode from Podcast and library file
-    const episodeRemoved = libraryItem.media.removeEpisode(episodeId)
-    if (episodeRemoved?.audioFile) {
-      libraryItem.removeLibraryFile(episodeRemoved.audioFile.ino)
-    }
-
-    // Update/remove playlists that had this podcast episode
-    const playlistMediaItems = await Database.playlistMediaItemModel.findAll({
-      where: {
-        mediaItemId: episodeId
-      },
-      include: {
-        model: Database.playlistModel,
-        include: Database.playlistMediaItemModel
-      }
-    })
-    for (const pmi of playlistMediaItems) {
-      const numItems = pmi.playlist.playlistMediaItems.length - 1
-
-      if (!numItems) {
-        Logger.info(`[PodcastController] Playlist "${pmi.playlist.name}" has no more items - removing it`)
-        const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
-        SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_removed', jsonExpanded)
-        await pmi.playlist.destroy()
-      } else {
-        await pmi.destroy()
-        const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
-        SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_updated', jsonExpanded)
-      }
-    }
+    // Remove episode from playlists
+    await Database.playlistModel.removeMediaItemsFromPlaylists([episodeId])
 
     // Remove media progress for this episode
     const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
@@ -448,9 +443,16 @@ class PodcastController {
       Logger.info(`[PodcastController] Removed ${mediaProgressRemoved} media progress for episode ${episode.id}`)
     }
 
-    await Database.updateLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
+    // Remove episode
+    await episode.destroy()
+
+    // Remove library file
+    req.libraryItem.libraryFiles = req.libraryItem.libraryFiles.filter((file) => file.ino !== episode.audioFile.ino)
+    req.libraryItem.changed('libraryFiles', true)
+    await req.libraryItem.save()
+
+    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    res.json(req.libraryItem.toOldJSON())
   }
 
   /**
@@ -460,15 +462,15 @@ class PodcastController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    const item = await Database.libraryItemModel.getOldById(req.params.id)
-    if (!item?.media) return res.sendStatus(404)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
+    if (!libraryItem?.media) return res.sendStatus(404)
 
-    if (!item.isPodcast) {
+    if (!libraryItem.isPodcast) {
       return res.sendStatus(500)
     }
 
     // Check user can access this library item
-    if (!req.user.checkCanAccessLibraryItem(item)) {
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
       return res.sendStatus(403)
     }
 
@@ -480,7 +482,7 @@ class PodcastController {
       return res.sendStatus(403)
     }
 
-    req.libraryItem = item
+    req.libraryItem = libraryItem
     next()
   }
 }

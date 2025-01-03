@@ -144,6 +144,23 @@ class PodcastEpisode extends Model {
   }
 
   /**
+   * Used for matching the episode with an episode in the RSS feed
+   *
+   * @param {string} guid
+   * @param {string} enclosureURL
+   * @returns {boolean}
+   */
+  checkMatchesGuidOrEnclosureUrl(guid, enclosureURL) {
+    if (this.extraData?.guid && this.extraData.guid === guid) {
+      return true
+    }
+    if (this.enclosureURL && this.enclosureURL === enclosureURL) {
+      return true
+    }
+    return false
+  }
+
+  /**
    * Used in client players
    *
    * @param {string} libraryItemId
