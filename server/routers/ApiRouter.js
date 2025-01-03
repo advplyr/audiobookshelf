@@ -65,7 +65,7 @@ class ApiRouter {
     //
     // Library Routes
     //
-    this.router.get(/^\/libraries/, this.apiCacheManager.middleware)
+    this.router.get(/^\/libraries/i, this.apiCacheManager.middleware)
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
     this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))

@@ -42,6 +42,8 @@ class ApiCacheManager {
         Logger.debug(`[ApiCacheManager] Skipping cache for random sort`)
         return next()
       }
+      // Force URL to be lower case for matching against routes
+      req.url = req.url.toLowerCase()
       const key = { user: req.user.username, url: req.url }
       const stringifiedKey = JSON.stringify(key)
       Logger.debug(`[ApiCacheManager] count: ${this.cache.size} size: ${this.cache.calculatedSize}`)
