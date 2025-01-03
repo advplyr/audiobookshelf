@@ -23,6 +23,8 @@ components:
           type: array
           items:
             $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookChapter'
+        metadata:
+          $ref: '../metadata/BookMetadata.yaml#/components/schemas/bookMetadataBase'
         missingParts:
           description: Any parts missing from the book by track index.
           type: array
