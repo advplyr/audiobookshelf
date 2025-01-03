@@ -249,6 +249,9 @@ class LibraryItemController {
 
     const hasUpdates = (await req.libraryItem.media.updateFromRequest(mediaPayload)) || mediaPayload.url
     if (hasUpdates) {
+      req.libraryItem.changed('updatedAt', true)
+      await req.libraryItem.save()
+
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(req.libraryItem)
       }
