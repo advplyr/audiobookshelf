@@ -114,9 +114,9 @@ export default {
 
       if (this.currentLibraryId) {
         configRoutes.push({
-          id: 'library-stats',
-          title: this.$strings.HeaderLibraryStats,
-          path: `/library/${this.currentLibraryId}/stats`
+          id: 'config-server-stats',
+          title: this.$strings.HeaderServerStats,
+          path: `/config/server-stats`
         })
         configRoutes.push({
           id: 'config-stats',
