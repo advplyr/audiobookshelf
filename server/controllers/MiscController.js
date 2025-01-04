@@ -342,8 +342,8 @@ class MiscController {
           tags: libraryItem.media.tags
         })
         await libraryItem.saveMetadataFile()
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
         numItemsUpdated++
       }
     }
@@ -385,8 +385,8 @@ class MiscController {
         tags: libraryItem.media.tags
       })
       await libraryItem.saveMetadataFile()
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
       numItemsUpdated++
     }
 
@@ -480,8 +480,8 @@ class MiscController {
           genres: libraryItem.media.genres
         })
         await libraryItem.saveMetadataFile()
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-        SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
         numItemsUpdated++
       }
     }
@@ -523,8 +523,8 @@ class MiscController {
         genres: libraryItem.media.genres
       })
       await libraryItem.saveMetadataFile()
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+
+      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
       numItemsUpdated++
     }
 

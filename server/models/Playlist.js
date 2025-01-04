@@ -357,7 +357,7 @@ class Playlist extends Model {
         libraryItem.media = pmi.mediaItem
         return {
           libraryItemId: libraryItem.id,
-          libraryItem: this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem).toJSONExpanded()
+          libraryItem: libraryItem.toOldJSONExpanded()
         }
       }
 
@@ -368,7 +368,7 @@ class Playlist extends Model {
         episodeId: pmi.mediaItemId,
         episode: pmi.mediaItem.toOldJSONExpanded(libraryItem.id),
         libraryItemId: libraryItem.id,
-        libraryItem: this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem).toJSONMinified()
+        libraryItem: libraryItem.toOldJSONMinified()
       }
     })
 

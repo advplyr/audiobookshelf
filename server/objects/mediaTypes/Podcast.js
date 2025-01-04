@@ -166,10 +166,6 @@ class Podcast {
     return true
   }
 
-  checkHasEpisode(episodeId) {
-    return this.episodes.some((ep) => ep.id === episodeId)
-  }
-
   getEpisode(episodeId) {
     if (!episodeId) return null
 

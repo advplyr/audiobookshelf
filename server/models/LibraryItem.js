@@ -123,45 +123,6 @@ class LibraryItem extends Model {
   }
 
   /**
-   *
-   * @param {import('sequelize').WhereOptions} [where]
-   * @returns {Array<objects.LibraryItem>} old library items
-   */
-  static async getAllOldLibraryItems(where = null) {
-    let libraryItems = await this.findAll({
-      where,
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
-    return libraryItems.map((ti) => this.getOldLibraryItem(ti))
-  }
-
-  /**
    * Convert an expanded LibraryItem into an old library item
    *
    * @param {Model<LibraryItem>} libraryItemExpanded
@@ -197,40 +158,6 @@ class LibraryItem extends Model {
       media,
       libraryFiles: libraryItemExpanded.libraryFiles
     })
-  }
-
-  static async fullCreateFromOld(oldLibraryItem) {
-    const newLibraryItem = await this.create(this.getFromOld(oldLibraryItem))
-
-    if (oldLibraryItem.mediaType === 'book') {
-      const bookObj = this.sequelize.models.book.getFromOld(oldLibraryItem.media)
-      bookObj.libraryItemId = newLibraryItem.id
-      const newBook = await this.sequelize.models.book.create(bookObj)
-
-      const oldBookAuthors = oldLibraryItem.media.metadata.authors || []
-      const oldBookSeriesAll = oldLibraryItem.media.metadata.series || []
-
-      for (const oldBookAuthor of oldBookAuthors) {
-        await this.sequelize.models.bookAuthor.create({ authorId: oldBookAuthor.id, bookId: newBook.id })
-      }
-      for (const oldSeries of oldBookSeriesAll) {
-        await this.sequelize.models.bookSeries.create({ seriesId: oldSeries.id, bookId: newBook.id, sequence: oldSeries.sequence })
-      }
-    } else if (oldLibraryItem.mediaType === 'podcast') {
-      const podcastObj = this.sequelize.models.podcast.getFromOld(oldLibraryItem.media)
-      podcastObj.libraryItemId = newLibraryItem.id
-      const newPodcast = await this.sequelize.models.podcast.create(podcastObj)
-
-      const oldEpisodes = oldLibraryItem.media.episodes || []
-      for (const oldEpisode of oldEpisodes) {
-        const episodeObj = this.sequelize.models.podcastEpisode.getFromOld(oldEpisode)
-        episodeObj.libraryItemId = newLibraryItem.id
-        episodeObj.podcastId = newPodcast.id
-        await this.sequelize.models.podcastEpisode.create(episodeObj)
-      }
-    }
-
-    return newLibraryItem
   }
 
   /**
@@ -450,6 +377,47 @@ class LibraryItem extends Model {
 
   /**
    *
+   * @param {import('sequelize').WhereOptions} where
+   * @returns {Promise<LibraryItemExpanded[]>}
+   */
+  static async findAllExpandedWhere(where = null) {
+    return this.findAll({
+      where,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: this.sequelize.models.podcast,
+          include: {
+            model: this.sequelize.models.podcastEpisode
+          }
+        }
+      ],
+      order: [
+        // Ensure author & series stay in the same order
+        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+      ]
+    })
+  }
+
+  /**
+   *
    * @param {string} libraryItemId
    * @returns {Promise<LibraryItemExpanded>}
    */
@@ -611,7 +579,7 @@ class LibraryItem extends Model {
 
     return {
       libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = li.toOldJSONMinified()
         if (li.collapsedSeries) {
           oldLibraryItem.collapsedSeries = li.collapsedSeries
         }
@@ -817,21 +785,11 @@ class LibraryItem extends Model {
    * Get book library items for author, optional use user permissions
    * @param {import('./Author')} author
    * @param {import('./User')} user
-   * @returns {Promise<oldLibraryItem[]>}
+   * @returns {Promise<LibraryItemExpanded[]>}
    */
   static async getForAuthor(author, user = null) {
     const { libraryItems } = await libraryFilters.getLibraryItemsForAuthor(author, user, undefined, undefined)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
-  }
-
-  /**
-   * Get book library items in a collection
-   * @param {oldCollection} collection
-   * @returns {Promise<oldLibraryItem[]>}
-   */
-  static async getForCollection(collection) {
-    const libraryItems = await libraryFilters.getLibraryItemsForCollection(collection)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
+    return libraryItems
   }
 
   /**

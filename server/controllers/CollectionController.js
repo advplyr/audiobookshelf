@@ -221,7 +221,9 @@ class CollectionController {
    * @param {Response} res
    */
   async addBook(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.body.id)
+    const libraryItem = await Database.libraryItemModel.findByPk(req.body.id, {
+      attributes: ['libraryId', 'mediaId']
+    })
     if (!libraryItem) {
       return res.status(404).send('Book not found')
     }
@@ -231,14 +233,14 @@ class CollectionController {
 
     // Check if book is already in collection
     const collectionBooks = await req.collection.getCollectionBooks()
-    if (collectionBooks.some((cb) => cb.bookId === libraryItem.media.id)) {
+    if (collectionBooks.some((cb) => cb.bookId === libraryItem.mediaId)) {
       return res.status(400).send('Book already in collection')
     }
 
     // Create collectionBook record
     await Database.collectionBookModel.create({
       collectionId: req.collection.id,
-      bookId: libraryItem.media.id,
+      bookId: libraryItem.mediaId,
       order: collectionBooks.length + 1
     })
     const jsonExpanded = await req.collection.getOldJsonExpanded()
@@ -255,7 +257,9 @@ class CollectionController {
    * @param {Response} res
    */
   async removeBook(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.params.bookId)
+    const libraryItem = await Database.libraryItemModel.findByPk(req.params.bookId, {
+      attributes: ['mediaId']
+    })
     if (!libraryItem) {
       return res.sendStatus(404)
     }
@@ -266,7 +270,7 @@ class CollectionController {
     })
 
     let jsonExpanded = null
-    const collectionBookToRemove = collectionBooks.find((cb) => cb.bookId === libraryItem.media.id)
+    const collectionBookToRemove = collectionBooks.find((cb) => cb.bookId === libraryItem.mediaId)
     if (collectionBookToRemove) {
       // Remove collection book record
       await collectionBookToRemove.destroy()
@@ -274,7 +278,7 @@ class CollectionController {
       // Update order on collection books
       let order = 1
       for (const collectionBook of collectionBooks) {
-        if (collectionBook.bookId === libraryItem.media.id) continue
+        if (collectionBook.bookId === libraryItem.mediaId) continue
         if (collectionBook.order !== order) {
           await collectionBook.update({
             order

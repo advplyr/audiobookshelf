@@ -401,17 +401,6 @@ class Database {
     return this.models.setting.updateSettingObj(settings.toJSON())
   }
 
-  updateBulkBooks(oldBooks) {
-    if (!this.sequelize) return false
-    return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
-  }
-
-  async createLibraryItem(oldLibraryItem) {
-    if (!this.sequelize) return false
-    await oldLibraryItem.saveMetadata()
-    await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
-  }
-
   /**
    * Save metadata file and update library item
    *
@@ -427,17 +416,6 @@ class Database {
       delete this.libraryFilterData[oldLibraryItem.libraryId]
     }
     return updated
-  }
-
-  async createBulkBookAuthors(bookAuthors) {
-    if (!this.sequelize) return false
-    await this.models.bookAuthor.bulkCreate(bookAuthors)
-  }
-
-  async removeBulkBookAuthors(authorId = null, bookId = null) {
-    if (!this.sequelize) return false
-    if (!authorId && !bookId) return
-    await this.models.bookAuthor.removeByIds(authorId, bookId)
   }
 
   getPlaybackSessions(where = null) {
@@ -665,7 +643,7 @@ class Database {
   /**
    * Clean invalid records in database
    * Series should have atleast one Book
-   * Book and Podcast must have an associated LibraryItem
+   * Book and Podcast must have an associated LibraryItem (and vice versa)
    * Remove playback sessions that are 3 seconds or less
    */
   async cleanDatabase() {
@@ -693,6 +671,28 @@ class Database {
     for (const book of booksWithNoLibraryItem) {
       Logger.warn(`Found book "${book.title}" with no libraryItem - removing it`)
       await book.destroy()
+    }
+
+    // Remove invalid LibraryItem records
+    const libraryItemsWithNoMedia = await this.libraryItemModel.findAll({
+      include: [
+        {
+          model: this.bookModel,
+          attributes: ['id']
+        },
+        {
+          model: this.podcastModel,
+          attributes: ['id']
+        }
+      ],
+      where: {
+        '$book.id$': null,
+        '$podcast.id$': null
+      }
+    })
+    for (const libraryItem of libraryItemsWithNoMedia) {
+      Logger.warn(`Found libraryItem "${libraryItem.id}" with no media - removing it`)
+      await libraryItem.destroy()
     }
 
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({

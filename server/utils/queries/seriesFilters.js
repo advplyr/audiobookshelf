@@ -162,6 +162,12 @@ module.exports = {
             include: [
               {
                 model: Database.libraryItemModel
+              },
+              {
+                model: Database.authorModel
+              },
+              {
+                model: Database.seriesModel
               }
             ]
           },
@@ -195,10 +201,10 @@ module.exports = {
         })
       })
       oldSeries.books = s.bookSeries.map((bs) => {
-        const libraryItem = bs.book.libraryItem.toJSON()
+        const libraryItem = bs.book.libraryItem
         delete bs.book.libraryItem
         libraryItem.media = bs.book
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONMinified()
+        const oldLibraryItem = libraryItem.toOldJSONMinified()
         return oldLibraryItem
       })
       allOldSeries.push(oldSeries)

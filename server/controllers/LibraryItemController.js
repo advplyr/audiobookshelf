@@ -551,11 +551,11 @@ class LibraryItemController {
     const hardDelete = req.query.hard == 1 // Delete files from filesystem
 
     const { libraryItemIds } = req.body
-    if (!libraryItemIds?.length) {
+    if (!libraryItemIds?.length || !Array.isArray(libraryItemIds)) {
       return res.status(400).send('Invalid request body')
     }
 
-    const itemsToDelete = await Database.libraryItemModel.getAllOldLibraryItems({
+    const itemsToDelete = await Database.libraryItemModel.findAllExpandedWhere({
       id: libraryItemIds
     })
 
@@ -566,19 +566,19 @@ class LibraryItemController {
     const libraryId = itemsToDelete[0].libraryId
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
-      Logger.info(`[LibraryItemController] (${hardDelete ? 'Hard' : 'Soft'}) deleting Library Item "${libraryItem.media.metadata.title}" with id "${libraryItem.id}"`)
+      Logger.info(`[LibraryItemController] (${hardDelete ? 'Hard' : 'Soft'}) deleting Library Item "${libraryItem.media.title}" with id "${libraryItem.id}"`)
       const mediaItemIds = []
       const seriesIds = []
       const authorIds = []
       if (libraryItem.isPodcast) {
-        mediaItemIds.push(...libraryItem.media.episodes.map((ep) => ep.id))
+        mediaItemIds.push(...libraryItem.media.podcastEpisodes.map((ep) => ep.id))
       } else {
         mediaItemIds.push(libraryItem.media.id)
-        if (libraryItem.media.metadata.series?.length) {
-          seriesIds.push(...libraryItem.media.metadata.series.map((se) => se.id))
+        if (libraryItem.media.series?.length) {
+          seriesIds.push(...libraryItem.media.series.map((se) => se.id))
         }
-        if (libraryItem.media.metadata.authors?.length) {
-          authorIds.push(...libraryItem.media.metadata.authors.map((au) => au.id))
+        if (libraryItem.media.authors?.length) {
+          authorIds.push(...libraryItem.media.authors.map((au) => au.id))
         }
       }
       await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
@@ -623,7 +623,7 @@ class LibraryItemController {
     }
 
     // Get all library items to update
-    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({
       id: libraryItemIds
     })
     if (updatePayloads.length !== libraryItems.length) {
@@ -645,21 +645,23 @@ class LibraryItemController {
       if (libraryItem.isBook) {
         if (Array.isArray(mediaPayload.metadata?.series)) {
           const seriesIdsInUpdate = mediaPayload.metadata.series.map((se) => se.id)
-          const seriesRemoved = libraryItem.media.metadata.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+          const seriesRemoved = libraryItem.media.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
           seriesIdsRemoved.push(...seriesRemoved.map((se) => se.id))
         }
         if (Array.isArray(mediaPayload.metadata?.authors)) {
           const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
-          const authorsRemoved = libraryItem.media.metadata.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+          const authorsRemoved = libraryItem.media.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
           authorIdsRemoved.push(...authorsRemoved.map((au) => au.id))
         }
       }
 
-      if (libraryItem.media.update(mediaPayload)) {
-        Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
+      const hasUpdates = await libraryItem.media.updateFromRequest(mediaPayload)
+      if (hasUpdates) {
+        libraryItem.changed('updatedAt', true)
+        await libraryItem.save()
 
-        await Database.updateLibraryItem(libraryItem)
-        SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+        Logger.debug(`[LibraryItemController] Updated library item media "${libraryItem.media.title}"`)
+        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
         itemsUpdated++
       }
     }
@@ -688,11 +690,11 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({
       id: libraryItemIds
     })
     res.json({
-      libraryItems: libraryItems.map((li) => li.toJSONExpanded())
+      libraryItems: libraryItems.map((li) => li.toOldJSONExpanded())
     })
   }
 
@@ -715,7 +717,7 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
-    const libraryItems = await Database.libraryItemModel.getAllOldLibraryItems({
+    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({
       id: req.body.libraryItemIds
     })
     if (!libraryItems?.length) {
@@ -737,7 +739,8 @@ class LibraryItemController {
     }
 
     for (const libraryItem of libraryItems) {
-      const matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
+      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
+      const matchResult = await Scanner.quickMatchLibraryItem(this, oldLibraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {
