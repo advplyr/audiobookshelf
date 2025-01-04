@@ -125,7 +125,7 @@ class AuthorController {
       const bookAuthorsToCreate = []
       const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
 
-      const oldLibraryItems = []
+      const libraryItems = []
       allItemsWithAuthor.forEach((libraryItem) => {
         // Replace old author with merging author for each book
         libraryItem.media.authors = libraryItem.media.authors.filter((au) => au.id !== req.author.id)
@@ -134,23 +134,22 @@ class AuthorController {
           name: existingAuthor.name
         })
 
-        const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-        oldLibraryItems.push(oldLibraryItem)
+        libraryItems.push(libraryItem)
 
         bookAuthorsToCreate.push({
           bookId: libraryItem.media.id,
           authorId: existingAuthor.id
         })
       })
-      if (oldLibraryItems.length) {
+      if (libraryItems.length) {
         await Database.removeBulkBookAuthors(req.author.id) // Remove all old BookAuthor
         await Database.createBulkBookAuthors(bookAuthorsToCreate) // Create all new BookAuthor
-        for (const libraryItem of allItemsWithAuthor) {
+        for (const libraryItem of libraryItems) {
           await libraryItem.saveMetadataFile()
         }
         SocketAuthority.emitter(
           'items_updated',
-          oldLibraryItems.map((li) => li.toJSONExpanded())
+          libraryItems.map((li) => li.toOldJSONExpanded())
         )
       }
 
@@ -190,7 +189,7 @@ class AuthorController {
         const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
 
         numBooksForAuthor = allItemsWithAuthor.length
-        const oldLibraryItems = []
+        const libraryItems = []
         // Update author name on all books
         for (const libraryItem of allItemsWithAuthor) {
           libraryItem.media.authors = libraryItem.media.authors.map((au) => {
@@ -199,16 +198,16 @@ class AuthorController {
             }
             return au
           })
-          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-          oldLibraryItems.push(oldLibraryItem)
+
+          libraryItems.push(libraryItem)
 
           await libraryItem.saveMetadataFile()
         }
 
-        if (oldLibraryItems.length) {
+        if (libraryItems.length) {
           SocketAuthority.emitter(
             'items_updated',
-            oldLibraryItems.map((li) => li.toJSONExpanded())
+            libraryItems.map((li) => li.toOldJSONExpanded())
           )
         }
       } else {

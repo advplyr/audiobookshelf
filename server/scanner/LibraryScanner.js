@@ -167,7 +167,7 @@ class LibraryScanner {
     if (this.shouldCancelScan(libraryScan)) return true
 
     const libraryItemIdsMissing = []
-    let oldLibraryItemsUpdated = []
+    let libraryItemsUpdated = []
     for (const existingLibraryItem of existingLibraryItems) {
       // First try to find matching library item with exact file path
       let libraryItemData = libraryItemDataFound.find((lid) => lid.path === existingLibraryItem.path)
@@ -190,11 +190,11 @@ class LibraryScanner {
             libraryItemIdsMissing.push(existingLibraryItem.id)
 
             // TODO: Temporary while using old model to socket emit
-            const oldLibraryItem = await Database.libraryItemModel.getOldById(existingLibraryItem.id)
-            if (oldLibraryItem) {
-              oldLibraryItem.isMissing = true
-              oldLibraryItem.updatedAt = Date.now()
-              oldLibraryItemsUpdated.push(oldLibraryItem)
+            const libraryItem = await Database.libraryItemModel.getExpandedById(existingLibraryItem.id)
+            if (libraryItem) {
+              libraryItem.isMissing = true
+              await libraryItem.save()
+              libraryItemsUpdated.push(libraryItem)
             }
           }
         }
@@ -206,16 +206,15 @@ class LibraryScanner {
             const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
             if (!forceRescan || wasUpdated) {
               libraryScan.resultsUpdated++
-              const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-              oldLibraryItemsUpdated.push(oldLibraryItem)
+              libraryItemsUpdated.push(libraryItem)
             } else {
               libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
             }
           } else {
             libraryScan.resultsUpdated++
             // TODO: Temporary while using old model to socket emit
-            const oldLibraryItem = await Database.libraryItemModel.getOldById(existingLibraryItem.id)
-            oldLibraryItemsUpdated.push(oldLibraryItem)
+            const libraryItem = await Database.libraryItemModel.getExpandedById(existingLibraryItem.id)
+            libraryItemsUpdated.push(libraryItem)
           }
         } else {
           libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
@@ -223,23 +222,23 @@ class LibraryScanner {
       }
 
       // Emit item updates in chunks of 10 to client
-      if (oldLibraryItemsUpdated.length === 10) {
+      if (libraryItemsUpdated.length === 10) {
         // TODO: Should only emit to clients where library item is accessible
         SocketAuthority.emitter(
           'items_updated',
-          oldLibraryItemsUpdated.map((li) => li.toJSONExpanded())
+          libraryItemsUpdated.map((li) => li.toOldJSONExpanded())
         )
-        oldLibraryItemsUpdated = []
+        libraryItemsUpdated = []
       }
 
       if (this.shouldCancelScan(libraryScan)) return true
     }
     // Emit item updates to client
-    if (oldLibraryItemsUpdated.length) {
+    if (libraryItemsUpdated.length) {
       // TODO: Should only emit to clients where library item is accessible
       SocketAuthority.emitter(
         'items_updated',
-        oldLibraryItemsUpdated.map((li) => li.toJSONExpanded())
+        libraryItemsUpdated.map((li) => li.toOldJSONExpanded())
       )
     }
 
@@ -267,34 +266,33 @@ class LibraryScanner {
 
     // Add new library items
     if (libraryItemDataFound.length) {
-      let newOldLibraryItems = []
+      let newLibraryItems = []
       for (const libraryItemData of libraryItemDataFound) {
         const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library.settings, libraryScan)
         if (newLibraryItem) {
-          const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
-          newOldLibraryItems.push(oldLibraryItem)
+          newLibraryItems.push(newLibraryItem)
 
           libraryScan.resultsAdded++
         }
 
         // Emit new items in chunks of 10 to client
-        if (newOldLibraryItems.length === 10) {
+        if (newLibraryItems.length === 10) {
           // TODO: Should only emit to clients where library item is accessible
           SocketAuthority.emitter(
             'items_added',
-            newOldLibraryItems.map((li) => li.toJSONExpanded())
+            newLibraryItems.map((li) => li.toOldJSONExpanded())
           )
-          newOldLibraryItems = []
+          newLibraryItems = []
         }
 
         if (this.shouldCancelScan(libraryScan)) return true
       }
       // Emit new items to client
-      if (newOldLibraryItems.length) {
+      if (newLibraryItems.length) {
         // TODO: Should only emit to clients where library item is accessible
         SocketAuthority.emitter(
           'items_added',
-          newOldLibraryItems.map((li) => li.toJSONExpanded())
+          newLibraryItems.map((li) => li.toOldJSONExpanded())
         )
       }
     }
@@ -645,8 +643,7 @@ class LibraryScanner {
       const isSingleMediaItem = isSingleMediaFile(fileUpdateGroup, itemDir)
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
-        const oldNewLibraryItem = Database.libraryItemModel.getOldLibraryItem(newLibraryItem)
-        SocketAuthority.emitter('item_added', oldNewLibraryItem.toJSONExpanded())
+        SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }

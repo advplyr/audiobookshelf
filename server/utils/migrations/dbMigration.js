@@ -1200,7 +1200,7 @@ async function migrationPatchNewColumns(queryInterface) {
  */
 async function handleOldLibraryItems(ctx) {
   const oldLibraryItems = await oldDbFiles.loadOldData('libraryItems')
-  const libraryItems = await ctx.models.libraryItem.getAllOldLibraryItems()
+  const libraryItems = (await ctx.models.libraryItem.findAllExpandedWhere()).map((li) => ctx.models.libraryItem.getOldLibraryItem(li))
 
   const bulkUpdateItems = []
   const bulkUpdateEpisodes = []

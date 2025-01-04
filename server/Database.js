@@ -665,7 +665,7 @@ class Database {
   /**
    * Clean invalid records in database
    * Series should have atleast one Book
-   * Book and Podcast must have an associated LibraryItem
+   * Book and Podcast must have an associated LibraryItem (and vice versa)
    * Remove playback sessions that are 3 seconds or less
    */
   async cleanDatabase() {
@@ -693,6 +693,28 @@ class Database {
     for (const book of booksWithNoLibraryItem) {
       Logger.warn(`Found book "${book.title}" with no libraryItem - removing it`)
       await book.destroy()
+    }
+
+    // Remove invalid LibraryItem records
+    const libraryItemsWithNoMedia = await this.libraryItemModel.findAll({
+      include: [
+        {
+          model: this.bookModel,
+          attributes: ['id']
+        },
+        {
+          model: this.podcastModel,
+          attributes: ['id']
+        }
+      ],
+      where: {
+        '$book.id$': null,
+        '$podcast.id$': null
+      }
+    })
+    for (const libraryItem of libraryItemsWithNoMedia) {
+      Logger.warn(`Found libraryItem "${libraryItem.id}" with no media - removing it`)
+      await libraryItem.destroy()
     }
 
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({

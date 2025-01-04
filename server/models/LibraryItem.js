@@ -123,45 +123,6 @@ class LibraryItem extends Model {
   }
 
   /**
-   *
-   * @param {import('sequelize').WhereOptions} [where]
-   * @returns {Array<objects.LibraryItem>} old library items
-   */
-  static async getAllOldLibraryItems(where = null) {
-    let libraryItems = await this.findAll({
-      where,
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
-    return libraryItems.map((ti) => this.getOldLibraryItem(ti))
-  }
-
-  /**
    * Convert an expanded LibraryItem into an old library item
    *
    * @param {Model<LibraryItem>} libraryItemExpanded
@@ -450,6 +411,47 @@ class LibraryItem extends Model {
 
   /**
    *
+   * @param {import('sequelize').WhereOptions} where
+   * @returns {Promise<LibraryItemExpanded[]>}
+   */
+  static async findAllExpandedWhere(where = null) {
+    return this.findAll({
+      where,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: this.sequelize.models.podcast,
+          include: {
+            model: this.sequelize.models.podcastEpisode
+          }
+        }
+      ],
+      order: [
+        // Ensure author & series stay in the same order
+        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+      ]
+    })
+  }
+
+  /**
+   *
    * @param {string} libraryItemId
    * @returns {Promise<LibraryItemExpanded>}
    */
@@ -611,7 +613,7 @@ class LibraryItem extends Model {
 
     return {
       libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = li.toOldJSONMinified()
         if (li.collapsedSeries) {
           oldLibraryItem.collapsedSeries = li.collapsedSeries
         }

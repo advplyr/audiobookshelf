@@ -296,9 +296,9 @@ class PodcastManager {
 
     Logger.info(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.title}" | Last check: ${new Date(lastEpisodeCheck)} | ${latestEpisodePublishedAt ? `Latest episode pubDate: ${new Date(latestEpisodePublishedAt)}` : 'No latest episode'}`)
 
-    // Use latest episode pubDate if exists OR fallback to using lastEpisodeCheckDate
-    //    lastEpisodeCheckDate will be the current time when adding a new podcast
-    const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheckDate
+    // Use latest episode pubDate if exists OR fallback to using lastEpisodeCheck
+    //    lastEpisodeCheck will be the current time when adding a new podcast
+    const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheck
     Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
     const newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)

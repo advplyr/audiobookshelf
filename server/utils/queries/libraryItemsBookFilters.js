@@ -349,7 +349,7 @@ module.exports = {
    * @param {number} limit
    * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
   async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false) {
     // TODO: Handle collapse sub-series
@@ -583,8 +583,8 @@ module.exports = {
     })
 
     const libraryItems = books.map((bookExpanded) => {
-      const libraryItem = bookExpanded.libraryItem.toJSON()
-      const book = bookExpanded.toJSON()
+      const libraryItem = bookExpanded.libraryItem
+      const book = bookExpanded
 
       if (filterGroup === 'series' && book.series?.length) {
         // For showing sequence on book cover when filtering for series
@@ -596,27 +596,37 @@ module.exports = {
       }
 
       delete book.libraryItem
-      delete book.authors
-      delete book.series
+
+      book.series =
+        book.bookSeries?.map((bs) => {
+          const series = bs.series
+          delete bs.series
+          series.bookSeries = bs
+          return series
+        }) || []
+      delete book.bookSeries
+
+      book.authors = book.bookAuthors?.map((ba) => ba.author) || []
+      delete book.bookAuthors
 
       // For showing details of collapsed series
-      if (collapseseries && book.bookSeries?.length) {
-        const collapsedSeries = book.bookSeries.find((bs) => collapseSeriesBookSeries.some((cbs) => cbs.id === bs.id))
+      if (collapseseries && book.series?.length) {
+        const collapsedSeries = book.series.find((bs) => collapseSeriesBookSeries.some((cbs) => cbs.id === bs.bookSeries.id))
         if (collapsedSeries) {
-          const collapseSeriesObj = collapseSeriesBookSeries.find((csbs) => csbs.id === collapsedSeries.id)
+          const collapseSeriesObj = collapseSeriesBookSeries.find((csbs) => csbs.id === collapsedSeries.bookSeries.id)
           libraryItem.collapsedSeries = {
-            id: collapsedSeries.series.id,
-            name: collapsedSeries.series.name,
-            nameIgnorePrefix: collapsedSeries.series.nameIgnorePrefix,
-            sequence: collapsedSeries.sequence,
+            id: collapsedSeries.id,
+            name: collapsedSeries.name,
+            nameIgnorePrefix: collapsedSeries.nameIgnorePrefix,
+            sequence: collapsedSeries.bookSeries.sequence,
             numBooks: collapseSeriesObj?.numBooks || 0,
             libraryItemIds: collapseSeriesObj?.libraryItemIds || []
           }
         }
       }
 
-      if (bookExpanded.libraryItem.feeds?.length) {
-        libraryItem.rssFeed = bookExpanded.libraryItem.feeds[0]
+      if (libraryItem.feeds?.length) {
+        libraryItem.rssFeed = libraryItem.feeds[0]
       }
 
       if (includeMediaItemShare) {
@@ -646,7 +656,7 @@ module.exports = {
    * @param {string[]} include
    * @param {number} limit
    * @param {number} offset
-   * @returns {{ libraryItems:import('../../models/LibraryItem')[], count:number }}
+   * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
   async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
     const libraryId = library.id
@@ -758,16 +768,19 @@ module.exports = {
           }
         }
 
-        const libraryItem = s.bookSeries[bookIndex].book.libraryItem.toJSON()
-        const book = s.bookSeries[bookIndex].book.toJSON()
+        const libraryItem = s.bookSeries[bookIndex].book.libraryItem
+        const book = s.bookSeries[bookIndex].book
         delete book.libraryItem
+
+        book.series = []
+
         libraryItem.series = {
           id: s.id,
           name: s.name,
           sequence: s.bookSeries[bookIndex].sequence
         }
-        if (s.bookSeries[bookIndex].book.libraryItem.feeds?.length) {
-          libraryItem.rssFeed = s.bookSeries[bookIndex].book.libraryItem.feeds[0]
+        if (libraryItem.feeds?.length) {
+          libraryItem.rssFeed = libraryItem.feeds[0]
         }
         libraryItem.media = book
         return libraryItem
@@ -788,7 +801,7 @@ module.exports = {
    * @param {import('../../models/User')} user
    * @param {string[]} include
    * @param {number} limit
-   * @returns {object} {libraryItems:LibraryItem, count:number}
+   * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
   async getDiscoverLibraryItems(libraryId, user, include, limit) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
@@ -895,13 +908,26 @@ module.exports = {
 
     // Step 3: Map books to library items
     const libraryItems = books.map((bookExpanded) => {
-      const libraryItem = bookExpanded.libraryItem.toJSON()
-      const book = bookExpanded.toJSON()
+      const libraryItem = bookExpanded.libraryItem
+      const book = bookExpanded
       delete book.libraryItem
+
+      book.series =
+        book.bookSeries?.map((bs) => {
+          const series = bs.series
+          delete bs.series
+          series.bookSeries = bs
+          return series
+        }) || []
+      delete book.bookSeries
+
+      book.authors = book.bookAuthors?.map((ba) => ba.author) || []
+      delete book.bookAuthors
+
       libraryItem.media = book
 
-      if (bookExpanded.libraryItem.feeds?.length) {
-        libraryItem.rssFeed = bookExpanded.libraryItem.feeds[0]
+      if (libraryItem.feeds?.length) {
+        libraryItem.rssFeed = libraryItem.feeds[0]
       }
 
       return libraryItem
@@ -961,11 +987,11 @@ module.exports = {
    * Get library items for series
    * @param {import('../../models/Series')} series
    * @param {import('../../models/User')} [user]
-   * @returns {Promise<import('../../objects/LibraryItem')[]>}
+   * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
   async getLibraryItemsForSeries(series, user) {
     const { libraryItems } = await this.getFilteredLibraryItems(series.libraryId, user, 'series', series.id, null, null, false, [], null, null)
-    return libraryItems.map((li) => Database.libraryItemModel.getOldLibraryItem(li))
+    return libraryItems
   },
 
   /**
@@ -1040,9 +1066,21 @@ module.exports = {
     for (const book of books) {
       const libraryItem = book.libraryItem
       delete book.libraryItem
+
+      book.series = book.bookSeries.map((bs) => {
+        const series = bs.series
+        delete bs.series
+        series.bookSeries = bs
+        return series
+      })
+      delete book.bookSeries
+
+      book.authors = book.bookAuthors.map((ba) => ba.author)
+      delete book.bookAuthors
+
       libraryItem.media = book
       itemMatches.push({
-        libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
+        libraryItem: libraryItem.toOldJSONExpanded()
       })
     }
 
@@ -1132,7 +1170,9 @@ module.exports = {
       const books = series.bookSeries.map((bs) => {
         const libraryItem = bs.book.libraryItem
         libraryItem.media = bs.book
-        return Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSON()
+        libraryItem.media.authors = []
+        libraryItem.media.series = []
+        return libraryItem.toOldJSON()
       })
       seriesMatches.push({
         series: series.toOldJSON(),
