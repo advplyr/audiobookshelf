@@ -125,7 +125,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     /** @type {import('../models/Podcast')} */
     const podcast = podcastEpisodeDownload.libraryItem.media
-    const podcastEpisode = podcastEpisodeDownload.podcastEpisode
+    const podcastEpisode = podcastEpisodeDownload.rssPodcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
     const taggings = {
@@ -144,7 +144,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       'series-part': podcastEpisode.episode,
       title: podcastEpisode.title,
       'title-sort': podcastEpisode.title,
-      year: podcastEpisode.pubYear,
+      year: podcastEpisodeDownload.pubYear,
       date: podcastEpisode.pubDate,
       releasedate: podcastEpisode.pubDate,
       'itunes-id': podcast.itunesId,

@@ -127,6 +127,45 @@ class Podcast extends Model {
   }
 
   /**
+   * Payload from the /api/podcasts POST endpoint
+   *
+   * @param {Object} payload
+   * @param {import('sequelize').Transaction} transaction
+   */
+  static async createFromRequest(payload, transaction) {
+    const title = typeof payload.metadata.title === 'string' ? payload.metadata.title : null
+    const autoDownloadSchedule = typeof payload.autoDownloadSchedule === 'string' ? payload.autoDownloadSchedule : null
+    const genres = Array.isArray(payload.metadata.genres) && payload.metadata.genres.every((g) => typeof g === 'string' && g.length) ? payload.metadata.genres : []
+    const tags = Array.isArray(payload.tags) && payload.tags.every((t) => typeof t === 'string' && t.length) ? payload.tags : []
+
+    return this.create(
+      {
+        title,
+        titleIgnorePrefix: getTitleIgnorePrefix(title),
+        author: typeof payload.metadata.author === 'string' ? payload.metadata.author : null,
+        releaseDate: typeof payload.metadata.releaseDate === 'string' ? payload.metadata.releaseDate : null,
+        feedURL: typeof payload.metadata.feedUrl === 'string' ? payload.metadata.feedUrl : null,
+        imageURL: typeof payload.metadata.imageUrl === 'string' ? payload.metadata.imageUrl : null,
+        description: typeof payload.metadata.description === 'string' ? payload.metadata.description : null,
+        itunesPageURL: typeof payload.metadata.itunesPageUrl === 'string' ? payload.metadata.itunesPageUrl : null,
+        itunesId: typeof payload.metadata.itunesId === 'string' ? payload.metadata.itunesId : null,
+        itunesArtistId: typeof payload.metadata.itunesArtistId === 'string' ? payload.metadata.itunesArtistId : null,
+        language: typeof payload.metadata.language === 'string' ? payload.metadata.language : null,
+        podcastType: typeof payload.metadata.type === 'string' ? payload.metadata.type : null,
+        explicit: !!payload.metadata.explicit,
+        autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
+        autoDownloadSchedule: autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule,
+        lastEpisodeCheck: new Date(),
+        maxEpisodesToKeep: 0,
+        maxNewEpisodesToDownload: 3,
+        tags,
+        genres
+      },
+      { transaction }
+    )
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
@@ -368,7 +407,7 @@ class Podcast extends Model {
   /**
    * Used for checking if an rss feed episode is already in the podcast
    *
-   * @param {Object} feedEpisode - object from rss feed
+   * @param {import('../utils/podcastUtils').RssPodcastEpisode} feedEpisode - object from rss feed
    * @returns {boolean}
    */
   checkHasEpisodeByFeedEpisode(feedEpisode) {

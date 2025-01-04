@@ -88,6 +88,40 @@ class PodcastEpisode extends Model {
   }
 
   /**
+   *
+   * @param {import('../utils/podcastUtils').RssPodcastEpisode} rssPodcastEpisode
+   * @param {string} podcastId
+   * @param {import('../objects/files/AudioFile')} audioFile
+   */
+  static async createFromRssPodcastEpisode(rssPodcastEpisode, podcastId, audioFile) {
+    const podcastEpisode = {
+      index: null,
+      season: rssPodcastEpisode.season,
+      episode: rssPodcastEpisode.episode,
+      episodeType: rssPodcastEpisode.episodeType,
+      title: rssPodcastEpisode.title,
+      subtitle: rssPodcastEpisode.subtitle,
+      description: rssPodcastEpisode.description,
+      pubDate: rssPodcastEpisode.pubDate,
+      enclosureURL: rssPodcastEpisode.enclosure?.url || null,
+      enclosureSize: rssPodcastEpisode.enclosure?.length || null,
+      enclosureType: rssPodcastEpisode.enclosure?.type || null,
+      publishedAt: rssPodcastEpisode.publishedAt,
+      podcastId,
+      audioFile: audioFile.toJSON(),
+      chapters: [],
+      extraData: {}
+    }
+    if (rssPodcastEpisode.guid) {
+      podcastEpisode.extraData.guid = rssPodcastEpisode.guid
+    }
+    if (audioFile.chapters?.length) {
+      podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
+    }
+    return this.create(podcastEpisode)
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */

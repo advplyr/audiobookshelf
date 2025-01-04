@@ -1,4 +1,3 @@
-const uuidv4 = require('uuid').v4
 const { areEquivalent, copyValue } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -126,27 +125,6 @@ class PodcastEpisode {
   }
   get enclosureUrl() {
     return this.enclosure?.url || null
-  }
-  get pubYear() {
-    if (!this.publishedAt) return null
-    return new Date(this.publishedAt).getFullYear()
-  }
-
-  setData(data, index = 1) {
-    this.id = uuidv4()
-    this.index = index
-    this.title = data.title
-    this.subtitle = data.subtitle || ''
-    this.pubDate = data.pubDate || ''
-    this.description = data.description || ''
-    this.enclosure = data.enclosure ? { ...data.enclosure } : null
-    this.guid = data.guid || null
-    this.season = data.season || ''
-    this.episode = data.episode || ''
-    this.episodeType = data.episodeType || 'full'
-    this.publishedAt = data.publishedAt || 0
-    this.addedAt = Date.now()
-    this.updatedAt = Date.now()
   }
 
   update(payload) {

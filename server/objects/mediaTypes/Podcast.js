@@ -132,18 +132,6 @@ class Podcast {
   get numTracks() {
     return this.episodes.length
   }
-  get latestEpisodePublished() {
-    var largestPublishedAt = 0
-    this.episodes.forEach((ep) => {
-      if (ep.publishedAt && ep.publishedAt > largestPublishedAt) {
-        largestPublishedAt = ep.publishedAt
-      }
-    })
-    return largestPublishedAt
-  }
-  get episodesWithPubDate() {
-    return this.episodes.filter((ep) => !!ep.publishedAt)
-  }
 
   update(payload) {
     var json = this.toJSON()
@@ -178,32 +166,8 @@ class Podcast {
     return true
   }
 
-  setData(mediaData) {
-    this.metadata = new PodcastMetadata()
-    if (mediaData.metadata) {
-      this.metadata.setData(mediaData.metadata)
-    }
-
-    this.coverPath = mediaData.coverPath || null
-    this.autoDownloadEpisodes = !!mediaData.autoDownloadEpisodes
-    this.autoDownloadSchedule = mediaData.autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule
-    this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
-  }
-
   checkHasEpisode(episodeId) {
     return this.episodes.some((ep) => ep.id === episodeId)
-  }
-
-  addPodcastEpisode(podcastEpisode) {
-    this.episodes.push(podcastEpisode)
-  }
-
-  removeEpisode(episodeId) {
-    const episode = this.episodes.find((ep) => ep.id === episodeId)
-    if (episode) {
-      this.episodes = this.episodes.filter((ep) => ep.id !== episodeId)
-    }
-    return episode
   }
 
   getEpisode(episodeId) {

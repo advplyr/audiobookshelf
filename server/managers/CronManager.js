@@ -217,7 +217,7 @@ class CronManager {
 
   /**
    *
-   * @param {import('../models/LibraryItem')} libraryItem - this can be the old model
+   * @param {import('../models/LibraryItem')} libraryItem
    */
   checkUpdatePodcastCron(libraryItem) {
     // Remove from old cron by library item id

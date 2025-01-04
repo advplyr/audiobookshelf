@@ -338,13 +338,14 @@ class CoverManager {
    *
    * @param {string} url
    * @param {string} libraryItemId
-   * @param {string} [libraryItemPath] null if library item isFile or is from adding new podcast
+   * @param {string} [libraryItemPath] - null if library item isFile
+   * @param {boolean} [forceLibraryItemFolder=false] - force save cover with library item (used for adding new podcasts)
    * @returns {Promise<{error:string}|{cover:string}>}
    */
-  async downloadCoverFromUrlNew(url, libraryItemId, libraryItemPath) {
+  async downloadCoverFromUrlNew(url, libraryItemId, libraryItemPath, forceLibraryItemFolder = false) {
     try {
       let coverDirPath = null
-      if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
+      if ((global.ServerSettings.storeCoverWithItem || forceLibraryItemFolder) && libraryItemPath) {
         coverDirPath = libraryItemPath
       } else {
         coverDirPath = Path.posix.join(global.MetadataPath, 'items', libraryItemId)
