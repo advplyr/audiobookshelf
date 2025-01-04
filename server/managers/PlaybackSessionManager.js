@@ -120,8 +120,8 @@ class PlaybackSessionManager {
    */
   async syncLocalSession(user, sessionJson, deviceInfo) {
     // TODO: Combine libraryItem query with library query
-    const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
-    const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
+    const libraryItem = await Database.libraryItemModel.getExpandedById(sessionJson.libraryItemId)
+    const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.podcastEpisodes.find((pe) => pe.id === sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
       return {
@@ -175,7 +175,8 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
-      session.setDuration(libraryItem, sessionJson.episodeId)
+      session.duration = libraryItem.media.getPlaybackDuration(sessionJson.episodeId)
+
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {
@@ -346,7 +347,7 @@ class PlaybackSessionManager {
    */
   async syncSession(user, session, syncData) {
     // TODO: Combine libraryItem query with library query
-    const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
       return null
@@ -381,9 +382,6 @@ class PlaybackSessionManager {
       })
     }
     this.saveSession(session)
-    return {
-      libraryItem
-    }
   }
 
   /**
