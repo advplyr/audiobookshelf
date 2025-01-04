@@ -269,16 +269,5 @@ class LibraryItem {
         this.isSavingMetadata = false
       })
   }
-
-  removeLibraryFile(ino) {
-    if (!ino) return false
-    const libraryFile = this.libraryFiles.find((lf) => lf.ino === ino)
-    if (libraryFile) {
-      this.libraryFiles = this.libraryFiles.filter((lf) => lf.ino !== ino)
-      this.updatedAt = Date.now()
-      return true
-    }
-    return false
-  }
 }
 module.exports = LibraryItem

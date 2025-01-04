@@ -401,17 +401,6 @@ class Database {
     return this.models.setting.updateSettingObj(settings.toJSON())
   }
 
-  updateBulkBooks(oldBooks) {
-    if (!this.sequelize) return false
-    return Promise.all(oldBooks.map((oldBook) => this.models.book.saveFromOld(oldBook)))
-  }
-
-  async createLibraryItem(oldLibraryItem) {
-    if (!this.sequelize) return false
-    await oldLibraryItem.saveMetadata()
-    await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
-  }
-
   /**
    * Save metadata file and update library item
    *
@@ -427,17 +416,6 @@ class Database {
       delete this.libraryFilterData[oldLibraryItem.libraryId]
     }
     return updated
-  }
-
-  async createBulkBookAuthors(bookAuthors) {
-    if (!this.sequelize) return false
-    await this.models.bookAuthor.bulkCreate(bookAuthors)
-  }
-
-  async removeBulkBookAuthors(authorId = null, bookId = null) {
-    if (!this.sequelize) return false
-    if (!authorId && !bookId) return
-    await this.models.bookAuthor.removeByIds(authorId, bookId)
   }
 
   getPlaybackSessions(where = null) {

@@ -160,40 +160,6 @@ class LibraryItem extends Model {
     })
   }
 
-  static async fullCreateFromOld(oldLibraryItem) {
-    const newLibraryItem = await this.create(this.getFromOld(oldLibraryItem))
-
-    if (oldLibraryItem.mediaType === 'book') {
-      const bookObj = this.sequelize.models.book.getFromOld(oldLibraryItem.media)
-      bookObj.libraryItemId = newLibraryItem.id
-      const newBook = await this.sequelize.models.book.create(bookObj)
-
-      const oldBookAuthors = oldLibraryItem.media.metadata.authors || []
-      const oldBookSeriesAll = oldLibraryItem.media.metadata.series || []
-
-      for (const oldBookAuthor of oldBookAuthors) {
-        await this.sequelize.models.bookAuthor.create({ authorId: oldBookAuthor.id, bookId: newBook.id })
-      }
-      for (const oldSeries of oldBookSeriesAll) {
-        await this.sequelize.models.bookSeries.create({ seriesId: oldSeries.id, bookId: newBook.id, sequence: oldSeries.sequence })
-      }
-    } else if (oldLibraryItem.mediaType === 'podcast') {
-      const podcastObj = this.sequelize.models.podcast.getFromOld(oldLibraryItem.media)
-      podcastObj.libraryItemId = newLibraryItem.id
-      const newPodcast = await this.sequelize.models.podcast.create(podcastObj)
-
-      const oldEpisodes = oldLibraryItem.media.episodes || []
-      for (const oldEpisode of oldEpisodes) {
-        const episodeObj = this.sequelize.models.podcastEpisode.getFromOld(oldEpisode)
-        episodeObj.libraryItemId = newLibraryItem.id
-        episodeObj.podcastId = newPodcast.id
-        await this.sequelize.models.podcastEpisode.create(episodeObj)
-      }
-    }
-
-    return newLibraryItem
-  }
-
   /**
    * Updates libraryItem, book, authors and series from old library item
    *
@@ -819,21 +785,11 @@ class LibraryItem extends Model {
    * Get book library items for author, optional use user permissions
    * @param {import('./Author')} author
    * @param {import('./User')} user
-   * @returns {Promise<oldLibraryItem[]>}
+   * @returns {Promise<LibraryItemExpanded[]>}
    */
   static async getForAuthor(author, user = null) {
     const { libraryItems } = await libraryFilters.getLibraryItemsForAuthor(author, user, undefined, undefined)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
-  }
-
-  /**
-   * Get book library items in a collection
-   * @param {oldCollection} collection
-   * @returns {Promise<oldLibraryItem[]>}
-   */
-  static async getForCollection(collection) {
-    const libraryItems = await libraryFilters.getLibraryItemsForCollection(collection)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
+    return libraryItems
   }
 
   /**
