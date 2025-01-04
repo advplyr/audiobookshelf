@@ -280,15 +280,15 @@ class Stream extends EventEmitter {
 
     this.ffmpeg.addOption([`-loglevel ${logLevel}`, '-map 0:a', `-c:a ${audioCodec}`])
     const hlsOptions = ['-f hls', '-copyts', '-avoid_negative_ts make_non_negative', '-max_delay 5000000', '-max_muxing_queue_size 2048', `-hls_time 6`, `-hls_segment_type ${this.hlsSegmentType}`, `-start_number ${this.segmentStartNumber}`, '-hls_playlist_type vod', '-hls_list_size 0', '-hls_allow_cache 0']
+    this.ffmpeg.addOption(hlsOptions)
     if (this.hlsSegmentType === 'fmp4') {
-      hlsOptions.push('-strict -2')
+      this.ffmpeg.addOption('-strict -2')
       var fmp4InitFilename = Path.join(this.streamPath, 'init.mp4')
       // var fmp4InitFilename = 'init.mp4'
-      hlsOptions.push(`-hls_fmp4_init_filename ${fmp4InitFilename}`)
+      this.ffmpeg.addOption('-hls_fmp4_init_filename', fmp4InitFilename)
     }
-    this.ffmpeg.addOption(hlsOptions)
     var segmentFilename = Path.join(this.streamPath, this.segmentBasename)
-    this.ffmpeg.addOption(`-hls_segment_filename ${segmentFilename}`)
+    this.ffmpeg.addOption('-hls_segment_filename', segmentFilename)
     this.ffmpeg.output(this.finalPlaylistPath)
 
     this.ffmpeg.on('start', (command) => {
