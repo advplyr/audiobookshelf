@@ -91,24 +91,6 @@ class PodcastMetadata {
     return getTitlePrefixAtEnd(this.title)
   }
 
-  setData(mediaMetadata = {}) {
-    this.title = mediaMetadata.title || null
-    this.author = mediaMetadata.author || null
-    this.description = mediaMetadata.description || null
-    this.releaseDate = mediaMetadata.releaseDate || null
-    this.feedUrl = mediaMetadata.feedUrl || null
-    this.imageUrl = mediaMetadata.imageUrl || null
-    this.itunesPageUrl = mediaMetadata.itunesPageUrl || null
-    this.itunesId = mediaMetadata.itunesId || null
-    this.itunesArtistId = mediaMetadata.itunesArtistId || null
-    this.explicit = !!mediaMetadata.explicit
-    this.language = mediaMetadata.language || null
-    this.type = mediaMetadata.type || null
-    if (mediaMetadata.genres && mediaMetadata.genres.length) {
-      this.genres = [...mediaMetadata.genres]
-    }
-  }
-
   update(payload) {
     const json = this.toJSON()
     let hasUpdates = false

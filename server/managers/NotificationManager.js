@@ -14,6 +14,11 @@ class NotificationManager {
     return notificationData
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')} episode
+   */
   async onPodcastEpisodeDownloaded(libraryItem, episode) {
     if (!Database.notificationSettings.isUseable) return
 
@@ -22,17 +27,17 @@ class NotificationManager {
       return
     }
 
-    Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.metadata.title}`)
+    Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.title}`)
     const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
     const eventData = {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,
       libraryName: library?.name || 'Unknown',
       mediaTags: (libraryItem.media.tags || []).join(', '),
-      podcastTitle: libraryItem.media.metadata.title,
-      podcastAuthor: libraryItem.media.metadata.author || '',
-      podcastDescription: libraryItem.media.metadata.description || '',
-      podcastGenres: (libraryItem.media.metadata.genres || []).join(', '),
+      podcastTitle: libraryItem.media.title,
+      podcastAuthor: libraryItem.media.author || '',
+      podcastDescription: libraryItem.media.description || '',
+      podcastGenres: (libraryItem.media.genres || []).join(', '),
       episodeId: episode.id,
       episodeTitle: episode.title,
       episodeSubtitle: episode.subtitle || '',

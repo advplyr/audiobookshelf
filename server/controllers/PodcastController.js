@@ -1,3 +1,4 @@
+const Path = require('path')
 const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
@@ -11,8 +12,6 @@ const { validateUrl } = require('../utils/index')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
-
-const LibraryItem = require('../objects/LibraryItem')
 
 /**
  * @typedef RequestUserObject
@@ -42,6 +41,9 @@ class PodcastController {
       return res.sendStatus(403)
     }
     const payload = req.body
+    if (!payload.media || !payload.media.metadata) {
+      return res.status(400).send('Invalid request body. "media" and "media.metadata" are required')
+    }
 
     const library = await Database.libraryModel.findByIdWithFolders(payload.libraryId)
     if (!library) {
@@ -83,43 +85,87 @@ class PodcastController {
     let relPath = payload.path.replace(folder.fullPath, '')
     if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
-    const libraryItemPayload = {
-      path: podcastPath,
-      relPath,
-      folderId: payload.folderId,
-      libraryId: payload.libraryId,
-      ino: libraryItemFolderStats.ino,
-      mtimeMs: libraryItemFolderStats.mtimeMs || 0,
-      ctimeMs: libraryItemFolderStats.ctimeMs || 0,
-      birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-      media: payload.media
+    let newLibraryItem = null
+    const transaction = await Database.sequelize.transaction()
+    try {
+      const podcast = await Database.podcastModel.createFromRequest(payload.media, transaction)
+
+      newLibraryItem = await Database.libraryItemModel.create(
+        {
+          ino: libraryItemFolderStats.ino,
+          path: podcastPath,
+          relPath,
+          mediaId: podcast.id,
+          mediaType: 'podcast',
+          isFile: false,
+          isMissing: false,
+          isInvalid: false,
+          mtime: libraryItemFolderStats.mtimeMs || 0,
+          ctime: libraryItemFolderStats.ctimeMs || 0,
+          birthtime: libraryItemFolderStats.birthtimeMs || 0,
+          size: 0,
+          libraryFiles: [],
+          extraData: {},
+          libraryId: library.id,
+          libraryFolderId: folder.id
+        },
+        { transaction }
+      )
+
+      await transaction.commit()
+    } catch (error) {
+      Logger.error(`[PodcastController] Failed to create podcast: ${error}`)
+      await transaction.rollback()
+      return res.status(500).send('Failed to create podcast')
     }
 
-    const libraryItem = new LibraryItem()
-    libraryItem.setData('podcast', libraryItemPayload)
+    newLibraryItem.media = await newLibraryItem.getMediaExpanded()
 
     // Download and save cover image
-    if (payload.media.metadata.imageUrl) {
-      // TODO: Scan cover image to library files
+    if (typeof payload.media.metadata.imageUrl === 'string' && payload.media.metadata.imageUrl.startsWith('http')) {
       // Podcast cover will always go into library item folder
-      const coverResponse = await CoverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
-      if (coverResponse) {
-        if (coverResponse.error) {
-          Logger.error(`[PodcastController] Download cover error from "${payload.media.metadata.imageUrl}": ${coverResponse.error}`)
-        } else if (coverResponse.cover) {
-          libraryItem.media.coverPath = coverResponse.cover
+      const coverResponse = await CoverManager.downloadCoverFromUrlNew(payload.media.metadata.imageUrl, newLibraryItem.id, newLibraryItem.path, true)
+      if (coverResponse.error) {
+        Logger.error(`[PodcastController] Download cover error from "${payload.media.metadata.imageUrl}": ${coverResponse.error}`)
+      } else if (coverResponse.cover) {
+        const coverImageFileStats = await getFileTimestampsWithIno(coverResponse.cover)
+        if (!coverImageFileStats) {
+          Logger.error(`[PodcastController] Failed to get cover image stats for "${coverResponse.cover}"`)
+        } else {
+          // Add libraryFile to libraryItem and coverPath to podcast
+          const newLibraryFile = {
+            ino: coverImageFileStats.ino,
+            fileType: 'image',
+            addedAt: Date.now(),
+            updatedAt: Date.now(),
+            metadata: {
+              filename: Path.basename(coverResponse.cover),
+              ext: Path.extname(coverResponse.cover).slice(1),
+              path: coverResponse.cover,
+              relPath: Path.basename(coverResponse.cover),
+              size: coverImageFileStats.size,
+              mtimeMs: coverImageFileStats.mtimeMs || 0,
+              ctimeMs: coverImageFileStats.ctimeMs || 0,
+              birthtimeMs: coverImageFileStats.birthtimeMs || 0
+            }
+          }
+          newLibraryItem.libraryFiles.push(newLibraryFile)
+          newLibraryItem.changed('libraryFiles', true)
+          await newLibraryItem.save()
+
+          newLibraryItem.media.coverPath = coverResponse.cover
+          await newLibraryItem.media.save()
         }
       }
     }
 
-    await Database.createLibraryItem(libraryItem)
-    SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
 
-    res.json(libraryItem.toJSONExpanded())
+    res.json(newLibraryItem.toOldJSONExpanded())
 
     // Turn on podcast auto download cron if not already on
-    if (libraryItem.media.autoDownloadEpisodes) {
-      this.cronManager.checkUpdatePodcastCron(libraryItem)
+    if (newLibraryItem.media.autoDownloadEpisodes) {
+      this.cronManager.checkUpdatePodcastCron(newLibraryItem)
     }
   }
 

@@ -1,4 +1,3 @@
-const uuidv4 = require('uuid').v4
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
@@ -176,45 +175,6 @@ class LibraryItem {
   }
   get hasAudioFiles() {
     return this.libraryFiles.some((lf) => lf.fileType === 'audio')
-  }
-
-  // Data comes from scandir library item data
-  // TODO: Remove this function. Only used when creating a new podcast now
-  setData(libraryMediaType, payload) {
-    this.id = uuidv4()
-    this.mediaType = libraryMediaType
-    if (libraryMediaType === 'podcast') {
-      this.media = new Podcast()
-    } else {
-      Logger.error(`[LibraryItem] setData called with unsupported media type "${libraryMediaType}"`)
-      return
-    }
-    this.media.id = uuidv4()
-    this.media.libraryItemId = this.id
-
-    for (const key in payload) {
-      if (key === 'libraryFiles') {
-        this.libraryFiles = payload.libraryFiles.map((lf) => lf.clone())
-
-        // Set cover image
-        const imageFiles = this.libraryFiles.filter((lf) => lf.fileType === 'image')
-        const coverMatch = imageFiles.find((iFile) => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
-        if (coverMatch) {
-          this.media.coverPath = coverMatch.metadata.path
-        } else if (imageFiles.length) {
-          this.media.coverPath = imageFiles[0].metadata.path
-        }
-      } else if (this[key] !== undefined && key !== 'media') {
-        this[key] = payload[key]
-      }
-    }
-
-    if (payload.media) {
-      this.media.setData(payload.media)
-    }
-
-    this.addedAt = Date.now()
-    this.updatedAt = Date.now()
   }
 
   update(payload) {
