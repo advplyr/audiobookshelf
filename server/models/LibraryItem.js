@@ -1,11 +1,8 @@
-const util = require('util')
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const fsExtra = require('../libs/fsExtra')
 const Logger = require('../Logger')
-const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
-const { areEquivalent } = require('../utils/index')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const LibraryFile = require('../objects/files/LibraryFile')
 const Book = require('./Book')
@@ -119,44 +116,6 @@ class LibraryItem extends Model {
       ],
       offset,
       limit
-    })
-  }
-
-  /**
-   * Convert an expanded LibraryItem into an old library item
-   *
-   * @param {Model<LibraryItem>} libraryItemExpanded
-   * @returns {oldLibraryItem}
-   */
-  static getOldLibraryItem(libraryItemExpanded) {
-    let media = null
-    if (libraryItemExpanded.mediaType === 'book') {
-      media = this.sequelize.models.book.getOldBook(libraryItemExpanded)
-    } else if (libraryItemExpanded.mediaType === 'podcast') {
-      media = this.sequelize.models.podcast.getOldPodcast(libraryItemExpanded)
-    }
-
-    return new oldLibraryItem({
-      id: libraryItemExpanded.id,
-      ino: libraryItemExpanded.ino,
-      oldLibraryItemId: libraryItemExpanded.extraData?.oldLibraryItemId || null,
-      libraryId: libraryItemExpanded.libraryId,
-      folderId: libraryItemExpanded.libraryFolderId,
-      path: libraryItemExpanded.path,
-      relPath: libraryItemExpanded.relPath,
-      isFile: libraryItemExpanded.isFile,
-      mtimeMs: libraryItemExpanded.mtime?.valueOf(),
-      ctimeMs: libraryItemExpanded.ctime?.valueOf(),
-      birthtimeMs: libraryItemExpanded.birthtime?.valueOf(),
-      addedAt: libraryItemExpanded.createdAt.valueOf(),
-      updatedAt: libraryItemExpanded.updatedAt.valueOf(),
-      lastScan: libraryItemExpanded.lastScan?.valueOf(),
-      scanVersion: libraryItemExpanded.lastScanVersion,
-      isMissing: !!libraryItemExpanded.isMissing,
-      isInvalid: !!libraryItemExpanded.isInvalid,
-      mediaType: libraryItemExpanded.mediaType,
-      media,
-      libraryFiles: libraryItemExpanded.libraryFiles
     })
   }
 
@@ -319,60 +278,11 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Get old library item by id
-   * @param {string} libraryItemId
-   * @returns {oldLibraryItem}
-   */
-  static async getOldById(libraryItemId) {
-    if (!libraryItemId) return null
-
-    const libraryItem = await this.findByPk(libraryItemId)
-    if (!libraryItem) {
-      Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
-      return null
-    }
-
-    if (libraryItem.mediaType === 'podcast') {
-      libraryItem.media = await libraryItem.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.podcastEpisode
-          }
-        ]
-      })
-    } else {
-      libraryItem.media = await libraryItem.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: this.sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          }
-        ],
-        order: [
-          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
-        ]
-      })
-    }
-
-    if (!libraryItem.media) return null
-    return this.getOldLibraryItem(libraryItem)
-  }
-
-  /**
    * Get library items using filter and sort
    * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {object} options
-   * @returns {{ libraryItems:oldLibraryItem[], count:number }}
+   * @returns {{ libraryItems:Object[], count:number }}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
@@ -426,17 +336,19 @@ class LibraryItem extends Model {
     // "Continue Listening" shelf
     const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, false)
     if (itemsInProgressPayload.items.length) {
-      const ebookOnlyItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.isEBookOnly)
-      const audioOnlyItemsInProgress = itemsInProgressPayload.items.filter((li) => !li.media.isEBookOnly)
+      const ebookOnlyItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.ebookFormat && !li.media.numTracks)
+      const audioItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.numTracks)
 
-      shelves.push({
-        id: 'continue-listening',
-        label: 'Continue Listening',
-        labelStringKey: 'LabelContinueListening',
-        type: library.isPodcast ? 'episode' : 'book',
-        entities: audioOnlyItemsInProgress,
-        total: itemsInProgressPayload.count
-      })
+      if (audioItemsInProgress.length) {
+        shelves.push({
+          id: 'continue-listening',
+          label: 'Continue Listening',
+          labelStringKey: 'LabelContinueListening',
+          type: library.isPodcast ? 'episode' : 'book',
+          entities: audioItemsInProgress,
+          total: itemsInProgressPayload.count
+        })
+      }
 
       if (ebookOnlyItemsInProgress.length) {
         // "Continue Reading" shelf
@@ -535,17 +447,19 @@ class LibraryItem extends Model {
     // "Listen Again" shelf
     const mediaFinishedPayload = await libraryFilters.getMediaFinished(library, user, include, limit)
     if (mediaFinishedPayload.items.length) {
-      const ebookOnlyItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.isEBookOnly)
-      const audioOnlyItemsInProgress = mediaFinishedPayload.items.filter((li) => !li.media.isEBookOnly)
+      const ebookOnlyItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.ebookFormat && !li.media.numTracks)
+      const audioItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.numTracks)
 
-      shelves.push({
-        id: 'listen-again',
-        label: 'Listen Again',
-        labelStringKey: 'LabelListenAgain',
-        type: library.isPodcast ? 'episode' : 'book',
-        entities: audioOnlyItemsInProgress,
-        total: mediaFinishedPayload.count
-      })
+      if (audioItemsInProgress.length) {
+        shelves.push({
+          id: 'listen-again',
+          label: 'Listen Again',
+          labelStringKey: 'LabelListenAgain',
+          type: library.isPodcast ? 'episode' : 'book',
+          entities: audioItemsInProgress,
+          total: mediaFinishedPayload.count
+        })
+      }
 
       // "Read Again" shelf
       if (ebookOnlyItemsInProgress.length) {

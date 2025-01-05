@@ -5,7 +5,6 @@ const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
-const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
   // A ' within a quoted string is escaped with '\'' in ffmpeg (see https://www.ffmpeg.org/ffmpeg-utils.html#Quoting-and-escaping)
@@ -365,28 +364,26 @@ function escapeFFMetadataValue(value) {
 /**
  * Retrieves the FFmpeg metadata object for a given library item.
  *
- * @param {LibraryItem} libraryItem - The library item containing the media metadata.
+ * @param {import('../models/LibraryItem')} libraryItem - The library item containing the media metadata.
  * @param {number} audioFilesLength - The length of the audio files.
  * @returns {Object} - The FFmpeg metadata object.
  */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
-  const metadata = libraryItem.media.metadata
-
   const ffmetadata = {
-    title: metadata.title,
-    artist: metadata.authorName,
-    album_artist: metadata.authorName,
-    album: (metadata.title || '') + (metadata.subtitle ? `: ${metadata.subtitle}` : ''),
-    TIT3: metadata.subtitle, // mp3 only
-    genre: metadata.genres?.join('; '),
-    date: metadata.publishedYear,
-    comment: metadata.description,
-    description: metadata.description,
-    composer: metadata.narratorName,
-    copyright: metadata.publisher,
-    publisher: metadata.publisher, // mp3 only
+    title: libraryItem.media.title,
+    artist: libraryItem.media.authorName,
+    album_artist: libraryItem.media.authorName,
+    album: (libraryItem.media.title || '') + (libraryItem.media.subtitle ? `: ${libraryItem.media.subtitle}` : ''),
+    TIT3: libraryItem.media.subtitle, // mp3 only
+    genre: libraryItem.media.genres?.join('; '),
+    date: libraryItem.media.publishedYear,
+    comment: libraryItem.media.description,
+    description: libraryItem.media.description,
+    composer: (libraryItem.media.narrators || []).join(', '),
+    copyright: libraryItem.media.publisher,
+    publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join('; ')
+    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
@@ -402,7 +399,7 @@ module.exports.getFFMetadataObject = getFFMetadataObject
 /**
  * Merges audio files into a single output file using FFmpeg.
  *
- * @param {Array} audioTracks - The audio tracks to merge.
+ * @param {import('../models/Book').AudioFileObject} audioTracks - The audio tracks to merge.
  * @param {number} duration - The total duration of the audio tracks.
  * @param {string} itemCachePath - The path to the item cache.
  * @param {string} outputFilePath - The path to the output file.

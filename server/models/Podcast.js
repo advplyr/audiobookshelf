@@ -66,66 +66,6 @@ class Podcast extends Model {
     this.podcastEpisodes
   }
 
-  static getOldPodcast(libraryItemExpanded) {
-    const podcastExpanded = libraryItemExpanded.media
-    const podcastEpisodes = podcastExpanded.podcastEpisodes?.map((ep) => ep.getOldPodcastEpisode(libraryItemExpanded.id).toJSON()).sort((a, b) => a.index - b.index)
-    return {
-      id: podcastExpanded.id,
-      libraryItemId: libraryItemExpanded.id,
-      metadata: {
-        title: podcastExpanded.title,
-        author: podcastExpanded.author,
-        description: podcastExpanded.description,
-        releaseDate: podcastExpanded.releaseDate,
-        genres: podcastExpanded.genres,
-        feedUrl: podcastExpanded.feedURL,
-        imageUrl: podcastExpanded.imageURL,
-        itunesPageUrl: podcastExpanded.itunesPageURL,
-        itunesId: podcastExpanded.itunesId,
-        itunesArtistId: podcastExpanded.itunesArtistId,
-        explicit: podcastExpanded.explicit,
-        language: podcastExpanded.language,
-        type: podcastExpanded.podcastType
-      },
-      coverPath: podcastExpanded.coverPath,
-      tags: podcastExpanded.tags,
-      episodes: podcastEpisodes || [],
-      autoDownloadEpisodes: podcastExpanded.autoDownloadEpisodes,
-      autoDownloadSchedule: podcastExpanded.autoDownloadSchedule,
-      lastEpisodeCheck: podcastExpanded.lastEpisodeCheck?.valueOf() || null,
-      maxEpisodesToKeep: podcastExpanded.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: podcastExpanded.maxNewEpisodesToDownload
-    }
-  }
-
-  static getFromOld(oldPodcast) {
-    const oldPodcastMetadata = oldPodcast.metadata
-    return {
-      id: oldPodcast.id,
-      title: oldPodcastMetadata.title,
-      titleIgnorePrefix: oldPodcastMetadata.titleIgnorePrefix,
-      author: oldPodcastMetadata.author,
-      releaseDate: oldPodcastMetadata.releaseDate,
-      feedURL: oldPodcastMetadata.feedUrl,
-      imageURL: oldPodcastMetadata.imageUrl,
-      description: oldPodcastMetadata.description,
-      itunesPageURL: oldPodcastMetadata.itunesPageUrl,
-      itunesId: oldPodcastMetadata.itunesId,
-      itunesArtistId: oldPodcastMetadata.itunesArtistId,
-      language: oldPodcastMetadata.language,
-      podcastType: oldPodcastMetadata.type,
-      explicit: !!oldPodcastMetadata.explicit,
-      autoDownloadEpisodes: !!oldPodcast.autoDownloadEpisodes,
-      autoDownloadSchedule: oldPodcast.autoDownloadSchedule,
-      lastEpisodeCheck: oldPodcast.lastEpisodeCheck,
-      maxEpisodesToKeep: oldPodcast.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: oldPodcast.maxNewEpisodesToDownload,
-      coverPath: oldPodcast.coverPath,
-      tags: oldPodcast.tags,
-      genres: oldPodcastMetadata.genres
-    }
-  }
-
   /**
    * Payload from the /api/podcasts POST endpoint
    *

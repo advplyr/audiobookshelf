@@ -32,7 +32,7 @@ class Scanner {
    * @param {import('../routers/ApiRouter')} apiRouterCtx
    * @param {import('../models/LibraryItem')} libraryItem
    * @param {QuickMatchOptions} options
-   * @returns {Promise<{updated: boolean, libraryItem: import('../objects/LibraryItem')}>}
+   * @returns {Promise<{updated: boolean, libraryItem: Object}>}
    */
   async quickMatchLibraryItem(apiRouterCtx, libraryItem, options = {}) {
     const provider = options.provider || 'google'
