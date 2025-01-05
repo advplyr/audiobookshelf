@@ -242,7 +242,17 @@ class AuthorController {
       await CacheManager.purgeImageCache(req.author.id) // Purge cache
     }
 
+    // Load library items so that metadata file can be updated
+    const allItemsWithAuthor = await Database.authorModel.getAllLibraryItemsForAuthor(req.author.id)
+    allItemsWithAuthor.forEach((libraryItem) => {
+      libraryItem.media.authors = libraryItem.media.authors.filter((au) => au.id !== req.author.id)
+    })
+
     await req.author.destroy()
+
+    for (const libraryItem of allItemsWithAuthor) {
+      await libraryItem.saveMetadataFile()
+    }
 
     SocketAuthority.emitter('author_removed', req.author.toOldJSON())
 

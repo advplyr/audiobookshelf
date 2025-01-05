@@ -130,130 +130,6 @@ class Book extends Model {
     this.series
   }
 
-  static getOldBook(libraryItemExpanded) {
-    const bookExpanded = libraryItemExpanded.media
-    let authors = []
-    if (bookExpanded.authors?.length) {
-      authors = bookExpanded.authors.map((au) => {
-        return {
-          id: au.id,
-          name: au.name
-        }
-      })
-    } else if (bookExpanded.bookAuthors?.length) {
-      authors = bookExpanded.bookAuthors
-        .map((ba) => {
-          if (ba.author) {
-            return {
-              id: ba.author.id,
-              name: ba.author.name
-            }
-          } else {
-            Logger.error(`[Book] Invalid bookExpanded bookAuthors: no author`, ba)
-            return null
-          }
-        })
-        .filter((a) => a)
-    }
-
-    let series = []
-    if (bookExpanded.series?.length) {
-      series = bookExpanded.series.map((se) => {
-        return {
-          id: se.id,
-          name: se.name,
-          sequence: se.bookSeries.sequence
-        }
-      })
-    } else if (bookExpanded.bookSeries?.length) {
-      series = bookExpanded.bookSeries
-        .map((bs) => {
-          if (bs.series) {
-            return {
-              id: bs.series.id,
-              name: bs.series.name,
-              sequence: bs.sequence
-            }
-          } else {
-            Logger.error(`[Book] Invalid bookExpanded bookSeries: no series`, bs)
-            return null
-          }
-        })
-        .filter((s) => s)
-    }
-
-    return {
-      id: bookExpanded.id,
-      libraryItemId: libraryItemExpanded.id,
-      coverPath: bookExpanded.coverPath,
-      tags: bookExpanded.tags,
-      audioFiles: bookExpanded.audioFiles,
-      chapters: bookExpanded.chapters,
-      ebookFile: bookExpanded.ebookFile,
-      metadata: {
-        title: bookExpanded.title,
-        subtitle: bookExpanded.subtitle,
-        authors: authors,
-        narrators: bookExpanded.narrators,
-        series: series,
-        genres: bookExpanded.genres,
-        publishedYear: bookExpanded.publishedYear,
-        publishedDate: bookExpanded.publishedDate,
-        publisher: bookExpanded.publisher,
-        description: bookExpanded.description,
-        isbn: bookExpanded.isbn,
-        asin: bookExpanded.asin,
-        language: bookExpanded.language,
-        explicit: bookExpanded.explicit,
-        abridged: bookExpanded.abridged
-      }
-    }
-  }
-
-  /**
-   * @param {object} oldBook
-   * @returns {boolean} true if updated
-   */
-  static saveFromOld(oldBook) {
-    const book = this.getFromOld(oldBook)
-    return this.update(book, {
-      where: {
-        id: book.id
-      }
-    })
-      .then((result) => result[0] > 0)
-      .catch((error) => {
-        Logger.error(`[Book] Failed to save book ${book.id}`, error)
-        return false
-      })
-  }
-
-  static getFromOld(oldBook) {
-    return {
-      id: oldBook.id,
-      title: oldBook.metadata.title,
-      titleIgnorePrefix: oldBook.metadata.titleIgnorePrefix,
-      subtitle: oldBook.metadata.subtitle,
-      publishedYear: oldBook.metadata.publishedYear,
-      publishedDate: oldBook.metadata.publishedDate,
-      publisher: oldBook.metadata.publisher,
-      description: oldBook.metadata.description,
-      isbn: oldBook.metadata.isbn,
-      asin: oldBook.metadata.asin,
-      language: oldBook.metadata.language,
-      explicit: !!oldBook.metadata.explicit,
-      abridged: !!oldBook.metadata.abridged,
-      narrators: oldBook.metadata.narrators,
-      ebookFile: oldBook.ebookFile?.toJSON() || null,
-      coverPath: oldBook.coverPath,
-      duration: oldBook.duration,
-      audioFiles: oldBook.audioFiles?.map((af) => af.toJSON()) || [],
-      chapters: oldBook.chapters,
-      tags: oldBook.tags,
-      genres: oldBook.metadata.genres
-    }
-  }
-
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
@@ -542,47 +418,111 @@ class Book extends Model {
       await this.save()
     }
 
-    if (Array.isArray(payload.metadata?.authors)) {
-      const authorsRemoved = this.authors.filter((au) => !payload.metadata.authors.some((a) => a.id === au.id))
-      const newAuthors = payload.metadata.authors.filter((a) => !this.authors.some((au) => au.id === a.id))
-
-      for (const author of authorsRemoved) {
-        await this.sequelize.models.bookAuthor.removeByIds(author.id, this.id)
-        Logger.debug(`[Book] "${this.title}" Removed author ${author.id}`)
-        hasUpdates = true
-      }
-      for (const author of newAuthors) {
-        await this.sequelize.models.bookAuthor.create({ bookId: this.id, authorId: author.id })
-        Logger.debug(`[Book] "${this.title}" Added author ${author.id}`)
-        hasUpdates = true
-      }
-    }
-
-    if (Array.isArray(payload.metadata?.series)) {
-      const seriesRemoved = this.series.filter((se) => !payload.metadata.series.some((s) => s.id === se.id))
-      const newSeries = payload.metadata.series.filter((s) => !this.series.some((se) => se.id === s.id))
-
-      for (const series of seriesRemoved) {
-        await this.sequelize.models.bookSeries.removeByIds(series.id, this.id)
-        Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
-        hasUpdates = true
-      }
-      for (const series of newSeries) {
-        await this.sequelize.models.bookSeries.create({ bookId: this.id, seriesId: series.id, sequence: series.sequence })
-        Logger.debug(`[Book] "${this.title}" Added series ${series.id}`)
-        hasUpdates = true
-      }
-      for (const series of payload.metadata.series) {
-        const existingSeries = this.series.find((se) => se.id === series.id)
-        if (existingSeries && existingSeries.bookSeries.sequence !== series.sequence) {
-          await existingSeries.bookSeries.update({ sequence: series.sequence })
-          Logger.debug(`[Book] "${this.title}" Updated series ${series.id} sequence ${series.sequence}`)
-          hasUpdates = true
-        }
-      }
-    }
-
     return hasUpdates
+  }
+
+  /**
+   * Creates or removes authors from the book using the author names from the request
+   *
+   * @param {string[]} authors
+   * @param {string} libraryId
+   * @returns {Promise<{authorsRemoved: import('./Author')[], authorsAdded: import('./Author')[]}>}
+   */
+  async updateAuthorsFromRequest(authors, libraryId) {
+    if (!Array.isArray(authors)) return null
+
+    if (!this.authors) {
+      throw new Error(`[Book] Cannot update authors because authors are not loaded for book ${this.id}`)
+    }
+
+    /** @type {typeof import('./Author')} */
+    const authorModel = this.sequelize.models.author
+
+    /** @type {typeof import('./BookAuthor')} */
+    const bookAuthorModel = this.sequelize.models.bookAuthor
+
+    const authorsCleaned = authors.map((a) => a.toLowerCase()).filter((a) => a)
+    const authorsRemoved = this.authors.filter((au) => !authorsCleaned.includes(au.name.toLowerCase()))
+    const newAuthorNames = authors.filter((a) => !this.authors.some((au) => au.name.toLowerCase() === a.toLowerCase()))
+
+    for (const author of authorsRemoved) {
+      await bookAuthorModel.removeByIds(author.id, this.id)
+      Logger.debug(`[Book] "${this.title}" Removed author "${author.name}"`)
+      this.authors = this.authors.filter((au) => au.id !== author.id)
+    }
+    const authorsAdded = []
+    for (const authorName of newAuthorNames) {
+      const author = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
+      await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
+      Logger.debug(`[Book] "${this.title}" Added author "${author.name}"`)
+      this.authors.push(author)
+      authorsAdded.push(author)
+    }
+
+    return {
+      authorsRemoved,
+      authorsAdded
+    }
+  }
+
+  /**
+   * Creates or removes series from the book using the series names from the request.
+   * Updates series sequence if it has changed.
+   *
+   * @param {{ name: string, sequence: string }[]} seriesObjects
+   * @param {string} libraryId
+   * @returns {Promise<{seriesRemoved: import('./Series')[], seriesAdded: import('./Series')[], hasUpdates: boolean}>}
+   */
+  async updateSeriesFromRequest(seriesObjects, libraryId) {
+    if (!Array.isArray(seriesObjects) || seriesObjects.some((se) => !se.name || typeof se.name !== 'string')) return null
+
+    if (!this.series) {
+      throw new Error(`[Book] Cannot update series because series are not loaded for book ${this.id}`)
+    }
+
+    /** @type {typeof import('./Series')} */
+    const seriesModel = this.sequelize.models.series
+
+    /** @type {typeof import('./BookSeries')} */
+    const bookSeriesModel = this.sequelize.models.bookSeries
+
+    const seriesNamesCleaned = seriesObjects.map((se) => se.name.toLowerCase())
+    const seriesRemoved = this.series.filter((se) => !seriesNamesCleaned.includes(se.name.toLowerCase()))
+    const seriesAdded = []
+    let hasUpdates = false
+    for (const seriesObj of seriesObjects) {
+      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence : null
+
+      const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
+      if (existingSeries) {
+        if (existingSeries.bookSeries.sequence !== seriesObjSequence) {
+          existingSeries.bookSeries.sequence = seriesObjSequence
+          await existingSeries.bookSeries.save()
+          hasUpdates = true
+          Logger.debug(`[Book] "${this.title}" Updated series "${existingSeries.name}" sequence ${seriesObjSequence}`)
+        }
+      } else {
+        const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
+        series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
+        this.series.push(series)
+        seriesAdded.push(series)
+        hasUpdates = true
+        Logger.debug(`[Book] "${this.title}" Added series "${series.name}"`)
+      }
+    }
+
+    for (const series of seriesRemoved) {
+      await bookSeriesModel.removeByIds(series.id, this.id)
+      this.series = this.series.filter((se) => se.id !== series.id)
+      Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
+      hasUpdates = true
+    }
+
+    return {
+      seriesRemoved,
+      seriesAdded,
+      hasUpdates
+    }
   }
 
   /**

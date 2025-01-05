@@ -415,7 +415,7 @@ module.exports = {
    * @param {import('../../models/User')} user
    * @param {number} limit
    * @param {number} offset
-   * @returns {Promise<{ libraryItems:import('../../objects/LibraryItem')[], count:number }>}
+   * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
   async getLibraryItemsForAuthor(author, user, limit, offset) {
     const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(author.libraryId, user, 'authors', author.id, 'addedAt', true, false, [], limit, offset)

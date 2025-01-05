@@ -375,11 +375,9 @@ class PodcastController {
     }
 
     const overrideDetails = req.query.override === '1'
-    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
-    const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(oldLibraryItem, { overrideDetails })
+    const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
-      await Database.updateLibraryItem(oldLibraryItem)
-      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     }
 
     res.json({

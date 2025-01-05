@@ -51,7 +51,7 @@ class AbMergeManager {
   /**
    *
    * @param {string} userId
-   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {AbMergeEncodeOptions} [options={}]
    */
   async startAudiobookMerge(userId, libraryItem, options = {}) {
@@ -67,7 +67,7 @@ class AbMergeManager {
       libraryItemId: libraryItem.id,
       libraryItemDir,
       userId,
-      originalTrackPaths: libraryItem.media.tracks.map((t) => t.metadata.path),
+      originalTrackPaths: libraryItem.media.includedAudioFiles.map((t) => t.metadata.path),
       inos: libraryItem.media.includedAudioFiles.map((f) => f.ino),
       tempFilepath,
       targetFilename,
@@ -86,9 +86,9 @@ class AbMergeManager {
       key: 'MessageTaskEncodingM4b'
     }
     const taskDescriptionString = {
-      text: `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`,
+      text: `Encoding audiobook "${libraryItem.media.title}" into a single m4b file.`,
       key: 'MessageTaskEncodingM4bDescription',
-      subs: [libraryItem.media.metadata.title]
+      subs: [libraryItem.media.title]
     }
     task.setData('encode-m4b', taskTitleString, taskDescriptionString, false, taskData)
     TaskManager.addTask(task)
@@ -103,7 +103,7 @@ class AbMergeManager {
 
   /**
    *
-   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {Task} task
    * @param {AbMergeEncodeOptions} encodingOptions
    */
@@ -141,7 +141,7 @@ class AbMergeManager {
     const embedFraction = 1 - encodeFraction
     try {
       const trackProgressMonitor = new TrackProgressMonitor(
-        libraryItem.media.tracks.map((t) => t.duration),
+        libraryItem.media.includedAudioFiles.map((t) => t.duration),
         (trackIndex) => SocketAuthority.adminEmitter('track_started', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] }),
         (trackIndex, progressInTrack, taskProgress) => {
           SocketAuthority.adminEmitter('track_progress', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex], progress: progressInTrack })
@@ -150,7 +150,7 @@ class AbMergeManager {
         (trackIndex) => SocketAuthority.adminEmitter('track_finished', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] })
       )
       task.data.ffmpeg = new Ffmpeg()
-      await ffmpegHelpers.mergeAudioFiles(libraryItem.media.tracks, task.data.duration, task.data.itemCachePath, task.data.tempFilepath, encodingOptions, (progress) => trackProgressMonitor.update(progress), task.data.ffmpeg)
+      await ffmpegHelpers.mergeAudioFiles(libraryItem.media.includedAudioFiles, task.data.duration, task.data.itemCachePath, task.data.tempFilepath, encodingOptions, (progress) => trackProgressMonitor.update(progress), task.data.ffmpeg)
       delete task.data.ffmpeg
       trackProgressMonitor.finish()
     } catch (error) {

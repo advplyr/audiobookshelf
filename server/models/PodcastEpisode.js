@@ -1,5 +1,4 @@
 const { DataTypes, Model } = require('sequelize')
-const oldPodcastEpisode = require('../objects/entities/PodcastEpisode')
 
 /**
  * @typedef ChapterObject
@@ -51,40 +50,6 @@ class PodcastEpisode extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
-  }
-
-  static createFromOld(oldEpisode) {
-    const podcastEpisode = this.getFromOld(oldEpisode)
-    return this.create(podcastEpisode)
-  }
-
-  static getFromOld(oldEpisode) {
-    const extraData = {}
-    if (oldEpisode.oldEpisodeId) {
-      extraData.oldEpisodeId = oldEpisode.oldEpisodeId
-    }
-    if (oldEpisode.guid) {
-      extraData.guid = oldEpisode.guid
-    }
-    return {
-      id: oldEpisode.id,
-      index: oldEpisode.index,
-      season: oldEpisode.season,
-      episode: oldEpisode.episode,
-      episodeType: oldEpisode.episodeType,
-      title: oldEpisode.title,
-      subtitle: oldEpisode.subtitle,
-      description: oldEpisode.description,
-      pubDate: oldEpisode.pubDate,
-      enclosureURL: oldEpisode.enclosure?.url || null,
-      enclosureSize: oldEpisode.enclosure?.length || null,
-      enclosureType: oldEpisode.enclosure?.type || null,
-      publishedAt: oldEpisode.publishedAt,
-      podcastId: oldEpisode.podcastId,
-      audioFile: oldEpisode.audioFile?.toJSON() || null,
-      chapters: oldEpisode.chapters,
-      extraData
-    }
   }
 
   /**
@@ -206,42 +171,6 @@ class PodcastEpisode extends Model {
     track.title = this.audioFile.metadata.title
     track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
     return track
-  }
-
-  /**
-   * @param {string} libraryItemId
-   * @returns {oldPodcastEpisode}
-   */
-  getOldPodcastEpisode(libraryItemId = null) {
-    let enclosure = null
-    if (this.enclosureURL) {
-      enclosure = {
-        url: this.enclosureURL,
-        type: this.enclosureType,
-        length: this.enclosureSize !== null ? String(this.enclosureSize) : null
-      }
-    }
-    return new oldPodcastEpisode({
-      libraryItemId: libraryItemId || null,
-      podcastId: this.podcastId,
-      id: this.id,
-      oldEpisodeId: this.extraData?.oldEpisodeId || null,
-      index: this.index,
-      season: this.season,
-      episode: this.episode,
-      episodeType: this.episodeType,
-      title: this.title,
-      subtitle: this.subtitle,
-      description: this.description,
-      enclosure,
-      guid: this.extraData?.guid || null,
-      pubDate: this.pubDate,
-      chapters: this.chapters,
-      audioFile: this.audioFile,
-      publishedAt: this.publishedAt?.valueOf() || null,
-      addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf()
-    })
   }
 
   toOldJSON(libraryItemId) {

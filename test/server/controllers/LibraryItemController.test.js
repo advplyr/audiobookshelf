@@ -157,7 +157,7 @@ describe('LibraryItemController', () => {
 
     it('should remove authors and series with no books on library item update media', async () => {
       const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItem1Id)
-
+      libraryItem.saveMetadataFile = sinon.stub()
       // Update library item 1 remove all authors and series
       const fakeReq = {
         query: {},

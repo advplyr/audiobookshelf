@@ -297,7 +297,7 @@ module.exports = {
       delete podcast.libraryItem
       libraryItem.media = podcast
 
-      libraryItem.recentEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSON()
+      libraryItem.recentEpisode = ep.toOldJSON(libraryItem.id)
       return libraryItem
     })
 
@@ -460,13 +460,14 @@ module.exports = {
     })
 
     const episodeResults = episodes.map((ep) => {
-      const libraryItem = ep.podcast.libraryItem
-      libraryItem.media = ep.podcast
-      const oldPodcast = Database.podcastModel.getOldPodcast(libraryItem)
-      const oldPodcastEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSONExpanded()
-      oldPodcastEpisode.podcast = oldPodcast
-      oldPodcastEpisode.libraryId = libraryItem.libraryId
-      return oldPodcastEpisode
+      ep.podcast.podcastEpisodes = [] // Not needed
+      const oldPodcastJson = ep.podcast.toOldJSON(ep.podcast.libraryItem.id)
+
+      const oldPodcastEpisodeJson = ep.toOldJSONExpanded(ep.podcast.libraryItem.id)
+
+      oldPodcastEpisodeJson.podcast = oldPodcastJson
+      oldPodcastEpisodeJson.libraryId = ep.podcast.libraryItem.libraryId
+      return oldPodcastEpisodeJson
     })
 
     return episodeResults

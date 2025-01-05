@@ -82,31 +82,6 @@ class LibraryItemController {
   }
 
   /**
-   * PATCH: /api/items/:id
-   *
-   * @deprecated
-   * Use the updateMedia /api/items/:id/media endpoint instead or updateCover /api/items/:id/cover
-   *
-   * @param {LibraryItemControllerRequest} req
-   * @param {Response} res
-   */
-  async update(req, res) {
-    // Item has cover and update is removing cover so purge it from cache
-    if (req.libraryItem.media.coverPath && req.body.media && (req.body.media.coverPath === '' || req.body.media.coverPath === null)) {
-      await CacheManager.purgeCoverCache(req.libraryItem.id)
-    }
-
-    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
-    const hasUpdates = oldLibraryItem.update(req.body)
-    if (hasUpdates) {
-      Logger.debug(`[LibraryItemController] Updated now saving`)
-      await Database.updateLibraryItem(oldLibraryItem)
-      SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
-    }
-    res.json(oldLibraryItem.toJSON())
-  }
-
-  /**
    * DELETE: /api/items/:id
    * Delete library item. Will delete from database and file system if hard delete is requested.
    * Optional query params:
@@ -219,11 +194,6 @@ class LibraryItemController {
       if (res.writableEnded || res.headersSent) return
     }
 
-    // Book specific
-    if (req.libraryItem.isBook) {
-      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, req.libraryItem.libraryId)
-    }
-
     // Podcast specific
     let isPodcastAutoDownloadUpdated = false
     if (req.libraryItem.isPodcast) {
@@ -234,23 +204,49 @@ class LibraryItemController {
       }
     }
 
-    // Book specific - Get all series being removed from this item
-    let seriesRemoved = []
-    if (req.libraryItem.isBook && mediaPayload.metadata?.series) {
-      const seriesIdsInUpdate = mediaPayload.metadata.series?.map((se) => se.id) || []
-      seriesRemoved = req.libraryItem.media.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
+    let hasUpdates = (await req.libraryItem.media.updateFromRequest(mediaPayload)) || mediaPayload.url
+
+    if (req.libraryItem.isBook && Array.isArray(mediaPayload.metadata?.series)) {
+      const seriesUpdateData = await req.libraryItem.media.updateSeriesFromRequest(mediaPayload.metadata.series, req.libraryItem.libraryId)
+      if (seriesUpdateData?.seriesRemoved.length) {
+        // Check remove empty series
+        Logger.debug(`[LibraryItemController] Series were removed from book. Check if series are now empty.`)
+        await this.checkRemoveEmptySeries(seriesUpdateData.seriesRemoved.map((se) => se.id))
+      }
+      if (seriesUpdateData?.seriesAdded.length) {
+        // Add series to filter data
+        seriesUpdateData.seriesAdded.forEach((se) => {
+          Database.addSeriesToFilterData(req.libraryItem.libraryId, se.name, se.id)
+        })
+      }
+      if (seriesUpdateData?.hasUpdates) {
+        hasUpdates = true
+      }
     }
 
-    let authorsRemoved = []
-    if (req.libraryItem.isBook && mediaPayload.metadata?.authors) {
-      const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
-      authorsRemoved = req.libraryItem.media.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
+    if (req.libraryItem.isBook && Array.isArray(mediaPayload.metadata?.authors)) {
+      const authorNames = mediaPayload.metadata.authors.map((au) => (typeof au.name === 'string' ? au.name.trim() : null)).filter((au) => au)
+      const authorUpdateData = await req.libraryItem.media.updateAuthorsFromRequest(authorNames, req.libraryItem.libraryId)
+      if (authorUpdateData?.authorsRemoved.length) {
+        // Check remove empty authors
+        Logger.debug(`[LibraryItemController] Authors were removed from book. Check if authors are now empty.`)
+        await this.checkRemoveAuthorsWithNoBooks(authorUpdateData.authorsRemoved.map((au) => au.id))
+        hasUpdates = true
+      }
+      if (authorUpdateData?.authorsAdded.length) {
+        // Add authors to filter data
+        authorUpdateData.authorsAdded.forEach((au) => {
+          Database.addAuthorToFilterData(req.libraryItem.libraryId, au.name, au.id)
+        })
+        hasUpdates = true
+      }
     }
 
-    const hasUpdates = (await req.libraryItem.media.updateFromRequest(mediaPayload)) || mediaPayload.url
     if (hasUpdates) {
       req.libraryItem.changed('updatedAt', true)
       await req.libraryItem.save()
+
+      await req.libraryItem.saveMetadataFile()
 
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(req.libraryItem)
@@ -258,17 +254,6 @@ class LibraryItemController {
 
       Logger.debug(`[LibraryItemController] Updated library item media ${req.libraryItem.media.title}`)
       SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
-
-      if (authorsRemoved.length) {
-        // Check remove empty authors
-        Logger.debug(`[LibraryItemController] Authors were removed from book. Check if authors are now empty.`)
-        await this.checkRemoveAuthorsWithNoBooks(authorsRemoved.map((au) => au.id))
-      }
-      if (seriesRemoved.length) {
-        // Check remove empty series
-        Logger.debug(`[LibraryItemController] Series were removed from book. Check if series are now empty.`)
-        await this.checkRemoveEmptySeries(seriesRemoved.map((se) => se.id))
-      }
     }
     res.json({
       updated: hasUpdates,
@@ -527,8 +512,7 @@ class LibraryItemController {
       options.overrideDetails = !!reqBody.overrideDetails
     }
 
-    const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(req.libraryItem)
-    var matchResult = await Scanner.quickMatchLibraryItem(this, oldLibraryItem, options)
+    const matchResult = await Scanner.quickMatchLibraryItem(this, req.libraryItem, options)
     res.json(matchResult)
   }
 
@@ -640,25 +624,43 @@ class LibraryItemController {
       const mediaPayload = updatePayload.mediaPayload
       const libraryItem = libraryItems.find((li) => li.id === updatePayload.id)
 
-      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
+      let hasUpdates = await libraryItem.media.updateFromRequest(mediaPayload)
 
-      if (libraryItem.isBook) {
-        if (Array.isArray(mediaPayload.metadata?.series)) {
-          const seriesIdsInUpdate = mediaPayload.metadata.series.map((se) => se.id)
-          const seriesRemoved = libraryItem.media.series.filter((se) => !seriesIdsInUpdate.includes(se.id))
-          seriesIdsRemoved.push(...seriesRemoved.map((se) => se.id))
+      if (libraryItem.isBook && Array.isArray(mediaPayload.metadata?.series)) {
+        const seriesUpdateData = await libraryItem.media.updateSeriesFromRequest(mediaPayload.metadata.series, libraryItem.libraryId)
+        if (seriesUpdateData?.seriesRemoved.length) {
+          seriesIdsRemoved.push(...seriesUpdateData.seriesRemoved.map((se) => se.id))
         }
-        if (Array.isArray(mediaPayload.metadata?.authors)) {
-          const authorIdsInUpdate = mediaPayload.metadata.authors.map((au) => au.id)
-          const authorsRemoved = libraryItem.media.authors.filter((au) => !authorIdsInUpdate.includes(au.id))
-          authorIdsRemoved.push(...authorsRemoved.map((au) => au.id))
+        if (seriesUpdateData?.seriesAdded.length) {
+          seriesUpdateData.seriesAdded.forEach((se) => {
+            Database.addSeriesToFilterData(libraryItem.libraryId, se.name, se.id)
+          })
+        }
+        if (seriesUpdateData?.hasUpdates) {
+          hasUpdates = true
         }
       }
 
-      const hasUpdates = await libraryItem.media.updateFromRequest(mediaPayload)
+      if (libraryItem.isBook && Array.isArray(mediaPayload.metadata?.authors)) {
+        const authorNames = mediaPayload.metadata.authors.map((au) => (typeof au.name === 'string' ? au.name.trim() : null)).filter((au) => au)
+        const authorUpdateData = await libraryItem.media.updateAuthorsFromRequest(authorNames, libraryItem.libraryId)
+        if (authorUpdateData?.authorsRemoved.length) {
+          authorIdsRemoved.push(...authorUpdateData.authorsRemoved.map((au) => au.id))
+          hasUpdates = true
+        }
+        if (authorUpdateData?.authorsAdded.length) {
+          authorUpdateData.authorsAdded.forEach((au) => {
+            Database.addAuthorToFilterData(libraryItem.libraryId, au.name, au.id)
+          })
+          hasUpdates = true
+        }
+      }
+
       if (hasUpdates) {
         libraryItem.changed('updatedAt', true)
         await libraryItem.save()
+
+        await libraryItem.saveMetadataFile()
 
         Logger.debug(`[LibraryItemController] Updated library item media "${libraryItem.media.title}"`)
         SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
@@ -739,8 +741,7 @@ class LibraryItemController {
     }
 
     for (const libraryItem of libraryItems) {
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      const matchResult = await Scanner.quickMatchLibraryItem(this, oldLibraryItem, options)
+      const matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {
@@ -890,6 +891,8 @@ class LibraryItemController {
     if (hasUpdates) {
       req.libraryItem.media.changed('chapters', true)
       await req.libraryItem.media.save()
+
+      await req.libraryItem.saveMetadataFile()
 
       SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     }

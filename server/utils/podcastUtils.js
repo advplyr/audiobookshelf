@@ -330,6 +330,12 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   return this.findMatchingEpisodesInFeed(feed, searchTitle)
 }
 
+/**
+ *
+ * @param {RssPodcast} feed
+ * @param {string} searchTitle
+ * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ */
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   searchTitle = searchTitle.toLowerCase().trim()
   if (!feed?.episodes) {
