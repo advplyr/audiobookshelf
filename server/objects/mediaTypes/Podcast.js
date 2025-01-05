@@ -83,23 +83,6 @@ class Podcast {
     }
   }
 
-  toJSONExpanded() {
-    return {
-      id: this.id,
-      libraryItemId: this.libraryItemId,
-      metadata: this.metadata.toJSONExpanded(),
-      coverPath: this.coverPath,
-      tags: [...this.tags],
-      episodes: this.episodes.map((e) => e.toJSONExpanded()),
-      autoDownloadEpisodes: this.autoDownloadEpisodes,
-      autoDownloadSchedule: this.autoDownloadSchedule,
-      lastEpisodeCheck: this.lastEpisodeCheck,
-      maxEpisodesToKeep: this.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
-      size: this.size
-    }
-  }
-
   toJSONForMetadataFile() {
     return {
       tags: [...this.tags],

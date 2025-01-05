@@ -87,13 +87,10 @@ class MediaItemShare extends Model {
     const libraryItemModel = this.sequelize.models.libraryItem
 
     if (mediaItemType === 'book') {
-      const libraryItem = await libraryItemModel.findOneExpanded(
-        { mediaId: mediaItemId },
-        {
-          model: this.sequelize.models.library,
-          attributes: ['settings']
-        }
-      )
+      const libraryItem = await libraryItemModel.findOneExpanded({ mediaId: mediaItemId }, null, {
+        model: this.sequelize.models.library,
+        attributes: ['settings']
+      })
 
       return libraryItem
     }

@@ -361,7 +361,7 @@ class BookFinder {
   /**
    * Search for books including fuzzy searches
    *
-   * @param {Object} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {string} provider
    * @param {string} title
    * @param {string} author

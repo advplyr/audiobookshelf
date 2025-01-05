@@ -161,206 +161,6 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Updates libraryItem, book, authors and series from old library item
-   *
-   * @param {oldLibraryItem} oldLibraryItem
-   * @returns {Promise<boolean>} true if updates were made
-   */
-  static async fullUpdateFromOld(oldLibraryItem) {
-    const libraryItemExpanded = await this.getExpandedById(oldLibraryItem.id)
-    if (!libraryItemExpanded) return false
-
-    let hasUpdates = false
-
-    // Check update Book/Podcast
-    if (libraryItemExpanded.media) {
-      let updatedMedia = null
-      if (libraryItemExpanded.mediaType === 'podcast') {
-        updatedMedia = this.sequelize.models.podcast.getFromOld(oldLibraryItem.media)
-
-        const existingPodcastEpisodes = libraryItemExpanded.media.podcastEpisodes || []
-        const updatedPodcastEpisodes = oldLibraryItem.media.episodes || []
-
-        for (const existingPodcastEpisode of existingPodcastEpisodes) {
-          // Episode was removed
-          if (!updatedPodcastEpisodes.some((ep) => ep.id === existingPodcastEpisode.id)) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingPodcastEpisode.title}" was removed`)
-            await existingPodcastEpisode.destroy()
-            hasUpdates = true
-          }
-        }
-        for (const updatedPodcastEpisode of updatedPodcastEpisodes) {
-          const existingEpisodeMatch = existingPodcastEpisodes.find((ep) => ep.id === updatedPodcastEpisode.id)
-          if (!existingEpisodeMatch) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${updatedPodcastEpisode.title}" was added`)
-            await this.sequelize.models.podcastEpisode.createFromOld(updatedPodcastEpisode)
-            hasUpdates = true
-          } else {
-            const updatedEpisodeCleaned = this.sequelize.models.podcastEpisode.getFromOld(updatedPodcastEpisode)
-            let episodeHasUpdates = false
-            for (const key in updatedEpisodeCleaned) {
-              let existingValue = existingEpisodeMatch[key]
-              if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-              if (!areEquivalent(updatedEpisodeCleaned[key], existingValue, true)) {
-                Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from %j to %j`, existingValue, updatedEpisodeCleaned[key]))
-                episodeHasUpdates = true
-              }
-            }
-            if (episodeHasUpdates) {
-              await existingEpisodeMatch.update(updatedEpisodeCleaned)
-              hasUpdates = true
-            }
-          }
-        }
-      } else if (libraryItemExpanded.mediaType === 'book') {
-        updatedMedia = this.sequelize.models.book.getFromOld(oldLibraryItem.media)
-
-        const existingAuthors = libraryItemExpanded.media.authors || []
-        const existingSeriesAll = libraryItemExpanded.media.series || []
-        const updatedAuthors = oldLibraryItem.media.metadata.authors || []
-        const uniqueUpdatedAuthors = updatedAuthors.filter((au, idx) => updatedAuthors.findIndex((a) => a.id === au.id) === idx)
-        const updatedSeriesAll = oldLibraryItem.media.metadata.series || []
-
-        for (const existingAuthor of existingAuthors) {
-          // Author was removed from Book
-          if (!uniqueUpdatedAuthors.some((au) => au.id === existingAuthor.id)) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
-            await this.sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
-            hasUpdates = true
-          }
-        }
-        for (const updatedAuthor of uniqueUpdatedAuthors) {
-          // Author was added
-          if (!existingAuthors.some((au) => au.id === updatedAuthor.id)) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
-            await this.sequelize.models.bookAuthor.create({ authorId: updatedAuthor.id, bookId: libraryItemExpanded.media.id })
-            hasUpdates = true
-          }
-        }
-        for (const existingSeries of existingSeriesAll) {
-          // Series was removed
-          if (!updatedSeriesAll.some((se) => se.id === existingSeries.id)) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${existingSeries.name}" was removed`)
-            await this.sequelize.models.bookSeries.removeByIds(existingSeries.id, libraryItemExpanded.media.id)
-            hasUpdates = true
-          }
-        }
-        for (const updatedSeries of updatedSeriesAll) {
-          // Series was added/updated
-          const existingSeriesMatch = existingSeriesAll.find((se) => se.id === updatedSeries.id)
-          if (!existingSeriesMatch) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" was added`)
-            await this.sequelize.models.bookSeries.create({ seriesId: updatedSeries.id, bookId: libraryItemExpanded.media.id, sequence: updatedSeries.sequence })
-            hasUpdates = true
-          } else if (existingSeriesMatch.bookSeries.sequence !== updatedSeries.sequence) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
-            await existingSeriesMatch.bookSeries.update({ id: updatedSeries.id, sequence: updatedSeries.sequence })
-            hasUpdates = true
-          }
-        }
-      }
-
-      let hasMediaUpdates = false
-      for (const key in updatedMedia) {
-        let existingValue = libraryItemExpanded.media[key]
-        if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-        if (!areEquivalent(updatedMedia[key], existingValue, true)) {
-          if (key === 'chapters') {
-            // Handle logging of chapters separately because the object is large
-            const chaptersRemoved = libraryItemExpanded.media.chapters.filter((ch) => !updatedMedia.chapters.some((uch) => uch.id === ch.id))
-            if (chaptersRemoved.length) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters removed: ${chaptersRemoved.map((ch) => ch.title).join(', ')}`)
-            }
-            const chaptersAdded = updatedMedia.chapters.filter((uch) => !libraryItemExpanded.media.chapters.some((ch) => ch.id === uch.id))
-            if (chaptersAdded.length) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters added: ${chaptersAdded.map((ch) => ch.title).join(', ')}`)
-            }
-            if (!chaptersRemoved.length && !chaptersAdded.length) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" chapters updated`)
-            }
-          } else {
-            Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from %j to %j`, existingValue, updatedMedia[key]))
-          }
-
-          hasMediaUpdates = true
-        }
-      }
-      if (hasMediaUpdates && updatedMedia) {
-        await libraryItemExpanded.media.update(updatedMedia)
-        hasUpdates = true
-      }
-    }
-
-    const updatedLibraryItem = this.getFromOld(oldLibraryItem)
-    let hasLibraryItemUpdates = false
-    for (const key in updatedLibraryItem) {
-      let existingValue = libraryItemExpanded[key]
-      if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-
-      if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
-        if (key === 'libraryFiles') {
-          // Handle logging of libraryFiles separately because the object is large (should be addressed when migrating off the old library item model)
-          const libraryFilesRemoved = libraryItemExpanded.libraryFiles.filter((lf) => !updatedLibraryItem.libraryFiles.some((ulf) => ulf.ino === lf.ino))
-          if (libraryFilesRemoved.length) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files removed: ${libraryFilesRemoved.map((lf) => lf.metadata.path).join(', ')}`)
-          }
-          const libraryFilesAdded = updatedLibraryItem.libraryFiles.filter((ulf) => !libraryItemExpanded.libraryFiles.some((lf) => lf.ino === ulf.ino))
-          if (libraryFilesAdded.length) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files added: ${libraryFilesAdded.map((lf) => lf.metadata.path).join(', ')}`)
-          }
-          if (!libraryFilesRemoved.length && !libraryFilesAdded.length) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" library files updated`)
-          }
-        } else {
-          Logger.debug(util.format(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from %j to %j`, existingValue, updatedLibraryItem[key]))
-        }
-
-        hasLibraryItemUpdates = true
-        if (key === 'updatedAt') {
-          libraryItemExpanded.changed('updatedAt', true)
-        }
-      }
-    }
-    if (hasLibraryItemUpdates) {
-      await libraryItemExpanded.update(updatedLibraryItem)
-      Logger.info(`[LibraryItem] Library item "${libraryItemExpanded.id}" updated`)
-      hasUpdates = true
-    }
-    return hasUpdates
-  }
-
-  static getFromOld(oldLibraryItem) {
-    const extraData = {}
-    if (oldLibraryItem.oldLibraryItemId) {
-      extraData.oldLibraryItemId = oldLibraryItem.oldLibraryItemId
-    }
-    return {
-      id: oldLibraryItem.id,
-      ino: oldLibraryItem.ino,
-      path: oldLibraryItem.path,
-      relPath: oldLibraryItem.relPath,
-      mediaId: oldLibraryItem.media.id,
-      mediaType: oldLibraryItem.mediaType,
-      isFile: !!oldLibraryItem.isFile,
-      isMissing: !!oldLibraryItem.isMissing,
-      isInvalid: !!oldLibraryItem.isInvalid,
-      mtime: oldLibraryItem.mtimeMs,
-      ctime: oldLibraryItem.ctimeMs,
-      updatedAt: oldLibraryItem.updatedAt,
-      birthtime: oldLibraryItem.birthtimeMs,
-      size: oldLibraryItem.size,
-      lastScan: oldLibraryItem.lastScan,
-      lastScanVersion: oldLibraryItem.scanVersion,
-      libraryId: oldLibraryItem.libraryId,
-      libraryFolderId: oldLibraryItem.folderId,
-      libraryFiles: oldLibraryItem.libraryFiles?.map((lf) => lf.toJSON()) || [],
-      extraData
-    }
-  }
-
-  /**
    * Remove library item by id
    *
    * @param {string} libraryItemId
@@ -468,12 +268,14 @@ class LibraryItem extends Model {
   /**
    *
    * @param {import('sequelize').WhereOptions} where
+   * @param {import('sequelize').BindOrReplacements} [replacements]
    * @param {import('sequelize').IncludeOptions} [include]
    * @returns {Promise<LibraryItemExpanded>}
    */
-  static async findOneExpanded(where, include = null) {
+  static async findOneExpanded(where, replacements = null, include = null) {
     const libraryItem = await this.findOne({
       where,
+      replacements,
       include
     })
     if (!libraryItem) {
@@ -803,52 +605,6 @@ class LibraryItem extends Model {
 
   /**
    *
-   * @param {import('sequelize').WhereOptions} where
-   * @param {import('sequelize').BindOrReplacements} replacements
-   * @returns {Object} oldLibraryItem
-   */
-  static async findOneOld(where, replacements = {}) {
-    const libraryItem = await this.findOne({
-      where,
-      replacements,
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ],
-      order: [
-        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
-      ]
-    })
-    if (!libraryItem) return null
-    return this.getOldLibraryItem(libraryItem)
-  }
-
-  /**
-   *
    * @param {string} libraryItemId
    * @returns {Promise<string>}
    */
@@ -970,7 +726,7 @@ class LibraryItem extends Model {
           }
         }
 
-        Logger.debug(`Success saving abmetadata to "${metadataFilePath}"`)
+        Logger.debug(`[LibraryItem] Saved metadata for "${this.media.title}" file to "${metadataFilePath}"`)
 
         return metadataLibraryFile
       })

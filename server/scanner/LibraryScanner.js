@@ -582,7 +582,7 @@ class LibraryScanner {
       }
 
       // Check if book dir group is already an item
-      let existingLibraryItem = await Database.libraryItemModel.findOneOld({
+      let existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
         libraryId: library.id,
         path: potentialChildDirs
       })
@@ -606,17 +606,17 @@ class LibraryScanner {
         if (existingLibraryItem.path === fullPath) {
           const exists = await fs.pathExists(fullPath)
           if (!exists) {
-            Logger.info(`[LibraryScanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
-            existingLibraryItem.setMissing()
-            await Database.updateLibraryItem(existingLibraryItem)
-            SocketAuthority.emitter('item_updated', existingLibraryItem.toJSONExpanded())
+            Logger.info(`[LibraryScanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.title}" - marking as missing`)
+            existingLibraryItem.isMissing = true
+            await existingLibraryItem.save()
+            SocketAuthority.emitter('item_updated', existingLibraryItem.toOldJSONExpanded())
 
             itemGroupingResults[itemDir] = ScanResult.REMOVED
             continue
           }
         }
         // Scan library item for updates
-        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" with id "${existingLibraryItem.id}" - scan for updates`)
+        Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.title}" with id "${existingLibraryItem.id}" - scan for updates`)
         itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
@@ -672,7 +672,7 @@ function isSingleMediaFile(fileUpdateGroup, itemDir) {
 async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneOld({
+  const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
     libraryId: libraryId,
     ino: ino
   })
@@ -685,7 +685,7 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneOld(
+  const existingLibraryItem = await Database.libraryItemModel.findOneExpanded(
     [
       {
         libraryId: libraryId
@@ -711,7 +711,7 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
     if (ino) itemFileInos.push(ino)
   }
   if (!itemFileInos.length) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneOld({
+  const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
     libraryId: libraryId,
     ino: {
       [sequelize.Op.in]: itemFileInos

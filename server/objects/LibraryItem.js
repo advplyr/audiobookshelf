@@ -135,33 +135,6 @@ class LibraryItem {
     }
   }
 
-  // Adds additional helpful fields like media duration, tracks, etc.
-  toJSONExpanded() {
-    return {
-      id: this.id,
-      ino: this.ino,
-      oldLibraryItemId: this.oldLibraryItemId,
-      libraryId: this.libraryId,
-      folderId: this.folderId,
-      path: this.path,
-      relPath: this.relPath,
-      isFile: this.isFile,
-      mtimeMs: this.mtimeMs,
-      ctimeMs: this.ctimeMs,
-      birthtimeMs: this.birthtimeMs,
-      addedAt: this.addedAt,
-      updatedAt: this.updatedAt,
-      lastScan: this.lastScan,
-      scanVersion: this.scanVersion,
-      isMissing: !!this.isMissing,
-      isInvalid: !!this.isInvalid,
-      mediaType: this.mediaType,
-      media: this.media.toJSONExpanded(),
-      libraryFiles: this.libraryFiles.map((f) => f.toJSON()),
-      size: this.size
-    }
-  }
-
   get isPodcast() {
     return this.mediaType === 'podcast'
   }
@@ -175,99 +148,6 @@ class LibraryItem {
   }
   get hasAudioFiles() {
     return this.libraryFiles.some((lf) => lf.fileType === 'audio')
-  }
-
-  update(payload) {
-    const json = this.toJSON()
-    let hasUpdates = false
-    for (const key in json) {
-      if (payload[key] !== undefined) {
-        if (key === 'media') {
-          if (this.media.update(payload[key])) {
-            hasUpdates = true
-          }
-        } else if (!areEquivalent(payload[key], json[key])) {
-          this[key] = copyValue(payload[key])
-          hasUpdates = true
-        }
-      }
-    }
-    if (hasUpdates) {
-      this.updatedAt = Date.now()
-    }
-    return hasUpdates
-  }
-
-  updateMediaCover(coverPath) {
-    this.media.updateCover(coverPath)
-    this.updatedAt = Date.now()
-    return true
-  }
-
-  setMissing() {
-    this.isMissing = true
-    this.updatedAt = Date.now()
-  }
-
-  /**
-   * Save metadata.json file
-   * TODO: Move to new LibraryItem model
-   * @returns {Promise<LibraryFile>} null if not saved
-   */
-  async saveMetadata() {
-    if (this.isSavingMetadata || !global.MetadataPath) return null
-
-    this.isSavingMetadata = true
-
-    let metadataPath = Path.join(global.MetadataPath, 'items', this.id)
-    let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
-    if (storeMetadataWithItem && !this.isFile) {
-      metadataPath = this.path
-    } else {
-      // Make sure metadata book dir exists
-      storeMetadataWithItem = false
-      await fs.ensureDir(metadataPath)
-    }
-
-    const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
-
-    return fs
-      .writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2))
-      .then(async () => {
-        // Add metadata.json to libraryFiles array if it is new
-        let metadataLibraryFile = this.libraryFiles.find((lf) => lf.metadata.path === filePathToPOSIX(metadataFilePath))
-        if (storeMetadataWithItem) {
-          if (!metadataLibraryFile) {
-            metadataLibraryFile = new LibraryFile()
-            await metadataLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
-            this.libraryFiles.push(metadataLibraryFile)
-          } else {
-            const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
-            if (fileTimestamps) {
-              metadataLibraryFile.metadata.mtimeMs = fileTimestamps.mtimeMs
-              metadataLibraryFile.metadata.ctimeMs = fileTimestamps.ctimeMs
-              metadataLibraryFile.metadata.size = fileTimestamps.size
-              metadataLibraryFile.ino = fileTimestamps.ino
-            }
-          }
-          const libraryItemDirTimestamps = await getFileTimestampsWithIno(this.path)
-          if (libraryItemDirTimestamps) {
-            this.mtimeMs = libraryItemDirTimestamps.mtimeMs
-            this.ctimeMs = libraryItemDirTimestamps.ctimeMs
-          }
-        }
-
-        Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
-
-        return metadataLibraryFile
-      })
-      .catch((error) => {
-        Logger.error(`[LibraryItem] Failed to save json file at "${metadataFilePath}"`, error)
-        return null
-      })
-      .finally(() => {
-        this.isSavingMetadata = false
-      })
   }
 }
 module.exports = LibraryItem

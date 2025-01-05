@@ -89,31 +89,6 @@ class BookMetadata {
     }
   }
 
-  toJSONExpanded() {
-    return {
-      title: this.title,
-      titleIgnorePrefix: this.titlePrefixAtEnd,
-      subtitle: this.subtitle,
-      authors: this.authors.map((a) => ({ ...a })), // Author JSONMinimal with name and id
-      narrators: [...this.narrators],
-      series: this.series.map((s) => ({ ...s })),
-      genres: [...this.genres],
-      publishedYear: this.publishedYear,
-      publishedDate: this.publishedDate,
-      publisher: this.publisher,
-      description: this.description,
-      isbn: this.isbn,
-      asin: this.asin,
-      language: this.language,
-      explicit: this.explicit,
-      authorName: this.authorName,
-      authorNameLF: this.authorNameLF,
-      narratorName: this.narratorName,
-      seriesName: this.seriesName,
-      abridged: this.abridged
-    }
-  }
-
   toJSONForMetadataFile() {
     const json = this.toJSON()
     json.authors = json.authors.map((au) => au.name)

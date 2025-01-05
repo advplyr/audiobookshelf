@@ -68,22 +68,6 @@ class Book {
     }
   }
 
-  toJSONExpanded() {
-    return {
-      id: this.id,
-      libraryItemId: this.libraryItemId,
-      metadata: this.metadata.toJSONExpanded(),
-      coverPath: this.coverPath,
-      tags: [...this.tags],
-      audioFiles: this.audioFiles.map((f) => f.toJSON()),
-      chapters: this.chapters.map((c) => ({ ...c })),
-      duration: this.duration,
-      size: this.size,
-      tracks: this.tracks.map((t) => t.toJSON()),
-      ebookFile: this.ebookFile?.toJSON() || null
-    }
-  }
-
   toJSONForMetadataFile() {
     return {
       tags: [...this.tags],

@@ -105,7 +105,6 @@ class ApiRouter {
     this.router.post('/items/batch/scan', LibraryItemController.batchScan.bind(this))
 
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
-    this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
     this.router.get('/items/:id/download', LibraryItemController.middleware.bind(this), LibraryItemController.download.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
@@ -530,110 +529,6 @@ class ApiRouter {
       listeningStats.totalTime += sessionTimeListening
     })
     return listeningStats
-  }
-
-  async createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryId) {
-    if (mediaPayload.metadata) {
-      const mediaMetadata = mediaPayload.metadata
-
-      // Create new authors if in payload
-      if (mediaMetadata.authors?.length) {
-        const newAuthors = []
-        for (let i = 0; i < mediaMetadata.authors.length; i++) {
-          const authorName = (mediaMetadata.authors[i].name || '').trim()
-          if (!authorName) {
-            Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
-            mediaMetadata.authors[i].id = null
-            continue
-          }
-
-          if (mediaMetadata.authors[i].id?.startsWith('new')) {
-            mediaMetadata.authors[i].id = null
-          }
-
-          // Ensure the ID for the author exists
-          if (mediaMetadata.authors[i].id && !(await Database.checkAuthorExists(libraryId, mediaMetadata.authors[i].id))) {
-            Logger.warn(`[ApiRouter] Author id "${mediaMetadata.authors[i].id}" does not exist`)
-            mediaMetadata.authors[i].id = null
-          }
-
-          if (!mediaMetadata.authors[i].id) {
-            let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryId)
-            if (!author) {
-              author = await Database.authorModel.create({
-                name: authorName,
-                lastFirst: Database.authorModel.getLastFirst(authorName),
-                libraryId
-              })
-              Logger.debug(`[ApiRouter] Creating new author "${author.name}"`)
-              newAuthors.push(author)
-              // Update filter data
-              Database.addAuthorToFilterData(libraryId, author.name, author.id)
-            }
-
-            // Update ID in original payload
-            mediaMetadata.authors[i].id = author.id
-          }
-        }
-        // Remove authors without an id
-        mediaMetadata.authors = mediaMetadata.authors.filter((au) => !!au.id)
-        if (newAuthors.length) {
-          SocketAuthority.emitter(
-            'authors_added',
-            newAuthors.map((au) => au.toOldJSON())
-          )
-        }
-      }
-
-      // Create new series if in payload
-      if (mediaMetadata.series && mediaMetadata.series.length) {
-        const newSeries = []
-        for (let i = 0; i < mediaMetadata.series.length; i++) {
-          const seriesName = (mediaMetadata.series[i].name || '').trim()
-          if (!seriesName) {
-            Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
-            mediaMetadata.series[i].id = null
-            continue
-          }
-
-          if (mediaMetadata.series[i].id?.startsWith('new')) {
-            mediaMetadata.series[i].id = null
-          }
-
-          // Ensure the ID for the series exists
-          if (mediaMetadata.series[i].id && !(await Database.checkSeriesExists(libraryId, mediaMetadata.series[i].id))) {
-            Logger.warn(`[ApiRouter] Series id "${mediaMetadata.series[i].id}" does not exist`)
-            mediaMetadata.series[i].id = null
-          }
-
-          if (!mediaMetadata.series[i].id) {
-            let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesName, libraryId)
-            if (!seriesItem) {
-              seriesItem = await Database.seriesModel.create({
-                name: seriesName,
-                nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
-                libraryId
-              })
-              Logger.debug(`[ApiRouter] Creating new series "${seriesItem.name}"`)
-              newSeries.push(seriesItem)
-              // Update filter data
-              Database.addSeriesToFilterData(libraryId, seriesItem.name, seriesItem.id)
-            }
-
-            // Update ID in original payload
-            mediaMetadata.series[i].id = seriesItem.id
-          }
-        }
-        // Remove series without an id
-        mediaMetadata.series = mediaMetadata.series.filter((se) => se.id)
-        if (newSeries.length) {
-          SocketAuthority.emitter(
-            'multiple_series_added',
-            newSeries.map((se) => se.toOldJSON())
-          )
-        }
-      }
-    }
   }
 }
 module.exports = ApiRouter

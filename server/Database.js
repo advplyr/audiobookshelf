@@ -401,23 +401,6 @@ class Database {
     return this.models.setting.updateSettingObj(settings.toJSON())
   }
 
-  /**
-   * Save metadata file and update library item
-   *
-   * @param {import('./objects/LibraryItem')} oldLibraryItem
-   * @returns {Promise<boolean>}
-   */
-  async updateLibraryItem(oldLibraryItem) {
-    if (!this.sequelize) return false
-    await oldLibraryItem.saveMetadata()
-    const updated = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
-    // Clear library filter data cache
-    if (updated) {
-      delete this.libraryFilterData[oldLibraryItem.libraryId]
-    }
-    return updated
-  }
-
   getPlaybackSessions(where = null) {
     if (!this.sequelize) return false
     return this.models.playbackSession.getOldPlaybackSessions(where)

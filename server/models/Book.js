@@ -542,47 +542,111 @@ class Book extends Model {
       await this.save()
     }
 
-    if (Array.isArray(payload.metadata?.authors)) {
-      const authorsRemoved = this.authors.filter((au) => !payload.metadata.authors.some((a) => a.id === au.id))
-      const newAuthors = payload.metadata.authors.filter((a) => !this.authors.some((au) => au.id === a.id))
-
-      for (const author of authorsRemoved) {
-        await this.sequelize.models.bookAuthor.removeByIds(author.id, this.id)
-        Logger.debug(`[Book] "${this.title}" Removed author ${author.id}`)
-        hasUpdates = true
-      }
-      for (const author of newAuthors) {
-        await this.sequelize.models.bookAuthor.create({ bookId: this.id, authorId: author.id })
-        Logger.debug(`[Book] "${this.title}" Added author ${author.id}`)
-        hasUpdates = true
-      }
-    }
-
-    if (Array.isArray(payload.metadata?.series)) {
-      const seriesRemoved = this.series.filter((se) => !payload.metadata.series.some((s) => s.id === se.id))
-      const newSeries = payload.metadata.series.filter((s) => !this.series.some((se) => se.id === s.id))
-
-      for (const series of seriesRemoved) {
-        await this.sequelize.models.bookSeries.removeByIds(series.id, this.id)
-        Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
-        hasUpdates = true
-      }
-      for (const series of newSeries) {
-        await this.sequelize.models.bookSeries.create({ bookId: this.id, seriesId: series.id, sequence: series.sequence })
-        Logger.debug(`[Book] "${this.title}" Added series ${series.id}`)
-        hasUpdates = true
-      }
-      for (const series of payload.metadata.series) {
-        const existingSeries = this.series.find((se) => se.id === series.id)
-        if (existingSeries && existingSeries.bookSeries.sequence !== series.sequence) {
-          await existingSeries.bookSeries.update({ sequence: series.sequence })
-          Logger.debug(`[Book] "${this.title}" Updated series ${series.id} sequence ${series.sequence}`)
-          hasUpdates = true
-        }
-      }
-    }
-
     return hasUpdates
+  }
+
+  /**
+   * Creates or removes authors from the book using the author names from the request
+   *
+   * @param {string[]} authors
+   * @param {string} libraryId
+   * @returns {Promise<{authorsRemoved: import('./Author')[], authorsAdded: import('./Author')[]}>}
+   */
+  async updateAuthorsFromRequest(authors, libraryId) {
+    if (!Array.isArray(authors)) return null
+
+    if (!this.authors) {
+      throw new Error(`[Book] Cannot update authors because authors are not loaded for book ${this.id}`)
+    }
+
+    /** @type {typeof import('./Author')} */
+    const authorModel = this.sequelize.models.author
+
+    /** @type {typeof import('./BookAuthor')} */
+    const bookAuthorModel = this.sequelize.models.bookAuthor
+
+    const authorsCleaned = authors.map((a) => a.toLowerCase()).filter((a) => a)
+    const authorsRemoved = this.authors.filter((au) => !authorsCleaned.includes(au.name.toLowerCase()))
+    const newAuthorNames = authors.filter((a) => !this.authors.some((au) => au.name.toLowerCase() === a.toLowerCase()))
+
+    for (const author of authorsRemoved) {
+      await bookAuthorModel.removeByIds(author.id, this.id)
+      Logger.debug(`[Book] "${this.title}" Removed author "${author.name}"`)
+      this.authors = this.authors.filter((au) => au.id !== author.id)
+    }
+    const authorsAdded = []
+    for (const authorName of newAuthorNames) {
+      const author = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
+      await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
+      Logger.debug(`[Book] "${this.title}" Added author "${author.name}"`)
+      this.authors.push(author)
+      authorsAdded.push(author)
+    }
+
+    return {
+      authorsRemoved,
+      authorsAdded
+    }
+  }
+
+  /**
+   * Creates or removes series from the book using the series names from the request.
+   * Updates series sequence if it has changed.
+   *
+   * @param {{ name: string, sequence: string }[]} seriesObjects
+   * @param {string} libraryId
+   * @returns {Promise<{seriesRemoved: import('./Series')[], seriesAdded: import('./Series')[], hasUpdates: boolean}>}
+   */
+  async updateSeriesFromRequest(seriesObjects, libraryId) {
+    if (!Array.isArray(seriesObjects) || seriesObjects.some((se) => !se.name || typeof se.name !== 'string')) return null
+
+    if (!this.series) {
+      throw new Error(`[Book] Cannot update series because series are not loaded for book ${this.id}`)
+    }
+
+    /** @type {typeof import('./Series')} */
+    const seriesModel = this.sequelize.models.series
+
+    /** @type {typeof import('./BookSeries')} */
+    const bookSeriesModel = this.sequelize.models.bookSeries
+
+    const seriesNamesCleaned = seriesObjects.map((se) => se.name.toLowerCase())
+    const seriesRemoved = this.series.filter((se) => !seriesNamesCleaned.includes(se.name.toLowerCase()))
+    const seriesAdded = []
+    let hasUpdates = false
+    for (const seriesObj of seriesObjects) {
+      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence : null
+
+      const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
+      if (existingSeries) {
+        if (existingSeries.bookSeries.sequence !== seriesObjSequence) {
+          existingSeries.bookSeries.sequence = seriesObjSequence
+          await existingSeries.bookSeries.save()
+          hasUpdates = true
+          Logger.debug(`[Book] "${this.title}" Updated series "${existingSeries.name}" sequence ${seriesObjSequence}`)
+        }
+      } else {
+        const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
+        series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
+        this.series.push(series)
+        seriesAdded.push(series)
+        hasUpdates = true
+        Logger.debug(`[Book] "${this.title}" Added series "${series.name}"`)
+      }
+    }
+
+    for (const series of seriesRemoved) {
+      await bookSeriesModel.removeByIds(series.id, this.id)
+      this.series = this.series.filter((se) => se.id !== series.id)
+      Logger.debug(`[Book] "${this.title}" Removed series ${series.id}`)
+      hasUpdates = true
+    }
+
+    return {
+      seriesRemoved,
+      seriesAdded,
+      hasUpdates
+    }
   }
 
   /**

@@ -75,10 +75,6 @@ class PodcastMetadata {
     }
   }
 
-  toJSONExpanded() {
-    return this.toJSONMinified()
-  }
-
   clone() {
     return new PodcastMetadata(this.toJSON())
   }
