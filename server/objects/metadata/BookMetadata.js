@@ -159,11 +159,6 @@ class BookMetadata {
   getSeries(seriesId) {
     return this.series.find((se) => se.id == seriesId)
   }
-  getSeriesSequence(seriesId) {
-    const series = this.series.find((se) => se.id == seriesId)
-    if (!series) return null
-    return series.sequence || ''
-  }
 
   update(payload) {
     const json = this.toJSON()

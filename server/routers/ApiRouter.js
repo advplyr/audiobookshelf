@@ -65,7 +65,7 @@ class ApiRouter {
     //
     // Library Routes
     //
-    this.router.get(/^\/libraries/, this.apiCacheManager.middleware)
+    this.router.get(/^\/libraries/i, this.apiCacheManager.middleware)
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
     this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))
@@ -361,36 +361,7 @@ class ApiRouter {
     }
 
     // remove item from playlists
-    const playlistsWithItem = await Database.playlistModel.getPlaylistsForMediaItemIds(mediaItemIds)
-    for (const playlist of playlistsWithItem) {
-      let numMediaItems = playlist.playlistMediaItems.length
-
-      let order = 1
-      // Remove items in playlist and re-order
-      for (const playlistMediaItem of playlist.playlistMediaItems) {
-        if (mediaItemIds.includes(playlistMediaItem.mediaItemId)) {
-          await playlistMediaItem.destroy()
-          numMediaItems--
-        } else {
-          if (playlistMediaItem.order !== order) {
-            playlistMediaItem.update({
-              order
-            })
-          }
-          order++
-        }
-      }
-
-      // If playlist is now empty then remove it
-      const jsonExpanded = await playlist.getOldJsonExpanded()
-      if (!numMediaItems) {
-        Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
-        await playlist.destroy()
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
-      } else {
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
-      }
-    }
+    await Database.playlistModel.removeMediaItemsFromPlaylists(mediaItemIds)
 
     // Close rss feed - remove from db and emit socket event
     await RssFeedManager.closeFeedForEntityId(libraryItemId)

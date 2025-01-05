@@ -1,4 +1,3 @@
-const uuidv4 = require('uuid').v4
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
@@ -177,48 +176,6 @@ class LibraryItem {
   get hasAudioFiles() {
     return this.libraryFiles.some((lf) => lf.fileType === 'audio')
   }
-  get hasMediaEntities() {
-    return this.media.hasMediaEntities
-  }
-
-  // Data comes from scandir library item data
-  // TODO: Remove this function. Only used when creating a new podcast now
-  setData(libraryMediaType, payload) {
-    this.id = uuidv4()
-    this.mediaType = libraryMediaType
-    if (libraryMediaType === 'podcast') {
-      this.media = new Podcast()
-    } else {
-      Logger.error(`[LibraryItem] setData called with unsupported media type "${libraryMediaType}"`)
-      return
-    }
-    this.media.id = uuidv4()
-    this.media.libraryItemId = this.id
-
-    for (const key in payload) {
-      if (key === 'libraryFiles') {
-        this.libraryFiles = payload.libraryFiles.map((lf) => lf.clone())
-
-        // Set cover image
-        const imageFiles = this.libraryFiles.filter((lf) => lf.fileType === 'image')
-        const coverMatch = imageFiles.find((iFile) => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
-        if (coverMatch) {
-          this.media.coverPath = coverMatch.metadata.path
-        } else if (imageFiles.length) {
-          this.media.coverPath = imageFiles[0].metadata.path
-        }
-      } else if (this[key] !== undefined && key !== 'media') {
-        this[key] = payload[key]
-      }
-    }
-
-    if (payload.media) {
-      this.media.setData(payload.media)
-    }
-
-    this.addedAt = Date.now()
-    this.updatedAt = Date.now()
-  }
 
   update(payload) {
     const json = this.toJSON()
@@ -250,10 +207,6 @@ class LibraryItem {
   setMissing() {
     this.isMissing = true
     this.updatedAt = Date.now()
-  }
-
-  getDirectPlayTracklist(episodeId) {
-    return this.media.getDirectPlayTracklist(episodeId)
   }
 
   /**
@@ -315,32 +268,6 @@ class LibraryItem {
       .finally(() => {
         this.isSavingMetadata = false
       })
-  }
-
-  removeLibraryFile(ino) {
-    if (!ino) return false
-    const libraryFile = this.libraryFiles.find((lf) => lf.ino === ino)
-    if (libraryFile) {
-      this.libraryFiles = this.libraryFiles.filter((lf) => lf.ino !== ino)
-      this.updatedAt = Date.now()
-      return true
-    }
-    return false
-  }
-
-  /**
-   * Set the EBookFile from a LibraryFile
-   * If null then ebookFile will be removed from the book
-   * all ebook library files that are not primary are marked as supplementary
-   *
-   * @param {LibraryFile} [libraryFile]
-   */
-  setPrimaryEbook(ebookLibraryFile = null) {
-    const ebookLibraryFiles = this.libraryFiles.filter((lf) => lf.isEBookFile)
-    for (const libraryFile of ebookLibraryFiles) {
-      libraryFile.isSupplementary = ebookLibraryFile?.ino !== libraryFile.ino
-    }
-    this.media.setEbookFile(ebookLibraryFile)
   }
 }
 module.exports = LibraryItem

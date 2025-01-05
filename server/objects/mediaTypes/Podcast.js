@@ -124,9 +124,6 @@ class Podcast {
     this.episodes.forEach((ep) => (total += ep.size))
     return total
   }
-  get hasMediaEntities() {
-    return !!this.episodes.length
-  }
   get duration() {
     let total = 0
     this.episodes.forEach((ep) => (total += ep.duration))
@@ -134,18 +131,6 @@ class Podcast {
   }
   get numTracks() {
     return this.episodes.length
-  }
-  get latestEpisodePublished() {
-    var largestPublishedAt = 0
-    this.episodes.forEach((ep) => {
-      if (ep.publishedAt && ep.publishedAt > largestPublishedAt) {
-        largestPublishedAt = ep.publishedAt
-      }
-    })
-    return largestPublishedAt
-  }
-  get episodesWithPubDate() {
-    return this.episodes.filter((ep) => !!ep.publishedAt)
   }
 
   update(payload) {
@@ -181,82 +166,6 @@ class Podcast {
     return true
   }
 
-  removeFileWithInode(inode) {
-    const hasEpisode = this.episodes.some((ep) => ep.audioFile.ino === inode)
-    if (hasEpisode) {
-      this.episodes = this.episodes.filter((ep) => ep.audioFile.ino !== inode)
-    }
-    return hasEpisode
-  }
-
-  findFileWithInode(inode) {
-    var episode = this.episodes.find((ep) => ep.audioFile.ino === inode)
-    if (episode) return episode.audioFile
-    return null
-  }
-
-  setData(mediaData) {
-    this.metadata = new PodcastMetadata()
-    if (mediaData.metadata) {
-      this.metadata.setData(mediaData.metadata)
-    }
-
-    this.coverPath = mediaData.coverPath || null
-    this.autoDownloadEpisodes = !!mediaData.autoDownloadEpisodes
-    this.autoDownloadSchedule = mediaData.autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule
-    this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
-  }
-
-  checkHasEpisode(episodeId) {
-    return this.episodes.some((ep) => ep.id === episodeId)
-  }
-  checkHasEpisodeByFeedEpisode(feedEpisode) {
-    const guid = feedEpisode.guid
-    const url = feedEpisode.enclosure.url
-    return this.episodes.some((ep) => (ep.guid && ep.guid === guid) || ep.checkEqualsEnclosureUrl(url))
-  }
-
-  // Only checks container format
-  checkCanDirectPlay(payload, episodeId) {
-    var episode = this.episodes.find((ep) => ep.id === episodeId)
-    if (!episode) return false
-    return episode.checkCanDirectPlay(payload)
-  }
-
-  getDirectPlayTracklist(episodeId) {
-    var episode = this.episodes.find((ep) => ep.id === episodeId)
-    if (!episode) return false
-    return episode.getDirectPlayTracklist()
-  }
-
-  addPodcastEpisode(podcastEpisode) {
-    this.episodes.push(podcastEpisode)
-  }
-
-  removeEpisode(episodeId) {
-    const episode = this.episodes.find((ep) => ep.id === episodeId)
-    if (episode) {
-      this.episodes = this.episodes.filter((ep) => ep.id !== episodeId)
-    }
-    return episode
-  }
-
-  getPlaybackTitle(episodeId) {
-    var episode = this.episodes.find((ep) => ep.id == episodeId)
-    if (!episode) return this.metadata.title
-    return episode.title
-  }
-
-  getPlaybackAuthor() {
-    return this.metadata.author
-  }
-
-  getEpisodeDuration(episodeId) {
-    var episode = this.episodes.find((ep) => ep.id == episodeId)
-    if (!episode) return 0
-    return episode.duration
-  }
-
   getEpisode(episodeId) {
     if (!episodeId) return null
 
@@ -264,10 +173,6 @@ class Podcast {
     if (episodeId.startsWith('ep_')) return this.episodes.find((ep) => ep.oldEpisodeId == episodeId)
 
     return this.episodes.find((ep) => ep.id == episodeId)
-  }
-
-  getChapters(episodeId) {
-    return this.getEpisode(episodeId)?.chapters?.map((ch) => ({ ...ch })) || []
   }
 }
 module.exports = Podcast

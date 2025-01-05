@@ -163,13 +163,10 @@ export default {
 
       this.isProcessing = false
       if (updateResult) {
-        if (updateResult) {
-          this.$toast.success(this.$strings.ToastItemUpdateSuccess)
-          return true
-        } else {
-          this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
-        }
+        this.$toast.success(this.$strings.ToastItemUpdateSuccess)
+        return true
       }
+
       return false
     }
   },

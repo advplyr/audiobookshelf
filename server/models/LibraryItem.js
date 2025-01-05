@@ -123,45 +123,6 @@ class LibraryItem extends Model {
   }
 
   /**
-   * Currently unused because this is too slow and uses too much mem
-   * @param {import('sequelize').WhereOptions} [where]
-   * @returns {Array<objects.LibraryItem>} old library items
-   */
-  static async getAllOldLibraryItems(where = null) {
-    let libraryItems = await this.findAll({
-      where,
-      include: [
-        {
-          model: this.sequelize.models.book,
-          include: [
-            {
-              model: this.sequelize.models.author,
-              through: {
-                attributes: []
-              }
-            },
-            {
-              model: this.sequelize.models.series,
-              through: {
-                attributes: ['sequence']
-              }
-            }
-          ]
-        },
-        {
-          model: this.sequelize.models.podcast,
-          include: [
-            {
-              model: this.sequelize.models.podcastEpisode
-            }
-          ]
-        }
-      ]
-    })
-    return libraryItems.map((ti) => this.getOldLibraryItem(ti))
-  }
-
-  /**
    * Convert an expanded LibraryItem into an old library item
    *
    * @param {Model<LibraryItem>} libraryItemExpanded
@@ -197,40 +158,6 @@ class LibraryItem extends Model {
       media,
       libraryFiles: libraryItemExpanded.libraryFiles
     })
-  }
-
-  static async fullCreateFromOld(oldLibraryItem) {
-    const newLibraryItem = await this.create(this.getFromOld(oldLibraryItem))
-
-    if (oldLibraryItem.mediaType === 'book') {
-      const bookObj = this.sequelize.models.book.getFromOld(oldLibraryItem.media)
-      bookObj.libraryItemId = newLibraryItem.id
-      const newBook = await this.sequelize.models.book.create(bookObj)
-
-      const oldBookAuthors = oldLibraryItem.media.metadata.authors || []
-      const oldBookSeriesAll = oldLibraryItem.media.metadata.series || []
-
-      for (const oldBookAuthor of oldBookAuthors) {
-        await this.sequelize.models.bookAuthor.create({ authorId: oldBookAuthor.id, bookId: newBook.id })
-      }
-      for (const oldSeries of oldBookSeriesAll) {
-        await this.sequelize.models.bookSeries.create({ seriesId: oldSeries.id, bookId: newBook.id, sequence: oldSeries.sequence })
-      }
-    } else if (oldLibraryItem.mediaType === 'podcast') {
-      const podcastObj = this.sequelize.models.podcast.getFromOld(oldLibraryItem.media)
-      podcastObj.libraryItemId = newLibraryItem.id
-      const newPodcast = await this.sequelize.models.podcast.create(podcastObj)
-
-      const oldEpisodes = oldLibraryItem.media.episodes || []
-      for (const oldEpisode of oldEpisodes) {
-        const episodeObj = this.sequelize.models.podcastEpisode.getFromOld(oldEpisode)
-        episodeObj.libraryItemId = newLibraryItem.id
-        episodeObj.podcastId = newPodcast.id
-        await this.sequelize.models.podcastEpisode.create(episodeObj)
-      }
-    }
-
-    return newLibraryItem
   }
 
   /**
@@ -450,6 +377,47 @@ class LibraryItem extends Model {
 
   /**
    *
+   * @param {import('sequelize').WhereOptions} where
+   * @returns {Promise<LibraryItemExpanded[]>}
+   */
+  static async findAllExpandedWhere(where = null) {
+    return this.findAll({
+      where,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: this.sequelize.models.podcast,
+          include: {
+            model: this.sequelize.models.podcastEpisode
+          }
+        }
+      ],
+      order: [
+        // Ensure author & series stay in the same order
+        [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+      ]
+    })
+  }
+
+  /**
+   *
    * @param {string} libraryItemId
    * @returns {Promise<LibraryItemExpanded>}
    */
@@ -459,6 +427,57 @@ class LibraryItem extends Model {
     const libraryItem = await this.findByPk(libraryItemId)
     if (!libraryItem) {
       Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
+      return null
+    }
+
+    if (libraryItem.mediaType === 'podcast') {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      libraryItem.media = await libraryItem.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['id', 'sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+
+    if (!libraryItem.media) return null
+    return libraryItem
+  }
+
+  /**
+   *
+   * @param {import('sequelize').WhereOptions} where
+   * @param {import('sequelize').IncludeOptions} [include]
+   * @returns {Promise<LibraryItemExpanded>}
+   */
+  static async findOneExpanded(where, include = null) {
+    const libraryItem = await this.findOne({
+      where,
+      include
+    })
+    if (!libraryItem) {
+      Logger.error(`[LibraryItem] Library item not found`)
       return null
     }
 
@@ -560,7 +579,7 @@ class LibraryItem extends Model {
 
     return {
       libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
+        const oldLibraryItem = li.toOldJSONMinified()
         if (li.collapsedSeries) {
           oldLibraryItem.collapsedSeries = li.collapsedSeries
         }
@@ -766,21 +785,11 @@ class LibraryItem extends Model {
    * Get book library items for author, optional use user permissions
    * @param {import('./Author')} author
    * @param {import('./User')} user
-   * @returns {Promise<oldLibraryItem[]>}
+   * @returns {Promise<LibraryItemExpanded[]>}
    */
   static async getForAuthor(author, user = null) {
     const { libraryItems } = await libraryFilters.getLibraryItemsForAuthor(author, user, undefined, undefined)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
-  }
-
-  /**
-   * Get book library items in a collection
-   * @param {oldCollection} collection
-   * @returns {Promise<oldLibraryItem[]>}
-   */
-  static async getForCollection(collection) {
-    const libraryItems = await libraryFilters.getLibraryItemsForCollection(collection)
-    return libraryItems.map((li) => this.getOldLibraryItem(li))
+    return libraryItems
   }
 
   /**
@@ -863,54 +872,6 @@ class LibraryItem extends Model {
     }
 
     return libraryItem.media.coverPath
-  }
-
-  /**
-   *
-   * @param {import('sequelize').FindOptions} options
-   * @returns {Promise<Book|Podcast>}
-   */
-  getMedia(options) {
-    if (!this.mediaType) return Promise.resolve(null)
-    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`
-    return this[mixinMethodName](options)
-  }
-
-  /**
-   *
-   * @returns {Promise<Book|Podcast>}
-   */
-  getMediaExpanded() {
-    if (this.mediaType === 'podcast') {
-      return this.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.podcastEpisode
-          }
-        ]
-      })
-    } else {
-      return this.getMedia({
-        include: [
-          {
-            model: this.sequelize.models.author,
-            through: {
-              attributes: []
-            }
-          },
-          {
-            model: this.sequelize.models.series,
-            through: {
-              attributes: ['sequence']
-            }
-          }
-        ],
-        order: [
-          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
-        ]
-      })
-    }
   }
 
   /**
@@ -1062,6 +1023,9 @@ class LibraryItem extends Model {
             fields: ['libraryId', 'mediaType']
           },
           {
+            fields: ['libraryId', 'mediaType', 'size']
+          },
+          {
             fields: ['libraryId', 'mediaId', 'mediaType']
           },
           {
@@ -1128,6 +1092,64 @@ class LibraryItem extends Model {
     })
   }
 
+  get isBook() {
+    return this.mediaType === 'book'
+  }
+  get isPodcast() {
+    return this.mediaType === 'podcast'
+  }
+  get hasAudioTracks() {
+    return this.media.hasAudioTracks()
+  }
+
+  /**
+   *
+   * @param {import('sequelize').FindOptions} options
+   * @returns {Promise<Book|Podcast>}
+   */
+  getMedia(options) {
+    if (!this.mediaType) return Promise.resolve(null)
+    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaType)}`
+    return this[mixinMethodName](options)
+  }
+
+  /**
+   *
+   * @returns {Promise<Book|Podcast>}
+   */
+  getMediaExpanded() {
+    if (this.mediaType === 'podcast') {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.podcastEpisode
+          }
+        ]
+      })
+    } else {
+      return this.getMedia({
+        include: [
+          {
+            model: this.sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: this.sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          }
+        ],
+        order: [
+          [this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
+        ]
+      })
+    }
+  }
+
   /**
    * Check if book or podcast library item has audio tracks
    * Requires expanded library item
@@ -1139,10 +1161,147 @@ class LibraryItem extends Model {
       Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
       return false
     }
-    if (this.mediaType === 'book') {
+    if (this.isBook) {
       return this.media.audioFiles?.length > 0
     } else {
       return this.media.podcastEpisodes?.length > 0
+    }
+  }
+
+  /**
+   *
+   * @param {string} ino
+   * @returns {import('./Book').AudioFileObject}
+   */
+  getAudioFileWithIno(ino) {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] getAudioFileWithIno: Library item "${this.id}" does not have media`)
+      return null
+    }
+    if (this.isBook) {
+      return this.media.audioFiles.find((af) => af.ino === ino)
+    } else {
+      return this.media.podcastEpisodes.find((pe) => pe.audioFile?.ino === ino)?.audioFile
+    }
+  }
+
+  /**
+   * Get the track list to be used in client audio players
+   * AudioTrack is the AudioFile with startOffset and contentUrl
+   * Podcasts must have an episodeId to get the track list
+   *
+   * @param {string} [episodeId]
+   * @returns {import('./Book').AudioTrack[]}
+   */
+  getTrackList(episodeId) {
+    if (!this.media) {
+      Logger.error(`[LibraryItem] getTrackList: Library item "${this.id}" does not have media`)
+      return []
+    }
+    return this.media.getTracklist(this.id, episodeId)
+  }
+
+  /**
+   *
+   * @param {string} ino
+   * @returns {LibraryFile}
+   */
+  getLibraryFileWithIno(ino) {
+    const libraryFile = this.libraryFiles.find((lf) => lf.ino === ino)
+    if (!libraryFile) return null
+    return new LibraryFile(libraryFile)
+  }
+
+  getLibraryFiles() {
+    return this.libraryFiles.map((lf) => new LibraryFile(lf))
+  }
+
+  getLibraryFilesJson() {
+    return this.libraryFiles.map((lf) => new LibraryFile(lf).toJSON())
+  }
+
+  toOldJSON() {
+    if (!this.media) {
+      throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
+    }
+
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      lastScan: this.lastScan?.valueOf(),
+      scanVersion: this.lastScanVersion,
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSON(this.id),
+      // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
+      libraryFiles: this.getLibraryFilesJson()
+    }
+  }
+
+  toOldJSONMinified() {
+    if (!this.media) {
+      throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
+    }
+
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSONMinified(),
+      numFiles: this.libraryFiles.length,
+      size: this.size
+    }
+  }
+
+  toOldJSONExpanded() {
+    return {
+      id: this.id,
+      ino: this.ino,
+      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
+      libraryId: this.libraryId,
+      folderId: this.libraryFolderId,
+      path: this.path,
+      relPath: this.relPath,
+      isFile: this.isFile,
+      mtimeMs: this.mtime?.valueOf(),
+      ctimeMs: this.ctime?.valueOf(),
+      birthtimeMs: this.birthtime?.valueOf(),
+      addedAt: this.createdAt.valueOf(),
+      updatedAt: this.updatedAt.valueOf(),
+      lastScan: this.lastScan?.valueOf(),
+      scanVersion: this.lastScanVersion,
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid,
+      mediaType: this.mediaType,
+      media: this.media.toOldJSONExpanded(this.id),
+      // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
+      libraryFiles: this.getLibraryFilesJson(),
+      size: this.size
     }
   }
 }

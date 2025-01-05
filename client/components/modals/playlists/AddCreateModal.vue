@@ -130,7 +130,6 @@ export default {
         .$post(`/api/playlists/${playlist.id}/batch/remove`, { items: itemObjects })
         .then((updatedPlaylist) => {
           console.log(`Items removed from playlist`, updatedPlaylist)
-          this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           this.processing = false
         })
         .catch((error) => {
@@ -148,7 +147,6 @@ export default {
         .$post(`/api/playlists/${playlist.id}/batch/add`, { items: itemObjects })
         .then((updatedPlaylist) => {
           console.log(`Items added to playlist`, updatedPlaylist)
-          this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           this.processing = false
         })
         .catch((error) => {
@@ -174,7 +172,6 @@ export default {
         .$post('/api/playlists', newPlaylist)
         .then((data) => {
           console.log('New playlist created', data)
-          this.$toast.success(this.$strings.ToastPlaylistCreateSuccess + ': ' + data.name)
           this.processing = false
           this.newPlaylistName = ''
         })

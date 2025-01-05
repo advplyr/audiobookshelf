@@ -1145,14 +1145,14 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      itemsUpdated.push(oldLibraryItem)
+
+      itemsUpdated.push(libraryItem)
     }
 
     if (itemsUpdated.length) {
       SocketAuthority.emitter(
         'items_updated',
-        itemsUpdated.map((li) => li.toJSONExpanded())
+        itemsUpdated.map((li) => li.toOldJSONExpanded())
       )
     }
 
@@ -1189,14 +1189,14 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      itemsUpdated.push(oldLibraryItem)
+
+      itemsUpdated.push(libraryItem)
     }
 
     if (itemsUpdated.length) {
       SocketAuthority.emitter(
         'items_updated',
-        itemsUpdated.map((li) => li.toJSONExpanded())
+        itemsUpdated.map((li) => li.toOldJSONExpanded())
       )
     }
 
