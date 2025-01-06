@@ -168,7 +168,7 @@ class PodcastEpisode extends Model {
   getAudioTrack(libraryItemId) {
     const track = structuredClone(this.audioFile)
     track.startOffset = 0
-    track.title = this.audioFile.metadata.title
+    track.title = this.audioFile.metadata.filename
     track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
     return track
   }
