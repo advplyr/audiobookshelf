@@ -343,20 +343,20 @@ class PlaybackSessionManager {
    * @param {import('../models/User')} user
    * @param {*} session
    * @param {*} syncData
-   * @returns
+   * @returns {Promise<boolean>}
    */
   async syncSession(user, session, syncData) {
     // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getExpandedById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
-      return null
+      return false
     }
 
     const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
     if (!library) {
       Logger.error(`[PlaybackSessionManager] syncSession Library not found "${libraryItem.libraryId}"`)
-      return null
+      return false
     }
 
     session.currentTime = syncData.currentTime
@@ -382,6 +382,8 @@ class PlaybackSessionManager {
       })
     }
     this.saveSession(session)
+
+    return true
   }
 
   /**
