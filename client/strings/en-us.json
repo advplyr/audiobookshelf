@@ -976,6 +976,7 @@
   "ToastEpisodeDownloadQueueClearFailed": "Failed to clear queue",
   "ToastEpisodeDownloadQueueClearSuccess": "Episode download queue cleared",
   "ToastEpisodeUpdateSuccess": "{0} episodes updated",
+  "ToastEpisodePubDateUpdateFailed": "Publish date is required",
   "ToastErrorCannotShare": "Cannot share natively on this device",
   "ToastFailedToLoadData": "Failed to load data",
   "ToastFailedToMatch": "Failed to match",

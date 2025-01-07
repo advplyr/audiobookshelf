@@ -150,6 +150,12 @@ export default {
         this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return false
       }
+
+      // Check pubdate is valid if it is being updated. Cannot be set to null in the web client
+      if (updatedDetails.pubDate === null) {
+        this.$toast.error(this.$strings.ToastEpisodePubDateUpdateFailed)
+        return null
+      }
       return this.updateDetails(updatedDetails)
     },
     async updateDetails(updatedDetails) {
