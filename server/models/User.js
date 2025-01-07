@@ -563,9 +563,8 @@ class User extends Model {
 
   /**
    * Check user can access library item
-   * TODO: Currently supports both old and new library item models
    *
-   * @param {import('../objects/LibraryItem')|import('./LibraryItem')} libraryItem
+   * @param {import('./LibraryItem')} libraryItem
    * @returns {boolean}
    */
   checkCanAccessLibraryItem(libraryItem) {

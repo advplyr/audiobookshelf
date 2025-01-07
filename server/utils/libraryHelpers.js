@@ -10,35 +10,41 @@ const naturalSort = createNewSortInstance({
 })
 
 module.exports = {
-  getSeriesFromBooks(books, filterSeries, hideSingleBookSeries) {
+  /**
+   *
+   * @param {import('../models/LibraryItem')[]} libraryItems
+   * @param {*} filterSeries
+   * @param {*} hideSingleBookSeries
+   * @returns
+   */
+  getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries) {
     const _series = {}
     const seriesToFilterOut = {}
-    books.forEach((libraryItem) => {
+    libraryItems.forEach((libraryItem) => {
       // get all book series for item that is not already filtered out
-      const bookSeries = (libraryItem.media.metadata.series || []).filter((se) => !seriesToFilterOut[se.id])
-      if (!bookSeries.length) return
+      const allBookSeries = (libraryItem.media.series || []).filter((se) => !seriesToFilterOut[se.id])
+      if (!allBookSeries.length) return
 
-      bookSeries.forEach((bookSeriesObj) => {
-        // const series = allSeries.find(se => se.id === bookSeriesObj.id)
-
-        const abJson = libraryItem.toJSONMinified()
-        abJson.sequence = bookSeriesObj.sequence
+      allBookSeries.forEach((bookSeries) => {
+        const abJson = libraryItem.toOldJSONMinified()
+        abJson.sequence = bookSeries.bookSeries.sequence
         if (filterSeries) {
-          abJson.filterSeriesSequence = libraryItem.media.metadata.getSeries(filterSeries).sequence
+          const series = libraryItem.media.series.find((se) => se.id === filterSeries)
+          abJson.filterSeriesSequence = series.bookSeries.sequence
         }
-        if (!_series[bookSeriesObj.id]) {
-          _series[bookSeriesObj.id] = {
-            id: bookSeriesObj.id,
-            name: bookSeriesObj.name,
-            nameIgnorePrefix: getTitlePrefixAtEnd(bookSeriesObj.name),
-            nameIgnorePrefixSort: getTitleIgnorePrefix(bookSeriesObj.name),
+        if (!_series[bookSeries.id]) {
+          _series[bookSeries.id] = {
+            id: bookSeries.id,
+            name: bookSeries.name,
+            nameIgnorePrefix: getTitlePrefixAtEnd(bookSeries.name),
+            nameIgnorePrefixSort: getTitleIgnorePrefix(bookSeries.name),
             type: 'series',
             books: [abJson],
             totalDuration: isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
           }
         } else {
-          _series[bookSeriesObj.id].books.push(abJson)
-          _series[bookSeriesObj.id].totalDuration += isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
+          _series[bookSeries.id].books.push(abJson)
+          _series[bookSeries.id].totalDuration += isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
         }
       })
     })
@@ -56,6 +62,13 @@ module.exports = {
     })
   },
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')[]} libraryItems
+   * @param {string} filterSeries - series id
+   * @param {boolean} hideSingleBookSeries
+   * @returns
+   */
   collapseBookSeries(libraryItems, filterSeries, hideSingleBookSeries) {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
@@ -169,8 +182,9 @@ module.exports = {
     let libraryItems = books
       .map((book) => {
         const libraryItem = book.libraryItem
+        delete book.libraryItem
         libraryItem.media = book
-        return Database.libraryItemModel.getOldLibraryItem(libraryItem)
+        return libraryItem
       })
       .filter((li) => {
         return user.checkCanAccessLibraryItem(li)
@@ -189,15 +203,18 @@ module.exports = {
     if (!payload.sortBy || payload.sortBy === 'sequence') {
       sortArray = [
         {
-          [direction]: (li) => li.media.metadata.getSeries(seriesId).sequence
+          [direction]: (li) => {
+            const series = li.media.series.find((se) => se.id === seriesId)
+            return series.bookSeries.sequence
+          }
         },
         {
           // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
           [direction]: (li) => {
             if (sortingIgnorePrefix) {
-              return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+              return li.collapsedSeries?.nameIgnorePrefix || li.media.titleIgnorePrefix
             } else {
-              return li.collapsedSeries?.name || li.media.metadata.title
+              return li.collapsedSeries?.name || li.media.title
             }
           }
         }
@@ -220,9 +237,9 @@ module.exports = {
         [direction]: (li) => {
           if (payload.sortBy === 'media.metadata.title') {
             if (sortingIgnorePrefix) {
-              return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+              return li.collapsedSeries?.nameIgnorePrefix || li.media.titleIgnorePrefix
             } else {
-              return li.collapsedSeries?.name || li.media.metadata.title
+              return li.collapsedSeries?.name || li.media.title
             }
           } else {
             return payload.sortBy.split('.').reduce((a, b) => a[b], li)
@@ -240,12 +257,12 @@ module.exports = {
 
     return Promise.all(
       libraryItems.map(async (li) => {
-        const filteredSeries = li.media.metadata.getSeries(seriesId)
-        const json = li.toJSONMinified()
+        const filteredSeries = li.media.series.find((se) => se.id === seriesId)
+        const json = li.toOldJSONMinified()
         json.media.metadata.series = {
           id: filteredSeries.id,
           name: filteredSeries.name,
-          sequence: filteredSeries.sequence
+          sequence: filteredSeries.bookSeries.sequence
         }
 
         if (li.collapsedSeries) {

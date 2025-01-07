@@ -771,7 +771,6 @@
   "MessageItemsSelected": "{0} vybraných položek",
   "MessageItemsUpdated": "{0} položky byly aktualizovány",
   "MessageJoinUsOn": "Přidejte se k nám",
-  "MessageListeningSessionsInTheLastYear": "{0} poslechových relací za poslední rok",
   "MessageLoading": "Načítá se...",
   "MessageLoadingFolders": "Načítám složky...",
   "MessageLogsDescription": "Protokoly se ukládají do souborů JSON v <code>/metadata/logs</code>. Protokoly o pádech jsou uloženy v <code>/metadata/logs/crash_logs.txt</code>.",

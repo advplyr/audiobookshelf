@@ -1,7 +1,7 @@
 <template>
   <div id="heatmap" class="w-full">
     <div class="mx-auto" :style="{ height: innerHeight + 160 + 'px', width: innerWidth + 52 + 'px' }" style="background-color: rgba(13, 17, 23, 0)">
-      <p class="mb-2 px-1 text-sm text-gray-200">{{ $getString('MessageListeningSessionsInTheLastYear', [Object.values(daysListening).length]) }}</p>
+      <p class="mb-2 px-1 text-sm text-gray-200">{{ $getString('MessageDaysListenedInTheLastYear', [daysListenedInTheLastYear]) }}</p>
       <div class="border border-white border-opacity-25 rounded py-2 w-full" style="background-color: #232323" :style="{ height: innerHeight + 80 + 'px' }">
         <div :style="{ width: innerWidth + 'px', height: innerHeight + 'px' }" class="ml-10 mt-5 absolute" @mouseover="mouseover" @mouseout="mouseout">
           <div v-for="dayLabel in dayLabels" :key="dayLabel.label" :style="dayLabel.style" class="absolute top-0 left-0 text-gray-300">{{ dayLabel.label }}</div>
@@ -37,6 +37,7 @@ export default {
       innerHeight: 13 * 7,
       blockWidth: 13,
       data: [],
+      daysListenedInTheLastYear: 0,
       monthLabels: [],
       tooltipEl: null,
       tooltipTextEl: null,
@@ -61,9 +62,6 @@ export default {
     },
     dayOfWeekToday() {
       return new Date().getDay()
-    },
-    firstWeekStart() {
-      return this.$addDaysToToday(-this.daysToShow)
     },
     dayLabels() {
       return [
@@ -197,12 +195,25 @@ export default {
       let minValue = 0
 
       const dates = []
-      for (let i = 0; i < this.daysToShow + 1; i++) {
-        const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
+
+      const numDaysInTheLastYear = 52 * 7 + this.dayOfWeekToday
+      const firstDay = this.$addDaysToToday(-numDaysInTheLastYear)
+      for (let i = 0; i < numDaysInTheLastYear + 1; i++) {
+        const date = i === 0 ? firstDay : this.$addDaysToDate(firstDay, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
+
+        if (this.daysListening[dateString] > 0) {
+          this.daysListenedInTheLastYear++
+        }
+
+        const visibleDayIndex = i - (numDaysInTheLastYear - this.daysToShow)
+        if (visibleDayIndex < 0) {
+          continue
+        }
+
         const dateObj = {
-          col: Math.floor(i / 7),
-          row: i % 7,
+          col: Math.floor(visibleDayIndex / 7),
+          row: visibleDayIndex % 7,
           date,
           dateString,
           datePretty: this.$formatJsDate(date, 'MMM d, yyyy'),
@@ -213,7 +224,7 @@ export default {
         }
         dates.push(dateObj)
 
-        if (dateObj.value) {
+        if (dateObj.value > 0) {
           if (dateObj.value > maxValue) maxValue = dateObj.value
           if (!minValue || dateObj.value < minValue) minValue = dateObj.value
         }
@@ -260,6 +271,7 @@ export default {
       const heatmapEl = document.getElementById('heatmap')
       this.contentWidth = heatmapEl.clientWidth
       this.maxInnerWidth = this.contentWidth - 52
+      this.daysListenedInTheLastYear = 0
       this.buildData()
     }
   },

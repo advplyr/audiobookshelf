@@ -106,7 +106,7 @@ class EmailController {
       return res.sendStatus(403)
     }
 
-    const libraryItem = await Database.libraryItemModel.getOldById(req.body.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.body.libraryItemId)
     if (!libraryItem) {
       return res.status(404).send('Library item not found')
     }

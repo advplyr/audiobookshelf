@@ -1,6 +1,6 @@
 const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
-const { getTitlePrefixAtEnd } = require('../utils/index')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
 
 class Series extends Model {
   constructor(values, options) {
@@ -64,6 +64,22 @@ class Series extends Model {
     if (!series) return null
     series.books = await series.getBooksExpandedWithLibraryItem()
     return series
+  }
+
+  /**
+   *
+   * @param {string} seriesName
+   * @param {string} libraryId
+   * @returns {Promise<Series>}
+   */
+  static async findOrCreateByNameAndLibrary(seriesName, libraryId) {
+    const series = await this.getByNameAndLibrary(seriesName, libraryId)
+    if (series) return series
+    return this.create({
+      name: seriesName,
+      nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
+      libraryId
+    })
   }
 
   /**

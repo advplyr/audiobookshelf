@@ -149,7 +149,7 @@ class SessionController {
    * @param {Response} res
    */
   async getOpenSession(req, res) {
-    const libraryItem = await Database.libraryItemModel.getOldById(req.playbackSession.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.playbackSession.libraryItemId)
     const sessionForClient = req.playbackSession.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }

@@ -282,7 +282,7 @@ class Collection extends Model {
       const libraryItem = book.libraryItem
       delete book.libraryItem
       libraryItem.media = book
-      return this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem).toJSONExpanded()
+      return libraryItem.toOldJSONExpanded()
     })
 
     return json

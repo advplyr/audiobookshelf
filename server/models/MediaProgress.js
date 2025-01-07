@@ -36,45 +36,12 @@ class MediaProgress extends Model {
     this.createdAt
   }
 
-  static upsertFromOld(oldMediaProgress) {
-    const mediaProgress = this.getFromOld(oldMediaProgress)
-    return this.upsert(mediaProgress)
-  }
-
-  static getFromOld(oldMediaProgress) {
-    return {
-      id: oldMediaProgress.id,
-      userId: oldMediaProgress.userId,
-      mediaItemId: oldMediaProgress.mediaItemId,
-      mediaItemType: oldMediaProgress.mediaItemType,
-      duration: oldMediaProgress.duration,
-      currentTime: oldMediaProgress.currentTime,
-      ebookLocation: oldMediaProgress.ebookLocation || null,
-      ebookProgress: oldMediaProgress.ebookProgress || null,
-      isFinished: !!oldMediaProgress.isFinished,
-      hideFromContinueListening: !!oldMediaProgress.hideFromContinueListening,
-      finishedAt: oldMediaProgress.finishedAt,
-      createdAt: oldMediaProgress.startedAt || oldMediaProgress.lastUpdate,
-      updatedAt: oldMediaProgress.lastUpdate,
-      extraData: {
-        libraryItemId: oldMediaProgress.libraryItemId,
-        progress: oldMediaProgress.progress
-      }
-    }
-  }
-
   static removeById(mediaProgressId) {
     return this.destroy({
       where: {
         id: mediaProgressId
       }
     })
-  }
-
-  getMediaItem(options) {
-    if (!this.mediaItemType) return Promise.resolve(null)
-    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaItemType)}`
-    return this[mixinMethodName](options)
   }
 
   /**
@@ -160,6 +127,12 @@ class MediaProgress extends Model {
       onDelete: 'CASCADE'
     })
     MediaProgress.belongsTo(user)
+  }
+
+  getMediaItem(options) {
+    if (!this.mediaItemType) return Promise.resolve(null)
+    const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaItemType)}`
+    return this[mixinMethodName](options)
   }
 
   getOldMediaProgress() {

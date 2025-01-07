@@ -1,5 +1,6 @@
 const { DataTypes, Model, Op } = require('sequelize')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 
 class Playlist extends Model {
   constructor(values, options) {
@@ -164,6 +165,49 @@ class Playlist extends Model {
   }
 
   /**
+   * Removes media items and re-orders playlists
+   *
+   * @param {string[]} mediaItemIds
+   */
+  static async removeMediaItemsFromPlaylists(mediaItemIds) {
+    if (!mediaItemIds?.length) return
+
+    const playlistsWithItem = await this.getPlaylistsForMediaItemIds(mediaItemIds)
+
+    if (!playlistsWithItem.length) return
+
+    for (const playlist of playlistsWithItem) {
+      let numMediaItems = playlist.playlistMediaItems.length
+
+      let order = 1
+      // Remove items in playlist and re-order
+      for (const playlistMediaItem of playlist.playlistMediaItems) {
+        if (mediaItemIds.includes(playlistMediaItem.mediaItemId)) {
+          await playlistMediaItem.destroy()
+          numMediaItems--
+        } else {
+          if (playlistMediaItem.order !== order) {
+            playlistMediaItem.update({
+              order
+            })
+          }
+          order++
+        }
+      }
+
+      // If playlist is now empty then remove it
+      const jsonExpanded = await playlist.getOldJsonExpanded()
+      if (!numMediaItems) {
+        Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
+        await playlist.destroy()
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
+      } else {
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
+      }
+    }
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
@@ -313,7 +357,7 @@ class Playlist extends Model {
         libraryItem.media = pmi.mediaItem
         return {
           libraryItemId: libraryItem.id,
-          libraryItem: this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem).toJSONExpanded()
+          libraryItem: libraryItem.toOldJSONExpanded()
         }
       }
 
@@ -324,7 +368,7 @@ class Playlist extends Model {
         episodeId: pmi.mediaItemId,
         episode: pmi.mediaItem.toOldJSONExpanded(libraryItem.id),
         libraryItemId: libraryItem.id,
-        libraryItem: this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem).toJSONMinified()
+        libraryItem: libraryItem.toOldJSONMinified()
       }
     })
 

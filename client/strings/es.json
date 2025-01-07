@@ -771,7 +771,6 @@
   "MessageItemsSelected": "{0} Elementos Seleccionados",
   "MessageItemsUpdated": "{0} Elementos Actualizados",
   "MessageJoinUsOn": "Únetenos en",
-  "MessageListeningSessionsInTheLastYear": "{0} sesiones de escucha en el último año",
   "MessageLoading": "Cargando...",
   "MessageLoadingFolders": "Cargando archivos...",
   "MessageLogsDescription": "Logs son almacenados en <code>/metadata/logs</code> en archivos bajo formato JSON. Logs de fallos son almacenados en <code>/metadata/logs/crash_logs.txt</code>.",

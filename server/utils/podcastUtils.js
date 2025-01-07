@@ -4,6 +4,49 @@ const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
+/**
+ * @typedef RssPodcastEpisode
+ * @property {string} title
+ * @property {string} subtitle
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} pubDate
+ * @property {string} episodeType
+ * @property {string} season
+ * @property {string} episode
+ * @property {string} author
+ * @property {string} duration
+ * @property {string} explicit
+ * @property {number} publishedAt - Unix timestamp
+ * @property {{ url: string, type?: string, length?: string }} enclosure
+ * @property {string} guid
+ * @property {string} chaptersUrl
+ * @property {string} chaptersType
+ */
+
+/**
+ * @typedef RssPodcastMetadata
+ * @property {string} title
+ * @property {string} language
+ * @property {string} explicit
+ * @property {string} author
+ * @property {string} pubDate
+ * @property {string} link
+ * @property {string} image
+ * @property {string[]} categories
+ * @property {string} feedUrl
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} type
+ */
+
+/**
+ * @typedef RssPodcast
+ * @property {RssPodcastMetadata} metadata
+ * @property {RssPodcastEpisode[]} episodes
+ * @property {number} numEpisodes
+ */
+
 function extractFirstArrayItem(json, key) {
   if (!json[key]?.length) return null
   return json[key][0]
@@ -223,7 +266,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
  *
  * @param {string} feedUrl
  * @param {boolean} [excludeEpisodeMetadata=false]
- * @returns {Promise}
+ * @returns {Promise<RssPodcast|null>}
  */
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
@@ -287,6 +330,12 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   return this.findMatchingEpisodesInFeed(feed, searchTitle)
 }
 
+/**
+ *
+ * @param {RssPodcast} feed
+ * @param {string} searchTitle
+ * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ */
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   searchTitle = searchTitle.toLowerCase().trim()
   if (!feed?.episodes) {
