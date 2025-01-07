@@ -113,6 +113,10 @@ export default {
           return false
         })
         console.log('updateResult', updateResult)
+      } else if (!lastEpisodeCheck) {
+        this.$toast.error(this.$strings.ToastDateTimeInvalidOrIncomplete)
+        this.checkingNewEpisodes = false
+        return false
       }
 
       this.$axios
