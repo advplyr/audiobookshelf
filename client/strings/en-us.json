@@ -964,7 +964,7 @@
   "ToastCollectionRemoveSuccess": "Collection removed",
   "ToastCollectionUpdateSuccess": "Collection updated",
   "ToastCoverUpdateFailed": "Cover update failed",
-  "ToastDateMustBeComplete": "Date and time cannot be incomplete",
+  "ToastDateTimeInvalidOrIncomplete": "Date and time is invalid or incomplete",
   "ToastDeleteFileFailed": "Failed to delete file",
   "ToastDeleteFileSuccess": "File deleted",
   "ToastDeviceAddFailed": "Failed to add device",

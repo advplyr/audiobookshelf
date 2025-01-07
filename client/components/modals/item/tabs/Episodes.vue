@@ -114,7 +114,7 @@ export default {
         })
         console.log('updateResult', updateResult)
       } else if (!lastEpisodeCheck) {
-        this.$toast.error(this.$strings.ToastDateMustBeComplete)
+        this.$toast.error(this.$strings.ToastDateTimeInvalidOrIncomplete)
         this.checkingNewEpisodes = false
         return false
       }

@@ -11,7 +11,7 @@
         <ui-dropdown v-model="newEpisode.episodeType" :label="$strings.LabelEpisodeType" :items="episodeTypes" small />
       </div>
       <div class="w-2/5 p-1">
-        <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" :label="$strings.LabelPubDate" />
+        <ui-text-input-with-label v-model="pubDateInput" ref="pubdate" type="datetime-local" :label="$strings.LabelPubDate" @input="updatePubDate" />
       </div>
       <div class="w-full p-1">
         <ui-text-input-with-label v-model="newEpisode.title" :label="$strings.LabelTitle" />
@@ -145,17 +145,18 @@ export default {
         return null
       }
 
+      // Check pubdate is valid if it is being updated. Cannot be set to null in the web client
+      if (this.newEpisode.pubDate === null && this.$refs.pubdate?.$refs?.input?.isInvalidDate) {
+        this.$toast.error(this.$strings.ToastDateTimeInvalidOrIncomplete)
+        return null
+      }
+
       const updatedDetails = this.getUpdatePayload()
       if (!Object.keys(updatedDetails).length) {
         this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
         return false
       }
 
-      // Check pubdate is valid if it is being updated. Cannot be set to null in the web client
-      if (updatedDetails.pubDate === null) {
-        this.$toast.error(this.$strings.ToastDateMustBeComplete)
-        return null
-      }
       return this.updateDetails(updatedDetails)
     },
     async updateDetails(updatedDetails) {
