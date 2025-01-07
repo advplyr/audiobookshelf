@@ -266,7 +266,7 @@ class LibraryItemController {
    *
    * @param {LibraryItemControllerRequest} req
    * @param {Response} res
-   * @param {boolean} [updateAndReturnJson=true]
+   * @param {boolean} [updateAndReturnJson=true] - Allows the function to be used for both direct API calls and internally
    */
   async uploadCover(req, res, updateAndReturnJson = true) {
     if (!req.user.canUpload) {
@@ -291,11 +291,11 @@ class LibraryItemController {
       return res.status(500).send('Unknown error occurred')
     }
 
-    if (updateAndReturnJson) {
-      req.libraryItem.media.coverPath = result.cover
-      req.libraryItem.media.changed('coverPath', true)
-      await req.libraryItem.media.save()
+    req.libraryItem.media.coverPath = result.cover
+    req.libraryItem.media.changed('coverPath', true)
+    await req.libraryItem.media.save()
 
+    if (updateAndReturnJson) {
       // client uses updatedAt timestamp in URL to force refresh cover
       req.libraryItem.changed('updatedAt', true)
       await req.libraryItem.save()
