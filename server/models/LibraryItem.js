@@ -337,7 +337,7 @@ class LibraryItem extends Model {
     const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, false)
     if (itemsInProgressPayload.items.length) {
       const ebookOnlyItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.ebookFormat && !li.media.numTracks)
-      const audioItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.numTracks)
+      const audioItemsInProgress = itemsInProgressPayload.items.filter((li) => li.media.numTracks || li.mediaType === 'podcast')
 
       if (audioItemsInProgress.length) {
         shelves.push({
@@ -448,7 +448,7 @@ class LibraryItem extends Model {
     const mediaFinishedPayload = await libraryFilters.getMediaFinished(library, user, include, limit)
     if (mediaFinishedPayload.items.length) {
       const ebookOnlyItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.ebookFormat && !li.media.numTracks)
-      const audioItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.numTracks)
+      const audioItemsInProgress = mediaFinishedPayload.items.filter((li) => li.media.numTracks || li.mediaType === 'podcast')
 
       if (audioItemsInProgress.length) {
         shelves.push({
