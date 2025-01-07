@@ -1,8 +1,6 @@
 const date = require('../libs/dateAndTime')
 const uuidv4 = require('uuid').v4
 const serverVersion = require('../../package.json').version
-const BookMetadata = require('./metadata/BookMetadata')
-const PodcastMetadata = require('./metadata/PodcastMetadata')
 const DeviceInfo = require('./DeviceInfo')
 
 class PlaybackSession {
@@ -60,7 +58,7 @@ class PlaybackSession {
       bookId: this.bookId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
-      mediaMetadata: this.mediaMetadata?.toJSON() || null,
+      mediaMetadata: structuredClone(this.mediaMetadata),
       chapters: (this.chapters || []).map((c) => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
@@ -82,7 +80,7 @@ class PlaybackSession {
 
   /**
    * Session data to send to clients
-   * @param {Object} [libraryItem] - old library item
+   * @param {import('../models/LibraryItem')} [libraryItem]
    * @returns
    */
   toJSONForClient(libraryItem) {
@@ -94,7 +92,7 @@ class PlaybackSession {
       bookId: this.bookId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
-      mediaMetadata: this.mediaMetadata?.toJSON() || null,
+      mediaMetadata: structuredClone(this.mediaMetadata),
       chapters: (this.chapters || []).map((c) => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
@@ -112,7 +110,7 @@ class PlaybackSession {
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map((at) => at.toJSON?.() || { ...at }),
-      libraryItem: libraryItem?.toJSONExpanded() || null
+      libraryItem: libraryItem?.toOldJSONExpanded() || null
     }
   }
 
@@ -148,14 +146,7 @@ class PlaybackSession {
     this.serverVersion = session.serverVersion
     this.chapters = session.chapters || []
 
-    this.mediaMetadata = null
-    if (session.mediaMetadata) {
-      if (this.mediaType === 'book') {
-        this.mediaMetadata = new BookMetadata(session.mediaMetadata)
-      } else if (this.mediaType === 'podcast') {
-        this.mediaMetadata = new PodcastMetadata(session.mediaMetadata)
-      }
-    }
+    this.mediaMetadata = session.mediaMetadata
     this.displayTitle = session.displayTitle || ''
     this.displayAuthor = session.displayAuthor || ''
     this.coverPath = session.coverPath
@@ -205,6 +196,15 @@ class PlaybackSession {
     }
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} userId
+   * @param {*} mediaPlayer
+   * @param {*} deviceInfo
+   * @param {*} startTime
+   * @param {*} episodeId
+   */
   setData(libraryItem, userId, mediaPlayer, deviceInfo, startTime, episodeId = null) {
     this.id = uuidv4()
     this.userId = userId
@@ -213,13 +213,12 @@ class PlaybackSession {
     this.bookId = episodeId ? null : libraryItem.media.id
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
-    this.mediaMetadata = libraryItem.media.metadata.clone()
+    this.mediaMetadata = libraryItem.media.oldMetadataToJSON()
     this.chapters = libraryItem.media.getChapters(episodeId)
     this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
-
-    this.setDuration(libraryItem, episodeId)
+    this.duration = libraryItem.media.getPlaybackDuration(episodeId)
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
@@ -233,14 +232,6 @@ class PlaybackSession {
     this.dayOfWeek = date.format(new Date(), 'dddd')
     this.startedAt = Date.now()
     this.updatedAt = Date.now()
-  }
-
-  setDuration(libraryItem, episodeId) {
-    if (episodeId) {
-      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
-    } else {
-      this.duration = libraryItem.media.duration
-    }
   }
 
   addListeningTime(timeListened) {

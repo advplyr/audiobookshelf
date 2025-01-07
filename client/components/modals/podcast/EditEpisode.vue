@@ -170,6 +170,12 @@ export default {
         this.show = false
       }
     },
+    libraryItemUpdated(libraryItem) {
+      const episode = libraryItem.media.episodes.find((e) => e.id === this.selectedEpisodeId)
+      if (episode) {
+        this.episodeItem = episode
+      }
+    },
     hotkey(action) {
       if (action === this.$hotkeys.Modal.NEXT_PAGE) {
         this.goNextEpisode()
@@ -178,9 +184,15 @@ export default {
       }
     },
     registerListeners() {
+      if (this.libraryItem) {
+        this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+      }
       this.$eventBus.$on('modal-hotkey', this.hotkey)
     },
     unregisterListeners() {
+      if (this.libraryItem) {
+        this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+      }
       this.$eventBus.$off('modal-hotkey', this.hotkey)
     }
   },

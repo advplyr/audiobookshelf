@@ -202,12 +202,12 @@ class AudioFileScanner {
 
   /**
    *
-   * @param {AudioFile} audioFile
+   * @param {string} audioFilePath
    * @returns {object}
    */
-  probeAudioFile(audioFile) {
-    Logger.debug(`[AudioFileScanner] Running ffprobe for audio file at "${audioFile.metadata.path}"`)
-    return prober.rawProbe(audioFile.metadata.path)
+  probeAudioFile(audioFilePath) {
+    Logger.debug(`[AudioFileScanner] Running ffprobe for audio file at "${audioFilePath}"`)
+    return prober.rawProbe(audioFilePath)
   }
 
   /**

@@ -5,11 +5,10 @@ const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
-const LibraryItem = require('../objects/LibraryItem')
 
 function escapeSingleQuotes(path) {
-  // return path.replace(/'/g, '\'\\\'\'')
-  return filePathToPOSIX(path).replace(/ /g, '\\ ').replace(/'/g, "\\'")
+  // A ' within a quoted string is escaped with '\'' in ffmpeg (see https://www.ffmpeg.org/ffmpeg-utils.html#Quoting-and-escaping)
+  return filePathToPOSIX(path).replace(/'/g, "'\\''")
 }
 
 // Returns first track start time
@@ -33,7 +32,7 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
 
   var tracksToInclude = tracks.filter((t) => t.index >= trackToStartWithIndex)
   var trackPaths = tracksToInclude.map((t) => {
-    var line = 'file ' + escapeSingleQuotes(t.metadata.path) + '\n' + `duration ${t.duration}`
+    var line = "file '" + escapeSingleQuotes(t.metadata.path) + "'\n" + `duration ${t.duration}`
     return line
   })
   var inputstr = trackPaths.join('\n\n')
@@ -97,6 +96,11 @@ async function resizeImage(filePath, outputPath, width, height) {
 }
 module.exports.resizeImage = resizeImage
 
+/**
+ *
+ * @param {import('../objects/PodcastEpisodeDownload')} podcastEpisodeDownload
+ * @returns
+ */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
     const response = await axios({
@@ -118,32 +122,33 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
 
-    const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
-    const podcastEpisode = podcastEpisodeDownload.podcastEpisode
+    /** @type {import('../models/Podcast')} */
+    const podcast = podcastEpisodeDownload.libraryItem.media
+    const podcastEpisode = podcastEpisodeDownload.rssPodcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
     const taggings = {
-      album: podcastMetadata.title,
-      'album-sort': podcastMetadata.title,
-      artist: podcastMetadata.author,
-      'artist-sort': podcastMetadata.author,
+      album: podcast.title,
+      'album-sort': podcast.title,
+      artist: podcast.author,
+      'artist-sort': podcast.author,
       comment: podcastEpisode.description,
       subtitle: podcastEpisode.subtitle,
       disc: podcastEpisode.season,
-      genre: podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
-      language: podcastMetadata.language,
-      MVNM: podcastMetadata.title,
+      genre: podcast.genres.length ? podcast.genres.join(';') : null,
+      language: podcast.language,
+      MVNM: podcast.title,
       MVIN: podcastEpisode.episode,
       track: podcastEpisode.episode,
       'series-part': podcastEpisode.episode,
       title: podcastEpisode.title,
       'title-sort': podcastEpisode.title,
-      year: podcastEpisode.pubYear,
+      year: podcastEpisodeDownload.pubYear,
       date: podcastEpisode.pubDate,
       releasedate: podcastEpisode.pubDate,
-      'itunes-id': podcastMetadata.itunesId,
-      'podcast-type': podcastMetadata.type,
-      'episode-type': podcastMetadata.episodeType
+      'itunes-id': podcast.itunesId,
+      'podcast-type': podcast.podcastType,
+      'episode-type': podcastEpisode.episodeType
     }
 
     for (const tag in taggings) {
@@ -359,28 +364,26 @@ function escapeFFMetadataValue(value) {
 /**
  * Retrieves the FFmpeg metadata object for a given library item.
  *
- * @param {LibraryItem} libraryItem - The library item containing the media metadata.
+ * @param {import('../models/LibraryItem')} libraryItem - The library item containing the media metadata.
  * @param {number} audioFilesLength - The length of the audio files.
  * @returns {Object} - The FFmpeg metadata object.
  */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
-  const metadata = libraryItem.media.metadata
-
   const ffmetadata = {
-    title: metadata.title,
-    artist: metadata.authorName,
-    album_artist: metadata.authorName,
-    album: (metadata.title || '') + (metadata.subtitle ? `: ${metadata.subtitle}` : ''),
-    TIT3: metadata.subtitle, // mp3 only
-    genre: metadata.genres?.join('; '),
-    date: metadata.publishedYear,
-    comment: metadata.description,
-    description: metadata.description,
-    composer: metadata.narratorName,
-    copyright: metadata.publisher,
-    publisher: metadata.publisher, // mp3 only
+    title: libraryItem.media.title,
+    artist: libraryItem.media.authorName,
+    album_artist: libraryItem.media.authorName,
+    album: (libraryItem.media.title || '') + (libraryItem.media.subtitle ? `: ${libraryItem.media.subtitle}` : ''),
+    TIT3: libraryItem.media.subtitle, // mp3 only
+    genre: libraryItem.media.genres?.join('; '),
+    date: libraryItem.media.publishedYear,
+    comment: libraryItem.media.description,
+    description: libraryItem.media.description,
+    composer: (libraryItem.media.narrators || []).join(', '),
+    copyright: libraryItem.media.publisher,
+    publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: metadata.series?.map((s) => s.name + (s.sequence ? ` #${s.sequence}` : '')).join('; ')
+    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
@@ -396,7 +399,7 @@ module.exports.getFFMetadataObject = getFFMetadataObject
 /**
  * Merges audio files into a single output file using FFmpeg.
  *
- * @param {Array} audioTracks - The audio tracks to merge.
+ * @param {import('../models/Book').AudioFileObject} audioTracks - The audio tracks to merge.
  * @param {number} duration - The total duration of the audio tracks.
  * @param {string} itemCachePath - The path to the item cache.
  * @param {string} outputFilePath - The path to the output file.

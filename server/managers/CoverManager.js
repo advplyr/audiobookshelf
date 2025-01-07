@@ -79,6 +79,12 @@ class CoverManager {
     return imgType
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {*} coverFile - file object from req.files
+   * @returns {Promise<{error:string}|{cover:string}>}
+   */
   async uploadCover(libraryItem, coverFile) {
     const extname = Path.extname(coverFile.name.toLowerCase())
     if (!extname || !globals.SupportedImageTypes.includes(extname.slice(1))) {
@@ -110,62 +116,19 @@ class CoverManager {
     await this.removeOldCovers(coverDirPath, extname)
     await CacheManager.purgeCoverCache(libraryItem.id)
 
-    Logger.info(`[CoverManager] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.metadata.title}"`)
+    Logger.info(`[CoverManager] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.title}"`)
 
-    libraryItem.updateMediaCover(coverFullPath)
     return {
       cover: coverFullPath
     }
   }
 
-  async downloadCoverFromUrl(libraryItem, url, forceLibraryItemFolder = false) {
-    try {
-      // Force save cover with library item is used for adding new podcasts
-      var coverDirPath = forceLibraryItemFolder ? libraryItem.path : this.getCoverDirectory(libraryItem)
-      await fs.ensureDir(coverDirPath)
-
-      var temppath = Path.posix.join(coverDirPath, 'cover')
-
-      let errorMsg = ''
-      let success = await downloadImageFile(url, temppath)
-        .then(() => true)
-        .catch((err) => {
-          errorMsg = err.message || 'Unknown error'
-          Logger.error(`[CoverManager] Download image file failed for "${url}"`, errorMsg)
-          return false
-        })
-      if (!success) {
-        return {
-          error: 'Failed to download image from url: ' + errorMsg
-        }
-      }
-
-      var imgtype = await this.checkFileIsValidImage(temppath, true)
-
-      if (imgtype.error) {
-        return imgtype
-      }
-
-      var coverFilename = `cover.${imgtype.ext}`
-      var coverFullPath = Path.posix.join(coverDirPath, coverFilename)
-      await fs.rename(temppath, coverFullPath)
-
-      await this.removeOldCovers(coverDirPath, '.' + imgtype.ext)
-      await CacheManager.purgeCoverCache(libraryItem.id)
-
-      Logger.info(`[CoverManager] Downloaded libraryItem cover "${coverFullPath}" from url "${url}" for "${libraryItem.media.metadata.title}"`)
-      libraryItem.updateMediaCover(coverFullPath)
-      return {
-        cover: coverFullPath
-      }
-    } catch (error) {
-      Logger.error(`[CoverManager] Fetch cover image from url "${url}" failed`, error)
-      return {
-        error: 'Failed to fetch image from url'
-      }
-    }
-  }
-
+  /**
+   *
+   * @param {string} coverPath
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @returns {Promise<{error:string}|{cover:string,updated:boolean}>}
+   */
   async validateCoverPath(coverPath, libraryItem) {
     // Invalid cover path
     if (!coverPath || coverPath.startsWith('http:') || coverPath.startsWith('https:')) {
@@ -235,7 +198,6 @@ class CoverManager {
 
     await CacheManager.purgeCoverCache(libraryItem.id)
 
-    libraryItem.updateMediaCover(coverPath)
     return {
       cover: coverPath,
       updated: true
@@ -321,13 +283,14 @@ class CoverManager {
    *
    * @param {string} url
    * @param {string} libraryItemId
-   * @param {string} [libraryItemPath] null if library item isFile or is from adding new podcast
+   * @param {string} [libraryItemPath] - null if library item isFile
+   * @param {boolean} [forceLibraryItemFolder=false] - force save cover with library item (used for adding new podcasts)
    * @returns {Promise<{error:string}|{cover:string}>}
    */
-  async downloadCoverFromUrlNew(url, libraryItemId, libraryItemPath) {
+  async downloadCoverFromUrlNew(url, libraryItemId, libraryItemPath, forceLibraryItemFolder = false) {
     try {
       let coverDirPath = null
-      if (global.ServerSettings.storeCoverWithItem && libraryItemPath) {
+      if ((global.ServerSettings.storeCoverWithItem || forceLibraryItemFolder) && libraryItemPath) {
         coverDirPath = libraryItemPath
       } else {
         coverDirPath = Path.posix.join(global.MetadataPath, 'items', libraryItemId)

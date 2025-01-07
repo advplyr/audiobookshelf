@@ -1,7 +1,6 @@
-const { DataTypes, Model, Op, literal } = require('sequelize')
+const { DataTypes, Model, Op } = require('sequelize')
 const Logger = require('../Logger')
-
-const oldPlaylist = require('../objects/Playlist')
+const SocketAuthority = require('../SocketAuthority')
 
 class Playlist extends Model {
   constructor(values, options) {
@@ -21,141 +20,23 @@ class Playlist extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
-  }
 
-  static getOldPlaylist(playlistExpanded) {
-    const items = playlistExpanded.playlistMediaItems
-      .map((pmi) => {
-        const mediaItem = pmi.mediaItem || pmi.dataValues?.mediaItem
-        const libraryItemId = mediaItem?.podcast?.libraryItem?.id || mediaItem?.libraryItem?.id || null
-        if (!libraryItemId) {
-          Logger.error(`[Playlist] Invalid playlist media item - No library item id found`, JSON.stringify(pmi, null, 2))
-          return null
-        }
-        return {
-          episodeId: pmi.mediaItemType === 'podcastEpisode' ? pmi.mediaItemId : '',
-          libraryItemId
-        }
-      })
-      .filter((pmi) => pmi)
+    // Expanded properties
 
-    return new oldPlaylist({
-      id: playlistExpanded.id,
-      libraryId: playlistExpanded.libraryId,
-      userId: playlistExpanded.userId,
-      name: playlistExpanded.name,
-      description: playlistExpanded.description,
-      items,
-      lastUpdate: playlistExpanded.updatedAt.valueOf(),
-      createdAt: playlistExpanded.createdAt.valueOf()
-    })
+    /** @type {import('./PlaylistMediaItem')[]} - only set when expanded */
+    this.playlistMediaItems
   }
 
   /**
-   * Get old playlist toJSONExpanded
-   * @param {string[]} [include]
-   * @returns {Promise<oldPlaylist>} oldPlaylist.toJSONExpanded
-   */
-  async getOldJsonExpanded(include) {
-    this.playlistMediaItems =
-      (await this.getPlaylistMediaItems({
-        include: [
-          {
-            model: this.sequelize.models.book,
-            include: this.sequelize.models.libraryItem
-          },
-          {
-            model: this.sequelize.models.podcastEpisode,
-            include: {
-              model: this.sequelize.models.podcast,
-              include: this.sequelize.models.libraryItem
-            }
-          }
-        ],
-        order: [['order', 'ASC']]
-      })) || []
-
-    const oldPlaylist = this.sequelize.models.playlist.getOldPlaylist(this)
-    const libraryItemIds = oldPlaylist.items.map((i) => i.libraryItemId)
-
-    let libraryItems = await this.sequelize.models.libraryItem.getAllOldLibraryItems({
-      id: libraryItemIds
-    })
-
-    const playlistExpanded = oldPlaylist.toJSONExpanded(libraryItems)
-
-    if (include?.includes('rssfeed')) {
-      const feeds = await this.getFeeds()
-      if (feeds?.length) {
-        playlistExpanded.rssFeed = this.sequelize.models.feed.getOldFeed(feeds[0])
-      }
-    }
-
-    return playlistExpanded
-  }
-
-  static createFromOld(oldPlaylist) {
-    const playlist = this.getFromOld(oldPlaylist)
-    return this.create(playlist)
-  }
-
-  static getFromOld(oldPlaylist) {
-    return {
-      id: oldPlaylist.id,
-      name: oldPlaylist.name,
-      description: oldPlaylist.description,
-      userId: oldPlaylist.userId,
-      libraryId: oldPlaylist.libraryId
-    }
-  }
-
-  static removeById(playlistId) {
-    return this.destroy({
-      where: {
-        id: playlistId
-      }
-    })
-  }
-
-  /**
-   * Get playlist by id
-   * @param {string} playlistId
-   * @returns {Promise<oldPlaylist|null>} returns null if not found
-   */
-  static async getById(playlistId) {
-    if (!playlistId) return null
-    const playlist = await this.findByPk(playlistId, {
-      include: {
-        model: this.sequelize.models.playlistMediaItem,
-        include: [
-          {
-            model: this.sequelize.models.book,
-            include: this.sequelize.models.libraryItem
-          },
-          {
-            model: this.sequelize.models.podcastEpisode,
-            include: {
-              model: this.sequelize.models.podcast,
-              include: this.sequelize.models.libraryItem
-            }
-          }
-        ]
-      },
-      order: [['playlistMediaItems', 'order', 'ASC']]
-    })
-    if (!playlist) return null
-    return this.getOldPlaylist(playlist)
-  }
-
-  /**
-   * Get old playlists for user and optionally for library
+   * Get old playlists for user and library
    *
    * @param {string} userId
-   * @param {string} [libraryId]
-   * @returns {Promise<oldPlaylist[]>}
+   * @param {string} libraryId
+   * @async
    */
-  static async getOldPlaylistsForUserAndLibrary(userId, libraryId = null) {
+  static async getOldPlaylistsForUserAndLibrary(userId, libraryId) {
     if (!userId && !libraryId) return []
+
     const whereQuery = {}
     if (userId) {
       whereQuery.userId = userId
@@ -170,7 +51,23 @@ class Playlist extends Model {
         include: [
           {
             model: this.sequelize.models.book,
-            include: this.sequelize.models.libraryItem
+            include: [
+              {
+                model: this.sequelize.models.libraryItem
+              },
+              {
+                model: this.sequelize.models.author,
+                through: {
+                  attributes: []
+                }
+              },
+              {
+                model: this.sequelize.models.series,
+                through: {
+                  attributes: ['sequence']
+                }
+              }
+            ]
           },
           {
             model: this.sequelize.models.podcastEpisode,
@@ -181,42 +78,13 @@ class Playlist extends Model {
           }
         ]
       },
-      order: [
-        [literal('name COLLATE NOCASE'), 'ASC'],
-        ['playlistMediaItems', 'order', 'ASC']
-      ]
+      order: [['playlistMediaItems', 'order', 'ASC']]
     })
 
-    const oldPlaylists = []
-    for (const playlistExpanded of playlistsExpanded) {
-      const oldPlaylist = this.getOldPlaylist(playlistExpanded)
-      const libraryItems = []
-      for (const pmi of playlistExpanded.playlistMediaItems) {
-        let mediaItem = pmi.mediaItem || pmi.dataValues.mediaItem
+    // Sort by name asc
+    playlistsExpanded.sort((a, b) => a.name.localeCompare(b.name))
 
-        if (!mediaItem) {
-          Logger.error(`[Playlist] Invalid playlist media item - No media item found`, JSON.stringify(mediaItem, null, 2))
-          continue
-        }
-        let libraryItem = mediaItem.libraryItem || mediaItem.podcast?.libraryItem
-
-        if (mediaItem.podcast) {
-          libraryItem.media = mediaItem.podcast
-          libraryItem.media.podcastEpisodes = [mediaItem]
-          delete mediaItem.podcast.libraryItem
-        } else {
-          libraryItem.media = mediaItem
-          delete mediaItem.libraryItem
-        }
-
-        const oldLibraryItem = this.sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
-        libraryItems.push(oldLibraryItem)
-      }
-      const oldPlaylistJson = oldPlaylist.toJSONExpanded(libraryItems)
-      oldPlaylists.push(oldPlaylistJson)
-    }
-
-    return oldPlaylists
+    return playlistsExpanded.map((playlist) => playlist.toOldJSONExpanded())
   }
 
   /**
@@ -297,6 +165,49 @@ class Playlist extends Model {
   }
 
   /**
+   * Removes media items and re-orders playlists
+   *
+   * @param {string[]} mediaItemIds
+   */
+  static async removeMediaItemsFromPlaylists(mediaItemIds) {
+    if (!mediaItemIds?.length) return
+
+    const playlistsWithItem = await this.getPlaylistsForMediaItemIds(mediaItemIds)
+
+    if (!playlistsWithItem.length) return
+
+    for (const playlist of playlistsWithItem) {
+      let numMediaItems = playlist.playlistMediaItems.length
+
+      let order = 1
+      // Remove items in playlist and re-order
+      for (const playlistMediaItem of playlist.playlistMediaItems) {
+        if (mediaItemIds.includes(playlistMediaItem.mediaItemId)) {
+          await playlistMediaItem.destroy()
+          numMediaItems--
+        } else {
+          if (playlistMediaItem.order !== order) {
+            playlistMediaItem.update({
+              order
+            })
+          }
+          order++
+        }
+      }
+
+      // If playlist is now empty then remove it
+      const jsonExpanded = await playlist.getOldJsonExpanded()
+      if (!numMediaItems) {
+        Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
+        await playlist.destroy()
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
+      } else {
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
+      }
+    }
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
@@ -351,6 +262,117 @@ class Playlist extends Model {
         }
       }
     })
+  }
+
+  /**
+   * Get all media items in playlist expanded with library item
+   *
+   * @returns {Promise<import('./PlaylistMediaItem')[]>}
+   */
+  getMediaItemsExpandedWithLibraryItem() {
+    return this.getPlaylistMediaItems({
+      include: [
+        {
+          model: this.sequelize.models.book,
+          include: [
+            {
+              model: this.sequelize.models.libraryItem
+            },
+            {
+              model: this.sequelize.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: this.sequelize.models.series,
+              through: {
+                attributes: ['sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: this.sequelize.models.podcastEpisode,
+          include: [
+            {
+              model: this.sequelize.models.podcast,
+              include: this.sequelize.models.libraryItem
+            }
+          ]
+        }
+      ],
+      order: [['order', 'ASC']]
+    })
+  }
+
+  /**
+   * Get playlists toOldJSONExpanded
+   *
+   * @async
+   */
+  async getOldJsonExpanded() {
+    this.playlistMediaItems = await this.getMediaItemsExpandedWithLibraryItem()
+    return this.toOldJSONExpanded()
+  }
+
+  /**
+   * Old model used libraryItemId instead of bookId
+   *
+   * @param {string} libraryItemId
+   * @param {string} [episodeId]
+   */
+  checkHasMediaItem(libraryItemId, episodeId) {
+    if (!this.playlistMediaItems) {
+      throw new Error('playlistMediaItems are required to check Playlist')
+    }
+    if (episodeId) {
+      return this.playlistMediaItems.some((pmi) => pmi.mediaItemId === episodeId)
+    }
+    return this.playlistMediaItems.some((pmi) => pmi.mediaItem.libraryItem.id === libraryItemId)
+  }
+
+  toOldJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      libraryId: this.libraryId,
+      userId: this.userId,
+      description: this.description,
+      lastUpdate: this.updatedAt.valueOf(),
+      createdAt: this.createdAt.valueOf()
+    }
+  }
+
+  toOldJSONExpanded() {
+    if (!this.playlistMediaItems) {
+      throw new Error('playlistMediaItems are required to expand Playlist')
+    }
+
+    const json = this.toOldJSON()
+    json.items = this.playlistMediaItems.map((pmi) => {
+      if (pmi.mediaItemType === 'book') {
+        const libraryItem = pmi.mediaItem.libraryItem
+        delete pmi.mediaItem.libraryItem
+        libraryItem.media = pmi.mediaItem
+        return {
+          libraryItemId: libraryItem.id,
+          libraryItem: libraryItem.toOldJSONExpanded()
+        }
+      }
+
+      const libraryItem = pmi.mediaItem.podcast.libraryItem
+      delete pmi.mediaItem.podcast.libraryItem
+      libraryItem.media = pmi.mediaItem.podcast
+      return {
+        episodeId: pmi.mediaItemId,
+        episode: pmi.mediaItem.toOldJSONExpanded(libraryItem.id),
+        libraryItemId: libraryItem.id,
+        libraryItem: libraryItem.toOldJSONMinified()
+      }
+    })
+
+    return json
   }
 }
 

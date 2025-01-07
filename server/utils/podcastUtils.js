@@ -4,6 +4,49 @@ const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
+/**
+ * @typedef RssPodcastEpisode
+ * @property {string} title
+ * @property {string} subtitle
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} pubDate
+ * @property {string} episodeType
+ * @property {string} season
+ * @property {string} episode
+ * @property {string} author
+ * @property {string} duration
+ * @property {string} explicit
+ * @property {number} publishedAt - Unix timestamp
+ * @property {{ url: string, type?: string, length?: string }} enclosure
+ * @property {string} guid
+ * @property {string} chaptersUrl
+ * @property {string} chaptersType
+ */
+
+/**
+ * @typedef RssPodcastMetadata
+ * @property {string} title
+ * @property {string} language
+ * @property {string} explicit
+ * @property {string} author
+ * @property {string} pubDate
+ * @property {string} link
+ * @property {string} image
+ * @property {string[]} categories
+ * @property {string} feedUrl
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} type
+ */
+
+/**
+ * @typedef RssPodcast
+ * @property {RssPodcastMetadata} metadata
+ * @property {RssPodcastEpisode[]} episodes
+ * @property {number} numEpisodes
+ */
+
 function extractFirstArrayItem(json, key) {
   if (!json[key]?.length) return null
   return json[key][0]
@@ -59,8 +102,8 @@ function extractPodcastMetadata(channel) {
 
   if (channel['description']) {
     const rawDescription = extractFirstArrayItem(channel, 'description') || ''
-    metadata.description = htmlSanitizer.sanitize(rawDescription)
-    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    metadata.description = htmlSanitizer.sanitize(rawDescription.trim())
+    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
 
   const arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
@@ -103,8 +146,8 @@ function extractEpisodeData(item) {
   // Supposed to be the plaintext description but not always followed
   if (item['description']) {
     const rawDescription = extractFirstArrayItem(item, 'description') || ''
-    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
-    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription.trim())
+    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
 
   if (item['pubDate']) {
@@ -223,7 +266,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
  *
  * @param {string} feedUrl
  * @param {boolean} [excludeEpisodeMetadata=false]
- * @returns {Promise}
+ * @returns {Promise<RssPodcast|null>}
  */
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
@@ -244,8 +287,8 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
       'User-Agent': userAgent
     },
-    httpAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl),
-    httpsAgent: global.DisableSsrfRequestFilter ? null : ssrfFilter(feedUrl)
+    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
+    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
   })
     .then(async (data) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
@@ -287,6 +330,12 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   return this.findMatchingEpisodesInFeed(feed, searchTitle)
 }
 
+/**
+ *
+ * @param {RssPodcast} feed
+ * @param {string} searchTitle
+ * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ */
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   searchTitle = searchTitle.toLowerCase().trim()
   if (!feed?.episodes) {

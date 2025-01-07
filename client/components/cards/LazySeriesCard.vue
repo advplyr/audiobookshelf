@@ -1,5 +1,5 @@
 <template>
-  <div cy-id="card" ref="card" :id="`series-card-${index}`" :style="{ width: cardWidth + 'px' }" class="absolute rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div cy-id="card" ref="card" :id="`series-card-${index}`" tabindex="0" :style="{ width: cardWidth + 'px' }" class="absolute rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div cy-id="covers-area" class="relative" :style="{ height: coverHeight + 'px' }">
       <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
       <div class="w-full h-full bg-primary relative rounded overflow-hidden z-0">
@@ -7,12 +7,12 @@
       </div>
 
       <div cy-id="seriesLengthMarker" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
-        <p :style="{ fontSize: 0.8 + 'em' }">{{ books.length }}</p>
+        <p :style="{ fontSize: 0.8 + 'em' }" role="status" :aria-label="$strings.LabelNumberOfBooks">{{ books.length }}</p>
       </div>
 
       <div cy-id="seriesProgressBar" v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
 
-      <div cy-id="hoveringDisplayTitle" v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: '1em' }">
+      <div cy-id="hoveringDisplayTitle" v-if="hasValidCovers" aria-hidden="true" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: '1em' }">
         <p :style="{ fontSize: 1.2 + 'em' }">{{ displayTitle }}</p>
       </div>
 

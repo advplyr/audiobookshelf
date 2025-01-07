@@ -34,6 +34,11 @@ class AudioMetadataMangaer {
     return this.tasksQueued.some((t) => t.data.libraryItemId === libraryItemId) || this.tasksRunning.some((t) => t.data.libraryItemId === libraryItemId)
   }
 
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @returns
+   */
   getMetadataObjectForApi(libraryItem) {
     return ffmpegHelpers.getFFMetadataObject(libraryItem, libraryItem.media.includedAudioFiles.length)
   }
@@ -41,8 +46,8 @@ class AudioMetadataMangaer {
   /**
    *
    * @param {string} userId
-   * @param {*} libraryItems
-   * @param {*} options
+   * @param {import('../models/LibraryItem')[]} libraryItems
+   * @param {UpdateMetadataOptions} options
    */
   handleBatchEmbed(userId, libraryItems, options = {}) {
     libraryItems.forEach((li) => {
@@ -53,7 +58,7 @@ class AudioMetadataMangaer {
   /**
    *
    * @param {string} userId
-   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {UpdateMetadataOptions} [options={}]
    */
   async updateMetadataForItem(userId, libraryItem, options = {}) {
@@ -103,14 +108,14 @@ class AudioMetadataMangaer {
       key: 'MessageTaskEmbeddingMetadata'
     }
     const taskDescriptionString = {
-      text: `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`,
+      text: `Embedding metadata in audiobook "${libraryItem.media.title}".`,
       key: 'MessageTaskEmbeddingMetadataDescription',
-      subs: [libraryItem.media.metadata.title]
+      subs: [libraryItem.media.title]
     }
     task.setData('embed-metadata', taskTitleString, taskDescriptionString, false, taskData)
 
     if (this.tasksRunning.length >= this.MAX_CONCURRENT_TASKS) {
-      Logger.info(`[AudioMetadataManager] Queueing embed metadata for audiobook "${libraryItem.media.metadata.title}"`)
+      Logger.info(`[AudioMetadataManager] Queueing embed metadata for audiobook "${libraryItem.media.title}"`)
       SocketAuthority.adminEmitter('metadata_embed_queue_update', {
         libraryItemId: libraryItem.id,
         queued: true

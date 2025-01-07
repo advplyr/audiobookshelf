@@ -107,7 +107,7 @@ module.exports = {
    * @param {string[]} include
    * @param {number} limit
    * @param {number} offset
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
   async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset) {
     const includeRSSFeed = include.includes('rssfeed')
@@ -175,16 +175,19 @@ module.exports = {
     })
 
     const libraryItems = podcasts.map((podcastExpanded) => {
-      const libraryItem = podcastExpanded.libraryItem.toJSON()
-      const podcast = podcastExpanded.toJSON()
+      const libraryItem = podcastExpanded.libraryItem
+      const podcast = podcastExpanded
 
       delete podcast.libraryItem
 
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
       }
-      if (podcast.numEpisodesIncomplete) {
-        libraryItem.numEpisodesIncomplete = podcast.numEpisodesIncomplete
+      if (podcast.dataValues.numEpisodesIncomplete) {
+        libraryItem.numEpisodesIncomplete = podcast.dataValues.numEpisodesIncomplete
+      }
+      if (podcast.dataValues.numEpisodes) {
+        podcast.numEpisodes = podcast.dataValues.numEpisodes
       }
 
       libraryItem.media = podcast
@@ -209,7 +212,7 @@ module.exports = {
    * @param {number} limit
    * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
-   * @returns {object} {libraryItems:LibraryItem[], count:number}
+   * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
   async getFilteredPodcastEpisodes(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, limit, offset, isHomePage = false) {
     if (sortBy === 'progress' && filterGroup !== 'progress') {
@@ -289,11 +292,12 @@ module.exports = {
     })
 
     const libraryItems = podcastEpisodes.map((ep) => {
-      const libraryItem = ep.podcast.libraryItem.toJSON()
-      const podcast = ep.podcast.toJSON()
+      const libraryItem = ep.podcast.libraryItem
+      const podcast = ep.podcast
       delete podcast.libraryItem
       libraryItem.media = podcast
-      libraryItem.recentEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSON()
+
+      libraryItem.recentEpisode = ep.toOldJSON(libraryItem.id)
       return libraryItem
     })
 
@@ -362,8 +366,9 @@ module.exports = {
       const libraryItem = podcast.libraryItem
       delete podcast.libraryItem
       libraryItem.media = podcast
+      libraryItem.media.podcastEpisodes = []
       itemMatches.push({
-        libraryItem: Database.libraryItemModel.getOldLibraryItem(libraryItem).toJSONExpanded()
+        libraryItem: libraryItem.toOldJSONExpanded()
       })
     }
 
@@ -455,13 +460,14 @@ module.exports = {
     })
 
     const episodeResults = episodes.map((ep) => {
-      const libraryItem = ep.podcast.libraryItem
-      libraryItem.media = ep.podcast
-      const oldPodcast = Database.podcastModel.getOldPodcast(libraryItem)
-      const oldPodcastEpisode = ep.getOldPodcastEpisode(libraryItem.id).toJSONExpanded()
-      oldPodcastEpisode.podcast = oldPodcast
-      oldPodcastEpisode.libraryId = libraryItem.libraryId
-      return oldPodcastEpisode
+      ep.podcast.podcastEpisodes = [] // Not needed
+      const oldPodcastJson = ep.podcast.toOldJSON(ep.podcast.libraryItem.id)
+
+      const oldPodcastEpisodeJson = ep.toOldJSONExpanded(ep.podcast.libraryItem.id)
+
+      oldPodcastEpisodeJson.podcast = oldPodcastJson
+      oldPodcastEpisodeJson.libraryId = ep.podcast.libraryItem.libraryId
+      return oldPodcastEpisodeJson
     })
 
     return episodeResults

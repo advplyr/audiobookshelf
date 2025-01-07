@@ -218,7 +218,6 @@ export default {
             this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
           } else {
             console.log(`Item removed from playlist`, updatedPlaylist)
-            this.$toast.success(this.$strings.ToastPlaylistUpdateSuccess)
           }
         })
         .catch((error) => {

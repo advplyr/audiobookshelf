@@ -39,7 +39,7 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('../controllers/SessionController').RequestWithUser} req
+   * @param {import('../controllers/LibraryItemController').LibraryItemControllerRequest} req
    * @param {Object} [clientDeviceInfo]
    * @returns {Promise<DeviceInfo>}
    */
@@ -67,7 +67,7 @@ class PlaybackSessionManager {
 
   /**
    *
-   * @param {import('../controllers/SessionController').RequestWithUser} req
+   * @param {import('../controllers/LibraryItemController').LibraryItemControllerRequest} req
    * @param {import('express').Response} res
    * @param {string} [episodeId]
    */
@@ -120,8 +120,8 @@ class PlaybackSessionManager {
    */
   async syncLocalSession(user, sessionJson, deviceInfo) {
     // TODO: Combine libraryItem query with library query
-    const libraryItem = await Database.libraryItemModel.getOldById(sessionJson.libraryItemId)
-    const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
+    const libraryItem = await Database.libraryItemModel.getExpandedById(sessionJson.libraryItemId)
+    const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.podcastEpisodes.find((pe) => pe.id === sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
       return {
@@ -187,7 +187,8 @@ class PlaybackSessionManager {
       if(session.displayAuthor == null || session.displayAuthor === '') {
         session.displayAuthor = libraryItem?.media?.metadata?.authors?.map(a => a.name).join(', ') ?? libraryItem?.media?.metadata?.author ?? ''
       }
-      session.setDuration(libraryItem, sessionJson.episodeId)
+      session.duration = libraryItem.media.getPlaybackDuration(sessionJson.episodeId)
+
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {
@@ -291,7 +292,7 @@ class PlaybackSessionManager {
    *
    * @param {import('../models/User')} user
    * @param {DeviceInfo} deviceInfo
-   * @param {import('../objects/LibraryItem')} libraryItem
+   * @param {import('../models/LibraryItem')} libraryItem
    * @param {string|null} episodeId
    * @param {{forceDirectPlay?:boolean, forceTranscode?:boolean, mediaPlayer:string, supportedMimeTypes?:string[]}} options
    * @returns {Promise<PlaybackSession>}
@@ -304,7 +305,7 @@ class PlaybackSessionManager {
       await this.closeSession(user, session, null)
     }
 
-    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
+    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options.supportedMimeTypes, episodeId))
     const mediaPlayer = options.mediaPlayer || 'unknown'
 
     const mediaItemId = episodeId || libraryItem.media.id
@@ -312,7 +313,7 @@ class PlaybackSessionManager {
     let userStartTime = 0
     if (userProgress) {
       if (userProgress.isFinished) {
-        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.metadata.title}"`)
+        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.title}"`)
         // Keep userStartTime as 0 so the client restarts the media
       } else {
         userStartTime = Number.parseFloat(userProgress.currentTime) || 0
@@ -324,7 +325,7 @@ class PlaybackSessionManager {
     let audioTracks = []
     if (shouldDirectPlay) {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
-      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
+      audioTracks = libraryItem.getTrackList(episodeId)
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
@@ -354,20 +355,20 @@ class PlaybackSessionManager {
    * @param {import('../models/User')} user
    * @param {*} session
    * @param {*} syncData
-   * @returns
+   * @returns {Promise<boolean>}
    */
   async syncSession(user, session, syncData) {
     // TODO: Combine libraryItem query with library query
-    const libraryItem = await Database.libraryItemModel.getOldById(session.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
-      return null
+      return false
     }
 
     const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
     if (!library) {
       Logger.error(`[PlaybackSessionManager] syncSession Library not found "${libraryItem.libraryId}"`)
-      return null
+      return false
     }
 
     session.currentTime = syncData.currentTime
@@ -393,9 +394,8 @@ class PlaybackSessionManager {
       })
     }
     this.saveSession(session)
-    return {
-      libraryItem
-    }
+
+    return true
   }
 
   /**

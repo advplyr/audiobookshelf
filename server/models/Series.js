@@ -1,6 +1,6 @@
-const { DataTypes, Model, where, fn, col } = require('sequelize')
+const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
-const { getTitlePrefixAtEnd } = require('../utils/index')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
 
 class Series extends Model {
   constructor(values, options) {
@@ -20,6 +20,11 @@ class Series extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+
+    // Expanded properties
+
+    /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
+    this.books
   }
 
   /**
@@ -46,6 +51,34 @@ class Series extends Model {
           libraryId
         }
       ]
+    })
+  }
+
+  /**
+   *
+   * @param {string} seriesId
+   * @returns {Promise<Series>}
+   */
+  static async getExpandedById(seriesId) {
+    const series = await this.findByPk(seriesId)
+    if (!series) return null
+    series.books = await series.getBooksExpandedWithLibraryItem()
+    return series
+  }
+
+  /**
+   *
+   * @param {string} seriesName
+   * @param {string} libraryId
+   * @returns {Promise<Series>}
+   */
+  static async findOrCreateByNameAndLibrary(seriesName, libraryId) {
+    const series = await this.getByNameAndLibrary(seriesName, libraryId)
+    if (series) return series
+    return this.create({
+      name: seriesName,
+      nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
+      libraryId
     })
   }
 
@@ -101,6 +134,35 @@ class Series extends Model {
       onDelete: 'CASCADE'
     })
     Series.belongsTo(library)
+  }
+
+  /**
+   * Get all books in collection expanded with library item
+   *
+   * @returns {Promise<import('./Book').BookExpandedWithLibraryItem[]>}
+   */
+  getBooksExpandedWithLibraryItem() {
+    return this.getBooks({
+      joinTableAttributes: ['sequence'],
+      include: [
+        {
+          model: this.sequelize.models.libraryItem
+        },
+        {
+          model: this.sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: this.sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ],
+      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]]
+    })
   }
 
   toOldJSON() {
