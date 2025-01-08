@@ -110,7 +110,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       headers: {
         'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
-      timeout: 30000
+      timeout: global.PodcastDownloadTimeout
     }).catch((error) => {
       Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
       return null

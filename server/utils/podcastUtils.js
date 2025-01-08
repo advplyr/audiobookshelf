@@ -281,7 +281,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   return axios({
     url: feedUrl,
     method: 'GET',
-    timeout: 12000,
+    timeout: global.PodcastDownloadTimeout,
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',

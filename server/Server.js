@@ -85,6 +85,12 @@ class Server {
       }
     }
 
+    if (process.env.PODCAST_DOWNLOAD_TIMEOUT) {
+      global.PodcastDownloadTimeout = process.env.PODCAST_DOWNLOAD_TIMEOUT
+    } else {
+      global.PodcastDownloadTimeout = 30000
+    }
+
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
     }
