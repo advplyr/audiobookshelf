@@ -964,6 +964,7 @@
   "ToastCollectionRemoveSuccess": "Zbirka je bila odstranjena",
   "ToastCollectionUpdateSuccess": "Zbirka je bila posodobljena",
   "ToastCoverUpdateFailed": "Posodobitev naslovnice ni uspela",
+  "ToastDateTimeInvalidOrIncomplete": "Datum in čas sta neveljavna ali nepopolna",
   "ToastDeleteFileFailed": "Brisanje datoteke ni uspelo",
   "ToastDeleteFileSuccess": "Datoteka je bila izbrisana",
   "ToastDeviceAddFailed": "Naprave ni bilo mogoče dodati",
