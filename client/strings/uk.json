@@ -964,6 +964,7 @@
   "ToastCollectionRemoveSuccess": "Добірку видалено",
   "ToastCollectionUpdateSuccess": "Добірку оновлено",
   "ToastCoverUpdateFailed": "Не вдалося оновити обкладинку",
+  "ToastDateTimeInvalidOrIncomplete": "Дата й час недійсні або неповні",
   "ToastDeleteFileFailed": "Не вдалося видалити файл",
   "ToastDeleteFileSuccess": "Файл видалено",
   "ToastDeviceAddFailed": "Не вдалося додати пристрій",
