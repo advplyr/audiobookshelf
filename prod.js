@@ -25,7 +25,7 @@ const CONFIG_PATH = inputConfig || process.env.CONFIG_PATH || Path.resolve('conf
 const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve('metadata')
 const SOURCE = options.source || process.env.SOURCE || 'debian'
 
-const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
+const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || '/audiobookshelf'
 
 console.log(process.env.NODE_ENV, 'Config', CONFIG_PATH, METADATA_PATH)
 
