@@ -964,6 +964,7 @@
   "ToastCollectionRemoveSuccess": "Sammlung entfernt",
   "ToastCollectionUpdateSuccess": "Sammlung aktualisiert",
   "ToastCoverUpdateFailed": "Cover-Update fehlgeschlagen",
+  "ToastDateTimeInvalidOrIncomplete": "Datum und Zeit ist ungültig oder unvollständig",
   "ToastDeleteFileFailed": "Die Datei konnte nicht gelöscht werden",
   "ToastDeleteFileSuccess": "Datei gelöscht",
   "ToastDeviceAddFailed": "Gerät konnte nicht hinzugefügt werden",
