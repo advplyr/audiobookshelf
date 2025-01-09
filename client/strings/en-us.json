@@ -837,6 +837,7 @@
   "MessageResetChaptersConfirm": "Are you sure you want to reset chapters and undo the changes you made?",
   "MessageRestoreBackupConfirm": "Are you sure you want to restore the backup created on",
   "MessageRestoreBackupWarning": "Restoring a backup will overwrite the entire database located at /config and cover images in /metadata/items & /metadata/authors.<br /><br />Backups do not modify any files in your library folders. If you have enabled server settings to store cover art and metadata in your library folders then those are not backed up or overwritten.<br /><br />All clients using your server will be automatically refreshed.",
+  "MessageScheduleLibraryScanNote": "For most users, it is recommended to leave this feature disabled and keep the folder watcher setting enabled. The folder watcher will automatically detect changes in your library folders. The folder watcher doesn't work for every file system (like NFS) so scheduled library scans can be used instead.",
   "MessageSearchResultsFor": "Search results for",
   "MessageSelected": "{0} selected",
   "MessageServerCouldNotBeReached": "Server could not be reached",
