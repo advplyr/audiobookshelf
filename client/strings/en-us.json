@@ -1018,6 +1018,7 @@
   "ToastNewUserTagError": "Must select at least one tag",
   "ToastNewUserUsernameError": "Enter a username",
   "ToastNoNewEpisodesFound": "No new episodes found",
+  "ToastNoRSSFeed": "Podcast does not have an RSS Feed",
   "ToastNoUpdatesNecessary": "No updates necessary",
   "ToastNotificationCreateFailed": "Failed to create notification",
   "ToastNotificationDeleteFailed": "Failed to delete notification",
