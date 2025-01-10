@@ -52,6 +52,29 @@ function extractFirstArrayItem(json, key) {
   return json[key][0]
 }
 
+function extractStringOrStringify(json) {
+  try {
+    if (typeof json[Object.keys(json)[0]]?.[0] === 'string') {
+      return json[Object.keys(json)[0]][0]
+    }
+    // Handles case where html was included without being wrapped in CDATA
+    return JSON.stringify(value)
+  } catch {
+    return ''
+  }
+}
+
+function extractFirstArrayItemString(json, key) {
+  const item = extractFirstArrayItem(json, key)
+  if (!item) return ''
+  if (typeof item === 'object') {
+    if (item?.['_'] && typeof item['_'] === 'string') return item['_']
+
+    return extractStringOrStringify(item)
+  }
+  return typeof item === 'string' ? item : ''
+}
+
 function extractImage(channel) {
   if (!channel.image || !channel.image.url || !channel.image.url.length) {
     if (!channel['itunes:image'] || !channel['itunes:image'].length || !channel['itunes:image'][0]['$']) {
@@ -101,7 +124,7 @@ function extractPodcastMetadata(channel) {
   }
 
   if (channel['description']) {
-    const rawDescription = extractFirstArrayItem(channel, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(channel, 'description')
     metadata.description = htmlSanitizer.sanitize(rawDescription.trim())
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -145,7 +168,8 @@ function extractEpisodeData(item) {
 
   // Supposed to be the plaintext description but not always followed
   if (item['description']) {
-    const rawDescription = extractFirstArrayItem(item, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(item, 'description')
+
     if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription.trim())
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -175,9 +199,7 @@ function extractEpisodeData(item) {
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
-    let value = extractFirstArrayItem(item, key)
-    if (value?.['_']) value = value['_']
-    episode[cleanKey] = value
+    episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
   return episode
 }
