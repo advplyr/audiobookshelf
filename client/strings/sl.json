@@ -837,6 +837,7 @@
   "MessageResetChaptersConfirm": "Ali ste prepričani, da želite ponastaviti poglavja in razveljaviti spremembe, ki ste jih naredili?",
   "MessageRestoreBackupConfirm": "Ali ste prepričani, da želite obnoviti varnostno kopijo, ustvarjeno ob",
   "MessageRestoreBackupWarning": "Obnovitev varnostne kopije bo prepisala celotno zbirko podatkov, ki se nahaja v /config, in zajema slike v /metadata/items in /metadata/authors.<br /><br />Varnostne kopije ne spreminjajo nobenih datotek v mapah vaše knjižnice. Če ste omogočili nastavitve strežnika za shranjevanje naslovnic in metapodatkov v mapah vaše knjižnice, potem ti niso varnostno kopirani ali prepisani.<br /><br />Vsi odjemalci, ki uporabljajo vaš strežnik, bodo samodejno osveženi.",
+  "MessageScheduleLibraryScanNote": "Za večino uporabnikov je priporočljivo, da to funkcijo pustite onemogočeno in ohranite nastavitev pregledovalnika map omogočeno. Pregledovalnik map bo samodejno zaznal spremembe v mapah vaše knjižnice. Pregledovalnik map ne deluje za vse datotečne sisteme (na primer NFS), zato lahko namesto tega uporabite načrtovane preglede knjižnic.",
   "MessageSearchResultsFor": "Rezultati iskanja za",
   "MessageSelected": "{0} izbrano",
   "MessageServerCouldNotBeReached": "Strežnika ni bilo mogoče doseči",
