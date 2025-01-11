@@ -170,21 +170,34 @@ class LibraryController {
    * GET: /api/libraries
    * Get all libraries
    *
+   * ?include=stats to load library stats - used in android auto to filter out libraries with no audio
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   async findAll(req, res) {
-    const libraries = await Database.libraryModel.getAllWithFolders()
+    let libraries = await Database.libraryModel.getAllWithFolders()
 
     const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
-      return res.json({
-        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toOldJSON())
-      })
+      libraries = libraries.filter((lib) => librariesAccessible.includes(lib.id))
+    }
+
+    libraries = libraries.map((lib) => lib.toOldJSON())
+
+    const includeArray = (req.query.include || '').split(',')
+    if (includeArray.includes('stats')) {
+      for (const library of libraries) {
+        if (library.mediaType === 'book') {
+          library.stats = await libraryItemsBookFilters.getBookLibraryStats(library.id)
+        } else if (library.mediaType === 'podcast') {
+          library.stats = await libraryItemsPodcastFilters.getPodcastLibraryStats(library.id)
+        }
+      }
     }
 
     res.json({
-      libraries: libraries.map((lib) => lib.toOldJSON())
+      libraries
     })
   }
 
