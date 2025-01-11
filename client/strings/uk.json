@@ -1018,6 +1018,7 @@
   "ToastNewUserTagError": "Потрібно вибрати хоча б один тег",
   "ToastNewUserUsernameError": "Введіть ім'я користувача",
   "ToastNoNewEpisodesFound": "Нових епізодів не знайдено",
+  "ToastNoRSSFeed": "Подкаст не має RSS-канал",
   "ToastNoUpdatesNecessary": "Оновлення не потрібні",
   "ToastNotificationCreateFailed": "Не вдалося створити сповіщення",
   "ToastNotificationDeleteFailed": "Не вдалося видалити сповіщення",
