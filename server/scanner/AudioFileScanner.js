@@ -499,16 +499,17 @@ class AudioFileScanner {
             // Filter these out and log a warning
             // See https://github.com/advplyr/audiobookshelf/issues/3361
             const afChaptersCleaned =
-              file.chapters?.filter((c) => {
+              file.chapters?.filter((c, i) => {
                 if (c.end - c.start < 0.1) {
-                  libraryScan.addLog(LogLevel.WARN, `Chapter "${c.title}" has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
+                  libraryScan.addLog(LogLevel.WARN, `Audio file "${file.metadata.filename}" Chapter "${c.title}" (index ${i}) has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
                   return false
                 }
                 return true
               }) || []
-            const afChapters = afChaptersCleaned.map((c) => ({
+
+            const afChapters = afChaptersCleaned.map((c, i) => ({
               ...c,
-              id: c.id + currChapterId,
+              id: currChapterId + i,
               start: c.start + currStartTime,
               end: c.end + currStartTime
             }))
