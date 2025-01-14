@@ -99,7 +99,7 @@ module.exports.resizeImage = resizeImage
 /**
  *
  * @param {import('../objects/PodcastEpisodeDownload')} podcastEpisodeDownload
- * @returns
+ * @returns {Promise<{success: boolean, isFfmpegError?: boolean}>}
  */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
@@ -115,7 +115,11 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
       return null
     })
-    if (!response) return resolve(false)
+    if (!response) {
+      return resolve({
+        success: false
+      })
+    }
 
     /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     const ffmpeg = Ffmpeg(response.data)
@@ -177,7 +181,10 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       if (stderrLines.length) {
         Logger.error(`Full stderr dump for episode url "${podcastEpisodeDownload.url}": ${stderrLines.join('\n')}`)
       }
-      resolve(false)
+      resolve({
+        success: false,
+        isFfmpegError: true
+      })
     })
     ffmpeg.on('progress', (progress) => {
       let progressPercent = 0
@@ -189,7 +196,9 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
     ffmpeg.on('end', () => {
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Complete`)
-      resolve(podcastEpisodeDownload.targetPath)
+      resolve({
+        success: true
+      })
     })
     ffmpeg.run()
   })
