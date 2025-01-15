@@ -80,7 +80,8 @@ export default {
       episodeComponentRefs: {},
       windowHeight: 0,
       episodesTableOffsetTop: 0,
-      episodeRowHeight: 176
+      episodeRowHeight: 176,
+      currScrollTop: 0
     }
   },
   watch: {
@@ -484,9 +485,8 @@ export default {
         }
       }
     },
-    scroll(evt) {
-      if (!evt?.target?.scrollTop) return
-      const scrollTop = Math.max(evt.target.scrollTop - this.episodesTableOffsetTop, 0)
+    handleScroll() {
+      const scrollTop = this.currScrollTop
       let firstEpisodeIndex = Math.floor(scrollTop / this.episodeRowHeight)
       let lastEpisodeIndex = Math.ceil((scrollTop + this.windowHeight) / this.episodeRowHeight)
       lastEpisodeIndex = Math.min(this.totalEpisodes - 1, lastEpisodeIndex)
@@ -500,6 +500,12 @@ export default {
         return true
       })
       this.mountEpisodes(firstEpisodeIndex, lastEpisodeIndex + 1)
+    },
+    scroll(evt) {
+      if (!evt?.target?.scrollTop) return
+      const scrollTop = Math.max(evt.target.scrollTop - this.episodesTableOffsetTop, 0)
+      this.currScrollTop = scrollTop
+      this.handleScroll()
     },
     initListeners() {
       const itemPageWrapper = document.getElementById('item-page-wrapper')
@@ -535,7 +541,12 @@ export default {
       this.episodesPerPage = Math.ceil(this.windowHeight / this.episodeRowHeight)
 
       this.$nextTick(() => {
-        this.mountEpisodes(0, Math.min(this.episodesPerPage, this.totalEpisodes))
+        // Maybe update currScrollTop if items were removed
+        const itemPageWrapper = document.getElementById('item-page-wrapper')
+        const { scrollHeight, clientHeight } = itemPageWrapper
+        const maxScrollTop = scrollHeight - clientHeight
+        this.currScrollTop = Math.min(this.currScrollTop, maxScrollTop)
+        this.handleScroll()
       })
     }
   },

@@ -461,6 +461,9 @@ class PodcastController {
       return res.sendStatus(404)
     }
 
+    // Remove it from the podcastEpisodes array
+    req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.id !== episodeId)
+
     if (hardDelete) {
       const audioFile = episode.audioFile
       // TODO: this will trigger the watcher. should maybe handle this gracefully
