@@ -2,7 +2,7 @@
   <div class="flex items-center px-4 py-4 justify-start relative hover:bg-primary/10" :class="wrapperClass" @click.stop="click" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="w-16 max-w-16 text-center">
       <p class="text-sm font-mono text-gray-400">
-        {{ this.$secondsToTimestamp(bookmark.time) }}
+        {{ this.$secondsToTimestamp(bookmark.time / playbackRate) }}
       </p>
     </div>
     <div class="flex-grow overflow-hidden px-2">
@@ -35,7 +35,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    highlight: Boolean
+    highlight: Boolean,
+    playbackRate: Number
   },
   data() {
     return {

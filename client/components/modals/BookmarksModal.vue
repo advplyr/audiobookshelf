@@ -5,22 +5,22 @@
         <p class="text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
       </div>
     </template>
-    <div class="w-full rounded-lg bg-bg box-shadow-md relative" style="max-height: 80vh">
+    <div v-if="show" class="w-full rounded-lg bg-bg box-shadow-md relative" style="max-height: 80vh">
       <div v-if="bookmarks.length" class="h-full max-h-[calc(80vh-60px)] w-full relative overflow-y-auto overflow-x-hidden">
         <template v-for="bookmark in bookmarks">
-          <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" @click="clickBookmark" @delete="deleteBookmark" />
+          <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" :playback-rate="playbackRate" @click="clickBookmark" @delete="deleteBookmark" />
         </template>
       </div>
       <div v-else class="flex h-32 items-center justify-center">
         <p class="text-xl">{{ $strings.MessageNoBookmarks }}</p>
       </div>
 
-      <div v-if="canCreateBookmark" class="w-full border-t border-white/10">
+      <div v-if="canCreateBookmark && !hideCreate" class="w-full border-t border-white/10">
         <form @submit.prevent="submitCreateBookmark">
           <div class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
             <div class="w-16 max-w-16 text-center">
               <p class="text-sm font-mono text-gray-400">
-                {{ this.$secondsToTimestamp(currentTime) }}
+                {{ this.$secondsToTimestamp(currentTime / playbackRate) }}
               </p>
             </div>
             <div class="flex-grow px-2">
@@ -46,7 +46,9 @@ export default {
       type: Number,
       default: 0
     },
-    libraryItemId: String
+    libraryItemId: String,
+    playbackRate: Number,
+    hideCreate: Boolean
   },
   data() {
     return {
