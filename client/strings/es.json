@@ -953,7 +953,6 @@
   "ToastBookmarkCreateFailed": "Error al crear marcador",
   "ToastBookmarkCreateSuccess": "Marcador Agregado",
   "ToastBookmarkRemoveSuccess": "Marcador eliminado",
-  "ToastBookmarkUpdateSuccess": "Marcador actualizado",
   "ToastCachePurgeFailed": "Error al purgar el caché",
   "ToastCachePurgeSuccess": "Caché purgado de manera exitosa",
   "ToastChaptersHaveErrors": "Los capítulos tienen errores",

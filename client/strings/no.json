@@ -904,7 +904,6 @@
   "ToastBookmarkCreateFailed": "Misslykkes å opprette bokmerke",
   "ToastBookmarkCreateSuccess": "Bokmerke lagt til",
   "ToastBookmarkRemoveSuccess": "Bokmerke fjernet",
-  "ToastBookmarkUpdateSuccess": "Bokmerke oppdatert",
   "ToastCachePurgeFailed": "Kunne ikke å slette mellomlager",
   "ToastCachePurgeSuccess": "Mellomlager slettet",
   "ToastChaptersHaveErrors": "Kapittel har feil",

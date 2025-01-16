@@ -679,7 +679,6 @@
   "ToastBookmarkCreateFailed": "Tạo đánh dấu thất bại",
   "ToastBookmarkCreateSuccess": "Đã thêm đánh dấu",
   "ToastBookmarkRemoveSuccess": "Đánh dấu đã được xóa",
-  "ToastBookmarkUpdateSuccess": "Đánh dấu đã được cập nhật",
   "ToastChaptersHaveErrors": "Các chương có lỗi",
   "ToastChaptersMustHaveTitles": "Các chương phải có tiêu đề",
   "ToastCollectionRemoveSuccess": "Bộ sưu tập đã được xóa",

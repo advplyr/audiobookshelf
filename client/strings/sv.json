@@ -707,7 +707,6 @@
   "ToastBookmarkCreateFailed": "Det gick inte att skapa bokmärket",
   "ToastBookmarkCreateSuccess": "Bokmärket har adderats",
   "ToastBookmarkRemoveSuccess": "Bokmärket har raderats",
-  "ToastBookmarkUpdateSuccess": "Bokmärket har uppdaterats",
   "ToastChaptersHaveErrors": "Kapitlen har fel",
   "ToastChaptersMustHaveTitles": "Kapitel måste ha titlar",
   "ToastCollectionRemoveSuccess": "Samlingen har raderats",
