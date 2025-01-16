@@ -941,7 +941,6 @@
   "ToastBookmarkCreateFailed": "Creazione segnalibro fallita",
   "ToastBookmarkCreateSuccess": "Segnalibro creato",
   "ToastBookmarkRemoveSuccess": "Segnalibro Rimosso",
-  "ToastBookmarkUpdateSuccess": "Segnalibro aggiornato",
   "ToastCachePurgeFailed": "Impossibile eliminare la cache",
   "ToastCachePurgeSuccess": "Cache eliminata correttamente",
   "ToastChaptersHaveErrors": "I capitoli contengono errori",

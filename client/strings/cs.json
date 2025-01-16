@@ -947,7 +947,6 @@
   "ToastBookmarkCreateFailed": "Vytvoření záložky se nezdařilo",
   "ToastBookmarkCreateSuccess": "Přidána záložka",
   "ToastBookmarkRemoveSuccess": "Záložka odstraněna",
-  "ToastBookmarkUpdateSuccess": "Záložka aktualizována",
   "ToastCachePurgeFailed": "Nepodařilo se vyčistit mezipaměť",
   "ToastCachePurgeSuccess": "Vyrovnávací paměť úspěšně vyčištěna",
   "ToastChaptersHaveErrors": "Kapitoly obsahují chyby",
