@@ -952,7 +952,6 @@
   "ToastBookmarkCreateFailed": "বুকমার্ক তৈরি করতে ব্যর্থ",
   "ToastBookmarkCreateSuccess": "বুকমার্ক যোগ করা হয়েছে",
   "ToastBookmarkRemoveSuccess": "বুকমার্ক সরানো হয়েছে",
-  "ToastBookmarkUpdateSuccess": "বুকমার্ক আপডেট করা হয়েছে",
   "ToastCachePurgeFailed": "ক্যাশে পরিষ্কার করতে ব্যর্থ হয়েছে",
   "ToastCachePurgeSuccess": "ক্যাশে সফলভাবে পরিষ্কার করা হয়েছে",
   "ToastChaptersHaveErrors": "অধ্যায়ে ত্রুটি আছে",

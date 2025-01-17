@@ -775,7 +775,6 @@
   "ToastBookmarkCreateFailed": "Det gick inte att skapa bokmärket",
   "ToastBookmarkCreateSuccess": "Bokmärket har adderats",
   "ToastBookmarkRemoveSuccess": "Bokmärket har raderats",
-  "ToastBookmarkUpdateSuccess": "Bokmärket har uppdaterats",
   "ToastCachePurgeFailed": "Misslyckades med att rensa cachen",
   "ToastCachePurgeSuccess": "Rensning av cachen har genomförts",
   "ToastChaptersHaveErrors": "Kapitlen har fel",

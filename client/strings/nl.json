@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "Aanmaken boekwijzer mislukt",
   "ToastBookmarkCreateSuccess": "boekwijzer toegevoegd",
   "ToastBookmarkRemoveSuccess": "Boekwijzer verwijderd",
-  "ToastBookmarkUpdateSuccess": "Boekwijzer bijgewerkt",
   "ToastCachePurgeFailed": "Cache wissen is mislukt",
   "ToastCachePurgeSuccess": "Cache succesvol verwijderd",
   "ToastChaptersHaveErrors": "Hoofdstukken bevatten fouten",

@@ -697,7 +697,6 @@
   "ToastBookmarkCreateFailed": "Mislykkedes oprettelse af bogmærke",
   "ToastBookmarkCreateSuccess": "Bogmærke tilføjet",
   "ToastBookmarkRemoveSuccess": "Bogmærke fjernet",
-  "ToastBookmarkUpdateSuccess": "Bogmærke opdateret",
   "ToastChaptersHaveErrors": "Kapitler har fejl",
   "ToastChaptersMustHaveTitles": "Kapitler skal have titler",
   "ToastCollectionRemoveSuccess": "Samling fjernet",

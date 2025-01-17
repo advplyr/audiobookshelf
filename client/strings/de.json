@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "Lesezeichen konnte nicht erstellt werden",
   "ToastBookmarkCreateSuccess": "Lesezeichen hinzugefügt",
   "ToastBookmarkRemoveSuccess": "Lesezeichen entfernt",
-  "ToastBookmarkUpdateSuccess": "Lesezeichen aktualisiert",
   "ToastCachePurgeFailed": "Cache leeren fehlgeschlagen",
   "ToastCachePurgeSuccess": "Cache geleert",
   "ToastChaptersHaveErrors": "Kapitel sind fehlerhaft",

@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "Izrada knjižne oznake nije uspjela",
   "ToastBookmarkCreateSuccess": "Knjižna oznaka dodana",
   "ToastBookmarkRemoveSuccess": "Knjižna oznaka uklonjena",
-  "ToastBookmarkUpdateSuccess": "Knjižna oznaka ažurirana",
   "ToastCachePurgeFailed": "Čišćenje predmemorije nije uspjelo",
   "ToastCachePurgeSuccess": "Predmemorija uspješno očišćena",
   "ToastChaptersHaveErrors": "Poglavlja imaju pogreške",

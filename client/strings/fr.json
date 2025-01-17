@@ -944,7 +944,6 @@
   "ToastBookmarkCreateFailed": "Échec de la création de signet",
   "ToastBookmarkCreateSuccess": "Signet ajouté",
   "ToastBookmarkRemoveSuccess": "Signet supprimé",
-  "ToastBookmarkUpdateSuccess": "Signet mis à jour",
   "ToastCachePurgeFailed": "Échec de la purge du cache",
   "ToastCachePurgeSuccess": "Cache purgé avec succès",
   "ToastChaptersHaveErrors": "Les chapitres contiennent des erreurs",

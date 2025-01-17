@@ -723,7 +723,6 @@
   "ToastBookmarkCreateFailed": "創建書簽失敗",
   "ToastBookmarkCreateSuccess": "書籤已新增",
   "ToastBookmarkRemoveSuccess": "書籤已刪除",
-  "ToastBookmarkUpdateSuccess": "書籤已更新",
   "ToastChaptersHaveErrors": "章節有錯誤",
   "ToastChaptersMustHaveTitles": "章節必須有標題",
   "ToastCollectionRemoveSuccess": "收藏夾已刪除",

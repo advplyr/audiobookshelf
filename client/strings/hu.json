@@ -950,7 +950,6 @@
   "ToastBookmarkCreateFailed": "Könyvjelző létrehozása sikertelen",
   "ToastBookmarkCreateSuccess": "Könyvjelző hozzáadva",
   "ToastBookmarkRemoveSuccess": "Könyvjelző eltávolítva",
-  "ToastBookmarkUpdateSuccess": "Könyvjelző frissítve",
   "ToastCachePurgeFailed": "A gyorsítótár törlése sikertelen",
   "ToastCachePurgeSuccess": "A gyorsítótár sikeresen törölve",
   "ToastChaptersHaveErrors": "A fejezetek hibákat tartalmaznak",

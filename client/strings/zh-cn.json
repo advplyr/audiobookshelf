@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "创建书签失败",
   "ToastBookmarkCreateSuccess": "书签已添加",
   "ToastBookmarkRemoveSuccess": "书签已删除",
-  "ToastBookmarkUpdateSuccess": "书签已更新",
   "ToastCachePurgeFailed": "清除缓存失败",
   "ToastCachePurgeSuccess": "缓存清除成功",
   "ToastChaptersHaveErrors": "章节有错误",

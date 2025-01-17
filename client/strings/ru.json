@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "Не удалось создать закладку",
   "ToastBookmarkCreateSuccess": "Добавлена закладка",
   "ToastBookmarkRemoveSuccess": "Закладка удалена",
-  "ToastBookmarkUpdateSuccess": "Закладка обновлена",
   "ToastCachePurgeFailed": "Не удалось очистить кэш",
   "ToastCachePurgeSuccess": "Кэш успешно очищен",
   "ToastChaptersHaveErrors": "Главы имеют ошибки",
