@@ -954,7 +954,6 @@
   "ToastBookmarkCreateFailed": "Failed to create bookmark",
   "ToastBookmarkCreateSuccess": "Bookmark added",
   "ToastBookmarkRemoveSuccess": "Bookmark removed",
-  "ToastBookmarkUpdateSuccess": "Bookmark updated",
   "ToastCachePurgeFailed": "Failed to purge cache",
   "ToastCachePurgeSuccess": "Cache purged successfully",
   "ToastChaptersHaveErrors": "Chapters have errors",

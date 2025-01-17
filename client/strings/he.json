@@ -740,7 +740,6 @@
   "ToastBookmarkCreateFailed": "יצירת סימניה נכשלה",
   "ToastBookmarkCreateSuccess": "הסימניה נוספה בהצלחה",
   "ToastBookmarkRemoveSuccess": "הסימניה הוסרה בהצלחה",
-  "ToastBookmarkUpdateSuccess": "הסימניה עודכנה בהצלחה",
   "ToastChaptersHaveErrors": "פרקים מכילים שגיאות",
   "ToastChaptersMustHaveTitles": "פרקים חייבים לכלול כותרות",
   "ToastCollectionRemoveSuccess": "האוסף הוסר בהצלחה",

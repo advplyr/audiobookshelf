@@ -725,7 +725,6 @@
   "ToastBookmarkCreateFailed": "Неуспешно създаване на отметка",
   "ToastBookmarkCreateSuccess": "Отметката е създадена",
   "ToastBookmarkRemoveSuccess": "Отметката е премахната",
-  "ToastBookmarkUpdateSuccess": "Отметката е обновена",
   "ToastChaptersHaveErrors": "Главите имат грешки",
   "ToastChaptersMustHaveTitles": "Главите трябва да имат заглавия",
   "ToastCollectionRemoveSuccess": "Колекцията е премахната",

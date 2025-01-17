@@ -898,7 +898,6 @@
   "ToastBookmarkCreateFailed": "Error en crear marcador",
   "ToastBookmarkCreateSuccess": "Marcador afegit",
   "ToastBookmarkRemoveSuccess": "Marcador eliminat",
-  "ToastBookmarkUpdateSuccess": "Marcador actualitzat",
   "ToastCachePurgeFailed": "Error en purgar la memòria cau",
   "ToastCachePurgeSuccess": "Memòria cau purgada amb èxit",
   "ToastChaptersHaveErrors": "Els capítols tenen errors",
