@@ -139,7 +139,8 @@ class FeedEpisode extends Model {
    */
   static getFeedEpisodeObjFromAudiobookTrack(book, pubDateStart, feed, slug, audioTrack, useChapterTitles, existingEpisodeId = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
-    let timeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 1000 // Offset pubdate to ensure correct order
+    // Offset pubdate in 1 minute intervals to ensure correct order
+    let timeOffset = isNaN(audioTrack.index) ? 0 : Number(audioTrack.index) * 60000
     let episodeId = existingEpisodeId || uuidv4()
 
     // e.g. Track 1 will have a pub date before Track 2
