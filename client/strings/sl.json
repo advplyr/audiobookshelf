@@ -1017,6 +1017,7 @@
   "ToastNewUserTagError": "Izbrati morate vsaj eno oznako",
   "ToastNewUserUsernameError": "Vnesite uporabniško ime",
   "ToastNoNewEpisodesFound": "Ni novih epizod",
+  "ToastNoRSSFeed": "Podcast nima RSS vira",
   "ToastNoUpdatesNecessary": "Posodobitve niso potrebne",
   "ToastNotificationCreateFailed": "Obvestila ni bilo mogoče ustvariti",
   "ToastNotificationDeleteFailed": "Brisanje obvestila ni uspelo",
