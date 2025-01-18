@@ -325,6 +325,7 @@
   "LabelLastBookUpdated": "Viimeisin päivitetty kirja",
   "LabelLastUpdate": "Viimeisin päivitys",
   "LabelLayout": "Asettelu",
+  "LabelLayoutSinglePage": "Yksi sivu",
   "LabelLibrariesAccessibleToUser": "Käyttäjälle saatavilla olevat kirjastot",
   "LabelLibrary": "Kirjasto",
   "LabelLibraryName": "Kirjaston nimi",
