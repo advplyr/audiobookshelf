@@ -725,7 +725,7 @@
   "MessageSelected": "{0} valda",
   "MessageServerCouldNotBeReached": "Servern kunde inte nås",
   "MessageSetChaptersFromTracksDescription": "Ställ in kapitel med varje ljudfil som ett kapitel och kapitelrubrik som ljudfilens namn",
-  "MessageStartPlaybackAtTime": "Starta uppspelning för \"{0}\" kl. {1}?",
+  "MessageStartPlaybackAtTime": "Starta uppspelning av \"{0}\" vid tidpunkt {1}?",
   "MessageTaskFailedToCreateCacheDirectory": "Misslyckades med att skapa bibliotek för cachen",
   "MessageThinking": "Tänker...",
   "MessageUploaderItemFailed": "Misslyckades med att ladda upp",
