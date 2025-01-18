@@ -303,6 +303,7 @@
   "LabelFolder": "Kansio",
   "LabelFolders": "Kansiot",
   "LabelFontBoldness": "Kirjasintyyppien lihavointi",
+  "LabelFontScale": "Kirjasintyyppien skaalautuminen",
   "LabelGenre": "Lajityyppi",
   "LabelGenres": "Lajityypit",
   "LabelHost": "Isäntä",
