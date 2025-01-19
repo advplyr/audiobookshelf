@@ -463,7 +463,7 @@
   "LabelNotificationsMaxQueueSize": "Največja velikost čakalne vrste za dogodke obvestil",
   "LabelNotificationsMaxQueueSizeHelp": "Dogodki so omejeni na sprožitev 1 na sekundo. Dogodki bodo prezrti, če je čakalna vrsta najvišja. To preprečuje neželeno pošiljanje obvestil.",
   "LabelNumberOfBooks": "Število knjig",
-  "LabelNumberOfEpisodes": "število epizod",
+  "LabelNumberOfEpisodes": "# epizod",
   "LabelOpenIDAdvancedPermsClaimDescription": "Ime zahtevka OpenID, ki vsebuje napredna dovoljenja za uporabniška dejanja v aplikaciji, ki bodo veljala za neskrbniške vloge (<b>če je konfigurirano</b>). Če trditev manjka v odgovoru, bo dostop do ABS zavrnjen. Če ena možnost manjka, bo obravnavana kot <code>false</code>. Zagotovite, da se zahtevek ponudnika identitete ujema s pričakovano strukturo:",
   "LabelOpenIDClaims": "Pustite naslednje možnosti prazne, da onemogočite napredno dodeljevanje skupin in dovoljenj, nato pa samodejno dodelite skupino 'Uporabnik'.",
   "LabelOpenIDGroupClaimDescription": "Ime zahtevka OpenID, ki vsebuje seznam uporabnikovih skupin. Običajno imenovane <code>skupine</code>. <b>Če je konfigurirana</b>, bo aplikacija samodejno dodelila vloge na podlagi članstva v skupini uporabnika, pod pogojem, da so te skupine v zahtevku poimenovane 'admin', 'user' ali 'guest' brez razlikovanja med velikimi in malimi črkami. Zahtevek mora vsebovati seznam in če uporabnik pripada več skupinam, mu aplikacija dodeli vlogo, ki ustreza najvišjemu nivoju dostopa. Če se nobena skupina ne ujema, bo dostop zavrnjen.",
