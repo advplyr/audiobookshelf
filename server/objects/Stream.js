@@ -18,6 +18,7 @@ class Stream extends EventEmitter {
 
     this.id = sessionId
     this.user = user
+    /** @type {import('../models/LibraryItem')} */
     this.libraryItem = libraryItem
     this.episodeId = episodeId
 
@@ -40,31 +41,25 @@ class Stream extends EventEmitter {
     this.furthestSegmentCreated = 0
   }
 
-  get isPodcast() {
-    return this.libraryItem.mediaType === 'podcast'
-  }
+  /**
+   * @returns {import('../models/PodcastEpisode') | null}
+   */
   get episode() {
-    if (!this.isPodcast) return null
-    return this.libraryItem.media.episodes.find((ep) => ep.id === this.episodeId)
-  }
-  get libraryItemId() {
-    return this.libraryItem.id
+    if (!this.libraryItem.isPodcast) return null
+    return this.libraryItem.media.podcastEpisodes.find((ep) => ep.id === this.episodeId)
   }
   get mediaTitle() {
-    if (this.episode) return this.episode.title || ''
-    return this.libraryItem.media.metadata.title || ''
+    return this.libraryItem.media.getPlaybackTitle(this.episodeId)
   }
   get totalDuration() {
-    if (this.episode) return this.episode.duration
-    return this.libraryItem.media.duration
+    return this.libraryItem.media.getPlaybackDuration(this.episodeId)
   }
   get tracks() {
-    if (this.episode) return this.episode.tracks
-    return this.libraryItem.media.tracks
+    return this.libraryItem.getTrackList(this.episodeId)
   }
   get tracksAudioFileType() {
     if (!this.tracks.length) return null
-    return this.tracks[0].metadata.format
+    return this.tracks[0].metadata.ext.slice(1)
   }
   get tracksMimeType() {
     if (!this.tracks.length) return null
@@ -116,8 +111,8 @@ class Stream extends EventEmitter {
     return {
       id: this.id,
       userId: this.user.id,
-      libraryItem: this.libraryItem.toJSONExpanded(),
-      episode: this.episode ? this.episode.toJSONExpanded() : null,
+      libraryItem: this.libraryItem.toOldJSONExpanded(),
+      episode: this.episode ? this.episode.toOldJSONExpanded(this.libraryItem.id) : null,
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,
@@ -280,15 +275,15 @@ class Stream extends EventEmitter {
 
     this.ffmpeg.addOption([`-loglevel ${logLevel}`, '-map 0:a', `-c:a ${audioCodec}`])
     const hlsOptions = ['-f hls', '-copyts', '-avoid_negative_ts make_non_negative', '-max_delay 5000000', '-max_muxing_queue_size 2048', `-hls_time 6`, `-hls_segment_type ${this.hlsSegmentType}`, `-start_number ${this.segmentStartNumber}`, '-hls_playlist_type vod', '-hls_list_size 0', '-hls_allow_cache 0']
+    this.ffmpeg.addOption(hlsOptions)
     if (this.hlsSegmentType === 'fmp4') {
-      hlsOptions.push('-strict -2')
+      this.ffmpeg.addOption('-strict -2')
       var fmp4InitFilename = Path.join(this.streamPath, 'init.mp4')
       // var fmp4InitFilename = 'init.mp4'
-      hlsOptions.push(`-hls_fmp4_init_filename ${fmp4InitFilename}`)
+      this.ffmpeg.addOption('-hls_fmp4_init_filename', fmp4InitFilename)
     }
-    this.ffmpeg.addOption(hlsOptions)
     var segmentFilename = Path.join(this.streamPath, this.segmentBasename)
-    this.ffmpeg.addOption(`-hls_segment_filename ${segmentFilename}`)
+    this.ffmpeg.addOption('-hls_segment_filename', segmentFilename)
     this.ffmpeg.output(this.finalPlaylistPath)
 
     this.ffmpeg.on('start', (command) => {

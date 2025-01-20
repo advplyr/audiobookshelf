@@ -30,7 +30,7 @@
         <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
       </form>
     </div>
-    <div class="relative min-h-[176px]">
+    <div class="relative min-h-44">
       <template v-for="episode in totalEpisodes">
         <div :key="episode" :id="`episode-${episode - 1}`" class="w-full h-44 px-2 py-3 overflow-hidden relative border-b border-white/10">
           <!-- episode is mounted here -->
@@ -39,7 +39,7 @@
       <div v-if="isSearching" class="w-full h-full absolute inset-0 flex justify-center py-12" :class="{ 'bg-black/50': totalEpisodes }">
         <ui-loading-indicator />
       </div>
-      <div v-else-if="!totalEpisodes" class="h-44 flex items-center justify-center">
+      <div v-else-if="!totalEpisodes" id="no-episodes" class="h-44 flex items-center justify-center">
         <p class="text-lg">{{ $strings.MessageNoEpisodes }}</p>
       </div>
     </div>
@@ -80,7 +80,8 @@ export default {
       episodeComponentRefs: {},
       windowHeight: 0,
       episodesTableOffsetTop: 0,
-      episodeRowHeight: 176
+      episodeRowHeight: 44 * 4, // h-44,
+      currScrollTop: 0
     }
   },
   watch: {
@@ -484,9 +485,8 @@ export default {
         }
       }
     },
-    scroll(evt) {
-      if (!evt?.target?.scrollTop) return
-      const scrollTop = Math.max(evt.target.scrollTop - this.episodesTableOffsetTop, 0)
+    handleScroll() {
+      const scrollTop = this.currScrollTop
       let firstEpisodeIndex = Math.floor(scrollTop / this.episodeRowHeight)
       let lastEpisodeIndex = Math.ceil((scrollTop + this.windowHeight) / this.episodeRowHeight)
       lastEpisodeIndex = Math.min(this.totalEpisodes - 1, lastEpisodeIndex)
@@ -500,6 +500,12 @@ export default {
         return true
       })
       this.mountEpisodes(firstEpisodeIndex, lastEpisodeIndex + 1)
+    },
+    scroll(evt) {
+      if (!evt?.target?.scrollTop) return
+      const scrollTop = Math.max(evt.target.scrollTop - this.episodesTableOffsetTop, 0)
+      this.currScrollTop = scrollTop
+      this.handleScroll()
     },
     initListeners() {
       const itemPageWrapper = document.getElementById('item-page-wrapper')
@@ -532,11 +538,24 @@ export default {
       this.episodesTableOffsetTop = (lazyEpisodesTableEl?.offsetTop || 0) + 64
 
       this.windowHeight = window.innerHeight
-      this.episodesPerPage = Math.ceil(this.windowHeight / this.episodeRowHeight)
 
       this.$nextTick(() => {
-        this.mountEpisodes(0, Math.min(this.episodesPerPage, this.totalEpisodes))
+        this.recalcEpisodeRowHeight()
+        this.episodesPerPage = Math.ceil(this.windowHeight / this.episodeRowHeight)
+        // Maybe update currScrollTop if items were removed
+        const itemPageWrapper = document.getElementById('item-page-wrapper')
+        const { scrollHeight, clientHeight } = itemPageWrapper
+        const maxScrollTop = scrollHeight - clientHeight
+        this.currScrollTop = Math.min(this.currScrollTop, maxScrollTop)
+        this.handleScroll()
       })
+    },
+    recalcEpisodeRowHeight() {
+      const episodeRowEl = document.getElementById('episode-0') || document.getElementById('no-episodes')
+      if (episodeRowEl) {
+        const height = getComputedStyle(episodeRowEl).height
+        this.episodeRowHeight = parseInt(height) || this.episodeRowHeight
+      }
     }
   },
   mounted() {

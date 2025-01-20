@@ -69,15 +69,20 @@ Vue.prototype.$elapsedPrettyExtended = (seconds, useDays = true, showSeconds = t
   let hours = Math.floor(minutes / 60)
   minutes -= hours * 60
 
+  // Handle rollovers before days calculation
+  if (minutes && seconds && !showSeconds) {
+    if (seconds >= 30) minutes++
+    if (minutes >= 60) {
+      hours++ // Increment hours if minutes roll over
+      minutes -= 60 // adjust minutes
+    }
+  }
+
+  // Now calculate days with the final hours value
   let days = 0
   if (useDays || Math.floor(hours / 24) >= 100) {
     days = Math.floor(hours / 24)
     hours -= days * 24
-  }
-
-  // If not showing seconds then round minutes up
-  if (minutes && seconds && !showSeconds) {
-    if (seconds >= 30) minutes++
   }
 
   const strs = []

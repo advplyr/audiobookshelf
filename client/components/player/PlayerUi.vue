@@ -4,7 +4,7 @@
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
         <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
 
-        <ui-tooltip direction="left" :text="$strings.LabelVolume">
+        <ui-tooltip direction="bottom" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 

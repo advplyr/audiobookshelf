@@ -70,14 +70,13 @@ class ShareController {
     }
 
     try {
-      const oldLibraryItem = await Database.mediaItemShareModel.getMediaItemsOldLibraryItem(mediaItemShare.mediaItemId, mediaItemShare.mediaItemType)
-
-      if (!oldLibraryItem) {
+      const libraryItem = await Database.mediaItemShareModel.getMediaItemsLibraryItem(mediaItemShare.mediaItemId, mediaItemShare.mediaItemType)
+      if (!libraryItem) {
         return res.status(404).send('Media item not found')
       }
 
       let startOffset = 0
-      const publicTracks = oldLibraryItem.media.includedAudioFiles.map((audioFile) => {
+      const publicTracks = libraryItem.media.includedAudioFiles.map((audioFile) => {
         const audioTrack = {
           index: audioFile.index,
           startOffset,
@@ -86,7 +85,7 @@ class ShareController {
           contentUrl: `${global.RouterBasePath}/public/share/${slug}/track/${audioFile.index}`,
           mimeType: audioFile.mimeType,
           codec: audioFile.codec || null,
-          metadata: audioFile.metadata.clone()
+          metadata: structuredClone(audioFile.metadata)
         }
         startOffset += audioTrack.duration
         return audioTrack
@@ -105,12 +104,12 @@ class ShareController {
       const deviceInfo = await this.playbackSessionManager.getDeviceInfo(req, clientDeviceInfo)
 
       const newPlaybackSession = new PlaybackSession()
-      newPlaybackSession.setData(oldLibraryItem, null, 'web-share', deviceInfo, startTime)
+      newPlaybackSession.setData(libraryItem, null, 'web-share', deviceInfo, startTime)
       newPlaybackSession.audioTracks = publicTracks
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       newPlaybackSession.shareSessionId = shareSessionId
       newPlaybackSession.mediaItemShareId = mediaItemShare.id
-      newPlaybackSession.coverAspectRatio = oldLibraryItem.librarySettings.coverAspectRatio
+      newPlaybackSession.coverAspectRatio = libraryItem.library.settings.coverAspectRatio
 
       mediaItemShare.playbackSession = newPlaybackSession.toJSONForClient()
       ShareManager.addOpenSharePlaybackSession(newPlaybackSession)

@@ -46,5 +46,10 @@ RUN apk del make python3 g++
 
 EXPOSE 80
 
+ENV PORT=80
+ENV CONFIG_PATH="/config"
+ENV METADATA_PATH="/metadata"
+ENV SOURCE="docker"
+
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]

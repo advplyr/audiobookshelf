@@ -189,8 +189,14 @@ class CbzStreamZipComicBookExtractor extends AbstractComicBookExtractor {
   }
 
   close() {
-    this.archive?.close()
-    Logger.debug(`[CbzStreamZipComicBookExtractor] Closed comic book "${this.comicPath}"`)
+    this.archive
+      ?.close()
+      .then(() => {
+        Logger.debug(`[CbzStreamZipComicBookExtractor] Closed comic book "${this.comicPath}"`)
+      })
+      .catch((error) => {
+        Logger.error(`[CbzStreamZipComicBookExtractor] Failed to close comic book "${this.comicPath}"`, error)
+      })
   }
 }
 

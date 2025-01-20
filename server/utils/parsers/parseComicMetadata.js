@@ -43,7 +43,9 @@ async function parse(ebookFile) {
     archive = createComicBookExtractor(comicPath)
     await archive.open()
 
-    const filePaths = await archive.getFilePaths()
+    const filePaths = await archive.getFilePaths().catch((error) => {
+      Logger.error(`[parseComicMetadata] Failed to get file paths from comic at "${comicPath}"`, error)
+    })
 
     // Sort the file paths in a natural order to get the first image
     filePaths.sort((a, b) => {

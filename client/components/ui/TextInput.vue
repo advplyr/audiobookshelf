@@ -1,24 +1,6 @@
 <template>
   <div ref="wrapper" class="relative">
-    <input
-      :id="inputId"
-      :name="inputName"
-      ref="input"
-      v-model="inputValue"
-      :type="actualType"
-      :step="step"
-      :min="min"
-      :readonly="readonly"
-      :disabled="disabled"
-      :placeholder="placeholder"
-      dir="auto"
-      class="rounded bg-primary text-gray-200 focus:border-gray-300 focus:bg-bg focus:outline-none border border-gray-600 h-full w-full"
-      :class="classList"
-      @keyup="keyup"
-      @change="change"
-      @focus="focused"
-      @blur="blurred"
-    />
+    <input :id="inputId" :name="inputName" ref="input" v-model="inputValue" :type="actualType" :step="step" :min="min" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" dir="auto" class="rounded bg-primary text-gray-200 focus:bg-bg focus:outline-none border h-full w-full" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
     <div v-if="clearable && inputValue" class="absolute top-0 right-0 h-full px-2 flex items-center justify-center">
       <span class="material-symbols text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
     </div>
@@ -65,7 +47,8 @@ export default {
       showPassword: false,
       isHovering: false,
       isFocused: false,
-      hasCopied: false
+      hasCopied: false,
+      isInvalidDate: false
     }
   },
   computed: {
@@ -84,6 +67,10 @@ export default {
       if (this.noSpinner) _list.push('no-spinner')
       if (this.textCenter) _list.push('text-center')
       if (this.customInputClass) _list.push(this.customInputClass)
+
+      if (this.isInvalidDate) _list.push('border-error')
+      else _list.push('focus:border-gray-300 border-gray-600')
+
       return _list.join(' ')
     },
     actualType() {
@@ -118,6 +105,14 @@ export default {
     },
     keyup(e) {
       this.$emit('keyup', e)
+
+      if (this.type === 'datetime-local') {
+        if (e.target.validity?.badInput) {
+          this.isInvalidDate = true
+        } else {
+          this.isInvalidDate = false
+        }
+      }
     },
     blur() {
       if (this.$refs.input) this.$refs.input.blur()

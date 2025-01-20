@@ -4,9 +4,75 @@ const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
+/**
+ * @typedef RssPodcastEpisode
+ * @property {string} title
+ * @property {string} subtitle
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} pubDate
+ * @property {string} episodeType
+ * @property {string} season
+ * @property {string} episode
+ * @property {string} author
+ * @property {string} duration
+ * @property {string} explicit
+ * @property {number} publishedAt - Unix timestamp
+ * @property {{ url: string, type?: string, length?: string }} enclosure
+ * @property {string} guid
+ * @property {string} chaptersUrl
+ * @property {string} chaptersType
+ */
+
+/**
+ * @typedef RssPodcastMetadata
+ * @property {string} title
+ * @property {string} language
+ * @property {string} explicit
+ * @property {string} author
+ * @property {string} pubDate
+ * @property {string} link
+ * @property {string} image
+ * @property {string[]} categories
+ * @property {string} feedUrl
+ * @property {string} description
+ * @property {string} descriptionPlain
+ * @property {string} type
+ */
+
+/**
+ * @typedef RssPodcast
+ * @property {RssPodcastMetadata} metadata
+ * @property {RssPodcastEpisode[]} episodes
+ * @property {number} numEpisodes
+ */
+
 function extractFirstArrayItem(json, key) {
   if (!json[key]?.length) return null
   return json[key][0]
+}
+
+function extractStringOrStringify(json) {
+  try {
+    if (typeof json[Object.keys(json)[0]]?.[0] === 'string') {
+      return json[Object.keys(json)[0]][0]
+    }
+    // Handles case where html was included without being wrapped in CDATA
+    return JSON.stringify(value)
+  } catch {
+    return ''
+  }
+}
+
+function extractFirstArrayItemString(json, key) {
+  const item = extractFirstArrayItem(json, key)
+  if (!item) return ''
+  if (typeof item === 'object') {
+    if (item?.['_'] && typeof item['_'] === 'string') return item['_']
+
+    return extractStringOrStringify(item)
+  }
+  return typeof item === 'string' ? item : ''
 }
 
 function extractImage(channel) {
@@ -58,7 +124,7 @@ function extractPodcastMetadata(channel) {
   }
 
   if (channel['description']) {
-    const rawDescription = extractFirstArrayItem(channel, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(channel, 'description')
     metadata.description = htmlSanitizer.sanitize(rawDescription.trim())
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -102,7 +168,8 @@ function extractEpisodeData(item) {
 
   // Supposed to be the plaintext description but not always followed
   if (item['description']) {
-    const rawDescription = extractFirstArrayItem(item, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(item, 'description')
+
     if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription.trim())
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -132,9 +199,7 @@ function extractEpisodeData(item) {
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
-    let value = extractFirstArrayItem(item, key)
-    if (value?.['_']) value = value['_']
-    episode[cleanKey] = value
+    episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
   return episode
 }
@@ -223,7 +288,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
  *
  * @param {string} feedUrl
  * @param {boolean} [excludeEpisodeMetadata=false]
- * @returns {Promise}
+ * @returns {Promise<RssPodcast|null>}
  */
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
@@ -238,7 +303,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   return axios({
     url: feedUrl,
     method: 'GET',
-    timeout: 12000,
+    timeout: global.PodcastDownloadTimeout,
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
@@ -287,6 +352,12 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   return this.findMatchingEpisodesInFeed(feed, searchTitle)
 }
 
+/**
+ *
+ * @param {RssPodcast} feed
+ * @param {string} searchTitle
+ * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ */
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
   searchTitle = searchTitle.toLowerCase().trim()
   if (!feed?.episodes) {
