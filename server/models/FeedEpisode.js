@@ -305,6 +305,21 @@ class FeedEpisode extends Model {
    * @param {string} hostPrefix
    */
   getRSSData(hostPrefix) {
+    const customElements = [
+      { 'itunes:author': this.author || null },
+      { 'itunes:duration': Math.round(Number(this.duration)) },
+      { 'itunes:summary': this.description || null },
+      {
+        'itunes:explicit': !!this.explicit
+      },
+      { 'itunes:episodeType': this.episodeType || null },
+      { 'itunes:season': this.season || null },
+      { 'itunes:episode': this.episode || null }
+    ].filter((element) => {
+      // Remove empty custom elements
+      return Object.values(element)[0] !== null
+    })
+
     return {
       title: this.title,
       description: this.description || '',
@@ -317,17 +332,7 @@ class FeedEpisode extends Model {
         type: this.enclosureType,
         size: this.enclosureSize
       },
-      custom_elements: [
-        { 'itunes:author': this.author },
-        { 'itunes:duration': secondsToTimestamp(this.duration) },
-        { 'itunes:summary': this.description || '' },
-        {
-          'itunes:explicit': !!this.explicit
-        },
-        { 'itunes:episodeType': this.episodeType },
-        { 'itunes:season': this.season },
-        { 'itunes:episode': this.episode }
-      ]
+      custom_elements: customElements
     }
   }
 }

@@ -112,7 +112,7 @@ function secondsToTimestamp(seconds, includeMs = false, alwaysIncludeHours = fal
   var ms = _seconds - Math.floor(seconds)
   _seconds = Math.floor(_seconds)
 
-  var msString = '.' + (includeMs ? ms.toFixed(3) : '0.0').split('.')[1]
+  const msString = includeMs ? '.' + ms.toFixed(3).split('.')[1] : ''
   if (alwaysIncludeHours) {
     return `${_hours.toString().padStart(2, '0')}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}${msString}`
   }
