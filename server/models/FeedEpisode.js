@@ -220,7 +220,7 @@ class FeedEpisode extends Model {
     const feedEpisodeObjs = []
     let numExisting = 0
     for (const book of books) {
-      const trackList = book.libraryItem.getTrackList()
+      const trackList = book.getTracklist(book.libraryItem.id)
       const useChapterTitles = this.checkUseChapterTitlesForEpisodes(trackList, book)
       for (const track of trackList) {
         // Check for existing episode by filepath
