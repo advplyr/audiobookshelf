@@ -463,7 +463,7 @@
   "LabelNotificationsMaxQueueSize": "通知事件的最大队列大小",
   "LabelNotificationsMaxQueueSizeHelp": "通知事件被限制为每秒触发 1 个. 如果队列处于最大大小, 则将忽略事件. 这可以防止通知垃圾邮件.",
   "LabelNumberOfBooks": "图书数量",
-  "LabelNumberOfEpisodes": "# 集",
+  "LabelNumberOfEpisodes": "# 集数",
   "LabelOpenIDAdvancedPermsClaimDescription": "OpenID 声明的名称, 该声明包含应用程序内用户操作的高级权限, 该权限将应用于非管理员角色(<b>如果已配置</b>). 如果响应中缺少声明, 获取 ABS 的权限将被拒绝. 如果缺少单个选项, 它将被视为 <code>禁用</code>. 确保身份提供商的声明与预期结构匹配:",
   "LabelOpenIDClaims": "将以下选项留空以禁用高级组和权限分配, 然后自动分配 'User' 组.",
   "LabelOpenIDGroupClaimDescription": "OpenID 声明的名称, 该声明包含用户组的列表. 通常称为<code>组</code><b>如果已配置</b>, 应用程序将根据用户的组成员身份自动分配角色, 前提是这些组在声明中以不区分大小写的方式命名为 'Admin', 'User' 或 'Guest'. 声明应包含一个列表, 如果用户属于多个组, 则应用程序将分配与最高访问级别相对应的角色. 如果没有组匹配, 访问将被拒绝.",
