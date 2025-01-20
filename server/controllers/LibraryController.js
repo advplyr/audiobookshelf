@@ -100,6 +100,15 @@ class LibraryController {
               return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
             }
             newLibraryPayload.settings[key] = req.body.settings[key]
+          } else if (key === 'markAsFinishedPercentComplete' || key === 'markAsFinishedTimeRemaining') {
+            if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+            } else if (key === 'markAsFinishedPercentComplete' && req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 100)) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 100`)
+            } else if (key === 'markAsFinishedTimeRemaining' && req.body.settings[key] !== null && Number(req.body.settings[key]) < 0) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be greater than or equal to 0`)
+            }
+            newLibraryPayload.settings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
           } else {
             if (typeof req.body.settings[key] !== typeof newLibraryPayload.settings[key]) {
               return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof newLibraryPayload.settings[key]}`)
@@ -170,21 +179,34 @@ class LibraryController {
    * GET: /api/libraries
    * Get all libraries
    *
+   * ?include=stats to load library stats - used in android auto to filter out libraries with no audio
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   async findAll(req, res) {
-    const libraries = await Database.libraryModel.getAllWithFolders()
+    let libraries = await Database.libraryModel.getAllWithFolders()
 
     const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
-      return res.json({
-        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toOldJSON())
-      })
+      libraries = libraries.filter((lib) => librariesAccessible.includes(lib.id))
+    }
+
+    libraries = libraries.map((lib) => lib.toOldJSON())
+
+    const includeArray = (req.query.include || '').split(',')
+    if (includeArray.includes('stats')) {
+      for (const library of libraries) {
+        if (library.mediaType === 'book') {
+          library.stats = await libraryItemsBookFilters.getBookLibraryStats(library.id)
+        } else if (library.mediaType === 'podcast') {
+          library.stats = await libraryItemsPodcastFilters.getPodcastLibraryStats(library.id)
+        }
+      }
     }
 
     res.json({
-      libraries: libraries.map((lib) => lib.toOldJSON())
+      libraries
     })
   }
 
@@ -312,7 +334,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else if (key === 'markAsFinishedTimeRemaining') {
@@ -325,7 +347,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else {
@@ -1145,14 +1167,14 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      itemsUpdated.push(oldLibraryItem)
+
+      itemsUpdated.push(libraryItem)
     }
 
     if (itemsUpdated.length) {
       SocketAuthority.emitter(
         'items_updated',
-        itemsUpdated.map((li) => li.toJSONExpanded())
+        itemsUpdated.map((li) => li.toOldJSONExpanded())
       )
     }
 
@@ -1189,14 +1211,14 @@ class LibraryController {
       await libraryItem.media.update({
         narrators: libraryItem.media.narrators
       })
-      const oldLibraryItem = Database.libraryItemModel.getOldLibraryItem(libraryItem)
-      itemsUpdated.push(oldLibraryItem)
+
+      itemsUpdated.push(libraryItem)
     }
 
     if (itemsUpdated.length) {
       SocketAuthority.emitter(
         'items_updated',
-        itemsUpdated.map((li) => li.toJSONExpanded())
+        itemsUpdated.map((li) => li.toOldJSONExpanded())
       )
     }
 

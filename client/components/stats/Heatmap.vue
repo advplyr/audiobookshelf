@@ -63,9 +63,6 @@ export default {
     dayOfWeekToday() {
       return new Date().getDay()
     },
-    firstWeekStart() {
-      return this.$addDaysToToday(-this.daysToShow)
-    },
     dayLabels() {
       return [
         {
@@ -198,12 +195,25 @@ export default {
       let minValue = 0
 
       const dates = []
-      for (let i = 0; i < this.daysToShow + 1; i++) {
-        const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
+
+      const numDaysInTheLastYear = 52 * 7 + this.dayOfWeekToday
+      const firstDay = this.$addDaysToToday(-numDaysInTheLastYear)
+      for (let i = 0; i < numDaysInTheLastYear + 1; i++) {
+        const date = i === 0 ? firstDay : this.$addDaysToDate(firstDay, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
+
+        if (this.daysListening[dateString] > 0) {
+          this.daysListenedInTheLastYear++
+        }
+
+        const visibleDayIndex = i - (numDaysInTheLastYear - this.daysToShow)
+        if (visibleDayIndex < 0) {
+          continue
+        }
+
         const dateObj = {
-          col: Math.floor(i / 7),
-          row: i % 7,
+          col: Math.floor(visibleDayIndex / 7),
+          row: visibleDayIndex % 7,
           date,
           dateString,
           datePretty: this.$formatJsDate(date, 'MMM d, yyyy'),
@@ -215,7 +225,6 @@ export default {
         dates.push(dateObj)
 
         if (dateObj.value > 0) {
-          this.daysListenedInTheLastYear++
           if (dateObj.value > maxValue) maxValue = dateObj.value
           if (!minValue || dateObj.value < minValue) minValue = dateObj.value
         }

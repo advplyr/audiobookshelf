@@ -1200,7 +1200,7 @@ async function migrationPatchNewColumns(queryInterface) {
  */
 async function handleOldLibraryItems(ctx) {
   const oldLibraryItems = await oldDbFiles.loadOldData('libraryItems')
-  const libraryItems = await ctx.models.libraryItem.getAllOldLibraryItems()
+  const libraryItems = await ctx.models.libraryItem.findAllExpandedWhere()
 
   const bulkUpdateItems = []
   const bulkUpdateEpisodes = []
@@ -1218,8 +1218,8 @@ async function handleOldLibraryItems(ctx) {
         }
       })
 
-      if (libraryItem.media.episodes?.length && matchingOldLibraryItem.media.episodes?.length) {
-        for (const podcastEpisode of libraryItem.media.episodes) {
+      if (libraryItem.media.podcastEpisodes?.length && matchingOldLibraryItem.media.episodes?.length) {
+        for (const podcastEpisode of libraryItem.media.podcastEpisodes) {
           // Find matching old episode by audio file ino
           const matchingOldPodcastEpisode = matchingOldLibraryItem.media.episodes.find((oep) => oep.audioFile?.ino && oep.audioFile.ino === podcastEpisode.audioFile?.ino)
           if (matchingOldPodcastEpisode) {

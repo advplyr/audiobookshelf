@@ -660,7 +660,6 @@
   "ToastBookmarkCreateFailed": "Žymos sukurti nepavyko",
   "ToastBookmarkCreateSuccess": "Žyma pridėta",
   "ToastBookmarkRemoveSuccess": "Žyma pašalinta",
-  "ToastBookmarkUpdateSuccess": "Žyma atnaujinta",
   "ToastChaptersHaveErrors": "Skyriai turi klaidų",
   "ToastChaptersMustHaveTitles": "Skyriai turi turėti pavadinimus",
   "ToastChaptersRemoved": "Skyriai pašalinti",

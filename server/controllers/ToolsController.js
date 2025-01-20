@@ -7,6 +7,11 @@ const Database = require('../Database')
  * @property {import('../models/User')} user
  *
  * @typedef {Request & RequestUserObject} RequestWithUser
+ *
+ * @typedef RequestEntityObject
+ * @property {import('../models/LibraryItem')} libraryItem
+ *
+ * @typedef {RequestWithUser & RequestEntityObject} RequestWithLibraryItem
  */
 
 class ToolsController {
@@ -18,7 +23,7 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async encodeM4b(req, res) {
@@ -27,12 +32,12 @@ class ToolsController {
       return res.status(404).send('Audiobook not found')
     }
 
-    if (req.libraryItem.mediaType !== 'book') {
+    if (!req.libraryItem.isBook) {
       Logger.error(`[MiscController] encodeM4b: Invalid library item ${req.params.id}: not a book`)
       return res.status(400).send('Invalid library item: not a book')
     }
 
-    if (req.libraryItem.media.tracks.length <= 0) {
+    if (!req.libraryItem.hasAudioTracks) {
       Logger.error(`[MiscController] encodeM4b: Invalid audiobook ${req.params.id}: no audio tracks`)
       return res.status(400).send('Invalid audiobook: no audio tracks')
     }
@@ -72,11 +77,11 @@ class ToolsController {
    *
    * @this import('../routers/ApiRouter')
    *
-   * @param {RequestWithUser} req
+   * @param {RequestWithLibraryItem} req
    * @param {Response} res
    */
   async embedAudioFileMetadata(req, res) {
-    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioTracks || !req.libraryItem.isBook) {
       Logger.error(`[ToolsController] Invalid library item`)
       return res.sendStatus(400)
     }
@@ -111,7 +116,7 @@ class ToolsController {
 
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = await Database.libraryItemModel.getOldById(libraryItemId)
+      const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not found`)
         return res.sendStatus(404)
@@ -123,7 +128,7 @@ class ToolsController {
         return res.sendStatus(403)
       }
 
-      if (libraryItem.isMissing || !libraryItem.hasAudioFiles || !libraryItem.isBook) {
+      if (libraryItem.isMissing || !libraryItem.hasAudioTracks || !libraryItem.isBook) {
         Logger.error(`[ToolsController] Batch embed invalid library item (${libraryItemId})`)
         return res.sendStatus(400)
       }
@@ -157,7 +162,7 @@ class ToolsController {
     }
 
     if (req.params.id) {
-      const item = await Database.libraryItemModel.getOldById(req.params.id)
+      const item = await Database.libraryItemModel.getExpandedById(req.params.id)
       if (!item?.media) return res.sendStatus(404)
 
       // Check user can access this library item

@@ -709,7 +709,6 @@
   "ToastBookmarkCreateFailed": "Järjehoidja loomine ebaõnnestus",
   "ToastBookmarkCreateSuccess": "Järjehoidja lisatud",
   "ToastBookmarkRemoveSuccess": "Järjehoidja eemaldatud",
-  "ToastBookmarkUpdateSuccess": "Järjehoidja värskendatud",
   "ToastChaptersHaveErrors": "Peatükkidel on vigu",
   "ToastChaptersMustHaveTitles": "Peatükkidel peab olema pealkiri",
   "ToastCollectionRemoveSuccess": "Kogum eemaldatud",

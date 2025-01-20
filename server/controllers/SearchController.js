@@ -24,7 +24,7 @@ class SearchController {
    */
   async findBooks(req, res) {
     const id = req.query.id
-    const libraryItem = await Database.libraryItemModel.getOldById(id)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(id)
     const provider = req.query.provider || 'google'
     const title = req.query.title || ''
     const author = req.query.author || ''

@@ -249,11 +249,33 @@ export default {
         }
       }
       return target
+    },
+    enableBreakParagraphOnReturn() {
+      // Trix works with divs by default, we want paragraphs instead
+      Trix.config.blockAttributes.default.tagName = 'p'
+      // Enable break paragraph on Enter (Shift + Enter will still create a line break)
+      Trix.config.blockAttributes.default.breakOnReturn = true
+
+      // Hack to fix buggy paragraph breaks
+      // Copied from https://github.com/basecamp/trix/issues/680#issuecomment-735742942
+      Trix.Block.prototype.breaksOnReturn = function () {
+        const attr = this.getLastAttribute()
+        const config = Trix.getBlockConfig(attr ? attr : 'default')
+        return config ? config.breakOnReturn : false
+      }
+      Trix.LineBreakInsertion.prototype.shouldInsertBlockBreak = function () {
+        if (this.block.hasAttributes() && this.block.isListItem() && !this.block.isEmpty()) {
+          return this.startLocation.offset > 0
+        } else {
+          return !this.shouldBreakFormattedBlock() ? this.breaksOnReturn : false
+        }
+      }
     }
   },
   mounted() {
     /** Override editor configuration */
     this.overrideConfig(this.config)
+    this.enableBreakParagraphOnReturn()
     /** Check if editor read-only mode is required */
     this.decorateDisabledEditor(this.disabledEditor)
     this.$nextTick(() => {

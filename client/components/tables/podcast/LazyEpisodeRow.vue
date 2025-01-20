@@ -96,7 +96,7 @@ export default {
       return this.episode?.title || ''
     },
     episodeSubtitle() {
-      return this.episode?.subtitle || ''
+      return this.episode?.subtitle || this.episode?.description || ''
     },
     episodeType() {
       return this.episode?.episodeType || ''
