@@ -308,7 +308,6 @@ class FeedEpisode extends Model {
     const customElements = [
       { 'itunes:author': this.author || null },
       { 'itunes:duration': Math.round(Number(this.duration)) },
-      { 'itunes:summary': this.description || null },
       {
         'itunes:explicit': !!this.explicit
       },
@@ -319,6 +318,9 @@ class FeedEpisode extends Model {
       // Remove empty custom elements
       return Object.values(element)[0] !== null
     })
+    if (this.description) {
+      customElements.push({ 'itunes:summary': { _cdata: this.description } })
+    }
 
     return {
       title: this.title,
