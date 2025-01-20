@@ -561,7 +561,42 @@ class Feed extends Model {
    * @param {string} hostPrefix
    */
   buildXml(hostPrefix) {
-    const blockTags = [{ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' }]
+    const customElements = [
+      { language: this.language || 'en' },
+      { author: this.author || 'advplyr' },
+      { 'itunes:author': this.author || 'advplyr' },
+      { 'itunes:type': this.podcastType || 'serial' },
+      {
+        'itunes:image': {
+          _attr: {
+            href: `${hostPrefix}${this.imageURL}`
+          }
+        }
+      },
+      { 'itunes:explicit': !!this.explicit }
+    ]
+
+    if (this.description) {
+      customElements.push({ 'itunes:summary': { _cdata: this.description } })
+    }
+
+    const itunesOwnersData = []
+    if (this.ownerName || this.author) {
+      itunesOwnersData.push({ 'itunes:name': this.ownerName || this.author })
+    }
+    if (this.ownerEmail) {
+      itunesOwnersData.push({ 'itunes:email': this.ownerEmail })
+    }
+    if (itunesOwnersData.length) {
+      customElements.push({
+        'itunes:owner': itunesOwnersData
+      })
+    }
+
+    if (this.preventIndexing) {
+      customElements.push({ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' })
+    }
+
     const rssData = {
       title: this.title,
       description: this.description || '',
@@ -571,29 +606,10 @@ class Feed extends Model {
       image_url: `${hostPrefix}${this.imageURL}`,
       custom_namespaces: {
         itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
-        psc: 'http://podlove.org/simple-chapters',
         podcast: 'https://podcastindex.org/namespace/1.0',
         googleplay: 'http://www.google.com/schemas/play-podcasts/1.0'
       },
-      custom_elements: [
-        { language: this.language || 'en' },
-        { author: this.author || 'advplyr' },
-        { 'itunes:author': this.author || 'advplyr' },
-        { 'itunes:summary': this.description || '' },
-        { 'itunes:type': this.podcastType },
-        {
-          'itunes:image': {
-            _attr: {
-              href: `${hostPrefix}${this.imageURL}`
-            }
-          }
-        },
-        {
-          'itunes:owner': [{ 'itunes:name': this.ownerName || this.author || '' }, { 'itunes:email': this.ownerEmail || '' }]
-        },
-        { 'itunes:explicit': !!this.explicit },
-        ...(this.preventIndexing ? blockTags : [])
-      ]
+      custom_elements: customElements
     }
 
     const rssfeed = new RSS(rssData)
