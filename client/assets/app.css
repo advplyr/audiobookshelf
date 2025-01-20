@@ -5,7 +5,7 @@
 @import './absicons.css';
 
 :root {
-  --bookshelf-texture-img: url(/textures/wood_default.jpg);
+  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
   --bookshelf-divider-bg: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%);
 }
 

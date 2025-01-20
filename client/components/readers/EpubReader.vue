@@ -97,9 +97,9 @@ export default {
     },
     ebookUrl() {
       if (this.fileId) {
-        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+        return `${this.$config.routerBasePath}/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
-      return `/api/items/${this.libraryItemId}/ebook`
+      return `${this.$config.routerBasePath}/api/items/${this.libraryItemId}/ebook`
     },
     themeRules() {
       const isDark = this.ereaderSettings.theme === 'dark'
