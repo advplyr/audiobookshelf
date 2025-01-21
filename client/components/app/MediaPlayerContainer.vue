@@ -12,10 +12,15 @@
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
         <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
-          <span class="material-symbols text-sm">person</span>
+          <span class="material-symbols text-sm">person_edit</span>
           <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+          </div>
+          <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
+          <span class="material-symbols text-sm pl-1.5">record_voice_over</span>
+          <div v-if="narrators.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
+            <nuxt-link v-for="(narrator, index) in narrators" :key="index" :to="`/library/${streamLibraryItem.libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}<span v-if="index < narrators.length - 1">,&nbsp;</span></nuxt-link>
           </div>
           <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
         </div>
@@ -153,6 +158,9 @@ export default {
     },
     authors() {
       return this.mediaMetadata.authors || []
+    },
+    narrators() {
+      return this.mediaMetadata.narrators || []
     },
     libraryId() {
       return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
