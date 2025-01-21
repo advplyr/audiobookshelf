@@ -459,7 +459,7 @@
   "LabelNotificationsMaxQueueSize": "Maksimal køstørrelse for meddelelseshændelser",
   "LabelNotificationsMaxQueueSizeHelp": "Hændelser begrænses til at udløse en gang pr. sekund. Hændelser ignoreres, hvis køen er fyldt. Dette forhindrer meddelelsesspam.",
   "LabelNumberOfBooks": "Antal bøger",
-  "LabelNumberOfEpisodes": "Antal episoder",
+  "LabelNumberOfEpisodes": "# afsnit",
   "LabelOpenRSSFeed": "Åbn RSS-feed",
   "LabelOverwrite": "Overskriv",
   "LabelPassword": "Kodeord",
