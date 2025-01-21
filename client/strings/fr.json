@@ -546,7 +546,7 @@
   "LabelServerYearReview": "Bilan de l’année du serveur ({0})",
   "LabelSetEbookAsPrimary": "Définir comme principale",
   "LabelSetEbookAsSupplementary": "Définir comme supplémentaire",
-  "LabelSettingsAllowIframe": "Autoriser l'intégration dans une iframe",
+  "LabelSettingsAllowIframe": "Autoriser l’intégration dans une iframe",
   "LabelSettingsAudiobooksOnly": "Livres audios seulement",
   "LabelSettingsAudiobooksOnlyHelp": "L’activation de ce paramètre ignorera les fichiers de type « livre numériques », sauf s’ils se trouvent dans un dossier spécifique , auquel cas ils seront définis comme des livres numériques supplémentaires",
   "LabelSettingsBookshelfViewHelp": "Interface skeumorphique avec étagères en bois",
