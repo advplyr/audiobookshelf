@@ -556,7 +556,7 @@
   "LabelTags": "Taggar",
   "LabelTagsAccessibleToUser": "Taggar användaren har tillgång till",
   "LabelTagsNotAccessibleToUser": "Taggar inte tillgängliga för användaren",
-  "LabelTasks": "Körande uppgifter",
+  "LabelTasks": "Pågående aktivitet",
   "LabelTextEditorBulletedList": "Punktlista",
   "LabelTextEditorNumberedList": "Numrerad lista",
   "LabelTheme": "Utseende",
