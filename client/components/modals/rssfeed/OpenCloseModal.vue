@@ -12,7 +12,7 @@
         <div class="w-full relative">
           <ui-text-input :value="feedUrl" readonly />
 
-          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feedUrl)">content_copy</span>
+          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 transform hover:scale-125 cursor-pointer" :class="copiedToClipboard ? 'text-success' : 'text-gray-300 hover:text-white'" @click="copyToClipboard(feedUrl)">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
         </div>
 
         <div v-if="currentFeed.meta" class="mt-5">
@@ -68,7 +68,8 @@ export default {
         preventIndexing: true,
         ownerName: '',
         ownerEmail: ''
-      }
+      },
+      copiedToClipboard: false
     }
   },
   watch: {
@@ -160,8 +161,11 @@ export default {
           this.processing = false
         })
     },
-    copyToClipboard(str) {
-      this.$copyToClipboard(str, this)
+    async copyToClipboard(str) {
+      this.copiedToClipboard = await this.$copyToClipboard(str)
+      setTimeout(() => {
+        this.copiedToClipboard = false
+      }, 2000)
     },
     closeFeed() {
       this.processing = true
