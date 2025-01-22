@@ -508,6 +508,7 @@
   "LabelRSSFeedCustomOwnerName": "Custom owner Name",
   "LabelRSSFeedOpen": "RSS Feed Open",
   "LabelRSSFeedPreventIndexing": "Prevent Indexing",
+  "LabelRSSFeedReverseOrder": "Reverse Episode Order",
   "LabelRSSFeedSlug": "RSS Feed Slug",
   "LabelRSSFeedURL": "RSS Feed URL",
   "LabelRandomly": "Randomly",

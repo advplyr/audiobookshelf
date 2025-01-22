@@ -24,6 +24,9 @@
         <div class="w-full relative mb-1">
           <ui-text-input-with-label v-model="ownerEmail" :label="$strings.LabelRSSFeedCustomOwnerEmail" />
         </div>
+        <div class="w-full relative mb-1">
+          <ui-checkbox v-model="reverseOrder" :label="$strings.LabelRSSFeedReverseOrder" checkbox-bg="primary" border-color="gray-600" label-class="pl-2" />
+        </div>
       </template>
     </div>
   </div>
@@ -38,7 +41,8 @@ export default {
         return {
           preventIndexing: true,
           ownerName: '',
-          ownerEmail: ''
+          ownerEmail: '',
+          reverseOrder: false
         }
       }
     }
@@ -80,6 +84,17 @@ export default {
         this.$emit('input', {
           ...this.value,
           ownerEmail: value
+        })
+      }
+    },
+    reverseOrder: {
+      get() {
+        return this.value.reverseOrder
+      },
+      set(value) {
+        this.$emit('input', {
+          ...this.value,
+          reverseOrder: value
         })
       }
     }

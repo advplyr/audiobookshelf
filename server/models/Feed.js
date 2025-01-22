@@ -388,7 +388,11 @@ class Feed extends Model {
         ownerEmail: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
         preventIndexing: DataTypes.BOOLEAN,
-        coverPath: DataTypes.STRING
+        coverPath: DataTypes.STRING,
+        reverseOrder: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: false
+        }
       },
       {
         sequelize,
@@ -613,8 +617,13 @@ class Feed extends Model {
     }
 
     const rssfeed = new RSS(rssData)
-    this.feedEpisodes.forEach((ep) => {
-      rssfeed.item(ep.getRSSData(hostPrefix))
+    let episodes = this.feedEpisodes || []
+    if (this.reverseOrder) {
+      episodes = [...episodes].reverse()
+    }
+
+    episodes.forEach(episode => {
+      rssfeed.item(episode.getRSSData(hostPrefix))
     })
     return rssfeed.xml()
   }
