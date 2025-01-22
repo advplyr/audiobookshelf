@@ -16,7 +16,7 @@
         </div>
       </div>
       <p dir="auto" class="text-lg font-semibold mb-6">{{ title }}</p>
-      <div v-if="description" dir="auto" class="default-style" v-html="description" />
+      <div v-if="description" dir="auto" class="default-style less-spacing" v-html="description" />
       <p v-else class="mb-2">{{ $strings.MessageNoDescription }}</p>
 
       <div class="w-full h-px bg-white/5 my-4" />

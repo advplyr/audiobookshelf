@@ -53,3 +53,16 @@
   text-align: start !important;
   text-align-last: start !important;
 }
+
+.default-style.less-spacing p {
+  margin-block-start: 0;
+}
+
+.default-style.less-spacing ul {
+  margin-block-start: 0;
+}
+
+.default-style.less-spacing ol {
+  margin-block-start: 0;
+}
+

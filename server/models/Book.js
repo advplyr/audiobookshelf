@@ -2,6 +2,7 @@ const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const parseNameString = require('../utils/parsers/parseNameString')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 /**
  * @typedef EBookFileObject
@@ -343,6 +344,7 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
+      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
@@ -542,6 +544,7 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
+      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
@@ -564,6 +567,7 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
+      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
