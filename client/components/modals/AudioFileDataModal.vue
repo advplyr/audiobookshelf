@@ -90,8 +90,8 @@
         <div class="relative">
           <ui-textarea-with-label :value="prettyFfprobeData" readonly :rows="30" class="text-xs" />
 
-          <button class="absolute top-4 right-4" :class="copiedToClipboard ? 'text-success' : 'text-white/50 hover:text-white/80'" @click.stop="copyFfprobeData">
-            <span class="material-symbols">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
+          <button class="absolute top-4 right-4" :class="hasCopied ? 'text-success' : 'text-gray-400 hover:text-white'" @click.stop="copyToClipboard">
+            <span class="material-symbols">{{ hasCopied ? 'done' : 'content_copy' }}</span>
           </button>
         </div>
       </div>
@@ -113,14 +113,13 @@ export default {
     return {
       probingFile: false,
       ffprobeData: null,
-      copiedToClipboard: false
+      hasCopied: null
     }
   },
   watch: {
     show(newVal) {
       if (newVal) {
         this.ffprobeData = null
-        this.copiedToClipboard = false
         this.probingFile = false
       }
     }
@@ -165,8 +164,13 @@ export default {
           this.probingFile = false
         })
     },
-    async copyFfprobeData() {
-      this.copiedToClipboard = await this.$copyToClipboard(this.prettyFfprobeData)
+    copyToClipboard() {
+      clearTimeout(this.hasCopied)
+      this.$copyToClipboard(this.prettyFfprobeData).then((success) => {
+        this.hasCopied = setTimeout(() => {
+          this.hasCopied = null
+        }, 2000)
+      })
     }
   },
   mounted() {}

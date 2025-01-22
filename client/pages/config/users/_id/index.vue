@@ -14,11 +14,7 @@
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
       <div v-if="userToken" class="flex text-xs mt-4">
-        <ui-text-input-with-label :label="$strings.LabelApiToken" :value="userToken" readonly />
-
-        <div class="px-1 mt-8 cursor-pointer" @click="copyToClipboard(userToken)">
-          <span class="material-symbols pl-2 text-base">content_copy</span>
-        </div>
+        <ui-text-input-with-label :label="$strings.LabelApiToken" :value="userToken" readonly show-copy />
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
@@ -140,9 +136,6 @@ export default {
     }
   },
   methods: {
-    copyToClipboard(str) {
-      this.$copyToClipboard(str, this)
-    },
     async init() {
       this.listeningSessions = await this.$axios
         .$get(`/api/users/${this.user.id}/listening-sessions?page=0&itemsPerPage=10`)
