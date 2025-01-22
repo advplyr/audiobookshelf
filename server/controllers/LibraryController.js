@@ -100,6 +100,15 @@ class LibraryController {
               return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
             }
             newLibraryPayload.settings[key] = req.body.settings[key]
+          } else if (key === 'markAsFinishedPercentComplete' || key === 'markAsFinishedTimeRemaining') {
+            if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+            } else if (key === 'markAsFinishedPercentComplete' && req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 100)) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 100`)
+            } else if (key === 'markAsFinishedTimeRemaining' && req.body.settings[key] !== null && Number(req.body.settings[key]) < 0) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be greater than or equal to 0`)
+            }
+            newLibraryPayload.settings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
           } else {
             if (typeof req.body.settings[key] !== typeof newLibraryPayload.settings[key]) {
               return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof newLibraryPayload.settings[key]}`)
@@ -325,7 +334,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else if (key === 'markAsFinishedTimeRemaining') {
@@ -338,7 +347,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else {

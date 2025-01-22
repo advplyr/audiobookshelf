@@ -141,15 +141,19 @@ function extractPodcastMetadata(channel) {
 
 function extractEpisodeData(item) {
   // Episode must have url
-  if (!item.enclosure?.[0]?.['$']?.url) {
+  let enclosure
+
+  if (item.enclosure?.[0]?.['$']?.url) {
+    enclosure = item.enclosure[0]['$']
+  } else if(item['media:content']?.find(c => c?.['$']?.url && (c?.['$']?.type ?? "").startsWith("audio"))) {
+    enclosure = item['media:content'].find(c => (c['$']?.type ?? "").startsWith("audio"))['$']
+  } else {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
   const episode = {
-    enclosure: {
-      ...item.enclosure[0]['$']
-    }
+    enclosure: enclosure,
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
