@@ -165,6 +165,15 @@ For this to work you must enable at least the following mods using `a2enmod`:
 </IfModule>
 ```
 
+If using Apache >= 2.4.47 you can use the following, without having to use any of the `RewriteEngine`, `RewriteCond`, or `RewriteRule` directives. For example:
+```xml
+    <Location /audiobookshelf>
+        ProxyPreserveHost on
+        ProxyPass http://localhost:<audiobookshelf_port>/audiobookshelf upgrade=websocket
+        ProxyPassReverse http://localhost:<audiobookshelf_port>/audiobookshelf
+    </Location>
+```
+
 Some SSL certificates like those signed by Let's Encrypt require ACME validation. To allow Let's Encrypt to write and confirm the ACME challenge, edit your VirtualHost definition to prevent proxying traffic that queries `/.well-known` and instead serve that directly:
 
 ```bash
