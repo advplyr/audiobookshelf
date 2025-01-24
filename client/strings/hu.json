@@ -508,6 +508,7 @@
   "LabelRSSFeedCustomOwnerName": "Egyéni tulajdonos neve",
   "LabelRSSFeedOpen": "RSS hírcsatorna nyitva",
   "LabelRSSFeedPreventIndexing": "Indexelés megakadályozása",
+  "LabelRSSFeedReverseOrder": "Epizódok fordított sorrendje",
   "LabelRSSFeedSlug": "RSS hírcsatorna slug",
   "LabelRSSFeedURL": "RSS hírcsatorna URL",
   "LabelRandomly": "Véletlenszerűen",

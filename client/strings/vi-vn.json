@@ -380,6 +380,7 @@
   "LabelRSSFeedCustomOwnerName": "Tên chủ sở hữu tùy chỉnh",
   "LabelRSSFeedOpen": "Mở RSS Feed",
   "LabelRSSFeedPreventIndexing": "Ngăn chặn Chỉ mục RSS Feed",
+  "LabelRSSFeedReverseOrder": "Đảo ngược thứ tự tập",
   "LabelRSSFeedSlug": "Slug RSS Feed",
   "LabelRSSFeedURL": "URL RSS Feed",
   "LabelRead": "Đọc",

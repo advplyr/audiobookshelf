@@ -508,6 +508,7 @@
   "LabelRSSFeedCustomOwnerName": "Ime lastnika po meri",
   "LabelRSSFeedOpen": "Odprt vir RSS",
   "LabelRSSFeedPreventIndexing": "Prepreči indeksiranje",
+  "LabelRSSFeedReverseOrder": "Obrni vrstni red epizod",
   "LabelRSSFeedSlug": "Slug RSS vira",
   "LabelRSSFeedURL": "URL vira RSS",
   "LabelRandomly": "Naključno",

@@ -468,6 +468,8 @@
   "LabelPublishers": "Wydawcy",
   "LabelRSSFeedOpen": "RSS Feed otwarty",
   "LabelRSSFeedPreventIndexing": "Zapobiegaj indeksowaniu",
+  "LabelRSSFeedReverseOrder": "Odwrócona kolejność odcinków",
+  "LabelRSSFeedSlug": "Slug kanału RSS",
   "LabelRSSFeedURL": "URL kanały RSS",
   "LabelRandomly": "Losowo",
   "LabelReAddSeriesToContinueListening": "Ponownie Dodaj Serię do sekcji Kontunuuj Odtwarzanie",

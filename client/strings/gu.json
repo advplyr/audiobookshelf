@@ -161,6 +161,7 @@
   "LabelBackupsMaxBackupSize": "Maximum backup size (in GB)",
   "LabelFontFamily": "ફોન્ટ કુટુંબ",
   "LabelPodcastSearchRegion": "પોડકાસ્ટ શોધ પ્રદેશ",
+  "LabelRSSFeedReverseOrder": "ઉલટો એપિસોડ ક્રમ",
   "LabelSettingsPreferMatchedMetadataHelp": "Matched data will overide item details when using Quick Match. By default Quick Match will only fill in missing details.",
   "MessageBookshelfNoResultsForFilter": "No Results for filter \"{0}: {1}\"",
   "ToastSendEbookToDeviceFailed": "Failed to Send Ebook to device"

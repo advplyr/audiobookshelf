@@ -505,6 +505,7 @@
   "LabelRSSFeedCustomOwnerName": "Nome del proprietario personalizzato",
   "LabelRSSFeedOpen": "Flusso RSS aperto",
   "LabelRSSFeedPreventIndexing": "Impedisci l'indicizzazione",
+  "LabelRSSFeedReverseOrder": "Ordine inverso degli episodi",
   "LabelRSSFeedSlug": "Parole chiave del flusso RSS",
   "LabelRSSFeedURL": "URL del flusso RSS",
   "LabelRandomly": "Casualmente",

@@ -420,6 +420,7 @@
   "LabelRSSFeedCustomOwnerName": "Nome do dono personalizado",
   "LabelRSSFeedOpen": "Feed RSS Aberto",
   "LabelRSSFeedPreventIndexing": "Impedir Indexação",
+  "LabelRSSFeedReverseOrder": "Ordem inversa dos episódios",
   "LabelRSSFeedSlug": "Slug do Feed RSS",
   "LabelRSSFeedURL": "URL do Feed RSS",
   "LabelRead": "Lido",

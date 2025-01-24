@@ -384,6 +384,7 @@
   "LabelRSSFeedCustomOwnerName": "Pasirinktinis savininko vardas",
   "LabelRSSFeedOpen": "Atidarytas RSS srautas",
   "LabelRSSFeedPreventIndexing": "Neleisti indeksuoti",
+  "LabelRSSFeedReverseOrder": "Atvirkštinė epizodų tvarka",
   "LabelRSSFeedSlug": "RSS srauto identifikatorius",
   "LabelRSSFeedURL": "RSS srauto URL",
   "LabelRead": "Skaityta",

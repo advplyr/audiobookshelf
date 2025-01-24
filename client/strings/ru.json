@@ -508,6 +508,7 @@
   "LabelRSSFeedCustomOwnerName": "Пользовательское Имя владельца",
   "LabelRSSFeedOpen": "Открыть RSS-канал",
   "LabelRSSFeedPreventIndexing": "Запретить индексирование",
+  "LabelRSSFeedReverseOrder": "Обратный порядок эпизодов",
   "LabelRSSFeedSlug": "Встроить RSS-канал",
   "LabelRSSFeedURL": "URL RSS-канала",
   "LabelRandomly": "Случайно",

@@ -507,6 +507,7 @@
   "LabelRSSFeedPreventIndexing": "Evitar l'indexació",
   "LabelRSSFeedSlug": "Font RSS Slug",
   "LabelRSSFeedURL": "URL de la Font RSS",
+  "LabelRSSFeedReverseOrder": "Ordre invers",
   "LabelRandomly": "Aleatòriament",
   "LabelReAddSeriesToContinueListening": "Reafegir la sèrie per continuar escoltant-la",
   "LabelRead": "Llegit",

@@ -152,5 +152,6 @@
   "HeaderLogin": "تسجيل الدخول",
   "HeaderLogs": "السجلات",
   "HeaderManageGenres": "إدارة الانواع",
-  "HeaderManageTags": "إدارة العلامات"
+  "HeaderManageTags": "إدارة العلامات",
+  "LabelRSSFeedReverseOrder": "ترتيب عكسي"
 }

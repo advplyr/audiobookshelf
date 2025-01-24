@@ -413,6 +413,7 @@
   "LabelRSSFeedCustomOwnerName": "Kohandatud omaniku nimi",
   "LabelRSSFeedOpen": "Ava RSS voog",
   "LabelRSSFeedPreventIndexing": "Vältige indekseerimist",
+  "LabelRSSFeedReverseOrder": "Pööra episoodide järjekord ümber",
   "LabelRSSFeedSlug": "RSS voog Slug",
   "LabelRSSFeedURL": "RSS voog URL",
   "LabelRead": "Lugenud",

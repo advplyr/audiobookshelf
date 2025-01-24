@@ -86,6 +86,7 @@
   "LabelBackupsMaxBackupSize": "Maximum backup size (in GB)",
   "LabelFontFamily": "फुहारा परिवार",
   "LabelPodcastSearchRegion": "पॉडकास्ट खोज क्षेत्र",
+  "LabelRSSFeedReverseOrder": "उल्टा एपिसोड क्रम",
   "LabelSettingsPreferMatchedMetadataHelp": "Matched data will overide item details when using Quick Match. By default Quick Match will only fill in missing details.",
   "MessageBookshelfNoResultsForFilter": "No Results for filter \"{0}: {1}\"",
   "NoteChangeRootPassword": "रूट user is the only user that can have an empty password",
