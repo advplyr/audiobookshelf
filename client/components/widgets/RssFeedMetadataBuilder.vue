@@ -18,14 +18,14 @@
         <div class="flex-grow pt-2 mb-2">
           <ui-checkbox v-model="preventIndexing" :label="$strings.LabelPreventIndexing" checkbox-bg="primary" border-color="gray-600" label-class="pl-2" />
         </div>
+        <div class="flex-grow pt-2 mb-2">
+          <ui-checkbox v-model="reverseOrder" :label="$strings.LabelRSSFeedReverseOrder" checkbox-bg="primary" border-color="gray-600" label-class="pl-2" />
+        </div>
         <div class="w-full relative mb-1">
           <ui-text-input-with-label v-model="ownerName" :label="$strings.LabelRSSFeedCustomOwnerName" />
         </div>
         <div class="w-full relative mb-1">
           <ui-text-input-with-label v-model="ownerEmail" :label="$strings.LabelRSSFeedCustomOwnerEmail" />
-        </div>
-        <div class="w-full relative mb-1">
-          <ui-checkbox v-model="reverseOrder" :label="$strings.LabelRSSFeedReverseOrder" checkbox-bg="primary" border-color="gray-600" label-class="pl-2" />
         </div>
       </template>
     </div>
