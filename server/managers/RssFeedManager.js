@@ -8,7 +8,7 @@ const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 
 class RssFeedManager {
-  constructor() {}
+  constructor() { }
 
   /**
    * Remove invalid feeds (invalid if the entity does not exist)
@@ -263,6 +263,7 @@ class RssFeedManager {
 
     return {
       preventIndexing: metadataDetails.preventIndexing,
+      reverseOrder: metadataDetails.reverseOrder,
       ownerName: metadataDetails.ownerName && typeof metadataDetails.ownerName === 'string' ? metadataDetails.ownerName : null,
       ownerEmail: metadataDetails.ownerEmail && typeof metadataDetails.ownerEmail === 'string' ? metadataDetails.ownerEmail : null
     }

@@ -9,6 +9,7 @@ const RSS = require('../libs/rss')
  * @property {boolean} preventIndexing
  * @property {string} ownerName
  * @property {string} ownerEmail
+ * @property {boolean} reverseOrder
  */
 
 /**
@@ -58,6 +59,8 @@ class Feed extends Model {
     this.explicit
     /** @type {boolean} */
     this.preventIndexing
+    /** @type {boolean} */
+    this.reverseOrder
     /** @type {string} */
     this.coverPath
     /** @type {UUIDV4} */
@@ -133,6 +136,7 @@ class Feed extends Model {
 
     if (feedOptions) {
       feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.reverseOrder = feedOptions.reverseOrder
       feedObj.ownerName = feedOptions.ownerName
       feedObj.ownerEmail = feedOptions.ownerEmail
     }
