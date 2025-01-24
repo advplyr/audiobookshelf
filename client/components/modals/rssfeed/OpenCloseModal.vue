@@ -10,9 +10,7 @@
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedIsOpen }}</p>
 
         <div class="w-full relative">
-          <ui-text-input :value="feedUrl" readonly />
-
-          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feedUrl)">content_copy</span>
+          <ui-text-input :value="feedUrl" readonly show-copy />
         </div>
 
         <div v-if="currentFeed.meta" class="mt-5">
@@ -159,9 +157,6 @@ export default {
         .finally(() => {
           this.processing = false
         })
-    },
-    copyToClipboard(str) {
-      this.$copyToClipboard(str, this)
     },
     closeFeed() {
       this.processing = true

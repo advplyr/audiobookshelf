@@ -7,8 +7,8 @@
     <div v-if="type === 'password' && isHovering" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
       <span class="material-symbols text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
     </div>
-    <div v-else-if="showCopy" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
-      <span class="material-symbols text-gray-400 cursor-pointer text-lg" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
+    <div v-else-if="showCopy" class="absolute top-0 right-0 h-full px-2 flex items-center justify-center">
+      <span class="material-symbols cursor-pointer text-lg" :class="hasCopied ? 'text-success' : 'text-gray-400 hover:text-white'" @click.stop.prevent="copyToClipboard">{{ !hasCopied ? 'content_copy' : 'done' }}</span>
     </div>
   </div>
 </template>
@@ -47,7 +47,7 @@ export default {
       showPassword: false,
       isHovering: false,
       isFocused: false,
-      hasCopied: false,
+      hasCopied: null,
       isInvalidDate: false
     }
   },
@@ -62,7 +62,12 @@ export default {
     },
     classList() {
       var _list = []
-      _list.push(`px-${this.paddingX}`)
+      if (this.showCopy) {
+        _list.push('pl-3', 'pr-8')
+      } else {
+        _list.push(`px-${this.paddingX}`)
+      }
+
       _list.push(`py-${this.paddingY}`)
       if (this.noSpinner) _list.push('no-spinner')
       if (this.textCenter) _list.push('text-center')
@@ -80,11 +85,10 @@ export default {
   },
   methods: {
     copyToClipboard() {
-      if (this.hasCopied) return
+      clearTimeout(this.hasCopied)
       this.$copyToClipboard(this.inputValue).then((success) => {
-        this.hasCopied = success
-        setTimeout(() => {
-          this.hasCopied = false
+        this.hasCopied = setTimeout(() => {
+          this.hasCopied = null
         }, 2000)
       })
     },
