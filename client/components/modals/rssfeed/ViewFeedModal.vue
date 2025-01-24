@@ -5,8 +5,7 @@
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedGeneral }}</p>
 
         <div class="w-full relative">
-          <ui-text-input :value="feedUrl" readonly />
-          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 transform hover:scale-125 cursor-pointer" :class="copiedToClipboard ? 'text-success' : 'text-gray-300 hover:text-white'" @click="copyToClipboard(feedUrl)">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
+          <ui-text-input :value="feedUrl" readonly show-copy />
         </div>
 
         <div v-if="feed.meta" class="mt-5">
@@ -62,8 +61,7 @@ export default {
   },
   data() {
     return {
-      processing: false,
-      copiedToClipboard: false
+      processing: false
     }
   },
   computed: {
@@ -81,16 +79,7 @@ export default {
     feedUrl() {
       return this.feed ? `${window.origin}${this.$config.routerBasePath}${this.feed.feedUrl}` : ''
     }
-  },
-  methods: {
-    async copyToClipboard(str) {
-      this.copiedToClipboard = await this.$copyToClipboard(str)
-      setTimeout(() => {
-        this.copiedToClipboard = false
-      }, 2000)
-    }
-  },
-  mounted() {}
+  }
 }
 </script>
 

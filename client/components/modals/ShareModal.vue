@@ -16,7 +16,7 @@
       <template v-if="currentShare">
         <div class="w-full py-2">
           <label class="px-1 text-sm font-semibold block">{{ $strings.LabelShareURL }}</label>
-          <ui-text-input v-model="currentShareUrl" show-copy readonly class="text-base h-10" />
+          <ui-text-input v-model="currentShareUrl" show-copy readonly />
         </div>
         <div class="w-full py-2 px-1">
           <p v-if="currentShare.isDownloadable" class="text-sm mb-2">{{ $strings.LabelDownloadable }}</p>
