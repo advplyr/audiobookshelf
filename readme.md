@@ -47,7 +47,6 @@ Check out the web client demo: https://audiobooks.dev/ (thanks for hosting [@Vit
 
 Username/password: `demo`/`demo` (user account)
 
-
 ### Android App (beta)
 
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
@@ -86,7 +85,7 @@ See [install docs](https://www.audiobookshelf.org/docs)
 
 #### Important! Audiobookshelf requires a websocket connection.
 
-#### Note: Subfolder paths (e.g. /audiobooks) are not supported yet. See [issue](https://github.com/advplyr/audiobookshelf/issues/385)
+#### Note: Using a subfolder is supported with no additional changes but the path must be `/audiobookshelf` (this is not changeable). See [discussion](https://github.com/advplyr/audiobookshelf/discussions/3535)
 
 ### NGINX Proxy Manager
 
@@ -166,6 +165,7 @@ For this to work you must enable at least the following mods using `a2enmod`:
 ```
 
 If using Apache >= 2.4.47 you can use the following, without having to use any of the `RewriteEngine`, `RewriteCond`, or `RewriteRule` directives. For example:
+
 ```xml
     <Location /audiobookshelf>
         ProxyPreserveHost on
