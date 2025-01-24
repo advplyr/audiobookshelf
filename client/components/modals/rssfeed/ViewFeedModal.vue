@@ -22,6 +22,12 @@
             </div>
             <div>{{ feed.meta.reverseOrder ? 'Yes' : 'No' }}</div>
           </div>
+          <div class="flex py-0.5">
+            <div class="w-48">
+              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedReverseOrder }}</span>
+            </div>
+            <div>{{ feed.meta.reverseOrder ? 'Yes' : 'No' }}</div>
+          </div>
           <div v-if="feed.meta.ownerName" class="flex py-0.5">
             <div class="w-48">
               <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>

@@ -40,9 +40,9 @@ export default {
       default: () => {
         return {
           preventIndexing: true,
+          reverseOrder: false,
           ownerName: '',
-          ownerEmail: '',
-          reverseOrder: false
+          ownerEmail: ''
         }
       }
     }
@@ -65,6 +65,17 @@ export default {
         })
       }
     },
+    reverseOrder: {
+      get() {
+        return this.value.reverseOrder
+      },
+      set(value) {
+        this.$emit('input', {
+          ...this.value,
+          reverseOrder: value
+        })
+      }
+    },
     ownerName: {
       get() {
         return this.value.ownerName
@@ -84,17 +95,6 @@ export default {
         this.$emit('input', {
           ...this.value,
           ownerEmail: value
-        })
-      }
-    },
-    reverseOrder: {
-      get() {
-        return this.value.reverseOrder
-      },
-      set(value) {
-        this.$emit('input', {
-          ...this.value,
-          reverseOrder: value
         })
       }
     }
