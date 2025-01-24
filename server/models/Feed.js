@@ -3,13 +3,14 @@ const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 
 const RSS = require('../libs/rss')
+const { reverse } = require('dns')
 
 /**
  * @typedef FeedOptions
  * @property {boolean} preventIndexing
+ * @property {boolean} reverseOrder
  * @property {string} ownerName
  * @property {string} ownerEmail
- * @property {boolean} reverseOrder
  */
 
 /**
@@ -229,6 +230,7 @@ class Feed extends Model {
 
     if (feedOptions) {
       feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.reverseOrder = feedOptions.reverseOrder
       feedObj.ownerName = feedOptions.ownerName
       feedObj.ownerEmail = feedOptions.ownerEmail
     }
@@ -318,6 +320,7 @@ class Feed extends Model {
 
     if (feedOptions) {
       feedObj.preventIndexing = feedOptions.preventIndexing
+      feedObj.reverseOrder = feedOptions.reverseOrder
       feedObj.ownerName = feedOptions.ownerName
       feedObj.ownerEmail = feedOptions.ownerEmail
     }
@@ -392,11 +395,8 @@ class Feed extends Model {
         ownerEmail: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
         preventIndexing: DataTypes.BOOLEAN,
-        coverPath: DataTypes.STRING,
-        reverseOrder: {
-          type: DataTypes.BOOLEAN,
-          defaultValue: false
-        }
+        reverseOrder: DataTypes.BOOLEAN,
+        coverPath: DataTypes.STRING
       },
       {
         sequelize,
@@ -664,6 +664,7 @@ class Feed extends Model {
         type: this.podcastType,
         language: this.language,
         preventIndexing: this.preventIndexing,
+        reverseOrder: this.reverseOrder,
         ownerName: this.ownerName,
         ownerEmail: this.ownerEmail
       },
@@ -685,6 +686,7 @@ class Feed extends Model {
         title: this.title,
         description: this.description,
         preventIndexing: this.preventIndexing,
+        reverseOrder: this.reverseOrder,
         ownerName: this.ownerName,
         ownerEmail: this.ownerEmail
       }
