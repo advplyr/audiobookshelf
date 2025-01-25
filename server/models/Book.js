@@ -344,7 +344,6 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
-      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
@@ -544,7 +543,6 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
-      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
@@ -567,7 +565,6 @@ class Book extends Model {
       publishedDate: this.publishedDate,
       publisher: this.publisher,
       description: this.description,
-      descriptionPlain: this.description ? htmlSanitizer.stripAllTags(this.description) : null,
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
@@ -583,6 +580,7 @@ class Book extends Model {
     oldMetadataJSON.authorNameLF = this.authorNameLF
     oldMetadataJSON.narratorName = (this.narrators || []).join(', ')
     oldMetadataJSON.seriesName = this.seriesName
+    oldMetadataJSON.descriptionPlain = this.description ? htmlSanitizer.stripAllTags(this.description) : null
     return oldMetadataJSON
   }
 
