@@ -33,6 +33,10 @@ export default {
     value: {
       type: [String, Number],
       default: 1
+    },
+    playbackRateIncrementDecrement: {
+      type: Number,
+      default: 0.1
     }
   },
   data() {
@@ -58,10 +62,10 @@ export default {
       return [0.5, 1, 1.2, 1.5, 2]
     },
     canIncrement() {
-      return this.playbackRate + 0.1 <= this.MAX_SPEED
+      return this.playbackRate + this.playbackRateIncrementDecrement <= this.MAX_SPEED
     },
     canDecrement() {
-      return this.playbackRate - 0.1 >= this.MIN_SPEED
+      return this.playbackRate - this.playbackRateIncrementDecrement >= this.MIN_SPEED
     }
   },
   methods: {
@@ -73,14 +77,14 @@ export default {
       this.$nextTick(() => this.setShowMenu(false))
     },
     increment() {
-      if (this.playbackRate + 0.1 > this.MAX_SPEED) return
-      var newPlaybackRate = this.playbackRate + 0.1
-      this.playbackRate = Number(newPlaybackRate.toFixed(1))
+      if (this.playbackRate + this.playbackRateIncrementDecrement > this.MAX_SPEED) return
+      var newPlaybackRate = this.playbackRate + this.playbackRateIncrementDecrement
+      this.playbackRate = Number(newPlaybackRate.toFixed(2))
     },
     decrement() {
-      if (this.playbackRate - 0.1 < this.MIN_SPEED) return
-      var newPlaybackRate = this.playbackRate - 0.1
-      this.playbackRate = Number(newPlaybackRate.toFixed(1))
+      if (this.playbackRate - this.playbackRateIncrementDecrement < this.MIN_SPEED) return
+      var newPlaybackRate = this.playbackRate - this.playbackRateIncrementDecrement
+      this.playbackRate = Number(newPlaybackRate.toFixed(2))
     },
     updateMenuPositions() {
       if (!this.$refs.wrapper) return
