@@ -11,8 +11,11 @@
       <div class="flex items-center mb-4">
         <ui-select-input v-model="jumpForwardAmount" :label="$strings.LabelJumpForwardAmount" menuMaxHeight="250px" :items="jumpValues" @input="setJumpForwardAmount" />
       </div>
-      <div class="flex items-center">
+      <div class="flex items-center mb-4">
         <ui-select-input v-model="jumpBackwardAmount" :label="$strings.LabelJumpBackwardAmount" menuMaxHeight="250px" :items="jumpValues" @input="setJumpBackwardAmount" />
+      </div>
+      <div class="flex items-center mb-4">
+        <ui-select-input v-model="playbackRateIncrementDecrement" :label="$strings.LabelPlaybackRateIncrementDecrement" menuMaxHeight="250px" :items="playbackRateIncrementDecrementValues" @input="setPlaybackRateIncrementDecrementAmount" />
       </div>
     </div>
   </modals-modal>
@@ -35,7 +38,9 @@ export default {
         { text: this.$getString('LabelTimeDurationXMinutes', ['5']), value: 300 }
       ],
       jumpForwardAmount: 10,
-      jumpBackwardAmount: 10
+      jumpBackwardAmount: 10,
+      playbackRateIncrementDecrementValues: [0.1, 0.05],
+      playbackRateIncrementDecrement: 0.1
     }
   },
   computed: {
@@ -60,10 +65,15 @@ export default {
       this.jumpBackwardAmount = val
       this.$store.dispatch('user/updateUserSettings', { jumpBackwardAmount: val })
     },
+    setPlaybackRateIncrementDecrementAmount(val) {
+      this.playbackRateIncrementDecrement = val
+      this.$store.dispatch('user/updateUserSettings', { playbackRateIncrementDecrement: val })
+    },
     settingsUpdated() {
       this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack')
       this.jumpForwardAmount = this.$store.getters['user/getUserSetting']('jumpForwardAmount')
       this.jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount')
+      this.playbackRateIncrementDecrement = this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
     }
   },
   mounted() {
