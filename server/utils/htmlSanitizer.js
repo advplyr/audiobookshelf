@@ -1,11 +1,9 @@
 const sanitizeHtml = require('../libs/sanitizeHtml')
-const { entities } = require("./htmlEntities");
+const { entities } = require('./htmlEntities')
 
 function sanitize(html) {
   const sanitizerOptions = {
-    allowedTags: [
-      'p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del', 'br'
-    ],
+    allowedTags: ['p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del', 'br', 'b', 'i'],
     disallowedTagsMode: 'discard',
     allowedAttributes: {
       a: ['href', 'name', 'target']
@@ -34,6 +32,6 @@ function decodeHTMLEntities(strToDecode) {
     if (entity in entities) {
       return entities[entity]
     }
-    return entity;
+    return entity
   })
 }

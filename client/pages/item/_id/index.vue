@@ -123,7 +123,7 @@
           </div>
 
           <div class="my-4 w-full">
-            <p ref="description" id="item-description" dir="auto" class="text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }">{{ description }}</p>
+            <p ref="description" id="item-description" dir="auto" class="default-style less-spacing text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }" v-html="description" />
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">{{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" /></button>
           </div>
 
@@ -804,8 +804,7 @@ export default {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
-  max-height: 6.25rem;
-  transition: all 0.3s ease-in-out;
+  max-height: calc(6 * 1lh);
 }
 #item-description.show-full {
   -webkit-line-clamp: unset;
