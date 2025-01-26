@@ -1,7 +1,17 @@
 const sanitizeHtml = require('../libs/sanitizeHtml')
 const { entities } = require('./htmlEntities')
 
+/**
+ *
+ * @param {string} html
+ * @returns {string}
+ * @throws {Error} if input is not a string
+ */
 function sanitize(html) {
+  if (typeof html !== 'string') {
+    throw new Error('sanitizeHtml: input must be a string')
+  }
+
   const sanitizerOptions = {
     allowedTags: ['p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del', 'br', 'b', 'i'],
     disallowedTagsMode: 'discard',

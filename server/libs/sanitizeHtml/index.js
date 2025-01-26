@@ -7,12 +7,6 @@
 */
 
 const htmlparser = require('htmlparser2');
-// const escapeStringRegexp = require('escape-string-regexp');
-// const { isPlainObject } = require('is-plain-object');
-// const deepmerge = require('deepmerge');
-// const parseSrcset = require('parse-srcset');
-// const { parse: postcssParse } = require('postcss');
-// Tags that can conceivably represent stand-alone media.
 
 // ABS UPDATE: Packages not necessary
 // SOURCE: https://github.com/sindresorhus/escape-string-regexp/blob/main/index.js
@@ -76,17 +70,6 @@ function has(obj, key) {
   return ({}).hasOwnProperty.call(obj, key);
 }
 
-// Returns those elements of `a` for which `cb(a)` returns truthy
-function filter(a, cb) {
-  const n = [];
-  each(a, function (v) {
-    if (cb(v)) {
-      n.push(v);
-    }
-  });
-  return n;
-}
-
 function isEmptyObject(obj) {
   for (const key in obj) {
     if (has(obj, key)) {
@@ -94,21 +77,6 @@ function isEmptyObject(obj) {
     }
   }
   return true;
-}
-
-function stringifySrcset(parsedSrcset) {
-  return parsedSrcset.map(function (part) {
-    if (!part.url) {
-      throw new Error('URL missing');
-    }
-
-    return (
-      part.url +
-      (part.w ? ` ${part.w}w` : '') +
-      (part.h ? ` ${part.h}h` : '') +
-      (part.d ? ` ${part.d}x` : '')
-    );
-  }).join(', ');
 }
 
 module.exports = sanitizeHtml;
@@ -712,86 +680,6 @@ function sanitizeHtml(html, options, _recursing) {
     }
 
     return !options.allowedSchemes || options.allowedSchemes.indexOf(scheme) === -1;
-  }
-
-  /**
-   * Filters user input css properties by allowlisted regex attributes.
-   * Modifies the abstractSyntaxTree object.
-   *
-   * @param {object} abstractSyntaxTree  - Object representation of CSS attributes.
-   * @property {array[Declaration]} abstractSyntaxTree.nodes[0] - Each object cointains prop and value key, i.e { prop: 'color', value: 'red' }.
-   * @param {object} allowedStyles       - Keys are properties (i.e color), value is list of permitted regex rules (i.e /green/i).
-   * @return {object}                    - The modified tree.
-   */
-  // function filterCss(abstractSyntaxTree, allowedStyles) {
-  //   if (!allowedStyles) {
-  //     return abstractSyntaxTree;
-  //   }
-
-  //   const astRules = abstractSyntaxTree.nodes[0];
-  //   let selectedRule;
-
-  //   // Merge global and tag-specific styles into new AST.
-  //   if (allowedStyles[astRules.selector] && allowedStyles['*']) {
-  //     selectedRule = deepmerge(
-  //       allowedStyles[astRules.selector],
-  //       allowedStyles['*']
-  //     );
-  //   } else {
-  //     selectedRule = allowedStyles[astRules.selector] || allowedStyles['*'];
-  //   }
-
-  //   if (selectedRule) {
-  //     abstractSyntaxTree.nodes[0].nodes = astRules.nodes.reduce(filterDeclarations(selectedRule), []);
-  //   }
-
-  //   return abstractSyntaxTree;
-  // }
-
-  /**
-   * Extracts the style attributes from an AbstractSyntaxTree and formats those
-   * values in the inline style attribute format.
-   *
-   * @param  {AbstractSyntaxTree} filteredAST
-   * @return {string}             - Example: "color:yellow;text-align:center !important;font-family:helvetica;"
-   */
-  function stringifyStyleAttributes(filteredAST) {
-    return filteredAST.nodes[0].nodes
-      .reduce(function (extractedAttributes, attrObject) {
-        extractedAttributes.push(
-          `${attrObject.prop}:${attrObject.value}${attrObject.important ? ' !important' : ''}`
-        );
-        return extractedAttributes;
-      }, [])
-      .join(';');
-  }
-
-  /**
-    * Filters the existing attributes for the given property. Discards any attributes
-    * which don't match the allowlist.
-    *
-    * @param  {object} selectedRule             - Example: { color: red, font-family: helvetica }
-    * @param  {array} allowedDeclarationsList   - List of declarations which pass the allowlist.
-    * @param  {object} attributeObject          - Object representing the current css property.
-    * @property {string} attributeObject.type   - Typically 'declaration'.
-    * @property {string} attributeObject.prop   - The CSS property, i.e 'color'.
-    * @property {string} attributeObject.value  - The corresponding value to the css property, i.e 'red'.
-    * @return {function}                        - When used in Array.reduce, will return an array of Declaration objects
-    */
-  function filterDeclarations(selectedRule) {
-    return function (allowedDeclarationsList, attributeObject) {
-      // If this property is allowlisted...
-      if (has(selectedRule, attributeObject.prop)) {
-        const matchesRegex = selectedRule[attributeObject.prop].some(function (regularExpression) {
-          return regularExpression.test(attributeObject.value);
-        });
-
-        if (matchesRegex) {
-          allowedDeclarationsList.push(attributeObject);
-        }
-      }
-      return allowedDeclarationsList;
-    };
   }
 
   function filterClasses(classes, allowed, allowedGlobs) {

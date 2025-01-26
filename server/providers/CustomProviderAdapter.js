@@ -1,6 +1,7 @@
 const axios = require('axios').default
 const Database = require('../Database')
 const Logger = require('../Logger')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class CustomProviderAdapter {
   #responseTimeout = 30000
@@ -74,7 +75,7 @@ class CustomProviderAdapter {
         narrator,
         publisher,
         publishedYear,
-        description,
+        description: htmlSanitizer.sanitize(description),
         cover,
         isbn,
         asin,
