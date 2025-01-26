@@ -155,7 +155,7 @@ class LibraryItem extends Model {
             {
               model: this.sequelize.models.series,
               through: {
-                attributes: ['sequence']
+                attributes: ['id', 'sequence']
               }
             }
           ]
