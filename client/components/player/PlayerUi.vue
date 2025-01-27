@@ -2,7 +2,7 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
+        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" :playbackRateIncrementDecrement="playbackRateIncrementDecrement" class="mx-2 block" />
 
         <ui-tooltip direction="bottom" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
@@ -180,6 +180,9 @@ export default {
     useChapterTrack() {
       const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       return this.chapters.length ? _useChapterTrack : false
+    },
+    playbackRateIncrementDecrement() {
+      return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
     }
   },
   methods: {
@@ -223,12 +226,12 @@ export default {
     },
     increasePlaybackRate() {
       if (this.playbackRate >= 10) return
-      this.playbackRate = Number((this.playbackRate + 0.1).toFixed(1))
+      this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
       this.setPlaybackRate(this.playbackRate)
     },
     decreasePlaybackRate() {
       if (this.playbackRate <= 0.5) return
-      this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
+      this.playbackRate = Number((this.playbackRate - this.playbackRateIncrementDecrement || 0.1).toFixed(2))
       this.setPlaybackRate(this.playbackRate)
     },
     playbackRateChanged(playbackRate) {
