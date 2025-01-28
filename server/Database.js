@@ -700,6 +700,7 @@ class Database {
       await libraryItem.destroy()
     }
 
+    // Remove invalid PlaylistMediaItem records
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({
       include: [
         {
@@ -719,6 +720,19 @@ class Database {
     for (const playlistMediaItem of playlistMediaItemsWithNoMediaItem) {
       Logger.warn(`Found playlistMediaItem with no book or podcastEpisode - removing it`)
       await playlistMediaItem.destroy()
+    }
+
+    // Remove invalid CollectionBook records
+    const collectionBooksWithNoBook = await this.collectionBookModel.findAll({
+      include: {
+        model: this.bookModel,
+        required: false
+      },
+      where: { '$book.id$': null }
+    })
+    for (const collectionBook of collectionBooksWithNoBook) {
+      Logger.warn(`Found collectionBook with no book - removing it`)
+      await collectionBook.destroy()
     }
 
     // Remove empty series
