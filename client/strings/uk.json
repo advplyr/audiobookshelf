@@ -486,6 +486,7 @@
   "LabelPersonalYearReview": "Ваші підсумки року ({0})",
   "LabelPhotoPathURL": "Шлях/URL фото",
   "LabelPlayMethod": "Метод відтворення",
+  "LabelPlaybackRateIncrementDecrement": "Величина збільшення/зменшення швидкості відтворення",
   "LabelPlayerChapterNumberMarker": "{0} з {1}",
   "LabelPlaylists": "Списки відтворення",
   "LabelPodcast": "Подкаст",
