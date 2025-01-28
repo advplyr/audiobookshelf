@@ -394,7 +394,8 @@ export default {
             {
               src: this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
             }
-          ]
+          ],
+          chapterInfo
         })
         console.log('Set media session metadata', navigator.mediaSession.metadata)
 
