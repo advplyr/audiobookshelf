@@ -486,6 +486,7 @@
   "LabelPersonalYearReview": "Vaš godišnji pregled ({0})",
   "LabelPhotoPathURL": "Putanja ili URL fotografije",
   "LabelPlayMethod": "Način reprodukcije",
+  "LabelPlaybackRateIncrementDecrement": "Korak povećanja/smanjenja brzine reprodukcije",
   "LabelPlayerChapterNumberMarker": "{0} od {1}",
   "LabelPlaylists": "Popisi za izvođenje",
   "LabelPodcast": "Podcast",
