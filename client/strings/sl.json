@@ -486,6 +486,7 @@
   "LabelPersonalYearReview": "Pregled tvojega leta ({0})",
   "LabelPhotoPathURL": "Slika pot/URL",
   "LabelPlayMethod": "Metoda predvajanja",
+  "LabelPlaybackRateIncrementDecrement": "Korak povečanja/zmanjšanja hitrosti predvajanja",
   "LabelPlayerChapterNumberMarker": "{0} od {1}",
   "LabelPlaylists": "Seznami predvajanja",
   "LabelPodcast": "Podcast",
