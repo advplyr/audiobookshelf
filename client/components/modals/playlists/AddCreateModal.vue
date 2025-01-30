@@ -19,8 +19,18 @@
             </template>
           </transition-group>
         </div>
-        <div v-if="!playlists.length" class="flex h-32 items-center justify-center">
-          <p class="text-xl">{{ $strings.MessageNoUserPlaylists }}</p>
+        <div v-if="!playlists.length" class="flex h-32 items-center justify-center text-center">
+          <div>
+            <p class="text-xl">{{ $strings.MessageNoUserPlaylists }}</p>
+            <p class="text-sm flex items-center justify-center">
+              {{ $strings.MessageNoUserPlaylistsHelp }}
+              <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+                <a href="https://www.audiobookshelf.org/guides/collections" target="_blank" class="inline-flex">
+                  <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
+                </a>
+              </ui-tooltip>
+            </p>
+          </div>
         </div>
         <div class="w-full h-px bg-white bg-opacity-10" />
         <form @submit.prevent="submitCreatePlaylist">
