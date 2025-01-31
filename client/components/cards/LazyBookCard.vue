@@ -237,6 +237,7 @@ export default {
       return this.mediaMetadata.series
     },
     seriesName() {
+      if (this.collapsedSeries?.name) return this.collapsedSeries.name
       return this.series?.name || null
     },
     seriesSequence() {
