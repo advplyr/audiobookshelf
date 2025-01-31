@@ -1,5 +1,4 @@
 const axios = require('axios').default
-const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
 const { isValidASIN } = require('../utils/index')
 
@@ -68,7 +67,7 @@ class Audible {
       narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
       publisher: publisherName,
       publishedYear: releaseDate ? releaseDate.split('-')[0] : null,
-      description: summary ? htmlSanitizer.stripAllTags(summary) : null,
+      description: summary || null,
       cover: image,
       asin,
       genres: genresFiltered.length ? genresFiltered : null,

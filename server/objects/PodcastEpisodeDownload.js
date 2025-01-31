@@ -74,7 +74,7 @@ class PodcastEpisodeDownload {
     return this.rssPodcastEpisode.title
   }
   get targetFilename() {
-    const appendage = this.appendRandomId ? ` (${uuidv4()})` : ''
+    const appendage = this.appendRandomId ? ` (${this.id})` : ''
     const filename = `${this.rssPodcastEpisode.title}${appendage}.${this.fileExtension}`
     return sanitizeFilename(filename)
   }

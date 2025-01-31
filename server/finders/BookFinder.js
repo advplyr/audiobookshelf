@@ -8,6 +8,7 @@ const AudiobookCovers = require('../providers/AudiobookCovers')
 const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
 const { levenshteinDistance, escapeRegExp } = require('../utils/index')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class BookFinder {
   #providerResponseTimeout = 30000
@@ -463,6 +464,12 @@ class BookFinder {
     } else {
       books = await this.getGoogleBooksResults(title, author)
     }
+    books.forEach((book) => {
+      if (book.description) {
+        book.description = htmlSanitizer.sanitize(book.description)
+        book.descriptionPlain = htmlSanitizer.stripAllTags(book.description)
+      }
+    })
     return books
   }
 

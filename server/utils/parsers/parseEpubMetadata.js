@@ -56,7 +56,9 @@ async function extractCoverImage(epubPath, epubImageFilepath, outputCoverPath) {
       return false
     })
 
-  await zip.close()
+  await zip.close().catch((error) => {
+    Logger.error(`[parseEpubMetadata] Failed to close zip`, error)
+  })
 
   return success
 }
