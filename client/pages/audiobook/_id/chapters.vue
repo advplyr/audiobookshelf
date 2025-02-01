@@ -414,11 +414,8 @@ export default {
 
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
-      if (this.$isDev) {
-        src = `${process.env.serverUrl}${src}`
-      }
 
-      audioEl.src = src
+      audioEl.src = `${process.env.serverUrl}${src}`
       audioEl.id = 'chapter-audio'
       document.body.appendChild(audioEl)
 
