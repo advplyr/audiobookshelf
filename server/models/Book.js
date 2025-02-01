@@ -286,7 +286,7 @@ class Book extends Model {
       const track = structuredClone(af)
       track.title = af.metadata.filename
       track.startOffset = startOffset
-      track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
+      track.contentUrl = `/api/items/${libraryItemId}/file/${track.ino}`
       startOffset += track.duration
       return track
     })
