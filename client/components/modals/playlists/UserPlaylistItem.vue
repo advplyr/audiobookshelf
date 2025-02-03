@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-black-400" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="isItemIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
     <div class="w-16 max-w-16 text-center">
       <covers-playlist-cover :items="items" :width="64" :height="64" />
