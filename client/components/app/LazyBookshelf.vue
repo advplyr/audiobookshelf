@@ -19,6 +19,14 @@
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
+      <div v-if="entityName === 'collections' || entityName === 'playlists'" class="flex justify-center mt-4">
+        {{ emptyMessageHelp }}
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/collections" target="_blank" class="inline-flex">
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </div>
       <!-- Clear filter only available on Library bookshelf -->
       <div v-if="entityName === 'items'" class="flex justify-center mt-2">
         <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
@@ -108,6 +116,11 @@ export default {
         return this.$getString('MessageBookshelfNoResultsForFilter', [this.filterName, this.filterValue])
       }
       return this.$strings.MessageNoResults
+    },
+    emptyMessageHelp() {
+      if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollectionsHelp
+      if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylistsHelp
+      return ''
     },
     entityName() {
       if (!this.page) return 'items'

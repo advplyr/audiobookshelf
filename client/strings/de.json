@@ -645,7 +645,7 @@
   "LabelTimeToShift": "Zeit bis zum Wechsel in Sekunden",
   "LabelTitle": "Titel",
   "LabelToolsEmbedMetadata": "Metadaten einbetten",
-  "LabelToolsEmbedMetadataDescription": "Bettet die Metadaten einschließlich des Titelbildes und der Kapitel in die Audiodatein ein.",
+  "LabelToolsEmbedMetadataDescription": "Bettet die Metadaten einschließlich des Titelbildes und der Kapitel in die Audiodateien ein.",
   "LabelToolsM4bEncoder": "M4B Kodierer",
   "LabelToolsMakeM4b": "M4B-Datei erstellen",
   "LabelToolsMakeM4bDescription": "Erstellt eine M4B-Datei (Endung \".m4b\") welche mehrere mp3-Dateien in einer einzigen Datei inkl. derer Metadaten (Beschreibung, Titelbild, Kapitel, ...) zusammenfasst. M4B-Datei können darüber hinaus Lesezeichen speichern und mit einem Abspielschutz (Passwort) versehen werden.",

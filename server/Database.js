@@ -226,6 +226,28 @@ class Database {
 
     try {
       await this.sequelize.authenticate()
+
+      // Set SQLite pragmas from environment variables
+      const allowedPragmas = [
+        { name: 'mmap_size', env: 'SQLITE_MMAP_SIZE' },
+        { name: 'cache_size', env: 'SQLITE_CACHE_SIZE' },
+        { name: 'temp_store', env: 'SQLITE_TEMP_STORE' }
+      ]
+
+      for (const pragma of allowedPragmas) {
+        const value = process.env[pragma.env]
+        if (value !== undefined) {
+          try {
+            Logger.info(`[Database] Running "PRAGMA ${pragma.name} = ${value}"`)
+            await this.sequelize.query(`PRAGMA ${pragma.name} = ${value}`)
+            const [result] = await this.sequelize.query(`PRAGMA ${pragma.name}`)
+            Logger.debug(`[Database] "PRAGMA ${pragma.name}" query result:`, result)
+          } catch (error) {
+            Logger.error(`[Database] Failed to set SQLite pragma ${pragma.name}`, error)
+          }
+        }
+      }
+
       if (process.env.NUSQLITE3_PATH) {
         await this.loadExtension(process.env.NUSQLITE3_PATH)
         Logger.info(`[Database] Db supports unaccent and unicode foldings`)
@@ -678,6 +700,7 @@ class Database {
       await libraryItem.destroy()
     }
 
+    // Remove invalid PlaylistMediaItem records
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({
       include: [
         {
@@ -697,6 +720,19 @@ class Database {
     for (const playlistMediaItem of playlistMediaItemsWithNoMediaItem) {
       Logger.warn(`Found playlistMediaItem with no book or podcastEpisode - removing it`)
       await playlistMediaItem.destroy()
+    }
+
+    // Remove invalid CollectionBook records
+    const collectionBooksWithNoBook = await this.collectionBookModel.findAll({
+      include: {
+        model: this.bookModel,
+        required: false
+      },
+      where: { '$book.id$': null }
+    })
+    for (const collectionBook of collectionBooksWithNoBook) {
+      Logger.warn(`Found collectionBook with no book - removing it`)
+      await collectionBook.destroy()
     }
 
     // Remove empty series

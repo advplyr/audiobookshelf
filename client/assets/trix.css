@@ -446,12 +446,19 @@ trix-editor .attachment__metadata .attachment__size {
 }
 
 .trix-content {
-  line-height: 1.5;
+  line-height: inherit;
 }
 
 .trix-content * {
   box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+.trix-content p {
+  box-sizing: border-box;
+  margin-top: 0;
+  margin-bottom: 0.5em;
   padding: 0;
 }
 

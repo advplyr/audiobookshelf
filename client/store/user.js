@@ -5,6 +5,7 @@ export const state = () => ({
     orderDesc: false,
     filterBy: 'all',
     playbackRate: 1,
+    playbackRateIncrementDecrement: 0.1,
     bookshelfCoverSize: 120,
     collapseSeries: false,
     collapseBookSeries: false,

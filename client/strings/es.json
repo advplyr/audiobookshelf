@@ -1,5 +1,5 @@
 {
-  "ButtonAdd": "Agregaro",
+  "ButtonAdd": "Agregar",
   "ButtonAddChapters": "Agregar",
   "ButtonAddDevice": "Agregar Dispositivo",
   "ButtonAddLibrary": "Crear Biblioteca",
@@ -51,7 +51,7 @@
   "ButtonNext": "Siguiente",
   "ButtonNextChapter": "Siguiente Capítulo",
   "ButtonNextItemInQueue": "El siguiente elemento en cola",
-  "ButtonOk": "De acuerdo",
+  "ButtonOk": "Bueno",
   "ButtonOpenFeed": "Abrir fuente",
   "ButtonOpenManager": "Abrir Editor",
   "ButtonPause": "Pausar",
@@ -837,6 +837,7 @@
   "MessageResetChaptersConfirm": "¿Está seguro de que desea deshacer los cambios y revertir los capítulos a su estado original?",
   "MessageRestoreBackupConfirm": "¿Está seguro de que desea para restaurar del respaldo creado en",
   "MessageRestoreBackupWarning": "Restaurar sobrescribirá toda la base de datos localizada en /config y las imágenes de portadas en /metadata/items y /metadata/authors.<br /><br />El respaldo no modifica ningún archivo en las carpetas de su biblioteca. Si ha habilitado la opción del servidor para almacenar portadas y metadata en las carpetas de su biblioteca, esos archivos no se respaldan o sobrescriben.<br /><br />Todos los clientes que usen su servidor se actualizarán automáticamente.",
+  "MessageScheduleLibraryScanNote": "Para la mayoría de los usuarios, se recomienda dejar esta función desactivada y mantener activada la configuración del observador de carpetas. El observador de carpetas detectará automáticamente los cambios en las carpetas de la biblioteca. El observador de carpetas no funciona para todos los sistemas de archivos (como NFS), por lo que se pueden utilizar exploraciones programadas de la biblioteca en su lugar.",
   "MessageSearchResultsFor": "Resultados de la búsqueda de",
   "MessageSelected": "{0} seleccionado(s)",
   "MessageServerCouldNotBeReached": "No se pudo establecer la conexión con el servidor",

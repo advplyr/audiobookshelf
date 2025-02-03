@@ -94,9 +94,9 @@
         <div v-if="selectedMatchOrig.description" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.description" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" :label="$strings.LabelDescription" />
+            <ui-rich-text-editor v-model="selectedMatch.description" :disabled="!selectedMatchUsage.description" :label="$strings.LabelDescription" />
             <p v-if="mediaMetadata.description" class="text-xs ml-1 text-white text-opacity-60">
-              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('description', mediaMetadata.description)">{{ mediaMetadata.description.substr(0, 100) + (mediaMetadata.description.length > 100 ? '...' : '') }}</a>
+              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('description', mediaMetadata.description)">{{ mediaMetadata.descriptionPlain.substr(0, 100) + (mediaMetadata.descriptionPlain.length > 100 ? '...' : '') }}</a>
             </p>
           </div>
         </div>
