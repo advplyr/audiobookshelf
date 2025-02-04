@@ -36,8 +36,8 @@ class PodcastController {
    * @param {Response} res
    */
   async create(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
+    if (!req.user.canUpload) {
+      Logger.error(`[PodcastController] User "${req.user.username}" without upload permission attempted to create podcast`)
       return res.sendStatus(403)
     }
     const payload = req.body
@@ -346,8 +346,8 @@ class PodcastController {
    * @param {Response} res
    */
   async downloadEpisodes(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to download episodes`)
+    if (!req.user.canUpload) {
+      Logger.error(`[PodcastController] User "${req.user.username}" without upload permission attempted to download episodes`)
       return res.sendStatus(403)
     }
 
