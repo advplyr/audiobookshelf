@@ -169,7 +169,7 @@ class User extends Model {
       download: true,
       update: type === 'root' || type === 'admin',
       delete: type === 'root',
-      upload: type === 'root' || type === 'admin' || type === 'user',
+      upload: type === 'root' || type === 'admin',
       createEreader: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
@@ -477,7 +477,7 @@ class User extends Model {
    * User data for clients
    * Emitted on socket events user_online, user_offline and user_stream_update
    *
-   * @param {import('../objects/PlaybackSession')} sessions
+   * @param {import('../objects/PlaybackSession')[]} sessions
    * @returns
    */
   toJSONForPublic(sessions) {
