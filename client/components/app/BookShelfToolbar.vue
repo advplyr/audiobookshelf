@@ -63,8 +63,6 @@
         </ui-tooltip>
 
         <ui-context-menu-dropdown v-if="!isBatchSelecting && seriesContextMenuItems.length" :items="seriesContextMenuItems" class="mx-px" @action="seriesContextMenuAction" />
-
-        <modals-edit-series-modal v-model="showEditSeriesModal" :series="this.selectedSeries" />
       </template>
       <!-- library & collections page -->
       <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome && !isAuthorsPage">
@@ -133,8 +131,7 @@ export default {
       totalEntities: 0,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false,
-      showEditSeriesModal: false
+      processingAuthors: false
     }
   },
   computed: {
@@ -142,10 +139,6 @@ export default {
       if (!this.selectedSeries) return []
 
       const items = [
-        {
-          text: this.$strings.LabelEditSeries,
-          action: 'edit-series'
-        },
         {
           text: this.isSeriesFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished,
           action: 'mark-series-finished'
@@ -447,9 +440,6 @@ export default {
     exportOPML() {
       this.$downloadFile(`/api/libraries/${this.currentLibraryId}/opml?token=${this.$store.getters['user/getToken']}`, null, true)
     },
-    showEditSeries() {
-      this.showEditSeriesModal = !this.showEditSeriesModal
-    },
     seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
@@ -465,8 +455,6 @@ export default {
           return
         }
         this.markSeriesFinished()
-      } else if ((action = 'edit-series')) {
-        this.showEditSeries()
       } else if (this.handleSubtitlesAction(action)) {
         return
       } else if (this.handleCollapseSubSeriesAction(action)) {
