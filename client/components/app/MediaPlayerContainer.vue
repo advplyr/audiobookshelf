@@ -11,7 +11,7 @@
           </nuxt-link>
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
-        <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
+        <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5 truncate">
           <span class="material-symbols text-sm">person</span>
           <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
