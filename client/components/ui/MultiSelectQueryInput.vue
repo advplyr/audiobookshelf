@@ -215,6 +215,10 @@ export default {
     inputBlur() {
       if (!this.isFocused) return
 
+      if (typeof this.textInput === 'string') {
+        this.textInput = this.textInput.trim()
+      }
+
       setTimeout(() => {
         if (document.activeElement === this.$refs.input) {
           return
@@ -231,6 +235,11 @@ export default {
     },
     forceBlur() {
       this.isFocused = false
+
+      if (typeof this.textInput === 'string') {
+        this.textInput = this.textInput.trim()
+      }
+
       if (this.textInput) this.submitForm()
       if (this.$refs.input) this.$refs.input.blur()
     },
@@ -289,11 +298,12 @@ export default {
       this.selectedMenuItemIndex = null
     },
     submitForm() {
-      if (!this.textInput) return
+      if (!this.textInput || !this.textInput.trim?.()) return
 
-      const cleaned = this.textInput.trim()
+      this.textInput = this.textInput.trim()
+
       const matchesItem = this.items.find((i) => {
-        return i.name === cleaned
+        return i.name === this.textInput
       })
 
       if (matchesItem) {
