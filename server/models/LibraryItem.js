@@ -297,65 +297,43 @@ class LibraryItem extends Model {
     const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
-    let items = []
-    if (minified) {
-      items = libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONMinified()
-        if (li.collapsedSeries) {
-          oldLibraryItem.collapsedSeries = li.collapsedSeries
-        }
-        if (li.series) {
-          oldLibraryItem.media.metadata.series = li.series
-        }
-        if (li.rssFeed) {
-          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-        }
-        if (li.media.numEpisodes) {
-          oldLibraryItem.media.numEpisodes = li.media.numEpisodes
-        }
-        if (li.size && !oldLibraryItem.media.size) {
-          oldLibraryItem.media.size = li.size
-        }
-        if (li.numEpisodesIncomplete) {
-          oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
-        }
-        if (li.mediaItemShare) {
-          oldLibraryItem.mediaItemShare = li.mediaItemShare
-        }
-
-        return oldLibraryItem
-      })
-    } else {
-      items = libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONExpanded()
-        if (li.collapsedSeries) {
-          oldLibraryItem.collapsedSeries = li.collapsedSeries
-        }
-        if (li.series) {
-          oldLibraryItem.media.metadata.series = li.series
-        }
-        if (li.rssFeed) {
-          oldLibraryItem.rssFeed = li.rssFeed.toOldJSON()
-        }
-        if (li.media.numEpisodes) {
-          oldLibraryItem.media.numEpisodes = li.media.numEpisodes
-        }
-        if (li.size && !oldLibraryItem.media.size) {
-          oldLibraryItem.media.size = li.size
-        }
-        if (li.numEpisodesIncomplete) {
-          oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
-        }
-        if (li.mediaItemShare) {
-          oldLibraryItem.mediaItemShare = li.mediaItemShare
-        }
-
-        return oldLibraryItem
-      })
-    }
-
     return {
-      libraryItems: items,
+      libraryItems: libraryItems.map((li) => {
+        let oldLibraryItem = {}
+        if (minified) {
+          oldLibraryItem = li.toOldJSONMinified()
+        } else {
+          oldLibraryItem = li.toOldJSONExpanded()
+        }
+  
+        if (li.collapsedSeries) {
+          oldLibraryItem.collapsedSeries = li.collapsedSeries
+        }
+        if (li.series) {
+          oldLibraryItem.media.metadata.series = li.series
+        }
+        if (li.rssFeed) {
+          if (minified) {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+          } else {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSON()
+          }
+        }
+        if (li.media.numEpisodes) {
+          oldLibraryItem.media.numEpisodes = li.media.numEpisodes
+        }
+        if (li.size && !oldLibraryItem.media.size) {
+          oldLibraryItem.media.size = li.size
+        }
+        if (li.numEpisodesIncomplete) {
+          oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
+        }
+        if (li.mediaItemShare) {
+          oldLibraryItem.mediaItemShare = li.mediaItemShare
+        }
+  
+        return oldLibraryItem
+      }),
       count
     }
   }
