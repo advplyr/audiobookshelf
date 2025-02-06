@@ -22,7 +22,7 @@
           <div v-if="openMapOptions" class="flex flex-wrap">
             <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.subtitle" />
-              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" :label="$strings.LabelSubtitle" class="mb-5 ml-4" />
+              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" :label="$strings.LabelSubtitle" trim-whitespace class="mb-5 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.authors" />
@@ -31,7 +31,7 @@
             </div>
             <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
-              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" :label="$strings.LabelPublishYear" class="mb-5 ml-4" />
+              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" :label="$strings.LabelPublishYear" trim-whitespace class="mb-5 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
@@ -51,11 +51,11 @@
             </div>
             <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
-              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" :label="$strings.LabelPublisher" class="mb-5 ml-4" />
+              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" :label="$strings.LabelPublisher" trim-whitespace class="mb-5 ml-4" />
             </div>
             <div v-if="!isMapAppend" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.language" />
-              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" :label="$strings.LabelLanguage" class="mb-5 ml-4" />
+              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" :label="$strings.LabelLanguage" trim-whitespace class="mb-5 ml-4" />
             </div>
             <div v-if="!isMapAppend" class="flex items-center px-4 h-18 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.explicit" />
