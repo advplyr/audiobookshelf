@@ -29,7 +29,7 @@ class AudioTrack {
     this.duration = audioFile.duration
     this.title = audioFile.metadata.filename || ''
 
-    this.contentUrl = `${global.RouterBasePath}/api/items/${itemId}/file/${audioFile.ino}`
+    this.contentUrl = `/api/items/${itemId}/file/${audioFile.ino}`
     this.mimeType = audioFile.mimeType
     this.codec = audioFile.codec || null
     this.metadata = audioFile.metadata.clone()

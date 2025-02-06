@@ -351,8 +351,10 @@ export default {
   background-color: white;
 }
 trix-editor {
-  max-height: calc(4 * 1lh);
+  height: calc(4 * 1lh);
+  min-height: calc(4 * 1lh);
   overflow-y: auto;
+  resize: vertical;
 }
 
 trix-editor * {

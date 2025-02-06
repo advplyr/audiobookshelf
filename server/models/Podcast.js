@@ -202,8 +202,9 @@ class Podcast extends Model {
         } else if (key === 'itunesPageUrl') {
           newKey = 'itunesPageURL'
         }
-        if (typeof payload.metadata[key] === 'string' && payload.metadata[key] !== this[newKey]) {
-          this[newKey] = payload.metadata[key]
+        if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && payload.metadata[key] !== this[newKey]) {
+          this[newKey] = payload.metadata[key] || null
+
           if (key === 'title') {
             this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
           }

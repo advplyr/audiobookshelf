@@ -286,9 +286,22 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
           return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
         }
 
+        const totalSize = parseInt(response.headers['content-length'], 10)
+        let downloadedSize = 0
+
         // Write to filepath
         const writer = fs.createWriteStream(filepath)
         response.data.pipe(writer)
+
+        let lastProgress = 0
+        response.data.on('data', (chunk) => {
+          downloadedSize += chunk.length
+          const progress = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0
+          if (progress >= lastProgress + 5) {
+            Logger.debug(`[fileUtils] File "${Path.basename(filepath)}" download progress: ${progress}% (${downloadedSize}/${totalSize} bytes)`)
+            lastProgress = progress
+          }
+        })
 
         writer.on('finish', resolve)
         writer.on('error', reject)

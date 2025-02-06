@@ -31,13 +31,6 @@
           <p cy-id="placeholderAuthorText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
         </div>
 
-        <div v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #78350f">
-          <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequenceList }}</p>
-        </div>
-        <div v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #cd9d49dd">
-          <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
-        </div>
-
         <!-- No progress shown for podcasts (unless showing podcast episode) -->
         <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e max-w-full z-20 rounded-b box-shadow-progressbar" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
 
@@ -244,6 +237,7 @@ export default {
       return this.mediaMetadata.series
     },
     seriesName() {
+      if (this.collapsedSeries?.name) return this.collapsedSeries.name
       return this.series?.name || null
     },
     seriesSequence() {
