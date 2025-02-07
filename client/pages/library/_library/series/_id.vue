@@ -1,7 +1,18 @@
 <template>
-  <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar :selected-series="series" />
-    <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
+  <div id="page-wrapper" class="page" :class="streamLibraryItem ? 'streaming' : ''">
+    <app-book-shelf-toolbar id="series-toolbar" :selected-series="series" />
+    <div class="max-w-6xl mx-auto">
+      <div class="flex items-center my-8">
+        <h1 class="text-2xl">{{ series.name }}</h1>
+
+        <button class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="showEditSeries">
+          <span class="material-symbols text-base">edit</span>
+        </button>
+      </div>
+      <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
+    </div>
+
+    <modals-edit-series-modal v-model="showEditSeriesModal" :series="series" />
   </div>
 </template>
 
@@ -33,7 +44,9 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      showEditSeriesModal: false
+    }
   },
   computed: {
     streamLibraryItem() {
@@ -43,6 +56,9 @@ export default {
   methods: {
     seriesUpdated(series) {
       this.series = series
+    },
+    showEditSeries() {
+      this.showEditSeriesModal = !this.showEditSeriesModal
     }
   },
   mounted() {
@@ -57,3 +73,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+#bookshelf {
+  background-image: none;
+}
+#series-toolbar {
+  background-color: rgba(55, 56, 56, 1);
+}
+</style>
