@@ -11,9 +11,9 @@
           </nuxt-link>
           <widgets-explicit-indicator v-if="isExplicit" />
         </div>
-        <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5 truncate">
+        <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
           <span class="material-symbols text-sm">person</span>
-          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">{{ podcastAuthor }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </div>
