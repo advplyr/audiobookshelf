@@ -702,6 +702,9 @@ class LibraryItem extends Model {
             fields: ['libraryId', 'mediaType', 'size']
           },
           {
+            fields: ['libraryId', 'mediaType', 'createdAt']
+          },
+          {
             fields: ['libraryId', 'mediaType', { name: 'title', collate: 'NOCASE' }]
           },
           {
