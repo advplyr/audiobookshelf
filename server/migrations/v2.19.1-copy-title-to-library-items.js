@@ -105,8 +105,13 @@ async function removeIndex(queryInterface, logger, tableName, columns) {
 
 async function addColumn(queryInterface, logger, table, column, options) {
   logger.info(`${loggerPrefix} adding column "${column}" to table "${table}"`)
-  await queryInterface.addColumn(table, column, options)
-  logger.info(`${loggerPrefix} added column "${column}" to table "${table}"`)
+  const tableDescription = await queryInterface.describeTable(table)
+  if (!tableDescription[column]) {
+    await queryInterface.addColumn(table, column, options)
+    logger.info(`${loggerPrefix} added column "${column}" to table "${table}"`)
+  } else {
+    logger.info(`${loggerPrefix} column "${column}" already exists in table "${table}"`)
+  }
 }
 
 async function removeColumn(queryInterface, logger, table, column) {
@@ -129,6 +134,9 @@ async function copyColumn(queryInterface, logger, sourceTable, sourceColumn, sou
 async function addTrigger(queryInterface, logger, sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
   logger.info(`${loggerPrefix} adding trigger to update ${targetTable}.${targetColumn} when ${sourceTable}.${sourceColumn} is updated`)
   const triggerName = convertToSnakeCase(`update_${targetTable}_${targetColumn}`)
+
+  await queryInterface.sequelize.query(`DROP TRIGGER IF EXISTS ${triggerName}`)
+
   await queryInterface.sequelize.query(`
     CREATE TRIGGER ${triggerName}
       AFTER UPDATE OF ${sourceColumn} ON ${sourceTable}
