@@ -251,6 +251,7 @@ class CollectionController {
   /**
    * DELETE: /api/collections/:id/book/:bookId
    * Remove a single book from a collection. Re-order books
+   * Users with update permission can remove books from collections
    * TODO: bookId is actually libraryItemId. Clients need updating to use bookId
    *
    * @param {CollectionControllerRequest} req
@@ -427,7 +428,8 @@ class CollectionController {
       req.collection = collection
     }
 
-    if (req.method == 'DELETE' && !req.user.canDelete) {
+    // Users with update permission can remove books from collections
+    if (req.method == 'DELETE' && !req.params.bookId && !req.user.canDelete) {
       Logger.warn(`[CollectionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {

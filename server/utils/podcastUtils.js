@@ -311,6 +311,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
+      'Accept-Encoding': 'gzip, compress, deflate',
       'User-Agent': userAgent
     },
     httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
