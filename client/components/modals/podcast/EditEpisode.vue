@@ -117,8 +117,12 @@ export default {
   methods: {
     async goPrevEpisode() {
       if (this.currentEpisodeIndex - 1 < 0) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       const prevEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex - 1]
       this.processing = true
+
       const prevEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${prevEpisodeId}`).catch((error) => {
         const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch episode'
         this.$toast.error(errorMsg)
@@ -134,8 +138,12 @@ export default {
     },
     async goNextEpisode() {
       if (this.currentEpisodeIndex >= this.episodeTableEpisodeIds.length - 1) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       this.processing = true
       const nextEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex + 1]
+
       const nextEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${nextEpisodeId}`).catch((error) => {
         const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)

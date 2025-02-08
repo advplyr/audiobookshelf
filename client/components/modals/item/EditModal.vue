@@ -196,6 +196,9 @@ export default {
   methods: {
     async goPrevBook() {
       if (this.currentBookshelfIndex - 1 < 0) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
       this.processing = true
       var prevBook = await this.$axios.$get(`/api/items/${prevBookId}?expanded=1`).catch((error) => {
@@ -215,6 +218,9 @@ export default {
     },
     async goNextBook() {
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       this.processing = true
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
       var nextBook = await this.$axios.$get(`/api/items/${nextBookId}?expanded=1`).catch((error) => {
