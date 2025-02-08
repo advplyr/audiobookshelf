@@ -9,6 +9,12 @@
           <span class="material-symbols text-base">edit</span>
         </button>
       </div>
+      <div class="mb-6">
+        <h2 class="font-semibold">
+          {{ $strings.LabelDescription }}
+        </h2>
+        <div>{{ series.description }}</div>
+      </div>
       <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
     </div>
 
