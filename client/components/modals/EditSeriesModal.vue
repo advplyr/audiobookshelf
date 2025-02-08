@@ -29,7 +29,7 @@ export default {
   data() {
     return {
       isProcessing: false,
-      descriptionValue: ''
+      descriptionValue: this.series.description || ''
     }
   },
   computed: {
@@ -53,7 +53,10 @@ export default {
       }
 
       this.isProcessing = true
-      // Handle series update
+      const updateResult = await this.$axios.$patch(`/api/series/${this.series.id}`, payload).catch((error) => {
+        console.error('Failed to update', error)
+        return false
+      })
       this.isProcessing = false
     },
     async saveAndClose() {
