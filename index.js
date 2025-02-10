@@ -29,7 +29,7 @@ if (isDev) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   process.env.SOURCE = 'local'
-  process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? ''
+  process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
 }
 
 const inputConfig = options.config ? Path.resolve(options.config) : null
