@@ -10,6 +10,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt
 const OpenIDClient = require('openid-client')
 const Database = require('./Database')
 const Logger = require('./Logger')
+const { escapeRegExp } = require('./utils')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -18,7 +19,11 @@ class Auth {
   constructor() {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
-    this.ignorePatterns = [/\/api\/items\/[^/]+\/cover/, /\/api\/authors\/[^/]+\/image/]
+    const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
+    this.ignorePatterns = [
+      new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), 
+      new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)
+    ]
   }
 
   /**
@@ -28,7 +33,7 @@ class Auth {
    * @private
    */
   authNotNeeded(req) {
-    return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.originalUrl))
+    return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.path))
   }
 
   ifAuthNeeded(middleware) {
