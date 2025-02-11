@@ -3,6 +3,7 @@ const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const parseNameString = require('../utils/parsers/parseNameString')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 /**
  * @typedef EBookFileObject
@@ -192,6 +193,14 @@ class Book extends Model {
         ]
       }
     )
+
+    Book.addHook('afterDestroy', async (instance) => {
+      libraryItemsBookFilters.clearCountCache('afterDestroy')
+    })
+
+    Book.addHook('afterCreate', async (instance) => {
+      libraryItemsBookFilters.clearCountCache('afterCreate')
+    })
   }
 
   /**
