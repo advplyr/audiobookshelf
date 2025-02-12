@@ -137,7 +137,16 @@ export default {
         this.$toast.error(this.$strings.ToastFailedToLoadData)
         return
       }
-      this.feeds = data.feeds
+      this.feeds = data.feeds.map((feed) => ({
+        ...feed,
+        episodes: [...feed.episodes].sort((a, b) => {
+          if (!a.pubDate) return 1 // null dates sort to end
+          if (!b.pubDate) return -1
+          const dateA = new Date(a.pubDate)
+          const dateB = new Date(b.pubDate)
+          return dateA - dateB
+        })
+      }))
     },
     init() {
       this.loadFeeds()

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-black-400" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="isBookIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
     <div class="w-20 max-w-20 text-center">
       <covers-collection-cover :book-items="books" :width="80" :height="40 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />

@@ -246,6 +246,15 @@ class RssFeedManager {
     const extname = Path.extname(feed.coverPath).toLowerCase().slice(1)
     res.type(`image/${extname}`)
     const readStream = fs.createReadStream(feed.coverPath)
+
+    readStream.on('error', (error) => {
+      Logger.error(`[RssFeedManager] Error streaming cover image: ${error.message}`)
+      // Only send error if headers haven't been sent yet
+      if (!res.headersSent) {
+        res.sendStatus(404)
+      }
+    })
+
     readStream.pipe(res)
   }
 

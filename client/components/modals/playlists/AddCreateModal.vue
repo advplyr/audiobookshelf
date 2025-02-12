@@ -6,7 +6,7 @@
       </div>
     </template>
 
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
           <h1 v-if="!isBatch" class="text-2xl">{{ $strings.LabelAddToPlaylist }}</h1>

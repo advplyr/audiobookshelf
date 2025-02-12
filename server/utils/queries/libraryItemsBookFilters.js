@@ -4,6 +4,9 @@ const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 
 const ShareManager = require('../../managers/ShareManager')
+const { profile } = require('../profiler')
+
+const countCache = new Map()
 
 module.exports = {
   /**
@@ -270,9 +273,9 @@ module.exports = {
       }
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('`book`.`title` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
@@ -334,6 +337,28 @@ module.exports = {
       }
     })
     return { booksToExclude, bookSeriesToInclude }
+  },
+
+  clearCountCache(hook) {
+    Logger.debug(`[LibraryItemsBookFilters] book.${hook}: Clearing count cache`)
+    countCache.clear()
+  },
+
+  async findAndCountAll(findOptions, limit, offset) {
+    const findOptionsKey = JSON.stringify(findOptions)
+    Logger.debug(`[LibraryItemsBookFilters] findOptionsKey: ${findOptionsKey}`)
+
+    findOptions.limit = limit || null
+    findOptions.offset = offset
+
+    if (countCache.has(findOptionsKey)) {
+      const rows = await Database.bookModel.findAll(findOptions)
+      return { rows, count: countCache.get(findOptionsKey) }
+    } else {
+      const result = await Database.bookModel.findAndCountAll(findOptions)
+      countCache.set(findOptionsKey, result.count)
+      return result
+    }
   },
 
   /**
@@ -411,7 +436,8 @@ module.exports = {
     if (includeRSSFeed) {
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open'
+        required: filterGroup === 'feed-open',
+        separate: true
       })
     }
     if (filterGroup === 'feed-open' && !includeRSSFeed) {
@@ -560,7 +586,7 @@ module.exports = {
       }
     }
 
-    const { rows: books, count } = await Database.bookModel.findAndCountAll({
+    const findOptions = {
       where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
@@ -577,10 +603,11 @@ module.exports = {
         ...bookIncludes
       ],
       order: sortOrder,
-      subQuery: false,
-      limit: limit || null,
-      offset
-    })
+      subQuery: false
+    }
+
+    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset)
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem

@@ -40,7 +40,8 @@ export default {
     showCopy: Boolean,
     step: [String, Number],
     min: [String, Number],
-    customInputClass: String
+    customInputClass: String,
+    trimWhitespace: Boolean
   },
   data() {
     return {
@@ -101,9 +102,13 @@ export default {
       this.$emit('focus')
     },
     blurred() {
+      if (this.trimWhitespace && typeof this.inputValue === 'string') {
+        this.inputValue = this.inputValue.trim()
+      }
       this.isFocused = false
       this.$emit('blur')
     },
+
     change(e) {
       this.$emit('change', e.target.value)
     },

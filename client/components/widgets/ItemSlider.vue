@@ -124,6 +124,7 @@ export default {
       this.updateSelectionMode(false)
     },
     editEpisode({ libraryItem, episode }) {
+      this.$store.commit('setEpisodeTableEpisodeIds', [episode.id])
       this.$store.commit('setSelectedLibraryItem', libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
