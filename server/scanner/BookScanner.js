@@ -521,8 +521,8 @@ class BookScanner {
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
     libraryItemObj.extraData = {}
-    libraryItemObj.title = bookMetadata.title
-    libraryItemObj.titleIgnorePrefix = getTitleIgnorePrefix(bookMetadata.title)
+    libraryItemObj.titleCopy = bookMetadata.title
+    libraryItemObj.titleIgnorePrefixCopy = getTitleIgnorePrefix(bookMetadata.title)
 
     // Set isSupplementary flag on ebook library files
     for (const libraryFile of libraryItemObj.libraryFiles) {

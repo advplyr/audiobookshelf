@@ -273,9 +273,9 @@ module.exports = {
       }
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefixCopy` COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`titleCopy` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
@@ -346,7 +346,6 @@ module.exports = {
 
   async findAndCountAll(findOptions, limit, offset) {
     const findOptionsKey = JSON.stringify(findOptions)
-    Logger.debug(`[LibraryItemsBookFilters] findOptionsKey: ${findOptionsKey}`)
 
     findOptions.limit = limit || null
     findOptions.offset = offset
