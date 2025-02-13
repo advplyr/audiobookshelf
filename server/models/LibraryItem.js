@@ -73,6 +73,10 @@ class LibraryItem extends Model {
 
     /** @type {Book.BookExpanded|Podcast.PodcastExpanded} - only set when expanded */
     this.media
+    /** @type {string} */
+    this.title // Only used for sorting
+    /** @type {string} */
+    this.titleIgnorePrefix // Only used for sorting
   }
 
   /**
@@ -677,7 +681,9 @@ class LibraryItem extends Model {
         lastScan: DataTypes.DATE,
         lastScanVersion: DataTypes.STRING,
         libraryFiles: DataTypes.JSON,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+        title: DataTypes.STRING,
+        titleIgnorePrefix: DataTypes.STRING
       },
       {
         sequelize,
@@ -694,6 +700,15 @@ class LibraryItem extends Model {
           },
           {
             fields: ['libraryId', 'mediaType', 'size']
+          },
+          {
+            fields: ['libraryId', 'mediaType', 'createdAt']
+          },
+          {
+            fields: ['libraryId', 'mediaType', { name: 'title', collate: 'NOCASE' }]
+          },
+          {
+            fields: ['libraryId', 'mediaType', { name: 'titleIgnorePrefix', collate: 'NOCASE' }]
           },
           {
             fields: ['libraryId', 'mediaId', 'mediaType']

@@ -4,6 +4,9 @@ const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
 
 const ShareManager = require('../../managers/ShareManager')
+const { profile } = require('../profiler')
+
+const countCache = new Map()
 
 module.exports = {
   /**
@@ -270,9 +273,9 @@ module.exports = {
       }
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('`book`.`title` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
@@ -334,6 +337,28 @@ module.exports = {
       }
     })
     return { booksToExclude, bookSeriesToInclude }
+  },
+
+  clearCountCache(hook) {
+    Logger.debug(`[LibraryItemsBookFilters] book.${hook}: Clearing count cache`)
+    countCache.clear()
+  },
+
+  async findAndCountAll(findOptions, limit, offset) {
+    const findOptionsKey = JSON.stringify(findOptions)
+    Logger.debug(`[LibraryItemsBookFilters] findOptionsKey: ${findOptionsKey}`)
+
+    findOptions.limit = limit || null
+    findOptions.offset = offset
+
+    if (countCache.has(findOptionsKey)) {
+      const rows = await Database.bookModel.findAll(findOptions)
+      return { rows, count: countCache.get(findOptionsKey) }
+    } else {
+      const result = await Database.bookModel.findAndCountAll(findOptions)
+      countCache.set(findOptionsKey, result.count)
+      return result
+    }
   },
 
   /**
@@ -411,7 +436,8 @@ module.exports = {
     if (includeRSSFeed) {
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open'
+        required: filterGroup === 'feed-open',
+        separate: true
       })
     }
     if (filterGroup === 'feed-open' && !includeRSSFeed) {
@@ -554,13 +580,13 @@ module.exports = {
       // When collapsing series and sorting by title then use the series name instead of the book title
       //  for this set an attribute "display_title" to use in sorting
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), titleIgnorePrefix)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`titleIgnorePrefix\`)`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`book\`.\`title\`)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`title\`)`), 'display_title'])
       }
     }
 
-    const { rows: books, count } = await Database.bookModel.findAndCountAll({
+    const findOptions = {
       where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
@@ -577,10 +603,11 @@ module.exports = {
         ...bookIncludes
       ],
       order: sortOrder,
-      subQuery: false,
-      limit: limit || null,
-      offset
-    })
+      subQuery: false
+    }
+
+    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset)
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
@@ -1008,8 +1035,8 @@ module.exports = {
 
     const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = textSearchQuery.matchExpression('title')
-    const matchSubtitle = textSearchQuery.matchExpression('subtitle')
+    const matchTitle = textSearchQuery.matchExpression('book.title')
+    const matchSubtitle = textSearchQuery.matchExpression('book.subtitle')
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({

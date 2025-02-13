@@ -84,7 +84,7 @@ module.exports = {
       return [[Sequelize.literal(`\`podcast\`.\`author\` COLLATE NOCASE ${nullDir}`)]]
     } else if (sortBy === 'media.metadata.title') {
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`podcast`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
       } else {
         return [[Sequelize.literal('`podcast`.`title` COLLATE NOCASE'), dir]]
       }
@@ -321,8 +321,8 @@ module.exports = {
 
     const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = textSearchQuery.matchExpression('title')
-    const matchAuthor = textSearchQuery.matchExpression('author')
+    const matchTitle = textSearchQuery.matchExpression('podcast.title')
+    const matchAuthor = textSearchQuery.matchExpression('podcast.author')
 
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({

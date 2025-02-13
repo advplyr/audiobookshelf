@@ -129,9 +129,9 @@ describe('migration-v2.15.0-series-column-unique', () => {
         { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
         { id: series2Id, name: 'Series 2', libraryId: library2Id, createdAt: new Date(), updatedAt: new Date() },
         { id: series3Id, name: 'Series 3', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series1Id_dup, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series3Id_dup, name: 'Series 3', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series1Id_dup2, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+        { id: series1Id_dup, name: 'Series 1', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) },
+        { id: series3Id_dup, name: 'Series 3', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) },
+        { id: series1Id_dup2, name: 'Series 1', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) }
       ])
       // Add some entries to the BookSeries table
       await queryInterface.bulkInsert('BookSeries', [
