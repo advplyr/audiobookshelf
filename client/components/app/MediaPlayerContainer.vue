@@ -85,7 +85,8 @@ export default {
       displayTitle: null,
       currentPlaybackRate: 1,
       syncFailedToast: null,
-      coverAspectRatio: 1
+      coverAspectRatio: 1,
+      lastChapterId: null
     }
   },
   computed: {
@@ -236,12 +237,16 @@ export default {
         }
       }, 1000)
     },
-    checkChapterEnd(time) {
+    checkChapterEnd() {
       if (!this.currentChapter) return
-      const chapterEndTime = this.currentChapter.end
-      const tolerance = 0.75
-      if (time >= chapterEndTime - tolerance) {
-        this.sleepTimerEnd()
+
+      // Track chapter transitions by comparing current chapter with last chapter
+      if (this.lastChapterId !== this.currentChapter.id) {
+        // Chapter changed - if we had a previous chapter, this means we crossed a boundary
+        if (this.lastChapterId) {
+          this.sleepTimerEnd()
+        }
+        this.lastChapterId = this.currentChapter.id
       }
     },
     sleepTimerEnd() {
@@ -301,7 +306,7 @@ export default {
       }
 
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
-        this.checkChapterEnd(time)
+        this.checkChapterEnd()
       }
     },
     setDuration(duration) {
