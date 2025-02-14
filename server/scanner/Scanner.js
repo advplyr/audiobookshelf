@@ -48,13 +48,7 @@ class Scanner {
     let updatePayload = {}
     let hasUpdated = false
 
-    let existingAuthors = [] // Used for checking if authors or series are now empty
-    let existingSeries = []
-
     if (libraryItem.isBook) {
-      existingAuthors = libraryItem.media.authors.map((a) => a.id)
-      existingSeries = libraryItem.media.series.map((s) => s.id)
-
       const searchISBN = options.isbn || libraryItem.media.isbn
       const searchASIN = options.asin || libraryItem.media.asin
 
