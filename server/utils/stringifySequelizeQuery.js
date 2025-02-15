@@ -1,34 +1,25 @@
 function stringifySequelizeQuery(findOptions) {
-  // Helper function to handle symbols in nested objects
-  function handleSymbols(obj) {
-    if (!obj || typeof obj !== 'object') return obj
-
-    if (Array.isArray(obj)) {
-      return obj.map(handleSymbols)
-    }
-
-    const newObj = {}
-    for (const [key, value] of Object.entries(obj)) {
-      // Handle Symbol keys from Object.getOwnPropertySymbols
-      Object.getOwnPropertySymbols(obj).forEach((sym) => {
-        newObj[`__Op.${sym.toString()}`] = handleSymbols(obj[sym])
-      })
-
-      // Handle regular keys
-      if (typeof key === 'string') {
-        if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Symbol.prototype) {
-          // Handle Symbol values
-          newObj[key] = `__Op.${value.toString()}`
-        } else {
-          // Recursively handle nested objects
-          newObj[key] = handleSymbols(value)
-        }
-      }
-    }
-    return newObj
+  function isClass(func) {
+    return typeof func === 'function' && /^class\s/.test(func.toString())
   }
 
-  const sanitizedOptions = handleSymbols(findOptions)
-  return JSON.stringify(sanitizedOptions)
+  function replacer(key, value) {
+    if (typeof value === 'object' && value !== null) {
+      const symbols = Object.getOwnPropertySymbols(value).reduce((acc, sym) => {
+        acc[sym.toString()] = value[sym]
+        return acc
+      }, {})
+
+      return { ...value, ...symbols }
+    }
+
+    if (isClass(value)) {
+      return `${value.name}`
+    }
+
+    return value
+  }
+
+  return JSON.stringify(findOptions, replacer)
 }
 module.exports = stringifySequelizeQuery
