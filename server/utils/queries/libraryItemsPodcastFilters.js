@@ -120,7 +120,8 @@ module.exports = {
     if (includeRSSFeed) {
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open'
+        required: filterGroup === 'feed-open',
+        separate: true
       })
     }
     if (filterGroup === 'issues') {
