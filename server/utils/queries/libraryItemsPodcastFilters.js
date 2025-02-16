@@ -84,9 +84,9 @@ module.exports = {
       return [[Sequelize.literal(`\`podcast\`.\`author\` COLLATE NOCASE ${nullDir}`)]]
     } else if (sortBy === 'media.metadata.title') {
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('`podcast`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('`podcast`.`title` COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'media.numTracks') {
       return [['numEpisodes', dir]]
