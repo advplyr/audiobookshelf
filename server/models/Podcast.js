@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const Logger = require('../Logger')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -148,6 +149,14 @@ class Podcast extends Model {
         modelName: 'podcast'
       }
     )
+
+    Podcast.addHook('afterDestroy', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterDestroy')
+    })
+
+    Podcast.addHook('afterCreate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterCreate')
+    })
   }
 
   get hasMediaFiles() {

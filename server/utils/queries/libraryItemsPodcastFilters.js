@@ -100,7 +100,8 @@ module.exports = {
     return []
   },
 
-  clearCountCache() {
+  clearCountCache(model, hook) {
+    Logger.debug(`[LibraryItemsPodcastFilters] ${model}.${hook}: Clearing count cache`)
     countCache.clear()
   },
 
