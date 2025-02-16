@@ -498,6 +498,10 @@ class PodcastController {
     req.libraryItem.changed('libraryFiles', true)
     await req.libraryItem.save()
 
+    // update number of episodes
+    req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
+    await req.libraryItem.media.save()
+
     SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     res.json(req.libraryItem.toOldJSON())
   }

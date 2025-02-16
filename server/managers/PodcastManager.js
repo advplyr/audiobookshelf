@@ -232,6 +232,11 @@ class PodcastManager {
 
     await libraryItem.save()
 
+    if (libraryItem.media.numEpisodes !== libraryItem.media.podcastEpisodes.length) {
+      libraryItem.media.numEpisodes = libraryItem.media.podcastEpisodes.length
+      await libraryItem.media.save()
+    }
+
     SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
     const podcastEpisodeExpanded = podcastEpisode.toOldJSONExpanded(libraryItem.id)
     podcastEpisodeExpanded.libraryItem = libraryItem.toOldJSONExpanded()

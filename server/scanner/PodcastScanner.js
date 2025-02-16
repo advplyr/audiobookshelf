@@ -131,6 +131,11 @@ class PodcastScanner {
 
     let hasMediaChanges = false
 
+    if (existingPodcastEpisodes.length !== media.numEpisodes) {
+      media.numEpisodes = existingPodcastEpisodes.length
+      hasMediaChanges = true
+    }
+
     // Check if cover was removed
     if (media.coverPath && libraryItemData.imageLibraryFilesRemoved.some(lf => lf.metadata.path === media.coverPath)) {
       media.coverPath = null
@@ -283,7 +288,8 @@ class PodcastScanner {
       lastEpisodeCheck: 0,
       maxEpisodesToKeep: 0,
       maxNewEpisodesToDownload: 3,
-      podcastEpisodes: newPodcastEpisodes
+      podcastEpisodes: newPodcastEpisodes,
+      numEpisodes: newPodcastEpisodes.length
     }
 
     const libraryItemObj = libraryItemData.libraryItemObject
