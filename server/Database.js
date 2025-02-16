@@ -191,6 +191,10 @@ class Database {
     Logger.info(`[Database] Db initialized with models:`, Object.keys(this.sequelize.models).join(', '))
 
     await this.loadData()
+
+    Logger.info(`[Database] running ANALYZE`)
+    await this.sequelize.query('ANALYZE')
+    Logger.info(`[Database] ANALYZE completed`)
   }
 
   /**
