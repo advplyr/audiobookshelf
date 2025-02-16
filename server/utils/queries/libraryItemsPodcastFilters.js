@@ -1,6 +1,9 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
+const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+
+const countCache = new Map()
 
 module.exports = {
   /**
@@ -96,6 +99,28 @@ module.exports = {
     return []
   },
 
+  clearCountCache() {
+    countCache.clear()
+  },
+
+  async findAndCountAll(findOptions, model, limit, offset) {
+    const cacheKey = stringifySequelizeQuery(findOptions)
+    if (!countCache.has(cacheKey)) {
+      const count = await model.count(findOptions)
+      countCache.set(cacheKey, count)
+    }
+
+    findOptions.limit = limit
+    findOptions.offset = offset
+
+    const rows = await model.findAll(findOptions)
+
+    return {
+      rows,
+      count: countCache.get(cacheKey)
+    }
+  },
+
   /**
    * Get library items for podcast media type using filter and sort
    * @param {string} libraryId
@@ -151,7 +176,7 @@ module.exports = {
     replacements = { ...replacements, ...userPermissionPodcastWhere.replacements }
     podcastWhere.push(...userPermissionPodcastWhere.podcastWhere)
 
-    const { rows: podcasts, count } = await Database.podcastModel.findAndCountAll({
+    const findOptions = {
       where: podcastWhere,
       replacements,
       distinct: true,
@@ -167,10 +192,10 @@ module.exports = {
         }
       ],
       order: this.getOrder(sortBy, sortDesc),
-      subQuery: false,
-      limit: limit || null,
-      offset
-    })
+      subQuery: false
+    }
+
+    const { rows: podcasts, count } = await this.findAndCountAll(findOptions, Database.podcastModel, limit, offset)
 
     const libraryItems = podcasts.map((podcastExpanded) => {
       const libraryItem = podcastExpanded.libraryItem
@@ -270,7 +295,7 @@ module.exports = {
 
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const { rows: podcastEpisodes, count } = await Database.podcastEpisodeModel.findAndCountAll({
+    const findOptions = {
       where: podcastEpisodeWhere,
       replacements: userPermissionPodcastWhere.replacements,
       include: [
@@ -289,10 +314,10 @@ module.exports = {
         ...podcastEpisodeIncludes
       ],
       subQuery: false,
-      order: podcastEpisodeOrder,
-      limit,
-      offset
-    })
+      order: podcastEpisodeOrder
+    }
+
+    const { rows: podcastEpisodes, count } = await this.findAndCountAll(findOptions, Database.podcastEpisodeModel, limit, offset)
 
     const libraryItems = podcastEpisodes.map((ep) => {
       const libraryItem = ep.podcast.libraryItem
