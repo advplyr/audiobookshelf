@@ -140,9 +140,6 @@ module.exports = {
     }
 
     const podcastIncludes = []
-    if (includeNumEpisodesIncomplete) {
-      podcastIncludes.push([Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), 'numEpisodesIncomplete'])
-    }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
     replacements.userId = user.id
@@ -184,8 +181,15 @@ module.exports = {
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
       }
-      if (podcast.dataValues.numEpisodesIncomplete) {
-        libraryItem.numEpisodesIncomplete = podcast.dataValues.numEpisodesIncomplete
+
+      if (includeNumEpisodesIncomplete) {
+        const numEpisodesComplete = user.mediaProgresses.reduce((acc, mp) => {
+          if (mp.podcastId === podcast.id && mp.isFinished) {
+            acc += 1
+          }
+          return acc
+        }, 0)
+        libraryItem.numEpisodesIncomplete = podcast.numEpisodes - numEpisodesComplete
       }
 
       libraryItem.media = podcast
