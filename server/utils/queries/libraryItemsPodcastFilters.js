@@ -288,7 +288,6 @@ module.exports = {
         },
         ...podcastEpisodeIncludes
       ],
-      distinct: true,
       subQuery: false,
       order: podcastEpisodeOrder,
       limit,
