@@ -61,6 +61,8 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {number} */
+    this.numEpisodes
 
     /** @type {import('./PodcastEpisode')[]} */
     this.podcastEpisodes
@@ -138,7 +140,8 @@ class Podcast extends Model {
         maxNewEpisodesToDownload: DataTypes.INTEGER,
         coverPath: DataTypes.STRING,
         tags: DataTypes.JSON,
-        genres: DataTypes.JSON
+        genres: DataTypes.JSON,
+        numEpisodes: DataTypes.INTEGER
       },
       {
         sequelize,
