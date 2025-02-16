@@ -627,7 +627,9 @@ class PodcastManager {
             libraryFiles: [],
             extraData: {},
             libraryId: folder.libraryId,
-            libraryFolderId: folder.id
+            libraryFolderId: folder.id,
+            title: podcast.title,
+            titleIgnorePrefix: podcast.titleIgnorePrefix
           },
           { transaction }
         )

@@ -107,7 +107,9 @@ class PodcastController {
           libraryFiles: [],
           extraData: {},
           libraryId: library.id,
-          libraryFolderId: folder.id
+          libraryFolderId: folder.id,
+          title: podcast.title,
+          titleIgnorePrefix: podcast.titleIgnorePrefix
         },
         { transaction }
       )

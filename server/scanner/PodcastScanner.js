@@ -303,6 +303,8 @@ class PodcastScanner {
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
     libraryItemObj.extraData = {}
+    libraryItemObj.title = podcastObject.title
+    libraryItemObj.titleIgnorePrefix = getTitleIgnorePrefix(podcastObject.title)
 
     // If cover was not found in folder then check embedded covers in audio files
     if (!podcastObject.coverPath && scannedAudioFiles.length) {
