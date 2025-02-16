@@ -404,6 +404,14 @@ class User extends Model {
     return count > 0
   }
 
+  static mediaProgressRemoved(mediaProgress) {
+    const cachedUser = userCache.getById(mediaProgress.userId)
+    if (cachedUser) {
+      Logger.debug(`[User] mediaProgressRemoved: ${mediaProgress.id} from user ${cachedUser.id}`)
+      cachedUser.mediaProgresses = cachedUser.mediaProgresses.filter((mp) => mp.id !== mediaProgress.id)
+    }
+  }
+
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize

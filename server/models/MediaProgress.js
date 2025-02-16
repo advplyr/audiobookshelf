@@ -126,6 +126,16 @@ class MediaProgress extends Model {
       }
     })
 
+    // make sure to call the afterDestroy hook for each instance
+    MediaProgress.addHook('beforeBulkDestroy', (options) => {
+      options.individualHooks = true
+    })
+
+    // update the potentially cached user after destroying the media progress
+    MediaProgress.addHook('afterDestroy', (instance) => {
+      user.mediaProgressRemoved(instance)
+    })
+
     user.hasMany(MediaProgress, {
       onDelete: 'CASCADE'
     })
