@@ -159,7 +159,7 @@ module.exports = {
       replacements,
       distinct: true,
       attributes: {
-        include: [[Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe WHERE pe.podcastId = podcast.id)`), 'numEpisodes'], ...podcastIncludes]
+        include: [...podcastIncludes]
       },
       include: [
         {
@@ -186,9 +186,6 @@ module.exports = {
       }
       if (podcast.dataValues.numEpisodesIncomplete) {
         libraryItem.numEpisodesIncomplete = podcast.dataValues.numEpisodesIncomplete
-      }
-      if (podcast.dataValues.numEpisodes) {
-        podcast.numEpisodes = podcast.dataValues.numEpisodes
       }
 
       libraryItem.media = podcast
