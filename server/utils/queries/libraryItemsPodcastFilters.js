@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
+const { profile } = require('../../utils/profiler')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
 
 const countCache = new Map()
@@ -195,7 +196,9 @@ module.exports = {
       subQuery: false
     }
 
-    const { rows: podcasts, count } = await this.findAndCountAll(findOptions, Database.podcastModel, limit, offset)
+    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+
+    const { rows: podcasts, count } = await findAndCountAll(findOptions, Database.podcastModel, limit, offset)
 
     const libraryItems = podcasts.map((podcastExpanded) => {
       const libraryItem = podcastExpanded.libraryItem
@@ -317,7 +320,9 @@ module.exports = {
       order: podcastEpisodeOrder
     }
 
-    const { rows: podcastEpisodes, count } = await this.findAndCountAll(findOptions, Database.podcastEpisodeModel, limit, offset)
+    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+
+    const { rows: podcastEpisodes, count } = await findAndCountAll(findOptions, Database.podcastEpisodeModel, limit, offset)
 
     const libraryItems = podcastEpisodes.map((ep) => {
       const libraryItem = ep.podcast.libraryItem
