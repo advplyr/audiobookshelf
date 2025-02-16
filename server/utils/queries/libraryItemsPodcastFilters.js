@@ -276,10 +276,12 @@ module.exports = {
       include: [
         {
           model: Database.podcastModel,
+          required: true,
           where: userPermissionPodcastWhere.podcastWhere,
           include: [
             {
               model: Database.libraryItemModel,
+              required: true,
               where: libraryItemWhere
             }
           ]
