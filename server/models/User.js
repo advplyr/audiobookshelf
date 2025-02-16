@@ -634,6 +634,7 @@ class User extends Model {
     /** @type {import('./MediaProgress')|null} */
     let mediaProgress = null
     let mediaItemId = null
+    let podcastId = null
     if (progressPayload.episodeId) {
       const podcastEpisode = await this.sequelize.models.podcastEpisode.findByPk(progressPayload.episodeId, {
         attributes: ['id', 'podcastId'],
@@ -662,6 +663,7 @@ class User extends Model {
       }
       mediaItemId = podcastEpisode.id
       mediaProgress = podcastEpisode.mediaProgresses?.[0]
+      podcastId = podcastEpisode.podcastId
     } else {
       const libraryItem = await this.sequelize.models.libraryItem.findByPk(progressPayload.libraryItemId, {
         attributes: ['id', 'mediaId', 'mediaType'],
@@ -694,6 +696,7 @@ class User extends Model {
       const newMediaProgressPayload = {
         userId: this.id,
         mediaItemId,
+        podcastId,
         mediaItemType: progressPayload.episodeId ? 'podcastEpisode' : 'book',
         duration: isNullOrNaN(progressPayload.duration) ? 0 : Number(progressPayload.duration),
         currentTime: isNullOrNaN(progressPayload.currentTime) ? 0 : Number(progressPayload.currentTime),
