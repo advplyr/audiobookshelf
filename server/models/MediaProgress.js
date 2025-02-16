@@ -34,6 +34,8 @@ class MediaProgress extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+    /** @type {UUIDV4} */
+    this.podcastId
   }
 
   static removeById(mediaProgressId) {
@@ -69,7 +71,8 @@ class MediaProgress extends Model {
         ebookLocation: DataTypes.STRING,
         ebookProgress: DataTypes.FLOAT,
         finishedAt: DataTypes.DATE,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+        podcastId: DataTypes.UUID
       },
       {
         sequelize,
