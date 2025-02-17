@@ -1,24 +1,26 @@
 <template>
   <div id="page-wrapper" class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar id="series-toolbar" :selected-series="series" />
-    <div class="max-w-6xl mx-auto">
-      <div class="px-4e sm:px-8e">
-        <div class="flex items-center my-8">
-          <h1 class="text-2xl">{{ series.name }}</h1>
+    <div class="h-full overflow-y-auto pb-[100px]">
+      <div class="max-w-6xl mx-auto">
+        <div class="px-4e sm:px-8e">
+          <div class="flex items-center my-8">
+            <h1 class="text-2xl">{{ series.name }}</h1>
 
-          <button class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="showEditSeries">
-            <span class="material-symbols text-base">edit</span>
-          </button>
+            <button class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="showEditSeries">
+              <span class="material-symbols text-base">edit</span>
+            </button>
+          </div>
+          <div class="mb-6">
+            <h2 class="font-semibold">
+              {{ $strings.LabelDescription }}
+            </h2>
+            <div>{{ series.description }}</div>
+          </div>
         </div>
-        <div class="mb-6">
-          <h2 class="font-semibold">
-            {{ $strings.LabelDescription }}
-          </h2>
-          <div>{{ series.description }}</div>
-        </div>
+
+        <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
       </div>
-
-      <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
     </div>
 
     <modals-edit-series-modal v-model="showEditSeriesModal" :series="series" />
