@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-col sm:flex-row mb-4">
-      <div class="relative self-center">
+      <div class="relative self-center md:self-start">
         <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, libraryItemUpdatedAt, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
         <!-- book cover overlay -->
@@ -36,7 +36,7 @@
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
-          <div v-if="showLocalCovers" class="flex items-center justify-center pb-2">
+          <div v-if="showLocalCovers" class="flex items-center justify-center flex-wrap pb-2">
             <template v-for="localCoverFile in localCovers">
               <div :key="localCoverFile.ino" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="localCoverFile.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(localCoverFile)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
