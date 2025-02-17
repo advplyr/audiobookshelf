@@ -5,7 +5,7 @@ const authorFilters = require('./authorFilters')
 
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
-
+const stringifySequelizeQuery = require('../stringifySequelizeQuery')
 const countCache = new Map()
 
 module.exports = {
@@ -345,7 +345,7 @@ module.exports = {
   },
 
   async findAndCountAll(findOptions, limit, offset) {
-    const findOptionsKey = JSON.stringify(findOptions)
+    const findOptionsKey = stringifySequelizeQuery(findOptions)
     Logger.debug(`[LibraryItemsBookFilters] findOptionsKey: ${findOptionsKey}`)
 
     findOptions.limit = limit || null
@@ -353,6 +353,7 @@ module.exports = {
 
     if (countCache.has(findOptionsKey)) {
       const rows = await Database.bookModel.findAll(findOptions)
+
       return { rows, count: countCache.get(findOptionsKey) }
     } else {
       const result = await Database.bookModel.findAndCountAll(findOptions)
