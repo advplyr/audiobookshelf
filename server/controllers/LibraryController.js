@@ -767,12 +767,16 @@ class LibraryController {
       .map((v) => v.trim().toLowerCase())
       .filter((v) => !!v)
 
-    const series = await Database.seriesModel.findByPk(req.params.seriesId)
+    const series = req.query.expanded ? await Database.seriesModel.getExpandedById(req.params.seriesId) : await Database.seriesModel.findByPk(req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
 
     const seriesJson = series.toOldJSON()
+    if (req.query.expanded) {
+      seriesJson.books = series.books
+    }
+
     if (include.includes('progress')) {
       const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.media.id)?.isFinished)
       seriesJson.progress = {
