@@ -17,6 +17,16 @@
             </h2>
             <div>{{ series.description }}</div>
           </div>
+          <div class="mb-6">
+            <h2 class="font-semibold">
+              {{ authors.length > 1 ? $strings.LabelAuthors : $strings.LabelAuthor }}
+            </h2>
+            <div>{{ authors.join(', ') }}</div>
+          </div>
+          <div class="mb-6">
+            <h2 class="font-semibold">{{ this.$strings.LabelTotalDuration }}</h2>
+            <div>{{ totalDuration.hours }}<span>hrs</span> {{ totalDuration.minutes }}<span>min</span></div>
+          </div>
         </div>
 
         <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
@@ -41,7 +51,7 @@ export default {
       return redirect(`/library/${libraryId}`)
     }
 
-    const series = await app.$axios.$get(`/api/libraries/${library.id}/series/${params.id}?include=progress,rssfeed`).catch((error) => {
+    const series = await app.$axios.$get(`/api/libraries/${library.id}/series/${params.id}?include=progress,rssfeed&expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -62,6 +72,22 @@ export default {
   computed: {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    totalDuration() {
+      const totalSeconds = this.series.books.reduce((acc, book) => acc + book.duration, 0)
+      const hours = Math.floor(totalSeconds / 3600)
+      const minuteRemainder = totalSeconds % 3600
+      const minutes = Math.floor(minuteRemainder / 60)
+
+      return { hours, minutes }
+    },
+    authors() {
+      // Get nested array of authors
+      const nestedAuthors = this.series.books.map((book) => book.authors.map((author) => author.name))
+      // Flatten to one array
+      const authors = nestedAuthors.flat(1)
+      // Remove duplicates
+      return [...new Set(authors)]
     }
   },
   methods: {
