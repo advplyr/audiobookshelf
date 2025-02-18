@@ -9,7 +9,7 @@ const util = require('util')
  * @property {MigrationContext} context - an object containing the migration context.
  */
 
-const migrationVersion = '2.19.3'
+const migrationVersion = '2.19.4'
 const migrationName = `${migrationVersion}-improve-podcast-queries`
 const loggerPrefix = `[${migrationVersion} migration]`
 

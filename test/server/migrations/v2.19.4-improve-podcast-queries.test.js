@@ -5,9 +5,9 @@ const { expect } = chai
 const { DataTypes, Sequelize } = require('sequelize')
 const Logger = require('../../../server/Logger')
 
-const { up, down } = require('../../../server/migrations/v2.19.3-improve-podcast-queries')
+const { up, down } = require('../../../server/migrations/v2.19.4-improve-podcast-queries')
 
-describe('Migration v2.19.3-improve-podcast-queries', () => {
+describe('Migration v2.19.4-improve-podcast-queries', () => {
   let sequelize
   let queryInterface
   let loggerInfoStub
