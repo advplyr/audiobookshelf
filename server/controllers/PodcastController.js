@@ -107,7 +107,9 @@ class PodcastController {
           libraryFiles: [],
           extraData: {},
           libraryId: library.id,
-          libraryFolderId: folder.id
+          libraryFolderId: folder.id,
+          title: podcast.title,
+          titleIgnorePrefix: podcast.titleIgnorePrefix
         },
         { transaction }
       )
@@ -497,6 +499,10 @@ class PodcastController {
     req.libraryItem.libraryFiles = req.libraryItem.libraryFiles.filter((file) => file.ino !== episode.audioFile.ino)
     req.libraryItem.changed('libraryFiles', true)
     await req.libraryItem.save()
+
+    // update number of episodes
+    req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
+    await req.libraryItem.media.save()
 
     SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
     res.json(req.libraryItem.toOldJSON())

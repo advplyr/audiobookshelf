@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const Logger = require('../Logger')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -61,6 +62,8 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {number} */
+    this.numEpisodes
 
     /** @type {import('./PodcastEpisode')[]} */
     this.podcastEpisodes
@@ -138,13 +141,22 @@ class Podcast extends Model {
         maxNewEpisodesToDownload: DataTypes.INTEGER,
         coverPath: DataTypes.STRING,
         tags: DataTypes.JSON,
-        genres: DataTypes.JSON
+        genres: DataTypes.JSON,
+        numEpisodes: DataTypes.INTEGER
       },
       {
         sequelize,
         modelName: 'podcast'
       }
     )
+
+    Podcast.addHook('afterDestroy', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterDestroy')
+    })
+
+    Podcast.addHook('afterCreate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterCreate')
+    })
   }
 
   get hasMediaFiles() {
