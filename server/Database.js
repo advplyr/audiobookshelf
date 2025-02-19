@@ -190,6 +190,8 @@ class Database {
     await this.buildModels(force)
     Logger.info(`[Database] Db initialized with models:`, Object.keys(this.sequelize.models).join(', '))
 
+    await this.addTriggers()
+
     await this.loadData()
 
     Logger.info(`[Database] running ANALYZE`)
@@ -769,6 +771,43 @@ class Database {
     const textQuery = new this.TextSearchQuery(this.sequelize, this.supportsUnaccent, query)
     await textQuery.init()
     return textQuery
+  }
+
+  /**
+   * This is used to create necessary triggers for new databases.
+   * It adds triggers to update libraryItems.title[IgnorePrefix] when (books|podcasts).title[IgnorePrefix] is updated
+   */
+  async addTriggers() {
+    await this.addTriggerIfNotExists('books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
+    await this.addTriggerIfNotExists('books', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
+    await this.addTriggerIfNotExists('podcasts', 'title', 'id', 'libraryItems', 'title', 'mediaId')
+    await this.addTriggerIfNotExists('podcasts', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
+  }
+
+  async addTriggerIfNotExists(sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
+    const action = `update_${targetTable}_${targetColumn}`
+    const fromSource = sourceTable === 'books' ? '' : `_from_${sourceTable}_${sourceColumn}`
+    const triggerName = this.convertToSnakeCase(`${action}${fromSource}`)
+
+    const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+    if (count > 0) return // Trigger already exists
+
+    Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+    await this.sequelize.query(`
+      CREATE TRIGGER ${triggerName}
+        AFTER UPDATE OF ${sourceColumn} ON ${sourceTable}
+        FOR EACH ROW
+        BEGIN
+          UPDATE ${targetTable}
+            SET ${targetColumn} = NEW.${sourceColumn}
+          WHERE ${targetTable}.${targetIdColumn} = NEW.${sourceIdColumn};
+        END;
+    `)
+  }
+
+  convertToSnakeCase(str) {
+    return str.replace(/([A-Z])/g, '_$1').toLowerCase()
   }
 
   TextSearchQuery = class {
