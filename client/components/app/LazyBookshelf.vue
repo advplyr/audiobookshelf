@@ -547,6 +547,15 @@ export default {
       if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
+          if (this.entityName === 'items' && this.orderBy === 'media.metadata.title') {
+            const curTitle = this.entities[indexOf].media.metadata?.title
+            const newTitle = libraryItem.media.metadata?.title
+            if (curTitle != newTitle) {
+              console.log('Title changed. Re-sorting...')
+              this.resetEntities()
+              return
+            }
+          }
           this.entities[indexOf] = libraryItem
           if (this.entityComponentRefs[indexOf]) {
             this.entityComponentRefs[indexOf].setEntity(libraryItem)
