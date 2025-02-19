@@ -419,7 +419,7 @@ export default {
 
       this.postScrollTimeout = setTimeout(this.postScroll, 500)
     },
-    async resetEntities() {
+    async resetEntities(scrollPositionToRestore) {
       if (this.isFetchingEntities) {
         this.pendingReset = true
         return
@@ -437,6 +437,12 @@ export default {
       await this.loadPage(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntities(0, lastBookIndex)
+
+      if (scrollPositionToRestore) {
+        if (window.bookshelf) {
+          window.bookshelf.scrollTop = scrollPositionToRestore
+        }
+      }
     },
     async rebuild() {
       this.initSizeData()
@@ -444,9 +450,8 @@ export default {
       var lastBookIndex = Math.min(this.totalEntities, this.booksPerFetch)
       this.destroyEntityComponents()
       await this.loadPage(0)
-      var bookshelfEl = document.getElementById('bookshelf')
-      if (bookshelfEl) {
-        bookshelfEl.scrollTop = 0
+      if (window.bookshelf) {
+        window.bookshelf.scrollTop = 0
       }
       this.mountEntities(0, lastBookIndex)
     },
@@ -547,6 +552,15 @@ export default {
       if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
+          if (this.entityName === 'items' && this.orderBy === 'media.metadata.title') {
+            const curTitle = this.entities[indexOf].media.metadata?.title
+            const newTitle = libraryItem.media.metadata?.title
+            if (curTitle != newTitle) {
+              console.log('Title changed. Re-sorting...')
+              this.resetEntities(this.currScrollTop)
+              return
+            }
+          }
           this.entities[indexOf] = libraryItem
           if (this.entityComponentRefs[indexOf]) {
             this.entityComponentRefs[indexOf].setEntity(libraryItem)
