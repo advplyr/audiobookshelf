@@ -34,6 +34,8 @@ class MediaProgress extends Model {
     this.updatedAt
     /** @type {Date} */
     this.createdAt
+    /** @type {UUIDV4} */
+    this.podcastId
   }
 
   static removeById(mediaProgressId) {
@@ -69,7 +71,8 @@ class MediaProgress extends Model {
         ebookLocation: DataTypes.STRING,
         ebookProgress: DataTypes.FLOAT,
         finishedAt: DataTypes.DATE,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+        podcastId: DataTypes.UUID
       },
       {
         sequelize,
@@ -121,6 +124,16 @@ class MediaProgress extends Model {
         delete instance.podcastEpisode
         delete instance.dataValues.podcastEpisode
       }
+    })
+
+    // make sure to call the afterDestroy hook for each instance
+    MediaProgress.addHook('beforeBulkDestroy', (options) => {
+      options.individualHooks = true
+    })
+
+    // update the potentially cached user after destroying the media progress
+    MediaProgress.addHook('afterDestroy', (instance) => {
+      user.mediaProgressRemoved(instance)
     })
 
     user.hasMany(MediaProgress, {

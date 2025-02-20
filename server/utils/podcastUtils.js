@@ -145,15 +145,15 @@ function extractEpisodeData(item) {
 
   if (item.enclosure?.[0]?.['$']?.url) {
     enclosure = item.enclosure[0]['$']
-  } else if(item['media:content']?.find(c => c?.['$']?.url && (c?.['$']?.type ?? "").startsWith("audio"))) {
-    enclosure = item['media:content'].find(c => (c['$']?.type ?? "").startsWith("audio"))['$']
+  } else if (item['media:content']?.find((c) => c?.['$']?.url && (c?.['$']?.type ?? '').startsWith('audio'))) {
+    enclosure = item['media:content'].find((c) => (c['$']?.type ?? '').startsWith('audio'))['$']
   } else {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
   const episode = {
-    enclosure: enclosure,
+    enclosure: enclosure
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
@@ -343,6 +343,14 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       return payload.podcast
     })
     .catch((error) => {
+      // Check for failures due to redirecting from http to https. If original url was http, upgrade to https and try again
+      if (error.code === 'ERR_FR_REDIRECTION_FAILURE' && error.cause.code === 'ERR_INVALID_PROTOCOL') {
+        if (feedUrl.startsWith('http://') && error.request._options.protocol === 'https:') {
+          Logger.info('Redirection from http to https detected. Upgrading Request', error.request._options.href)
+          feedUrl = feedUrl.replace('http://', 'https://')
+          return this.getPodcastFeed(feedUrl, excludeEpisodeMetadata)
+        }
+      }
       Logger.error('[podcastUtils] getPodcastFeed Error', error)
       return null
     })

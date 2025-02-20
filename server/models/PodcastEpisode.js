@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
-
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 /**
  * @typedef ChapterObject
  * @property {number} id
@@ -132,6 +132,14 @@ class PodcastEpisode extends Model {
       onDelete: 'CASCADE'
     })
     PodcastEpisode.belongsTo(podcast)
+
+    PodcastEpisode.addHook('afterDestroy', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterDestroy')
+    })
+
+    PodcastEpisode.addHook('afterCreate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterCreate')
+    })
   }
 
   get size() {

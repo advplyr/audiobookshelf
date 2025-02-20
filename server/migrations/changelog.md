@@ -14,3 +14,4 @@ Please add a record of every database migration that you create to this file. Th
 | v2.17.6        | v2.17.6-share-add-isdownloadable             | Adds the isDownloadable column to the mediaItemShares table                                                   |
 | v2.17.7        | v2.17.7-add-indices                          | Adds indices to the libraryItems and books tables to reduce query times                                       |
 | v2.19.1        | v2.19.1-copy-title-to-library-items          | Copies title and titleIgnorePrefix to the libraryItems table, creates update triggers and indices             |
+| v2.19.4        | v2.19.4-improve-podcast-queries              | Adds numEpisodes to podcasts, adds podcastId to mediaProgresses, copies podcast title to libraryItems         |
