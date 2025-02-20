@@ -1,6 +1,7 @@
 const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
+const expressStaticGzip = require('express-static-gzip')
 const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
@@ -318,7 +319,7 @@ class Server {
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
-    router.use(express.static(distPath))
+    router.use(expressStaticGzip(distPath))
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
