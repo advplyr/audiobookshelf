@@ -112,7 +112,7 @@ module.exports = {
       countCache.set(cacheKey, count)
     }
 
-    findOptions.limit = limit
+    findOptions.limit = limit || null
     findOptions.offset = offset
 
     const rows = await model.findAll(findOptions)
