@@ -157,6 +157,10 @@ class Podcast extends Model {
     Podcast.addHook('afterCreate', async (instance) => {
       libraryItemsPodcastFilters.clearCountCache('podcast', 'afterCreate')
     })
+
+    Podcast.addHook('afterUpdate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterUpdate')
+    })
   }
 
   get hasMediaFiles() {

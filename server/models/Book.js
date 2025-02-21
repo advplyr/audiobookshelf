@@ -201,6 +201,10 @@ class Book extends Model {
     Book.addHook('afterCreate', async (instance) => {
       libraryItemsBookFilters.clearCountCache('afterCreate')
     })
+
+    Book.addHook('afterUpdate', async (instance) => {
+      libraryItemsBookFilters.clearCountCache('afterUpdate')
+    })
   }
 
   /**
