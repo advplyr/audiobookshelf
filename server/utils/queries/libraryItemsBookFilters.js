@@ -434,19 +434,17 @@ module.exports = {
 
     const libraryItemIncludes = []
     const bookIncludes = []
-    if (includeRSSFeed) {
+
+    if (filterGroup === 'feed-open' || includeRSSFeed) {
+      const rssFeedRequired = filterGroup === 'feed-open'
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open',
-        separate: true
+        required: rssFeedRequired,
+        separate: !rssFeedRequired
       })
     }
-    if (filterGroup === 'feed-open' && !includeRSSFeed) {
-      libraryItemIncludes.push({
-        model: Database.feedModel,
-        required: true
-      })
-    } else if (filterGroup === 'share-open') {
+
+    if (filterGroup === 'share-open') {
       bookIncludes.push({
         model: Database.mediaItemShareModel,
         required: true
