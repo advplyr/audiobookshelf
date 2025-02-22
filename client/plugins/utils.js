@@ -156,7 +156,7 @@ Vue.prototype.$parseCronExpression = (expression, context) => {
       .join(', ')
 
   return {
-    description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
+    description: context.$getString('MessageScheduleRunEveryWeekdayAtTime', [weekdayText, `${pieces[1]}:${pieces[0].padStart(2, '0')}`])
   }
 }
 
