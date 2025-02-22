@@ -254,6 +254,11 @@ class LibraryController {
    * @param {Response} res
    */
   async update(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to update library`)
+      return res.sendStatus(403)
+    }
+
     // Validation
     const updatePayload = {}
     const keysToCheck = ['name', 'provider', 'mediaType', 'icon']
@@ -519,6 +524,11 @@ class LibraryController {
    * @param {Response} res
    */
   async delete(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to delete library`)
+      return res.sendStatus(403)
+    }
+    
     // Remove library watcher
     Watcher.removeLibrary(req.library)
 
@@ -639,6 +649,11 @@ class LibraryController {
    * @param {Response} res
    */
   async removeLibraryItemsWithIssues(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to delete library items missing or invalid`)
+      return res.sendStatus(403)
+    }
+
     const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
       where: {
         libraryId: req.library.id,
