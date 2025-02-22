@@ -393,6 +393,7 @@
   "LabelIntervalEvery6Hours": "Every 6 hours",
   "LabelIntervalEveryDay": "Every day",
   "LabelIntervalEveryHour": "Every hour",
+  "LabelIntervalEveryMinute": "Every minute",
   "LabelInvert": "Invert",
   "LabelItem": "Item",
   "LabelJumpBackwardAmount": "Jump backward amount",
