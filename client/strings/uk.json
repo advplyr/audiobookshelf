@@ -393,6 +393,7 @@
   "LabelIntervalEvery6Hours": "Кожні 6 годин",
   "LabelIntervalEveryDay": "Щодня",
   "LabelIntervalEveryHour": "Щогодини",
+  "LabelIntervalEveryMinute": "Кожну хвилину",
   "LabelInvert": "Інвертувати",
   "LabelItem": "Елемент",
   "LabelJumpBackwardAmount": "Час переходу назад",
