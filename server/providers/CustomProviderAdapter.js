@@ -41,6 +41,9 @@ class CustomProviderAdapter {
     }
     const queryString = new URLSearchParams(queryObj).toString()
 
+    const url = `${provider.url}/search?${queryString}`
+    Logger.debug(`[CustomMetadataProvider] Search url: ${url}`)
+
     // Setup headers
     const axiosOptions = {
       timeout
@@ -52,7 +55,7 @@ class CustomProviderAdapter {
     }
 
     const matches = await axios
-      .get(`${provider.url}/search?${queryString}`, axiosOptions)
+      .get(url, axiosOptions)
       .then((res) => {
         if (!res?.data || !Array.isArray(res.data.matches)) return null
         return res.data.matches
