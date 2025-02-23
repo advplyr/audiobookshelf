@@ -132,6 +132,41 @@ async function readTextFile(path) {
 module.exports.readTextFile = readTextFile
 
 /**
+ * Check if file or directory should be ignored. Returns a string of the reason to ignore, or null if not ignored
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+module.exports.shouldIgnoreFile = (path) => {
+  var extensionIgnores = ['.part', '.tmp', '.crdownload', '.download', '.bak', '.old', '.temp', '.tempfile', '.tempfile~']
+
+  // Check extension
+  if (extensionIgnores.includes(Path.extname(path).toLowerCase())) {
+    // Return the extension that is ignored
+    return `${Path.extname(path)} file`
+  }
+
+  // Check if directory or file name starts with "."
+  if (Path.basename(path).startsWith('.')) {
+    return 'dotfile'
+  }
+  if (path.split('/').find((p) => p.startsWith('.'))) {
+    return 'dotpath'
+  }
+
+  // If these strings exist anywhere in the filename or directory name, ignore. Vendor specific hidden directories
+  var includeAnywhereIgnore = ['@eaDir']
+  var filteredInclude = includeAnywhereIgnore.filter((str) => path.includes(str))
+  if (filteredInclude.length) {
+    return `${filteredInclude[0]} directory`
+  }
+
+  // Should not ignore this file or directory
+  return null
+}
+module.exports.shouldIgnoreFile = this.shouldIgnoreFile
+
+/**
  * @typedef FilePathItem
  * @property {string} name - file name e.g. "audiofile.m4b"
  * @property {string} path - fullpath excluding folder e.g. "Author/Book/audiofile.m4b"
@@ -197,14 +232,10 @@ async function recurseFiles(path, relPathToReplace = null) {
         return false
       }
 
-      if (item.extension === '.part') {
-        Logger.debug(`[fileUtils] Ignoring .part file "${relpath}"`)
-        return false
-      }
-
-      // Ignore any file if a directory or the filename starts with "."
-      if (relpath.split('/').find((p) => p.startsWith('.'))) {
-        Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
+      // Check for ignored extensions or directories
+      const shouldIgnore = this.shouldIgnoreFile(relpath)
+      if (shouldIgnore) {
+        Logger.debug(`[fileUtils] Ignoring ${shouldIgnore} - "${relpath}"`)
         return false
       }
 
