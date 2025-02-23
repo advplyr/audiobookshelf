@@ -105,22 +105,27 @@ module.exports = {
     countCache.clear()
   },
 
-  async findAndCountAll(findOptions, model, limit, offset) {
-    const cacheKey = stringifySequelizeQuery(findOptions)
-    if (!countCache.has(cacheKey)) {
-      const count = await model.count(findOptions)
-      countCache.set(cacheKey, count)
+  async findAndCountAll(findOptions, model, limit, offset, useCountCache) {
+    if (useCountCache) {
+      const countCacheKey = stringifySequelizeQuery(findOptions)
+      Logger.debug(`[LibraryItemsPodcastFilters] countCacheKey: ${countCacheKey}`)
+      if (!countCache.has(countCacheKey)) {
+        const count = await model.count(findOptions)
+        countCache.set(countCacheKey, count)
+      }
+
+      findOptions.limit = limit || null
+      findOptions.offset = offset
+
+      const rows = await model.findAll(findOptions)
+
+      return { rows, count: countCache.get(countCacheKey) }
     }
 
     findOptions.limit = limit || null
     findOptions.offset = offset
 
-    const rows = await model.findAll(findOptions)
-
-    return {
-      rows,
-      count: countCache.get(cacheKey)
-    }
+    return await model.findAndCountAll(findOptions)
   },
 
   /**
@@ -199,7 +204,7 @@ module.exports = {
 
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
 
-    const { rows: podcasts, count } = await findAndCountAll(findOptions, Database.podcastModel, limit, offset)
+    const { rows: podcasts, count } = await findAndCountAll(findOptions, Database.podcastModel, limit, offset, !filterGroup)
 
     const libraryItems = podcasts.map((podcastExpanded) => {
       const libraryItem = podcastExpanded.libraryItem
@@ -323,7 +328,7 @@ module.exports = {
 
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
 
-    const { rows: podcastEpisodes, count } = await findAndCountAll(findOptions, Database.podcastEpisodeModel, limit, offset)
+    const { rows: podcastEpisodes, count } = await findAndCountAll(findOptions, Database.podcastEpisodeModel, limit, offset, !filterGroup)
 
     const libraryItems = podcastEpisodes.map((ep) => {
       const libraryItem = ep.podcast.libraryItem
