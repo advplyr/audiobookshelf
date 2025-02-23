@@ -344,22 +344,28 @@ module.exports = {
     countCache.clear()
   },
 
-  async findAndCountAll(findOptions, limit, offset) {
-    const findOptionsKey = stringifySequelizeQuery(findOptions)
-    Logger.debug(`[LibraryItemsBookFilters] findOptionsKey: ${findOptionsKey}`)
+  async findAndCountAll(findOptions, limit, offset, useCountCache) {
+    const model = Database.bookModel
+    if (useCountCache) {
+      const countCacheKey = stringifySequelizeQuery(findOptions)
+      Logger.debug(`[LibraryItemsBookFilters] countCacheKey: ${countCacheKey}`)
+      if (!countCache.has(countCacheKey)) {
+        const count = await model.count(findOptions)
+        countCache.set(countCacheKey, count)
+      }
+
+      findOptions.limit = limit || null
+      findOptions.offset = offset
+
+      const rows = await model.findAll(findOptions)
+
+      return { rows, count: countCache.get(countCacheKey) }
+    }
 
     findOptions.limit = limit || null
     findOptions.offset = offset
 
-    if (countCache.has(findOptionsKey)) {
-      const rows = await Database.bookModel.findAll(findOptions)
-
-      return { rows, count: countCache.get(findOptionsKey) }
-    } else {
-      const result = await Database.bookModel.findAndCountAll(findOptions)
-      countCache.set(findOptionsKey, result.count)
-      return result
-    }
+    return await model.findAndCountAll(findOptions)
   },
 
   /**
@@ -606,7 +612,7 @@ module.exports = {
     }
 
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset)
+    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup)
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
