@@ -89,6 +89,13 @@ export default {
       handler() {
         this.refresh()
       }
+    },
+    episodesList: {
+      handler(newList) {
+        const episodeIds = newList.map((ep) => ep.id)
+        this.$store.commit('setSortedEpisodeIds', episodeIds)
+      },
+      immediate: true
     }
   },
   computed: {
