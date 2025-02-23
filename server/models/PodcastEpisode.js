@@ -140,10 +140,6 @@ class PodcastEpisode extends Model {
     PodcastEpisode.addHook('afterCreate', async (instance) => {
       libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterCreate')
     })
-
-    PodcastEpisode.addHook('afterUpdate', async (instance) => {
-      libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterUpdate')
-    })
   }
 
   get size() {
