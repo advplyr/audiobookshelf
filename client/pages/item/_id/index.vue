@@ -537,14 +537,15 @@ export default {
       let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        const episodesInListeningOrder = [...this.sortedEpisodeIds].reverse().map((id) => this.podcastEpisodes.find((ep) => ep.id === id))
-        console.log('Episodes in listening order', episodesInListeningOrder)
+        // Sort the episodes based on the sorting and filtering from the episode table component
+        const episodesInListeningOrder = this.sortedEpisodeIds.map((id) => this.podcastEpisodes.find((ep) => ep.id === id))
 
-        // Find most recent episode unplayed
-        let episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
+        // Find the first unplayed episode from the table
+        let episodeIndex = episodesInListeningOrder.findIndex((ep) => {
           const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
+        // If all episodes are played, use the first episode
         if (episodeIndex < 0) episodeIndex = 0
 
         episodeId = episodesInListeningOrder[episodeIndex].id
