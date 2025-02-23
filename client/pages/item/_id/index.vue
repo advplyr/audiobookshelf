@@ -267,6 +267,9 @@ export default {
     podcastEpisodes() {
       return this.media.episodes || []
     },
+    sortedEpisodeIds() {
+      return this.$store.getters.getSortedEpisodeIds
+    },
     title() {
       return this.mediaMetadata.title || 'No Title'
     },
@@ -534,7 +537,8 @@ export default {
       let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        const episodesInListeningOrder = this.podcastEpisodes.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+        const episodesInListeningOrder = [...this.sortedEpisodeIds].reverse().map((id) => this.podcastEpisodes.find((ep) => ep.id === id))
+        console.log('Episodes in listening order', episodesInListeningOrder)
 
         // Find most recent episode unplayed
         let episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
