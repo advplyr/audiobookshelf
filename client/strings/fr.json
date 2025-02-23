@@ -707,7 +707,7 @@
   "MessageBackupsLocationEditNote": "Remarque : Mettre à jour l'emplacement de sauvegarde ne déplacera pas ou ne modifiera pas les sauvegardes existantes",
   "MessageBackupsLocationNoEditNote": "Remarque : l’emplacement de sauvegarde est défini via une variable d’environnement et ne peut pas être modifié ici.",
   "MessageBackupsLocationPathEmpty": "L'emplacement de secours ne peut pas être vide",
-  "MessageBatchEditPopulateMapDetailsAllHelp": "Remplir les champs disponibles avec les données de tous les éléments. les champs avec des valeurs multiples seront fusionnés",
+  "MessageBatchEditPopulateMapDetailsAllHelp": "Remplir les champs disponibles avec les données de tous les éléments. Les champs avec des valeurs multiples seront fusionnés.",
   "MessageBatchQuickMatchDescription": "La recherche par correspondance rapide tentera d’ajouter les couvertures et métadonnées manquantes pour les éléments sélectionnés. Activez les options ci-dessous pour permettre la Recherche par correspondance d’écraser les couvertures et/ou métadonnées existantes.",
   "MessageBookshelfNoCollections": "Vous n’avez pas encore de collections",
   "MessageBookshelfNoRSSFeeds": "Aucun flux RSS n’est ouvert",
