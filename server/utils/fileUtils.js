@@ -138,14 +138,6 @@ module.exports.readTextFile = readTextFile
  * @returns {string}
  */
 module.exports.shouldIgnoreFile = (path) => {
-  var extensionIgnores = ['.part', '.tmp', '.crdownload', '.download', '.bak', '.old', '.temp', '.tempfile', '.tempfile~']
-
-  // Check extension
-  if (extensionIgnores.includes(Path.extname(path).toLowerCase())) {
-    // Return the extension that is ignored
-    return `${Path.extname(path)} file`
-  }
-
   // Check if directory or file name starts with "."
   if (Path.basename(path).startsWith('.')) {
     return 'dotfile'
@@ -155,16 +147,23 @@ module.exports.shouldIgnoreFile = (path) => {
   }
 
   // If these strings exist anywhere in the filename or directory name, ignore. Vendor specific hidden directories
-  var includeAnywhereIgnore = ['@eaDir']
-  var filteredInclude = includeAnywhereIgnore.filter((str) => path.includes(str))
+  const includeAnywhereIgnore = ['@eaDir']
+  const filteredInclude = includeAnywhereIgnore.filter((str) => path.includes(str))
   if (filteredInclude.length) {
     return `${filteredInclude[0]} directory`
+  }
+
+  const extensionIgnores = ['.part', '.tmp', '.crdownload', '.download', '.bak', '.old', '.temp', '.tempfile', '.tempfile~']
+
+  // Check extension
+  if (extensionIgnores.includes(Path.extname(path).toLowerCase())) {
+    // Return the extension that is ignored
+    return `${Path.extname(path)} file`
   }
 
   // Should not ignore this file or directory
   return null
 }
-module.exports.shouldIgnoreFile = this.shouldIgnoreFile
 
 /**
  * @typedef FilePathItem
@@ -182,7 +181,7 @@ module.exports.shouldIgnoreFile = this.shouldIgnoreFile
  * @param {string} [relPathToReplace]
  * @returns {FilePathItem[]}
  */
-async function recurseFiles(path, relPathToReplace = null) {
+module.exports.recurseFiles = async (path, relPathToReplace = null) => {
   path = filePathToPOSIX(path)
   if (!path.endsWith('/')) path = path + '/'
 
@@ -266,7 +265,6 @@ async function recurseFiles(path, relPathToReplace = null) {
 
   return list
 }
-module.exports.recurseFiles = recurseFiles
 
 /**
  *
