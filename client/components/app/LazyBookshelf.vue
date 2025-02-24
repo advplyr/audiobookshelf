@@ -568,6 +568,18 @@ export default {
         }
       }
     },
+    routeToBookshelfIfLastIssueRemoved() {
+      if (this.totalEntities === 0) {
+        const currentRouteQuery = this.$route.query
+        if (currentRouteQuery?.filter && currentRouteQuery.filter === 'issues') {
+          this.$nextTick(() => {
+            console.log('Last issue removed. Redirecting to library bookshelf')
+            this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
+            this.$store.dispatch('libraries/fetch', this.currentLibraryId)
+          })
+        }
+      }
+    },
     libraryItemRemoved(libraryItem) {
       if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
@@ -578,6 +590,7 @@ export default {
           this.executeRebuild()
         }
       }
+      this.routeToBookshelfIfLastIssueRemoved()
     },
     libraryItemsAdded(libraryItems) {
       console.log('items added', libraryItems)

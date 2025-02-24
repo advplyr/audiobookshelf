@@ -122,7 +122,7 @@ export default {
     },
     scheduleDescription() {
       if (!this.cronExpression) return ''
-      const parsed = this.$parseCronExpression(this.cronExpression)
+      const parsed = this.$parseCronExpression(this.cronExpression, this)
       return parsed ? parsed.description : `${this.$strings.LabelCustomCronExpression} ${this.cronExpression}`
     },
     nextBackupDate() {

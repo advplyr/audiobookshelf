@@ -93,7 +93,7 @@ Vue.prototype.$elapsedPrettyExtended = (seconds, useDays = true, showSeconds = t
   return strs.join(' ')
 }
 
-Vue.prototype.$parseCronExpression = (expression) => {
+Vue.prototype.$parseCronExpression = (expression, context) => {
   if (!expression) return null
   const pieces = expression.split(' ')
   if (pieces.length !== 5) {
@@ -102,31 +102,31 @@ Vue.prototype.$parseCronExpression = (expression) => {
 
   const commonPatterns = [
     {
-      text: 'Every 12 hours',
+      text: context.$strings.LabelIntervalEvery12Hours,
       value: '0 */12 * * *'
     },
     {
-      text: 'Every 6 hours',
+      text: context.$strings.LabelIntervalEvery6Hours,
       value: '0 */6 * * *'
     },
     {
-      text: 'Every 2 hours',
+      text: context.$strings.LabelIntervalEvery2Hours,
       value: '0 */2 * * *'
     },
     {
-      text: 'Every hour',
+      text: context.$strings.LabelIntervalEveryHour,
       value: '0 * * * *'
     },
     {
-      text: 'Every 30 minutes',
+      text: context.$strings.LabelIntervalEvery30Minutes,
       value: '*/30 * * * *'
     },
     {
-      text: 'Every 15 minutes',
+      text: context.$strings.LabelIntervalEvery15Minutes,
       value: '*/15 * * * *'
     },
     {
-      text: 'Every minute',
+      text: context.$strings.LabelIntervalEveryMinute,
       value: '* * * * *'
     }
   ]
@@ -147,7 +147,7 @@ Vue.prototype.$parseCronExpression = (expression) => {
     return null
   }
 
-  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const weekdays = context.$getDaysOfWeek()
   var weekdayText = 'day'
   if (pieces[4] !== '*')
     weekdayText = pieces[4]
@@ -156,7 +156,7 @@ Vue.prototype.$parseCronExpression = (expression) => {
       .join(', ')
 
   return {
-    description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
+    description: context.$getString('MessageScheduleRunEveryWeekdayAtTime', [weekdayText, `${pieces[1]}:${pieces[0].padStart(2, '0')}`])
   }
 }
 
