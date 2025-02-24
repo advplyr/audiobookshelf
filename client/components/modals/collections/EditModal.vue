@@ -18,7 +18,7 @@
               <ui-textarea-with-label v-model="newCollectionDescription" :label="$strings.LabelDescription" />
             </div>
           </div>
-          <div class="absolute bottom-0 left-0 right-0 w-full py-2 px-4 flex">
+          <div class="absolute bottom-0 left-0 right-0 w-full py-4 px-4 flex">
             <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">{{ $strings.ButtonSave }}</ui-btn>
@@ -94,21 +94,32 @@ export default {
       this.newCollectionDescription = this.collection.description || ''
     },
     removeClick() {
-      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/collections/${this.collection.id}`)
-          .then(() => {
-            this.processing = false
-            this.show = false
-            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
-          })
-          .catch((error) => {
-            console.error('Failed to remove collection', error)
-            this.processing = false
-            this.$toast.error(this.$strings.ToastRemoveFailed)
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemoveCollection', [this.collectionName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteCollection()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteCollection() {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/collections/${this.collection.id}`)
+        .then(() => {
+          this.show = false
+          this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove collection', error)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     submitForm() {
       if (this.newCollectionName === this.collectionName && this.newCollectionDescription === this.collection.description) {

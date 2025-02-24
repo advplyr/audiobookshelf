@@ -28,7 +28,7 @@
 
               <button aria-label="Download Backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
 
-              <button aria-label="Delete Backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click="deleteBackupClick(backup)">delete</button>
+              <button aria-label="Delete Backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click.stop="deleteBackupClick(backup)">delete</button>
             </div>
           </td>
         </tr>
@@ -107,21 +107,32 @@ export default {
         })
     },
     deleteBackupClick(backup) {
-      if (confirm(this.$getString('MessageConfirmDeleteBackup', [this.$formatDatetime(backup.createdAt, this.dateFormat, this.timeFormat)]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/backups/${backup.id}`)
-          .then((data) => {
-            this.setBackups(data.backups || [])
-            this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
-            this.processing = false
-          })
-          .catch((error) => {
-            console.error(error)
-            this.$toast.error(this.$strings.ToastBackupDeleteFailed)
-            this.processing = false
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmDeleteBackup', [this.$formatDatetime(backup.createdAt, this.dateFormat, this.timeFormat)]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteBackup(backup)
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteBackup(backup) {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/backups/${backup.id}`)
+        .then((data) => {
+          this.setBackups(data.backups || [])
+          this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
+        })
+        .catch((error) => {
+          console.error(error)
+          this.$toast.error(this.$strings.ToastBackupDeleteFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     applyBackup(backup) {
       this.selectedBackup = backup

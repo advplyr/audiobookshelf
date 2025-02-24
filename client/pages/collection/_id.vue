@@ -176,21 +176,31 @@ export default {
       this.$store.commit('globals/setEditCollection', this.collection)
     },
     removeClick() {
-      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/collections/${this.collection.id}`)
-          .then(() => {
-            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
-          })
-          .catch((error) => {
-            console.error('Failed to remove collection', error)
-            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
-          })
-          .finally(() => {
-            this.processing = false
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemoveCollection', [this.collectionName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteCollection()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteCollection() {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/collections/${this.collection.id}`)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove collection', error)
+          this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     clickPlay() {
       const queueItems = []

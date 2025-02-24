@@ -599,19 +599,31 @@ export default {
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-      if (confirm(this.$strings.MessageConfirmResetProgress)) {
-        this.resettingProgress = true
-        this.$axios
-          .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
-          .then(() => {
-            console.log('Progress reset complete')
-            this.resettingProgress = false
-          })
-          .catch((error) => {
-            console.error('Progress reset failed', error)
-            this.resettingProgress = false
-          })
+
+      const payload = {
+        message: this.$strings.MessageConfirmResetProgress,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.clearProgress()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    clearProgress() {
+      this.resettingProgress = true
+      this.$axios
+        .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
+        .then(() => {
+          console.log('Progress reset complete')
+        })
+        .catch((error) => {
+          console.error('Progress reset failed', error)
+        })
+        .finally(() => {
+          this.resettingProgress = false
+        })
     },
     clickRSSFeed() {
       this.$store.commit('globals/setRSSFeedOpenCloseModal', {

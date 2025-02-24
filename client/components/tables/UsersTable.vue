@@ -91,24 +91,36 @@ export default {
     },
     deleteUserClick(user) {
       if (this.isDeletingUser) return
-      if (confirm(this.$getString('MessageRemoveUserWarning', [user.username]))) {
-        this.isDeletingUser = true
-        this.$axios
-          .$delete(`/api/users/${user.id}`)
-          .then((data) => {
-            this.isDeletingUser = false
-            if (data.error) {
-              this.$toast.error(data.error)
-            } else {
-              this.$toast.success(this.$strings.ToastUserDeleteSuccess)
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to delete user', error)
-            this.$toast.error(this.$strings.ToastUserDeleteFailed)
-            this.isDeletingUser = false
-          })
+
+      const payload = {
+        message: this.$getString('MessageRemoveUserWarning', [user.username]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteUser(user)
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteUser(user) {
+      this.isDeletingUser = true
+      this.$axios
+        .$delete(`/api/users/${user.id}`)
+        .then((data) => {
+          if (data.error) {
+            this.$toast.error(data.error)
+          } else {
+            this.$toast.success(this.$strings.ToastUserDeleteSuccess)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to delete user', error)
+          this.$toast.error(this.$strings.ToastUserDeleteFailed)
+        })
+        .finally(() => {
+          this.isDeletingUser = false
+        })
     },
     editUser(user) {
       this.$emit('edit', user)
