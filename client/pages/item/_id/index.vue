@@ -132,7 +132,7 @@
 
           <tables-tracks-table v-if="tracks.length" :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
 
-          <tables-podcast-lazy-episodes-table v-if="isPodcast" :library-item="libraryItem" />
+          <tables-podcast-lazy-episodes-table ref="episodesTable" v-if="isPodcast" :library-item="libraryItem" />
 
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
 
@@ -266,9 +266,6 @@ export default {
     },
     podcastEpisodes() {
       return this.media.episodes || []
-    },
-    sortedEpisodeIds() {
-      return this.$store.getters.getSortedEpisodeIds
     },
     title() {
       return this.mediaMetadata.title || 'No Title'
@@ -537,8 +534,8 @@ export default {
       let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        // Sort the episodes based on the sorting and filtering from the episode table component
-        const episodesInListeningOrder = this.sortedEpisodeIds.map((id) => this.podcastEpisodes.find((ep) => ep.id === id))
+        // Uses the sorting and filtering from the episode table component
+        const episodesInListeningOrder = this.$refs.episodesTable?.episodesList || []
 
         // Find the first unplayed episode from the table
         let episodeIndex = episodesInListeningOrder.findIndex((ep) => {

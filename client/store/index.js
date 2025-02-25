@@ -25,7 +25,6 @@ export const state = () => ({
   previousPath: '/',
   bookshelfBookIds: [],
   episodeTableEpisodeIds: [],
-  sortedEpisodeIds: [],
   openModal: null,
   innerModalOpen: false,
   lastBookshelfScrollData: {},
@@ -62,9 +61,6 @@ export const getters = {
   getHomeBookshelfView: (state) => {
     if (!state.serverSettings || isNaN(state.serverSettings.homeBookshelfView)) return Constants.BookshelfView.STANDARD
     return state.serverSettings.homeBookshelfView
-  },
-  getSortedEpisodeIds: (state) => {
-    return state.sortedEpisodeIds || []
   }
 }
 
@@ -149,9 +145,6 @@ export const mutations = {
   },
   setEpisodeTableEpisodeIds(state, val) {
     state.episodeTableEpisodeIds = val || []
-  },
-  setSortedEpisodeIds(state, episodeIds) {
-    state.sortedEpisodeIds = episodeIds || []
   },
   setPreviousPath(state, val) {
     state.previousPath = val
