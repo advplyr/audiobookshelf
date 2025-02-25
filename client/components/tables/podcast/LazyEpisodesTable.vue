@@ -1,3 +1,4 @@
+
 <template>
   <div id="lazy-episodes-table" class="w-full py-6">
     <div class="flex flex-wrap flex-col md:flex-row md:items-center mb-4">
@@ -123,6 +124,10 @@ export default {
         {
           text: this.$strings.LabelEpisode,
           value: 'episode'
+        },
+        {
+          text: this.$strings.LabelFilename,
+          value: 'audioFile.metadata.filename'
         }
       ]
     },
@@ -171,8 +176,17 @@ export default {
           return episodeProgress && !episodeProgress.isFinished
         })
         .sort((a, b) => {
-          let aValue = a[this.sortKey]
-          let bValue = b[this.sortKey]
+          let aValue
+          let bValue
+
+          if (this.sortKey.includes('.')) {
+            const getNestedValue = (ob, s) => s.split('.').reduce((o, k) => o?.[k], ob);
+            aValue = getNestedValue(a, this.sortKey)
+            bValue = getNestedValue(b, this.sortKey)
+          } else {
+            aValue = a[this.sortKey]
+            bValue = b[this.sortKey]
+          }
 
           // Sort episodes with no pub date as the oldest
           if (this.sortKey === 'publishedAt') {
