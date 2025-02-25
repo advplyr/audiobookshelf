@@ -132,7 +132,7 @@
 
           <tables-tracks-table v-if="tracks.length" :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
 
-          <tables-podcast-lazy-episodes-table v-if="isPodcast" :library-item="libraryItem" />
+          <tables-podcast-lazy-episodes-table ref="episodesTable" v-if="isPodcast" :library-item="libraryItem" />
 
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
 
@@ -534,13 +534,15 @@ export default {
       let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        const episodesInListeningOrder = this.podcastEpisodes.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+        // Uses the sorting and filtering from the episode table component
+        const episodesInListeningOrder = this.$refs.episodesTable?.episodesList || []
 
-        // Find most recent episode unplayed
-        let episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
+        // Find the first unplayed episode from the table
+        let episodeIndex = episodesInListeningOrder.findIndex((ep) => {
           const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
+        // If all episodes are played, use the first episode
         if (episodeIndex < 0) episodeIndex = 0
 
         episodeId = episodesInListeningOrder[episodeIndex].id

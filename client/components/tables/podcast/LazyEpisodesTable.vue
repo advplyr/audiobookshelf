@@ -361,20 +361,20 @@ export default {
     playEpisode(episode) {
       const queueItems = []
 
-      const episodesInListeningOrder = this.episodesCopy.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+      const episodesInListeningOrder = this.episodesList
       const episodeIndex = episodesInListeningOrder.findIndex((e) => e.id === episode.id)
       for (let i = episodeIndex; i < episodesInListeningOrder.length; i++) {
-        const episode = episodesInListeningOrder[i]
-        const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
-        if (!podcastProgress || !podcastProgress.isFinished) {
+        const _episode = episodesInListeningOrder[i]
+        const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, _episode.id)
+        if (!podcastProgress?.isFinished || episode.id === _episode.id) {
           queueItems.push({
             libraryItemId: this.libraryItem.id,
             libraryId: this.libraryItem.libraryId,
-            episodeId: episode.id,
-            title: episode.title,
+            episodeId: _episode.id,
+            title: _episode.title,
             subtitle: this.mediaMetadata.title,
-            caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
-            duration: episode.audioFile.duration || null,
+            caption: _episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(_episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
+            duration: _episode.audioFile.duration || null,
             coverPath: this.media.coverPath || null
           })
         }
