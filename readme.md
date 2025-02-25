@@ -93,6 +93,13 @@ Toggle websockets support.
 
 <img alt="NGINX Web socket" src="https://user-images.githubusercontent.com/67830747/153679106-b2a7f5b9-0702-48c6-9740-b26b401986e9.png" />
 
+For OIDC and RSS feeds to work if your external access URL contains a custom port (like https://xx.yy.zz:1234/audiobookshelf/), the Host header sent by NGINX Proxy Manager is incorrect, as it doesn't include the port number. This can be fixed by adding a custom location of "/" and then opening the advanced configuration field by clicking the cogwheel. Add this additional header line here:
+
+proxy_set_header Host $http_host;
+
+![image](https://github.com/user-attachments/assets/da85d0a7-b187-4114-bada-475e627a4960)
+
+
 ### NGINX Reverse Proxy
 
 Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
