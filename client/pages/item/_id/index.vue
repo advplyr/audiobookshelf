@@ -141,7 +141,7 @@
       </div>
     </div>
 
-    <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
+    <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" :download-queue="episodeDownloadsQueued" :episodes-downloading="episodesDownloading" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :playback-rate="1" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>
@@ -660,13 +660,11 @@ export default {
     },
     rssFeedOpen(data) {
       if (data.entityId === this.libraryItemId) {
-        console.log('RSS Feed Opened', data)
         this.rssFeed = data
       }
     },
     rssFeedClosed(data) {
       if (data.entityId === this.libraryItemId) {
-        console.log('RSS Feed Closed', data)
         this.rssFeed = null
       }
     },

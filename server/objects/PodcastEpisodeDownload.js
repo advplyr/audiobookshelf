@@ -43,7 +43,8 @@ class PodcastEpisodeDownload {
       season: this.rssPodcastEpisode?.season ?? null,
       episode: this.rssPodcastEpisode?.episode ?? null,
       episodeType: this.rssPodcastEpisode?.episodeType ?? 'full',
-      publishedAt: this.rssPodcastEpisode?.publishedAt ?? null
+      publishedAt: this.rssPodcastEpisode?.publishedAt ?? null,
+      guid: this.rssPodcastEpisode?.guid ?? null
     }
   }
 
