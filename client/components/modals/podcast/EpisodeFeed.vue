@@ -204,13 +204,13 @@ export default {
     },
     toggleSelectAll(val) {
       for (const episode of this.episodesList) {
-        if (this.getIsEpisodeDownloaded(episode)) this.selectedEpisodes[episode.cleanUrl] = false
+        if (episode.isDownloaded || episode.isDownloading) this.selectedEpisodes[episode.cleanUrl] = false
         else this.$set(this.selectedEpisodes, episode.cleanUrl, val)
       }
     },
     checkSetIsSelectedAll() {
       for (const episode of this.episodesList) {
-        if (!this.getIsEpisodeDownloaded(episode) && !this.selectedEpisodes[episode.cleanUrl]) {
+        if (!episode.isDownloaded && !episode.isDownloading && !this.selectedEpisodes[episode.cleanUrl]) {
           this.selectAll = false
           return
         }
