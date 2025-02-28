@@ -9,6 +9,7 @@ const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
 const { levenshteinDistance, escapeRegExp } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const AudiMeta = require('../providers/AudiMeta')
 
 class BookFinder {
   #providerResponseTimeout = 30000
@@ -17,13 +18,14 @@ class BookFinder {
     this.openLibrary = new OpenLibrary()
     this.googleBooks = new GoogleBooks()
     this.audible = new Audible()
+    this.audiMeta = new AudiMeta()
     this.iTunesApi = new iTunes()
     this.audnexus = new Audnexus()
     this.fantLab = new FantLab()
     this.audiobookCovers = new AudiobookCovers()
     this.customProviderAdapter = new CustomProviderAdapter()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audimeta.us', 'audible', 'audimeta.ca', 'audible.ca', 'audimeta.uk', 'audible.uk', 'audimeta.au', 'audible.au', 'audimeta.fr', 'audible.fr', 'audimeta.de', 'audible.de', 'audimeta.jp', 'audible.jp', 'audimeta.it', 'audible.it', 'audimeta.in', 'audible.in', 'audimeta.es', 'audible.es']
 
     this.verbose = false
   }
@@ -189,6 +191,21 @@ class BookFinder {
   async getAudibleResults(title, author, asin, provider) {
     const region = provider.includes('.') ? provider.split('.').pop() : ''
     const books = await this.audible.search(title, author, asin, region, this.#providerResponseTimeout)
+    if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
+    if (!books) return []
+    return books
+  }
+
+  /**
+   * @param {string} title
+   * @param {string} author
+   * @param {string} asin
+   * @param {string} provider
+   * @returns {Promise<Object[]>}
+   */
+  async getAudiMetaResults(title, author, asin, provider) {
+    const region = provider.includes('.') ? provider.split('.').pop() : ''
+    const books = await this.audiMeta.search(title, author, asin, region, this.#providerResponseTimeout)
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
     return books
@@ -453,6 +470,8 @@ class BookFinder {
       books = await this.getGoogleBooksResults(title, author)
     } else if (provider.startsWith('audible')) {
       books = await this.getAudibleResults(title, author, asin, provider)
+    } else if (provider.startsWith('audimeta')) {
+      books = await this.getAudiMetaResults(title, author, asin, provider)
     } else if (provider === 'itunes') {
       books = await this.getiTunesAudiobooksResults(title)
     } else if (provider === 'openlibrary') {
