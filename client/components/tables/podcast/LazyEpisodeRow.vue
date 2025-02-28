@@ -10,8 +10,13 @@
         <div class="h-10 flex items-center mt-1.5 mb-0.5 overflow-hidden">
           <p class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></p>
         </div>
+
         <div class="h-8 flex items-center">
-          <div class="w-full inline-flex justify-between max-w-xl">
+          <p v-if="sortKey === 'audioFile.metadata.filename'" class="text-sm text-gray-300 truncate font-light">
+            <strong className="font-bold">{{ $strings.LabelFilename }}</strong
+            >: {{ episode.audioFile.metadata.filename }}
+          </p>
+          <div v-else class="w-full inline-flex justify-between max-w-xl">
             <p v-if="episode?.season" class="text-sm text-gray-300">{{ $getString('LabelSeasonNumber', [episode.season]) }}</p>
             <p v-if="episode?.episode" class="text-sm text-gray-300">{{ $getString('LabelEpisodeNumber', [episode.episode]) }}</p>
             <p v-if="episode?.chapters?.length" class="text-sm text-gray-300">{{ $getString('LabelChapterCount', [episode.chapters.length]) }}</p>
@@ -65,7 +70,8 @@ export default {
     episode: {
       type: Object,
       default: () => null
-    }
+    },
+    sortKey: String
   },
   data() {
     return {

@@ -180,7 +180,7 @@ export default {
           let bValue
 
           if (this.sortKey.includes('.')) {
-            const getNestedValue = (ob, s) => s.split('.').reduce((o, k) => o?.[k], ob);
+            const getNestedValue = (ob, s) => s.split('.').reduce((o, k) => o?.[k], ob)
             aValue = getNestedValue(a, this.sortKey)
             bValue = getNestedValue(b, this.sortKey)
           } else {
@@ -454,7 +454,8 @@ export default {
           propsData: {
             index,
             libraryItemId: this.libraryItem.id,
-            episode: this.episodesList[index]
+            episode: this.episodesList[index],
+            sortKey: this.sortKey
           },
           created() {
             this.$on('selected', (payload) => {
