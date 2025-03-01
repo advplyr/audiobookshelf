@@ -204,7 +204,11 @@ class BookFinder {
    * @returns {Promise<Object[]>}
    */
   async getAudiMetaResults(title, author, asin, provider) {
-    const region = provider.includes('.') ? provider.split('.').pop() : ''
+    // Ensure provider is a string (See CodeQL) even though it should be a string anyway
+    const providerStr = (typeof provider === 'string' ? provider :
+      (Array.isArray(provider) ? provider[0]?.toString() || '' : '')).toString()
+
+    const region = providerStr.includes('.') ? providerStr.split('.').pop() : ''
     const books = await this.audiMeta.search(title, author, asin, region, this.#providerResponseTimeout)
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
