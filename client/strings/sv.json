@@ -66,6 +66,8 @@
   "ButtonPurgeItemsCache": "Rensa cache för föremål",
   "ButtonQueueAddItem": "Lägg till i kön",
   "ButtonQueueRemoveItem": "Ta bort från kön",
+  "ButtonQuickEmbed": "Snabbinbädda",
+  "ButtonQuickEmbedMetadata": "Snabbinbädda metadata",
   "ButtonQuickMatch": "Snabbmatchning",
   "ButtonReScan": "Ny skanning",
   "ButtonRead": "Läs",
