@@ -10,14 +10,14 @@
         <div class="w-full p-8">
           <div class="flex mb-2">
             <div class="w-3/4 p-1">
-              <ui-text-input-with-label v-model="newName" :label="$strings.LabelName" />
+              <ui-text-input-with-label v-model="newName" :label="$strings.LabelName" trim-whitespace />
             </div>
             <div class="w-1/4 p-1">
               <ui-text-input-with-label value="Book" readonly :label="$strings.LabelMediaType" />
             </div>
           </div>
           <div class="w-full mb-2 p-1">
-            <ui-text-input-with-label v-model="newUrl" label="URL" />
+            <ui-text-input-with-label v-model="newUrl" label="URL" trim-whitespace />
           </div>
           <div class="w-full mb-2 p-1">
             <ui-text-input-with-label v-model="newAuthHeaderValue" :label="$strings.LabelProviderAuthorizationValue" type="password" />
@@ -65,7 +65,11 @@ export default {
     }
   },
   methods: {
-    submitForm() {
+    async submitForm() {
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+      await this.$nextTick()
+
       if (!this.newName || !this.newUrl) {
         this.$toast.error(this.$strings.ToastProviderNameAndUrlRequired)
         return
