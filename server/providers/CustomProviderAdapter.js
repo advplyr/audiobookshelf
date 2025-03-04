@@ -78,7 +78,7 @@ class CustomProviderAdapter {
         narrator,
         publisher,
         publishedYear,
-        description: htmlSanitizer.sanitize(description),
+        description: typeof description === 'string' ? htmlSanitizer.sanitize(description) : description,
         cover,
         isbn,
         asin,
