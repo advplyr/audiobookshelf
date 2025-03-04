@@ -69,25 +69,57 @@ class CustomProviderAdapter {
       throw new Error('Custom provider returned malformed response')
     }
 
+    const toStringOrUndefined = (value) => {
+      if (typeof value === 'string' || typeof value === 'number') return String(value)
+      if (Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number')) return value.join(',')
+      return undefined
+    }
+    const validateSeriesArray = (series) => {
+      if (!Array.isArray(series) || !series.length) return undefined
+      return series
+        .map((s) => {
+          if (!s?.series || typeof s.series !== 'string') return undefined
+          const _series = {
+            series: s.series
+          }
+          if (s.sequence && (typeof s.sequence === 'string' || typeof s.sequence === 'number')) {
+            _series.sequence = String(s.sequence)
+          }
+          return _series
+        })
+        .filter((s) => s !== undefined)
+    }
+
     // re-map keys to throw out
-    return matches.map(({ title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration }) => {
-      return {
-        title,
-        subtitle,
-        author,
-        narrator,
-        publisher,
-        publishedYear,
-        description: typeof description === 'string' ? htmlSanitizer.sanitize(description) : description,
-        cover,
-        isbn,
-        asin,
-        genres,
-        tags: tags?.join(',') || null,
-        series: series?.length ? series : null,
-        language,
-        duration
+    return matches.map((match) => {
+      const { title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration } = match
+
+      const payload = {
+        title: toStringOrUndefined(title),
+        subtitle: toStringOrUndefined(subtitle),
+        author: toStringOrUndefined(author),
+        narrator: toStringOrUndefined(narrator),
+        publisher: toStringOrUndefined(publisher),
+        publishedYear: toStringOrUndefined(publishedYear),
+        description: description && typeof description === 'string' ? htmlSanitizer.sanitize(description) : undefined,
+        cover: toStringOrUndefined(cover),
+        isbn: toStringOrUndefined(isbn),
+        asin: toStringOrUndefined(asin),
+        genres: Array.isArray(genres) && genres.every((g) => typeof g === 'string') ? genres : undefined,
+        tags: toStringOrUndefined(tags),
+        series: validateSeriesArray(series),
+        language: toStringOrUndefined(language),
+        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined
       }
+
+      // Remove undefined values
+      for (const key in payload) {
+        if (payload[key] === undefined) {
+          delete payload[key]
+        }
+      }
+
+      return payload
     })
   }
 }
