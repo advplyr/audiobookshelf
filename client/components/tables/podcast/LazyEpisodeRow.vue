@@ -8,7 +8,7 @@
         </div>
 
         <div class="h-10 flex items-center mt-1.5 mb-0.5 overflow-hidden">
-          <p class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></p>
+          <div dir="auto" class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></div>
         </div>
 
         <div class="h-8 flex items-center">
