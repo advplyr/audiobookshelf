@@ -523,6 +523,8 @@ class BookScanner {
     libraryItemObj.extraData = {}
     libraryItemObj.title = bookMetadata.title
     libraryItemObj.titleIgnorePrefix = getTitleIgnorePrefix(bookMetadata.title)
+    libraryItemObj.authorNamesFirstLast = bookMetadata.authors.join(', ')
+    libraryItemObj.authorNamesLastFirst = bookMetadata.authors.map((author) => Database.authorModel.getLastFirst(author)).join(', ')
 
     // Set isSupplementary flag on ebook library files
     for (const libraryFile of libraryItemObj.libraryFiles) {
