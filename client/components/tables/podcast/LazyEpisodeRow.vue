@@ -26,12 +26,13 @@
 
         <div class="flex items-center pt-2">
           <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
-            <span class="material-symbols fill text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-            <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
+            <span class="material-symbols fill text-2xl" aria-hidden="true" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <span class="sr-only">{{ streamIsPlaying ? $strings.ButtonPause : $strings.ButtonPlay }}</span>
+            <p class="pl-2 pr-1 text-sm font-semibold" aria-hidden="true">{{ timeRemaining }}</p>
           </button>
 
           <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
-            <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
+            <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :aria-label="isQueued ? $strings.LabelRemoveFromPlayerQueue : $strings.LabelAddToPlayerQueue" borderless @click="queueBtnClick" />
           </ui-tooltip>
 
           <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
@@ -39,11 +40,11 @@
           </ui-tooltip>
 
           <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
-            <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist" />
+            <ui-icon-btn icon="playlist_add" :aria-label="$strings.LabelYourPlaylists" borderless @click="clickAddToPlaylist" />
           </ui-tooltip>
 
           <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
-          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
+          <ui-icon-btn v-if="userCanDelete" icon="close" :aria-label="$strings.HeaderRemoveEpisode" borderless @click="removeClick" />
         </div>
       </div>
       <div v-if="isHovering || isSelected || isSelectionMode" class="hidden md:block w-12 min-w-12" />
@@ -53,7 +54,7 @@
     <div class="hidden md:block md:w-12 md:min-w-12 md:-right-0 md:absolute md:top-0 h-full transform transition-transform z-20" :class="!isHovering && !isSelected && !isSelectionMode ? 'translate-x-24' : 'translate-x-0'">
       <div class="flex h-full items-center">
         <div class="mx-1">
-          <ui-checkbox v-model="isSelected" @input="selectedUpdated" checkbox-bg="bg" />
+          <ui-checkbox v-model="isSelected" @input="selectedUpdated" checkbox-bg="bg" aria-label="Select episode" />
         </div>
       </div>
     </div>

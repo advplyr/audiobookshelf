@@ -11,7 +11,7 @@
         </template>
       </div>
     </div>
-    <div v-if="publishedYear" class="flex py-0.5">
+    <div v-if="publishedYear" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
       </div>
@@ -19,7 +19,7 @@
         {{ publishedYear }}
       </div>
     </div>
-    <div v-if="publisher" class="flex py-0.5">
+    <div v-if="publisher" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
@@ -27,7 +27,7 @@
         <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=publishers.${$encode(publisher)}`" class="hover:underline">{{ publisher }}</nuxt-link>
       </div>
     </div>
-    <div v-if="podcastType" class="flex py-0.5">
+    <div v-if="podcastType" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPodcastType }}</span>
       </div>
@@ -65,7 +65,7 @@
         <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=languages.${$encode(language)}`" class="hover:underline">{{ language }}</nuxt-link>
       </div>
     </div>
-    <div v-if="tracks.length || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
+    <div v-if="tracks.length || (isPodcast && totalPodcastDuration)" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
       </div>
@@ -73,7 +73,7 @@
         {{ durationPretty }}
       </div>
     </div>
-    <div class="flex py-0.5">
+    <div role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
       </div>
