@@ -394,7 +394,7 @@ class ApiRouter {
 
     const transaction = await Database.sequelize.transaction()
     try {
-      const seriesBooksToRemove = (
+      const seriesToRemove = (
         await Database.seriesModel.findAll({
           where: [
             {
@@ -412,10 +412,10 @@ class ApiRouter {
         })
       ).map((s) => ({ id: s.id, name: s.name, libraryId: s.libraryId }))
 
-      if (seriesBooksToRemove.length) {
+      if (seriesToRemove.length) {
         await Database.seriesModel.destroy({
           where: {
-            id: seriesBooksToRemove.map((s) => s.id)
+            id: seriesToRemove.map((s) => s.id)
           },
           transaction
         })
@@ -423,13 +423,17 @@ class ApiRouter {
 
       await transaction.commit()
 
-      seriesBooksToRemove.forEach((id, name, libraryId) => {
+      seriesToRemove.forEach(({ id, name, libraryId }) => {
         Logger.info(`[ApiRouter] Series "${name}" is now empty. Removing series`)
 
         // Remove series from library filter data
         Database.removeSeriesFromFilterData(libraryId, id)
         SocketAuthority.emitter('series_removed', { id: id, libraryId: libraryId })
       })
+      // Close rss feeds - remove from db and emit socket event
+      if (seriesToRemove.length) {
+        await RssFeedManager.closeFeedsForEntityIds(seriesToRemove.map((s) => s.id))
+      }
     } catch (error) {
       await transaction.rollback()
       Logger.error(`[ApiRouter] Error removing empty series: ${error.message}`)
