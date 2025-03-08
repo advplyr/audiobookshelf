@@ -420,40 +420,53 @@ class ApiRouter {
   async checkRemoveAuthorsWithNoBooks(authorIds) {
     if (!authorIds?.length) return
 
-    const bookAuthorsToRemove = (
-      await Database.authorModel.findAll({
-        where: [
-          {
-            id: authorIds,
-            asin: {
-              [sequelize.Op.or]: [null, '']
+    const transaction = await Database.sequelize.transaction()
+    try {
+      // Select authors with locking to prevent concurrent updates
+      const bookAuthorsToRemove = (
+        await Database.authorModel.findAll({
+          where: [
+            {
+              id: authorIds,
+              asin: {
+                [sequelize.Op.or]: [null, '']
+              },
+              description: {
+                [sequelize.Op.or]: [null, '']
+              },
+              imagePath: {
+                [sequelize.Op.or]: [null, '']
+              }
             },
-            description: {
-              [sequelize.Op.or]: [null, '']
-            },
-            imagePath: {
-              [sequelize.Op.or]: [null, '']
-            }
-          },
-          sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
-        ],
-        attributes: ['id', 'name', 'libraryId'],
-        raw: true
-      })
-    ).map((au) => ({ id: au.id, name: au.name, libraryId: au.libraryId }))
+            sequelize.where(sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 0)
+          ],
+          attributes: ['id', 'name', 'libraryId'],
+          raw: true,
+          transaction
+        })
+      ).map((au) => ({ id: au.id, name: au.name, libraryId: au.libraryId }))
 
-    if (bookAuthorsToRemove.length) {
-      await Database.authorModel.destroy({
-        where: {
-          id: bookAuthorsToRemove.map((au) => au.id)
-        }
-      })
+      if (bookAuthorsToRemove.length) {
+        await Database.authorModel.destroy({
+          where: {
+            id: bookAuthorsToRemove.map((au) => au.id)
+          },
+          transaction
+        })
+      }
+
+      await transaction.commit()
+
+      // Remove all book authors after completing remove from database
       bookAuthorsToRemove.forEach(({ id, name, libraryId }) => {
         Database.removeAuthorFromFilterData(libraryId, id)
         // TODO: Clients were expecting full author in payload but its unnecessary
         SocketAuthority.emitter('author_removed', { id, libraryId })
         Logger.info(`[ApiRouter] Removed author "${name}" with no books`)
       })
+    } catch (error) {
+      await transaction.rollback()
+      Logger.error(`[ApiRouter] Error removing authors: ${error.message}`)
     }
   }
 
