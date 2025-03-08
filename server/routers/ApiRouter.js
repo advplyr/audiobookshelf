@@ -392,21 +392,47 @@ class ApiRouter {
   async checkRemoveEmptySeries(seriesIds) {
     if (!seriesIds?.length) return
 
-    const series = await Database.seriesModel.findAll({
-      where: {
-        id: seriesIds
-      },
-      attributes: ['id', 'name', 'libraryId'],
-      include: {
-        model: Database.bookModel,
-        attributes: ['id']
-      }
-    })
+    const transaction = await Database.sequelize.transaction()
+    try {
+      const seriesBooksToRemove = (
+        await Database.seriesModel.findAll({
+          where: [
+            {
+              id: seriesIds
+            },
+            sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
+          ],
+          attributes: ['id', 'name', 'libraryId'],
+          include: {
+            model: Database.bookModel,
+            attributes: ['id'],
+            required: false // Ensure it includes series even if no books exist
+          },
+          transaction
+        })
+      ).map((s) => ({ id: s.id, name: s.name, libraryId: s.libraryId }))
 
-    for (const s of series) {
-      if (!s.books.length) {
-        await this.removeEmptySeries(s)
+      if (seriesBooksToRemove.length) {
+        await Database.seriesModel.destroy({
+          where: {
+            id: seriesBooksToRemove.map((s) => s.id)
+          },
+          transaction
+        })
       }
+
+      await transaction.commit()
+
+      seriesBooksToRemove.forEach((id, name, libraryId) => {
+        Logger.info(`[ApiRouter] Series "${name}" is now empty. Removing series`)
+
+        // Remove series from library filter data
+        Database.removeSeriesFromFilterData(libraryId, id)
+        SocketAuthority.emitter('series_removed', { id: id, libraryId: libraryId })
+      })
+    } catch (error) {
+      await transaction.rollback()
+      Logger.error(`[ApiRouter] Error removing empty series: ${error.message}`)
     }
   }
 
@@ -468,24 +494,6 @@ class ApiRouter {
       await transaction.rollback()
       Logger.error(`[ApiRouter] Error removing authors: ${error.message}`)
     }
-  }
-
-  /**
-   * Remove an empty series & close an open RSS feed
-   * @param {import('../models/Series')} series
-   */
-  async removeEmptySeries(series) {
-    await RssFeedManager.closeFeedForEntityId(series.id)
-    Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-
-    // Remove series from library filter data
-    Database.removeSeriesFromFilterData(series.libraryId, series.id)
-    SocketAuthority.emitter('series_removed', {
-      id: series.id,
-      libraryId: series.libraryId
-    })
-
-    await series.destroy()
   }
 
   async getUserListeningSessionsHelper(userId) {
