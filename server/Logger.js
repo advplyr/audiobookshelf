@@ -21,12 +21,7 @@ class Logger {
   }
 
   get levelString() {
-    for (const key in LogLevel) {
-      if (LogLevel[key] === this.logLevel) {
-        return key
-      }
-    }
-    return 'UNKNOWN'
+    return this.getLogLevelString(this.logLevel)
   }
 
   /**
