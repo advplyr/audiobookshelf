@@ -4,7 +4,6 @@ const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
 const Logger = require('../Logger')
-const { LogLevel } = require('../utils/constants')
 const { secondsToTimestamp, elapsedPretty } = require('../utils/index')
 
 class LibraryScan {
@@ -109,20 +108,11 @@ class LibraryScan {
     this.elapsed = this.finishedAt - this.startedAt
   }
 
-  getLogLevelString(level) {
-    for (const key in LogLevel) {
-      if (LogLevel[key] === level) {
-        return key
-      }
-    }
-    return 'UNKNOWN'
-  }
-
   addLog(level, ...args) {
     const logObj = {
       timestamp: this.timestamp,
       message: args.join(' '),
-      levelName: this.getLogLevelString(level),
+      levelName: Logger.getLogLevelString(level),
       level
     }
 
