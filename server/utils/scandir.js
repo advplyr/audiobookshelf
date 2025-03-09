@@ -44,7 +44,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly 
     return i.deep > 0 || (mediaType === 'book' && isMediaFile(mediaType, i.extension, audiobooksOnly))
   })
 
-  // Step 2: Seperate media files and other files
+  // Step 2: Separate media files and other files
   //     - Directories without a media file will not be included
   /** @type {import('./fileUtils').FilePathItem[]} */
   const mediaFileItems = []
