@@ -122,6 +122,10 @@ class PodcastEpisode extends Model {
           {
             name: 'podcastEpisode_createdAt_podcastId',
             fields: ['createdAt', 'podcastId']
+          },
+          {
+            name: 'podcast_episodes_published_at',
+            fields: ['publishedAt']
           }
         ]
       }
