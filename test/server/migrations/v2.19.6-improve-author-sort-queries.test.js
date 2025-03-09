@@ -39,6 +39,11 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
       createdAt: { type: DataTypes.DATE, allowNull: false }
     })
 
+    await queryInterface.createTable('podcastEpisodes', {
+      id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
+      publishedAt: { type: DataTypes.DATE, allowNull: true }
+    })
+
     await queryInterface.bulkInsert('libraryItems', [
       { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1 },
       { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1 }
@@ -54,6 +59,12 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
       { id: 1, bookId: 1, authorId: 1, createdAt: '2025-01-01 00:00:00.000 +00:00' },
       { id: 2, bookId: 2, authorId: 2, createdAt: '2025-01-02 00:00:00.000 +00:00' },
       { id: 3, bookId: 1, authorId: 3, createdAt: '2025-01-03 00:00:00.000 +00:00' }
+    ])
+
+    await queryInterface.bulkInsert('podcastEpisodes', [
+      { id: 1, publishedAt: '2025-01-01 00:00:00.000 +00:00' },
+      { id: 2, publishedAt: '2025-01-02 00:00:00.000 +00:00' },
+      { id: 3, publishedAt: '2025-01-03 00:00:00.000 +00:00' }
     ])
   })
 
@@ -219,6 +230,20 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
       ])
     })
 
+    it('should add an index on publishedAt to the podcastEpisodes table', async () => {
+      await up({ context: { queryInterface, logger: Logger } })
+
+      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      expect(count).to.equal(1)
+
+      const [[{ sql }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      expect(normalizeWhitespaceAndBackticks(sql)).to.equal(
+        normalizeWhitespaceAndBackticks(`
+          CREATE INDEX podcast_episodes_published_at ON podcastEpisodes (publishedAt)
+        `)
+      )
+    })
+
     it('should be idempotent', async () => {
       await up({ context: { queryInterface, logger: Logger } })
       await up({ context: { queryInterface, logger: Logger } })
@@ -241,6 +266,9 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
 
       const [[{ count: count5 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
       expect(count5).to.equal(1)
+
+      const [[{ count: count6 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      expect(count6).to.equal(1)
 
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
@@ -291,6 +319,14 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
       expect(count2).to.equal(0)
     })
 
+    it('should remove the index on publishedAt from the podcastEpisodes table', async () => {
+      await up({ context: { queryInterface, logger: Logger } })
+      await down({ context: { queryInterface, logger: Logger } })
+
+      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      expect(count).to.equal(0)
+    })
+
     it('should be idempotent', async () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
@@ -320,6 +356,9 @@ describe('Migration v2.19.6-improve-author-sort-queries', () => {
 
       const [[{ count: count5 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
       expect(count5).to.equal(0)
+
+      const [[{ count: count6 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      expect(count6).to.equal(0)
     })
   })
 })

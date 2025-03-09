@@ -18,6 +18,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
 const libraryItems = 'libraryItems'
 const bookAuthors = 'bookAuthors'
 const authors = 'authors'
+const podcastEpisodes = 'podcastEpisodes'
 const columns = [
   { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
   { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
@@ -31,6 +32,8 @@ const authorsSort = `${bookAuthors}.createdAt ASC`
  * This upward migration adds an authorNames column to the libraryItems table and populates it.
  * It also creates triggers to update the authorNames column when the corresponding bookAuthors and authors records are updated.
  * It also creates an index on the authorNames column.
+ *
+ * It also adds an index on publishedAt to the podcastEpisodes table.
  *
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
@@ -53,12 +56,17 @@ async function up({ context: { queryInterface, logger } }) {
   // Create indexes on the authorNames columns
   await helper.addIndexes()
 
+  // Add index on publishedAt to the podcastEpisodes table
+  await helper.addIndex(podcastEpisodes, ['publishedAt'])
+
   logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)
 }
 
 /**
  * This downward migration removes the authorNames column from the libraryItems table,
  * the triggers on the bookAuthors and authors tables, and the index on the authorNames column.
+ *
+ * It also removes the index on publishedAt from the podcastEpisodes table.
  *
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
@@ -71,6 +79,9 @@ async function down({ context: { queryInterface, logger } }) {
 
   // Remove triggers to update authorNames columns
   await helper.removeTriggers()
+
+  // Remove index on publishedAt from the podcastEpisodes table
+  await helper.removeIndex(podcastEpisodes, ['publishedAt'])
 
   // Remove indexes on the authorNames columns
   await helper.removeIndexes()
