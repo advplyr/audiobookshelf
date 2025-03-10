@@ -131,7 +131,8 @@ export default {
       totalEntities: 0,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false
+      processingAuthors: false,
+      showAllLibraryStats: false
     }
   },
   computed: {
@@ -234,6 +235,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    currentLibraryName() {
+      return this.$store.getters['libraries/getCurrentLibraryName']
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
