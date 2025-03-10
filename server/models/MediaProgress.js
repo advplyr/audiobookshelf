@@ -187,7 +187,7 @@ class MediaProgress extends Model {
     if (!this.extraData) this.extraData = {}
     if (progressPayload.isFinished !== undefined) {
       if (progressPayload.isFinished && !this.isFinished) {
-        this.finishedAt = Date.now()
+        this.finishedAt = progressPayload.finishedAt || Date.now()
         this.extraData.progress = 1
         this.changed('extraData', true)
         delete progressPayload.finishedAt
