@@ -155,7 +155,7 @@ export default {
       const itemProgressPercent = episode.progress?.progress || 0
       if (!isFinished && itemProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${episode.title}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [episode.title]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleEpisodeFinished(episode, true)
