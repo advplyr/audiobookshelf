@@ -457,8 +457,6 @@
   "LabelSettingsDisableWatcher": "Desativar Monitoramento",
   "LabelSettingsDisableWatcherForLibrary": "Desativa o monitoramento de pastas para a biblioteca",
   "LabelSettingsDisableWatcherHelp": "Desativa o acréscimo/atualização de itens quando forem detectadas mudanças no arquivo. *Requer reiniciar o servidor",
-  "LabelSettingsEnableWatcher": "Ativar Monitoramento",
-  "LabelSettingsEnableWatcherForLibrary": "Ativa o monitoramento de pastas para a biblioteca",
   "LabelSettingsEnableWatcherHelp": "Ativa o acréscimo/atualização de itens quando forem detectadas mudanças no arquivo. *Requer reiniciar o servidor",
   "LabelSettingsEpubsAllowScriptedContent": "Permitir scripts em epubs",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Permitir que arquivos epub executem scripts. É recomendado manter essa configuração desativada, a não ser que confie na fonte dos arquivos epub.",

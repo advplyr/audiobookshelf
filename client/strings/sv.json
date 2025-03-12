@@ -542,8 +542,6 @@
   "LabelSettingsDisableWatcher": "Inaktivera Watcher",
   "LabelSettingsDisableWatcherForLibrary": "Inaktivera bevakning med Watcher för biblioteket",
   "LabelSettingsDisableWatcherHelp": "Inaktiverar automatik att addera/uppdatera<br> objekt när ändringar av filer genomförs.<br>OBS: Kräver en omstart av servern",
-  "LabelSettingsEnableWatcher": "Aktivera Watcher",
-  "LabelSettingsEnableWatcherForLibrary": "Aktivera bevakning med Watcher för biblioteket",
   "LabelSettingsEnableWatcherHelp": "Aktiverar automatik att addera/uppdatera<br> objekt när ändringar av filer genomförs.<br>OBS: Kräver en omstart av servern",
   "LabelSettingsEpubsAllowScriptedContent": "Tillåt e-böcker i epubs-format som innehåller script",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Tillåt att epub-filer får använda script.<br>Det rekommenderas att denna inställning är<br>avstängd när du inte litar på källan för epub-filerna.",

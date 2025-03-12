@@ -558,8 +558,6 @@
   "LabelSettingsDisableWatcher": "禁用监视程序",
   "LabelSettingsDisableWatcherForLibrary": "禁用媒体库的文件夹监视程序",
   "LabelSettingsDisableWatcherHelp": "检测到文件更改时禁用自动添加和更新项目. *需要重启服务器",
-  "LabelSettingsEnableWatcher": "启用监视程序",
-  "LabelSettingsEnableWatcherForLibrary": "为库启用文件夹监视程序",
   "LabelSettingsEnableWatcherHelp": "当检测到文件更改时, 启用项目的自动添加/更新. *需要重新启动服务器",
   "LabelSettingsEpubsAllowScriptedContent": "允许 epubs 中包含脚本内容",
   "LabelSettingsEpubsAllowScriptedContentHelp": "允许 epub 文件执行脚本. 建议将此设置保持禁用, 除非你信任 epub 文件的来源.",

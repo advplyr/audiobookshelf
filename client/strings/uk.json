@@ -561,8 +561,6 @@
   "LabelSettingsDisableWatcher": "Вимкнути спостерігача",
   "LabelSettingsDisableWatcherForLibrary": "Вимкнути спостерігання тек бібліотеки",
   "LabelSettingsDisableWatcherHelp": "Вимикає автоматичне додавання/оновлення елементів, коли спостерігаються зміни файлів. *Потребує перезавантаження сервера",
-  "LabelSettingsEnableWatcher": "Увімкнути спостерігача",
-  "LabelSettingsEnableWatcherForLibrary": "Увімкнути спостерігання тек бібліотеки",
   "LabelSettingsEnableWatcherHelp": "Вмикає автоматичне додавання/оновлення елементів, коли спостерігаються зміни файлів. *Потребує перезавантаження сервера",
   "LabelSettingsEpubsAllowScriptedContent": "Дозволити JavaScript-вміст у epub",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Дозволяти epub-файлам виконувати код. Вмикайте цей параметр лише якщо ви довіряєте джерелу epub-файлів.",

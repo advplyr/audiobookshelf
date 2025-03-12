@@ -502,8 +502,6 @@
   "LabelSettingsDisableWatcher": "Poista kansiotarkkailu käytöstä",
   "LabelSettingsDisableWatcherForLibrary": "Poista kirjaston kansiotarkkailu käytöstä",
   "LabelSettingsDisableWatcherHelp": "Poistaa käytöstä kohteiden automaattisen lisäämisen ja päivityksen kun tiedostomuutoksia havaitaan. *Tarvitsee palvelimen uudelleenkäynnistyksen",
-  "LabelSettingsEnableWatcher": "Ota käyttöön kansiotarkkailu",
-  "LabelSettingsEnableWatcherForLibrary": "Ota käyttöön kansiotarkkailu kirjastolle",
   "LabelSettingsEnableWatcherHelp": "Ottaa käyttöön kohteiden automaattisen lisäämisen ja päivityksen kun tiedostomuutoksia havaitaan. *Tarvitsee palvelimen uudelleenkäynnistyksen",
   "LabelSettingsExperimentalFeatures": "Kokeelliset ominaisuudet",
   "LabelSettingsFindCovers": "Etsi kansikuvia",

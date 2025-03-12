@@ -558,8 +558,6 @@
   "LabelSettingsDisableWatcher": "Zakázat sledování",
   "LabelSettingsDisableWatcherForLibrary": "Zakázat sledování složky pro knihovnu",
   "LabelSettingsDisableWatcherHelp": "Zakáže automatické přidávání/aktualizaci položek při zjištění změn v souboru. *Vyžaduje restart serveru",
-  "LabelSettingsEnableWatcher": "Povolit sledování",
-  "LabelSettingsEnableWatcherForLibrary": "Povolit sledování složky pro knihovnu",
   "LabelSettingsEnableWatcherHelp": "Povoluje automatické přidávání/aktualizaci položek, když jsou zjištěny změny souborů. *Vyžaduje restart serveru",
   "LabelSettingsEpubsAllowScriptedContent": "Povolení skriptovaného obsahu v epubu",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Povolení spouštění skriptů v souborech epub. Doporučujeme toto nastavení vypnout, pokud nedůvěřujete zdroji souborů epub.",

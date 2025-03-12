@@ -448,8 +448,6 @@
   "LabelSettingsDisableWatcher": "Keela vaatamine",
   "LabelSettingsDisableWatcherForLibrary": "Keela kaustavaatamine raamatukogu jaoks",
   "LabelSettingsDisableWatcherHelp": "Keelab automaatse lisamise/uuendamise, kui failimuudatusi tuvastatakse. *Nõuab serveri taaskäivitamist",
-  "LabelSettingsEnableWatcher": "Luba vaatamine",
-  "LabelSettingsEnableWatcherForLibrary": "Luba kaustavaatamine raamatukogu jaoks",
   "LabelSettingsEnableWatcherHelp": "Lubab automaatset lisamist/uuendamist, kui tuvastatakse failimuudatused. *Nõuab serveri taaskäivitamist",
   "LabelSettingsExperimentalFeatures": "Eksperimentaalsed funktsioonid",
   "LabelSettingsExperimentalFeaturesHelp": "Arengus olevad funktsioonid, mis vajavad teie tagasisidet ja abi testimisel. Klõpsake GitHubi arutelu avamiseks.",

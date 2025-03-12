@@ -561,8 +561,6 @@
   "LabelSettingsDisableWatcher": "Isključi praćenje datotečnog sustava",
   "LabelSettingsDisableWatcherForLibrary": "Onemogući praćenje datotečnog sustava za ovu knjižnicu",
   "LabelSettingsDisableWatcherHelp": "Onemogućuje automatsko dodavanje ili ažuriranje stavki kod uočenih promjena datoteka. *Potrebno je ponovno pokrenuti poslužitelj",
-  "LabelSettingsEnableWatcher": "Omogući praćenje promjena",
-  "LabelSettingsEnableWatcherForLibrary": "Omogući praćenje promjena u mapi knjižnice",
   "LabelSettingsEnableWatcherHelp": "Omogućuje automatsko dodavanje/ažuriranje stavki kada se uoče izmjene datoteka. *Potrebno je ponovno pokretanje poslužitelja",
   "LabelSettingsEpubsAllowScriptedContent": "Omogući skripte u epub datotekama",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Omogućuje epub datotekama izvođenje skripti. Preporučamo isključiti ovu mogućnost ukoliko nemate povjerenja u izvore epub datoteka.",

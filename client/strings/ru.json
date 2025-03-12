@@ -561,8 +561,6 @@
   "LabelSettingsDisableWatcher": "Отключить отслеживание",
   "LabelSettingsDisableWatcherForLibrary": "Отключить отслеживание для библиотеки",
   "LabelSettingsDisableWatcherHelp": "Отключает автоматическое добавление/обновление элементов, когда обнаружено изменение файлов. *Требуется перезапуск сервера",
-  "LabelSettingsEnableWatcher": "Включить отслеживание",
-  "LabelSettingsEnableWatcherForLibrary": "Включить отслеживание за папками библиотеки",
   "LabelSettingsEnableWatcherHelp": "Включает автоматическое добавление/обновление элементов при обнаружении изменений файлов. *Требуется перезапуск сервера",
   "LabelSettingsEpubsAllowScriptedContent": "Разрешение содержимого epub с скриптами",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Разрешить файлам epub выполнять скрипты. Рекомендуется отключать этот параметр, если вы не доверяете источнику файлов epub.",

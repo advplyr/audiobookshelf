@@ -561,8 +561,6 @@
   "LabelSettingsDisableWatcher": "Désactiver la surveillance",
   "LabelSettingsDisableWatcherForLibrary": "Désactiver la surveillance des dossiers pour la bibliothèque",
   "LabelSettingsDisableWatcherHelp": "Désactive la mise à jour automatique lorsque des modifications de fichiers sont détectées. * Nécessite le redémarrage du serveur",
-  "LabelSettingsEnableWatcher": "Activer la veille",
-  "LabelSettingsEnableWatcherForLibrary": "Activer la surveillance des dossiers pour la bibliothèque",
   "LabelSettingsEnableWatcherHelp": "Active la mise à jour automatique d'éléments lorsque des modifications de fichiers sont détectées. * Nécessite le redémarrage du serveur",
   "LabelSettingsEpubsAllowScriptedContent": "Autoriser le contenu scénarisé pour les fichiers EPUB",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Autoriser les fichiers EPUB à exécuter des scripts. Il est recommandé de laisser ce paramètre désactivé, sauf si vous faites confiance à la source des fichiers EPUB.",

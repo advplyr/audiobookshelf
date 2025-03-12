@@ -555,8 +555,6 @@
   "LabelSettingsDisableWatcher": "Deshabilitar Watcher",
   "LabelSettingsDisableWatcherForLibrary": "Deshabilitar Watcher de Carpetas para esta biblioteca",
   "LabelSettingsDisableWatcherHelp": "Deshabilitar la función de agregar/actualizar elementos automáticamente cuando se detectan cambios en los archivos. *Require Reiniciar el Servidor",
-  "LabelSettingsEnableWatcher": "Habilitar Watcher",
-  "LabelSettingsEnableWatcherForLibrary": "Habilitar Watcher para la carpeta de esta biblioteca",
   "LabelSettingsEnableWatcherHelp": "Permite agregar/actualizar elementos automáticamente cuando se detectan cambios en los archivos. *Requiere reiniciar el servidor",
   "LabelSettingsEpubsAllowScriptedContent": "Permitir scripts en epubs",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Permitir que los archivos epub ejecuten scripts. Se recomienda mantener esta opción desactivada a menos que confíe en el origen de los archivos epub.",
