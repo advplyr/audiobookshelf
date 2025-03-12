@@ -392,7 +392,6 @@
   "LabelSettingsAudiobooksOnly": "Толькі аўдыякнігі",
   "LabelSettingsAudiobooksOnlyHelp": "Уключэнне гэтай налады будзе ігнараваць файлы электронных кніг, калі толькі яны не знаходзяцца ў тэчцы з аўдыякнігамі. У такім выпадку яны будуць пазначаны як дадатковыя электронныя кнігі.",
   "LabelSettingsBookshelfViewHelp": "Рэалістычны дызайн з драўлянымі паліцамі",
-  "LabelSettingsDisableWatcherForLibrary": "Адключыць назіранне за тэчкамі бібліятэкі",
   "LabelSettingsEnableWatcherHelp": "Адключае аўтаматычнае дадаванне/абнаўленне элементаў пры выяўленні змен у файлах. *Патрабуецца перазапуск сервера",
   "LabelSettingsEpubsAllowScriptedContent": "Дазволіць скрыптавы кантэнт у EPUB",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Дазволіць EPUB-файлам выконваць скрыпты. Рэкамендуецца пакінуць гэтую наладу выключанай, калі вы не давяраеце крыніцы EPUB-файлаў.",
