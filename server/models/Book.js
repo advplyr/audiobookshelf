@@ -374,8 +374,10 @@ class Book extends Model {
     if (payload.metadata) {
       const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
       metadataStringKeys.forEach((key) => {
-        if (typeof payload.metadata[key] == 'number')
+        if (typeof payload.metadata[key] == 'number') {
           payload.metadata[key] = String(payload.metadata[key])
+        }
+          
         if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && this[key] !== payload.metadata[key]) {
           this[key] = payload.metadata[key] || null
 
