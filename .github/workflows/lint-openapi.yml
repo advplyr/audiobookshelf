@@ -18,15 +18,22 @@ jobs:
       # Check out the repository
       - name: Checkout
         uses: actions/checkout@v4
+
       # Set up node to run the javascript
       - name: Set up node
         uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
       # Install Redocly CLI
       - name: Install Redocly CLI
         run: npm install -g @redocly/cli@latest
+
       # Perform linting for exploded spec
       - name: Run linting for exploded spec
         run: redocly lint docs/root.yaml --format=github-actions
+
       # Perform linting for bundled spec
       - name: Run linting for bundled spec
         run: redocly lint docs/openapi.json --format=github-actions
