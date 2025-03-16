@@ -5,11 +5,11 @@ const { expect } = chai
 const { DataTypes, Sequelize } = require('sequelize')
 const Logger = require('../../../server/Logger')
 
-const { up, down } = require('../../../server/migrations/v2.19.6-improve-author-sort-queries')
+const { up, down } = require('../../../server/migrations/v2.20.0-improve-author-sort-queries')
 
 const normalizeWhitespaceAndBackticks = (str) => str.replace(/\s+/g, ' ').trim().replace(/`/g, '')
 
-describe('Migration v2.19.6-improve-author-sort-queries', () => {
+describe('Migration v2.20.0-improve-author-sort-queries', () => {
   let sequelize
   let queryInterface
   let loggerInfoStub

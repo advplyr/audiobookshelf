@@ -10,7 +10,7 @@ const { Sequelize } = require('sequelize')
  * @property {MigrationContext} context - an object containing the migration context.
  */
 
-const migrationVersion = '2.19.6'
+const migrationVersion = '2.20.0'
 const migrationName = `${migrationVersion}-improve-author-sort-queries`
 const loggerPrefix = `[${migrationVersion} migration]`
 
