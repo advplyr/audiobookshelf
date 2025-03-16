@@ -81,6 +81,13 @@
   "ButtonRemoveFromContinueReading": "Odtrániť z nedokončených audiokníh",
   "ButtonRemoveSeriesFromContinueSeries": "Odstrániť z nedokončených sérií",
   "ButtonReset": "Resetovať",
+  "ButtonResetToDefault": "Resetovať do predvolené",
+  "ButtonRestore": "Obnoviť zo zálohy",
+  "ButtonSave": "Uložiť",
+  "ButtonSaveAndClose": "Uložiť a zavrieť",
+  "ButtonSaveTracklist": "Uložiť zoznam",
+  "ButtonScan": "Skenovať",
+  "ButtonScanLibrary": "Skenovať knižnicu",
   "HeaderMatch": "Spárovať",
   "LabelBackupsNumberToKeepHelp": "Týmto spôsobom odstránite vždy iba jednu zálohu. V prípade, ak chcete odtrániť viacero záloh, mali by ste ich odstrániť manuálne."
 }
