@@ -109,21 +109,31 @@ export default {
       this.$store.commit('globals/setEditPlaylist', this.playlist)
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove playlist "${this.playlistName}"?`)) {
-        this.processingRemove = true
-        var playlistName = this.playlistName
-        this.$axios
-          .$delete(`/api/playlists/${this.playlist.id}`)
-          .then(() => {
-            this.processingRemove = false
-            this.$toast.success(`Playlist "${playlistName}" Removed`)
-          })
-          .catch((error) => {
-            console.error('Failed to remove playlist', error)
-            this.processingRemove = false
-            this.$toast.error(`Failed to remove playlist`)
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemovePlaylist', [this.playlistName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.removePlaylist()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    removePlaylist() {
+      this.processingRemove = true
+      this.$axios
+        .$delete(`/api/playlists/${this.playlist.id}`)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove playlist', error)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
+        })
+        .finally(() => {
+          this.processingRemove = false
+        })
     },
     clickPlay() {
       const queueItems = []

@@ -74,21 +74,32 @@ export default {
       this.newPlaylistDescription = this.playlist.description || ''
     },
     removeClick() {
-      if (confirm(this.$getString('MessageConfirmRemovePlaylist', [this.playlistName]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/playlists/${this.playlist.id}`)
-          .then(() => {
-            this.processing = false
-            this.show = false
-            this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
-          })
-          .catch((error) => {
-            console.error('Failed to remove playlist', error)
-            this.processing = false
-            this.$toast.error(this.$strings.ToastRemoveFailed)
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemovePlaylist', [this.playlistName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.removePlaylist()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    removePlaylist() {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/playlists/${this.playlist.id}`)
+        .then(() => {
+          this.show = false
+          this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove playlist', error)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     submitForm() {
       if (this.newPlaylistName === this.playlistName && this.newPlaylistDescription === this.playlist.description) {
