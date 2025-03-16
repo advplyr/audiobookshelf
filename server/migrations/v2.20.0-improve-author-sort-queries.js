@@ -23,10 +23,10 @@ const columns = [
   { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
   { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
 ]
-const columnNames = columns.map((column) => column.name).join(', ')
-const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ')`).join(', ')
-const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
 const authorsSort = `${bookAuthors}.createdAt ASC`
+const columnNames = columns.map((column) => column.name).join(', ')
+const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ' ORDER BY ${authorsSort})`).join(', ')
+const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
 
 /**
  * This upward migration adds an authorNames column to the libraryItems table and populates it.
@@ -142,7 +142,6 @@ class MigrationHelper {
       SELECT ${columnSourcesExpression}
       FROM ${authorsJoin}
       WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
-      ORDER BY ${authorsSort}
     `
     await this.queryInterface.sequelize.query(`
       UPDATE ${libraryItems}
@@ -160,7 +159,6 @@ class MigrationHelper {
       SELECT ${columnSourcesExpression}
       FROM ${authorsJoin}
       WHERE ${bookAuthors}.bookId = ${modifiedRecord}.bookId
-      ORDER BY ${authorsSort}
     `
     await this.queryInterface.sequelize.query(`DROP TRIGGER IF EXISTS ${triggerName}`)
 
@@ -184,7 +182,6 @@ class MigrationHelper {
       SELECT ${columnSourcesExpression}
       FROM ${authorsJoin}
       WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
-      ORDER BY ${authorsSort}
     `
 
     await this.queryInterface.sequelize.query(`DROP TRIGGER IF EXISTS ${triggerName}`)
