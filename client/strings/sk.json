@@ -79,6 +79,8 @@
   "ButtonRemoveAllLibraryItems": "Odstrániť všetky položky knižnice",
   "ButtonRemoveFromContinueListening": "Odstrániť z nedokončených podcastov",
   "ButtonRemoveFromContinueReading": "Odtrániť z nedokončených audiokníh",
+  "ButtonRemoveSeriesFromContinueSeries": "Odstrániť z nedokončených sérií",
+  "ButtonReset": "Resetovať",
   "HeaderMatch": "Spárovať",
   "LabelBackupsNumberToKeepHelp": "Týmto spôsobom odstránite vždy iba jednu zálohu. V prípade, ak chcete odtrániť viacero záloh, mali by ste ich odstrániť manuálne."
 }
