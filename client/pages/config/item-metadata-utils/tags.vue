@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8 relative" style="min-height: 200px">
+  <div class="bg-bg rounded-md shadow-lg border border-white/5 p-4 mb-8 relative" style="min-height: 200px">
     <div class="flex items-center mb-4">
-      <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center">
+      <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white/10 text-center">
         <span class="material-symbols text-2xl">arrow_back</span>
       </nuxt-link>
 
@@ -15,13 +15,13 @@
         <div :key="tag" class="w-full p-2 flex items-center text-gray-400 hover:text-white" :class="{ 'bg-primary/20': index % 2 === 0 }">
           <p v-if="editingTag !== tag" class="text-sm md:text-base text-gray-100">{{ tag }}</p>
           <ui-text-input v-else v-model="newTagName" />
-          <div class="flex-grow" />
+          <div class="grow" />
           <template v-if="editingTag !== tag">
             <ui-icon-btn icon="edit" borderless :size="8" icon-font-size="1.1rem" class="mx-1" @click="editTagClick(tag)" />
             <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" @click="removeTagClick(tag)" />
           </template>
           <template v-else>
-            <ui-btn color="success" small class="mx-2" @click.stop="saveTagClick">{{ $strings.ButtonSave }}</ui-btn>
+            <ui-btn color="bg-success" small class="mx-2" @click.stop="saveTagClick">{{ $strings.ButtonSave }}</ui-btn>
             <ui-btn small @click.stop="cancelEditClick">{{ $strings.ButtonCancel }}</ui-btn>
           </template>
         </div>

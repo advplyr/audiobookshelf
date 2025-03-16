@@ -14,7 +14,7 @@
     </button>
     <transition name="menu">
       <div class="sm:w-80 w-full relative">
-        <div v-show="showMenu" class="absolute z-40 -mt-px w-40 sm:w-full bg-bg border border-black-200 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalTaskRunningMenu">
+        <div v-show="showMenu" class="absolute z-40 -mt-px w-40 sm:w-full bg-bg border border-black-200 shadow-lg rounded-md text-base ring-1 ring-black/5 overflow-auto focus:outline-hidden sm:text-sm globalTaskRunningMenu">
           <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
             <template v-if="tasksToShow.length">
               <template v-for="task in tasksToShow">

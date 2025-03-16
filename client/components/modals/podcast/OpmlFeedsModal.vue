@@ -32,8 +32,8 @@
         </div>
       </div>
       <div class="flex items-center py-4">
-        <div class="flex-grow" />
-        <ui-btn color="success" @click="submit">{{ $strings.ButtonAddPodcasts }}</ui-btn>
+        <div class="grow" />
+        <ui-btn color="bg-success" @click="submit">{{ $strings.ButtonAddPodcasts }}</ui-btn>
       </div>
     </div>
   </modals-modal>

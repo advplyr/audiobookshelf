@@ -1,22 +1,22 @@
 <template>
-  <div class="w-full pl-2 pr-4 md:px-4 h-12 border border-white border-opacity-10 flex items-center relative -mt-px" :class="selected ? 'bg-primary bg-opacity-50' : 'hover:bg-primary hover:bg-opacity-25'" @mouseover="mouseover = true" @mouseleave="mouseover = false">
+  <div class="w-full pl-2 pr-4 md:px-4 h-12 border border-white/10 flex items-center relative -mt-px" :class="selected ? 'bg-primary/50' : 'hover:bg-primary/25'" @mouseover="mouseover = true" @mouseleave="mouseover = false">
     <div v-show="selected" class="absolute top-0 left-0 h-full w-0.5 bg-warning z-10" />
-    <ui-library-icon v-if="!isScanning" :icon="library.icon" :size="6" font-size="lg md:text-xl" class="text-white" :class="isHovering ? 'text-opacity-90' : 'text-opacity-50'" />
-    <svg v-else viewBox="0 0 24 24" class="h-6 w-6 text-white text-opacity-50 animate-spin">
+    <ui-library-icon v-if="!isScanning" :icon="library.icon" :size="6" font-size="lg md:text-xl" :class="isHovering ? 'text-white/90' : 'text-white/50'" />
+    <svg v-else viewBox="0 0 24 24" class="h-6 w-6 text-white/50 animate-spin">
       <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
     </svg>
     <p class="text-base md:text-xl pl-2 md:pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
 
-    <div class="flex-grow" />
+    <div class="grow" />
 
     <!-- Scan button only shown on desktop -->
-    <ui-btn v-if="!isScanning && !isDeleting" color="bg" class="hidden md:block mx-2 text-xs" :padding-y="1" :padding-x="3" @click.stop="scanBtnClick">{{ this.$strings.ButtonScan }}</ui-btn>
+    <ui-btn v-if="!isScanning && !isDeleting" color="bg-bg" class="hidden md:block mx-2 text-xs" :padding-y="1" :padding-x="3" @click.stop="scanBtnClick">{{ this.$strings.ButtonScan }}</ui-btn>
 
     <!-- Desktop context menu icon -->
-    <ui-context-menu-dropdown v-if="!isScanning && !isDeleting" :items="contextMenuItems" :icon-class="`text-1.5xl text-gray-${isHovering ? 50 : 400}`" class="!hidden md:!block" @action="contextMenuAction" />
+    <ui-context-menu-dropdown v-if="!isScanning && !isDeleting" :items="contextMenuItems" :icon-class="`text-1.5xl text-gray-${isHovering ? 50 : 400}`" class="hidden! md:block!" @action="contextMenuAction" />
 
     <!-- Mobile context menu icon -->
-    <span v-if="!isScanning && !isDeleting" class="!block md:!hidden material-symbols text-xl text-gray-300 ml-3 cursor-pointer" @click.stop="showMenu">more_vert</span>
+    <span v-if="!isScanning && !isDeleting" class="block! md:hidden! material-symbols text-xl text-gray-300 ml-3 cursor-pointer" @click.stop="showMenu">more_vert</span>
 
     <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin">
       <svg viewBox="0 0 24 24" class="w-6 h-6">

@@ -2,7 +2,7 @@
   <div id="page-wrapper" class="page p-2 md:p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <app-config-side-nav :is-open.sync="sideDrawerOpen" />
     <div class="configContent" :class="`page-${currentPage}`">
-      <div v-show="isMobilePortrait" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2 cursor-pointer" @click.stop.prevent="toggleShowMore">
+      <div v-show="isMobilePortrait" class="w-full pb-4 px-2 flex border-b border-white/10 mb-2 cursor-pointer" @click.stop.prevent="toggleShowMore">
         <span class="material-symbols text-2xl cursor-pointer">arrow_forward</span>
         <p class="pl-3 capitalize">{{ currentPage }}</p>
       </div>
@@ -77,20 +77,20 @@ export default {
 
 <style>
 .configContent {
-  margin: auto;
-  width: 900px;
-  max-width: calc(100% - 176px);
+  margin: auto !important;
+  width: 900px !important;
+  max-width: calc(100% - 176px) !important;
 }
 @media (max-width: 1240px) {
   .configContent {
-    margin-left: 176px;
+    margin-left: 176px !important;
   }
 }
 @media (max-width: 640px) {
   .configContent {
-    margin-left: 0px;
-    width: 100%;
-    max-width: 100%;
+    margin-left: 0px !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 </style>

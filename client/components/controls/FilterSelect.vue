@@ -1,7 +1,7 @@
 <template>
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
     <div class="relative h-9">
-      <button type="button" class="relative w-full h-full border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none cursor-pointer" aria-haspopup="menu" :aria-expanded="showMenu" @click.prevent="showMenu = !showMenu">
+      <button type="button" class="relative w-full h-full border border-gray-500 hover:border-gray-400 rounded-sm shadow-xs pl-3 pr-3 py-0 text-left focus:outline-hidden cursor-pointer" aria-haspopup="menu" :aria-expanded="showMenu" @click.prevent="showMenu = !showMenu">
         <span class="flex items-center justify-between">
           <span class="block truncate text-xs">{{ selectedText }}</span>
         </span>
@@ -16,7 +16,7 @@
       </button>
     </div>
 
-    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
+    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-sm ring-1 ring-black/5 overflow-auto focus:outline-hidden">
       <ul class="h-full w-full" role="menu">
         <template v-for="item in items">
           <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="menuitem" @click="clickedOption(item)">

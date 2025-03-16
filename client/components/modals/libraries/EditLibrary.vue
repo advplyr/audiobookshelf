@@ -5,7 +5,7 @@
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
           <ui-dropdown v-model="mediaType" :items="mediaTypes" :label="$strings.LabelMediaType" :disabled="!isNew" small @input="changedMediaType" />
         </div>
-        <div class="w-full md:flex-grow px-1 py-1 md:py-0">
+        <div class="w-full md:grow px-1 py-1 md:py-0">
           <ui-text-input-with-label ref="nameInput" v-model="name" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
         </div>
         <div class="w-1/5 md:w-18 px-1 py-1 md:py-0">
@@ -19,16 +19,16 @@
       <div class="folders-container overflow-y-auto w-full py-2 mb-2">
         <p class="px-1 text-sm font-semibold">{{ $strings.LabelFolders }}</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
-          <span class="material-symbols fill bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text ref="folderInput" v-model="folder.fullPath" :readonly="!!folder.id" type="text" class="w-full" @blur="existingFolderInputBlurred(folder)" />
           <span v-show="folders.length > 1" class="material-symbols text-2xl ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
         </div>
         <div class="flex py-1 px-2 items-center w-full">
-          <span class="material-symbols fill bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text ref="newFolderInput" v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 
-        <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>
+        <ui-btn class="w-full mt-2" color="bg-primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>
       </div>
     </div>
     <modals-libraries-lazy-folder-chooser v-else :paths="folderPaths" @back="showDirectoryPicker = false" @select="selectFolder" />

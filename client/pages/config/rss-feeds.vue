@@ -11,14 +11,14 @@
 
       <div v-if="feeds.length" class="block max-w-full pt-2">
         <table class="rssFeedsTable text-xs">
-          <tr class="bg-primary bg-opacity-40 h-12">
+          <tr class="bg-primary/40 h-12">
             <th class="w-16 min-w-16"></th>
             <th class="w-48 max-w-64 min-w-24 text-left truncate">{{ $strings.LabelTitle }}</th>
             <th class="w-48 min-w-24 text-left hidden xl:table-cell">{{ $strings.LabelSlug }}</th>
             <th class="w-24 min-w-16 text-left hidden md:table-cell">{{ $strings.LabelType }}</th>
             <th class="w-16 min-w-16 text-center">{{ $strings.HeaderEpisodes }}</th>
             <th class="w-16 min-w-16 text-center hidden lg:table-cell">{{ $strings.LabelRSSFeedPreventIndexing }}</th>
-            <th class="w-48 min-w-24 flex-grow hidden md:table-cell">{{ $strings.LabelLastUpdate }}</th>
+            <th class="w-48 min-w-24 grow hidden md:table-cell">{{ $strings.LabelLastUpdate }}</th>
             <th class="w-16 text-left"></th>
           </tr>
 
@@ -57,7 +57,7 @@
             </td>
             <!--  -->
             <td class="text-center">
-              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="error" outlined @click.stop="deleteFeedClick(feed)" />
+              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="bg-error" outlined @click.stop="deleteFeedClick(feed)" />
             </td>
           </tr>
         </table>

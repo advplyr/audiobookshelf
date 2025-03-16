@@ -2,16 +2,16 @@
   <div class="relative w-full h-9" v-click-outside="clickOutsideObj">
     <p class="text-sm font-semibold">{{ label }}</p>
 
-    <button type="button" :disabled="disabled" class="relative h-full w-full border border-gray-600 rounded shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer bg-primary text-gray-100 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="relative h-full w-full border border-gray-600 rounded-sm shadow-xs pl-3 pr-3 text-left focus:outline-hidden cursor-pointer bg-primary text-gray-100 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <ui-library-icon :icon="selectedItem" />
     </button>
 
     <transition name="menu">
-      <div v-show="showMenu" class="absolute -left-[4.5rem] z-10 -mt-px bg-primary border border-black-200 shadow-lg max-h-56 w-48 rounded-md py-1 overflow-auto focus:outline-none sm:text-sm">
+      <div v-show="showMenu" class="absolute -left-[4.5rem] z-10 -mt-px bg-primary border border-black-200 shadow-lg max-h-56 w-48 rounded-md py-1 overflow-auto focus:outline-hidden sm:text-sm">
         <div class="flex justify-center items-center flex-wrap">
           <template v-for="icon in icons">
             <div :key="icon" class="p-2">
-              <span class="abs-icons text-xl text-white text-opacity-80 hover:text-opacity-100 cursor-pointer" :class="`icon-${icon}`" @click="select(icon)"></span>
+              <span class="abs-icons text-xl text-white//80 hover:text-white/100 cursor-pointer" :class="`icon-${icon}`" @click="select(icon)"></span>
             </div>
           </template>
         </div>

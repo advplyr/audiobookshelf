@@ -7,7 +7,7 @@
             <covers-book-cover class="relative group-hover:brightness-75 transition cursor-pointer" expand-on-click :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Item Progress Bar -->
-            <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+            <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 shadow-xs z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
@@ -17,11 +17,11 @@
                 </button>
               </div>
 
-              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
+              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white//75 hover:text-white/100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
             </div>
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 lg:py-0 md:px-10">
+        <div class="grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
@@ -40,18 +40,18 @@
               </template>
 
               <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
-              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
+              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden text-ellipsis">
                 {{ $getString('LabelByAuthor', ['']) }}<nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
-            <div class="hidden md:block flex-grow" />
+            <div class="hidden md:block grow" />
           </div>
 
           <!-- Podcast episode downloads queue -->
-          <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
+          <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info/40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
               <p class="text-sm py-1">{{ $getString('MessageEpisodesQueuedForDownload', [episodeDownloadsQueued.length]) }}</p>
 
@@ -60,7 +60,7 @@
           </div>
 
           <!-- Podcast episodes currently downloading -->
-          <div v-if="episodesDownloading.length" class="px-4 py-2 mt-4 bg-success bg-opacity-20 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
+          <div v-if="episodesDownloading.length" class="px-4 py-2 mt-4 bg-success/20 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div v-for="episode in episodesDownloading" :key="episode.id" class="flex items-center">
               <widgets-loading-spinner />
               <p class="text-sm py-1 pl-4">{{ $strings.MessageDownloadingEpisode }} "{{ episode.episodeDisplayTitle }}"</p>
@@ -81,21 +81,21 @@
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
-            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
+            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="bg-success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
               <span v-show="!isStreaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">&#xe037;</span>
               {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
-            <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
+            <ui-btn v-else-if="isMissing || isInvalid" color="bg-error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 
             <ui-tooltip v-if="showQueueBtn" :text="isQueued ? $strings.ButtonQueueRemoveItem : $strings.ButtonQueueAddItem" direction="top">
-              <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :bg-color="isQueued ? 'primary' : 'success bg-opacity-60'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
+              <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :bg-color="isQueued ? 'bg-primary' : 'bg-success/60'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
             </ui-tooltip>
 
-            <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showReadButton" color="bg-info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-symbols text-2xl -ml-2 pr-2 text-white" aria-hidden="true">auto_stories</span>
               {{ $strings.ButtonRead }}
             </ui-btn>
