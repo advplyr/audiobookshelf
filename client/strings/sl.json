@@ -558,6 +558,8 @@
   "LabelSettingsBookshelfViewHelp": "Skeuomorfna oblika z lesenimi policami",
   "LabelSettingsChromecastSupport": "Podpora za Chromecast",
   "LabelSettingsDateFormat": "Oblika datuma",
+  "LabelSettingsEnableWatcher": "Samodejno preglej knjižnice za spremembe",
+  "LabelSettingsEnableWatcherForLibrary": "Samodejno preglej knjižnico za spremembe",
   "LabelSettingsEnableWatcherHelp": "Omogoča samodejno dodajanje/posodabljanje elementov, ko so zaznane spremembe datoteke. *Potreben je ponovni zagon strežnika",
   "LabelSettingsEpubsAllowScriptedContent": "Dovoli skriptirano vsebino v epubih",
   "LabelSettingsEpubsAllowScriptedContentHelp": "Dovoli datotekam epub izvajanje skript. Priporočljivo je, da to nastavitev pustite onemogočeno, razen če zaupate viru datotek epub.",
