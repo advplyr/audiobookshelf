@@ -23,6 +23,7 @@ const RssFeedManager = require('../managers/RssFeedManager')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
+const zipHelpers = require('../utils/zipHelpers')
 
 /**
  * @typedef RequestUserObject
@@ -528,7 +529,7 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to delete library`)
       return res.sendStatus(403)
     }
-    
+
     // Remove library watcher
     Watcher.removeLibrary(req.library)
 
@@ -1418,6 +1419,51 @@ class LibraryController {
       })
     })
   }
+
+  /**
+   * GET: /api/library/:id/download
+   * Downloads multiple library items
+   *
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async downloadMultiple(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn(`User "${req.user.username}" attempted to download without permission`)
+      return res.sendStatus(403)
+    }
+
+    if(req.query.ids === undefined) {
+      res.status(400).send('Library not found')
+    }
+
+    const itemIds = req.query.ids.split(',')
+
+    const libraryItems = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'libraryId', 'path'],
+      where: {
+        id: itemIds,
+        libraryId: req.params.id,
+        mediaType: 'book'
+      }
+    })
+
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for items "${itemIds}"`)
+
+    const filename = `LibraryItems-${Date.now()}.zip`
+    const libraryItemPaths = libraryItems.map((li) => li.path)
+
+    console.log(libraryItemPaths)
+
+    try {
+      await zipHelpers.zipDirectoriesPipe(libraryItemPaths, filename, res)
+      Logger.info(`[LibraryItemController] Downloaded item "${filename}" at "${libraryItemPaths}"`)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Download failed for item "${filename}" at "${libraryItemPaths}"`, error)
+      //LibraryItemController.handleDownloadError(error, res)
+    }
+  }
+
 
   /**
    *
