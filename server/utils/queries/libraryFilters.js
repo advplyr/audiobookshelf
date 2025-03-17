@@ -164,7 +164,7 @@ module.exports = {
    */
   async getMediaFinished(library, user, include, limit) {
     if (library.isBook) {
-      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'finished', 'progress', true, false, include, limit, 0)
+      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'finished', 'random', true, false, include, limit, 0)
       return {
         items: libraryItems.map((li) => {
           const oldLibraryItem = li.toOldJSONMinified()
@@ -179,7 +179,7 @@ module.exports = {
         count
       }
     } else {
-      const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'progress', 'finished', 'progress', true, limit, 0)
+      const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'progress', 'finished', 'random', true, limit, 0)
       return {
         count,
         items: libraryItems.map((li) => {
