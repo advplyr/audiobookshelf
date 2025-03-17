@@ -58,7 +58,7 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
     await queryInterface.bulkInsert('bookAuthors', [
       { id: 1, bookId: 1, authorId: 1, createdAt: '2025-01-01 00:00:00.000 +00:00' },
       { id: 2, bookId: 2, authorId: 2, createdAt: '2025-01-02 00:00:00.000 +00:00' },
-      { id: 3, bookId: 1, authorId: 3, createdAt: '2025-01-03 00:00:00.000 +00:00' }
+      { id: 3, bookId: 1, authorId: 3, createdAt: '2024-12-31 00:00:00.000 +00:00' }
     ])
 
     await queryInterface.bulkInsert('podcastEpisodes', [
@@ -86,7 +86,7 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
 
       const [libraryItems] = await queryInterface.sequelize.query('SELECT * FROM libraryItems')
       expect(libraryItems).to.deep.equal([
-        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Doe, John Smith', authorNamesLastFirst: 'Doe, John, Smith, John' },
+        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Smith, John Doe', authorNamesLastFirst: 'Smith, John, Doe, John' },
         { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'Jane Smith', authorNamesLastFirst: 'Smith, Jane' }
       ])
     })
@@ -106,10 +106,9 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
             BEGIN
               UPDATE libraryItems
                 SET (authorNamesFirstLast, authorNamesLastFirst) = (
-                  SELECT GROUP_CONCAT(authors.name, ', '), GROUP_CONCAT(authors.lastFirst, ', ')
+                  SELECT GROUP_CONCAT(authors.name, ', ' ORDER BY bookAuthors.createdAt ASC), GROUP_CONCAT(authors.lastFirst, ', ' ORDER BY bookAuthors.createdAt ASC)
                   FROM authors JOIN bookAuthors ON authors.id = bookAuthors.authorId
                   WHERE bookAuthors.bookId = NEW.bookId
-                  ORDER BY bookAuthors.createdAt ASC
                 )
               WHERE mediaId = NEW.bookId;
             END
@@ -128,10 +127,9 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
             BEGIN
               UPDATE libraryItems
                 SET (authorNamesFirstLast, authorNamesLastFirst) = (
-                  SELECT GROUP_CONCAT(authors.name, ', '), GROUP_CONCAT(authors.lastFirst, ', ')
+                  SELECT GROUP_CONCAT(authors.name, ', ' ORDER BY bookAuthors.createdAt ASC), GROUP_CONCAT(authors.lastFirst, ', ' ORDER BY bookAuthors.createdAt ASC)
                   FROM authors JOIN bookAuthors ON authors.id = bookAuthors.authorId
                   WHERE bookAuthors.bookId = OLD.bookId
-                  ORDER BY bookAuthors.createdAt ASC
                 )
               WHERE mediaId = OLD.bookId;
             END
@@ -150,10 +148,9 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
             BEGIN
               UPDATE libraryItems
                 SET (authorNamesFirstLast, authorNamesLastFirst) = (
-                  SELECT GROUP_CONCAT(authors.name, ', '), GROUP_CONCAT(authors.lastFirst, ', ')
+                  SELECT GROUP_CONCAT(authors.name, ', ' ORDER BY bookAuthors.createdAt ASC), GROUP_CONCAT(authors.lastFirst, ', ' ORDER BY bookAuthors.createdAt ASC)
                   FROM authors JOIN bookAuthors ON authors.id = bookAuthors.authorId
                   WHERE bookAuthors.bookId = libraryItems.mediaId
-                  ORDER BY bookAuthors.createdAt ASC
                 )
               WHERE mediaId IN (SELECT bookId FROM bookAuthors WHERE authorId = NEW.id);
             END
@@ -194,7 +191,7 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       // check that the libraryItems table was updated
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
-        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Wayne, John Smith', authorNamesLastFirst: 'Wayne, John, Smith, John' },
+        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Smith, John Wayne', authorNamesLastFirst: 'Smith, John, Wayne, John' },
         { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'Jane Smith', authorNamesLastFirst: 'Smith, Jane' }
       ])
     })
@@ -211,7 +208,7 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       // check that the libraryItems table was updated
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
-        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Doe, John Smith, John Wayne', authorNamesLastFirst: 'Doe, John, Smith, John, Wayne, John' },
+        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Smith, John Doe, John Wayne', authorNamesLastFirst: 'Smith, John, Doe, John, Wayne, John' },
         { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'Jane Smith', authorNamesLastFirst: 'Smith, Jane' }
       ])
     })
@@ -272,7 +269,7 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
 
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
-        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Doe, John Smith', authorNamesLastFirst: 'Doe, John, Smith, John' },
+        { id: 1, mediaId: 1, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'John Smith, John Doe', authorNamesLastFirst: 'Smith, John, Doe, John' },
         { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1, authorNamesFirstLast: 'Jane Smith', authorNamesLastFirst: 'Smith, Jane' }
       ])
     })

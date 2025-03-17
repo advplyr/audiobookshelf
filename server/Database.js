@@ -815,10 +815,10 @@ class Database {
       { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
       { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
     ]
-    const columnNames = columns.map((column) => column.name).join(', ')
-    const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ')`).join(', ')
-    const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
     const authorsSort = `${bookAuthors}.createdAt ASC`
+    const columnNames = columns.map((column) => column.name).join(', ')
+    const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ' ORDER BY ${authorsSort})`).join(', ')
+    const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
 
     const addBookAuthorsTriggerIfNotExists = async (action) => {
       const modifiedRecord = action === 'delete' ? 'OLD' : 'NEW'
@@ -827,7 +827,6 @@ class Database {
         SELECT ${columnSourcesExpression}
         FROM ${authorsJoin}
         WHERE ${bookAuthors}.bookId = ${modifiedRecord}.bookId
-        ORDER BY ${authorsSort}
       `
       const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
       if (count > 0) return // Trigger already exists
@@ -852,7 +851,6 @@ class Database {
         SELECT ${columnSourcesExpression}
         FROM ${authorsJoin}
         WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
-        ORDER BY ${authorsSort}
       `
 
       const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
