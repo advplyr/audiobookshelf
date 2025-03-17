@@ -123,3 +123,20 @@ module.exports.zipDirectoriesPipe = (paths, filename, res) => {
     archive.finalize()
   })
 }
+
+/**
+ * Handles errors that occur during the download process.
+ *
+ * @param error
+ * @param res
+ * @returns {*}
+ */
+module.exports.handleDownloadError = (error, res) => {
+  if (!res.headersSent) {
+    if (error.code === 'ENOENT') {
+      return res.status(404).send('File not found')
+    } else {
+      return res.status(500).send('Download failed')
+    }
+  }
+}

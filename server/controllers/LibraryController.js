@@ -1433,8 +1433,8 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    if(req.query.ids === undefined) {
-      res.status(400).send('Library not found')
+    if(req.query.ids === undefined || req.query.ids === '') {
+      res.status(400).send('Library items not found')
     }
 
     const itemIds = req.query.ids.split(',')
@@ -1452,24 +1452,18 @@ class LibraryController {
 
     const filename = `LibraryItems-${Date.now()}.zip`
     const libraryItemPaths = libraryItems.map((li) => li.path)
-    
+
+    if (!libraryItemPaths.length) {
+      Logger.warn(`[LibraryItemController] No library items found for ids "${itemIds}"`)
+      return res.status(404).send('Library items not found')
+    }
 
     try {
       await zipHelpers.zipDirectoriesPipe(libraryItemPaths, filename, res)
       Logger.info(`[LibraryItemController] Downloaded item "${filename}" at "${libraryItemPaths}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Download failed for item "${filename}" at "${libraryItemPaths}"`, error)
-      LibraryController.handleDownloadError(error, res)
-    }
-  }
-
-  static handleDownloadError(error, res) {
-    if (!res.headersSent) {
-      if (error.code === 'ENOENT') {
-        return res.status(404).send('File not found')
-      } else {
-        return res.status(500).send('Download failed')
-      }
+      zipHelpers.handleDownloadError(error, res)
     }
   }
 
