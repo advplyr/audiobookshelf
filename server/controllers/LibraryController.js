@@ -1452,15 +1452,24 @@ class LibraryController {
 
     const filename = `LibraryItems-${Date.now()}.zip`
     const libraryItemPaths = libraryItems.map((li) => li.path)
-
-    console.log(libraryItemPaths)
+    
 
     try {
       await zipHelpers.zipDirectoriesPipe(libraryItemPaths, filename, res)
       Logger.info(`[LibraryItemController] Downloaded item "${filename}" at "${libraryItemPaths}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Download failed for item "${filename}" at "${libraryItemPaths}"`, error)
-      //LibraryItemController.handleDownloadError(error, res)
+      LibraryController.handleDownloadError(error, res)
+    }
+  }
+
+  static handleDownloadError(error, res) {
+    if (!res.headersSent) {
+      if (error.code === 'ENOENT') {
+        return res.status(404).send('File not found')
+      } else {
+        return res.status(500).send('Download failed')
+      }
     }
   }
 
