@@ -116,8 +116,7 @@ module.exports = {
     postcss: {
       postcssOptions: {
         plugins: {
-          '@tailwindcss/postcss': {},
-          autoprefixer: {}
+          '@tailwindcss/postcss': {}
         }
       }
     }
