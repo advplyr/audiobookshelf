@@ -1,6 +1,7 @@
+const Path = require('path')
+const { Response } = require('express')
 const Logger = require('../Logger')
 const archiver = require('../libs/archiver')
-const { lstatSync } = require('node:fs')
 
 module.exports.zipDirectoryPipe = (path, filename, res) => {
   return new Promise((resolve, reject) => {
@@ -55,12 +56,12 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
 /**
  * Creates a zip archive containing multiple directories and streams it to the response.
  *
- * @param {string[]} paths - Array of directory paths to include in the zip archive.
+ * @param {{ path: string, isFile: boolean }[]} pathObjects
  * @param {string} filename - Name of the zip file to be sent as attachment.
- * @param {object} res - Response object to pipe the archive data to.
+ * @param {Response} res - Response object to pipe the archive data to.
  * @returns {Promise<void>} - Promise that resolves when the zip operation completes.
  */
-module.exports.zipDirectoriesPipe = (paths, filename, res) => {
+module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
   return new Promise((resolve, reject) => {
     // create a file to stream archive data to
     res.attachment(filename)
@@ -105,20 +106,14 @@ module.exports.zipDirectoriesPipe = (paths, filename, res) => {
     archive.pipe(res)
 
     // Add each path as a directory in the zip
-    paths.forEach(path => {
-
-      const paths = path.split('/')
-
-      // Check if path is file or directory
-      if (lstatSync(path).isDirectory()) {
-        const dirName = path.split('/').pop()
-
+    pathObjects.forEach((pathObject) => {
+      if (!pathObject.isFile) {
         // Add the directory to the archive with its name as the root folder
-        archive.directory(path, dirName);
+        archive.directory(pathObject.path, Path.basename(pathObject.path))
       } else {
-        archive.file(path, { name: paths[paths.length - 1] });
+        archive.file(pathObject.path, { name: Path.basename(pathObject.path) })
       }
-    });
+    })
 
     archive.finalize()
   })
@@ -127,8 +122,8 @@ module.exports.zipDirectoriesPipe = (paths, filename, res) => {
 /**
  * Handles errors that occur during the download process.
  *
- * @param error
- * @param res
+ * @param {*} error
+ * @param {Response} res
  * @returns {*}
  */
 module.exports.handleDownloadError = (error, res) => {

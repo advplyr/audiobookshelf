@@ -1441,29 +1441,27 @@ class LibraryController {
     const itemIds = req.query.ids.split(',')
 
     const libraryItems = await Database.libraryItemModel.findAll({
-      attributes: ['id', 'libraryId', 'path'],
+      attributes: ['id', 'libraryId', 'path', 'isFile'],
       where: {
-        id: itemIds,
-        libraryId: req.params.id,
-        mediaType: 'book'
+        id: itemIds
       }
     })
 
-    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for items "${itemIds}"`)
+    Logger.info(`[LibraryController] User "${req.user.username}" requested download for items "${itemIds}"`)
 
     const filename = `LibraryItems-${Date.now()}.zip`
-    const libraryItemPaths = libraryItems.map((li) => li.path)
+    const pathObjects = libraryItems.map((li) => ({ path: li.path, isFile: li.isFile }))
 
-    if (!libraryItemPaths.length) {
-      Logger.warn(`[LibraryItemController] No library items found for ids "${itemIds}"`)
+    if (!pathObjects.length) {
+      Logger.warn(`[LibraryController] No library items found for ids "${itemIds}"`)
       return res.status(404).send('Library items not found')
     }
 
     try {
-      await zipHelpers.zipDirectoriesPipe(libraryItemPaths, filename, res)
-      Logger.info(`[LibraryItemController] Downloaded item "${filename}" at "${libraryItemPaths}"`)
+      await zipHelpers.zipDirectoriesPipe(pathObjects, filename, res)
+      Logger.info(`[LibraryController] Downloaded ${pathObjects.length} items "${filename}"`)
     } catch (error) {
-      Logger.error(`[LibraryItemController] Download failed for item "${filename}" at "${libraryItemPaths}"`, error)
+      Logger.error(`[LibraryController] Download failed for items "${filename}" at ${pathObjects.map((po) => po.path).join(', ')}`, error)
       zipHelpers.handleDownloadError(error, res)
     }
   }
