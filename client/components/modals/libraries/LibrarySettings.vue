@@ -75,9 +75,9 @@
       <div class="p-2 w-full md:w-1/2">
         <div class="flex items-center">
           <ui-toggle-switch v-model="listenAgainOrdered" size="sm" @input="formUpdated" />
-          <ui-tooltip :text="$strings.LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp">
+          <ui-tooltip :text="$strings.LabelListenAgainOrderedHelp">
             <p class="pl-4 text-sm">
-              {{ $strings.LabelSettingsOnlyShowLaterBooksInContinueSeries }}
+              {{ $strings.LabelListenAgainOrdered }}
               <span class="material-symbols icon-text text-sm">info</span>
             </p>
           </ui-tooltip>
