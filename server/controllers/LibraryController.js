@@ -1424,7 +1424,7 @@ class LibraryController {
    * GET: /api/library/:id/download
    * Downloads multiple library items
    *
-   * @param {LibraryItemControllerRequest} req
+   * @param {LibraryControllerRequest} req
    * @param {Response} res
    */
   async downloadMultiple(req, res) {
@@ -1433,8 +1433,9 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    if(req.query.ids === undefined || req.query.ids === '') {
-      res.status(400).send('Library items not found')
+    if (!req.query.ids || typeof req.query.ids !== 'string') {
+      res.status(400).send('Invalid request. ids must be a string')
+      return
     }
 
     const itemIds = req.query.ids.split(',')
@@ -1466,7 +1467,6 @@ class LibraryController {
       zipHelpers.handleDownloadError(error, res)
     }
   }
-
 
   /**
    *
