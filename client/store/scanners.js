@@ -112,11 +112,11 @@ export const state = () => ({
 })
 
 export const getters = {
-  checkBookProviderExists: state => (providerValue) => {
-    return state.providers.some(p => p.value === providerValue)
+  checkBookProviderExists: (state) => (providerValue) => {
+    return state.providers.some((p) => p.value === providerValue)
   },
-  checkPodcastProviderExists: state => (providerValue) => {
-    return state.podcastProviders.some(p => p.value === providerValue)
+  checkPodcastProviderExists: (state) => (providerValue) => {
+    return state.podcastProviders.some((p) => p.value === providerValue)
   }
 }
 
@@ -125,13 +125,13 @@ export const actions = {}
 export const mutations = {
   addCustomMetadataProvider(state, provider) {
     if (provider.mediaType === 'book') {
-      if (state.providers.some(p => p.value === provider.slug)) return
+      if (state.providers.some((p) => p.value === provider.slug)) return
       state.providers.push({
         text: provider.name,
         value: provider.slug
       })
     } else {
-      if (state.podcastProviders.some(p => p.value === provider.slug)) return
+      if (state.podcastProviders.some((p) => p.value === provider.slug)) return
       state.podcastProviders.push({
         text: provider.name,
         value: provider.slug
@@ -140,9 +140,9 @@ export const mutations = {
   },
   removeCustomMetadataProvider(state, provider) {
     if (provider.mediaType === 'book') {
-      state.providers = state.providers.filter(p => p.value !== provider.slug)
+      state.providers = state.providers.filter((p) => p.value !== provider.slug)
     } else {
-      state.podcastProviders = state.podcastProviders.filter(p => p.value !== provider.slug)
+      state.podcastProviders = state.podcastProviders.filter((p) => p.value !== provider.slug)
     }
   },
   setCustomMetadataProviders(state, providers) {

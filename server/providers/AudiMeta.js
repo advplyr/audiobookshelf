@@ -41,7 +41,7 @@ class AudiMeta {
   }
 
   cleanResult(item) {
-    const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, imageUrl, genres, series, language, lengthMinutes, bookFormat	} = item
+    const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, imageUrl, genres, series, language, lengthMinutes, bookFormat } = item
 
     const seriesList = []
 
@@ -50,7 +50,7 @@ class AudiMeta {
         series: s.name,
         sequence: this.cleanSeriesSequence(s.name, (s.position || '').toString())
       })
-    });
+    })
 
     // Tags and Genres are flipped for AudiMeta
     const genresFiltered = genres ? genres.filter((g) => g.type == 'Tags').map((g) => g.name) : []
@@ -147,7 +147,8 @@ class AudiMeta {
       items = await axios
         .get(url, {
           timeout
-        }).then((res) => {
+        })
+        .then((res) => {
           return res.data
         })
         .catch((error) => {
