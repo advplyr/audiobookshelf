@@ -110,6 +110,18 @@
           </div>
           <ui-toggle-btns v-model="ereaderSettings.spread" :items="spreadItems" @input="settingsUpdated" />
         </div>
+        <div class="flex items-center">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelFlow }}:</p>
+          </div>
+          <ui-toggle-btns v-model="ereaderSettings.flow" :items="flowItems" @input="settingsUpdated" />
+        </div>
+        <div class="flex items-center">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelSnap }}:</p>
+          </div>
+          <ui-toggle-btns v-model="ereaderSettings.snap" :items="snapItems" @input="settingsUpdated" />
+        </div>
       </div>
     </modals-modal>
   </div>
@@ -137,7 +149,9 @@ export default {
         fontScale: 100,
         lineSpacing: 115,
         fontBoldness: 100,
-        spread: 'auto',
+        flow: 'paginated', // paginated | scrolled
+        spread: 'auto', // none | auto
+        snap: true, // false | true
         textStroke: 0
       }
     }
@@ -171,6 +185,30 @@ export default {
         {
           text: this.$strings.LabelLayoutSplitPage,
           value: 'auto'
+        }
+      ]
+    },
+    flowItems() {
+      return [
+        {
+          text: this.$strings.LabelFlowPaginated,
+          value: 'paginated'
+        },
+        {
+          text: this.$strings.LabelFlowScrolled,
+          value: 'scrolled'
+        }
+      ]
+    },
+    snapItems() {
+      return [
+        {
+          text: this.$strings.LabelSnapTrue,
+          value: false //  -- note this is opposite to intuition (upstream problem)
+        },
+        {
+          text: this.$strings.LabelSnapFalse,
+          value: true //  -- note this is opposite to intuition (upstream problem)
         }
       ]
     },
@@ -321,10 +359,14 @@ export default {
       }
     },
     next() {
-      if (this.$refs.readerComponent?.next) this.$refs.readerComponent.next()
+      if (this.$refs.readerComponent?.next && !this.isEpub) {
+        this.$refs.readerComponent.next()
+      }
     },
     prev() {
-      if (this.$refs.readerComponent?.prev) this.$refs.readerComponent.prev()
+      if (this.$refs.readerComponent?.prev && !this.isEpub) {
+        this.$refs.readerComponent.prev()
+      }
     },
     handleGesture() {
       // Touch must be less than 1s. Must be > 60px drag and X distance > Y distance
