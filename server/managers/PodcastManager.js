@@ -108,7 +108,7 @@ class PodcastManager {
     //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
     //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
     if (await fs.pathExists(this.currentDownload.targetPath)) {
-      this.currentDownload.appendRandomId = true
+      this.currentDownload.setAppendRandomId(true)
     }
 
     // Ignores all added files to this dir

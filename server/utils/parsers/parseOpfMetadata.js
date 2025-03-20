@@ -22,11 +22,22 @@ function parseCreators(metadata) {
       Object.keys(c['$'])
         .find((key) => key.startsWith('xmlns:'))
         ?.split(':')[1] || 'opf'
-    return {
+    const creator = {
       value: c['_'],
       role: c['$'][`${namespace}:role`] || null,
       fileAs: c['$'][`${namespace}:file-as`] || null
     }
+
+    const id = c['$']['id']
+    if (id && metadata.meta.refines?.some((r) => r.refines === `#${id}`)) {
+      const creatorMeta = metadata.meta.refines.filter((r) => r.refines === `#${id}`)
+      if (creatorMeta) {
+        creator.role = creatorMeta.find((r) => r.property === 'role')?.value || creator.role || null
+        creator.fileAs = creatorMeta.find((r) => r.property === 'file-as')?.value || creator.fileAs || null
+      }
+    }
+
+    return creator
   })
 }
 
@@ -187,7 +198,6 @@ module.exports.parseOpfMetadataJson = (json) => {
   const prefix = packageKey.split(':').shift()
   let metadata = prefix ? json[packageKey][`${prefix}:metadata`] || json[packageKey].metadata : json[packageKey].metadata
   if (!metadata) return null
-
   if (Array.isArray(metadata)) {
     if (!metadata.length) return null
     metadata = metadata[0]
@@ -198,12 +208,22 @@ module.exports.parseOpfMetadataJson = (json) => {
   metadata.meta = {}
   if (metadataMeta?.length) {
     metadataMeta.forEach((meta) => {
-      if (meta && meta['$'] && meta['$'].name) {
+      if (meta?.['$']?.name) {
         metadata.meta[meta['$'].name] = [meta['$'].content || '']
+      } else if (meta?.['$']?.refines) {
+        // https://www.w3.org/TR/epub-33/#sec-meta-elem
+
+        if (!metadata.meta.refines) {
+          metadata.meta.refines = []
+        }
+        metadata.meta.refines.push({
+          value: meta._,
+          refines: meta['$'].refines,
+          property: meta['$'].property
+        })
       }
     })
   }
-
   const creators = parseCreators(metadata)
   const authors = (fetchCreators(creators, 'aut') || []).map((au) => au?.trim()).filter((au) => au)
   const narrators = (fetchNarrators(creators, metadata) || []).map((nrt) => nrt?.trim()).filter((nrt) => nrt)
@@ -227,5 +247,6 @@ module.exports.parseOpfMetadataJson = (json) => {
 module.exports.parseOpfMetadataXML = async (xml) => {
   const json = await xmlToJSON(xml)
   if (!json) return null
+
   return this.parseOpfMetadataJson(json)
 }

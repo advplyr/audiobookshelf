@@ -465,7 +465,7 @@ module.exports = {
   async getRecentEpisodes(user, library, limit, offset) {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
 
-    const episodes = await Database.podcastEpisodeModel.findAll({
+    const findOptions = {
       where: {
         '$mediaProgresses.isFinished$': {
           [Sequelize.Op.or]: [null, false]
@@ -496,7 +496,11 @@ module.exports = {
       subQuery: false,
       limit,
       offset
-    })
+    }
+
+    const findtAll = process.env.QUERY_PROFILING ? profile(Database.podcastEpisodeModel.findAll.bind(Database.podcastEpisodeModel)) : Database.podcastEpisodeModel.findAll.bind(Database.podcastEpisodeModel)
+
+    const episodes = await findtAll(findOptions)
 
     const episodeResults = episodes.map((ep) => {
       ep.podcast.podcastEpisodes = [] // Not needed
