@@ -43,7 +43,7 @@ export default {
   computed: {
     classList() {
       var list = []
-      list.push(this.loading ? 'text-white/100' : 'text-white')
+      list.push(this.loading ? 'text-white/0' : 'text-white')
       list.push(`${this.color}`)
       if (this.small) {
         list.push('text-sm')
