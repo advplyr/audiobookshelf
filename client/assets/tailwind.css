@@ -1,7 +1,5 @@
 @import 'tailwindcss';
 
-@config "../tailwind.config.js";
-
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
@@ -18,4 +16,66 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+}
+
+@theme {
+  --spacing-0\.5e: 0.125em;
+  --spacing-1e: 0.25em;
+  --spacing-1\.5e: 0.375em;
+  --spacing-2e: 0.5em;
+  --spacing-2\.5e: 0.625em;
+  --spacing-3e: 0.75em;
+  --spacing-3\.5e: 0.875em;
+  --spacing-4e: 1em;
+  --spacing-5e: 1.25em;
+  --spacing-6e: 1.5em;
+  --spacing-7e: 1.75em;
+  --spacing-8e: 2em;
+  --spacing-9e: 2.25em;
+  --spacing-10e: 2.5em;
+  --spacing-11e: 2.75em;
+  --spacing-12e: 3em;
+  --spacing-14e: 3.5em;
+  --spacing-16e: 4em;
+  --spacing-20e: 5em;
+  --spacing-24e: 6em;
+  --spacing-28e: 7em;
+  --spacing-32e: 8em;
+  --spacing-36e: 9em;
+  --spacing-40e: 10em;
+  --spacing-44e: 11em;
+  --spacing-48e: 12em;
+  --spacing-52e: 13em;
+  --spacing-56e: 14em;
+  --spacing-60e: 15em;
+  --spacing-64e: 16em;
+  --spacing-72e: 18em;
+  --spacing-80e: 20em;
+  --spacing-96e: 24em;
+
+  --color-bg: #373838;
+  --color-primary: #232323;
+  --color-accent: #1ad691;
+  --color-error: #FF5252;
+  --color-info: #2196F3;
+  --color-success: #4CAF50;
+  --color-warning: #FB8C00;
+  --color-darkgreen: rgb(34,127,35);
+  --color-black-50: #bbbbbb;
+  --color-black-100: #666666;
+  --color-black-200: #555555;
+  --color-black-300: #444444;
+  --color-black-400: #333333;
+  --color-black-500: #222222;
+  --color-black-600: #111111;
+  --color-black-700: #101010;
+
+  --font-sans: "Source Sans Pro";
+  --font-mono: "Ubuntu Mono";
+
+  --text-xxs: 0.625rem;
+  --text-1\.5xl: 1.375rem;
+  --text-2\.5xl: 1.6875rem;
+  --text-4\.5xl: 2.625rem;
+
 }

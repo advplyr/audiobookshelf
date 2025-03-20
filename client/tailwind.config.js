@@ -1,16 +1,23 @@
 module.exports = {
-  content: ['components/**/*.vue', 'layouts/**/*.vue', 'pages/**/*.vue', 'templates/**/*.vue', 'plugins/**/*.js', 'nuxt.config.js'],
-  safelist: ['bg-red-600', 'px-1.5', 'min-w-5', 'border-warning'],
+  // content is no longer needed, automatically built by tailwindcss
+  // content: ['components/**/*.vue', 'layouts/**/*.vue', 'pages/**/*.vue', 'templates/**/*.vue', 'plugins/**/*.js', 'nuxt.config.js'],
+  // safelist is no longer supported
+  //safelist: ['bg-red-600', 'px-1.5', 'min-w-5', 'border-warning'],
   theme: {
     extend: {
+      /* Not needed anymore, all numeric values are valid
       height: {
         7.5: '1.75rem',
         18: '4.5rem',
         45: '11.25rem'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       width: {
         18: '4.5rem'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       maxWidth: {
         6: '1.5rem',
         12: '3rem',
@@ -24,6 +31,8 @@ module.exports = {
         64: '16rem',
         80: '20rem'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       minWidth: {
         5: '1.25rem',
         6: '1.5rem',
@@ -39,10 +48,13 @@ module.exports = {
         64: '16rem',
         80: '20rem'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       spacing: {
-        18: '4.5rem',
-        '-54': '-13.5rem',
+        // 18: '4.5rem', // Not needed anymore, all numeric values are valid
+        // '-54': '-13.5rem' // Not needed anymore, all numeric values are valid
         // based on tailwind default config converted to em units, see client\node_modules\tailwindcss\stubs\config.full.js
+        // Replaced with theme variables
         '0.5e': '0.125em',
         '1e': '0.25em',
         '1.5e': '0.375em',
@@ -77,9 +89,13 @@ module.exports = {
         '80e': '20em',
         '96e': '24em'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       rotate: {
         '-60': '-60deg'
       },
+      */
+      /* Replaced with theme variables
       colors: {
         bg: '#373838',
         primary: '#232323',
@@ -98,27 +114,40 @@ module.exports = {
         'black-600': '#111111',
         'black-700': '#101010'
       },
+      */
+      /* Not needed anymore, none is already defined in tailwind default config
       cursor: {
         none: 'none'
       },
+      */
+      /* Replaced with theme variables
       fontFamily: {
         sans: ['Source Sans Pro'],
         mono: ['Ubuntu Mono']
       },
+      */
+      /* Replaced with theme variables
       fontSize: {
         xxs: '0.625rem',
         '1.5xl': '1.375rem',
         '2.5xl': '1.6875rem',
         '4.5xl': '2.625rem'
       },
+      */
+      /* Not needed anymore, all numeric values are valid
       zIndex: {
         50: 50,
         60: 60
       }
+      */
     }
-  },
+  }
+  /* Replaced with theme variables
   variants: {
     extend: {}
   },
+  */
+  /* replaced with @plugin directive
   plugins: []
+  */
 }
