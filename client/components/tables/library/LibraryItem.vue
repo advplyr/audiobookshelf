@@ -1,7 +1,7 @@
 <template>
   <div class="w-full pl-2 pr-4 md:px-4 h-12 border border-white/10 flex items-center relative -mt-px" :class="selected ? 'bg-primary/50' : 'hover:bg-primary/25'" @mouseover="mouseover = true" @mouseleave="mouseover = false">
     <div v-show="selected" class="absolute top-0 left-0 h-full w-0.5 bg-warning z-10" />
-    <ui-library-icon v-if="!isScanning" :icon="library.icon" :size="6" font-size="lg md:text-xl" :class="isHovering ? 'text-white/90' : 'text-white/50'" />
+    <ui-library-icon v-if="!isScanning" :icon="library.icon" :size="6" font-size="text-lg md:text-xl" :class="isHovering ? 'text-white/90' : 'text-white/50'" />
     <svg v-else viewBox="0 0 24 24" class="h-6 w-6 text-white/50 animate-spin">
       <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
     </svg>
