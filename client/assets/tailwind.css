@@ -56,11 +56,11 @@
   --color-bg: #373838;
   --color-primary: #232323;
   --color-accent: #1ad691;
-  --color-error: #FF5252;
-  --color-info: #2196F3;
-  --color-success: #4CAF50;
-  --color-warning: #FB8C00;
-  --color-darkgreen: rgb(34,127,35);
+  --color-error: #ff5252;
+  --color-info: #2196f3;
+  --color-success: #4caf50;
+  --color-warning: #fb8c00;
+  --color-darkgreen: rgb(34, 127, 35);
   --color-black-50: #bbbbbb;
   --color-black-100: #666666;
   --color-black-200: #555555;
@@ -70,12 +70,11 @@
   --color-black-600: #111111;
   --color-black-700: #101010;
 
-  --font-sans: "Source Sans Pro";
-  --font-mono: "Ubuntu Mono";
+  --font-sans: 'Source Sans Pro';
+  --font-mono: 'Ubuntu Mono';
 
   --text-xxs: 0.625rem;
   --text-1\.5xl: 1.375rem;
   --text-2\.5xl: 1.6875rem;
   --text-4\.5xl: 2.625rem;
-
 }

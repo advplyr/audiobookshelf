@@ -38,7 +38,6 @@
   "devDependencies": {
     "@nuxtjs/pwa": "^3.3.5",
     "@tailwindcss/cli": "^4.0.14",
-    "autoprefixer": "^10.4.7",
     "postcss": "^8.3.6",
     "tailwindcss": "^4.0.13"
   },
