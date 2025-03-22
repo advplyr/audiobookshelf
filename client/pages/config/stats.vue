@@ -3,7 +3,7 @@
     <!-- Year in review banner shown at the top in December and January -->
     <stats-year-in-review-banner v-if="showYearInReviewBanner" />
 
-    <app-settings-content :header-text="$strings.HeaderYourStats" class="!mb-4">
+    <app-settings-content :header-text="$strings.HeaderYourStats" class="mb-4!">
       <div class="flex justify-center">
         <div class="flex p-2">
           <svg class="hidden sm:block h-14 w-14 lg:h-18 lg:w-18" viewBox="0 0 24 24">
@@ -14,7 +14,7 @@
           </svg>
           <div class="px-3">
             <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(userItemsFinished.length) }}</p>
-            <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsItemsFinished }}</p>
+            <p class="text-xs md:text-sm text-white/80">{{ $strings.LabelStatsItemsFinished }}</p>
           </div>
         </div>
 
@@ -24,7 +24,7 @@
           </div>
           <div class="px-1">
             <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalDaysListened) }}</p>
-            <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsDaysListened }}</p>
+            <p class="text-xs md:text-sm text-white/80">{{ $strings.LabelStatsDaysListened }}</p>
           </div>
         </div>
 
@@ -34,7 +34,7 @@
           </div>
           <div class="px-1">
             <p class="text-4xl md:text-5xl font-bold">{{ $formatNumber(totalMinutesListening) }}</p>
-            <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsMinutesListening }}</p>
+            <p class="text-xs md:text-sm text-white/80">{{ $strings.LabelStatsMinutesListening }}</p>
           </div>
         </div>
       </div>
@@ -43,19 +43,19 @@
         <div class="w-80 my-6 mx-auto">
           <div class="flex mb-4 items-center">
             <h1 class="text-2xl">{{ $strings.HeaderStatsRecentSessions }}</h1>
-            <div class="flex-grow" />
+            <div class="grow" />
             <ui-btn v-if="isAdminOrUp" :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
           </div>
           <p v-if="!mostRecentListeningSessions.length">{{ $strings.MessageNoListeningSessions }}</p>
           <template v-for="(item, index) in mostRecentListeningSessions">
             <div :key="item.id" class="w-full py-0.5">
               <div class="flex items-center mb-1">
-                <p class="text-sm text-white text-opacity-70 w-8">{{ index + 1 }}.&nbsp;</p>
+                <p class="text-sm text-white/70 w-8">{{ index + 1 }}.&nbsp;</p>
                 <div class="w-56">
-                  <p class="text-sm text-white text-opacity-80 truncate">{{ item.mediaMetadata ? item.mediaMetadata.title : '' }}</p>
-                  <p class="text-xs text-white text-opacity-50">{{ $dateDistanceFromNow(item.updatedAt) }}</p>
+                  <p class="text-sm text-white/80 truncate">{{ item.mediaMetadata ? item.mediaMetadata.title : '' }}</p>
+                  <p class="text-xs text-white/50">{{ $dateDistanceFromNow(item.updatedAt) }}</p>
                 </div>
-                <div class="flex-grow" />
+                <div class="grow" />
                 <div class="w-18 text-right">
                   <p class="text-sm font-bold">{{ $elapsedPretty(item.timeListening) }}</p>
                 </div>

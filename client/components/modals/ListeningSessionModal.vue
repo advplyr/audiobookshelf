@@ -11,7 +11,7 @@
         <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">{{ $getString('LabelByAuthor', [_session.displayAuthor]) }}</p>
       </div>
 
-      <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+      <div class="w-full h-px bg-white/10 my-4" />
 
       <div class="flex flex-wrap mb-4">
         <div class="w-full md:w-2/3">
@@ -99,8 +99,8 @@
       </div>
 
       <div class="flex items-center">
-        <ui-btn v-if="!isOpenSession && !isMediaItemShareSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
-        <ui-btn v-else-if="!isMediaItemShareSession" small color="error" @click.stop="closeSessionClick">{{ $strings.ButtonCloseSession }}</ui-btn>
+        <ui-btn v-if="!isOpenSession && !isMediaItemShareSession" small color="bg-error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-else-if="!isMediaItemShareSession" small color="bg-error" @click.stop="closeSessionClick">{{ $strings.ButtonCloseSession }}</ui-btn>
       </div>
     </div>
   </modals-modal>

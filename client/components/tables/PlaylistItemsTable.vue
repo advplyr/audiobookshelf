@@ -1,12 +1,12 @@
 <template>
-  <div class="w-full bg-primary bg-opacity-40">
+  <div class="w-full bg-primary/40">
     <div class="w-full h-14 flex items-center px-4 md:px-6 py-2 bg-primary">
       <p class="pr-4">{{ $strings.HeaderPlaylistItems }}</p>
 
-      <div class="w-6 h-6 md:w-7 md:h-7 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+      <div class="w-6 h-6 md:w-7 md:h-7 bg-white/10 rounded-full flex items-center justify-center">
         <span class="text-xs md:text-sm font-mono leading-none">{{ items.length }}</span>
       </div>
-      <div class="flex-grow" />
+      <div class="grow" />
       <p v-if="totalDuration" class="text-sm text-gray-200">{{ totalDurationPretty }}</p>
     </div>
     <draggable v-model="itemsCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">

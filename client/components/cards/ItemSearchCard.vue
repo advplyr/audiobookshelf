@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center h-full px-1 overflow-hidden">
     <covers-book-cover :library-item="libraryItem" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-    <div class="flex-grow px-2 audiobookSearchCardContent">
+    <div class="grow px-2 audiobookSearchCardContent">
       <p class="truncate text-sm">{{ title }}</p>
       <p v-if="subtitle" class="truncate text-xs text-gray-300">{{ subtitle }}</p>
       <p class="text-xs text-gray-200 truncate">{{ $getString('LabelByAuthor', [authorName]) }}</p>

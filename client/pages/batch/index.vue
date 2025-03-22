@@ -1,12 +1,12 @@
 <template>
   <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="border border-white border-opacity-10 max-w-7xl mx-auto mb-10 mt-5">
+    <div class="border border-white/10 max-w-7xl mx-auto mb-10 mt-5">
       <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
         <span class="material-symbols text-2xl">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
         <p class="ml-4 text-gray-200 text-lg">{{ $strings.HeaderMapDetails }}</p>
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
         <div class="w-64 flex">
           <button class="w-32 h-8 rounded-l-md shadow-md border border-gray-600" :class="!isMapOverwrite ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'overwrite'">
@@ -91,8 +91,8 @@
               <ui-tooltip direction="bottom" :text="$strings.MessageBatchEditPopulateMapDetailsAllHelp">
                 <ui-btn small :disabled="!hasSelectedBatchUsage" @click.stop="populateFromExisting()">{{ $strings.ButtonBatchEditPopulateFromExisting }}</ui-btn>
               </ui-tooltip>
-              <div class="flex-grow" />
-              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">{{ $strings.ButtonApply }}</ui-btn>
+              <div class="grow" />
+              <ui-btn color="bg-success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">{{ $strings.ButtonApply }}</ui-btn>
             </div>
           </div>
         </transition>
@@ -112,13 +112,13 @@
         </div>
       </template>
     </div>
-    <div v-show="isProcessing" class="fixed top-0 left-0 z-50 w-full h-full flex items-center justify-center bg-black bg-opacity-60">
+    <div v-show="isProcessing" class="fixed top-0 left-0 z-50 w-full h-full flex items-center justify-center bg-black/60">
       <ui-loading-indicator />
     </div>
 
     <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamLibraryItem ? '165px' : '0px' }">
-      <div class="flex-grow" />
-      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" :disabled="!hasChanges" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
+      <div class="grow" />
+      <ui-btn color="bg-success" :padding-x="8" class="text-lg" :loading="isProcessing" :disabled="!hasChanges" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
     </div>
   </div>
 </template>

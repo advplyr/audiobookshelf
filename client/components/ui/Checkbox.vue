@@ -1,6 +1,6 @@
 <template>
   <label tabindex="0" ref="labelRef" class="flex justify-start items-center" :class="!disabled ? 'cursor-pointer' : ''" @keydown.enter="enterKeydown">
-    <div class="border-2 rounded flex flex-shrink-0 justify-center items-center" :class="wrapperClass">
+    <div class="border-2 rounded-sm flex shrink-0 justify-center items-center" :class="wrapperClass">
       <input v-model="selected" tabindex="-1" :disabled="disabled" type="checkbox" :aria-label="ariaLabel" class="opacity-0 absolute" :class="!disabled ? 'cursor-pointer' : ''" />
       <span v-if="partial" class="material-symbols text-base leading-none text-gray-400">remove</span>
       <svg v-else-if="selected" class="fill-current pointer-events-none" :class="svgClass" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z" /></svg>

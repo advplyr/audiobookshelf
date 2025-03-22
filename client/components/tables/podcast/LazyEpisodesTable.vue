@@ -9,26 +9,26 @@
           <p v-else>{{ episodesList.length }} / {{ episodes.length }}</p>
         </div>
       </div>
-      <div class="flex-grow hidden md:block" />
+      <div class="grow hidden md:block" />
       <div class="flex items-center">
         <template v-if="isSelectionMode">
           <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
             <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
           </ui-tooltip>
-          <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
+          <ui-btn color="bg-error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
           <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
         </template>
         <template v-else>
           <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" @change="filterSortChanged" />
           <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="filterSortChanged" />
-          <div class="flex-grow md:hidden" />
+          <div class="grow md:hidden" />
           <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
         </template>
       </div>
     </div>
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
-      <form @submit.prevent="submit" class="flex flex-grow">
-        <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
+      <form @submit.prevent="submit" class="flex grow">
+        <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="grow mr-2 text-sm md:text-base" />
       </form>
     </div>
     <div class="relative min-h-44">

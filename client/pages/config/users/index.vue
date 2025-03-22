@@ -12,9 +12,9 @@
           </a>
         </ui-tooltip>
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn color="primary" small @click="setShowUserModal()">{{ $strings.ButtonAddUser }}</ui-btn>
+        <ui-btn color="bg-primary" small @click="setShowUserModal()">{{ $strings.ButtonAddUser }}</ui-btn>
       </template>
 
       <tables-users-table class="pt-2" @edit="setShowUserModal" @numUsers="(count) => (numUsers = count)" />

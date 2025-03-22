@@ -17,16 +17,16 @@
 
       <div v-if="canCreateBookmark && !hideCreate" class="w-full border-t border-white/10">
         <form @submit.prevent="submitCreateBookmark">
-          <div class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
+          <div class="flex px-4 py-2 items-center text-center border-b border-white/10 text-white/80">
             <div class="w-16 max-w-16 text-center">
               <p class="text-sm font-mono text-gray-400">
                 {{ this.$secondsToTimestamp(currentTime / playbackRate) }}
               </p>
             </div>
-            <div class="flex-grow px-2">
+            <div class="grow px-2">
               <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full h-10" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">add</span></ui-btn>
+            <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">add</span></ui-btn>
           </div>
         </form>
       </div>

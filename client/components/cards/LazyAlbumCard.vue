@@ -1,15 +1,15 @@
 <template>
-  <div ref="card" :id="`album-card-${index}`" :style="{ width: cardWidth + 'px' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`album-card-${index}`" :style="{ width: cardWidth + 'px' }" class="absolute top-0 left-0 rounded-xs z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="relative" :style="{ height: coverHeight + 'px' }">
       <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
-      <div class="w-full h-full bg-primary relative rounded overflow-hidden">
+      <div class="w-full h-full bg-primary relative rounded-sm overflow-hidden">
         <covers-preview-cover ref="cover" :src="coverSrc" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </div>
     </div>
 
     <div class="relative w-full">
       <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6e h-6e rounded-md text-center" :style="{ width: Math.min(200, cardWidth) + 'px' }">
-        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em ${0.5}em` }">
+        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-xs border" :style="{ padding: `0em ${0.5}em` }">
           <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
         </div>
       </div>

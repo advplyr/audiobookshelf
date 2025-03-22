@@ -2,9 +2,9 @@
   <div>
     <div v-if="narrators?.length" class="flex py-0.5 mt-4">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
       </div>
-      <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
+      <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
         <template v-for="(narrator, index) in narrators">
           <nuxt-link :key="narrator" :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link
           ><span :key="index" v-if="index < narrators.length - 1">,&nbsp;</span>
@@ -13,7 +13,7 @@
     </div>
     <div v-if="publishedYear" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
       </div>
       <div>
         {{ publishedYear }}
@@ -21,7 +21,7 @@
     </div>
     <div v-if="publisher" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
       <div>
         <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=publishers.${$encode(publisher)}`" class="hover:underline">{{ publisher }}</nuxt-link>
@@ -29,7 +29,7 @@
     </div>
     <div v-if="podcastType" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPodcastType }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPodcastType }}</span>
       </div>
       <div class="capitalize">
         {{ podcastType }}
@@ -37,9 +37,9 @@
     </div>
     <div class="flex py-0.5" v-if="genres.length">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
       </div>
-      <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
+      <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
         <template v-for="(genre, index) in genres">
           <nuxt-link :key="genre" :to="`/library/${libraryId}/bookshelf?filter=genres.${$encode(genre)}`" class="hover:underline">{{ genre }}</nuxt-link
           ><span :key="index" v-if="index < genres.length - 1">,&nbsp;</span>
@@ -48,9 +48,9 @@
     </div>
     <div class="flex py-0.5" v-if="tags.length">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelTags }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelTags }}</span>
       </div>
-      <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
+      <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
         <template v-for="(tag, index) in tags">
           <nuxt-link :key="tag" :to="`/library/${libraryId}/bookshelf?filter=tags.${$encode(tag)}`" class="hover:underline">{{ tag }}</nuxt-link
           ><span :key="index" v-if="index < tags.length - 1">,&nbsp;</span>
@@ -59,7 +59,7 @@
     </div>
     <div v-if="language" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelLanguage }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelLanguage }}</span>
       </div>
       <div>
         <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=languages.${$encode(language)}`" class="hover:underline">{{ language }}</nuxt-link>
@@ -67,7 +67,7 @@
     </div>
     <div v-if="tracks.length || (isPodcast && totalPodcastDuration)" role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
       </div>
       <div>
         {{ durationPretty }}
@@ -75,7 +75,7 @@
     </div>
     <div role="paragraph" class="flex py-0.5">
       <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
-        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
+        <span class="text-white/60 uppercase text-sm">{{ $strings.LabelSize }}</span>
       </div>
       <div>
         {{ sizePretty }}

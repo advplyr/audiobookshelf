@@ -21,7 +21,7 @@
           <div class="text-center py-1 w-8 min-w-8">
             {{ source.include ? getSourceIndex(source.id) : '' }}
           </div>
-          <div class="flex-grow inline-flex justify-between px-4 py-3">
+          <div class="grow inline-flex justify-between px-4 py-3">
             {{ source.name }} <span v-if="source.include && (index === firstActiveSourceIndex || index === lastActiveSourceIndex)" class="px-2 italic font-semibold text-xs text-gray-400">{{ index === firstActiveSourceIndex ? $strings.LabelHighestPriority : $strings.LabelLowestPriority }}</span>
           </div>
           <div class="px-2 opacity-100">

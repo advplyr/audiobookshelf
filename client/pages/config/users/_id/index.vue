@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-0 sm:p-4 mb-8">
-      <nuxt-link to="/config/users" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
+    <div class="bg-bg rounded-md shadow-lg border border-white/5 p-0 sm:p-4 mb-8">
+      <nuxt-link to="/config/users" class="text-white//70 hover:text-white/100 hover:bg-white/5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
             <span class="material-symbols text-2xl">arrow_back</span>
@@ -16,9 +16,9 @@
       <div v-if="userToken" class="flex text-xs mt-4">
         <ui-text-input-with-label :label="$strings.LabelApiToken" :value="userToken" readonly show-copy />
       </div>
-      <div class="w-full h-px bg-white bg-opacity-10 my-2" />
+      <div class="w-full h-px bg-white/10 my-2" />
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderListeningStats }}</h1>
+        <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderListeningStats }}</h1>
         <div class="flex items-center">
           <p class="text-sm text-gray-300">{{ listeningSessions.total }} {{ $strings.HeaderListeningSessions }}</p>
           <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs mx-2" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
@@ -33,18 +33,18 @@
         </p>
 
         <div v-if="latestSession" class="mt-4">
-          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderLastListeningSession }}</h1>
+          <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderLastListeningSession }}</h1>
           <p class="text-sm text-gray-300">
             <strong>{{ latestSession.displayTitle }}</strong> {{ $dateDistanceFromNow(latestSession.updatedAt) }} for <span class="font-mono text-base">{{ $elapsedPrettyExtended(this.latestSession.timeListening) }}</span>
           </p>
         </div>
       </div>
-      <div class="w-full h-px bg-white bg-opacity-10 my-2" />
+      <div class="w-full h-px bg-white/10 my-2" />
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderSavedMediaProgress }}</h1>
+        <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderSavedMediaProgress }}</h1>
 
         <table v-if="mediaProgress.length" class="userAudiobooksTable">
-          <tr class="bg-primary bg-opacity-40">
+          <tr class="bg-primary/40">
             <th class="w-16 text-left">{{ $strings.LabelItem }}</th>
             <th class="text-left"></th>
             <th class="w-32">{{ $strings.LabelProgress }}</th>
@@ -58,7 +58,7 @@
             </td>
             <td>
               <p>{{ item.displayTitle || 'Unknown' }}</p>
-              <p v-if="item.displaySubtitle" class="text-white text-opacity-50 text-sm font-sans">{{ item.displaySubtitle }}</p>
+              <p v-if="item.displaySubtitle" class="text-white/50 text-sm font-sans">{{ item.displaySubtitle }}</p>
             </td>
             <td class="text-center">
               <p class="text-sm">{{ Math.floor(item.progress * 100) }}%</p>
@@ -75,7 +75,7 @@
             </td>
           </tr>
         </table>
-        <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoMediaProgress }}</p>
+        <p v-else class="text-white/50">{{ $strings.MessageNoMediaProgress }}</p>
       </div>
     </div>
   </div>

@@ -9,7 +9,7 @@
       </div>
       <div class="flex items-center h-9 relative overflow-hidden rounded-lg" style="width: 220px">
         <template v-for="rate in rates">
-          <div :key="rate" class="h-full border-black-300 w-11 cursor-pointer border rounded-sm" :class="value === rate ? 'bg-black-100' : 'hover:bg-black hover:bg-opacity-10'" style="min-width: 44px; max-width: 44px" @click="set(rate)">
+          <div :key="rate" class="h-full border-black-300 w-11 cursor-pointer border rounded-xs" :class="value === rate ? 'bg-black-100' : 'hover:bg-black/10'" style="min-width: 44px; max-width: 44px" @click="set(rate)">
             <div class="w-full h-full flex justify-center items-center">
               <p class="text-xs text-center">{{ rate }}<span class="text-sm">x</span></p>
             </div>

@@ -15,10 +15,10 @@
             </div>
           </div>
         </div>
-        <div class="flex-grow">
-          <form @submit.prevent="submitUploadCover" class="flex flex-grow mb-2 p-2">
+        <div class="grow">
+          <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2">
             <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
-            <ui-btn color="success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+            <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
           </form>
 
           <form v-if="author" @submit.prevent="submitForm">
@@ -26,7 +26,7 @@
               <div class="w-3/4 p-2">
                 <ui-text-input-with-label v-model="authorCopy.name" :disabled="processing" :label="$strings.LabelName" />
               </div>
-              <div class="flex-grow p-2">
+              <div class="grow p-2">
                 <ui-text-input-with-label v-model="authorCopy.asin" :disabled="processing" label="ASIN" />
               </div>
             </div>
@@ -35,8 +35,8 @@
             </div>
 
             <div class="flex pt-2 px-2">
-              <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
-              <div class="flex-grow" />
+              <ui-btn v-if="userCanDelete" small color="bg-error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
+              <div class="grow" />
               <ui-btn type="button" class="mx-2" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
 
               <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>

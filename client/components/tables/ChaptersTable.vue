@@ -3,8 +3,8 @@
     <div class="w-full bg-primary px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
       <p class="pr-4">{{ $strings.HeaderChapters }}</p>
       <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ chapters.length }}</span>
-      <div class="flex-grow" />
-      <ui-btn v-if="userCanUpdate" small :to="`/audiobook/${libraryItemId}/chapters`" color="primary" class="mr-2" @click="clickEditChapters">{{ $strings.ButtonEditChapters }}</ui-btn>
+      <div class="grow" />
+      <ui-btn v-if="userCanUpdate" small :to="`/audiobook/${libraryItemId}/chapters`" color="bg-primary" class="mr-2" @click="clickEditChapters">{{ $strings.ButtonEditChapters }}</ui-btn>
       <div v-if="!keepOpen" class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="expanded ? 'transform rotate-180' : ''">
         <span class="material-symbols text-4xl">&#xe313;</span>
       </div>

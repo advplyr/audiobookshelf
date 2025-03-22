@@ -11,16 +11,16 @@
           <div>
             <covers-playlist-cover :items="items" :width="200" :height="200" />
           </div>
-          <div class="flex-grow px-4">
+          <div class="grow px-4">
             <ui-text-input-with-label v-model="newPlaylistName" :label="$strings.LabelName" class="mb-2" />
 
             <ui-textarea-with-label v-model="newPlaylistDescription" :label="$strings.LabelDescription" />
           </div>
         </div>
         <div class="absolute bottom-0 left-0 right-0 w-full py-2 px-4 flex">
-          <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
-          <div class="flex-grow" />
-          <ui-btn color="success" type="submit">{{ $strings.ButtonSave }}</ui-btn>
+          <ui-btn v-if="userCanDelete" small color="bg-error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
+          <div class="grow" />
+          <ui-btn color="bg-success" type="submit">{{ $strings.ButtonSave }}</ui-btn>
         </div>
       </form>
     </div>

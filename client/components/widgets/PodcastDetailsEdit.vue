@@ -5,7 +5,7 @@
         <div class="w-1/2 px-1">
           <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1">
+        <div class="grow px-1">
           <ui-text-input-with-label ref="authorInput" v-model="details.author" :label="$strings.LabelAuthor" trim-whitespace @input="handleInputChange" />
         </div>
       </div>
@@ -18,7 +18,7 @@
         <div class="w-1/2 px-1">
           <ui-multi-select ref="genresSelect" v-model="details.genres" :label="$strings.LabelGenres" :items="genres" @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1">
+        <div class="grow px-1">
           <ui-multi-select ref="tagsSelect" v-model="newTags" :label="$strings.LabelTags" :items="tags" @input="handleInputChange" />
         </div>
       </div>
@@ -33,7 +33,7 @@
         <div class="w-1/4 px-1">
           <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1 pt-6">
+        <div class="grow px-1 pt-6">
           <div class="flex justify-center">
             <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
           </div>

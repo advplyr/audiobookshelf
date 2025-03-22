@@ -5,7 +5,7 @@
         <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
       </svg>
     </div>
-    <svg v-else class="w-full h-full mr-2 text-white text-opacity-20" viewBox="0 0 24 24">
+    <svg v-else class="w-full h-full mr-2 text-white/20" viewBox="0 0 24 24">
       <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
     </svg>
   </div>

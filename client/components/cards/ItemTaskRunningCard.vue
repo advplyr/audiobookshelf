@@ -4,7 +4,7 @@
       <span v-if="isFinished" :class="taskIconStatus" class="material-symbols text-base">{{ actionIcon }}</span>
       <widgets-loading-spinner v-else />
     </div>
-    <div class="flex-grow px-2 taskRunningCardContent">
+    <div class="grow px-2 taskRunningCardContent">
       <p class="truncate text-sm">{{ title }}</p>
 
       <p class="truncate text-xs text-gray-300">{{ description }}</p>
@@ -13,7 +13,7 @@
       <p v-if="isFailed && failedMessage" class="text-xs truncate text-red-500">{{ failedMessage }}</p>
       <p v-else-if="!isFinished && cancelingScan" class="text-xs truncate">Canceling...</p>
     </div>
-    <ui-btn v-if="userIsAdminOrUp && !isFinished && isLibraryScan && !cancelingScan" color="primary" :padding-y="1" :padding-x="1" class="text-xs w-16 max-w-16 truncate mr-1" @click.stop="cancelScan">{{ this.$strings.ButtonCancel }}</ui-btn>
+    <ui-btn v-if="userIsAdminOrUp && !isFinished && isLibraryScan && !cancelingScan" color="bg-primary" :padding-y="1" :padding-x="1" class="text-xs w-16 max-w-16 truncate mr-1" @click.stop="cancelScan">{{ this.$strings.ButtonCancel }}</ui-btn>
   </div>
 </template>
 

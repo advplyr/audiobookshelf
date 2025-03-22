@@ -25,8 +25,8 @@
               <ui-toggle-switch v-model="newNotification.enabled" />
               <p class="text-lg pl-2">{{ $strings.LabelEnable }}</p>
             </div>
-            <div class="flex-grow" />
-            <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
+            <div class="grow" />
+            <ui-btn color="bg-success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </div>
       </div>

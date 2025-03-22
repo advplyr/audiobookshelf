@@ -26,8 +26,8 @@
           <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" :label="$strings.LabelConfirmPassword" class="my-2" />
           <div class="flex items-center py-2">
             <p v-if="isRoot" class="text-error py-2 text-xs">* {{ $strings.NoteChangeRootPassword }}</p>
-            <div class="flex-grow" />
-            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonSubmit }}</ui-btn>
+            <div class="grow" />
+            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="bg-success">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>
@@ -37,9 +37,9 @@
 
         <app-settings-content :header-text="$strings.HeaderEreaderDevices">
           <template #header-items>
-            <div class="flex-grow" />
+            <div class="grow" />
 
-            <ui-btn color="primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
+            <ui-btn color="bg-primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
           </template>
 
           <table v-if="ereaderDevices.length" class="tracksTable mt-4">
@@ -70,7 +70,7 @@
       </div>
 
       <div class="py-4 mt-8 flex">
-        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
+        <ui-btn color="bg-primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
 
       <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />

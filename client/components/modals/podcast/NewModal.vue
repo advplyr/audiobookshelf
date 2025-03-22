@@ -52,11 +52,11 @@
         </div>
       </div>
       <div class="flex items-center py-4 px-2">
-        <div class="flex-grow" />
+        <div class="grow" />
         <div class="px-4">
           <ui-checkbox v-model="podcast.autoDownloadEpisodes" :label="$strings.LabelAutoDownloadEpisodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
         </div>
-        <ui-btn color="success" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
+        <ui-btn color="bg-success" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
       </div>
     </div>
   </modals-modal>
