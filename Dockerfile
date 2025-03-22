@@ -1,12 +1,12 @@
 ### STAGE 0: Build client ###
-FROM node:20-alpine AS build
+FROM node:20-alpine AS build-client
 WORKDIR /client
 COPY /client /client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM node:20-alpine
+FROM node:20-alpine AS build-server
 
 ENV NODE_ENV=production
 
@@ -21,9 +21,9 @@ RUN apk update && \
   tini \
   unzip
 
-COPY --from=build /client/dist /client/dist
-COPY index.js package* /
-COPY server server
+WORKDIR /server
+COPY index.js package* /server
+COPY /server /server/server
 
 ARG TARGETPLATFORM
 
@@ -42,7 +42,20 @@ RUN case "$TARGETPLATFORM" in \
 
 RUN npm ci --only=production
 
-RUN apk del make python3 g++
+### STAGE 2: Create minimal runtime image ###
+FROM node:20-alpine
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+  tzdata \
+  ffmpeg \
+  tini
+
+WORKDIR /app
+
+# Copy compiled frontend and server from build stages
+COPY --from=build-client /client/dist /app/client/dist
+COPY --from=build-server /server /app
 
 EXPOSE 80
 
