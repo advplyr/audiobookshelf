@@ -106,7 +106,7 @@ export default {
         this.inputValue = this.inputValue.trim()
       }
       this.isFocused = false
-      this.$emit('blur-sm')
+      this.$emit('blur')
     },
 
     change(e) {

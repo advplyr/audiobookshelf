@@ -55,7 +55,7 @@ export default {
       }
     },
     inputBlurred() {
-      this.$emit('blur-sm')
+      this.$emit('blur')
     }
   },
   mounted() {}

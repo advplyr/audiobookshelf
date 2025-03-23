@@ -32,7 +32,7 @@ export default {
       this.$emit('focus')
     },
     blurred() {
-      this.$emit('blur-sm')
+      this.$emit('blur')
     },
     change(e) {
       this.$emit('change', e.target.value)
