@@ -172,7 +172,6 @@ export default {
     setSelectionMode(val) {}
   },
   mounted() {
-    console.log('AuthorCard mounted', this.$el)
     if (this.authorMount) this.setEntity(this.authorMount)
   },
   beforeDestroy() {
