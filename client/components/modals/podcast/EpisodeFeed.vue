@@ -42,7 +42,7 @@
       <div class="flex justify-end pt-4">
         <ui-checkbox v-if="!allDownloaded" v-model="selectAll" @input="toggleSelectAll" :label="selectAllLabel" small checkbox-bg="primary" border-color="gray-600" class="mx-8" />
         <ui-btn v-if="!allDownloaded" :disabled="!episodesSelected.length" @click="submit">{{ buttonText }}</ui-btn>
-        <p v-else class="text-success text-base px-2 py-4">All episodes are downloaded</p>
+        <p v-else class="text-success text-base px-2 py-4">{{ $strings.LabelAllEpisodesDownloaded }}</p>
       </div>
     </div>
   </modals-modal>

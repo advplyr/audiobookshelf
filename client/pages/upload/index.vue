@@ -54,8 +54,7 @@
       </div>
       <!-- Item list header -->
       <div v-else class="w-full flex items-center pb-4 border-b border-white border-opacity-10">
-        <p class="text-lg">{{ items.length }} item{{ items.length === 1 ? '' : 's' }}</p>
-        <p v-if="ignoredFiles.length" class="text-lg">&nbsp;|&nbsp;{{ ignoredFiles.length }} file{{ ignoredFiles.length === 1 ? '' : 's' }} ignored</p>
+        <p class="text-lg lowercase">{{ items.length === 1 ? `1 ${$strings.LabelItem}` : $getString('LabelXItems', [items.length]) }}</p>
         <div class="flex-grow" />
         <ui-btn :disabled="processing" small @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
