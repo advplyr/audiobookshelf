@@ -77,20 +77,20 @@ export default {
 
 <style>
 .configContent {
-  margin: auto !important;
-  width: 900px !important;
-  max-width: calc(100% - 176px) !important;
+  margin: auto;
+  width: 900px;
+  max-width: calc(100% - 176px);
 }
 @media (max-width: 1240px) {
   .configContent {
-    margin-left: 176px !important;
+    margin-left: 176px;
   }
 }
 @media (max-width: 640px) {
   .configContent {
-    margin-left: 0px !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    margin-left: 0px;
+    width: 100%;
+    max-width: 100%;
   }
 }
 </style>

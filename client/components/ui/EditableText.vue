@@ -53,6 +53,6 @@ input {
   border-style: inherit !important;
 }
 input:read-only {
-  background-color: #444 !important;
+  background-color: #444;
 }
 </style>
