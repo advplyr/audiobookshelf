@@ -380,7 +380,7 @@ export default {
         const ref = this.getEditFormRef(li.id)
         ref.mapBatchDetails(batchMapPayload, this.mapDetailsType)
       })
-      this.$toast.success('Details mapped')
+      this.$toast.success(this.$strings.ToastBatchApplyDetailsToItemsSuccess)
     },
     newSeriesItem(item) {},
     removedSeriesItem(item) {},
@@ -452,7 +452,7 @@ export default {
           this.isProcessing = false
           if (data.updates) {
             this.itemsWithChanges = []
-            this.$toast.success(`Successfully updated ${data.updates} items`)
+            this.$toast.success(this.$getString('MessageItemsUpdated', [data.updates]))
             this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
             this.$toast.warning(this.$strings.MessageNoUpdatesWereNecessary)
@@ -460,7 +460,7 @@ export default {
         })
         .catch((error) => {
           console.error('failed to batch update', error)
-          this.$toast.error('Failed to batch update')
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
           this.isProcessing = false
         })
     },
