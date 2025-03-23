@@ -11,7 +11,7 @@
         <div class="flex justify-center items-center flex-wrap">
           <template v-for="icon in icons">
             <div :key="icon" class="p-2">
-              <span class="abs-icons text-xl text-white//80 hover:text-white/100 cursor-pointer" :class="`icon-${icon}`" @click="select(icon)"></span>
+              <span class="abs-icons text-xl text-white/80 hover:text-white/100 cursor-pointer" :class="`icon-${icon}`" @click="select(icon)"></span>
             </div>
           </template>
         </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
     <div class="bg-bg rounded-md shadow-lg border border-white/5 p-0 sm:p-4 mb-8">
-      <nuxt-link :to="`/config/users/${user.id}`" class="text-white//70 hover:text-white/100 hover:bg-white/5 cursor-pointer rounded-full px-2 sm:px-0">
+      <nuxt-link :to="`/config/users/${user.id}`" class="text-white/70 hover:text-white/100 hover:bg-white/5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
             <span class="material-symbols text-2xl">arrow_back</span>

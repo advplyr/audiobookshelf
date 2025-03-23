@@ -14,7 +14,7 @@
             </div>
             <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">forward</span></ui-btn>
             <div class="pl-2 flex items-center">
-              <span class="material-symbols text-3xl text-white//70 hover:text-white/95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
+              <span class="material-symbols text-3xl text-white/70 hover:text-white/95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
             </div>
           </div>
         </form>

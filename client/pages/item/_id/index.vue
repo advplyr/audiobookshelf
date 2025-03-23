@@ -17,7 +17,7 @@
                 </button>
               </div>
 
-              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white//75 hover:text-white/100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
+              <button class="absolute bottom-2.5 right-2.5 z-10 material-symbols text-lg cursor-pointer text-white/75 hover:text-white/100 hover:scale-110 transform duration-200 pointer-events-auto" :aria-label="$strings.ButtonEdit" @click="showEditCover">edit</button>
             </div>
           </div>
         </div>

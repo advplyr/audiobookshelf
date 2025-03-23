@@ -41,7 +41,7 @@
           <td class="py-0">
             <div class="w-full flex justify-left">
               <!-- Dont show edit for non-root users -->
-              <div v-if="user.type !== 'root' || userIsRoot" class="h-8 w-8 flex items-center justify-center text-white//50 hover:text-white/100 cursor-pointer" @click.stop="editUser(user)">
+              <div v-if="user.type !== 'root' || userIsRoot" class="h-8 w-8 flex items-center justify-center text-white/50 hover:text-white/100 cursor-pointer" @click.stop="editUser(user)">
                 <button type="button" :aria-label="$getString('ButtonUserEdit', [user.username])" class="material-symbols text-base">edit</button>
               </div>
               <div v-show="user.type !== 'root' && user.id !== currentUserId" class="h-8 w-8 flex items-center justify-center text-white/50 hover:text-error cursor-pointer" @click.stop="deleteUserClick(user)">
