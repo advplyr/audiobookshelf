@@ -19,7 +19,9 @@ describe('AuthorCard', () => {
   const mocks = {
     $strings: {
       LabelBooks: 'Books',
-      ButtonQuickMatch: 'Quick Match'
+      ButtonQuickMatch: 'Quick Match',
+      ToastAuthorUpdateSuccess: 'Author updated',
+      ToastAuthorUpdateSuccessNoImageFound: 'Author updated (no image found)'
     },
     $store: {
       getters: {
@@ -167,7 +169,7 @@ describe('AuthorCard', () => {
     cy.get('&match').click()
 
     cy.get('&spinner').should('be.hidden')
-    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated (no image found)')
+    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author updated (no image found)')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
   })
@@ -189,7 +191,7 @@ describe('AuthorCard', () => {
     cy.get('&match').click()
 
     cy.get('&spinner').should('be.hidden')
-    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author John Doe was updated')
+    cy.get('@success').should('have.been.calledOnceWithExactly', 'Author updated')
     cy.get('@error').should('not.have.been.called')
     cy.get('@info').should('not.have.been.called')
   })
