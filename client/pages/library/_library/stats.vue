@@ -155,9 +155,6 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    currentLibraryName() {
-      return this.$store.getters['libraries/getCurrentLibraryName']
-    },
     currentLibraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
