@@ -1086,6 +1086,8 @@
   "ToastUnknownError": "Unknown error",
   "ToastUnlinkOpenIdFailed": "Failed to unlink user from OpenID",
   "ToastUnlinkOpenIdSuccess": "User unlinked from OpenID",
+  "ToastUploaderFilepathExistsError": "Filepath \"{0}\" already exists on server",
+  "ToastUploaderItemExistsInSubdirectoryError": "Item \"{0}\" is using a subdirectory of the upload path.",
   "ToastUserDeleteFailed": "Failed to delete user",
   "ToastUserDeleteSuccess": "User deleted",
   "ToastUserPasswordChangeSuccess": "Password changed successfully",
