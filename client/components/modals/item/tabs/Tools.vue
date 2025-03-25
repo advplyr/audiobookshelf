@@ -9,7 +9,7 @@
           <p class="text-lg">{{ $strings.LabelToolsMakeM4b }}</p>
           <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $strings.LabelToolsMakeM4bDescription }}</p>
         </div>
-        <div class="flex-grow" />
+        <div class="grow" />
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=m4b`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
@@ -26,7 +26,7 @@
           <p class="text-lg">{{ $strings.LabelToolsEmbedMetadata }}</p>
           <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $strings.LabelToolsEmbedMetadataDescription }}</p>
         </div>
-        <div class="flex-grow" />
+        <div class="grow" />
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}

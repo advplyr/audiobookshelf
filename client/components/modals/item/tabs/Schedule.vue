@@ -33,10 +33,10 @@
       </template>
     </div>
 
-    <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white border-opacity-5">
+    <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white/5">
       <div class="flex items-center px-2 md:px-4">
-        <div class="flex-grow" />
-        <ui-btn @click="save" :disabled="!isUpdated" :color="isUpdated ? 'success' : 'primary'" class="mx-2">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdatesWereNecessary }}</ui-btn>
+        <div class="grow" />
+        <ui-btn @click="save" :disabled="!isUpdated" :color="isUpdated ? 'bg-success' : 'bg-primary'" class="mx-2">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdatesWereNecessary }}</ui-btn>
       </div>
     </div>
   </div>

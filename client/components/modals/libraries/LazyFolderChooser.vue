@@ -4,24 +4,24 @@
       <span class="material-symbols text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
       <p class="px-4 text-xl">{{ $strings.HeaderChooseAFolder }}</p>
     </div>
-    <div v-if="rootDirs.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
+    <div v-if="rootDirs.length" class="w-full bg-primary/70 py-1 px-4 mb-2">
       <p class="font-mono truncate">{{ selectedPath || '/' }}</p>
     </div>
-    <div v-if="rootDirs.length" class="relative flex bg-primary bg-opacity-50 p-4 folder-container">
+    <div v-if="rootDirs.length" class="relative flex bg-primary/50 p-4 folder-container">
       <div class="w-1/2 border-r border-bg h-full overflow-y-auto">
         <div v-if="level > 0" class="w-full p-1 cursor-pointer flex items-center hover:bg-white/10" @click="goBack">
-          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2">..</p>
         </div>
         <div v-for="dir in _directories" :key="dir.path" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" :class="dir.className" @click="selectDir(dir)">
-          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
           <span v-if="dir.path === selectedPath" class="material-symbols" style="font-size: 1.1rem">arrow_right</span>
         </div>
       </div>
       <div class="w-1/2 h-full overflow-y-auto">
         <div v-for="dir in _subdirs" :key="dir.path" :class="dir.className" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200 hover:bg-white/10" @click="selectSubDir(dir)">
-          <span class="material-symbols fill bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <span class="material-symbols fill text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
         </div>
       </div>
@@ -38,7 +38,7 @@
     </div>
 
     <div class="w-full py-2">
-      <ui-btn :disabled="!selectedPath" color="primary" class="w-full mt-2" @click="selectFolder">{{ $strings.ButtonSelectFolderPath }}</ui-btn>
+      <ui-btn :disabled="!selectedPath" color="bg-primary" class="w-full mt-2" @click="selectFolder">{{ $strings.ButtonSelectFolderPath }}</ui-btn>
     </div>
   </div>
 </template>

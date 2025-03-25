@@ -1,6 +1,6 @@
 <template>
   <div ref="wrapper" class="relative">
-    <input :id="inputId" :name="inputName" ref="input" v-model="inputValue" :type="actualType" :step="step" :min="min" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" dir="auto" class="rounded bg-primary text-gray-200 focus:bg-bg focus:outline-none border h-full w-full" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
+    <input :id="inputId" :name="inputName" ref="input" v-model="inputValue" :type="actualType" :step="step" :min="min" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" dir="auto" class="rounded-sm bg-primary text-gray-200 focus:bg-bg focus:outline-hidden border h-full w-full" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
     <div v-if="clearable && inputValue" class="absolute top-0 right-0 h-full px-2 flex items-center justify-center">
       <span class="material-symbols text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
     </div>

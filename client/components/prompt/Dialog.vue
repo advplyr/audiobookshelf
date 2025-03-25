@@ -1,6 +1,6 @@
 <template>
-  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 flex items-center justify-center z-40 opacity-0">
-    <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
+  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary/75 flex items-center justify-center z-40 opacity-0">
+    <div class="absolute top-0 left-0 right-0 w-full h-36 bg-linear-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
     <div ref="content" style="min-width: 400px; min-height: 200px" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }">
       <slot />
     </div>

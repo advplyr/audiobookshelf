@@ -2,18 +2,18 @@
   <div id="heatmap" class="w-full">
     <div class="mx-auto" :style="{ height: innerHeight + 160 + 'px', width: innerWidth + 52 + 'px' }" style="background-color: rgba(13, 17, 23, 0)">
       <p class="mb-2 px-1 text-sm text-gray-200">{{ $getString('MessageDaysListenedInTheLastYear', [daysListenedInTheLastYear]) }}</p>
-      <div class="border border-white border-opacity-25 rounded py-2 w-full" style="background-color: #232323" :style="{ height: innerHeight + 80 + 'px' }">
+      <div class="border border-white/25 rounded-sm py-2 w-full" style="background-color: #232323" :style="{ height: innerHeight + 80 + 'px' }">
         <div :style="{ width: innerWidth + 'px', height: innerHeight + 'px' }" class="ml-10 mt-5 absolute" @mouseover="mouseover" @mouseout="mouseout">
           <div v-for="dayLabel in dayLabels" :key="dayLabel.label" :style="dayLabel.style" class="absolute top-0 left-0 text-gray-300">{{ dayLabel.label }}</div>
 
           <div v-for="monthLabel in monthLabels" :key="monthLabel.id" :style="monthLabel.style" class="absolute top-0 left-0 text-gray-300">{{ monthLabel.label }}</div>
 
-          <div v-for="(block, index) in data" :key="block.dateString" :style="block.style" :data-index="index" class="absolute top-0 left-0 h-2.5 w-2.5 rounded-sm" />
+          <div v-for="(block, index) in data" :key="block.dateString" :style="block.style" :data-index="index" class="absolute top-0 left-0 h-2.5 w-2.5 rounded-xs" />
 
           <div class="flex py-2 px-4" :style="{ marginTop: innerHeight + 'px' }">
-            <div class="flex-grow" />
+            <div class="grow" />
             <p style="font-size: 10px; line-height: 10px" class="text-gray-400 px-1">{{ $strings.LabelLess }}</p>
-            <div v-for="block in legendBlocks" :key="block.id" :style="block.style" class="h-2.5 w-2.5 rounded-sm" style="margin-left: 1.5px; margin-right: 1.5px" />
+            <div v-for="block in legendBlocks" :key="block.id" :style="block.style" class="h-2.5 w-2.5 rounded-xs" style="margin-left: 1.5px; margin-right: 1.5px" />
             <p style="font-size: 10px; line-height: 10px" class="text-gray-400 px-1">{{ $strings.LabelMore }}</p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default {
     },
     createTooltip() {
       const tooltip = document.createElement('div')
-      tooltip.className = 'absolute top-0 left-0 rounded bg-gray-500 text-white p-2 text-white max-w-xs pointer-events-none'
+      tooltip.className = 'absolute top-0 left-0 rounded-sm bg-gray-500 text-white p-2 text-white max-w-xs pointer-events-none'
       tooltip.style.display = 'none'
       tooltip.id = 'heatmap-tooltip'
 

@@ -2,11 +2,11 @@
   <div class="w-full my-2">
     <div class="w-full bg-primary px-4 md:px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
       <p class="pr-2 md:pr-4">{{ $strings.HeaderEbookFiles }}</p>
-      <div class="h-5 md:h-7 w-5 md:w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+      <div class="h-5 md:h-7 w-5 md:w-7 rounded-full bg-white/10 flex items-center justify-center">
         <span class="text-sm font-mono">{{ ebookFiles.length }}</span>
       </div>
-      <div class="flex-grow" />
-      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
+      <div class="grow" />
+      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'bg-gray-600' : 'bg-primary'" class="mr-2 hidden md:block" @click.stop="toggleFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
         <span class="material-symbols text-4xl">&#xe313;</span>
       </div>

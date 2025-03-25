@@ -8,9 +8,9 @@
           </a>
         </ui-tooltip>
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn color="primary" small @click="setShowLibraryModal()">{{ $strings.ButtonAddLibrary }}</ui-btn>
+        <ui-btn color="bg-primary" small @click="setShowLibraryModal()">{{ $strings.ButtonAddLibrary }}</ui-btn>
       </template>
       <tables-library-libraries-table @showLibraryModal="setShowLibraryModal" class="pt-2" />
     </app-settings-content>

@@ -6,7 +6,7 @@
           <p class="text-lg">{{ $strings.LabelRemoveMetadataFile }}</p>
           <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $getString('LabelRemoveMetadataFileHelp', [mediaType]) }}</p>
         </div>
-        <div class="flex-grow" />
+        <div class="grow" />
         <div>
           <ui-btn class="mb-4 block" @click.stop="removeAllMetadataClick('json')">{{ $strings.LabelRemoveAllMetadataJson }}</ui-btn>
           <ui-btn @click.stop="removeAllMetadataClick('abs')">{{ $strings.LabelRemoveAllMetadataAbs }}</ui-btn>

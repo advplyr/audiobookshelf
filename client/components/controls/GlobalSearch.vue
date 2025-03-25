@@ -9,7 +9,7 @@
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
       </button>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black/5 overflow-auto focus:outline-hidden sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
           <p>{{ $strings.MessageThinking }}</p>

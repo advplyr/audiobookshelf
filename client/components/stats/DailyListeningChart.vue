@@ -11,7 +11,7 @@
       </div>
 
       <template v-for="n in 7">
-        <div :key="n" class="absolute pointer-events-none left-0 h-px bg-white bg-opacity-10" :style="{ top: n * lineSpacing - lineSpacing / 2 + 'px', width: '360px', marginLeft: '24px' }" />
+        <div :key="n" class="absolute pointer-events-none left-0 h-px bg-white/10" :style="{ top: n * lineSpacing - lineSpacing / 2 + 'px', width: '360px', marginLeft: '24px' }" />
 
         <div :key="`dot-${n}`" class="absolute z-10" :style="{ left: points[n - 1].x + 'px', bottom: points[n - 1].y + 'px' }">
           <ui-tooltip :text="last7DaysOfListening[n - 1].minutesListening" direction="top">

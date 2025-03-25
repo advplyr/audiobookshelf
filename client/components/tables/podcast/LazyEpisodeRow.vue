@@ -1,7 +1,7 @@
 <template>
   <div :id="`lazy-episode-${index}`" class="w-full h-full cursor-pointer" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="flex" @click="clickedEpisode">
-      <div class="flex-grow">
+      <div class="grow">
         <div dir="auto" class="flex items-center">
           <span class="text-sm font-semibold">{{ episodeTitle }}</span>
           <widgets-podcast-type-indicator :type="episodeType" />
@@ -25,7 +25,7 @@
         </div>
 
         <div class="flex items-center pt-2">
-          <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
+          <button class="h-8 px-4 border border-white/20 hover:bg-white/10 rounded-full flex items-center justify-center cursor-pointer focus:outline-hidden" :class="userIsFinished ? 'text-white/40' : ''" @click.stop="playClick">
             <span class="material-symbols fill text-2xl" aria-hidden="true" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <span class="sr-only">{{ streamIsPlaying ? $strings.ButtonPause : $strings.ButtonPlay }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold" aria-hidden="true">{{ timeRemaining }}</p>
@@ -50,7 +50,7 @@
       <div v-if="isHovering || isSelected || isSelectionMode" class="hidden md:block w-12 min-w-12" />
     </div>
 
-    <div v-if="isSelected || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-10 z-10 cursor-pointer" @click.stop="clickedSelectionBg" />
+    <div v-if="isSelected || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black/10 z-10 cursor-pointer" @click.stop="clickedSelectionBg" />
     <div class="hidden md:block md:w-12 md:min-w-12 md:-right-0 md:absolute md:top-0 h-full transform transition-transform z-20" :class="!isHovering && !isSelected && !isSelectionMode ? 'translate-x-24' : 'translate-x-0'">
       <div class="flex h-full items-center">
         <div class="mx-1">
