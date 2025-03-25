@@ -81,7 +81,7 @@ export default {
       var existingSeriesSameName = this.seriesItems.findIndex((se) => se.name.toLowerCase() === this.selectedSeries.name.toLowerCase())
       if (existingSeriesSameName >= 0 && existingSeriesIndex < 0) {
         console.error('Attempt to add duplicate series')
-        this.$toast.error('Cannot add two of the same series')
+        this.$toast.error(this.$strings.ToastSeriesSubmitFailedSameName)
         return
       }
 

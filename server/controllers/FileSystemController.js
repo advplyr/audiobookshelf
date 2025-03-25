@@ -4,6 +4,7 @@ const Logger = require('../Logger')
 const fs = require('../libs/fsExtra')
 const { toNumber } = require('../utils/index')
 const fileUtils = require('../utils/fileUtils')
+const Database = require('../Database')
 
 /**
  * @typedef RequestUserObject
@@ -87,14 +88,50 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    const filepath = req.body.filepath
-    if (!filepath?.length) {
+    const { filepath, directory, folderPath } = req.body
+
+    if (!filepath?.length || typeof filepath !== 'string') {
       return res.sendStatus(400)
     }
 
     const exists = await fs.pathExists(filepath)
-    res.json({
-      exists
+
+    if (exists) {
+      return res.json({
+        exists: true
+      })
+    }
+
+    // If directory and folderPath are passed in, check if a library item exists in a subdirectory
+    // See: https://github.com/advplyr/audiobookshelf/issues/4146
+    if (typeof directory === 'string' && typeof folderPath === 'string' && directory.length > 0 && folderPath.length > 0) {
+      const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
+      if (cleanedDirectory.includes('/')) {
+        // Can only be 2 levels deep
+        const possiblePaths = []
+        const subdir = Path.dirname(directory)
+        possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
+        if (subdir.includes('/')) {
+          possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
+        }
+
+        const libraryItem = await Database.libraryItemModel.findOne({
+          where: {
+            path: possiblePaths
+          }
+        })
+
+        if (libraryItem) {
+          return res.json({
+            exists: true,
+            libraryItemTitle: libraryItem.title
+          })
+        }
+      }
+    }
+
+    return res.json({
+      exists: false
     })
   }
 }

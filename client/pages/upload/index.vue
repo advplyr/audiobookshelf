@@ -54,8 +54,7 @@
       </div>
       <!-- Item list header -->
       <div v-else class="w-full flex items-center pb-4 border-b border-white/10">
-        <p class="text-lg">{{ items.length }} item{{ items.length === 1 ? '' : 's' }}</p>
-        <p v-if="ignoredFiles.length" class="text-lg">&nbsp;|&nbsp;{{ ignoredFiles.length }} file{{ ignoredFiles.length === 1 ? '' : 's' }} ignored</p>
+        <p class="text-lg lowercase">{{ items.length === 1 ? `1 ${$strings.LabelItem}` : $getString('LabelXItems', [items.length]) }}</p>
         <div class="grow" />
         <ui-btn :disabled="processing" small @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
@@ -363,10 +362,14 @@ export default {
       for (const item of items) {
         const filepath = Path.join(this.selectedFolder.fullPath, item.directory)
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { filepath })
+          .$post(`/api/filesystem/pathexists`, { filepath, directory: item.directory, folderPath: this.selectedFolder.fullPath })
           .then((data) => {
             if (data.exists) {
-              this.$toast.error(`Filepath "${filepath}" already exists on server`)
+              if (data.libraryItemTitle) {
+                this.$toast.error(this.$getString('ToastUploaderItemExistsInSubdirectoryError', [data.libraryItemTitle]))
+              } else {
+                this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [filepath]))
+              }
             }
             return data.exists
           })

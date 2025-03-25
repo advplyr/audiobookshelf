@@ -11,9 +11,7 @@
           <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg-bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">{{ $strings.ButtonQuickMatch }}</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="isLibraryScanning" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="isLibraryScanning" color="bg-bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
-        </ui-tooltip>
+        <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="isLibraryScanning" color="bg-bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
 
         <div class="grow" />
 
