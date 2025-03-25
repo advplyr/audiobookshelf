@@ -1086,6 +1086,8 @@
   "ToastUnknownError": "Невідома помилка",
   "ToastUnlinkOpenIdFailed": "Не вдалося відв'язати користувача від OpenID",
   "ToastUnlinkOpenIdSuccess": "Користувача відв'язано від OpenID",
+  "ToastUploaderFilepathExistsError": "Шлях до файлу \"{0}\" уже існує на сервері",
+  "ToastUploaderItemExistsInSubdirectoryError": "Елемент \"{0}\" використовує підкаталог шляху завантаження.",
   "ToastUserDeleteFailed": "Не вдалося видалити користувача",
   "ToastUserDeleteSuccess": "Користувача видалено",
   "ToastUserPasswordChangeSuccess": "Пароль успішно змінено",
