@@ -100,7 +100,7 @@
               <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" :label="$strings.LabelLibrariesAccessibleToUser" />
             </div>
 
-            <div class="flex items-cen~ter my-2 max-w-md">
+            <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
                 <p>{{ $strings.LabelPermissionsAccessAllTags }}</p>
               </div>
