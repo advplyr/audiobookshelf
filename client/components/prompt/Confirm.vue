@@ -68,7 +68,7 @@ export default {
       return this.confirmPromptOptions.yesButtonText || this.$strings.ButtonYes
     },
     yesButtonColor() {
-      return this.confirmPromptOptions.yesButtonColor || 'bg-success'
+      return this.confirmPromptOptions.yesButtonColor || 'success'
     },
     checkboxDefaultValue() {
       return !!this.confirmPromptOptions.checkboxDefaultValue

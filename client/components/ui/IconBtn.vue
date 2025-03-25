@@ -16,7 +16,7 @@ export default {
     disabled: Boolean,
     bgColor: {
       type: String,
-      default: 'primary'
+      default: 'bg-primary'
     },
     outlined: Boolean,
     borderless: Boolean,

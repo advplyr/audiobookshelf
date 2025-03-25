@@ -16,6 +16,11 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
+  [role='button'],
+  button {
+    cursor: pointer;
+  }
 }
 
 @theme {
