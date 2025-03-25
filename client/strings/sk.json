@@ -302,5 +302,14 @@
   "LabelEmailSettingsRejectUnauthorized": "Odmietnuť neautorizované certifikáty",
   "LabelEmailSettingsRejectUnauthorizedHelp": "Vypnutie validácie SSL certifikátu môže tvoje pripojenie vystaviť bezpečnostným rizikám, ako napríklad MitM útokom. Vypni túto možnosť len v prípade, že rozumieš dôsledkom a dôveruješ mailovému serveru, ku ktorému sa pripojuješ.",
   "LabelEmailSettingsSecure": "Bezpečné",
-  "LabelEmailSettingsTestAddress": "Testovacia adresa"
+  "LabelEmailSettingsTestAddress": "Testovacia adresa",
+  "LabelEndOfChapter": "Koniec kapitoly",
+  "LabelEpisode": "Epizóda",
+  "LabelEpisodeNumber": "Epizóda #{0}",
+  "LabelEpisodeTitle": "Názov epizódy",
+  "LabelEpisodeType": "Typ epizódy",
+  "LabelEpisodeUrlFromRssFeed": "URL epizódy z RSS",
+  "LabelEpisodes": "Epizódy",
+  "LabelExample": "Príklad",
+  "LabelFindEpisodes": "Nájsť epizódy"
 }
