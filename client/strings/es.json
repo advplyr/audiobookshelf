@@ -1079,10 +1079,12 @@
   "ToastUnknownError": "Error desconocido",
   "ToastUnlinkOpenIdFailed": "Error al desvincular el usuario de OpenID",
   "ToastUnlinkOpenIdSuccess": "Usuario desvinculado de OpenID",
+  "ToastUploaderFilepathExistsError": "La ruta de archivo «{0}» ya existe en el servidor",
+  "ToastUploaderItemExistsInSubdirectoryError": "El elemento «{0}» usa un subdirectorio de la ruta de carga.",
   "ToastUserDeleteFailed": "Error al eliminar el usuario",
   "ToastUserDeleteSuccess": "Usuario eliminado",
   "ToastUserPasswordChangeSuccess": "Contraseña modificada correctamente",
   "ToastUserPasswordMismatch": "No coinciden las contraseñas",
   "ToastUserPasswordMustChange": "La nueva contraseña no puede ser igual que la anterior",
-  "ToastUserRootRequireName": "Debes introducir un nombre de usuario root"
+  "ToastUserRootRequireName": "Debe introducir un nombre de usuario administrativo"
 }
