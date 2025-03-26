@@ -601,7 +601,7 @@ module.exports = {
     }
 
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup)
+    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
