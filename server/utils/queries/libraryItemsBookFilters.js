@@ -264,9 +264,9 @@ module.exports = {
     } else if (sortBy === 'media.metadata.publishedYear') {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
-      return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
-      return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
@@ -397,18 +397,7 @@ module.exports = {
     const includeRSSFeed = include.includes('rssfeed')
     const includeMediaItemShare = !!user?.isAdminOrUp && include.includes('share')
 
-    // For sorting by author name an additional attribute must be added
-    //   with author names concatenated
     let bookAttributes = null
-    if (sortBy === 'media.metadata.authorNameLF') {
-      bookAttributes = {
-        include: [[Sequelize.literal(`(SELECT group_concat(lastFirst, ", ") FROM (SELECT a.lastFirst FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
-      }
-    } else if (sortBy === 'media.metadata.authorName') {
-      bookAttributes = {
-        include: [[Sequelize.literal(`(SELECT group_concat(name, ", ") FROM (SELECT a.name FROM authors AS a, bookAuthors as ba WHERE ba.authorId = a.id AND ba.bookId = book.id ORDER BY ba.createdAt ASC))`), 'author_name']]
-      }
-    }
 
     const libraryItemWhere = {
       libraryId
@@ -612,7 +601,7 @@ module.exports = {
     }
 
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup)
+    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem

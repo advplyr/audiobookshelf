@@ -38,7 +38,7 @@
           <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
             <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="sortingPrefixesUpdated" :disabled="savingPrefixes" />
             <div class="flex justify-end py-1">
-              <ui-btn v-if="hasPrefixesChanged" color="success" :loading="savingPrefixes" small @click="updateSortingPrefixes">Save</ui-btn>
+              <ui-btn v-if="hasPrefixesChanged" color="bg-success" :loading="savingPrefixes" small @click="updateSortingPrefixes">Save</ui-btn>
             </div>
           </div>
 
@@ -64,7 +64,7 @@
                 <span aria-hidden="true" class="material-symbols icon-text">info</span>
               </p>
             </ui-tooltip>
-            <div class="flex-grow" />
+            <div class="grow" />
           </div>
           <div v-if="newServerSettings.scannerFindCovers" class="w-44 ml-14 mb-2">
             <ui-dropdown v-model="newServerSettings.scannerCoverProvider" small :items="providers" :label="$strings.LabelCoverProvider" @input="updateScannerCoverProvider" :disabled="updatingServerSettings" />
@@ -130,14 +130,14 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex-grow py-2">
+          <div class="grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
-            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
+            <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
           </div>
 
-          <div class="flex-grow py-2">
+          <div class="grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-52" @input="(val) => updateSettingsKey('timeFormat', val)" />
-            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
+            <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
           </div>
 
           <div class="py-2">
@@ -164,16 +164,16 @@
       </div>
     </app-settings-content>
 
-    <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
+    <div class="h-0.5 bg-primary/30 w-full" />
 
     <div class="flex items-center py-4">
-      <div class="flex-grow" />
-      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeCache">{{ $strings.ButtonPurgeAllCache }}</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
+      <div class="grow" />
+      <ui-btn color="bg-bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeCache">{{ $strings.ButtonPurgeAllCache }}</ui-btn>
+      <ui-btn color="bg-bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
     </div>
 
     <div class="flex items-center py-4">
-      <div class="flex-grow" />
+      <div class="grow" />
       <p class="pr-2 text-sm text-yellow-400">
         {{ $strings.MessageReportBugsAndContribute }}
         <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>
@@ -206,7 +206,7 @@
       </a>
     </div>
 
-    <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
+    <div class="h-0.5 bg-primary/30 w-full" />
 
     <!-- confirm cache purge dialog -->
     <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
@@ -214,9 +214,9 @@
         <p class="text-error font-semibold">{{ $strings.MessageImportantNotice }}</p>
         <p class="my-8 text-center" v-html="$strings.MessageConfirmPurgeCache" />
         <div class="flex px-1 items-center">
-          <ui-btn color="primary" @click="showConfirmPurgeCache = false">{{ $strings.ButtonNevermind }}</ui-btn>
-          <div class="flex-grow" />
-          <ui-btn color="success" @click="confirmPurge">{{ $strings.ButtonYes }}</ui-btn>
+          <ui-btn color="bg-primary" @click="showConfirmPurgeCache = false">{{ $strings.ButtonNevermind }}</ui-btn>
+          <div class="grow" />
+          <ui-btn color="bg-success" @click="confirmPurge">{{ $strings.ButtonYes }}</ui-btn>
         </div>
       </div>
     </prompt-dialog>

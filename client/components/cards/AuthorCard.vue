@@ -7,7 +7,7 @@
           <covers-author-image :author="author" />
 
           <!-- Author name & num books overlay -->
-          <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1e bg-black bg-opacity-60 px-2e">
+          <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1e bg-black/60 px-2e">
             <p class="text-center font-semibold truncate" :style="{ fontSize: 0.75 + 'em' }">{{ name }}</p>
             <p class="text-center text-gray-200" :style="{ fontSize: 0.65 + 'em' }">{{ numBooks }} {{ $strings.LabelBooks }}</p>
           </div>
@@ -25,7 +25,7 @@
           </div>
 
           <!-- Loading spinner -->
-          <div cy-id="spinner" v-show="searching" class="absolute top-0 left-0 z-10 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+          <div cy-id="spinner" v-show="searching" class="absolute top-0 left-0 z-10 w-full h-full bg-black/50 flex items-center justify-center">
             <widgets-loading-spinner size="" />
           </div>
         </div>

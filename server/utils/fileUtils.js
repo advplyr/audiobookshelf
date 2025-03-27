@@ -362,6 +362,9 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
     return false
   }
 
+  // Normalize the string first to ensure consistent byte calculations
+  filename = filename.normalize('NFC')
+
   // Most file systems use number of bytes for max filename
   //   to support most filesystems we will use max of 255 bytes in utf-16
   //   Ref: https://doc.owncloud.com/server/next/admin_manual/troubleshooting/path_filename_length.html
@@ -390,8 +393,11 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
   const ext = Path.extname(sanitized) // separate out file extension
   const basename = Path.basename(sanitized, ext)
   const extByteLength = Buffer.byteLength(ext, 'utf16le')
+
   const basenameByteLength = Buffer.byteLength(basename, 'utf16le')
   if (basenameByteLength + extByteLength > MAX_FILENAME_BYTES) {
+    Logger.debug(`[fileUtils] Filename "${filename}" is too long (${basenameByteLength + extByteLength} bytes), trimming basename to ${MAX_FILENAME_BYTES - extByteLength} bytes.`)
+
     const MaxBytesForBasename = MAX_FILENAME_BYTES - extByteLength
     let totalBytes = 0
     let trimmedBasename = ''
@@ -405,6 +411,10 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
 
     trimmedBasename = trimmedBasename.trim()
     sanitized = trimmedBasename + ext
+  }
+
+  if (filename !== sanitized) {
+    Logger.debug(`[fileUtils] Sanitized filename "${filename}" to "${sanitized}" (${Buffer.byteLength(sanitized, 'utf16le')} bytes)`)
   }
 
   return sanitized

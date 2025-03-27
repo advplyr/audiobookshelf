@@ -72,6 +72,15 @@ class PodcastManager {
    */
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
     if (this.currentDownload) {
+      // Prevent downloading episodes from the same URL for the same library item.
+      // Allow downloading for different library items in case of the same podcast existing in multiple libraries (e.g. different folders)
+      if (this.downloadQueue.some((d) => d.url === podcastEpisodeDownload.url && d.libraryItem.id === podcastEpisodeDownload.libraryItem.id)) {
+        Logger.warn(`[PodcastManager] Episode already in queue: "${this.currentDownload.episodeTitle}"`)
+        return
+      } else if (this.currentDownload.url === podcastEpisodeDownload.url && this.currentDownload.libraryItem.id === podcastEpisodeDownload.libraryItem.id) {
+        Logger.warn(`[PodcastManager] Episode download already in progress for "${podcastEpisodeDownload.episodeTitle}"`)
+        return
+      }
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
       return
@@ -99,7 +108,7 @@ class PodcastManager {
     //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
     //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
     if (await fs.pathExists(this.currentDownload.targetPath)) {
-      this.currentDownload.appendRandomId = true
+      this.currentDownload.setAppendRandomId(true)
     }
 
     // Ignores all added files to this dir

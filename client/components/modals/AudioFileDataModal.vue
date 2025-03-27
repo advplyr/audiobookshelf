@@ -7,7 +7,7 @@
         <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">{{ $strings.ButtonProbeAudioFile }}</ui-btn>
       </div>
 
-      <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+      <div class="w-full h-px bg-white/10 my-4" />
 
       <template v-if="!ffprobeData">
         <ui-text-input-with-label :value="metadata.path" readonly :label="$strings.LabelPath" class="mb-4 text-sm" />
@@ -75,7 +75,7 @@
           </div>
         </div>
 
-        <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+        <div class="w-full h-px bg-white/10 my-4" />
 
         <p class="font-bold mb-2">{{ $strings.LabelMetaTags }}</p>
 

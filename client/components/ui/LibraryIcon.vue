@@ -1,5 +1,5 @@
 <template>
-  <div :class="`h-${size} w-${size} min-w-${size} text-${fontSize}`" class="flex items-center justify-center">
+  <div :class="`${classList}`" class="flex items-center justify-center">
     <span class="abs-icons" :class="`icon-${iconToUse}`"></span>
   </div>
 </template>
@@ -13,7 +13,7 @@ export default {
     },
     fontSize: {
       type: String,
-      default: 'lg'
+      default: 'text-lg'
     },
     size: {
       type: Number,
@@ -24,6 +24,14 @@ export default {
     return {}
   },
   computed: {
+    classList() {
+      switch (this.size) {
+        case 6:
+          return `h-6 w-6 min-w-6 ${this.fontSize}`
+        default:
+          return `h-5 w-5 min-w-5 ${this.fontSize}`
+      }
+    },
     iconToUse() {
       return this.icons.includes(this.icon) ? this.icon : 'audiobookshelf'
     },

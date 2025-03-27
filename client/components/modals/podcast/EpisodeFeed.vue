@@ -7,20 +7,15 @@
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div v-if="episodesCleaned.length" class="w-full py-3 mx-auto flex">
-        <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
+        <form @submit.prevent="submit" class="flex grow">
+          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="grow mr-2 text-sm md:text-base" />
         </form>
       </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
-        <div
-          v-for="(episode, index) in episodesList"
-          :key="index"
-          class="relative"
-          :class="getIsEpisodeDownloaded(episode) ? 'bg-primary bg-opacity-40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
-          @click="toggleSelectEpisode(episode)"
-        >
+        <div v-for="(episode, index) in episodesList" :key="index" class="relative" :class="episode.isDownloaded || episode.isDownloading ? 'bg-primary/40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success/10' : index % 2 == 0 ? 'cursor-pointer bg-primary/25 hover:bg-primary/40' : 'cursor-pointer bg-primary/5 hover:bg-primary/25'" @click="toggleSelectEpisode(episode)">
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <span v-if="getIsEpisodeDownloaded(episode)" class="material-symbols text-success text-xl">download_done</span>
+            <span v-if="episode.isDownloaded" class="material-symbols text-success text-xl">download_done</span>
+            <span v-else-if="episode.isDownloading" class="material-symbols text-warning text-xl">download</span>
             <ui-checkbox v-else v-model="selectedEpisodes[episode.cleanUrl]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">
@@ -41,7 +36,7 @@
       <div class="flex justify-end pt-4">
         <ui-checkbox v-if="!allDownloaded" v-model="selectAll" @input="toggleSelectAll" :label="selectAllLabel" small checkbox-bg="primary" border-color="gray-600" class="mx-8" />
         <ui-btn v-if="!allDownloaded" :disabled="!episodesSelected.length" @click="submit">{{ buttonText }}</ui-btn>
-        <p v-else class="text-success text-base px-2 py-4">All episodes are downloaded</p>
+        <p v-else class="text-success text-base px-2 py-4">{{ $strings.LabelAllEpisodesDownloaded }}</p>
       </div>
     </div>
   </modals-modal>
@@ -56,6 +51,14 @@ export default {
       default: () => {}
     },
     episodes: {
+      type: Array,
+      default: () => []
+    },
+    downloadQueue: {
+      type: Array,
+      default: () => []
+    },
+    episodesDownloading: {
       type: Array,
       default: () => []
     }
@@ -78,6 +81,21 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal) this.init()
+      }
+    },
+    episodes: {
+      handler(newVal) {
+        if (newVal) this.updateEpisodeDownloadStatuses()
+      }
+    },
+    episodesDownloading: {
+      handler(newVal) {
+        if (newVal) this.updateEpisodeDownloadStatuses()
+      }
+    },
+    downloadQueue: {
+      handler(newVal) {
+        if (newVal) this.updateEpisodeDownloadStatuses()
       }
     }
   },
@@ -132,6 +150,13 @@ export default {
       }
       return false
     },
+    getIsEpisodeDownloadingOrQueued(episode) {
+      const episodesToCheck = [...this.episodesDownloading, ...this.downloadQueue]
+      if (episode.guid) {
+        return episodesToCheck.some((download) => download.guid === episode.guid)
+      }
+      return episodesToCheck.some((download) => this.getCleanEpisodeUrl(download.url) === episode.cleanUrl)
+    },
     /**
      * UPDATE: As of v2.4.5 guid is used for matching existing downloaded episodes if it is found on the RSS feed.
      * Fallback to checking the clean url
@@ -173,13 +198,13 @@ export default {
     },
     toggleSelectAll(val) {
       for (const episode of this.episodesList) {
-        if (this.getIsEpisodeDownloaded(episode)) this.selectedEpisodes[episode.cleanUrl] = false
+        if (episode.isDownloaded || episode.isDownloading) this.selectedEpisodes[episode.cleanUrl] = false
         else this.$set(this.selectedEpisodes, episode.cleanUrl, val)
       }
     },
     checkSetIsSelectedAll() {
       for (const episode of this.episodesList) {
-        if (!this.getIsEpisodeDownloaded(episode) && !this.selectedEpisodes[episode.cleanUrl]) {
+        if (!episode.isDownloaded && !episode.isDownloading && !this.selectedEpisodes[episode.cleanUrl]) {
           this.selectAll = false
           return
         }
@@ -187,7 +212,7 @@ export default {
       this.selectAll = true
     },
     toggleSelectEpisode(episode) {
-      if (this.getIsEpisodeDownloaded(episode)) return
+      if (episode.isDownloaded || episode.isDownloading) return
       this.$set(this.selectedEpisodes, episode.cleanUrl, !this.selectedEpisodes[episode.cleanUrl])
       this.checkSetIsSelectedAll()
     },
@@ -223,6 +248,23 @@ export default {
         })
     },
     init() {
+      this.updateDownloadedEpisodeMaps()
+
+      this.episodesCleaned = this.episodes
+        .filter((ep) => ep.enclosure?.url)
+        .map((_ep) => {
+          return {
+            ..._ep,
+            cleanUrl: this.getCleanEpisodeUrl(_ep.enclosure.url),
+            isDownloading: this.getIsEpisodeDownloadingOrQueued(_ep),
+            isDownloaded: this.getIsEpisodeDownloaded(_ep)
+          }
+        })
+      this.episodesCleaned.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
+      this.selectAll = false
+      this.selectedEpisodes = {}
+    },
+    updateDownloadedEpisodeMaps() {
       this.downloadedEpisodeGuidMap = {}
       this.downloadedEpisodeUrlMap = {}
 
@@ -230,18 +272,16 @@ export default {
         if (episode.guid) this.downloadedEpisodeGuidMap[episode.guid] = episode.id
         if (episode.enclosure?.url) this.downloadedEpisodeUrlMap[this.getCleanEpisodeUrl(episode.enclosure.url)] = episode.id
       })
-
-      this.episodesCleaned = this.episodes
-        .filter((ep) => ep.enclosure?.url)
-        .map((_ep) => {
-          return {
-            ..._ep,
-            cleanUrl: this.getCleanEpisodeUrl(_ep.enclosure.url)
-          }
-        })
-      this.episodesCleaned.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
-      this.selectAll = false
-      this.selectedEpisodes = {}
+    },
+    updateEpisodeDownloadStatuses() {
+      this.updateDownloadedEpisodeMaps()
+      this.episodesCleaned = this.episodesCleaned.map((ep) => {
+        return {
+          ...ep,
+          isDownloading: this.getIsEpisodeDownloadingOrQueued(ep),
+          isDownloaded: this.getIsEpisodeDownloaded(ep)
+        }
+      })
     }
   },
   mounted() {}

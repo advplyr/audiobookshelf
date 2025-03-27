@@ -7,24 +7,24 @@
             <covers-collection-cover :book-items="bookItems" :width="240" :height="120 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
+        <div class="grow px-2 py-6 md:py-0 md:px-10">
           <div class="flex items-end flex-row flex-wrap md:flex-nowrap">
             <h1 class="text-2xl md:text-3xl font-sans w-full md:w-fit mb-4 md:mb-0">
               {{ collectionName }}
             </h1>
-            <div class="flex-grow" />
+            <div class="grow" />
 
-            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
+            <ui-btn v-if="showPlayButton" :disabled="streaming" color="bg-success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
               <span v-show="!streaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlayAll }}
             </ui-btn>
 
             <!-- RSS feed -->
             <ui-tooltip v-if="rssFeed" :text="$strings.LabelOpenRSSFeed" direction="top">
-              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="showRSSFeedModal" />
+              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'bg-success' : 'bg-primary'" outlined @click="showRSSFeedModal" />
             </ui-tooltip>
 
-            <button type="button" class="h-9 w-9 flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5 mx-px" @click.stop.prevent="editClick">
+            <button type="button" class="h-9 w-9 flex items-center justify-center shadow-xs pl-3 pr-3 text-left focus:outline-hidden cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5 mx-px" @click.stop.prevent="editClick">
               <span class="material-symbols text-xl">edit</span>
             </button>
 
@@ -39,7 +39,7 @@
         </div>
       </div>
     </div>
-    <div v-show="processing" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
+    <div v-show="processing" class="absolute top-0 left-0 w-full h-full z-10 bg-black/40 flex items-center justify-center">
       <ui-loading-indicator />
     </div>
   </div>
@@ -176,21 +176,31 @@ export default {
       this.$store.commit('globals/setEditCollection', this.collection)
     },
     removeClick() {
-      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/collections/${this.collection.id}`)
-          .then(() => {
-            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
-          })
-          .catch((error) => {
-            console.error('Failed to remove collection', error)
-            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
-          })
-          .finally(() => {
-            this.processing = false
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemoveCollection', [this.collectionName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteCollection()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteCollection() {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/collections/${this.collection.id}`)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove collection', error)
+          this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     clickPlay() {
       const queueItems = []

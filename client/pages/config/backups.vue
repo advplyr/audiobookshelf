@@ -4,7 +4,7 @@
       <div v-if="backupLocation" class="mb-4 max-w-full overflow-hidden">
         <div class="flex items-center mb-0.5">
           <span class="material-symbols text-2xl text-black-50 mr-2">folder</span>
-          <span class="text-white text-opacity-60 uppercase text-sm whitespace-nowrap">{{ $strings.LabelBackupLocation }}:</span>
+          <span class="text-white/60 uppercase text-sm whitespace-nowrap">{{ $strings.LabelBackupLocation }}:</span>
         </div>
         <div v-if="!showEditBackupPath" class="inline-flex items-center w-full overflow-hidden">
           <p class="text-gray-100 max-w-[calc(100%-40px)] text-sm sm:text-base break-words">{{ backupLocation }}</p>
@@ -17,7 +17,7 @@
         <div v-else>
           <form class="flex items-center w-full space-x-1" @submit.prevent="saveBackupPath">
             <ui-text-input v-model="newBackupLocation" :disabled="savingBackupPath || !canEditBackup" class="w-full max-w-[calc(100%-50px)] text-sm h-8" />
-            <ui-btn v-if="canEditBackup" small :loading="savingBackupPath" color="success" type="submit" class="h-8">{{ $strings.ButtonSave }}</ui-btn>
+            <ui-btn v-if="canEditBackup" small :loading="savingBackupPath" color="bg-success" type="submit" class="h-8">{{ $strings.ButtonSave }}</ui-btn>
             <ui-btn small :disabled="savingBackupPath" type="button" class="h-8" @click="cancelEditBackupPath">{{ $strings.ButtonCancel }}</ui-btn>
           </form>
           <p class="text-sm text-warning/80 pt-1">{{ canEditBackup ? $strings.MessageBackupsLocationEditNote : $strings.MessageBackupsLocationNoEditNote }}</p>
@@ -35,7 +35,7 @@
         <div class="flex items-center pl-0 sm:pl-6 mb-2">
           <span class="material-symbols text-xl sm:text-2xl text-black-50 mr-2">schedule</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
-            <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span>
+            <span class="text-white/60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span>
           </div>
           <div class="text-gray-100 text-sm sm:text-base">{{ scheduleDescription }}</div>
           <button class="ml-2 text-black-50 hover:text-yellow-500 inline-flex" type="button" @click="showCronBuilder = !showCronBuilder">
@@ -46,7 +46,7 @@
         <div v-if="nextBackupDate" class="flex items-center pl-0 sm:pl-6 py-0.5">
           <span class="material-symbols text-xl sm:text-2xl text-black-50 mr-2">event</span>
           <div class="w-32 min-w-32 sm:w-40 sm:min-w-40">
-            <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
+            <span class="text-white/60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span>
           </div>
           <div class="text-gray-100 text-sm sm:text-base">{{ nextBackupDate }}</div>
         </div>

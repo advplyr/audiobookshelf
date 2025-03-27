@@ -4,8 +4,8 @@
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
-        <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="searchInput" type="search" :disabled="processing" :placeholder="$strings.MessagePodcastSearchField" class="flex-grow mr-2 text-sm md:text-base" />
+        <form @submit.prevent="submit" class="flex grow">
+          <ui-text-input v-model="searchInput" type="search" :disabled="processing" :placeholder="$strings.MessagePodcastSearchField" class="grow mr-2 text-sm md:text-base" />
           <ui-btn type="submit" :disabled="processing" class="hidden md:block">{{ $strings.ButtonSubmit }}</ui-btn>
           <ui-btn type="submit" :disabled="processing" class="block md:hidden" small>{{ $strings.ButtonSubmit }}</ui-btn>
         </form>
@@ -14,11 +14,11 @@
       <div class="w-full max-w-3xl mx-auto py-4">
         <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">{{ $strings.MessageNoPodcastsFound }}</p>
         <template v-for="podcast in results">
-          <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
+          <div :key="podcast.id" class="flex p-1 hover:bg-primary/25 cursor-pointer" @click="selectPodcast(podcast)">
             <div class="w-20 min-w-20 h-20 md:w-24 md:min-w-24 md:h-24 bg-primary">
               <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
             </div>
-            <div class="flex-grow pl-4 max-w-2xl">
+            <div class="grow pl-4 max-w-2xl">
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
                 <widgets-explicit-indicator v-if="podcast.explicit" />
@@ -32,7 +32,7 @@
         </template>
       </div>
 
-      <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-25 z-40">
+      <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/25 z-40">
         <ui-loading-indicator />
       </div>
     </div>

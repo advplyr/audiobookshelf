@@ -782,6 +782,7 @@ class Database {
     await this.addTriggerIfNotExists('books', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
     await this.addTriggerIfNotExists('podcasts', 'title', 'id', 'libraryItems', 'title', 'mediaId')
     await this.addTriggerIfNotExists('podcasts', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
+    await this.addAuthorNamesTriggersIfNotExist()
   }
 
   async addTriggerIfNotExists(sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
@@ -804,6 +805,74 @@ class Database {
           WHERE ${targetTable}.${targetIdColumn} = NEW.${sourceIdColumn};
         END;
     `)
+  }
+
+  async addAuthorNamesTriggersIfNotExist() {
+    const libraryItems = 'libraryItems'
+    const bookAuthors = 'bookAuthors'
+    const authors = 'authors'
+    const columns = [
+      { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
+      { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
+    ]
+    const authorsSort = `${bookAuthors}.createdAt ASC`
+    const columnNames = columns.map((column) => column.name).join(', ')
+    const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ' ORDER BY ${authorsSort})`).join(', ')
+    const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
+
+    const addBookAuthorsTriggerIfNotExists = async (action) => {
+      const modifiedRecord = action === 'delete' ? 'OLD' : 'NEW'
+      const triggerName = this.convertToSnakeCase(`update_${libraryItems}_authorNames_on_${bookAuthors}_${action}`)
+      const authorNamesSubQuery = `
+        SELECT ${columnSourcesExpression}
+        FROM ${authorsJoin}
+        WHERE ${bookAuthors}.bookId = ${modifiedRecord}.bookId
+      `
+      const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+      if (count > 0) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER ${action} ON ${bookAuthors}
+          FOR EACH ROW
+          BEGIN
+            UPDATE ${libraryItems}
+              SET (${columnNames}) = (${authorNamesSubQuery})
+            WHERE mediaId = ${modifiedRecord}.bookId;
+          END;
+      `)
+    }
+
+    const addAuthorsUpdateTriggerIfNotExists = async () => {
+      const triggerName = this.convertToSnakeCase(`update_${libraryItems}_authorNames_on_authors_update`)
+      const authorNamesSubQuery = `
+        SELECT ${columnSourcesExpression}
+        FROM ${authorsJoin}
+        WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
+      `
+
+      const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+      if (count > 0) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER UPDATE OF name ON ${authors}
+          FOR EACH ROW
+          BEGIN
+            UPDATE ${libraryItems}
+              SET (${columnNames}) = (${authorNamesSubQuery})
+            WHERE mediaId IN (SELECT bookId FROM ${bookAuthors} WHERE authorId = NEW.id);
+        END;
+      `)
+    }
+
+    await addBookAuthorsTriggerIfNotExists('insert')
+    await addBookAuthorsTriggerIfNotExists('delete')
+    await addAuthorsUpdateTriggerIfNotExists()
   }
 
   convertToSnakeCase(str) {

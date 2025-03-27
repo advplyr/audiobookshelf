@@ -126,9 +126,9 @@ describe('migration-v2.15.0-series-column-unique', () => {
     it('upgrade with duplicate series and no sequence', async () => {
       // Add some entries to the Series table using the UUID for the ids
       await queryInterface.bulkInsert('Series', [
-        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series2Id, name: 'Series 2', libraryId: library2Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series3Id, name: 'Series 3', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(7), updatedAt: new Date(7) },
+        { id: series2Id, name: 'Series 2', libraryId: library2Id, createdAt: new Date(7), updatedAt: new Date(8) },
+        { id: series3Id, name: 'Series 3', libraryId: library1Id, createdAt: new Date(7), updatedAt: new Date(9) },
         { id: series1Id_dup, name: 'Series 1', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) },
         { id: series3Id_dup, name: 'Series 3', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) },
         { id: series1Id_dup2, name: 'Series 1', libraryId: library1Id, createdAt: new Date(0), updatedAt: new Date(0) }
@@ -203,8 +203,8 @@ describe('migration-v2.15.0-series-column-unique', () => {
     it('upgrade with one book in two of the same series, both sequence are null', async () => {
       // Create two different series with the same name in the same library
       await queryInterface.bulkInsert('Series', [
-        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(8), updatedAt: new Date(20) },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(5), updatedAt: new Date(10) }
       ])
       // Create a book that is in both series
       await queryInterface.bulkInsert('BookSeries', [
@@ -236,8 +236,8 @@ describe('migration-v2.15.0-series-column-unique', () => {
     it('upgrade with one book in two of the same series, one sequence is null', async () => {
       // Create two different series with the same name in the same library
       await queryInterface.bulkInsert('Series', [
-        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(5), updatedAt: new Date(9) },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(5), updatedAt: new Date(7) }
       ])
       // Create a book that is in both series
       await queryInterface.bulkInsert('BookSeries', [
@@ -268,8 +268,8 @@ describe('migration-v2.15.0-series-column-unique', () => {
     it('upgrade with one book in two of the same series, both sequence are not null', async () => {
       // Create two different series with the same name in the same library
       await queryInterface.bulkInsert('Series', [
-        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() },
-        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(), updatedAt: new Date() }
+        { id: series1Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(1), updatedAt: new Date(3) },
+        { id: series2Id, name: 'Series 1', libraryId: library1Id, createdAt: new Date(2), updatedAt: new Date(2) }
       ])
       // Create a book that is in both series
       await queryInterface.bulkInsert('BookSeries', [

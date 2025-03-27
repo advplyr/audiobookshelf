@@ -4,10 +4,10 @@
       <span class="material-symbols text-2xl sm:text-3xl">{{ volumeIcon }}</span>
     </button>
     <transition name="menux">
-      <div v-show="isOpen" class="volumeMenu h-28 absolute bottom-2 w-6 py-2 bg-bg shadow-sm rounded-lg" style="top: -116px">
+      <div v-show="isOpen" class="volumeMenu h-28 absolute bottom-2 w-6 py-2 bg-bg shadow-xs rounded-lg" style="top: -116px">
         <div ref="volumeTrack" class="w-1 h-full bg-gray-500 mx-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
           <div class="bg-gray-100 w-full absolute left-0 bottom-0 pointer-events-none rounded-full" :style="{ height: volume * trackHeight + 'px' }" />
-          <div class="w-2.5 h-2.5 bg-white shadow-sm rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ bottom: cursorBottom + 'px', left: '-3px' }" />
+          <div class="w-2.5 h-2.5 bg-white shadow-xs rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ bottom: cursorBottom + 'px', left: '-3px' }" />
         </div>
       </div>
     </transition>

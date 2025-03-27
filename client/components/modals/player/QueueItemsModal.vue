@@ -10,7 +10,7 @@
         <div class="pb-4 px-4 flex items-center">
           <p class="text-base text-gray-200">{{ $strings.HeaderPlayerQueue }}</p>
           <p class="text-base text-gray-400 px-4">{{ playerQueueItems.length }} Items</p>
-          <div class="flex-grow" />
+          <div class="grow" />
           <ui-checkbox v-model="playerQueueAutoPlay" label="Auto Play" medium checkbox-bg="primary" border-color="gray-600" label-class="pl-2 mb-px" />
         </div>
         <modals-player-queue-item-row v-for="(item, index) in playerQueueItems" :key="index" :item="item" :index="index" @play="playItem(index)" @remove="removeItem" />

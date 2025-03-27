@@ -4,10 +4,10 @@
       <div class="flex flex-wrap sm:flex-nowrap justify-center mb-6">
         <div class="w-48 min-w-48">
           <div class="w-full h-60">
-            <covers-author-image :author="author" rounded="0" />
+            <covers-author-image :author="author" rounded-sm="0" />
           </div>
         </div>
-        <div class="flex-grow py-4 sm:py-0 px-4 md:px-8">
+        <div class="grow py-4 sm:py-0 px-4 md:px-8">
           <div class="flex items-center mb-8">
             <h1 class="text-2xl">{{ author.name }}</h1>
 
@@ -16,7 +16,7 @@
             </button>
           </div>
 
-          <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
+          <p v-if="author.description" class="text-white/60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
           <p ref="description" id="author-description" class="text-white max-w-3xl text-base whitespace-pre-wrap" :class="{ 'show-full': showFullDescription }">{{ author.description }}</p>
           <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
             {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1">{{ showFullDescription ? 'expand_less' : 'expand_more' }}</span>
@@ -37,7 +37,7 @@
           <nuxt-link :to="`/library/${currentLibraryId}/series/${series.id}`" class="hover:underline">
             <h2 class="text-lg">{{ series.name }}</h2>
           </nuxt-link>
-          <p class="text-white text-opacity-40 text-base px-2">{{ $strings.LabelSeries }}</p>
+          <p class="text-white/40 text-base px-2">{{ $strings.LabelSeries }}</p>
         </widgets-item-slider>
       </div>
     </div>

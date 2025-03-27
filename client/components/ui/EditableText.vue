@@ -1,5 +1,5 @@
 <template>
-  <input ref="input" v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="py-2 px-1 bg-transparent border-b border-opacity-0 border-gray-400 focus:border-opacity-100 focus:outline-none" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
+  <input ref="input" v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="py-2 px-1 bg-transparent border-b/0 border-gray-400 focus:border-opacity-100 focus:outline-hidden" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
 </template>
 
 <script>
