@@ -49,6 +49,7 @@ function createMountOptions() {
         'libraries/getLibraryProvider': () => 'audible.us',
         'libraries/getBookCoverAspectRatio': 1,
         'globals/getLibraryItemCoverSrc': () => 'https://my.server.com/book_placeholder.jpg',
+        'globals/getPlaceholderCoverSrc': 'https://my.server.com/book_placeholder.jpg',
         getLibraryItemsStreaming: () => null,
         getIsMediaQueued: () => false,
         getIsStreamingFromDifferentLibrary: () => false
