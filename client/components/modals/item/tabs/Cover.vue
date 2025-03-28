@@ -2,37 +2,37 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-col sm:flex-row mb-4">
       <div class="relative self-center md:self-start">
-        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, libraryItemUpdatedAt, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-preview-cover :src="coverUrl" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
-          <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
-          <div v-if="userCanDelete" class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
+          <div class="absolute top-0 left-0 w-full h-16 bg-linear-to-b from-black-600 to-transparent" />
+          <div v-if="userCanDelete" class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-xs" @click="removeCover">
             <ui-tooltip direction="top" :text="$strings.LabelRemoveCover">
               <span class="material-symbols text-2xl">delete</span>
             </ui-tooltip>
           </div>
         </div>
       </div>
-      <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
+      <div class="grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
               <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
-              <span class="material-symbols text-2xl inline-block md:!hidden">upload</span>
+              <span class="material-symbols text-2xl inline-block md:hidden!">upload</span>
             </ui-file-input>
           </div>
 
-          <form @submit.prevent="submitForm" class="flex flex-grow">
+          <form @submit.prevent="submitForm" class="flex grow">
             <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
-            <ui-btn color="success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+            <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
           </form>
         </div>
 
-        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white border-opacity-10">
+        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white/10">
           <div class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
-            <div class="flex-grow" />
+            <div class="grow" />
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
@@ -50,13 +50,13 @@
     </div>
     <form @submit.prevent="submitSearchForm">
       <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
-        <div class="w-48 flex-grow p-1">
+        <div class="w-48 grow p-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
-        <div class="w-72 flex-grow p-1">
+        <div class="w-72 grow p-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
-        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 flex-grow p-1">
+        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
         <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
@@ -79,7 +79,7 @@
       </div>
       <div class="absolute bottom-0 right-0 flex py-4 px-5">
         <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">{{ $strings.ButtonReset }}</ui-btn>
-        <ui-btn :loading="processingUpload" color="success" @click="submitCoverUpload">{{ $strings.ButtonUpload }}</ui-btn>
+        <ui-btn :loading="processingUpload" color="bg-success" @click="submitCoverUpload">{{ $strings.ButtonUpload }}</ui-btn>
       </div>
     </div>
   </div>
@@ -156,6 +156,12 @@ export default {
     },
     coverPath() {
       return this.media.coverPath
+    },
+    coverUrl() {
+      if (!this.coverPath) {
+        return this.$store.getters['globals/getPlaceholderCoverSrc']
+      }
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId, this.libraryItemUpdatedAt, true)
     },
     mediaMetadata() {
       return this.media.metadata || {}

@@ -19,14 +19,14 @@
     </div>
 
     <div class="flex justify-center flex-wrap">
-      <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
+      <div class="w-full max-w-2xl border border-white/10 bg-bg mx-2">
         <div class="flex py-2 px-4">
           <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
           <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
           <template v-for="(value, key, index) in metadataObject">
-            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
+            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary/25' : ''">
               <div class="w-1/3 font-semibold">{{ key }}</div>
               <div class="w-2/3">
                 {{ value }}
@@ -35,17 +35,17 @@
           </template>
         </div>
       </div>
-      <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
+      <div class="w-full max-w-2xl border border-white/10 bg-bg mx-2">
+        <div class="flex py-2 px-4 bg-primary/25">
+          <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
           <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
           <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelEnd }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
           <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">{{ $strings.MessageNoChapters }}</p>
           <template v-for="(chapter, index) in metadataChapters">
-            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary bg-opacity-25' : ''">
-              <div class="flex-grow font-semibold">{{ chapter.title }}</div>
+            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary/25' : ''">
+              <div class="grow font-semibold">{{ chapter.title }}</div>
               <div class="w-24">
                 {{ $secondsToTimestamp(chapter.start) }}
               </div>
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <div class="w-full h-px bg-white bg-opacity-10 my-8" />
+    <div class="w-full h-px bg-white/10 my-8" />
 
     <div class="w-full max-w-4xl mx-auto">
       <!-- queued alert -->
@@ -69,9 +69,9 @@
       <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
         <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" :label="$strings.LabelBackupAudioFiles" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="bg-primary" :loading="processing" :progress="progress" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageEmbedFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
@@ -81,10 +81,10 @@
           <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
         </button>
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished && processing" color="bg-error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="bg-primary" :loading="processing" :progress="progress" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
@@ -142,17 +142,17 @@
 
     <div class="w-full max-w-4xl mx-auto">
       <p class="mb-2 font-semibold">{{ $strings.HeaderAudioTracks }}</p>
-      <div class="w-full mx-auto border border-white border-opacity-10 bg-bg">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
+      <div class="w-full mx-auto border border-white/10 bg-bg">
+        <div class="flex py-2 px-4 bg-primary/25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
           <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
           <div class="w-24"></div>
         </div>
         <template v-for="file in audioFiles">
-          <div :key="file.index" class="flex py-2 px-4 text-sm" :class="file.index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
+          <div :key="file.index" class="flex py-2 px-4 text-sm" :class="file.index % 2 === 0 ? 'bg-primary/25' : ''">
             <div class="w-10">{{ file.index }}</div>
-            <div class="flex-grow">
+            <div class="grow">
               {{ file.metadata.filename }}
             </div>
             <div class="w-16 font-mono text-gray-200">

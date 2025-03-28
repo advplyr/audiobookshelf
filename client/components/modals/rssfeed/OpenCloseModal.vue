@@ -16,19 +16,19 @@
         <div v-if="currentFeed.meta" class="mt-5">
           <div class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedPreventIndexing }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedPreventIndexing }}</span>
             </div>
             <div>{{ currentFeed.meta.preventIndexing ? 'Yes' : 'No' }}</div>
           </div>
           <div v-if="currentFeed.meta.ownerName" class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>
             </div>
             <div>{{ currentFeed.meta.ownerName }}</div>
           </div>
           <div v-if="currentFeed.meta.ownerEmail" class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
             </div>
             <div>{{ currentFeed.meta.ownerEmail }}</div>
           </div>
@@ -47,9 +47,9 @@
         <p v-if="hasEpisodesWithoutPubDate" class="w-full pt-2 text-warning text-xs">{{ $strings.NoteRSSFeedPodcastAppsPubDate }}</p>
       </div>
       <div v-show="userIsAdminOrUp" class="flex items-center pt-6">
-        <div class="flex-grow" />
-        <ui-btn v-if="currentFeed" color="error" small @click="closeFeed">{{ $strings.ButtonCloseFeed }}</ui-btn>
-        <ui-btn v-else color="success" small @click="openFeed">{{ $strings.ButtonOpenFeed }}</ui-btn>
+        <div class="grow" />
+        <ui-btn v-if="currentFeed" color="bg-error" small @click="closeFeed">{{ $strings.ButtonCloseFeed }}</ui-btn>
+        <ui-btn v-else color="bg-success" small @click="openFeed">{{ $strings.ButtonOpenFeed }}</ui-btn>
       </div>
     </div>
   </modals-modal>

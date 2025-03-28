@@ -5,16 +5,16 @@
         {{ this.$secondsToTimestamp(bookmark.time / playbackRate) }}
       </p>
     </div>
-    <div class="flex-grow overflow-hidden px-2">
+    <div class="grow overflow-hidden px-2">
       <template v-if="isEditing">
         <form @submit.prevent="submitUpdate">
           <div class="flex items-center">
-            <div class="flex-grow pr-2">
+            <div class="grow pr-2">
               <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full h-10" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">forward</span></ui-btn>
+            <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">forward</span></ui-btn>
             <div class="pl-2 flex items-center">
-              <span class="material-symbols text-3xl text-white text-opacity-70 hover:text-opacity-95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
+              <span class="material-symbols text-3xl text-white/70 hover:text-white/95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
             </div>
           </div>
         </form>
@@ -48,7 +48,7 @@ export default {
   computed: {
     wrapperClass() {
       var classes = []
-      if (this.highlight) classes.push('bg-bg bg-opacity-60')
+      if (this.highlight) classes.push('bg-bg/60')
       if (!this.isEditing) classes.push('cursor-pointer')
       return classes.join(' ')
     }

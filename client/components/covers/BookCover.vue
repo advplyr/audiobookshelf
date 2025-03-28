@@ -1,7 +1,7 @@
 <template>
-  <div class="relative rounded-sm overflow-hidden" :style="{ height: height + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
+  <div class="relative rounded-xs overflow-hidden" :style="{ height: height + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
     <div class="w-full h-full relative bg-bg">
-      <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+      <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xs bg-primary">
         <div class="absolute cover-bg" ref="coverBg" />
       </div>
 
@@ -96,8 +96,8 @@ export default {
       return this.author
     },
     placeholderUrl() {
-      const config = this.$config || this.$nuxt.$config
-      return `${config.routerBasePath}/book_placeholder.jpg`
+      const store = this.$store || this.$nuxt.$store
+      return store.getters['globals/getPlaceholderCoverSrc']
     },
     fullCoverUrl() {
       if (!this.libraryItem) return null

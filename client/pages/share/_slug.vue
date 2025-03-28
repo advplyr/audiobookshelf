@@ -64,7 +64,7 @@ export default {
       return this.mediaItemShare.playbackSession
     },
     coverUrl() {
-      if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
+      if (!this.playbackSession.coverPath) return this.$store.getters['globals/getPlaceholderCoverSrc']
       return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
     },
     downloadUrl() {

@@ -7,18 +7,12 @@
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div v-if="episodesCleaned.length" class="w-full py-3 mx-auto flex">
-        <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
+        <form @submit.prevent="submit" class="flex grow">
+          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="grow mr-2 text-sm md:text-base" />
         </form>
       </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
-        <div
-          v-for="(episode, index) in episodesList"
-          :key="index"
-          class="relative"
-          :class="episode.isDownloaded || episode.isDownloading ? 'bg-primary bg-opacity-40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
-          @click="toggleSelectEpisode(episode)"
-        >
+        <div v-for="(episode, index) in episodesList" :key="index" class="relative" :class="episode.isDownloaded || episode.isDownloading ? 'bg-primary/40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success/10' : index % 2 == 0 ? 'cursor-pointer bg-primary/25 hover:bg-primary/40' : 'cursor-pointer bg-primary/5 hover:bg-primary/25'" @click="toggleSelectEpisode(episode)">
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
             <span v-if="episode.isDownloaded" class="material-symbols text-success text-xl">download_done</span>
             <span v-else-if="episode.isDownloading" class="material-symbols text-warning text-xl">download</span>

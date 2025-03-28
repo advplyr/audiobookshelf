@@ -23,8 +23,8 @@
             <ui-text-input-with-label v-model="newAuthHeaderValue" :label="$strings.LabelProviderAuthorizationValue" type="password" />
           </div>
           <div class="flex px-1 pt-4">
-            <div class="flex-grow" />
-            <ui-btn color="success" type="submit">{{ $strings.ButtonAdd }}</ui-btn>
+            <div class="grow" />
+            <ui-btn color="bg-success" type="submit">{{ $strings.ButtonAdd }}</ui-btn>
           </div>
         </div>
       </div>

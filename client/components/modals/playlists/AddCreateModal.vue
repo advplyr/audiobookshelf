@@ -32,13 +32,13 @@
             </div>
           </div>
         </div>
-        <div class="w-full h-px bg-white bg-opacity-10" />
+        <div class="w-full h-px bg-white/10" />
         <form @submit.prevent="submitCreatePlaylist">
-          <div class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
-            <div class="flex-grow px-2">
+          <div class="flex px-4 py-2 items-center text-center border-b border-white/10 text-white/80">
+            <div class="grow px-2">
               <ui-text-input v-model="newPlaylistName" :placeholder="$strings.PlaceholderNewPlaylist" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10">{{ $strings.ButtonCreate }}</ui-btn>
+            <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10">{{ $strings.ButtonCreate }}</ui-btn>
           </div>
         </form>
       </div>
