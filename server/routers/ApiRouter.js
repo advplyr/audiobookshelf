@@ -33,8 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
-
-const { getTitleIgnorePrefix } = require('../utils/index')
+const StatsController = require('../controllers/StatsController')
 
 class ApiRouter {
   constructor(Server) {
@@ -321,6 +320,12 @@ class ApiRouter {
     this.router.delete('/share/mediaitem/:id', ShareController.deleteMediaItemShare.bind(this))
 
     //
+    // Stats Routes
+    //
+    this.router.get('/stats/year/:year', StatsController.middleware.bind(this), StatsController.getAdminStatsForYear.bind(this))
+    this.router.get('/stats/server', StatsController.middleware.bind(this), StatsController.getServerStats.bind(this))
+
+    //
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
@@ -338,7 +343,6 @@ class ApiRouter {
     this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
-    this.router.get('/stats/year/:year', MiscController.getAdminStatsForYear.bind(this))
     this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
   }
 

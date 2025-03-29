@@ -167,5 +167,51 @@ module.exports = {
       topNarrators,
       topGenres
     }
+  },
+
+  /**
+   * Get total file size and number of items for books and podcasts
+   *
+   * @typedef {Object} SizeObject
+   * @property {number} totalSize
+   * @property {number} numItems
+   *
+   * @returns {Promise<{books: SizeObject, podcasts: SizeObject, total: SizeObject}}>}
+   */
+  async getTotalSize() {
+    const [mediaTypeStats] = await Database.sequelize.query(`SELECT li.mediaType, SUM(li.size) AS totalSize, COUNT(*) AS numItems FROM libraryItems li group by li.mediaType;`)
+    const bookStats = mediaTypeStats.find((m) => m.mediaType === 'book')
+    const podcastStats = mediaTypeStats.find((m) => m.mediaType === 'podcast')
+
+    return {
+      books: {
+        totalSize: bookStats?.totalSize || 0,
+        numItems: bookStats?.numItems || 0
+      },
+      podcasts: {
+        totalSize: podcastStats?.totalSize || 0,
+        numItems: podcastStats?.numItems || 0
+      },
+      total: {
+        totalSize: (bookStats?.totalSize || 0) + (podcastStats?.totalSize || 0),
+        numItems: (bookStats?.numItems || 0) + (podcastStats?.numItems || 0)
+      }
+    }
+  },
+
+  /**
+   * Get total number of audio files for books and podcasts
+   *
+   * @returns {Promise<{numBookAudioFiles: number, numPodcastAudioFiles: number, numAudioFiles: number}>}
+   */
+  async getNumAudioFiles() {
+    const [numBookAudioFilesRow] = await Database.sequelize.query(`SELECT SUM(json_array_length(b.audioFiles)) AS numAudioFiles FROM books b;`)
+    const numBookAudioFiles = numBookAudioFilesRow[0]?.numAudioFiles || 0
+    const numPodcastAudioFiles = await Database.podcastEpisodeModel.count()
+    return {
+      numBookAudioFiles,
+      numPodcastAudioFiles,
+      numAudioFiles: numBookAudioFiles + numPodcastAudioFiles
+    }
   }
 }
