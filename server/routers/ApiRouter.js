@@ -322,8 +322,8 @@ class ApiRouter {
     //
     // Stats Routes
     //
-    this.router.get('/stats/year/:year', StatsController.getAdminStatsForYear.bind(this))
-    this.router.get('/stats/server', StatsController.getServerStats.bind(this))
+    this.router.get('/stats/year/:year', StatsController.middleware.bind(this), StatsController.getAdminStatsForYear.bind(this))
+    this.router.get('/stats/server', StatsController.middleware.bind(this), StatsController.getServerStats.bind(this))
 
     //
     // Misc Routes

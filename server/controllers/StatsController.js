@@ -65,7 +65,7 @@ class StatsController {
    */
   async middleware(req, res, next) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[StatsController] Non-root user "${req.user.username}" attempted to access stats route`)
+      Logger.error(`[StatsController] Non-admin user "${req.user.username}" attempted to access stats route`)
       return res.sendStatus(403)
     }
 
