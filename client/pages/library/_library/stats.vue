@@ -89,14 +89,16 @@
 
 <script>
 export default {
-  asyncData({ redirect, store }) {
+  async asyncData({ redirect, store, params }) {
     if (!store.getters['user/getIsAdminOrUp']) {
       redirect('/')
       return
     }
 
-    if (!store.state.libraries.currentLibraryId) {
-      return redirect('/config')
+    const libraryId = params.library
+    const library = await store.dispatch('libraries/fetch', libraryId)
+    if (!library) {
+      return redirect(`/oops?message=Library "${libraryId}" not found`)
     }
     return {}
   },

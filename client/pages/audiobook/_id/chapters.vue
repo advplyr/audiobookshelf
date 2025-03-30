@@ -221,6 +221,11 @@ export default {
       return redirect('/')
     }
 
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
+    }
+
     var previousRoute = from ? from.fullPath : null
     if (from && from.path === '/login') previousRoute = null
     return {
