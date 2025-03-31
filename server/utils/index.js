@@ -243,3 +243,29 @@ module.exports.isValidASIN = (str) => {
   if (!str || typeof str !== 'string') return false
   return /^[A-Z0-9]{10}$/.test(str)
 }
+
+/**
+ * Convert timestamp to seconds
+ * @example "01:00:00" => 3600
+ * @example "01:00" => 60
+ * @example "01" => 1
+ *
+ * @param {string} timestamp
+ * @returns {number}
+ */
+module.exports.timestampToSeconds = (timestamp) => {
+  if (typeof timestamp !== 'string') {
+    return null
+  }
+  const parts = timestamp.split(':').map(Number)
+  if (parts.some(isNaN)) {
+    return null
+  } else if (parts.length === 1) {
+    return parts[0]
+  } else if (parts.length === 2) {
+    return parts[0] * 60 + parts[1]
+  } else if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  }
+  return null
+}

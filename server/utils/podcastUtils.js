@@ -1,8 +1,16 @@
 const axios = require('axios')
 const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
-const { xmlToJSON, levenshteinDistance } = require('./index')
+const { xmlToJSON, levenshteinDistance, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+
+/**
+ * @typedef RssPodcastChapter
+ * @property {number} id
+ * @property {string} title
+ * @property {number} start
+ * @property {number} end
+ */
 
 /**
  * @typedef RssPodcastEpisode
@@ -22,6 +30,7 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
  * @property {string} guid
  * @property {string} chaptersUrl
  * @property {string} chaptersType
+ * @property {RssPodcastChapter[]} chapters
  */
 
 /**
@@ -205,12 +214,53 @@ function extractEpisodeData(item) {
     const cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
+
+  // Extract psc:chapters if duration is set
+  let episodeDuration = !isNaN(episode.duration) ? timestampToSeconds(episode.duration) : null
+  if (item['psc:chapters']?.[0]?.['psc:chapter']?.length && episodeDuration) {
+    // Example chapter:
+    // {"id":0,"start":0,"end":43.004286,"title":"chapter 1"}
+
+    const cleanedChapters = item['psc:chapters'][0]['psc:chapter'].map((chapter, index) => {
+      if (!chapter['$']?.title || !chapter['$']?.start || typeof chapter['$']?.start !== 'string' || typeof chapter['$']?.title !== 'string') {
+        return null
+      }
+
+      const start = timestampToSeconds(chapter['$'].start)
+      if (start === null) {
+        return null
+      }
+
+      return {
+        id: index,
+        title: chapter['$'].title,
+        start
+      }
+    })
+
+    if (cleanedChapters.some((chapter) => !chapter)) {
+      Logger.warn(`[podcastUtils] Invalid chapter data for ${episode.enclosure.url}`)
+    } else {
+      episode.chapters = cleanedChapters.map((chapter, index) => {
+        const nextChapter = cleanedChapters[index + 1]
+        const end = nextChapter ? nextChapter.start : episodeDuration
+        return {
+          id: chapter.id,
+          title: chapter.title,
+          start: chapter.start,
+          end
+        }
+      })
+    }
+  }
+
   return episode
 }
 
 function cleanEpisodeData(data) {
   const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
   const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
+
   return {
     title: data.title,
     subtitle: data.subtitle || '',
@@ -227,7 +277,8 @@ function cleanEpisodeData(data) {
     enclosure: data.enclosure,
     guid: data.guid || null,
     chaptersUrl: data.chaptersUrl || null,
-    chaptersType: data.chaptersType || null
+    chaptersType: data.chaptersType || null,
+    chapters: data.chapters || []
   }
 }
 
