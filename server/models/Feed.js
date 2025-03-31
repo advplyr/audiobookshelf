@@ -607,7 +607,6 @@ class Feed extends Model {
       custom_namespaces: {
         itunes: 'http://www.itunes.com/dtds/podcast-1.0.dtd',
         podcast: 'https://podcastindex.org/namespace/1.0',
-        psc: 'http://podlove.org/simple-chapters',
         googleplay: 'http://www.google.com/schemas/play-podcasts/1.0'
       },
       custom_elements: customElements

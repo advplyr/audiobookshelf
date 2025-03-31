@@ -325,24 +325,6 @@ class FeedEpisode extends Model {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
     }
 
-    customElements.push({
-      'psc:chapters': [
-        {
-          _attr: {
-            version: '1.2'
-          },
-          'psc:chapter': [
-            {
-              _attr: {
-                title: 'Test',
-                start: '00:00:00'
-              }
-            }
-          ]
-        }
-      ]
-    })
-
     return {
       title: this.title,
       description: this.description || '',
