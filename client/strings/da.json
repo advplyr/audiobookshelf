@@ -252,7 +252,7 @@
   "LabelBackToUser": "Tilbage til Bruger",
   "LabelBackupAudioFiles": "Sikkerhedskopier lydfiler",
   "LabelBackupLocation": "Backup Placering",
-  "LabelBackupsEnableAutomaticBackups": "Aktivér automatisk sikkerhedskopiering",
+  "LabelBackupsEnableAutomaticBackups": "Automatisk sikkerhedskopiering",
   "LabelBackupsEnableAutomaticBackupsHelp": "Sikkerhedskopier gemt i /metadata/backups",
   "LabelBackupsMaxBackupSize": "Maksimal sikkerhedskopistørrelse (i GB) (0 for ubegrænset)",
   "LabelBackupsMaxBackupSizeHelp": "Som en beskyttelse mod fejlkonfiguration fejler sikkerhedskopier, hvis de overstiger den konfigurerede størrelse.",
