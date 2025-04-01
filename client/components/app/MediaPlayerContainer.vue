@@ -156,7 +156,7 @@ export default {
       return this.mediaMetadata.authors || []
     },
     libraryId() {
-      return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
+      return this.streamLibraryItem?.libraryId || null
     },
     totalDurationPretty() {
       // Adjusted by playback rate
