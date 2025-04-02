@@ -211,6 +211,14 @@ class PodcastManager {
     const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
 
     libraryItem.libraryFiles.push(libraryFile.toJSON())
+    // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
+    let libraryItemSize = 0
+    libraryItem.libraryFiles.forEach((lf) => {
+      if (lf.metadata.size && !isNaN(lf.metadata.size)) {
+        libraryItemSize += Number(lf.metadata.size)
+      }
+    })
+    libraryItem.size = libraryItemSize
     libraryItem.changed('libraryFiles', true)
 
     libraryItem.media.podcastEpisodes.push(podcastEpisode)
