@@ -1086,6 +1086,8 @@
   "ToastUnknownError": "Nepoznata pogreška",
   "ToastUnlinkOpenIdFailed": "Uklanjanje OpenID veze korisnika nije uspjelo",
   "ToastUnlinkOpenIdSuccess": "Korisnik odspojen od OpenID-ja",
+  "ToastUploaderFilepathExistsError": "Putanja \"{0}\" već postoji na poslužitelju",
+  "ToastUploaderItemExistsInSubdirectoryError": "Stavka \"{0}\" koristi se podmapom u putanje za učitavanje.",
   "ToastUserDeleteFailed": "Brisanje korisnika nije uspjelo",
   "ToastUserDeleteSuccess": "Korisnik izbrisan",
   "ToastUserPasswordChangeSuccess": "Zaporka je uspješno promijenjena",
