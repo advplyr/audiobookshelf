@@ -475,6 +475,8 @@ class BookScanner {
       bookAuthors: [],
       bookSeries: []
     }
+
+    const createdAtTimestamp = new Date().getTime()
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
         const matchingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
@@ -485,6 +487,8 @@ class BookScanner {
         } else {
           // New author
           bookObject.bookAuthors.push({
+            // Ensures authors are in a set order
+            createdAt: createdAtTimestamp + bookObject.bookAuthors.length,
             author: {
               libraryId: libraryItemData.libraryId,
               name: authorName,
