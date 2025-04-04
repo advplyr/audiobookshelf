@@ -1086,6 +1086,8 @@
   "ToastUnknownError": "Neznana napaka",
   "ToastUnlinkOpenIdFailed": "Prekinitev povezave uporabnika z OpenID ni uspela",
   "ToastUnlinkOpenIdSuccess": "Uporabnik je prekinil povezavo z OpenID",
+  "ToastUploaderFilepathExistsError": "Datoteka s potjo \"{0}\" že obstaja na strežniku",
+  "ToastUploaderItemExistsInSubdirectoryError": "Element \"{0}\" uporablja podmapo v poti za nalaganje.",
   "ToastUserDeleteFailed": "Brisanje uporabnika ni uspelo",
   "ToastUserDeleteSuccess": "Uporabnik je bil izbrisan",
   "ToastUserPasswordChangeSuccess": "Geslo je bilo uspešno spremenjeno",

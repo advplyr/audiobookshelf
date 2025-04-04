@@ -10,6 +10,8 @@
   "ButtonApplyChapters": "Fejezetek alkalmazása",
   "ButtonAuthors": "Szerzők",
   "ButtonBack": "Vissza",
+  "ButtonBatchEditPopulateFromExisting": "Létezőből feltöltés",
+  "ButtonBatchEditPopulateMapDetails": "",
   "ButtonBrowseForFolder": "Mappa keresése",
   "ButtonCancel": "Mégse",
   "ButtonCancelEncode": "Kódolás megszakítása",
