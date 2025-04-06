@@ -57,7 +57,7 @@
             </td>
             <!--  -->
             <td class="text-center">
-              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="bg-error" outlined @click.stop="deleteFeedClick(feed)" />
+              <ui-icon-btn icon="delete" class="mx-0.5 text-white/70" borderless :size="7" iconFontSize="1.25rem" outlined @click.stop="deleteFeedClick(feed)" />
             </td>
           </tr>
         </table>
