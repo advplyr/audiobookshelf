@@ -32,7 +32,7 @@
               <p class="truncate">{{ feed.meta.title }}</p>
             </td>
             <!--  -->
-            <td class="hidden xl:table-cell">
+            <td class="hidden xl:table-cell max-w-48">
               <p class="truncate">{{ feed.slug }}</p>
             </td>
             <!--  -->
