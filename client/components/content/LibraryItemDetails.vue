@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="narrators?.length" class="flex py-0.5 mt-4">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
@@ -12,7 +12,7 @@
       </div>
     </div>
     <div v-if="publishedYear" role="paragraph" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
       </div>
       <div>
@@ -20,7 +20,7 @@
       </div>
     </div>
     <div v-if="publisher" role="paragraph" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
       <div>
@@ -28,7 +28,7 @@
       </div>
     </div>
     <div v-if="podcastType" role="paragraph" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelPodcastType }}</span>
       </div>
       <div class="capitalize">
@@ -36,7 +36,7 @@
       </div>
     </div>
     <div class="flex py-0.5" v-if="genres.length">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
@@ -47,7 +47,7 @@
       </div>
     </div>
     <div class="flex py-0.5" v-if="tags.length">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelTags }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden text-ellipsis">
@@ -58,7 +58,7 @@
       </div>
     </div>
     <div v-if="language" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelLanguage }}</span>
       </div>
       <div>
@@ -66,7 +66,7 @@
       </div>
     </div>
     <div v-if="tracks.length || (isPodcast && totalPodcastDuration)" role="paragraph" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
       </div>
       <div>
@@ -74,7 +74,7 @@
       </div>
     </div>
     <div role="paragraph" class="flex py-0.5">
-      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
+      <div class="w-34 min-w-34 sm:w-34 sm:min-w-34 break-words">
         <span class="text-white/60 uppercase text-sm">{{ $strings.LabelSize }}</span>
       </div>
       <div>
