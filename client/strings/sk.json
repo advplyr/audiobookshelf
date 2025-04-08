@@ -554,5 +554,15 @@
   "LabelSetEbookAsPrimary": "Nastaviť ako primárny",
   "LabelSetEbookAsSupplementary": "Nastaviť ako doplnkový",
   "LabelSettingsAllowIframe": "Povoliť vkladanie do iframe",
-  "LabelSettingsAudiobooksOnly": "Len audioknihy"
+  "LabelSettingsAudiobooksOnly": "Len audioknihy",
+  "LabelSettingsAudiobooksOnlyHelp": "Pri povolení tejto voľby budú všetky e-knihy ignorované okrem tých, ktoré sa nachádzajú v priečinkoch audiokníh. Tie budú zároveň automaticky nastavené ako doplnkové e-knihy",
+  "LabelSettingsBookshelfViewHelp": "Skeuomorfný dizajn s drevenými poličkami",
+  "LabelSettingsChromecastSupport": "Podpora chromecastu",
+  "LabelSettingsDateFormat": "Formát dátumu",
+  "LabelSettingsEnableWatcher": "Automatické skenovanie knižníc pre zmeny",
+  "LabelSettingsEnableWatcherForLibrary": "Automaticky skenovať knižnicu pre zmeny",
+  "LabelSettingsEnableWatcherHelp": "Povoliť automatické pridávanie/aktualizácie položiek pri zmene súborov. *Vyžaduje reštart servera",
+  "LabelSettingsEpubsAllowScriptedContent": "Povoliť v e-knihách skriptovaný obsah",
+  "LabelSettingsEpubsAllowScriptedContentHelp": "Povoliť e-knihám spúšťanie skriptov. Odporúča sa túto voľbu nepovolovať, pokiaľ plne nedôverujete zdrojom súborov e-kníh.",
+  "LabelSettingsExperimentalFeatures": "Experimentálne funkcie"
 }
