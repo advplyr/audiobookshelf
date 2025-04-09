@@ -113,6 +113,9 @@ class PodcastScanner {
 
       // Create new podcast episodes from new found audio files
       for (const newAudioFile of newAudioFiles) {
+        // Podcast episode audio files always have index 1
+        newAudioFile.index = 1
+
         const newEpisode = {
           title: newAudioFile.metaTags.tagTitle || newAudioFile.metadata.filenameNoExt,
           subtitle: null,
@@ -253,6 +256,9 @@ class PodcastScanner {
 
     // Create podcast episodes from audio files
     for (const audioFile of scannedAudioFiles) {
+      // Podcast episode audio files always have index 1
+      audioFile.index = 1
+
       const newEpisode = {
         title: audioFile.metaTags.tagTitle || audioFile.metadata.filenameNoExt,
         subtitle: null,
