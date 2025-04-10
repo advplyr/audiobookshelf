@@ -59,17 +59,17 @@ class PodcastScanner {
 
     if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== existingPodcastEpisodes.length) {
       // Filter out and destroy episodes that were removed
-      existingPodcastEpisodes = await Promise.all(
-        existingPodcastEpisodes.filter(async (ep) => {
-          if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
-            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
-            // TODO: Should clean up other data linked to this episode
-            await ep.destroy()
-            return false
-          }
-          return true
-        })
-      )
+      const episodesToRemove = []
+      existingPodcastEpisodes = existingPodcastEpisodes.filter((ep) => {
+        if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
+          libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
+          episodesToRemove.push(ep)
+          return false
+        }
+        return true
+      })
+
+      await Promise.all(episodesToRemove.map((ep) => ep.destroy()))
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
@@ -139,7 +139,6 @@ class PodcastScanner {
     }
 
     let hasMediaChanges = false
-
     if (existingPodcastEpisodes.length !== media.numEpisodes) {
       media.numEpisodes = existingPodcastEpisodes.length
       hasMediaChanges = true
