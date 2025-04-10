@@ -62,14 +62,33 @@ class PodcastScanner {
       const episodesToRemove = []
       existingPodcastEpisodes = existingPodcastEpisodes.filter((ep) => {
         if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
-          libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
           episodesToRemove.push(ep)
           return false
         }
         return true
       })
 
-      await Promise.all(episodesToRemove.map((ep) => ep.destroy()))
+      if (episodesToRemove.length) {
+        // Remove episodes from playlists and media progress
+        const episodeIds = episodesToRemove.map((ep) => ep.id)
+        await Database.playlistModel.removeMediaItemsFromPlaylists(episodeIds)
+        const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
+          where: {
+            mediaItemId: episodeIds
+          }
+        })
+        if (mediaProgressRemoved) {
+          libraryScan.addLog(LogLevel.INFO, `Removed ${mediaProgressRemoved} media progress for episodes`)
+        }
+
+        // Remove episodes
+        await Promise.all(
+          episodesToRemove.map(async (ep) => {
+            await ep.destroy()
+            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
+          })
+        )
+      }
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
