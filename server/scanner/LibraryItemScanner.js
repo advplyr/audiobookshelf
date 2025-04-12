@@ -64,7 +64,7 @@ class LibraryItemScanner {
 
     const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
     if (libraryItemDataUpdated || wasUpdated) {
-      SocketAuthority.emitter('item_updated', expandedLibraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', expandedLibraryItem)
 
       await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
 

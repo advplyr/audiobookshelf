@@ -254,7 +254,7 @@ class PodcastManager {
       await libraryItem.media.save()
     }
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     const podcastEpisodeExpanded = podcastEpisode.toOldJSONExpanded(libraryItem.id)
     podcastEpisodeExpanded.libraryItem = libraryItem.toOldJSONExpanded()
     SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
@@ -367,7 +367,7 @@ class PodcastManager {
     libraryItem.changed('updatedAt', true)
     await libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
 
     return libraryItem.media.autoDownloadEpisodes
   }
@@ -425,7 +425,7 @@ class PodcastManager {
     libraryItem.changed('updatedAt', true)
     await libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
 
     return newEpisodes || []
   }
@@ -712,7 +712,7 @@ class PodcastManager {
         }
       }
 
-      SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
 
       // Turn on podcast auto download cron if not already on
       if (newLibraryItem.media.autoDownloadEpisodes) {
