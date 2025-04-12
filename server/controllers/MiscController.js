@@ -343,7 +343,7 @@ class MiscController {
         })
         await libraryItem.saveMetadataFile()
 
-        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
         numItemsUpdated++
       }
     }
@@ -386,7 +386,7 @@ class MiscController {
       })
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
       numItemsUpdated++
     }
 
@@ -481,7 +481,7 @@ class MiscController {
         })
         await libraryItem.saveMetadataFile()
 
-        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
         numItemsUpdated++
       }
     }
@@ -524,7 +524,7 @@ class MiscController {
       })
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
       numItemsUpdated++
     }
 

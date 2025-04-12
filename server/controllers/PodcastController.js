@@ -161,7 +161,7 @@ class PodcastController {
       }
     }
 
-    SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
 
     res.json(newLibraryItem.toOldJSONExpanded())
 
@@ -379,7 +379,7 @@ class PodcastController {
     const overrideDetails = req.query.override === '1'
     const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
 
     res.json({
@@ -418,7 +418,7 @@ class PodcastController {
         Logger.info(`[PodcastController] Updated episode "${episode.title}" keys`, episode.changed())
         await episode.save()
 
-        SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
       } else {
         Logger.info(`[PodcastController] No changes to episode "${episode.title}"`)
       }
@@ -504,7 +504,7 @@ class PodcastController {
     req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
     await req.libraryItem.media.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.json(req.libraryItem.toOldJSON())
   }
 

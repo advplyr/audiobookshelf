@@ -223,11 +223,7 @@ class LibraryScanner {
 
       // Emit item updates in chunks of 10 to client
       if (libraryItemsUpdated.length === 10) {
-        // TODO: Should only emit to clients where library item is accessible
-        SocketAuthority.emitter(
-          'items_updated',
-          libraryItemsUpdated.map((li) => li.toOldJSONExpanded())
-        )
+        SocketAuthority.libraryItemsEmitter('items_updated', libraryItemsUpdated)
         libraryItemsUpdated = []
       }
 
@@ -235,11 +231,7 @@ class LibraryScanner {
     }
     // Emit item updates to client
     if (libraryItemsUpdated.length) {
-      // TODO: Should only emit to clients where library item is accessible
-      SocketAuthority.emitter(
-        'items_updated',
-        libraryItemsUpdated.map((li) => li.toOldJSONExpanded())
-      )
+      SocketAuthority.libraryItemsEmitter('items_updated', libraryItemsUpdated)
     }
 
     // Authors and series that were removed from books should be removed if they are now empty
@@ -277,11 +269,7 @@ class LibraryScanner {
 
         // Emit new items in chunks of 10 to client
         if (newLibraryItems.length === 10) {
-          // TODO: Should only emit to clients where library item is accessible
-          SocketAuthority.emitter(
-            'items_added',
-            newLibraryItems.map((li) => li.toOldJSONExpanded())
-          )
+          SocketAuthority.libraryItemsEmitter('items_added', newLibraryItems)
           newLibraryItems = []
         }
 
@@ -289,11 +277,7 @@ class LibraryScanner {
       }
       // Emit new items to client
       if (newLibraryItems.length) {
-        // TODO: Should only emit to clients where library item is accessible
-        SocketAuthority.emitter(
-          'items_added',
-          newLibraryItems.map((li) => li.toOldJSONExpanded())
-        )
+        SocketAuthority.libraryItemsEmitter('items_added', newLibraryItems)
       }
     }
 
@@ -609,7 +593,7 @@ class LibraryScanner {
             Logger.info(`[LibraryScanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.title}" - marking as missing`)
             existingLibraryItem.isMissing = true
             await existingLibraryItem.save()
-            SocketAuthority.emitter('item_updated', existingLibraryItem.toOldJSONExpanded())
+            SocketAuthority.libraryItemEmitter('item_updated', existingLibraryItem)
 
             itemGroupingResults[itemDir] = ScanResult.REMOVED
             continue
@@ -643,7 +627,7 @@ class LibraryScanner {
       const isSingleMediaItem = isSingleMediaFile(fileUpdateGroup, itemDir)
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
-        SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }

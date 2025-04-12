@@ -253,7 +253,7 @@ class LibraryItemController {
       }
 
       Logger.debug(`[LibraryItemController] Updated library item media ${req.libraryItem.media.title}`)
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
     res.json({
       updated: hasUpdates,
@@ -300,7 +300,7 @@ class LibraryItemController {
       req.libraryItem.changed('updatedAt', true)
       await req.libraryItem.save()
 
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
       res.json({
         success: true,
         cover: result.cover
@@ -332,7 +332,7 @@ class LibraryItemController {
       req.libraryItem.changed('updatedAt', true)
       await req.libraryItem.save()
 
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
     res.json({
       success: true,
@@ -358,7 +358,7 @@ class LibraryItemController {
 
       await CacheManager.purgeCoverCache(req.libraryItem.id)
 
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
 
     res.sendStatus(200)
@@ -485,7 +485,7 @@ class LibraryItemController {
     req.libraryItem.media.changed('audioFiles', true)
     await req.libraryItem.media.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.json(req.libraryItem.toOldJSON())
   }
 
@@ -663,7 +663,7 @@ class LibraryItemController {
         await libraryItem.saveMetadataFile()
 
         Logger.debug(`[LibraryItemController] Updated library item media "${libraryItem.media.title}"`)
-        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
         itemsUpdated++
       }
     }
@@ -894,7 +894,7 @@ class LibraryItemController {
 
       await req.libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
 
     res.json({
@@ -1005,7 +1005,7 @@ class LibraryItemController {
 
     await req.libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.sendStatus(200)
   }
 
@@ -1153,7 +1153,7 @@ class LibraryItemController {
 
     await req.libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.sendStatus(200)
   }
 

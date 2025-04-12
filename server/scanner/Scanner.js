@@ -126,7 +126,7 @@ class Scanner {
 
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     }
 
     return {
