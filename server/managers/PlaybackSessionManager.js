@@ -175,29 +175,24 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
-      // This makes sure that the client's metadata is preferred over the library's metadata, if available, to make a non-breaking change
+
       if (session.mediaMetadata == null) {
         session.mediaMetadata = {}
       }
 
-      const { title, subtitle, narrators, authors, author, series, genres, type } = libraryItem?.media?.metadata || {}
-      session.mediaMetadata = {
-        title: session.mediaMetadata.title || title,
-        subtitle: session.mediaMetadata.subtitle || subtitle,
-        narrators: session.mediaMetadata.narrators || narrators,
-        authors: session.mediaMetadata.authors || authors,
-        author: session.mediaMetadata.author || author,
-        series: session.mediaMetadata.series || series,
-        genres: session.mediaMetadata.genres || genres,
-        type: session.mediaMetadata.type || type,
-        ...session.mediaMetadata
+      // Populate mediaMetadata with the current library items metadata for any keys not set by client
+      const libraryItemMediaMetadata = libraryItem.media.oldMetadataToJSON()
+      for (const key in libraryItemMediaMetadata) {
+        if (session.mediaMetadata[key] === undefined) {
+          session.mediaMetadata[key] = libraryItemMediaMetadata[key]
+        }
       }
 
-      if(session.displayTitle == null || session.displayTitle === '') {
-        session.displayTitle = libraryItem?.media?.metadata?.title ?? ''
+      if (session.displayTitle == null || session.displayTitle === '') {
+        session.displayTitle = libraryItem.title
       }
-      if(session.displayAuthor == null || session.displayAuthor === '') {
-        session.displayAuthor = libraryItem?.media?.metadata?.authors?.map(a => a.name).join(', ') ?? libraryItem?.media?.metadata?.author ?? ''
+      if (session.displayAuthor == null || session.displayAuthor === '') {
+        session.displayAuthor = libraryItem.authorNamesFirstLast
       }
       session.duration = libraryItem.media.getPlaybackDuration(sessionJson.episodeId)
 
