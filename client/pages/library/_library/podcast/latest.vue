@@ -9,11 +9,11 @@
         <template v-for="(episode, index) in episodesMapped">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
             <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
-            <div class="flex-grow pl-4 max-w-2xl">
+            <div class="grow pl-4 max-w-2xl">
               <!-- mobile -->
               <div class="flex md:hidden mb-2">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
-                <div class="flex-grow px-2">
+                <div class="grow px-2">
                   <div class="flex items-center">
                     <div class="flex" @click.stop>
                       <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
@@ -48,7 +48,7 @@
               <p dir="auto" class="text-sm text-gray-200 mb-4 line-clamp-4" v-html="episode.subtitle || episode.description" />
 
               <div class="flex items-center">
-                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress?.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
+                <button class="h-8 px-4 border border-white/20 hover:bg-white/10 rounded-full flex items-center justify-center cursor-pointer focus:outline-hidden" :class="episode.progress?.isFinished ? 'text-white/40' : ''" @click.stop="playClick(episode)">
                   <span v-if="episodeIdStreaming === episode.id" class="material-symbols text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
                   <span v-else class="material-symbols fill text-2xl text-success">play_arrow</span>
                   <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
@@ -70,7 +70,7 @@
 
             <div v-if="episode.progress" class="absolute bottom-0 left-0 h-0.5 pointer-events-none bg-warning" :style="{ width: episode.progress.progress * 100 + '%' }" />
           </div>
-          <div :key="index" v-if="index !== recentEpisodes.length" class="w-full h-px bg-white bg-opacity-10" />
+          <div :key="index" v-if="index !== recentEpisodes.length" class="w-full h-px bg-white/10" />
         </template>
       </div>
     </div>
@@ -155,7 +155,7 @@ export default {
       const itemProgressPercent = episode.progress?.progress || 0
       if (!isFinished && itemProgressPercent > 0 && !confirmed) {
         const payload = {
-          message: `Are you sure you want to mark "${episode.title}" as finished?`,
+          message: this.$getString('MessageConfirmMarkItemFinished', [episode.title]),
           callback: (confirmed) => {
             if (confirmed) {
               this.toggleEpisodeFinished(episode, true)
@@ -249,7 +249,7 @@ export default {
     },
     async loadRecentEpisodes(page = 0) {
       this.processing = true
-      const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=25&page=${page}`).catch((error) => {
+      const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=50&page=${page}`).catch((error) => {
         console.error('Failed to get recent episodes', error)
         this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null

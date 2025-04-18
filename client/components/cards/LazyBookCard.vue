@@ -1,19 +1,19 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" tabindex="0" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-sm z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
+  <div ref="card" :id="`book-card-${index}`" tabindex="0" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-xs z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded-sm overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
       <!-- When cover image does not fill -->
-      <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+      <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xs bg-primary">
         <div class="absolute cover-bg" ref="coverBg" />
       </div>
 
-      <div cy-id="seriesSequenceList" v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #78350f">
+      <div cy-id="seriesSequenceList" v-if="seriesSequenceList" class="absolute rounded-lg bg-black/90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #78350f">
         <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequenceList }}</p>
       </div>
-      <div cy-id="booksInSeries" v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
+      <div cy-id="booksInSeries" v-else-if="booksInSeries" class="absolute rounded-lg bg-black/90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
         <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
       </div>
 
-      <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
+      <div class="w-full h-full absolute top-0 left-0 rounded-sm overflow-hidden z-10">
         <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" aria-hidden="true" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: 0.5 + 'em' }">
           <p :style="{ fontSize: 0.8 + 'em' }" class="text-gray-300 text-center">{{ title }}</p>
         </div>
@@ -31,18 +31,11 @@
           <p cy-id="placeholderAuthorText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
         </div>
 
-        <div v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #78350f">
-          <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequenceList }}</p>
-        </div>
-        <div v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }" style="background-color: #cd9d49dd">
-          <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
-        </div>
-
         <!-- No progress shown for podcasts (unless showing podcast episode) -->
-        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
+        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e max-w-full z-20 rounded-b box-shadow-progressbar" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
 
         <!-- Overlay is not shown if collapsing series in library -->
-        <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded md:block" :class="overlayWrapperClasslist">
+        <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded-sm md:block" :class="overlayWrapperClasslist">
           <div cy-id="playButton" v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
             <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
               <span class="material-symbols fill" :style="{ fontSize: playIconFontSize + 'em' }">play_arrow</span>
@@ -75,12 +68,12 @@
         </div>
 
         <!-- Processing/loading spinner overlay -->
-        <div cy-id="loadingSpinner" v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
+        <div cy-id="loadingSpinner" v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black/40 rounded-sm flex items-center justify-center">
           <widgets-loading-spinner size="la-lg" />
         </div>
 
         <!-- Series name overlay -->
-        <div cy-id="seriesNameOverlay" v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: 1 + 'em' }">
+        <div cy-id="seriesNameOverlay" v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black/60 rounded-sm flex items-center justify-center" :style="{ padding: 1 + 'em' }">
           <p v-if="seriesName" class="text-gray-200 text-center" :style="{ fontSize: 1.1 + 'em' }">{{ seriesName }}</p>
         </div>
 
@@ -101,19 +94,19 @@
         </div>
 
         <!-- Series sequence -->
-        <div cy-id="seriesSequence" v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
+        <div cy-id="seriesSequence" v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black/90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
           <p :style="{ fontSize: 0.8 + 'em' }">#{{ seriesSequence }}</p>
         </div>
 
         <!-- Podcast Episode # -->
-        <div cy-id="podcastEpisodeNumber" v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
+        <div cy-id="podcastEpisodeNumber" v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black/90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
           <p :style="{ fontSize: 0.8 + 'em' }">
             Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
           </p>
         </div>
 
         <!-- Podcast Num Episodes -->
-        <div cy-id="numEpisodes" v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', width: 1.25 + 'em', height: 1.25 + 'em' }">
+        <div cy-id="numEpisodes" v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black/90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', width: 1.25 + 'em', height: 1.25 + 'em' }">
           <p :style="{ fontSize: 0.8 + 'em' }" role="status" :aria-label="$strings.LabelNumberOfEpisodes">{{ numEpisodes }}</p>
         </div>
 
@@ -230,8 +223,7 @@ export default {
       return this.mediaMetadata.explicit || false
     },
     placeholderUrl() {
-      const config = this.$config || this.$nuxt.$config
-      return `${config.routerBasePath}/book_placeholder.jpg`
+      return this.store.getters['globals/getPlaceholderCoverSrc']
     },
     bookCoverSrc() {
       return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
@@ -244,6 +236,7 @@ export default {
       return this.mediaMetadata.series
     },
     seriesName() {
+      if (this.collapsedSeries?.name) return this.collapsedSeries.name
       return this.series?.name || null
     },
     seriesSequence() {
@@ -436,8 +429,8 @@ export default {
     },
     overlayWrapperClasslist() {
       const classes = []
-      if (this.isSelectionMode) classes.push('bg-opacity-60')
-      else classes.push('bg-opacity-40')
+      if (this.isSelectionMode) classes.push('bg-black/60')
+      else classes.push('bg-black/40')
       if (this.selected) {
         classes.push('border-2 border-yellow-400')
       }

@@ -120,10 +120,10 @@
           </div>
 
           <div class="flex pt-4 px-2">
-            <ui-btn v-if="hasOpenIDLink" small :loading="unlinkingFromOpenID" color="primary" type="button" class="mr-2" @click.stop="unlinkOpenID">{{ $strings.ButtonUnlinkOpenId }}</ui-btn>
+            <ui-btn v-if="hasOpenIDLink" small :loading="unlinkingFromOpenID" color="bg-primary" type="button" class="mr-2" @click.stop="unlinkOpenID">{{ $strings.ButtonUnlinkOpenId }}</ui-btn>
             <ui-btn v-if="isEditingRoot" small class="flex items-center" to="/account">{{ $strings.ButtonChangeRootPassword }}</ui-btn>
-            <div class="flex-grow" />
-            <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
+            <div class="grow" />
+            <ui-btn color="bg-success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </div>
       </div>

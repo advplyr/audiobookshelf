@@ -13,7 +13,7 @@
         </div>
         <div class="text-gray-400 flex items-center w-1/2 sm:w-4/5 lg:w-2/5">
           <span class="material-symbols text-sm">person</span>
-          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+          <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">{{ podcastAuthor }}</div>
           <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base truncate">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </div>
@@ -25,7 +25,7 @@
           <p class="font-mono text-xs sm:text-sm pl-1 sm:pl-1.5 pb-px">{{ totalDurationPretty }}</p>
         </div>
       </div>
-      <div class="flex-grow" />
+      <div class="grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
         <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
@@ -55,7 +55,7 @@
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
     />
 
-    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :playback-rate="currentPlaybackRate" :library-item-id="libraryItemId" @select="selectBookmark" />
 
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
@@ -85,7 +85,8 @@ export default {
       displayTitle: null,
       currentPlaybackRate: 1,
       syncFailedToast: null,
-      coverAspectRatio: 1
+      coverAspectRatio: 1,
+      lastChapterId: null
     }
   },
   computed: {
@@ -155,7 +156,7 @@ export default {
       return this.mediaMetadata.authors || []
     },
     libraryId() {
-      return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
+      return this.streamLibraryItem?.libraryId || null
     },
     totalDurationPretty() {
       // Adjusted by playback rate
@@ -236,12 +237,16 @@ export default {
         }
       }, 1000)
     },
-    checkChapterEnd(time) {
+    checkChapterEnd() {
       if (!this.currentChapter) return
-      const chapterEndTime = this.currentChapter.end
-      const tolerance = 0.75
-      if (time >= chapterEndTime - tolerance) {
-        this.sleepTimerEnd()
+
+      // Track chapter transitions by comparing current chapter with last chapter
+      if (this.lastChapterId !== this.currentChapter.id) {
+        // Chapter changed - if we had a previous chapter, this means we crossed a boundary
+        if (this.lastChapterId) {
+          this.sleepTimerEnd()
+        }
+        this.lastChapterId = this.currentChapter.id
       }
     },
     sleepTimerEnd() {
@@ -301,7 +306,7 @@ export default {
       }
 
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
-        this.checkChapterEnd(time)
+        this.checkChapterEnd()
       }
     },
     setDuration(duration) {
@@ -394,7 +399,8 @@ export default {
             {
               src: this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
             }
-          ]
+          ],
+          chapterInfo
         })
         console.log('Set media session metadata', navigator.mediaSession.metadata)
 

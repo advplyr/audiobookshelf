@@ -2,6 +2,8 @@ const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const parseNameString = require('../utils/parsers/parseNameString')
+const htmlSanitizer = require('../utils/htmlSanitizer')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
 
 /**
  * @typedef EBookFileObject
@@ -191,6 +193,14 @@ class Book extends Model {
         ]
       }
     )
+
+    Book.addHook('afterDestroy', async (instance) => {
+      libraryItemsBookFilters.clearCountCache('afterDestroy')
+    })
+
+    Book.addHook('afterCreate', async (instance) => {
+      libraryItemsBookFilters.clearCountCache('afterCreate')
+    })
   }
 
   /**
@@ -285,7 +295,7 @@ class Book extends Model {
       const track = structuredClone(af)
       track.title = af.metadata.filename
       track.startOffset = startOffset
-      track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
+      track.contentUrl = `/api/items/${libraryItemId}/file/${track.ino}`
       startOffset += track.duration
       return track
     })
@@ -364,7 +374,11 @@ class Book extends Model {
     if (payload.metadata) {
       const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
       metadataStringKeys.forEach((key) => {
-        if (typeof payload.metadata[key] === 'string' && this[key] !== payload.metadata[key]) {
+        if (typeof payload.metadata[key] == 'number') {
+          payload.metadata[key] = String(payload.metadata[key])
+        }
+          
+        if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && this[key] !== payload.metadata[key]) {
           this[key] = payload.metadata[key] || null
 
           if (key === 'title') {
@@ -579,6 +593,7 @@ class Book extends Model {
     oldMetadataJSON.authorNameLF = this.authorNameLF
     oldMetadataJSON.narratorName = (this.narrators || []).join(', ')
     oldMetadataJSON.seriesName = this.seriesName
+    oldMetadataJSON.descriptionPlain = this.description ? htmlSanitizer.stripAllTags(this.description) : null
     return oldMetadataJSON
   }
 

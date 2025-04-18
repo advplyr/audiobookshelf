@@ -183,7 +183,7 @@ export default {
       this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)
     },
     libraryItemUpdated(libraryItem) {
-      if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
+      if (this.$store.state.selectedLibraryItem?.id === libraryItem.id) {
         this.$store.commit('setSelectedLibraryItem', libraryItem)
         if (this.$store.state.globals.selectedEpisode && libraryItem.mediaType === 'podcast') {
           const episode = libraryItem.media.episodes.find((ep) => ep.id === this.$store.state.globals.selectedEpisode.id)
@@ -191,6 +191,9 @@ export default {
             this.$store.commit('globals/setSelectedEpisode', episode)
           }
         }
+      }
+      if (this.$store.state.streamLibraryItem?.id === libraryItem.id) {
+        this.$store.commit('updateStreamLibraryItem', libraryItem)
       }
       this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
       this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)

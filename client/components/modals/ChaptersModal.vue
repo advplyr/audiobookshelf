@@ -7,7 +7,7 @@
             {{ chap.title }}
           </p>
           <span class="font-mono text-xxs sm:text-xs text-gray-400 pl-2 whitespace-nowrap">{{ $elapsedPrettyExtended((chap.end - chap.start) / _playbackRate) }}</span>
-          <span class="flex-grow" />
+          <span class="grow" />
           <span class="font-mono text-xs sm:text-sm text-gray-300">{{ $secondsToTimestamp(chap.start / _playbackRate) }}</span>
 
           <div v-show="chap.id === currentChapterId" class="w-0.5 h-full absolute top-0 left-0 bg-yellow-400" />

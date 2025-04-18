@@ -5,8 +5,8 @@
         <ui-tooltip v-if="tasksRunning" :text="$strings.LabelTasks" direction="bottom" class="flex items-center">
           <widgets-loading-spinner />
         </ui-tooltip>
-        <ui-tooltip v-else text="Activities" direction="bottom" class="flex items-center">
-          <span class="material-symbols text-1.5xl" aria-label="Activities" role="button">notifications</span>
+        <ui-tooltip v-else :text="$strings.LabelActivities" direction="bottom" class="flex items-center">
+          <span class="material-symbols text-1.5xl" :aria-label="$strings.LabelActivities" role="button">notifications</span>
         </ui-tooltip>
       </div>
       <div v-if="showUnseenSuccessIndicator" class="w-2 h-2 rounded-full bg-success pointer-events-none absolute -top-1 -right-0.5" />
@@ -14,7 +14,7 @@
     </button>
     <transition name="menu">
       <div class="sm:w-80 w-full relative">
-        <div v-show="showMenu" class="absolute z-40 -mt-px w-40 sm:w-full bg-bg border border-black-200 shadow-lg rounded-md text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalTaskRunningMenu">
+        <div v-show="showMenu" class="absolute z-40 -mt-px w-40 sm:w-full bg-bg border border-black-200 shadow-lg rounded-md text-base ring-1 ring-black/5 overflow-auto focus:outline-hidden sm:text-sm globalTaskRunningMenu">
           <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
             <template v-if="tasksToShow.length">
               <template v-for="task in tasksToShow">

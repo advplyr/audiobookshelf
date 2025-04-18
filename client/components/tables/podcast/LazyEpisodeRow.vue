@@ -1,17 +1,22 @@
 <template>
   <div :id="`lazy-episode-${index}`" class="w-full h-full cursor-pointer" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="flex" @click="clickedEpisode">
-      <div class="flex-grow">
+      <div class="grow">
         <div dir="auto" class="flex items-center">
           <span class="text-sm font-semibold">{{ episodeTitle }}</span>
           <widgets-podcast-type-indicator :type="episodeType" />
         </div>
 
         <div class="h-10 flex items-center mt-1.5 mb-0.5 overflow-hidden">
-          <p class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></p>
+          <div dir="auto" class="text-sm text-gray-200 line-clamp-2" v-html="episodeSubtitle"></div>
         </div>
+
         <div class="h-8 flex items-center">
-          <div class="w-full inline-flex justify-between max-w-xl">
+          <p v-if="sortKey === 'audioFile.metadata.filename'" class="text-sm text-gray-300 truncate font-light">
+            <strong className="font-bold">{{ $strings.LabelFilename }}</strong
+            >: {{ episode.audioFile.metadata.filename }}
+          </p>
+          <div v-else class="w-full inline-flex justify-between max-w-xl">
             <p v-if="episode?.season" class="text-sm text-gray-300">{{ $getString('LabelSeasonNumber', [episode.season]) }}</p>
             <p v-if="episode?.episode" class="text-sm text-gray-300">{{ $getString('LabelEpisodeNumber', [episode.episode]) }}</p>
             <p v-if="episode?.chapters?.length" class="text-sm text-gray-300">{{ $getString('LabelChapterCount', [episode.chapters.length]) }}</p>
@@ -20,13 +25,14 @@
         </div>
 
         <div class="flex items-center pt-2">
-          <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
-            <span class="material-symbols fill text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-            <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
+          <button class="h-8 px-4 border border-white/20 hover:bg-white/10 rounded-full flex items-center justify-center cursor-pointer focus:outline-hidden" :class="userIsFinished ? 'text-white/40' : ''" @click.stop="playClick">
+            <span class="material-symbols fill text-2xl" aria-hidden="true" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <span class="sr-only">{{ streamIsPlaying ? $strings.ButtonPause : $strings.ButtonPlay }}</span>
+            <p class="pl-2 pr-1 text-sm font-semibold" aria-hidden="true">{{ timeRemaining }}</p>
           </button>
 
           <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
-            <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
+            <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :aria-label="isQueued ? $strings.LabelRemoveFromPlayerQueue : $strings.LabelAddToPlayerQueue" borderless @click="queueBtnClick" />
           </ui-tooltip>
 
           <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
@@ -34,21 +40,21 @@
           </ui-tooltip>
 
           <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
-            <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist" />
+            <ui-icon-btn icon="playlist_add" :aria-label="$strings.LabelYourPlaylists" borderless @click="clickAddToPlaylist" />
           </ui-tooltip>
 
           <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
-          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
+          <ui-icon-btn v-if="userCanDelete" icon="close" :aria-label="$strings.HeaderRemoveEpisode" borderless @click="removeClick" />
         </div>
       </div>
       <div v-if="isHovering || isSelected || isSelectionMode" class="hidden md:block w-12 min-w-12" />
     </div>
 
-    <div v-if="isSelected || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-10 z-10 cursor-pointer" @click.stop="clickedSelectionBg" />
+    <div v-if="isSelected || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black/10 z-10 cursor-pointer" @click.stop="clickedSelectionBg" />
     <div class="hidden md:block md:w-12 md:min-w-12 md:-right-0 md:absolute md:top-0 h-full transform transition-transform z-20" :class="!isHovering && !isSelected && !isSelectionMode ? 'translate-x-24' : 'translate-x-0'">
       <div class="flex h-full items-center">
         <div class="mx-1">
-          <ui-checkbox v-model="isSelected" @input="selectedUpdated" checkbox-bg="bg" />
+          <ui-checkbox v-model="isSelected" @input="selectedUpdated" checkbox-bg="bg" aria-label="Select episode" />
         </div>
       </div>
     </div>
@@ -65,7 +71,8 @@ export default {
     episode: {
       type: Object,
       default: () => null
-    }
+    },
+    sortKey: String
   },
   data() {
     return {
@@ -96,7 +103,7 @@ export default {
       return this.episode?.title || ''
     },
     episodeSubtitle() {
-      return this.episode?.subtitle || ''
+      return this.episode?.subtitle || this.episode?.description || ''
     },
     episodeType() {
       return this.episode?.episodeType || ''

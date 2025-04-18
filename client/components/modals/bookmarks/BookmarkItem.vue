@@ -1,20 +1,20 @@
 <template>
-  <div class="flex items-center px-4 py-4 justify-start relative bg-primary hover:bg-opacity-25" :class="wrapperClass" @click.stop="click" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-4 justify-start relative hover:bg-primary/10" :class="wrapperClass" @click.stop="click" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="w-16 max-w-16 text-center">
       <p class="text-sm font-mono text-gray-400">
-        {{ this.$secondsToTimestamp(bookmark.time) }}
+        {{ this.$secondsToTimestamp(bookmark.time / playbackRate) }}
       </p>
     </div>
-    <div class="flex-grow overflow-hidden px-2">
+    <div class="grow overflow-hidden px-2">
       <template v-if="isEditing">
         <form @submit.prevent="submitUpdate">
           <div class="flex items-center">
-            <div class="flex-grow pr-2">
-              <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full" />
+            <div class="grow pr-2">
+              <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full h-10" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">forward</span></ui-btn>
+            <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10"><span class="material-symbols text-2xl -mt-px">forward</span></ui-btn>
             <div class="pl-2 flex items-center">
-              <span class="material-symbols text-3xl text-white text-opacity-70 hover:text-opacity-95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
+              <span class="material-symbols text-3xl text-white/70 hover:text-white/95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
             </div>
           </div>
         </form>
@@ -35,7 +35,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    highlight: Boolean
+    highlight: Boolean,
+    playbackRate: Number
   },
   data() {
     return {
@@ -47,7 +48,7 @@ export default {
   computed: {
     wrapperClass() {
       var classes = []
-      if (this.highlight) classes.push('bg-bg bg-opacity-60')
+      if (this.highlight) classes.push('bg-bg/60')
       if (!this.isEditing) classes.push('cursor-pointer')
       return classes.join(' ')
     }
@@ -83,11 +84,19 @@ export default {
       if (this.newBookmarkTitle === this.bookmark.title) {
         return this.cancelEditing()
       }
-      var bookmark = { ...this.bookmark }
+      const bookmark = { ...this.bookmark }
       bookmark.title = this.newBookmarkTitle
-      this.$emit('update', bookmark)
+
+      this.$axios
+        .$patch(`/api/me/item/${bookmark.libraryItemId}/bookmark`, bookmark)
+        .then(() => {
+          this.isEditing = false
+        })
+        .catch((error) => {
+          this.$toast.error(this.$strings.ToastFailedToUpdate)
+          console.error(error)
+        })
     }
-  },
-  mounted() {}
+  }
 }
 </script>

@@ -107,7 +107,9 @@ class PodcastController {
           libraryFiles: [],
           extraData: {},
           libraryId: library.id,
-          libraryFolderId: folder.id
+          libraryFolderId: folder.id,
+          title: podcast.title,
+          titleIgnorePrefix: podcast.titleIgnorePrefix
         },
         { transaction }
       )
@@ -159,7 +161,7 @@ class PodcastController {
       }
     }
 
-    SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
 
     res.json(newLibraryItem.toOldJSONExpanded())
 
@@ -377,7 +379,7 @@ class PodcastController {
     const overrideDetails = req.query.override === '1'
     const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
 
     res.json({
@@ -416,7 +418,7 @@ class PodcastController {
         Logger.info(`[PodcastController] Updated episode "${episode.title}" keys`, episode.changed())
         await episode.save()
 
-        SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
       } else {
         Logger.info(`[PodcastController] No changes to episode "${episode.title}"`)
       }
@@ -461,6 +463,9 @@ class PodcastController {
       return res.sendStatus(404)
     }
 
+    // Remove it from the podcastEpisodes array
+    req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.id !== episodeId)
+
     if (hardDelete) {
       const audioFile = episode.audioFile
       // TODO: this will trigger the watcher. should maybe handle this gracefully
@@ -495,7 +500,11 @@ class PodcastController {
     req.libraryItem.changed('libraryFiles', true)
     await req.libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    // update number of episodes
+    req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
+    await req.libraryItem.media.save()
+
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.json(req.libraryItem.toOldJSON())
   }
 

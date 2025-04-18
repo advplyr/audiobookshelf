@@ -130,7 +130,21 @@ class MigrationManager {
 
   async initUmzug(umzugStorage = new SequelizeStorage({ sequelize: this.sequelize })) {
     // This check is for dependency injection in tests
-    const files = (await fs.readdir(this.migrationsDir)).filter((file) => !file.startsWith('.')).map((file) => path.join(this.migrationsDir, file))
+    const files = (await fs.readdir(this.migrationsDir))
+      .filter((file) => {
+        // Only include .js files and exclude dot files
+        return !file.startsWith('.') && path.extname(file).toLowerCase() === '.js'
+      })
+      .map((file) => path.join(this.migrationsDir, file))
+
+    // Validate migration names
+    for (const file of files) {
+      const migrationName = path.basename(file, path.extname(file))
+      const migrationVersion = this.extractVersionFromTag(migrationName)
+      if (!migrationVersion) {
+        throw new Error(`Invalid migration file: "${migrationName}". Unable to extract version from filename.`)
+      }
+    }
 
     const parent = new Umzug({
       migrations: {

@@ -7,14 +7,14 @@
             <covers-playlist-cover :items="playlistItems" :width="200" :height="200" />
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
+        <div class="grow px-2 py-6 md:py-0 md:px-10">
           <div class="flex items-end flex-row flex-wrap md:flex-nowrap">
             <h1 class="text-2xl md:text-3xl font-sans w-full md:w-fit mb-4 md:mb-0">
               {{ playlistName }}
             </h1>
-            <div class="flex-grow" />
+            <div class="grow" />
 
-            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
+            <ui-btn v-if="showPlayButton" :disabled="streaming" color="bg-success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
               <span v-show="!streaming" class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlayAll }}
             </ui-btn>
@@ -32,7 +32,7 @@
         </div>
       </div>
     </div>
-    <div v-show="processingRemove" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
+    <div v-show="processingRemove" class="absolute top-0 left-0 w-full h-full z-10 bg-black/40 flex items-center justify-center">
       <ui-loading-indicator />
     </div>
   </div>
@@ -109,21 +109,31 @@ export default {
       this.$store.commit('globals/setEditPlaylist', this.playlist)
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove playlist "${this.playlistName}"?`)) {
-        this.processingRemove = true
-        var playlistName = this.playlistName
-        this.$axios
-          .$delete(`/api/playlists/${this.playlist.id}`)
-          .then(() => {
-            this.processingRemove = false
-            this.$toast.success(`Playlist "${playlistName}" Removed`)
-          })
-          .catch((error) => {
-            console.error('Failed to remove playlist', error)
-            this.processingRemove = false
-            this.$toast.error(`Failed to remove playlist`)
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmRemovePlaylist', [this.playlistName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.removePlaylist()
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    removePlaylist() {
+      this.processingRemove = true
+      this.$axios
+        .$delete(`/api/playlists/${this.playlist.id}`)
+        .then(() => {
+          this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
+        })
+        .catch((error) => {
+          console.error('Failed to remove playlist', error)
+          this.$toast.error(this.$strings.ToastRemoveFailed)
+        })
+        .finally(() => {
+          this.processingRemove = false
+        })
     },
     clickPlay() {
       const queueItems = []

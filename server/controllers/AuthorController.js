@@ -152,10 +152,7 @@ class AuthorController {
         for (const libraryItem of libraryItems) {
           await libraryItem.saveMetadataFile()
         }
-        SocketAuthority.emitter(
-          'items_updated',
-          libraryItems.map((li) => li.toOldJSONExpanded())
-        )
+        SocketAuthority.libraryItemsEmitter('items_updated', libraryItems)
       }
 
       // Remove old author
@@ -210,10 +207,7 @@ class AuthorController {
         }
 
         if (libraryItems.length) {
-          SocketAuthority.emitter(
-            'items_updated',
-            libraryItems.map((li) => li.toOldJSONExpanded())
-          )
+          SocketAuthority.libraryItemsEmitter('items_updated', libraryItems)
         }
       } else {
         numBooksForAuthor = await Database.bookAuthorModel.getCountForAuthor(req.author.id)

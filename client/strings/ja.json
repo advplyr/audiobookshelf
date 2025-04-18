@@ -1,0 +1,21 @@
+{
+  "ButtonAdd": "追加",
+  "ButtonAddChapters": "チャプターの追加",
+  "ButtonCancel": "キャンセル",
+  "ButtonOk": "はい",
+  "ButtonPlay": "プレイ",
+  "ButtonPlaying": "プレイ中",
+  "ButtonPrevious": "先",
+  "ButtonRead": "野村",
+  "ButtonYes": "はい",
+  "HeaderPlayerSettings": "プレーヤーの設定",
+  "LabelBooks": "ほん",
+  "LabelLanguage": "言語",
+  "LabelLanguages": "言語",
+  "LabelName": "名",
+  "LabelNew": "新しい",
+  "LabelNewPassword": "新しいのパスワード",
+  "LabelPassword": "パスワード",
+  "LabelPlaylists": "プレイリスト",
+  "LabelPodcast": "ポッドキャスト"
+}

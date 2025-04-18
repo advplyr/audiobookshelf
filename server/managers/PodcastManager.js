@@ -72,6 +72,15 @@ class PodcastManager {
    */
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
     if (this.currentDownload) {
+      // Prevent downloading episodes from the same URL for the same library item.
+      // Allow downloading for different library items in case of the same podcast existing in multiple libraries (e.g. different folders)
+      if (this.downloadQueue.some((d) => d.url === podcastEpisodeDownload.url && d.libraryItem.id === podcastEpisodeDownload.libraryItem.id)) {
+        Logger.warn(`[PodcastManager] Episode already in queue: "${this.currentDownload.episodeTitle}"`)
+        return
+      } else if (this.currentDownload.url === podcastEpisodeDownload.url && this.currentDownload.libraryItem.id === podcastEpisodeDownload.libraryItem.id) {
+        Logger.warn(`[PodcastManager] Episode download already in progress for "${podcastEpisodeDownload.episodeTitle}"`)
+        return
+      }
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
       return
@@ -99,7 +108,7 @@ class PodcastManager {
     //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
     //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
     if (await fs.pathExists(this.currentDownload.targetPath)) {
-      this.currentDownload.appendRandomId = true
+      this.currentDownload.setAppendRandomId(true)
     }
 
     // Ignores all added files to this dir
@@ -115,10 +124,24 @@ class PodcastManager {
     let success = false
     if (this.currentDownload.isMp3) {
       // Download episode and tag it
-      success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+      const ffmpegDownloadResponse = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
         Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-        return false
       })
+      success = !!ffmpegDownloadResponse?.success
+
+      // If failed due to ffmpeg error, retry without tagging
+      // e.g. RSS feed may have incorrect file extension and file type
+      // See https://github.com/advplyr/audiobookshelf/issues/3837
+      if (!success && ffmpegDownloadResponse?.isFfmpegError) {
+        Logger.info(`[PodcastManager] Retrying episode download without tagging`)
+        // Download episode only
+        success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
+          .then(() => true)
+          .catch((error) => {
+            Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+            return false
+          })
+      }
     } else {
       // Download episode only
       success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
@@ -188,6 +211,14 @@ class PodcastManager {
     const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
 
     libraryItem.libraryFiles.push(libraryFile.toJSON())
+    // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
+    let libraryItemSize = 0
+    libraryItem.libraryFiles.forEach((lf) => {
+      if (lf.metadata.size && !isNaN(lf.metadata.size)) {
+        libraryItemSize += Number(lf.metadata.size)
+      }
+    })
+    libraryItem.size = libraryItemSize
     libraryItem.changed('libraryFiles', true)
 
     libraryItem.media.podcastEpisodes.push(podcastEpisode)
@@ -218,7 +249,12 @@ class PodcastManager {
 
     await libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    if (libraryItem.media.numEpisodes !== libraryItem.media.podcastEpisodes.length) {
+      libraryItem.media.numEpisodes = libraryItem.media.podcastEpisodes.length
+      await libraryItem.media.save()
+    }
+
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     const podcastEpisodeExpanded = podcastEpisode.toOldJSONExpanded(libraryItem.id)
     podcastEpisodeExpanded.libraryItem = libraryItem.toOldJSONExpanded()
     SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
@@ -331,7 +367,7 @@ class PodcastManager {
     libraryItem.changed('updatedAt', true)
     await libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
 
     return libraryItem.media.autoDownloadEpisodes
   }
@@ -389,7 +425,7 @@ class PodcastManager {
     libraryItem.changed('updatedAt', true)
     await libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
 
     return newEpisodes || []
   }
@@ -608,7 +644,9 @@ class PodcastManager {
             libraryFiles: [],
             extraData: {},
             libraryId: folder.libraryId,
-            libraryFolderId: folder.id
+            libraryFolderId: folder.id,
+            title: podcast.title,
+            titleIgnorePrefix: podcast.titleIgnorePrefix
           },
           { transaction }
         )
@@ -674,7 +712,7 @@ class PodcastManager {
         }
       }
 
-      SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
 
       // Turn on podcast auto download cron if not already on
       if (newLibraryItem.media.autoDownloadEpisodes) {

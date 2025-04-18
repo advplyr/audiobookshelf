@@ -2,11 +2,11 @@
   <div class="w-full">
     <div class="flex items-center py-3e">
       <slot />
-      <div class="flex-grow" />
-      <button cy-id="leftScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollLeft" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollLeft">
+      <div class="grow" />
+      <button cy-id="leftScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollLeft" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollLeft ? 'hover:bg-white/5 text-gray-300 hover:text-white' : 'text-white/40 cursor-text'" @click="scrollLeft">
         <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_left</span>
       </button>
-      <button cy-id="rightScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollRight" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white hover:bg-opacity-5 text-gray-300 hover:text-white' : 'text-white text-opacity-40 cursor-text'" @click="scrollRight">
+      <button cy-id="rightScrollButton" v-if="isScrollable" :aria-label="$strings.ButtonScrollRight" class="w-8e h-8e mx-1e flex items-center justify-center rounded-full" :class="canScrollRight ? 'hover:bg-white/5 text-gray-300 hover:text-white' : 'text-white/40 cursor-text'" @click="scrollRight">
         <span class="material-symbols" :style="{ fontSize: 1.5 + 'em' }">chevron_right</span>
       </button>
     </div>
@@ -124,6 +124,7 @@ export default {
       this.updateSelectionMode(false)
     },
     editEpisode({ libraryItem, episode }) {
+      this.$store.commit('setEpisodeTableEpisodeIds', [episode.id])
       this.$store.commit('setSelectedLibraryItem', libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)

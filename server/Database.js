@@ -190,7 +190,13 @@ class Database {
     await this.buildModels(force)
     Logger.info(`[Database] Db initialized with models:`, Object.keys(this.sequelize.models).join(', '))
 
+    await this.addTriggers()
+
     await this.loadData()
+
+    Logger.info(`[Database] running ANALYZE`)
+    await this.sequelize.query('ANALYZE')
+    Logger.info(`[Database] ANALYZE completed`)
   }
 
   /**
@@ -226,6 +232,28 @@ class Database {
 
     try {
       await this.sequelize.authenticate()
+
+      // Set SQLite pragmas from environment variables
+      const allowedPragmas = [
+        { name: 'mmap_size', env: 'SQLITE_MMAP_SIZE' },
+        { name: 'cache_size', env: 'SQLITE_CACHE_SIZE' },
+        { name: 'temp_store', env: 'SQLITE_TEMP_STORE' }
+      ]
+
+      for (const pragma of allowedPragmas) {
+        const value = process.env[pragma.env]
+        if (value !== undefined) {
+          try {
+            Logger.info(`[Database] Running "PRAGMA ${pragma.name} = ${value}"`)
+            await this.sequelize.query(`PRAGMA ${pragma.name} = ${value}`)
+            const [result] = await this.sequelize.query(`PRAGMA ${pragma.name}`)
+            Logger.debug(`[Database] "PRAGMA ${pragma.name}" query result:`, result)
+          } catch (error) {
+            Logger.error(`[Database] Failed to set SQLite pragma ${pragma.name}`, error)
+          }
+        }
+      }
+
       if (process.env.NUSQLITE3_PATH) {
         await this.loadExtension(process.env.NUSQLITE3_PATH)
         Logger.info(`[Database] Db supports unaccent and unicode foldings`)
@@ -678,6 +706,7 @@ class Database {
       await libraryItem.destroy()
     }
 
+    // Remove invalid PlaylistMediaItem records
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({
       include: [
         {
@@ -697,6 +726,19 @@ class Database {
     for (const playlistMediaItem of playlistMediaItemsWithNoMediaItem) {
       Logger.warn(`Found playlistMediaItem with no book or podcastEpisode - removing it`)
       await playlistMediaItem.destroy()
+    }
+
+    // Remove invalid CollectionBook records
+    const collectionBooksWithNoBook = await this.collectionBookModel.findAll({
+      include: {
+        model: this.bookModel,
+        required: false
+      },
+      where: { '$book.id$': null }
+    })
+    for (const collectionBook of collectionBooksWithNoBook) {
+      Logger.warn(`Found collectionBook with no book - removing it`)
+      await collectionBook.destroy()
     }
 
     // Remove empty series
@@ -729,6 +771,112 @@ class Database {
     const textQuery = new this.TextSearchQuery(this.sequelize, this.supportsUnaccent, query)
     await textQuery.init()
     return textQuery
+  }
+
+  /**
+   * This is used to create necessary triggers for new databases.
+   * It adds triggers to update libraryItems.title[IgnorePrefix] when (books|podcasts).title[IgnorePrefix] is updated
+   */
+  async addTriggers() {
+    await this.addTriggerIfNotExists('books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
+    await this.addTriggerIfNotExists('books', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
+    await this.addTriggerIfNotExists('podcasts', 'title', 'id', 'libraryItems', 'title', 'mediaId')
+    await this.addTriggerIfNotExists('podcasts', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
+    await this.addAuthorNamesTriggersIfNotExist()
+  }
+
+  async addTriggerIfNotExists(sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
+    const action = `update_${targetTable}_${targetColumn}`
+    const fromSource = sourceTable === 'books' ? '' : `_from_${sourceTable}_${sourceColumn}`
+    const triggerName = this.convertToSnakeCase(`${action}${fromSource}`)
+
+    const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+    if (count > 0) return // Trigger already exists
+
+    Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+    await this.sequelize.query(`
+      CREATE TRIGGER ${triggerName}
+        AFTER UPDATE OF ${sourceColumn} ON ${sourceTable}
+        FOR EACH ROW
+        BEGIN
+          UPDATE ${targetTable}
+            SET ${targetColumn} = NEW.${sourceColumn}
+          WHERE ${targetTable}.${targetIdColumn} = NEW.${sourceIdColumn};
+        END;
+    `)
+  }
+
+  async addAuthorNamesTriggersIfNotExist() {
+    const libraryItems = 'libraryItems'
+    const bookAuthors = 'bookAuthors'
+    const authors = 'authors'
+    const columns = [
+      { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
+      { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
+    ]
+    const authorsSort = `${bookAuthors}.createdAt ASC`
+    const columnNames = columns.map((column) => column.name).join(', ')
+    const columnSourcesExpression = columns.map((column) => `GROUP_CONCAT(${column.source}, ', ' ORDER BY ${authorsSort})`).join(', ')
+    const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAuthors}.authorId`
+
+    const addBookAuthorsTriggerIfNotExists = async (action) => {
+      const modifiedRecord = action === 'delete' ? 'OLD' : 'NEW'
+      const triggerName = this.convertToSnakeCase(`update_${libraryItems}_authorNames_on_${bookAuthors}_${action}`)
+      const authorNamesSubQuery = `
+        SELECT ${columnSourcesExpression}
+        FROM ${authorsJoin}
+        WHERE ${bookAuthors}.bookId = ${modifiedRecord}.bookId
+      `
+      const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+      if (count > 0) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER ${action} ON ${bookAuthors}
+          FOR EACH ROW
+          BEGIN
+            UPDATE ${libraryItems}
+              SET (${columnNames}) = (${authorNamesSubQuery})
+            WHERE mediaId = ${modifiedRecord}.bookId;
+          END;
+      `)
+    }
+
+    const addAuthorsUpdateTriggerIfNotExists = async () => {
+      const triggerName = this.convertToSnakeCase(`update_${libraryItems}_authorNames_on_authors_update`)
+      const authorNamesSubQuery = `
+        SELECT ${columnSourcesExpression}
+        FROM ${authorsJoin}
+        WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
+      `
+
+      const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='${triggerName}'`)
+      if (count > 0) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER UPDATE OF name ON ${authors}
+          FOR EACH ROW
+          BEGIN
+            UPDATE ${libraryItems}
+              SET (${columnNames}) = (${authorNamesSubQuery})
+            WHERE mediaId IN (SELECT bookId FROM ${bookAuthors} WHERE authorId = NEW.id);
+        END;
+      `)
+    }
+
+    await addBookAuthorsTriggerIfNotExists('insert')
+    await addBookAuthorsTriggerIfNotExists('delete')
+    await addAuthorsUpdateTriggerIfNotExists()
+  }
+
+  convertToSnakeCase(str) {
+    return str.replace(/([A-Z])/g, '_$1').toLowerCase()
   }
 
   TextSearchQuery = class {

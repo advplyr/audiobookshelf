@@ -475,6 +475,8 @@ class BookScanner {
       bookAuthors: [],
       bookSeries: []
     }
+
+    const createdAtTimestamp = new Date().getTime()
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
         const matchingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
@@ -485,6 +487,8 @@ class BookScanner {
         } else {
           // New author
           bookObject.bookAuthors.push({
+            // Ensures authors are in a set order
+            createdAt: createdAtTimestamp + bookObject.bookAuthors.length,
             author: {
               libraryId: libraryItemData.libraryId,
               name: authorName,
@@ -521,6 +525,10 @@ class BookScanner {
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
     libraryItemObj.extraData = {}
+    libraryItemObj.title = bookMetadata.title
+    libraryItemObj.titleIgnorePrefix = getTitleIgnorePrefix(bookMetadata.title)
+    libraryItemObj.authorNamesFirstLast = bookMetadata.authors.join(', ')
+    libraryItemObj.authorNamesLastFirst = bookMetadata.authors.map((author) => Database.authorModel.getLastFirst(author)).join(', ')
 
     // Set isSupplementary flag on ebook library files
     for (const libraryFile of libraryItemObj.libraryFiles) {

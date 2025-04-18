@@ -5,17 +5,15 @@
       <widgets-podcast-details-edit v-else ref="itemDetailsEdit" :library-item="libraryItem" @submit="saveAndClose" />
     </div>
 
-    <div class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
+    <div class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white/5'">
       <div class="flex items-center px-4">
         <ui-tooltip :disabled="!!quickMatching" :text="$getString('MessageQuickMatchDescription', [libraryProvider])" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">{{ $strings.ButtonQuickMatch }}</ui-btn>
+          <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg-bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">{{ $strings.ButtonQuickMatch }}</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="isLibraryScanning" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="isLibraryScanning" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
-        </ui-tooltip>
+        <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="isLibraryScanning" color="bg-bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
         <!-- desktop -->
         <ui-btn @click="save" class="mx-2 hidden md:block">{{ $strings.ButtonSave }}</ui-btn>

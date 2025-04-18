@@ -2,7 +2,7 @@
   <div class="relative">
     <app-settings-content :header-text="$strings.HeaderCustomMetadataProviders">
       <template #header-prefix>
-        <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center mr-2">
+        <nuxt-link to="/config/item-metadata-utils" class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer hover:bg-white/10 text-center mr-2">
           <span class="material-symbols text-2xl">arrow_back</span>
         </nuxt-link>
       </template>
@@ -12,9 +12,9 @@
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn color="primary" small @click="setShowAddModal">{{ $strings.ButtonAdd }}</ui-btn>
+        <ui-btn color="bg-primary" small @click="setShowAddModal">{{ $strings.ButtonAdd }}</ui-btn>
       </template>
 
       <tables-custom-metadata-provider-table :providers="providers" :processing.sync="processing" class="pt-2" @removed="providerRemoved" />

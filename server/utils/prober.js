@@ -143,6 +143,7 @@ function parseChapters(_chapters) {
     .map((chap) => {
       let title = chap['TAG:title'] || chap.title || ''
       if (!title && chap.tags?.title) title = chap.tags.title
+      title = title.trim()
 
       const timebase = chap.time_base?.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
       const start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0

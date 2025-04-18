@@ -25,7 +25,7 @@
                 <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" @click="removeClick(narrator)" />
               </template>
               <template v-else>
-                <ui-btn color="success" small class="mr-2" @click.stop="saveClick">{{ $strings.ButtonSave }}</ui-btn>
+                <ui-btn color="bg-success" small class="mr-2" @click.stop="saveClick">{{ $strings.ButtonSave }}</ui-btn>
                 <ui-btn small @click.stop="cancelEditClick">{{ $strings.ButtonCancel }}</ui-btn>
               </template>
             </div>

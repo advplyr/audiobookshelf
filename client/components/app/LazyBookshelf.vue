@@ -4,7 +4,7 @@
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4e sm:px-8e relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
         <!-- Card skeletons -->
         <template v-for="entityIndex in entitiesInShelf(shelf)">
-          <div :key="entityIndex" class="w-full h-full absolute rounded z-5 top-0 left-0 bg-primary box-shadow-book" :style="{ transform: entityTransform(entityIndex), width: cardWidth + 'px', height: coverHeight + 'px' }" />
+          <div :key="entityIndex" class="w-full h-full absolute rounded-sm z-5 top-0 left-0 bg-primary box-shadow-book" :style="{ transform: entityTransform(entityIndex), width: cardWidth + 'px', height: coverHeight + 'px' }" />
         </template>
         <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20 h-6e" />
       </div>
@@ -13,15 +13,23 @@
     <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'items'" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
-        <ui-btn color="success" class="w-52" :loading="isScanningLibrary || tempIsScanning" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
+        <ui-btn to="/config" color="bg-primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
+        <ui-btn color="bg-success" class="w-52" :loading="isScanningLibrary || tempIsScanning" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
       </div>
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
+      <div v-if="entityName === 'collections' || entityName === 'playlists'" class="flex justify-center mt-4">
+        {{ emptyMessageHelp }}
+        <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+          <a href="https://www.audiobookshelf.org/guides/collections" target="_blank" class="inline-flex">
+            <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
+          </a>
+        </ui-tooltip>
+      </div>
       <!-- Clear filter only available on Library bookshelf -->
       <div v-if="entityName === 'items'" class="flex justify-center mt-2">
-        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
+        <ui-btn v-if="hasFilter" color="bg-primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
       </div>
     </div>
 
@@ -108,6 +116,11 @@ export default {
         return this.$getString('MessageBookshelfNoResultsForFilter', [this.filterName, this.filterValue])
       }
       return this.$strings.MessageNoResults
+    },
+    emptyMessageHelp() {
+      if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollectionsHelp
+      if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylistsHelp
+      return ''
     },
     entityName() {
       if (!this.page) return 'items'
@@ -406,7 +419,7 @@ export default {
 
       this.postScrollTimeout = setTimeout(this.postScroll, 500)
     },
-    async resetEntities() {
+    async resetEntities(scrollPositionToRestore) {
       if (this.isFetchingEntities) {
         this.pendingReset = true
         return
@@ -424,6 +437,12 @@ export default {
       await this.loadPage(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntities(0, lastBookIndex)
+
+      if (scrollPositionToRestore) {
+        if (window.bookshelf) {
+          window.bookshelf.scrollTop = scrollPositionToRestore
+        }
+      }
     },
     async rebuild() {
       this.initSizeData()
@@ -431,9 +450,8 @@ export default {
       var lastBookIndex = Math.min(this.totalEntities, this.booksPerFetch)
       this.destroyEntityComponents()
       await this.loadPage(0)
-      var bookshelfEl = document.getElementById('bookshelf')
-      if (bookshelfEl) {
-        bookshelfEl.scrollTop = 0
+      if (window.bookshelf) {
+        window.bookshelf.scrollTop = 0
       }
       this.mountEntities(0, lastBookIndex)
     },
@@ -534,10 +552,31 @@ export default {
       if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
+          if (this.entityName === 'items' && this.orderBy === 'media.metadata.title') {
+            const curTitle = this.entities[indexOf].media.metadata?.title
+            const newTitle = libraryItem.media.metadata?.title
+            if (curTitle != newTitle) {
+              console.log('Title changed. Re-sorting...')
+              this.resetEntities(this.currScrollTop)
+              return
+            }
+          }
           this.entities[indexOf] = libraryItem
           if (this.entityComponentRefs[indexOf]) {
             this.entityComponentRefs[indexOf].setEntity(libraryItem)
           }
+        }
+      }
+    },
+    routeToBookshelfIfLastIssueRemoved() {
+      if (this.totalEntities === 0) {
+        const currentRouteQuery = this.$route.query
+        if (currentRouteQuery?.filter && currentRouteQuery.filter === 'issues') {
+          this.$nextTick(() => {
+            console.log('Last issue removed. Redirecting to library bookshelf')
+            this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
+            this.$store.dispatch('libraries/fetch', this.currentLibraryId)
+          })
         }
       }
     },
@@ -551,6 +590,7 @@ export default {
           this.executeRebuild()
         }
       }
+      this.routeToBookshelfIfLastIssueRemoved()
     },
     libraryItemsAdded(libraryItems) {
       console.log('items added', libraryItems)

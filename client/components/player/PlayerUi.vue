@@ -2,9 +2,9 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
-        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" class="mx-2 block" />
+        <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" :playbackRateIncrementDecrement="playbackRateIncrementDecrement" class="mx-2 block" />
 
-        <ui-tooltip direction="left" :text="$strings.LabelVolume">
+        <ui-tooltip direction="bottom" :text="$strings.LabelVolume">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
@@ -31,13 +31,13 @@
         </ui-tooltip>
 
         <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings.LabelViewQueue">
-          <button :aria-label="$strings.LabelViewQueue" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
+          <button :aria-label="$strings.LabelViewQueue" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
             <span class="material-symbols text-2.5xl sm:text-3xl">playlist_play</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
-          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
+          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
             <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
@@ -49,7 +49,7 @@
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
 
     <div class="relative flex items-center justify-between">
-      <div class="flex-grow flex items-center">
+      <div class="grow flex items-center">
         <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
         <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
       </div>
@@ -58,7 +58,7 @@
           {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
         </p>
       </div>
-      <div class="flex-grow flex items-center justify-end">
+      <div class="grow flex items-center justify-end">
         <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
       </div>
     </div>
@@ -180,6 +180,9 @@ export default {
     useChapterTrack() {
       const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       return this.chapters.length ? _useChapterTrack : false
+    },
+    playbackRateIncrementDecrement() {
+      return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
     }
   },
   methods: {
@@ -223,12 +226,12 @@ export default {
     },
     increasePlaybackRate() {
       if (this.playbackRate >= 10) return
-      this.playbackRate = Number((this.playbackRate + 0.1).toFixed(1))
+      this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
       this.setPlaybackRate(this.playbackRate)
     },
     decreasePlaybackRate() {
       if (this.playbackRate <= 0.5) return
-      this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
+      this.playbackRate = Number((this.playbackRate - this.playbackRateIncrementDecrement || 0.1).toFixed(2))
       this.setPlaybackRate(this.playbackRate)
     },
     playbackRateChanged(playbackRate) {

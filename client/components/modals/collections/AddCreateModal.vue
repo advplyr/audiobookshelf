@@ -6,7 +6,7 @@
       </div>
     </template>
 
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
           <h1 v-if="!showBatchCollectionModal" class="text-2xl">{{ $strings.LabelAddToCollection }}</h1>
@@ -19,16 +19,27 @@
             </template>
           </transition-group>
         </div>
-        <div v-if="!collections.length" class="flex h-32 items-center justify-center">
-          <p class="text-xl">{{ $strings.MessageNoCollections }}</p>
+        <div v-if="!collections.length" class="flex h-32 items-center justify-center text-center px-2">
+          <div>
+            <p class="text-xl mb-2">{{ $strings.MessageNoCollections }}</p>
+            <div class="text-sm flex items-center justify-center text-gray-200">
+              <p>{{ $strings.MessageBookshelfNoCollectionsHelp }}</p>
+              <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+                <a href="https://www.audiobookshelf.org/guides/collections" target="_blank" class="inline-flex">
+                  <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
+                </a>
+              </ui-tooltip>
+            </div>
+          </div>
         </div>
-        <div class="w-full h-px bg-white bg-opacity-10" />
+
+        <div class="w-full h-px bg-white/10" />
         <form @submit.prevent="submitCreateCollection">
-          <div class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
-            <div class="flex-grow px-2">
+          <div class="flex px-4 py-2 items-center text-center border-b border-white/10 text-white/80">
+            <div class="grow px-2">
               <ui-text-input v-model="newCollectionName" :placeholder="$strings.PlaceholderNewCollection" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10">{{ $strings.ButtonCreate }}</ui-btn>
+            <ui-btn type="submit" color="bg-success" :padding-x="4" class="h-10">{{ $strings.ButtonCreate }}</ui-btn>
           </div>
         </form>
       </div>

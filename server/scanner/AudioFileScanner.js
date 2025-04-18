@@ -308,6 +308,27 @@ class AudioFileScanner {
               bookMetadata.series = series
             }
           } else {
+            // Detect if multiple series are in the series & series-part tags.
+            // Note: This requires that every series has a sequence and that they are separated by a semicolon.
+            if (value.includes(';') && audioFileMetaTags.tagSeriesPart?.includes(';')) {
+              const seriesSplit = value
+                .split(';')
+                .map((s) => s.trim())
+                .filter(Boolean)
+              const seriesSequenceSplit = audioFileMetaTags.tagSeriesPart
+                .split(';')
+                .map((s) => s.trim())
+                .filter(Boolean)
+              if (seriesSplit.length > 1 && seriesSplit.length === seriesSequenceSplit.length) {
+                bookMetadata.series = seriesSplit.map((series, index) => ({
+                  name: series,
+                  sequence: seriesSequenceSplit[index] || null
+                }))
+                libraryScan.addLog(LogLevel.DEBUG, `Detected multiple series in series/series-part tags: ${bookMetadata.series.map((s) => `${s.name} #${s.sequence}`).join(', ')}`)
+                return
+              }
+            }
+
             // Original embed used "series" and "series-part" tags
             bookMetadata.series = [
               {
@@ -499,16 +520,17 @@ class AudioFileScanner {
             // Filter these out and log a warning
             // See https://github.com/advplyr/audiobookshelf/issues/3361
             const afChaptersCleaned =
-              file.chapters?.filter((c) => {
+              file.chapters?.filter((c, i) => {
                 if (c.end - c.start < 0.1) {
-                  libraryScan.addLog(LogLevel.WARN, `Chapter "${c.title}" has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
+                  libraryScan.addLog(LogLevel.WARN, `Audio file "${file.metadata.filename}" Chapter "${c.title}" (index ${i}) has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
                   return false
                 }
                 return true
               }) || []
-            const afChapters = afChaptersCleaned.map((c) => ({
+
+            const afChapters = afChaptersCleaned.map((c, i) => ({
               ...c,
-              id: c.id + currChapterId,
+              id: currChapterId + i,
               start: c.start + currStartTime,
               end: c.end + currStartTime
             }))

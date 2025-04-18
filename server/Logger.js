@@ -21,12 +21,7 @@ class Logger {
   }
 
   get levelString() {
-    for (const key in LogLevel) {
-      if (LogLevel[key] === this.logLevel) {
-        return key
-      }
-    }
-    return 'UNKNOWN'
+    return this.getLogLevelString(this.logLevel)
   }
 
   /**
@@ -117,7 +112,7 @@ class Logger {
     if (level < LogLevel.FATAL && level < this.logLevel) return
     const consoleMethod = Logger.ConsoleMethods[levelName]
     console[consoleMethod](`[${this.timestamp}] ${levelName}:`, ...args)
-    this.#logToFileAndListeners(level, levelName, args, source)
+    return this.#logToFileAndListeners(level, levelName, args, source)
   }
 
   trace(...args) {
@@ -141,7 +136,7 @@ class Logger {
   }
 
   fatal(...args) {
-    this.#log('FATAL', this.source, ...args)
+    return this.#log('FATAL', this.source, ...args)
   }
 
   note(...args) {

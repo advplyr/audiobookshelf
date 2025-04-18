@@ -133,7 +133,7 @@ export default {
 
       instance.$mount()
       instance.$el.style.transform = this.entityTransform((index % this.entitiesPerShelf) + 1)
-      instance.$el.classList.add('absolute', 'top-0', 'left-0')
+      instance.$el.classList.add('absolute', 'top-0', 'left-0', 'z-10')
       shelfEl.appendChild(instance.$el)
 
       if (this.entities[index]) {

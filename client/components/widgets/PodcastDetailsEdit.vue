@@ -3,14 +3,14 @@
     <form class="w-full h-full px-4 py-6" @submit.prevent="submitForm">
       <div class="flex -mx-1">
         <div class="w-1/2 px-1">
-          <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" @input="handleInputChange" />
+          <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1">
-          <ui-text-input-with-label ref="authorInput" v-model="details.author" :label="$strings.LabelAuthor" @input="handleInputChange" />
+        <div class="grow px-1">
+          <ui-text-input-with-label ref="authorInput" v-model="details.author" :label="$strings.LabelAuthor" trim-whitespace @input="handleInputChange" />
         </div>
       </div>
 
-      <ui-text-input-with-label ref="feedUrlInput" v-model="details.feedUrl" :label="$strings.LabelRSSFeedURL" class="mt-2" @input="handleInputChange" />
+      <ui-text-input-with-label ref="feedUrlInput" v-model="details.feedUrl" :label="$strings.LabelRSSFeedURL" trim-whitespace class="mt-2" @input="handleInputChange" />
 
       <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" @input="handleInputChange" />
 
@@ -18,22 +18,22 @@
         <div class="w-1/2 px-1">
           <ui-multi-select ref="genresSelect" v-model="details.genres" :label="$strings.LabelGenres" :items="genres" @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1">
+        <div class="grow px-1">
           <ui-multi-select ref="tagsSelect" v-model="newTags" :label="$strings.LabelTags" :items="tags" @input="handleInputChange" />
         </div>
       </div>
 
       <div class="flex mt-2 -mx-1">
         <div class="w-1/4 px-1">
-          <ui-text-input-with-label ref="releaseDateInput" v-model="details.releaseDate" :label="$strings.LabelReleaseDate" @input="handleInputChange" />
+          <ui-text-input-with-label ref="releaseDateInput" v-model="details.releaseDate" :label="$strings.LabelReleaseDate" trim-whitespace @input="handleInputChange" />
         </div>
         <div class="w-1/4 px-1">
-          <ui-text-input-with-label ref="itunesIdInput" v-model="details.itunesId" label="iTunes ID" @input="handleInputChange" />
+          <ui-text-input-with-label ref="itunesIdInput" v-model="details.itunesId" label="iTunes ID" trim-whitespace @input="handleInputChange" />
         </div>
         <div class="w-1/4 px-1">
-          <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" @input="handleInputChange" />
+          <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="flex-grow px-1 pt-6">
+        <div class="grow px-1 pt-6">
           <div class="flex justify-center">
             <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
           </div>

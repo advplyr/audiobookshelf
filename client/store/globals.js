@@ -87,7 +87,7 @@ export const getters = {
   getLibraryItemCoverSrc:
     (state, getters, rootState, rootGetters) =>
     (libraryItem, placeholder = null, raw = false) => {
-      if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
+      if (!placeholder) placeholder = getters.getPlaceholderCoverSrc
       if (!libraryItem) return placeholder
       const media = libraryItem.media
       if (!media?.coverPath || media.coverPath === placeholder) return placeholder
@@ -95,7 +95,6 @@ export const getters = {
       // Absolute URL covers (should no longer be used)
       if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
 
-      const userToken = rootGetters['user/getToken']
       const lastUpdate = libraryItem.updatedAt || Date.now()
       const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
       return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?ts=${lastUpdate}${raw ? '&raw=1' : ''}`
@@ -103,11 +102,13 @@ export const getters = {
   getLibraryItemCoverSrcById:
     (state, getters, rootState, rootGetters) =>
     (libraryItemId, timestamp = null, raw = false) => {
-      const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
-      if (!libraryItemId) return placeholder
-      const userToken = rootGetters['user/getToken']
+      if (!libraryItemId) return getters.getPlaceholderCoverSrc
+
       return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
     },
+  getPlaceholderCoverSrc: (state, getters, rootState, rootGetters) => {
+    return `${rootState.routerBasePath}/book_placeholder.jpg`
+  },
   getIsBatchSelectingMediaItems: (state) => {
     return state.selectedMediaItems.length
   }
