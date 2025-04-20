@@ -45,6 +45,7 @@ module.exports.AudioMimeType = {
   FLAC: 'audio/flac',
   WMA: 'audio/x-ms-wma',
   AIFF: 'audio/x-aiff',
+  AIF: 'audio/x-aiff',
   WEBM: 'audio/webm',
   WEBMA: 'audio/webm',
   MKA: 'audio/x-matroska',
