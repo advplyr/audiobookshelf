@@ -77,9 +77,14 @@
       </div>
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
-        <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
-        </button>
+        <div class="flex flex-col items-start">
+          <button v-if="audioFiles.length > 1" :disabled="processing || showEncodeOptions || usingCustomEncodeOptions" :class="['text-sm uppercase flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md mb-2', (processing || showEncodeOptions || usingCustomEncodeOptions) ? 'text-gray-400' : 'text-gray-200']" @click="mergeWithoutEncoding = !mergeWithoutEncoding">
+            <span class="material-symbols text-xl">{{ mergeWithoutEncoding ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelMergeWithoutEncoding }}</span>
+          </button>
+          <button :disabled="processing || mergeWithoutEncoding" :class="['text-sm uppercase flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md', (processing || mergeWithoutEncoding || usingCustomEncodeOptions) ? 'text-gray-400' : 'text-gray-200']" @click="showEncodeOptions = !showEncodeOptions">
+            <span class="material-symbols text-xl">{{ showEncodeOptions || (usingCustomEncodeOptions && !mergeWithoutEncoding) ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
+          </button>
+        </div>
 
         <div class="grow" />
 
@@ -92,7 +97,7 @@
       <!-- advanced encoding options -->
       <div v-if="isM4BTool" class="overflow-hidden">
         <transition name="slide">
-          <div v-if="showEncodeOptions || usingCustomEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
+          <div v-if="(showEncodeOptions || usingCustomEncodeOptions) && !mergeWithoutEncoding" class="mb-4 pb-4 border-b border-white/10">
             <div class="flex flex-wrap -mx-2">
               <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
               <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
@@ -216,6 +221,7 @@ export default {
       isCancelingEncode: false,
       showEncodeOptions: false,
       shouldBackupAudioFiles: true,
+      mergeWithoutEncoding: false,
       encodingOptions: {
         bitrate: '128k',
         channels: '2',
@@ -352,7 +358,7 @@ export default {
       if (this.$refs.codecInput) this.$refs.codecInput.blur()
 
       let queryStr = ''
-      if (this.showEncodeOptions) {
+      if (this.showEncodeOptions && !this.mergeWithoutEncoding) {
         const options = []
         if (this.encodingOptions.bitrate) options.push(`bitrate=${this.encodingOptions.bitrate}`)
         if (this.encodingOptions.channels) options.push(`channels=${this.encodingOptions.channels}`)
@@ -360,6 +366,8 @@ export default {
         if (options.length) {
           queryStr = `?${options.join('&')}`
         }
+      } else if (this.mergeWithoutEncoding) {
+        queryStr = '?codec=copy'
       }
       this.processing = true
       this.$axios

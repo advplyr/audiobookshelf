@@ -432,6 +432,7 @@
   "LabelMaxEpisodesToKeepHelp": "Value of 0 sets no max limit. After a new episode is auto-downloaded this will delete the oldest episode if you have more than X episodes. This will only delete 1 episode per new download.",
   "LabelMediaPlayer": "Media Player",
   "LabelMediaType": "Media Type",
+  "LabelMergeWithoutEncoding": "Merge files without encoding",
   "LabelMetaTag": "Meta Tag",
   "LabelMetaTags": "Meta Tags",
   "LabelMetadataOrderOfPrecedenceDescription": "Higher priority metadata sources will override lower priority metadata sources",
