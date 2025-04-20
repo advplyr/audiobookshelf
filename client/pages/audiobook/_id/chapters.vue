@@ -565,7 +565,7 @@ export default {
           this.findingChapters = false
 
           if (data.error) {
-            this.asinError = data.error
+            this.asinError = this.$getString(data.stringKey)
           } else {
             console.log('Chapter data', data)
             this.chapterData = data
