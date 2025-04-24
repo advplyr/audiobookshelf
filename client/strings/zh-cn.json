@@ -604,6 +604,7 @@
   "LabelSlug": "Slug",
   "LabelSortAscending": "升序",
   "LabelSortDescending": "降序",
+  "LabelSortPubDate": "按出版日期排序",
   "LabelStart": "开始",
   "LabelStartTime": "开始时间",
   "LabelStarted": "开始于",
