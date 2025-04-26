@@ -215,9 +215,10 @@ class FeedEpisode extends Model {
    * @returns {Promise<FeedEpisode[]>}
    */
   static async createFromBooks(books, feed, slug, transaction) {
-    const earliestLibraryItemCreatedAt = books.reduce((earliest, book) => {
+    // This is never null unless the books array is empty, as this method is not invoked when no books. Reduce needs an initial item
+    const earliestLibraryItemCreatedAt = books.length > 0 ? books.reduce((earliest, book) => {
       return book.libraryItem.createdAt < earliest.libraryItem.createdAt ? book : earliest
-    }).libraryItem.createdAt
+    }).libraryItem.createdAt : null
 
     const feedEpisodeObjs = []
     let numExisting = 0
