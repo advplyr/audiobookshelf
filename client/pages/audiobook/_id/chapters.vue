@@ -337,12 +337,12 @@ export default {
 
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       if (lastChapter.start + amount > this.mediaDurationRounded) {
-        this.$toast.error($strings.ToastInvalidShiftAmountLast)
+        this.$toast.error(this.$strings.ToastInvalidShiftAmountLast)
         return
       }
 
       if (this.newChapters[1].start + amount <= 0) {
-        this.$toast.error($strings.ToastInvalidShiftAmountStart)
+        this.$toast.error(this.$strings.ToastInvalidShiftAmountStart)
         return
       }
 
