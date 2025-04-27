@@ -20,10 +20,10 @@
         <div class="w-1/2 px-2">
           <div v-if="!isPodcast" class="flex items-end">
             <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
-            <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
-              <div class="ml-2 mb-1 w-8 h-8 bg-bg border border-white/10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
+            <ui-tooltip direction="top" :text="$strings.LabelUploaderItemFetchMetadataHelp">
+              <button type="button" class="ml-2 mb-1 w-8 h-8 bg-bg border border-white/10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
                 <span class="text-base text-white/80 font-mono material-symbols">sync</span>
-              </div>
+              </button>
             </ui-tooltip>
           </div>
           <div v-else class="w-full">
