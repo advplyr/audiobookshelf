@@ -341,8 +341,8 @@ export default {
         return
       }
 
-      if (this.newChapters[0].end + amount <= 0) {
-        this.$toast.error('Invalid shift amount. First chapter would have zero or negative length.')
+      if (this.newChapters[1].start + amount <= 0) {
+        this.$toast.error('Invalid shift amount. The first chapter would have zero or negative length and would be overwritten by the second chapter. Increase the start duration of second chapter. ')
         return
       }
 
