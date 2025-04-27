@@ -149,7 +149,7 @@
               <ui-btn color="bg-primary flex-1" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
             </div>
             <div class="mt-2">
-              <ui-checkbox v-model="removeBranding" label="Remove Audible branding from chapters" small checkbox-bg="bg" label-class="pl-2 text-base text-sm" @click="toggleRemoveBranding" />
+              <ui-checkbox v-model="removeBranding" :label="$strings.LabelRemoveAudibleBranding" small checkbox-bg="bg" label-class="pl-2 text-base text-sm" @click="toggleRemoveBranding" />
             </div>
             <div class="absolute left-0 mt-1.5 text-error text-s h-5">
               <p v-if="asinError">{{ asinError }}</p>
@@ -337,12 +337,12 @@ export default {
 
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       if (lastChapter.start + amount > this.mediaDurationRounded) {
-        this.$toast.error('Invalid shift amount. Last chapter start time would extend beyond the duration of this audiobook.')
+        this.$toast.error($strings.ToastInvalidShiftAmountLast)
         return
       }
 
       if (this.newChapters[1].start + amount <= 0) {
-        this.$toast.error('Invalid shift amount. The first chapter would have zero or negative length and would be overwritten by the second chapter. Increase the start duration of second chapter. ')
+        this.$toast.error($strings.ToastInvalidShiftAmountStart)
         return
       }
 
