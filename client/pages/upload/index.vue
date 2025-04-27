@@ -316,9 +316,8 @@ export default {
         .$post('/api/upload', form)
         .then(() => true)
         .catch((error) => {
-          console.error('Failed', error)
-          var errorMessage = error.response && error.response.data ? error.response.data : 'Oops, something went wrong...'
-          this.$toast.error(errorMessage)
+          console.error('Failed to upload item', error)
+          this.$toast.error(error.response?.data || 'Oops, something went wrong...')
           return false
         })
     },
@@ -382,13 +381,9 @@ export default {
         }
       }
 
-      let itemsUploaded = 0
-      let itemsFailed = 0
       for (const item of itemsToUpload) {
         this.updateItemCardStatus(item.index, 'uploading')
         const result = await this.uploadItem(item)
-        if (result) itemsUploaded++
-        else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')
       }
       this.processing = false
