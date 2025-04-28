@@ -222,7 +222,7 @@ class MiscController {
 
     // Update nameIgnorePrefix column on series
     const allSeries = await Database.seriesModel.findAll({
-      attributes: ['id', 'name', 'nameIgnorePrefix']
+      attributes: ['id', 'name', 'nameIgnorePrefix', 'libraryId']
     })
     const bulkUpdateSeries = []
     allSeries.forEach((series) => {
@@ -230,6 +230,8 @@ class MiscController {
       if (nameIgnorePrefix !== series.nameIgnorePrefix) {
         bulkUpdateSeries.push({
           id: series.id,
+          name: series.name,
+          libraryId: series.libraryId,
           nameIgnorePrefix
         })
       }
