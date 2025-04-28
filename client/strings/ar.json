@@ -212,5 +212,20 @@
   "LabelLayoutSinglePage": "صفحة واحدة",
   "LabelLineSpacing": "تباعد الأسطر",
   "LabelListenAgain": "الاستماع مجدداً",
-  "LabelMediaType": "نوع الوسائط"
+  "LabelMediaType": "نوع الوسائط",
+  "LabelMissing": "مفقود",
+  "LabelMore": "أكثر",
+  "LabelMoreInfo": "معلومات أكثر",
+  "LabelName": "الاسم",
+  "LabelNarrator": "الراوي",
+  "LabelNarrators": "الرواة",
+  "LabelNewestAuthors": "أجدد المؤلفين",
+  "LabelNewestEpisodes": "أجدد الحلقات",
+  "LabelNotFinished": "لم يتم الانتهاء",
+  "LabelNotStarted": "لم يتم البدء",
+  "LabelNumberOfEpisodes": "# من الحلقات",
+  "LabelPassword": "كلمة المرور",
+  "LabelPath": "مسار",
+  "LabelPodcast": "مدونة صوتية",
+  "LabelPodcasts": "مدونات صوتية"
 }
