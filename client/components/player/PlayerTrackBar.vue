@@ -74,6 +74,9 @@ export default {
     currentChapterStart() {
       if (!this.currentChapter) return 0
       return this.currentChapter.start
+    },
+    isMobile() {
+      return this.$store.state.globals.isMobile
     }
   },
   methods: {
@@ -145,6 +148,9 @@ export default {
       })
     },
     mousemoveTrack(e) {
+      if (this.isMobile) {
+        return
+      }
       const offsetX = e.offsetX
 
       const baseTime = this.useChapterTrack ? this.currentChapterStart : 0
@@ -198,6 +204,7 @@ export default {
     setTrackWidth() {
       if (this.$refs.track) {
         this.trackWidth = this.$refs.track.clientWidth
+        this.trackOffsetLeft = this.$refs.track.getBoundingClientRect().left
       } else {
         console.error('Track not loaded', this.$refs)
       }
