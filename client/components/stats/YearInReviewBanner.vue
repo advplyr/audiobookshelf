@@ -164,14 +164,15 @@ export default {
   beforeMount() {
     this.yearInReviewYear = new Date().getFullYear()
 
-    // When not December show previous year
-    if (new Date().getMonth() < 11) {
+    this.availableYears = this.getAvailableYears()
+    const availableYearValues = this.availableYears.map((y) => y.value)
+
+    // When not December show previous year if data is available
+    if (new Date().getMonth() < 11 && availableYearValues.includes(this.yearInReviewYear - 1)) {
       this.yearInReviewYear--
     }
   },
   mounted() {
-    this.availableYears = this.getAvailableYears()
-
     if (typeof navigator.share !== 'undefined' && navigator.share) {
       this.showShareButton = true
     } else {
