@@ -2,7 +2,7 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-col sm:flex-row mb-4">
       <div class="relative self-center md:self-start">
-        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, libraryItemUpdatedAt, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-preview-cover :src="coverUrl" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
@@ -156,6 +156,12 @@ export default {
     },
     coverPath() {
       return this.media.coverPath
+    },
+    coverUrl() {
+      if (!this.coverPath) {
+        return this.$store.getters['globals/getPlaceholderCoverSrc']
+      }
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId, this.libraryItemUpdatedAt, true)
     },
     mediaMetadata() {
       return this.media.metadata || {}

@@ -80,9 +80,13 @@ class PodcastEpisode extends Model {
     if (rssPodcastEpisode.guid) {
       podcastEpisode.extraData.guid = rssPodcastEpisode.guid
     }
+
     if (audioFile.chapters?.length) {
       podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
+    } else if (rssPodcastEpisode.chapters?.length) {
+      podcastEpisode.chapters = rssPodcastEpisode.chapters.map((ch) => ({ ...ch }))
     }
+
     return this.create(podcastEpisode)
   }
 

@@ -223,8 +223,7 @@ export default {
       return this.mediaMetadata.explicit || false
     },
     placeholderUrl() {
-      const config = this.$config || this.$nuxt.$config
-      return `${config.routerBasePath}/book_placeholder.jpg`
+      return this.store.getters['globals/getPlaceholderCoverSrc']
     },
     bookCoverSrc() {
       return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)

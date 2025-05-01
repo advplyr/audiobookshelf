@@ -96,8 +96,8 @@ export default {
       return this.author
     },
     placeholderUrl() {
-      const config = this.$config || this.$nuxt.$config
-      return `${config.routerBasePath}/book_placeholder.jpg`
+      const store = this.$store || this.$nuxt.$store
+      return store.getters['globals/getPlaceholderCoverSrc']
     },
     fullCoverUrl() {
       if (!this.libraryItem) return null

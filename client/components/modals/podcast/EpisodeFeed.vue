@@ -10,6 +10,12 @@
         <form @submit.prevent="submit" class="flex grow">
           <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="grow mr-2 text-sm md:text-base" />
         </form>
+        <ui-btn :padding-x="4" @click="toggleSort">
+          <span class="pr-4">{{ $strings.LabelSortPubDate }}</span>
+          <span class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-2">
+            <span class="material-symbols text-xl" :aria-label="sortDescending ? $strings.LabelSortDescending : $strings.LabelSortAscending">{{ sortDescending ? 'expand_more' : 'expand_less' }}</span>
+          </span>
+        </ui-btn>
       </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
         <div v-for="(episode, index) in episodesList" :key="index" class="relative" :class="episode.isDownloaded || episode.isDownloading ? 'bg-primary/40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success/10' : index % 2 == 0 ? 'cursor-pointer bg-primary/25 hover:bg-primary/40' : 'cursor-pointer bg-primary/5 hover:bg-primary/25'" @click="toggleSelectEpisode(episode)">
@@ -73,7 +79,8 @@ export default {
       searchTimeout: null,
       searchText: null,
       downloadedEpisodeGuidMap: {},
-      downloadedEpisodeUrlMap: {}
+      downloadedEpisodeUrlMap: {},
+      sortDescending: true
     }
   },
   watch: {
@@ -141,6 +148,17 @@ export default {
     }
   },
   methods: {
+    toggleSort() {
+      this.sortDescending = !this.sortDescending
+      this.episodesCleaned = this.episodesCleaned.toSorted((a, b) => {
+        if (this.sortDescending) {
+          return a.publishedAt < b.publishedAt ? 1 : -1
+        }
+        return a.publishedAt > b.publishedAt ? 1 : -1
+      })
+      this.selectedEpisodes = {}
+      this.selectAll = false
+    },
     getIsEpisodeDownloaded(episode) {
       if (episode.guid && !!this.downloadedEpisodeGuidMap[episode.guid]) {
         return true

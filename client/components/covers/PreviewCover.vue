@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <p v-if="!imageFailed && showResolution" class="absolute -bottom-5 left-0 right-0 mx-auto text-xs text-gray-300 text-center">{{ resolution }}</p>
+    <p v-if="!imageFailed && showResolution && resolution" class="absolute -bottom-5 left-0 right-0 mx-auto text-xs text-gray-300 text-center">{{ resolution }}</p>
   </div>
 </template>
 
@@ -65,11 +65,12 @@ export default {
       return 0.8 * this.sizeMultiplier
     },
     resolution() {
+      if (!this.naturalWidth || !this.naturalHeight) return null
       return `${this.naturalWidth}×${this.naturalHeight}px`
     },
     placeholderUrl() {
-      const config = this.$config || this.$nuxt.$config
-      return `${config.routerBasePath}/book_placeholder.jpg`
+      const store = this.$store || this.$nuxt.$store
+      return store.getters['globals/getPlaceholderCoverSrc']
     }
   },
   methods: {

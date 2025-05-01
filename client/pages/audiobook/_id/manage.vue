@@ -195,8 +195,13 @@ export default {
       return redirect('/?error=invalid media type')
     }
     if (!libraryItem.media.audioFiles.length) {
-      cnosole.error('No audio files')
+      console.error('No audio files')
       return redirect('/?error=no audio files')
+    }
+
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
     }
 
     return {

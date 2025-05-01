@@ -175,6 +175,25 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
+
+      if (session.mediaMetadata == null) {
+        session.mediaMetadata = {}
+      }
+
+      // Populate mediaMetadata with the current library items metadata for any keys not set by client
+      const libraryItemMediaMetadata = libraryItem.media.oldMetadataToJSON()
+      for (const key in libraryItemMediaMetadata) {
+        if (session.mediaMetadata[key] === undefined) {
+          session.mediaMetadata[key] = libraryItemMediaMetadata[key]
+        }
+      }
+
+      if (session.displayTitle == null || session.displayTitle === '') {
+        session.displayTitle = libraryItem.title
+      }
+      if (session.displayAuthor == null || session.displayAuthor === '') {
+        session.displayAuthor = libraryItem.authorNamesFirstLast
+      }
       session.duration = libraryItem.media.getPlaybackDuration(sessionJson.episodeId)
 
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)

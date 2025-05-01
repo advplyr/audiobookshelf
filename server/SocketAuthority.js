@@ -85,6 +85,42 @@ class SocketAuthority {
   }
 
   /**
+   * Emits event with library item to all clients that can access the library item
+   * Note: Emits toOldJSONExpanded()
+   *
+   * @param {string} evt
+   * @param {import('./models/LibraryItem')} libraryItem
+   */
+  libraryItemEmitter(evt, libraryItem) {
+    for (const socketId in this.clients) {
+      if (this.clients[socketId].user?.checkCanAccessLibraryItem(libraryItem)) {
+        this.clients[socketId].socket.emit(evt, libraryItem.toOldJSONExpanded())
+      }
+    }
+  }
+
+  /**
+   * Emits event with library items to all clients that can access the library items
+   * Note: Emits toOldJSONExpanded()
+   *
+   * @param {string} evt
+   * @param {import('./models/LibraryItem')[]} libraryItems
+   */
+  libraryItemsEmitter(evt, libraryItems) {
+    for (const socketId in this.clients) {
+      if (this.clients[socketId].user) {
+        const libraryItemsAccessibleToUser = libraryItems.filter((li) => this.clients[socketId].user.checkCanAccessLibraryItem(li))
+        if (libraryItemsAccessibleToUser.length) {
+          this.clients[socketId].socket.emit(
+            evt,
+            libraryItemsAccessibleToUser.map((li) => li.toOldJSONExpanded())
+          )
+        }
+      }
+    }
+  }
+
+  /**
    * Closes the Socket.IO server and disconnect all clients
    *
    * @param {Function} callback

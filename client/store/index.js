@@ -171,6 +171,10 @@ export const mutations = {
       state.playerQueueItems = payload.queueItems || []
     }
   },
+  updateStreamLibraryItem(state, libraryItem) {
+    if (!libraryItem) return
+    state.streamLibraryItem = libraryItem
+  },
   setIsPlaying(state, isPlaying) {
     state.streamIsPlaying = isPlaying
   },

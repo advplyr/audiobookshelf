@@ -49,6 +49,7 @@ function createMountOptions() {
         'libraries/getLibraryProvider': () => 'audible.us',
         'libraries/getBookCoverAspectRatio': 1,
         'globals/getLibraryItemCoverSrc': () => 'https://my.server.com/book_placeholder.jpg',
+        'globals/getPlaceholderCoverSrc': 'https://my.server.com/book_placeholder.jpg',
         getLibraryItemsStreaming: () => null,
         getIsMediaQueued: () => false,
         getIsStreamingFromDifferentLibrary: () => false
@@ -172,6 +173,7 @@ describe('LazyBookCard', () => {
   })
 
   it('shows titleImageNotReady and sets opacity 0 on coverImage when image not ready', () => {
+    mountOptions.mocks.$store.getters['globals/getLibraryItemCoverSrc'] = () => 'https://my.server.com/notfound.jpg'
     cy.mount(LazyBookCard, mountOptions)
 
     cy.get('&titleImageNotReady').should('be.visible')
@@ -257,7 +259,7 @@ describe('LazyBookCard', () => {
       cy.get('#book-card-0').trigger('mouseover')
 
       cy.get('&titleImageNotReady').should('be.hidden')
-      cy.get('&seriesNameOverlay').should('be.visible').and('have.text', 'Middle Earth Chronicles')
+      cy.get('&seriesNameOverlay').should('be.visible').and('have.text', 'The Lord of the Rings')
     })
 
     it('shows the seriesSequenceList when collapsed series has a sequence list', () => {

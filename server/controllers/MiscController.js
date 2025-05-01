@@ -37,25 +37,31 @@ class MiscController {
       Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
       return res.sendStatus(403)
     }
-    if (!req.files) {
+    if (!req.files || !Object.values(req.files).length) {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
 
     const files = Object.values(req.files)
-    const { title, author, series, folder: folderId, library: libraryId } = req.body
+    let { title, author, series, folder: folderId, library: libraryId } = req.body
+    // Validate request body
+    if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
+      return res.status(400).send('Invalid request body')
+    }
+    if (!series || typeof series !== 'string') {
+      series = null
+    }
+    if (!author || typeof author !== 'string') {
+      author = null
+    }
 
     const library = await Database.libraryModel.findByIdWithFolders(libraryId)
     if (!library) {
-      return res.status(404).send(`Library not found with id ${libraryId}`)
+      return res.status(404).send('Library not found')
     }
     const folder = library.libraryFolders.find((fold) => fold.id === folderId)
     if (!folder) {
-      return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
-    }
-
-    if (!files.length || !title) {
-      return res.status(500).send(`Invalid post data`)
+      return res.status(404).send('Folder not found')
     }
 
     // Podcasts should only be one folder deep
@@ -216,7 +222,7 @@ class MiscController {
 
     // Update nameIgnorePrefix column on series
     const allSeries = await Database.seriesModel.findAll({
-      attributes: ['id', 'name', 'nameIgnorePrefix']
+      attributes: ['id', 'name', 'nameIgnorePrefix', 'libraryId']
     })
     const bulkUpdateSeries = []
     allSeries.forEach((series) => {
@@ -224,6 +230,8 @@ class MiscController {
       if (nameIgnorePrefix !== series.nameIgnorePrefix) {
         bulkUpdateSeries.push({
           id: series.id,
+          name: series.name,
+          libraryId: series.libraryId,
           nameIgnorePrefix
         })
       }
@@ -343,7 +351,7 @@ class MiscController {
         })
         await libraryItem.saveMetadataFile()
 
-        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
         numItemsUpdated++
       }
     }
@@ -386,7 +394,7 @@ class MiscController {
       })
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
       numItemsUpdated++
     }
 
@@ -481,7 +489,7 @@ class MiscController {
         })
         await libraryItem.saveMetadataFile()
 
-        SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
         numItemsUpdated++
       }
     }
@@ -524,7 +532,7 @@ class MiscController {
       })
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
       numItemsUpdated++
     }
 

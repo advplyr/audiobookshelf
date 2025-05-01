@@ -141,10 +141,21 @@
         </div>
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
-        <div v-if="!chapterData" class="flex p-20">
-          <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
-          <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 mx-1" />
-          <ui-btn small color="bg-primary" class="mt-5" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+        <div v-if="!chapterData" class="flex flex-col items-center justify-center p-20">
+          <div class="relative">
+            <div class="flex items-end space-x-2">
+              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
+              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32" />
+              <ui-btn small color="bg-primary" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+            </div>
+
+            <div class="absolute left-0 mt-1.5 text-error text-s h-5">
+              <p v-if="asinError">{{ asinError }}</p>
+              <p v-if="asinError">{{ $strings.MessageAsinCheck }}</p>
+            </div>
+
+            <div class="invisible h-5 mt-1 text-xs"></div>
+          </div>
         </div>
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
@@ -221,6 +232,11 @@ export default {
       return redirect('/')
     }
 
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
+    }
+
     var previousRoute = from ? from.fullPath : null
     if (from && from.path === '/login') previousRoute = null
     return {
@@ -244,6 +260,7 @@ export default {
       findingChapters: false,
       showFindChaptersModal: false,
       chapterData: null,
+      asinError: null,
       showSecondInputs: false,
       audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
       hasChanges: false
@@ -541,14 +558,14 @@ export default {
 
       this.findingChapters = true
       this.chapterData = null
+      this.asinError = null // used to show warning about audible vs amazon ASIN
       this.$axios
         .$get(`/api/search/chapters?asin=${this.asinInput}&region=${this.regionInput}`)
         .then((data) => {
           this.findingChapters = false
 
           if (data.error) {
-            this.$toast.error(data.error)
-            this.showFindChaptersModal = false
+            this.asinError = this.$getString(data.stringKey)
           } else {
             console.log('Chapter data', data)
             this.chapterData = data

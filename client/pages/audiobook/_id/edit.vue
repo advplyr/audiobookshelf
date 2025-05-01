@@ -103,6 +103,12 @@ export default {
       console.error('No need to edit library item that is 1 file...')
       return redirect('/')
     }
+
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
+    }
+
     return {
       libraryItem,
       files: libraryItem.media.audioFiles ? libraryItem.media.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []

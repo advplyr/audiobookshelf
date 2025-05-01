@@ -1188,10 +1188,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter(
-        'items_updated',
-        itemsUpdated.map((li) => li.toOldJSONExpanded())
-      )
+      SocketAuthority.libraryItemsEmitter('items_updated', itemsUpdated)
     }
 
     res.json({
@@ -1232,10 +1229,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter(
-        'items_updated',
-        itemsUpdated.map((li) => li.toOldJSONExpanded())
-      )
+      SocketAuthority.libraryItemsEmitter('items_updated', itemsUpdated)
     }
 
     res.json({

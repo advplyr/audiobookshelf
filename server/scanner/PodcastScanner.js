@@ -59,17 +59,36 @@ class PodcastScanner {
 
     if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== existingPodcastEpisodes.length) {
       // Filter out and destroy episodes that were removed
-      existingPodcastEpisodes = await Promise.all(
-        existingPodcastEpisodes.filter(async (ep) => {
-          if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
-            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
-            // TODO: Should clean up other data linked to this episode
-            await ep.destroy()
-            return false
+      const episodesToRemove = []
+      existingPodcastEpisodes = existingPodcastEpisodes.filter((ep) => {
+        if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
+          episodesToRemove.push(ep)
+          return false
+        }
+        return true
+      })
+
+      if (episodesToRemove.length) {
+        // Remove episodes from playlists and media progress
+        const episodeIds = episodesToRemove.map((ep) => ep.id)
+        await Database.playlistModel.removeMediaItemsFromPlaylists(episodeIds)
+        const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
+          where: {
+            mediaItemId: episodeIds
           }
-          return true
         })
-      )
+        if (mediaProgressRemoved) {
+          libraryScan.addLog(LogLevel.INFO, `Removed ${mediaProgressRemoved} media progress for episodes`)
+        }
+
+        // Remove episodes
+        await Promise.all(
+          episodesToRemove.map(async (ep) => {
+            await ep.destroy()
+            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${ep.title}" audio file was removed`)
+          })
+        )
+      }
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
@@ -113,6 +132,9 @@ class PodcastScanner {
 
       // Create new podcast episodes from new found audio files
       for (const newAudioFile of newAudioFiles) {
+        // Podcast episode audio files always have index 1
+        newAudioFile.index = 1
+
         const newEpisode = {
           title: newAudioFile.metaTags.tagTitle || newAudioFile.metadata.filenameNoExt,
           subtitle: null,
@@ -136,7 +158,6 @@ class PodcastScanner {
     }
 
     let hasMediaChanges = false
-
     if (existingPodcastEpisodes.length !== media.numEpisodes) {
       media.numEpisodes = existingPodcastEpisodes.length
       hasMediaChanges = true
@@ -253,6 +274,9 @@ class PodcastScanner {
 
     // Create podcast episodes from audio files
     for (const audioFile of scannedAudioFiles) {
+      // Podcast episode audio files always have index 1
+      audioFile.index = 1
+
       const newEpisode = {
         title: audioFile.metaTags.tagTitle || audioFile.metadata.filenameNoExt,
         subtitle: null,

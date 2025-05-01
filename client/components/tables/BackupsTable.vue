@@ -26,9 +26,9 @@
                 <span class="material-symbols text-2xl text-error">error_outline</span>
               </ui-tooltip>
 
-              <button aria-label="Download Backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
+              <button aria-label="Download backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
 
-              <button aria-label="Delete Backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click.stop="deleteBackupClick(backup)">delete</button>
+              <button aria-label="Delete backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click.stop="deleteBackupClick(backup)">delete</button>
             </div>
           </td>
         </tr>

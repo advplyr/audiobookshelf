@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-dvh max-h-dvh overflow-hidden" :style="{ backgroundColor: coverRgb }">
+  <div class="w-full max-w-full h-dvh max-h-dvh overflow-hidden" :style="{ backgroundColor: coverRgb }">
     <div class="w-screen h-screen absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(38, 38, 38, 1) 80%)"></div>
     <div class="absolute inset-0 w-screen h-dvh flex items-center justify-center z-10">
       <div class="w-full p-2 sm:p-4 md:p-8">
@@ -64,7 +64,7 @@ export default {
       return this.mediaItemShare.playbackSession
     },
     coverUrl() {
-      if (!this.playbackSession.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
+      if (!this.playbackSession.coverPath) return this.$store.getters['globals/getPlaceholderCoverSrc']
       return `${this.$config.routerBasePath}/public/share/${this.mediaItemShare.slug}/cover`
     },
     downloadUrl() {
@@ -335,8 +335,11 @@ export default {
       }
     },
     resize() {
-      this.windowWidth = window.innerWidth
-      this.windowHeight = window.innerHeight
+      setTimeout(() => {
+        this.windowWidth = window.innerWidth
+        this.windowHeight = window.innerHeight
+        this.$store.commit('globals/updateWindowSize', { width: window.innerWidth, height: window.innerHeight })
+      }, 100)
     },
     playerError(error) {
       console.error('Player error', error)

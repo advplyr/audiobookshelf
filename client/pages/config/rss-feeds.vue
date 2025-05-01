@@ -32,7 +32,7 @@
               <p class="truncate">{{ feed.meta.title }}</p>
             </td>
             <!--  -->
-            <td class="hidden xl:table-cell">
+            <td class="hidden xl:table-cell max-w-48">
               <p class="truncate">{{ feed.slug }}</p>
             </td>
             <!--  -->
@@ -57,7 +57,7 @@
             </td>
             <!--  -->
             <td class="text-center">
-              <ui-icon-btn icon="delete" class="mx-0.5" :size="7" bg-color="bg-error" outlined @click.stop="deleteFeedClick(feed)" />
+              <ui-icon-btn icon="delete" class="mx-0.5 text-white/70" borderless :size="7" iconFontSize="1.25rem" outlined @click.stop="deleteFeedClick(feed)" />
             </td>
           </tr>
         </table>
