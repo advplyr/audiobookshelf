@@ -24,6 +24,12 @@ function isMediaFile(mediaType, ext, audiobooksOnly = false) {
   return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
+function isScannableNonMediaFile(ext) {
+  if (!ext) return false
+  const extclean = ext.slice(1).toLowerCase()
+  return globals.TextFileTypes.includes(extclean) || globals.MetadataFileTypes.includes(extclean) || globals.SupportedImageTypes.includes(extclean)
+}
+
 function checkFilepathIsAudioFile(filepath) {
   const ext = Path.extname(filepath)
   if (!ext) return false
@@ -35,27 +41,31 @@ module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 /**
  * @param {string} mediaType
  * @param {import('./fileUtils').FilePathItem[]} fileItems
- * @param {boolean} [audiobooksOnly=false]
+ * @param {boolean} audiobooksOnly
+ * @param {boolean} [includeNonMediaFiles=false] - Used by the watcher to re-scan when covers/metadata files are added/removed
  * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
  */
-function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly = false) {
+function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly, includeNonMediaFiles = false) {
   // Step 1: Filter out non-book-media files in root dir (with depth of 0)
   const itemsFiltered = fileItems.filter((i) => {
     return i.deep > 0 || (mediaType === 'book' && isMediaFile(mediaType, i.extension, audiobooksOnly))
   })
 
   // Step 2: Separate media files and other files
-  //     - Directories without a media file will not be included
+  //     - Directories without a media file will not be included (unless includeNonMediaFiles is true)
   /** @type {import('./fileUtils').FilePathItem[]} */
   const mediaFileItems = []
   /** @type {import('./fileUtils').FilePathItem[]} */
   const otherFileItems = []
   itemsFiltered.forEach((item) => {
-    if (isMediaFile(mediaType, item.extension, audiobooksOnly)) mediaFileItems.push(item)
-    else otherFileItems.push(item)
+    if (isMediaFile(mediaType, item.extension, audiobooksOnly) || (includeNonMediaFiles && isScannableNonMediaFile(item.extension))) {
+      mediaFileItems.push(item)
+    } else {
+      otherFileItems.push(item)
+    }
   })
 
-  // Step 3: Group audio files in library items
+  // Step 3: Group media files (or non-media files if includeNonMediaFiles is true) in library items
   const libraryItemGroup = {}
   mediaFileItems.forEach((item) => {
     const dirparts = item.reldirpath.split('/').filter((p) => !!p)

@@ -246,7 +246,6 @@ class LibraryItem extends Model {
       include
     })
     if (!libraryItem) {
-      Logger.error(`[LibraryItem] Library item not found`)
       return null
     }
 
