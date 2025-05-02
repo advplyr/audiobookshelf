@@ -18,8 +18,8 @@
       <div class="w-full max-w-2xl"></div>
     </div>
 
-    <div class="flex justify-center flex-wrap">
-      <div class="w-full max-w-2xl border border-white/10 bg-bg mx-2">
+    <div class="flex justify-center flex-wrap lg:flex-nowrap gap-4">
+      <div class="w-full max-w-2xl border border-white/10 bg-bg">
         <div class="flex py-2 px-4">
           <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
           <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
@@ -35,7 +35,7 @@
           </template>
         </div>
       </div>
-      <div class="w-full max-w-2xl border border-white/10 bg-bg mx-2">
+      <div class="w-full max-w-2xl border border-white/10 bg-bg">
         <div class="flex py-2 px-4 bg-primary/25">
           <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
           <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
@@ -146,19 +146,29 @@
         <div class="flex py-2 px-4 bg-primary/25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
           <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="w-20 text-xs font-semibold uppercase text-gray-200 hidden lg:block">{{ $strings.LabelChannels }}</div>
+          <div class="w-16 text-xs font-semibold uppercase text-gray-200 hidden md:block">{{ $strings.LabelCodec }}</div>
+          <div class="w-16 text-xs font-semibold uppercase text-gray-200 hidden md:block">{{ $strings.LabelBitrate }}</div>
           <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
           <div class="w-24"></div>
         </div>
         <template v-for="file in audioFiles">
-          <div :key="file.index" class="flex py-2 px-4 text-sm" :class="file.index % 2 === 0 ? 'bg-primary/25' : ''">
-            <div class="w-10">{{ file.index }}</div>
+          <div :key="file.index" class="flex py-2 px-4 text-xs sm:text-sm" :class="file.index % 2 === 0 ? 'bg-primary/25' : ''">
+            <div class="w-10 min-w-10">{{ file.index }}</div>
             <div class="grow">
               {{ file.metadata.filename }}
             </div>
-            <div class="w-16 font-mono text-gray-200">
+            <div class="w-20 min-w-20 text-gray-200 hidden lg:block">{{ file.channels || 'unknown' }} ({{ file.channelLayout || 'unknown' }})</div>
+            <div class="w-16 min-w-16 text-gray-200 hidden md:block">
+              {{ file.codec || 'unknown' }}
+            </div>
+            <div class="w-16 min-w-16 text-gray-200 hidden md:block">
+              {{ $bytesPretty(file.bitRate || 0, 0) }}
+            </div>
+            <div class="w-16 min-w-16 text-gray-200">
               {{ $bytesPretty(file.metadata.size) }}
             </div>
-            <div class="w-24">
+            <div class="w-24 min-w-24">
               <div class="flex justify-center">
                 <span v-if="audioFilesFinished[file.ino]" class="material-symbols text-xl text-success leading-none">check_circle</span>
                 <div v-else-if="audioFilesEncoding[file.ino]">
