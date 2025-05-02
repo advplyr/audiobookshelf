@@ -77,10 +77,6 @@
       </div>
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
-        <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
-        </button>
-
         <div class="grow" />
 
         <ui-btn v-if="!isTaskFinished && processing" color="bg-error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
@@ -89,18 +85,16 @@
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
 
-      <!-- advanced encoding options -->
-      <div v-if="isM4BTool" class="overflow-hidden">
-        <transition name="slide">
-          <div v-if="showEncodeOptions || usingCustomEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
-            <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
-              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
-              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioCodec" class="m-2 max-w-40" @input="codecChanged" />
-            </div>
-            <p class="text-sm text-warning">{{ $strings.LabelEncodingWarningAdvancedSettings }}</p>
-          </div>
-        </transition>
+      <!-- show encoding options for running task -->
+      <div v-if="encodeTaskHasEncodingOptions" class="mb-4 pb-4 border-b border-white/10">
+        <div class="flex flex-wrap -mx-2">
+          <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" readonly :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
+          <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" readonly :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
+          <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" readonly :label="$strings.LabelAudioCodec" class="m-2 max-w-40" @input="codecChanged" />
+        </div>
+      </div>
+      <div v-else-if="isM4BTool" class="mb-4">
+        <widgets-encoder-options-card ref="encoderOptionsCard" :audio-tracks="audioFiles" :disabled="processing || isTaskFinished" />
       </div>
 
       <div class="mb-4">
@@ -224,7 +218,6 @@ export default {
       metadataObject: null,
       selectedTool: 'embed',
       isCancelingEncode: false,
-      showEncodeOptions: false,
       shouldBackupAudioFiles: true,
       encodingOptions: {
         bitrate: '128k',
@@ -324,8 +317,8 @@ export default {
     isMetadataEmbedQueued() {
       return this.queuedEmbedLIds.some((lid) => lid === this.libraryItemId)
     },
-    usingCustomEncodeOptions() {
-      return this.isM4BTool && this.encodeTask && this.encodeTask.data.encodeOptions && Object.keys(this.encodeTask.data.encodeOptions).length > 0
+    encodeTaskHasEncodingOptions() {
+      return this.isM4BTool && !!this.encodeTask?.data.encodeOptions && Object.keys(this.encodeTask.data.encodeOptions).length > 0
     }
   },
   methods: {
@@ -361,19 +354,13 @@ export default {
       if (this.$refs.channelsInput) this.$refs.channelsInput.blur()
       if (this.$refs.codecInput) this.$refs.codecInput.blur()
 
-      let queryStr = ''
-      if (this.showEncodeOptions) {
-        const options = []
-        if (this.encodingOptions.bitrate) options.push(`bitrate=${this.encodingOptions.bitrate}`)
-        if (this.encodingOptions.channels) options.push(`channels=${this.encodingOptions.channels}`)
-        if (this.encodingOptions.codec) options.push(`codec=${this.encodingOptions.codec}`)
-        if (options.length) {
-          queryStr = `?${options.join('&')}`
-        }
-      }
+      const encodeOptions = this.$refs.encoderOptionsCard.getEncodingOptions()
+
+      const queryParams = new URLSearchParams(encodeOptions)
+
       this.processing = true
       this.$axios
-        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b${queryStr}`)
+        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b?${queryParams.toString()}`)
         .then(() => {
           console.log('Ab m4b merge started')
         })
@@ -426,14 +413,10 @@ export default {
       const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
       this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
 
-      if (this.usingCustomEncodeOptions) {
+      if (this.encodeTaskHasEncodingOptions) {
         if (this.encodeTask.data.encodeOptions.bitrate) this.encodingOptions.bitrate = this.encodeTask.data.encodeOptions.bitrate
         if (this.encodeTask.data.encodeOptions.channels) this.encodingOptions.channels = this.encodeTask.data.encodeOptions.channels
         if (this.encodeTask.data.encodeOptions.codec) this.encodingOptions.codec = this.encodeTask.data.encodeOptions.codec
-      } else {
-        this.encodingOptions.bitrate = localStorage.getItem('embedMetadataBitrate') || '128k'
-        this.encodingOptions.channels = localStorage.getItem('embedMetadataChannels') || '2'
-        this.encodingOptions.codec = localStorage.getItem('embedMetadataCodec') || 'aac'
       }
     },
     fetchMetadataEmbedObject() {
