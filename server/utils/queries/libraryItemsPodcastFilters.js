@@ -533,8 +533,10 @@ module.exports = {
       }
     })
     return {
-      ...statResults[0],
-      totalSize: sizeResults[0].totalSize || 0
+      totalDuration: statResults?.[0]?.totalDuration || 0,
+      numAudioFiles: statResults?.[0]?.numAudioFiles || 0,
+      totalItems: statResults?.[0]?.totalItems || 0,
+      totalSize: sizeResults?.[0]?.totalSize || 0
     }
   },
 
