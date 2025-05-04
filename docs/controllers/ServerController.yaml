@@ -1,0 +1,30 @@
+paths:
+  /ping:
+    get:
+      operationId: ping
+      summary: Ping the server
+      description: This endpoint is a simple check to see if the server is operating and responding with JSON correctly.
+      tags:
+        - Server
+      responses:
+        200:
+          description: ping OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+  /healthcheck:
+    get:
+      operationId: healthcheck
+      summary: Health check
+      description: This endpoint is a simple check to see if the server is operating and can respond.
+      tags:
+        - Server
+      responses:
+        200:
+          description: healthcheck OK
+          content: {}
