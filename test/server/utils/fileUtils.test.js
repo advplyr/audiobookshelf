@@ -47,7 +47,7 @@ describe('fileUtils', () => {
 
       // Mock file structure with normalized paths
       const mockDirContents = new Map([
-        ['/test', ['file1.mp3', 'subfolder', 'ignoreme', 'temp.mp3.tmp']],
+        ['/test', ['file1.mp3', 'subfolder', 'ignoreme', 'ignoremenot.mp3', 'temp.mp3.tmp']],
         ['/test/subfolder', ['file2.m4b']],
         ['/test/ignoreme', ['.ignore', 'ignored.mp3']]
       ])
@@ -59,7 +59,8 @@ describe('fileUtils', () => {
         ['/test/ignoreme', { isDirectory: () => true, size: 0, mtimeMs: Date.now(), ino: '4' }],
         ['/test/ignoreme/.ignore', { isDirectory: () => false, size: 0, mtimeMs: Date.now(), ino: '5' }],
         ['/test/ignoreme/ignored.mp3', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '6' }],
-        ['/test/temp.mp3.tmp', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '7' }]
+        ['/test/ignoremenot.mp3', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '7' }],
+        ['/test/temp.mp3.tmp', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '8' }]
       ])
 
       // Stub fs.readdir
@@ -103,7 +104,7 @@ describe('fileUtils', () => {
     it('should return filtered file list', async () => {
       const files = await fileUtils.recurseFiles('/test')
       expect(files).to.be.an('array')
-      expect(files).to.have.lengthOf(2)
+      expect(files).to.have.lengthOf(3)
 
       expect(files[0]).to.deep.equal({
         name: 'file1.mp3',
@@ -115,6 +116,15 @@ describe('fileUtils', () => {
       })
 
       expect(files[1]).to.deep.equal({
+        name: 'ignoremenot.mp3',
+        path: 'ignoremenot.mp3',
+        reldirpath: '',
+        fullpath: '/test/ignoremenot.mp3',
+        extension: '.mp3',
+        deep: 0
+      })
+
+      expect(files[2]).to.deep.equal({
         name: 'file2.m4b',
         path: 'subfolder/file2.m4b',
         reldirpath: 'subfolder',
