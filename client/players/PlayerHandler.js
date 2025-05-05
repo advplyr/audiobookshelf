@@ -37,6 +37,9 @@ export default class PlayerHandler {
   get isPlayingLocalItem() {
     return this.libraryItem && this.player instanceof LocalAudioPlayer
   }
+  get userToken() {
+    return this.ctx.$store.getters['user/getToken']
+  }
   get playerPlaying() {
     return this.playerState === 'PLAYING'
   }
@@ -223,7 +226,7 @@ export default class PlayerHandler {
 
     console.log('[PlayerHandler] Preparing Session', session)
 
-    var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, session.id, this.ctx.$config.routerBasePath))
+    var audioTracks = session.audioTracks.map((at) => new AudioTrack(at, session.id, this.userToken, this.ctx.$config.routerBasePath))
 
     this.ctx.playerLoading = true
     this.isHlsTranscode = true
