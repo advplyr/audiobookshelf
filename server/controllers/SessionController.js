@@ -1,7 +1,9 @@
+const Path = require('path')
 const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const { toNumber, isUUID } = require('../utils/index')
+const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 
 const ShareManager = require('../managers/ShareManager')
 
@@ -264,6 +266,51 @@ class SessionController {
    */
   syncLocalSessions(req, res) {
     this.playbackSessionManager.syncLocalSessionsRequest(req, res)
+  }
+
+  /**
+   * GET: /public/session/:id/track/:index
+   * While a session is open, this endpoint can be used to stream the audio track
+   *
+   * @this {import('../routers/PublicRouter')}
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
+  async getTrack(req, res) {
+    const audioTrackIndex = toNumber(req.params.index, null)
+    if (audioTrackIndex === null) {
+      Logger.error(`[SessionController] Invalid audio track index "${req.params.index}"`)
+      return res.sendStatus(400)
+    }
+
+    const playbackSession = this.playbackSessionManager.getSession(req.params.id)
+    if (!playbackSession) {
+      Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
+      return res.sendStatus(404)
+    }
+
+    const audioTrack = playbackSession.audioTracks.find((t) => t.index === audioTrackIndex)
+    if (!audioTrack) {
+      Logger.error(`[SessionController] Unable to find audio track with index=${audioTrackIndex}`)
+      return res.sendStatus(404)
+    }
+
+    const user = await Database.userModel.getUserById(playbackSession.userId)
+    Logger.debug(`[SessionController] Serving audio track ${audioTrack.index} for session "${req.params.id}" belonging to user "${user.username}"`)
+
+    if (global.XAccel) {
+      const encodedURI = encodeUriPath(global.XAccel + audioTrack.metadata.path)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+    }
+
+    // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(audioTrack.metadata.path))
+    if (audioMimeType) {
+      res.setHeader('Content-Type', audioMimeType)
+    }
+    res.sendFile(audioTrack.metadata.path)
   }
 
   /**

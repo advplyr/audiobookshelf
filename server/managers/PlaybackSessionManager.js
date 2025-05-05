@@ -26,6 +26,12 @@ class PlaybackSessionManager {
     this.sessions = []
   }
 
+  /**
+   * Get open session by id
+   *
+   * @param {string} sessionId
+   * @returns {PlaybackSession}
+   */
   getSession(sessionId) {
     return this.sessions.find((s) => s.id === sessionId)
   }
