@@ -1,5 +1,5 @@
 export default class AudioTrack {
-  constructor(track, sessionId, userToken, routerBasePath) {
+  constructor(track, sessionId, routerBasePath) {
     this.index = track.index || 0
     this.startOffset = track.startOffset || 0 // Total time of all previous tracks
     this.duration = track.duration || 0
@@ -11,7 +11,7 @@ export default class AudioTrack {
     this.sessionId = sessionId
     this.routerBasePath = routerBasePath || ''
     if (this.contentUrl?.startsWith('/hls')) {
-      this.sessionTrackUrl = `${this.contentUrl}?token=${userToken}`
+      this.sessionTrackUrl = this.contentUrl
     } else {
       this.sessionTrackUrl = `/public/session/${sessionId}/track/${this.index}`
     }
