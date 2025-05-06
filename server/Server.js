@@ -313,7 +313,7 @@ class Server {
     router.use(express.json({ limit: '5mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
-    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
 
     // Static path to generated nuxt
