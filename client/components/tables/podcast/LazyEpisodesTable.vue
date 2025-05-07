@@ -1,4 +1,3 @@
-
 <template>
   <div id="lazy-episodes-table" class="w-full py-6">
     <div class="flex flex-wrap flex-col md:flex-row md:items-center mb-4">
@@ -176,6 +175,13 @@ export default {
           return episodeProgress && !episodeProgress.isFinished
         })
         .sort((a, b) => {
+          // Swap values if sort descending
+          if (this.sortDesc) {
+            const temp = a
+            a = b
+            b = temp
+          }
+
           let aValue
           let bValue
 
@@ -194,10 +200,23 @@ export default {
             if (!bValue) bValue = Number.MAX_VALUE
           }
 
-          if (this.sortDesc) {
-            return String(bValue).localeCompare(String(aValue), undefined, { numeric: true, sensitivity: 'base' })
+          const primaryCompare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' })
+          if (primaryCompare !== 0 || this.sortKey === 'publishedAt') return primaryCompare
+
+          // When sorting by season, secondary sort is by episode number
+          if (this.sortKey === 'season') {
+            const aEpisode = a.episode || ''
+            const bEpisode = b.episode || ''
+
+            const secondaryCompare = String(aEpisode).localeCompare(String(bEpisode), undefined, { numeric: true, sensitivity: 'base' })
+            if (secondaryCompare !== 0) return secondaryCompare
           }
-          return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' })
+
+          // Final sort by publishedAt
+          let aPubDate = a.publishedAt || Number.MAX_VALUE
+          let bPubDate = b.publishedAt || Number.MAX_VALUE
+
+          return String(aPubDate).localeCompare(String(bPubDate), undefined, { numeric: true, sensitivity: 'base' })
         })
     },
     episodesList() {
