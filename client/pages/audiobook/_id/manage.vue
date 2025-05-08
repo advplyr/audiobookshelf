@@ -2,7 +2,14 @@
   <div id="page-wrapper" class="bg-bg page p-8 overflow-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="flex items-center justify-center mb-6">
       <div class="w-full max-w-2xl">
-        <p class="text-2xl mb-2">{{ $strings.HeaderAudiobookTools }}</p>
+        <div class="flex items-center mb-4">
+          <nuxt-link :to="`/item/${libraryItem.id}`" class="hover:underline">
+            <h1 class="text-lg lg:text-xl">{{ mediaMetadata.title }}</h1>
+          </nuxt-link>
+          <button class="w-7 h-7 flex items-center justify-center mx-4 hover:scale-110 duration-100 transform text-gray-200 hover:text-white" @click="editItem">
+            <span class="material-symbols text-base">edit</span>
+          </button>
+        </div>
       </div>
       <div class="w-full max-w-2xl">
         <div class="flex justify-end">
@@ -13,7 +20,7 @@
 
     <div class="flex justify-center mb-2">
       <div class="w-full max-w-2xl">
-        <p class="text-xl">{{ $strings.HeaderMetadataToEmbed }}</p>
+        <p class="text-lg">{{ $strings.HeaderMetadataToEmbed }}</p>
       </div>
       <div class="w-full max-w-2xl"></div>
     </div>
@@ -424,10 +431,24 @@ export default {
     },
     taskUpdated(task) {
       this.processing = !task.isFinished
+    },
+    editItem() {
+      this.$store.commit('showEditModal', this.libraryItem)
+    },
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItem.id) {
+        this.libraryItem = libraryItem
+        this.fetchMetadataEmbedObject()
+      }
     }
   },
   mounted() {
     this.init()
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   }
 }
 </script>
