@@ -266,9 +266,6 @@ export default {
     audioFiles() {
       return (this.media.audioFiles || []).filter((af) => !af.exclude)
     },
-    isSingleM4b() {
-      return this.audioFiles.length === 1 && this.audioFiles[0].metadata.ext.toLowerCase() === '.m4b'
-    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
@@ -276,14 +273,10 @@ export default {
       return this.media.chapters || []
     },
     availableTools() {
-      if (this.isSingleM4b) {
-        return [{ value: 'embed', text: this.$strings.LabelToolsEmbedMetadata }]
-      } else {
-        return [
-          { value: 'embed', text: this.$strings.LabelToolsEmbedMetadata },
-          { value: 'm4b', text: this.$strings.LabelToolsM4bEncoder }
-        ]
-      }
+      return [
+        { value: 'embed', text: this.$strings.LabelToolsEmbedMetadata },
+        { value: 'm4b', text: this.$strings.LabelToolsM4bEncoder }
+      ]
     },
     taskFailed() {
       return this.isTaskFinished && this.task.isFailed
