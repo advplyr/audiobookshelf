@@ -1,6 +1,6 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex items-center py-4 px-2 md:px-0 max-w-7xl mx-auto">
+    <div class="flex items-center py-4 px-4 max-w-7xl mx-auto">
       <nuxt-link :to="`/item/${libraryItem.id}`" class="hover:underline">
         <h1 class="text-lg lg:text-xl">{{ title }}</h1>
       </nuxt-link>
@@ -12,7 +12,7 @@
       <p class="text-base font-mono ml-4 hidden md:block">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
-    <div class="flex flex-wrap-reverse justify-center py-4 px-2">
+    <div class="flex flex-wrap-reverse lg:flex-nowrap justify-center py-4 px-4">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
           <div class="w-12 hidden lg:block" />
@@ -23,8 +23,8 @@
         </div>
         <div class="flex items-center mb-3 py-1 -mx-1">
           <div class="w-12 hidden lg:block" />
-          <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
-          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" class="mx-1" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
+          <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1 whitespace-nowrap" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
+          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg-bg' : 'bg-primary'" class="mx-1 whitespace-nowrap" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
           <ui-btn color="bg-primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
           <div class="grow" />
           <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
@@ -65,7 +65,7 @@
               <ui-time-picker v-else class="text-xs" v-model="chapter.start" :show-three-digit-hour="mediaDuration >= 360000" @change="checkChapters" />
             </div>
             <div class="grow px-1">
-              <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs" />
+              <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs min-w-52" />
             </div>
             <div class="w-32 min-w-32 px-2 py-1">
               <div class="flex items-center">
