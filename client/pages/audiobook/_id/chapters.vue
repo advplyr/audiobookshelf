@@ -144,11 +144,11 @@
         <div v-if="!chapterData" class="flex flex-col items-center justify-center p-20">
           <div class="relative">
             <div class="flex items-end space-x-2">
-              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" class="flex-3"/>
-              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 flex-2" />
-              <ui-btn color="bg-primary flex-1" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" class="flex-grow" />
+              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-20 max-w-20" />
+              <ui-btn color="bg-primary" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
             </div>
-            <div class="mt-2">
+            <div class="mt-4">
               <ui-checkbox v-model="removeBranding" :label="$strings.LabelRemoveAudibleBranding" small checkbox-bg="bg" label-class="pl-2 text-base text-sm" @click="toggleRemoveBranding" />
             </div>
             <div class="absolute left-0 mt-1.5 text-error text-s h-5">
@@ -157,7 +157,6 @@
             </div>
             <div class="invisible mt-1 text-xs"></div>
           </div>
-
         </div>
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
@@ -326,7 +325,7 @@ export default {
       this.checkChapters()
     },
     toggleRemoveBranding() {
-      this.removeBranding = !this.removeBranding;
+      this.removeBranding = !this.removeBranding
     },
     shiftChapterTimes() {
       if (!this.shiftAmount || isNaN(this.shiftAmount) || this.newChapters.length <= 1) {
@@ -337,12 +336,12 @@ export default {
 
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       if (lastChapter.start + amount > this.mediaDurationRounded) {
-        this.$toast.error(this.$strings.ToastInvalidShiftAmountLast)
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountLast)
         return
       }
 
       if (this.newChapters[1].start + amount <= 0) {
-        this.$toast.error(this.$strings.ToastInvalidShiftAmountStart)
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountStart)
         return
       }
 
@@ -610,10 +609,10 @@ export default {
           data.chapters.pop()
         }
 
+        return data
       } catch {
         return data
       }
-      return data
     },
     resetChapters() {
       const payload = {
