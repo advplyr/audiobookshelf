@@ -242,7 +242,7 @@ module.exports.recurseFiles = async (path, relPathToReplace = null) => {
     })
     .filter((item) => {
       // Filter out items in ignore directories
-      if (directoriesToIgnore.some((dir) => item.fullname.startsWith(dir))) {
+      if (directoriesToIgnore.some((dir) => item.fullname.startsWith(dir + '/'))) {
         Logger.debug(`[fileUtils] Ignoring path in dir with .ignore "${item.fullname}"`)
         return false
       }
