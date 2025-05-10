@@ -144,17 +144,18 @@
         <div v-if="!chapterData" class="flex flex-col items-center justify-center p-20">
           <div class="relative">
             <div class="flex items-end space-x-2">
-              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
-              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32" />
-              <ui-btn small color="bg-primary" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" class="flex-grow" />
+              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-20 max-w-20" />
+              <ui-btn color="bg-primary" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
             </div>
-
+            <div class="mt-4">
+              <ui-checkbox v-model="removeBranding" :label="$strings.LabelRemoveAudibleBranding" small checkbox-bg="bg" label-class="pl-2 text-base text-sm" @click="toggleRemoveBranding" />
+            </div>
             <div class="absolute left-0 mt-1.5 text-error text-s h-5">
               <p v-if="asinError">{{ asinError }}</p>
               <p v-if="asinError">{{ $strings.MessageAsinCheck }}</p>
             </div>
-
-            <div class="invisible h-5 mt-1 text-xs"></div>
+            <div class="invisible mt-1 text-xs"></div>
           </div>
         </div>
         <div v-else class="w-full p-4">
@@ -261,6 +262,7 @@ export default {
       showFindChaptersModal: false,
       chapterData: null,
       asinError: null,
+      removeBranding: false,
       showSecondInputs: false,
       audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
       hasChanges: false
@@ -322,6 +324,9 @@ export default {
 
       this.checkChapters()
     },
+    toggleRemoveBranding() {
+      this.removeBranding = !this.removeBranding
+    },
     shiftChapterTimes() {
       if (!this.shiftAmount || isNaN(this.shiftAmount) || this.newChapters.length <= 1) {
         return
@@ -331,12 +336,12 @@ export default {
 
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       if (lastChapter.start + amount > this.mediaDurationRounded) {
-        this.$toast.error('Invalid shift amount. Last chapter start time would extend beyond the duration of this audiobook.')
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountLast)
         return
       }
 
-      if (this.newChapters[0].end + amount <= 0) {
-        this.$toast.error('Invalid shift amount. First chapter would have zero or negative length.')
+      if (this.newChapters[1].start + amount <= 0) {
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountStart)
         return
       }
 
@@ -568,7 +573,7 @@ export default {
             this.asinError = this.$getString(data.stringKey)
           } else {
             console.log('Chapter data', data)
-            this.chapterData = data
+            this.chapterData = this.removeBranding ? this.removeBrandingFromData(data) : data
           }
         })
         .catch((error) => {
@@ -577,6 +582,37 @@ export default {
           this.$toast.error(this.$strings.ToastFailedToLoadData)
           this.showFindChaptersModal = false
         })
+    },
+    removeBrandingFromData(data) {
+      if (!data) return data
+      try {
+        const introDuration = data.brandIntroDurationMs
+        const outroDuration = data.brandOutroDurationMs
+
+        for (let i = 0; i < data.chapters.length; i++) {
+          const chapter = data.chapters[i]
+          if (chapter.startOffsetMs < introDuration) {
+            // This should never happen, as the intro is not longer than the first chapter
+            // If this happens set to the next second
+            // Will be 0 for the first chapter anayways
+            chapter.startOffsetMs = i * 1000
+            chapter.startOffsetSec = i
+          } else {
+            chapter.startOffsetMs -= introDuration
+            chapter.startOffsetSec = Math.floor(chapter.startOffsetMs / 1000)
+          }
+        }
+
+        const lastChapter = data.chapters[data.chapters.length - 1]
+        // If there is an outro that's in the outro duration, remove it
+        if (lastChapter && lastChapter.lengthMs <= outroDuration) {
+          data.chapters.pop()
+        }
+
+        return data
+      } catch {
+        return data
+      }
     },
     resetChapters() {
       const payload = {
