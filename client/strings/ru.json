@@ -306,7 +306,7 @@
   "LabelDownload": "Скачать",
   "LabelDownloadNEpisodes": "Скачать {0} эпизодов",
   "LabelDownloadable": "Загружаемый",
-  "LabelDuration": "Продолжительность",
+  "LabelDuration": "Длительность",
   "LabelDurationComparisonExactMatch": "(точное совпадение)",
   "LabelDurationComparisonLonger": "({0} дольше)",
   "LabelDurationComparisonShorter": "({0} короче)",
