@@ -1195,10 +1195,12 @@ module.exports = {
         libraryItem.media.series = []
         return libraryItem.toOldJSON()
       })
-      seriesMatches.push({
-        series: series.toOldJSON(),
-        books
-      })
+      if (books.length) {
+        seriesMatches.push({
+          series: series.toOldJSON(),
+          books
+        })
+      }
     }
 
     // Search authors
