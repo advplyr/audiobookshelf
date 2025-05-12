@@ -10,15 +10,11 @@ FROM node:20-alpine AS build-server
 
 ENV NODE_ENV=production
 
-RUN apk update && \
-  apk add --no-cache --update \
+RUN apk add --no-cache --update \
   curl \
-  tzdata \
-  ffmpeg \
   make \
   python3 \
   g++ \
-  tini \
   unzip
 
 WORKDIR /server
@@ -46,7 +42,7 @@ RUN npm ci --only=production
 FROM node:20-alpine
 
 # Install only runtime dependencies
-RUN apk add --no-cache \
+RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
   tini
