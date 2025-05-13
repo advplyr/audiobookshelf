@@ -20,10 +20,7 @@ class Auth {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
     const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
-    this.ignorePatterns = [
-      new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), 
-      new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)
-    ]
+    this.ignorePatterns = [new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)]
   }
 
   /**

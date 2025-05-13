@@ -122,7 +122,8 @@
           </div>
         </transition>
       </div>
-      <div class="w-full flex items-center justify-end p-4">
+      <div class="w-full flex items-center justify-between p-4">
+        <p v-if="enableOpenIDAuth" class="text-sm text-warning">{{ $strings.MessageAuthenticationOIDCChangesRestart }}</p>
         <ui-btn color="bg-success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
       </div>
     </app-settings-content>
