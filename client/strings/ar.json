@@ -252,5 +252,20 @@
   "LabelStart": "ابدأ",
   "LabelStatsBestDay": "أفضل يوم",
   "LabelStatsDailyAverage": "المتوسط اليومي",
-  "LabelStatsDays": "أيام"
+  "LabelStatsDays": "أيام",
+  "LabelStatsDaysListened": "أيام الاستماع",
+  "LabelStatsInARow": "على التوالي",
+  "LabelStatsItemsFinished": "العناصر المنتهية",
+  "LabelStatsMinutes": "دقائق",
+  "LabelStatsMinutesListening": "دقائق الاستماع",
+  "NoteRSSFeedPodcastAppsHttps": "تحذير: تتطلب معظم تطبيقات البث الصوتي أن يكون عنوان URL لخلاصة RSS يستخدم HTTPS",
+  "NoteRSSFeedPodcastAppsPubDate": "تحذير: حلقة واحدة أو أكثر من حلقاتك ليس لها تاريخ نشر. بعض تطبيقات البودكاست تتطلب هذا.",
+  "ToastBookmarkCreateFailed": "فشل في إنشاء الإشارة المرجعية",
+  "ToastItemMarkedAsFinishedFailed": "فشل في وضع علامة على الانتهاء",
+  "ToastItemMarkedAsNotFinishedFailed": "فشل في وضع علامة \"غير مكتمل\"",
+  "ToastPlaylistCreateFailed": "فشل إنشاء قائمة التشغيل",
+  "ToastPodcastCreateFailed": "فشل في إنشاء البودكاست",
+  "ToastPodcastCreateSuccess": "تم إنشاء البودكاست بنجاح",
+  "ToastRSSFeedCloseFailed": "فشل في إغلاق موجز RSS",
+  "ToastRSSFeedCloseSuccess": "تم إغلاق موجز RSS"
 }
