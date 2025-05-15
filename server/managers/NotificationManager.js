@@ -90,6 +90,14 @@ class NotificationManager {
     this.triggerNotification('onBackupFailed', eventData)
   }
 
+  /**
+   * @param
+   */
+  async onItemUpdated(libraryItem) {
+    console.log('onItemUpdated', libraryItem)
+    this.triggerNotification('onItemUpdated', libraryItem)
+  }
+
   onTest() {
     this.triggerNotification('onTest')
   }
@@ -124,7 +132,7 @@ class NotificationManager {
     }
 
     await Database.updateSetting(Database.notificationSettings)
-    SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
+    //SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
 
     this.notificationFinished()
   }
@@ -183,6 +191,27 @@ class NotificationManager {
         Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)
         return false
       })
+  }
+
+  fireNotificationFromSocket(eventName, eventData) {
+    if (!Database.notificationSettings.isUseable) return
+
+    const eventNameModified = eventName.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    const eventKey = `on${eventNameModified.charAt(0).toUpperCase()}${eventNameModified.slice(1)}`;
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent(eventKey)) {
+      // No logging to prevent console spam
+      Logger.debug(`[NotificationManager] fireSocketNotification: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] fireNotificationFromSocket: ${eventKey} event fired`)
+
+    switch (eventKey) {
+      case 'onItemUpdated':
+        void this.onItemUpdated(eventData)
+        break
+    }
   }
 }
 module.exports = new NotificationManager()

@@ -1,4 +1,61 @@
 const { version } = require('../../package.json')
+const LibraryItem = require('../models/LibraryItem')
+
+const libraryItemVariables = [
+  'id',
+  'ino',
+  'path',
+  'relPath',
+  'mediaId',
+  'mediaType',
+  'isFile',
+  'isMissing',
+  'isInvalid',
+  'mtime',
+  'ctime',
+  'birthtime',
+  'size',
+  'lastScan',
+  'lastScanVersion',
+  'libraryFiles',
+  'extraData',
+  'title',
+  'titleIgnorePrefix',
+  'authorNamesFirstLast',
+  'authorNamesLastFirst',
+  'createdAt',
+  'updatedAt',
+  'libraryId',
+  'libraryFolderId',
+]
+
+const libraryItemTestData = {
+  id: '123e4567-e89b-12d3-a456-426614174000',
+  ino: '9876543',
+  path: '/audiobooks/Frank Herbert/Dune',
+  relPath: 'Frank Herbert/Dune',
+  mediaId: 'abcdef12-3456-7890-abcd-ef1234567890',
+  mediaType: 'book',
+  isFile: true,
+  isMissing: false,
+  isInvalid: false,
+  mtime: new Date('2023-11-15T10:20:30.400Z'),
+  ctime: new Date('2023-11-15T10:20:30.400Z'),
+  birthtime: new Date('2023-11-15T10:20:30.390Z'),
+  size: 987654321,
+  lastScan: new Date('2024-01-10T08:15:00.000Z'),
+  lastScanVersion: '3.2.0',
+  title: 'Dune',
+  titleIgnorePrefix: 'Dune',
+  authorNamesFirstLast: 'Frank Herbert',
+  authorNamesLastFirst: 'Herbert, Frank',
+  createdAt: new Date('2023-11-15T10:21:00.000Z'),
+  updatedAt: new Date('2024-05-15T18:30:36.940Z'),
+  libraryId: 'fedcba98-7654-3210-fedc-ba9876543210',
+  libraryFolderId: '11223344-5566-7788-99aa-bbccddeeff00'
+};
+
+
 
 module.exports.notificationData = {
   events: [
@@ -60,6 +117,22 @@ module.exports.notificationData = {
         errorMsg: 'Example error message'
       }
     },
+    // Sockets - Silently crying because not using typescript
+
+    {
+      name: 'onItemUpdated',
+      requiresLibrary: true,
+      description: 'Triggered when an item is updated',
+      descriptionKey: 'NotificationOnItemUpdatedDescription',
+      variables: libraryItemVariables,
+      defaults: {
+        title: 'Item Updated: {{title}}',
+        body: 'Item {{title}} has been updated.\n\nPath: {{path}}\nSize: {{size}} bytes\nLast Scan: {{lastScan}}\nLibrary ID: {{libraryId}}\nLibrary Folder ID: {{libraryFolderId}}'
+      },
+      testData: libraryItemTestData
+    },
+
+    // Test
     {
       name: 'onTest',
       requiresLibrary: false,

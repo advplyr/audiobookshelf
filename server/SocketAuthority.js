@@ -2,6 +2,7 @@ const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
 const Auth = require('./Auth')
+const NotificationManager = require('./managers/NotificationManager')
 
 /**
  * @typedef SocketClient
@@ -15,9 +16,23 @@ class SocketAuthority {
   constructor() {
     this.Server = null
     this.socketIoServers = []
+    this.emittedNotifications = new Set(['item_created', 'item_updated']);
 
     /** @type {Object.<string, SocketClient>} */
     this.clients = {}
+  }
+
+  /**
+   * Fires a notification if enabled and the event is whitelisted
+   * @param {string} event - The event name fired. Needs to be whitelisted in this.emitted_notifications
+   * @param {any} payload - The payload to send with the event. For user-specific events, this includes the userId
+   */
+  _fireNotification(event, payload) {
+    // Should be O(1) so no real performance hit
+    if (!this.emittedNotifications.has(event)) return
+    Logger.debug(`[SocketAuthority] fireNotification - ${event}`)
+
+    NotificationManager.fireNotificationFromSocket(event, payload)
   }
 
   /**
@@ -53,6 +68,7 @@ class SocketAuthority {
    * @param {Function} [filter] optional filter function to only send event to specific users
    */
   emitter(evt, data, filter = null) {
+    void this._fireNotification(evt, data)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {
         if (filter && !filter(this.clients[socketId].user)) continue
@@ -64,6 +80,7 @@ class SocketAuthority {
 
   // Emits event to all clients for a specific user
   clientEmitter(userId, evt, data) {
+    void this._fireNotification(evt, data)
     const clients = this.getClientsForUser(userId)
     if (!clients.length) {
       return Logger.debug(`[SocketAuthority] clientEmitter - no clients found for user ${userId}`)
@@ -77,6 +94,7 @@ class SocketAuthority {
 
   // Emits event to all admin user clients
   adminEmitter(evt, data) {
+    void this._fireNotification(evt, data);
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.isAdminOrUp) {
         this.clients[socketId].socket.emit(evt, data)
@@ -92,6 +110,7 @@ class SocketAuthority {
    * @param {import('./models/LibraryItem')} libraryItem
    */
   libraryItemEmitter(evt, libraryItem) {
+    void this._fireNotification(evt, libraryItem)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.checkCanAccessLibraryItem(libraryItem)) {
         this.clients[socketId].socket.emit(evt, libraryItem.toOldJSONExpanded())
@@ -107,6 +126,7 @@ class SocketAuthority {
    * @param {import('./models/LibraryItem')[]} libraryItems
    */
   libraryItemsEmitter(evt, libraryItems) {
+    void this._fireNotification(evt, libraryItems)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {
         const libraryItemsAccessibleToUser = libraryItems.filter((li) => this.clients[socketId].user.checkCanAccessLibraryItem(li))
