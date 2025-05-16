@@ -293,12 +293,19 @@ class LibraryItem extends Model {
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
+    const { minified } = options
     const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     return {
       libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONMinified()
+        let oldLibraryItem = {}
+        if (minified) {
+          oldLibraryItem = li.toOldJSONMinified()
+        } else {
+          oldLibraryItem = li.toOldJSONExpanded()
+        }
+  
         if (li.collapsedSeries) {
           oldLibraryItem.collapsedSeries = li.collapsedSeries
         }
@@ -306,7 +313,11 @@ class LibraryItem extends Model {
           oldLibraryItem.media.metadata.series = li.series
         }
         if (li.rssFeed) {
-          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+          if (minified) {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+          } else {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSON()
+          }
         }
         if (li.media.numEpisodes) {
           oldLibraryItem.media.numEpisodes = li.media.numEpisodes
@@ -320,7 +331,7 @@ class LibraryItem extends Model {
         if (li.mediaItemShare) {
           oldLibraryItem.mediaItemShare = li.mediaItemShare
         }
-
+  
         return oldLibraryItem
       }),
       count
