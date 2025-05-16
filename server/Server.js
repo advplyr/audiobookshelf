@@ -395,11 +395,11 @@ class Server {
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
-    const unixSocketPrefix = "unix/"
-    if(this.Host.startsWith(unixSocketPrefix)) {
+    const unixSocketPrefix = 'unix/'
+    if (this.Host?.startsWith(unixSocketPrefix)) {
       const sockPath = this.Host.slice(unixSocketPrefix.length)
-      this.server.listen(sockPath, () => {
-        fs.chmodSync(sockPath, 0o666)
+      this.server.listen(sockPath, async () => {
+        await fs.chmod(sockPath, 0o666)
         Logger.info(`Listening on unix socket ${sockPath}`)
       })
     } else {
