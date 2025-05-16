@@ -244,8 +244,8 @@ export default {
       const sizeInMb = payloadSize / 1024 / 1024
       const sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
       console.log('Request size', sizeInMb)
-      if (sizeInMb > 4.99) {
-        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 5Mb`)
+      if (sizeInMb > 9.99) {
+        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 10Mb`)
       }
 
       this.processing = true
