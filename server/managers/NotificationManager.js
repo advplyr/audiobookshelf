@@ -189,11 +189,8 @@ class NotificationManager {
   fireNotificationFromSocket(eventName, eventData) {
     if (!Database.notificationSettings.isUseable) return
 
-    const eventNameModified = eventName.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    const eventKey = `on${eventNameModified.charAt(0).toUpperCase()}${eventNameModified.slice(1)}`;
-
-    console.log(eventData)
-    console.log(Object.keys(eventData))
+    const eventNameModified = eventName.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+    const eventKey = `on${eventNameModified.charAt(0).toUpperCase()}${eventNameModified.slice(1)}`
 
     if (!Database.notificationSettings.getHasActiveNotificationsForEvent(eventKey)) {
       // No logging to prevent console spam

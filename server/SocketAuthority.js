@@ -17,7 +17,7 @@ class SocketAuthority {
   constructor() {
     this.Server = null
     this.socketIoServers = []
-    this.emittedNotifications = new Set(['item_added', 'item_updated', 'user_online', 'task_started', 'task_finished']);
+    this.emittedNotifications = new Set(['item_added', 'item_updated', 'user_online', 'task_started', 'task_finished'])
 
     /** @type {Object.<string, SocketClient>} */
     this.clients = {}
@@ -95,7 +95,7 @@ class SocketAuthority {
 
   // Emits event to all admin user clients
   adminEmitter(evt, data) {
-    void this._fireNotification(evt, data);
+    void this._fireNotification(evt, data)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.isAdminOrUp) {
         this.clients[socketId].socket.emit(evt, data)

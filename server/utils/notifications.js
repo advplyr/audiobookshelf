@@ -72,9 +72,7 @@ const libraryItemTestData = {
   updatedAt: new Date('2024-05-15T18:30:36.940Z'),
   libraryId: 'fedcba98-7654-3210-fedc-ba9876543210',
   libraryFolderId: '11223344-5566-7788-99aa-bbccddeeff00'
-};
-
-
+}
 
 module.exports.notificationData = {
   events: [
@@ -167,62 +165,33 @@ module.exports.notificationData = {
       requiresLibrary: false,
       description: 'Triggered when a user comes online',
       descriptionKey: 'NotificationOnUserOnlineDescription',
-      variables: [ 'id', 'username', 'type', 'session', 'lastSeen', 'createdAt'],
+      variables: ['id', 'username', 'type', 'session', 'lastSeen', 'createdAt'],
       defaults: {
         title: 'User Online: {{username}}',
         body: 'User {{username}} (ID: {{id}}) is now online.'
-      },
+      }
     },
     {
       name: 'onTaskStarted',
       requiresLibrary: false,
       description: 'Triggered when a task starts',
       descriptionKey: 'NotificationOnTaskStartedDescription',
-      variables: [
-        'id',             'action',
-        'data.libraryId', 'data.libraryName',
-        'title',          'titleKey',
-        'titleSubs',      'description',
-        'descriptionKey', 'descriptionSubs',
-        'error',          'errorKey',
-        'errorSubs',      'showSuccess',
-        'isFailed',       'isFinished',
-        'startedAt',      'finishedAt'
-      ],
+      variables: ['id', 'action', 'data.libraryId', 'data.libraryName', 'title', 'titleKey', 'titleSubs', 'description', 'descriptionKey', 'descriptionSubs', 'error', 'errorKey', 'errorSubs', 'showSuccess', 'isFailed', 'isFinished', 'startedAt', 'finishedAt'],
       defaults: {
         title: 'Task Started: {{title}}',
         body: 'Task {{title}} has started.\n\nAction: {{action}}\nLibrary ID: {{data.libraryId}}\nLibrary Name: {{data.libraryName}}'
-      },
+      }
     },
     {
       name: 'onTaskFinished',
       requiresLibrary: false,
       description: 'Triggered when a task finishes',
       descriptionKey: 'NotificationOnTaskFinishesDescription',
-      variables: [
-        'id',
-        'action',
-        'data.libraryId',
-        'data.libraryName',
-        'title',
-        'titleKey',
-        'titleSubs',
-        'description',
-        'descriptionKey',
-        'descriptionSubs',
-        'error',
-        'errorKey',
-        'errorSubs',
-        'showSuccess',
-        'isFailed',
-        'isFinished',
-        'startedAt',
-        'finishedAt'
-      ],
+      variables: ['id', 'action', 'data.libraryId', 'data.libraryName', 'title', 'titleKey', 'titleSubs', 'description', 'descriptionKey', 'descriptionSubs', 'error', 'errorKey', 'errorSubs', 'showSuccess', 'isFailed', 'isFinished', 'startedAt', 'finishedAt'],
       defaults: {
         title: 'Task Started: {{title}}',
         body: 'Task {{title}} has started.\n\nAction: {{action}}\nLibrary ID: {{data.libraryId}}\nLibrary Name: {{data.libraryName}}'
-      },
+      }
     },
 
     // Test
