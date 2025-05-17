@@ -173,6 +173,57 @@ module.exports.notificationData = {
         body: 'User {{username}} (ID: {{id}}) is now online.'
       },
     },
+    {
+      name: 'onTaskStarted',
+      requiresLibrary: false,
+      description: 'Triggered when a task starts',
+      descriptionKey: 'NotificationOnTaskStartedDescription',
+      variables: [
+        'id',             'action',
+        'data.libraryId', 'data.libraryName',
+        'title',          'titleKey',
+        'titleSubs',      'description',
+        'descriptionKey', 'descriptionSubs',
+        'error',          'errorKey',
+        'errorSubs',      'showSuccess',
+        'isFailed',       'isFinished',
+        'startedAt',      'finishedAt'
+      ],
+      defaults: {
+        title: 'Task Started: {{title}}',
+        body: 'Task {{title}} has started.\n\nAction: {{action}}\nLibrary ID: {{data.libraryId}}\nLibrary Name: {{data.libraryName}}'
+      },
+    },
+    {
+      name: 'onTaskFinished',
+      requiresLibrary: false,
+      description: 'Triggered when a task finishes',
+      descriptionKey: 'NotificationOnTaskFinishesDescription',
+      variables: [
+        'id',
+        'action',
+        'data.libraryId',
+        'data.libraryName',
+        'title',
+        'titleKey',
+        'titleSubs',
+        'description',
+        'descriptionKey',
+        'descriptionSubs',
+        'error',
+        'errorKey',
+        'errorSubs',
+        'showSuccess',
+        'isFailed',
+        'isFinished',
+        'startedAt',
+        'finishedAt'
+      ],
+      defaults: {
+        title: 'Task Started: {{title}}',
+        body: 'Task {{title}} has started.\n\nAction: {{action}}\nLibrary ID: {{data.libraryId}}\nLibrary Name: {{data.libraryName}}'
+      },
+    },
 
     // Test
     {
