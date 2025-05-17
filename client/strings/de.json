@@ -974,6 +974,7 @@
   "ToastCachePurgeFailed": "Cache leeren fehlgeschlagen",
   "ToastCachePurgeSuccess": "Cache geleert",
   "ToastChaptersHaveErrors": "Kapitel sind fehlerhaft",
+  "ToastChaptersInvalidShiftAmountLast": "Die Verschiebung ist nicht möglich, da die Startzeit des letzten Kapitels über die Gesamtdauer dieses Hörbuchs hinausgehen würde.",
   "ToastChaptersMustHaveTitles": "Kapitel benötigen eindeutige Namen",
   "ToastChaptersRemoved": "Kapitel entfernt",
   "ToastChaptersUpdated": "Kapitel aktualisiert",
