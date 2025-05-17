@@ -3,6 +3,7 @@ const Logger = require('./Logger')
 const Database = require('./Database')
 const Auth = require('./Auth')
 const NotificationManager = require('./managers/NotificationManager')
+const { flattenAny } = require('./utils/objectUtils')
 
 /**
  * @typedef SocketClient
@@ -16,7 +17,7 @@ class SocketAuthority {
   constructor() {
     this.Server = null
     this.socketIoServers = []
-    this.emittedNotifications = new Set(['item_created', 'item_updated']);
+    this.emittedNotifications = new Set(['item_added', 'item_updated', 'user_online']);
 
     /** @type {Object.<string, SocketClient>} */
     this.clients = {}
@@ -110,7 +111,7 @@ class SocketAuthority {
    * @param {import('./models/LibraryItem')} libraryItem
    */
   libraryItemEmitter(evt, libraryItem) {
-    void this._fireNotification(evt, libraryItem)
+    void this._fireNotification(evt, flattenAny(libraryItem.toOldJSONMinified()))
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.checkCanAccessLibraryItem(libraryItem)) {
         this.clients[socketId].socket.emit(evt, libraryItem.toOldJSONExpanded())
@@ -126,7 +127,6 @@ class SocketAuthority {
    * @param {import('./models/LibraryItem')[]} libraryItems
    */
   libraryItemsEmitter(evt, libraryItems) {
-    void this._fireNotification(evt, libraryItems)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {
         const libraryItemsAccessibleToUser = libraryItems.filter((li) => this.clients[socketId].user.checkCanAccessLibraryItem(li))

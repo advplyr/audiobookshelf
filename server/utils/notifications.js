@@ -4,29 +4,48 @@ const LibraryItem = require('../models/LibraryItem')
 const libraryItemVariables = [
   'id',
   'ino',
+  'oldLibraryItemId',
+  'libraryId',
+  'folderId',
   'path',
   'relPath',
-  'mediaId',
-  'mediaType',
   'isFile',
+  'mtimeMs',
+  'ctimeMs',
+  'birthtimeMs',
+  'addedAt',
+  'updatedAt',
   'isMissing',
   'isInvalid',
-  'mtime',
-  'ctime',
-  'birthtime',
-  'size',
-  'lastScan',
-  'lastScanVersion',
-  'libraryFiles',
-  'extraData',
-  'title',
-  'titleIgnorePrefix',
-  'authorNamesFirstLast',
-  'authorNamesLastFirst',
-  'createdAt',
-  'updatedAt',
-  'libraryId',
-  'libraryFolderId',
+  'mediaType',
+  'media.id',
+  'media.metadata.title',
+  'media.metadata.titleIgnorePrefix',
+  'media.metadata.subtitle',
+  'media.metadata.authorName',
+  'media.metadata.authorNameLF',
+  'media.metadata.narratorName',
+  'media.metadata.seriesName',
+  'media.metadata.genres',
+  'media.metadata.publishedYear',
+  'media.metadata.publishedDate',
+  'media.metadata.publisher',
+  'media.metadata.description',
+  'media.metadata.isbn',
+  'media.metadata.asin',
+  'media.metadata.language',
+  'media.metadata.explicit',
+  'media.metadata.abridged',
+  'media.coverPath',
+  'media.tags',
+  'media.numTracks',
+  'media.numAudioFiles',
+  'media.numChapters',
+  'media.duration',
+  'media.size',
+  'media.ebookFormat',
+  'numFiles',
+  'size'
 ]
 
 const libraryItemTestData = {
@@ -120,16 +139,39 @@ module.exports.notificationData = {
     // Sockets - Silently crying because not using typescript
 
     {
+      name: 'onItemAdded',
+      requiresLibrary: true,
+      description: 'Triggered when an item is added',
+      descriptionKey: 'NotificationOnItemAddedDescription',
+      variables: libraryItemVariables,
+      defaults: {
+        title: 'Item Added: {{media.metadata.title}}',
+        body: 'Item {{media.metadata.title}} has been added.\n\nPath: {{path}}\nSize: {{size}} bytes\nLibrary ID: {{libraryId}}'
+      },
+      testData: libraryItemTestData
+    },
+    {
       name: 'onItemUpdated',
       requiresLibrary: true,
       description: 'Triggered when an item is updated',
       descriptionKey: 'NotificationOnItemUpdatedDescription',
       variables: libraryItemVariables,
       defaults: {
-        title: 'Item Updated: {{title}}',
-        body: 'Item {{title}} has been updated.\n\nPath: {{path}}\nSize: {{size}} bytes\nLast Scan: {{lastScan}}\nLibrary ID: {{libraryId}}\nLibrary Folder ID: {{libraryFolderId}}'
+        title: 'Item Updated: {{media.metadata.title}}',
+        body: 'Item {{media.metadata.title}} has been added.\n\nPath: {{path}}\nSize: {{size}} bytes\nLibrary ID: {{libraryId}}'
       },
       testData: libraryItemTestData
+    },
+    {
+      name: 'onUserOnline',
+      requiresLibrary: false,
+      description: 'Triggered when a user comes online',
+      descriptionKey: 'NotificationOnUserOnlineDescription',
+      variables: [ 'id', 'username', 'type', 'session', 'lastSeen', 'createdAt'],
+      defaults: {
+        title: 'User Online: {{username}}',
+        body: 'User {{username}} (ID: {{id}}) is now online.'
+      },
     },
 
     // Test

@@ -90,14 +90,6 @@ class NotificationManager {
     this.triggerNotification('onBackupFailed', eventData)
   }
 
-  /**
-   * @param
-   */
-  async onItemUpdated(libraryItem) {
-    console.log('onItemUpdated', libraryItem)
-    this.triggerNotification('onItemUpdated', libraryItem)
-  }
-
   onTest() {
     this.triggerNotification('onTest')
   }
@@ -132,7 +124,8 @@ class NotificationManager {
     }
 
     await Database.updateSetting(Database.notificationSettings)
-    //SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
+    // Currently results in circular dependency TODO: Fix this
+    // SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
 
     this.notificationFinished()
   }
@@ -199,6 +192,9 @@ class NotificationManager {
     const eventNameModified = eventName.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
     const eventKey = `on${eventNameModified.charAt(0).toUpperCase()}${eventNameModified.slice(1)}`;
 
+    console.log(eventData)
+    console.log(Object.keys(eventData))
+
     if (!Database.notificationSettings.getHasActiveNotificationsForEvent(eventKey)) {
       // No logging to prevent console spam
       Logger.debug(`[NotificationManager] fireSocketNotification: No active notifications`)
@@ -207,11 +203,7 @@ class NotificationManager {
 
     Logger.debug(`[NotificationManager] fireNotificationFromSocket: ${eventKey} event fired`)
 
-    switch (eventKey) {
-      case 'onItemUpdated':
-        void this.onItemUpdated(eventData)
-        break
-    }
+    void this.triggerNotification(eventKey, eventData)
   }
 }
 module.exports = new NotificationManager()
