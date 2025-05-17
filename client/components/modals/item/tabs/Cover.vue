@@ -1,9 +1,9 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-col sm:flex-row mb-4">
+      <!-- Current book cover -->
       <div class="relative self-center md:self-start">
         <covers-preview-cover :src="coverUrl" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-linear-to-b from-black-600 to-transparent" />
@@ -14,7 +14,10 @@
           </div>
         </div>
       </div>
+
+      <!-- Contains Upload new cover and local covers -->
       <div class="grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
+        <!-- Upload new cover -->
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
@@ -29,6 +32,7 @@
           </form>
         </div>
 
+        <!-- Locaal covers -->
         <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white/10">
           <div class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
@@ -48,6 +52,8 @@
         </div>
       </div>
     </div>
+
+    <!-- Search Cover Form -->
     <form @submit.prevent="submitSearchForm">
       <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
         <div class="w-48 grow p-1">
@@ -62,12 +68,64 @@
         <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
-    <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
+
+    <!-- Cover Search Results -->
+    <div v-if="hasSearched" class="flex flex-col items-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
       <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
-      <template v-for="cover in coversFound">
-        <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
-          <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-        </div>
+
+      <!-- Conditional Rendering Based on bookCoverAspectRatio -->
+      <template v-if="bookCoverAspectRatio === 1">
+        <!-- Square Covers First -->
+        <template v-if="squareCovers.length">
+          <div class="flex items-center flex-wrap justify-center">
+            <template v-for="cover in squareCovers">
+              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
+                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Divider if there are rectangle covers -->
+        <div v-if="rectangleCovers.length" class="w-full border-b border-white/10 my-4"></div>
+
+        <!-- Rectangle Covers -->
+        <template v-if="rectangleCovers.length">
+          <div class="flex items-center flex-wrap justify-center">
+            <template v-for="cover in rectangleCovers">
+              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
+                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </div>
+            </template>
+          </div>
+        </template>
+      </template>
+
+      <template v-else>
+        <!-- Rectangle Covers First -->
+        <template v-if="rectangleCovers.length">
+          <div class="flex items-center flex-wrap justify-center">
+            <template v-for="cover in rectangleCovers">
+              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
+                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Divider if there are square covers -->
+        <div v-if="squareCovers.length" class="w-full border-b border-white/10 my-4"></div>
+
+        <!-- Square Covers -->
+        <template v-if="squareCovers.length">
+          <div class="flex items-center flex-wrap justify-center">
+            <template v-for="cover in squareCovers">
+              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
+                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </div>
+            </template>
+          </div>
+        </template>
       </template>
     </div>
 
@@ -92,7 +150,9 @@ export default {
     libraryItem: {
       type: Object,
       default: () => {}
-    }
+    },
+    coversFound: { type: Array, default: () => [] },
+    coverPath: { type: String, default: '' }
   },
   data() {
     return {
@@ -105,7 +165,8 @@ export default {
       showLocalCovers: false,
       previewUpload: null,
       selectedFile: null,
-      provider: 'google'
+      provider: 'google',
+      sortedCovers: []
     }
   },
   watch: {
@@ -186,6 +247,12 @@ export default {
           _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
+    },
+    squareCovers() {
+      return this.sortedCovers.filter((cover) => cover.width === cover.height)
+    },
+    rectangleCovers() {
+      return this.sortedCovers.filter((cover) => cover.width !== cover.height)
     }
   },
   methods: {
@@ -304,7 +371,10 @@ export default {
           console.error('Failed', error)
           return []
         })
+
       this.coversFound = results
+      const images = await this.resolveImages()
+
       this.isProcessing = false
       this.hasSearched = true
     },
@@ -319,6 +389,29 @@ export default {
         .finally(() => {
           this.isProcessing = false
         })
+    },
+    async resolveImages() {
+      const resolvedImages = await Promise.all(
+        this.coversFound.map((cover) => {
+          return new Promise((resolve) => {
+            const img = new Image()
+            img.src = cover
+            img.onload = () => {
+              resolve({ src: cover, width: img.width, height: img.height })
+            }
+          })
+        })
+      )
+      // Sort images: squares first, then rectangles by area
+      this.sortedCovers = resolvedImages.sort((a, b) => {
+        // Prioritize square images (-1 for square, 1 for non-square)
+        const squareComparison = (b.width === b.height) - (a.width === a.height)
+        if (squareComparison !== 0) return squareComparison
+
+        // Sub-sort by width (ascending order)
+        return a.width - b.width
+      })
+      return this.sortedCovers
     }
   }
 }
