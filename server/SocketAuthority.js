@@ -33,7 +33,7 @@ class SocketAuthority {
     if (!this.emittedNotifications.has(event)) return
     Logger.debug(`[SocketAuthority] fireNotification - ${event}`)
 
-    NotificationManager.fireNotificationFromSocket(event, payload)
+    NotificationManager.fireNotificationFromSocket(event, flattenAny(payload))
   }
 
   /**
@@ -69,7 +69,7 @@ class SocketAuthority {
    * @param {Function} [filter] optional filter function to only send event to specific users
    */
   emitter(evt, data, filter = null) {
-    void this._fireNotification(evt, flattenAny(data))
+    void this._fireNotification(evt, data)
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {
         if (filter && !filter(this.clients[socketId].user)) continue
@@ -81,7 +81,7 @@ class SocketAuthority {
 
   // Emits event to all clients for a specific user
   clientEmitter(userId, evt, data) {
-    void this._fireNotification(evt, flattenAny(data))
+    void this._fireNotification(evt, data)
     const clients = this.getClientsForUser(userId)
     if (!clients.length) {
       return Logger.debug(`[SocketAuthority] clientEmitter - no clients found for user ${userId}`)
@@ -95,7 +95,7 @@ class SocketAuthority {
 
   // Emits event to all admin user clients
   adminEmitter(evt, data) {
-    void this._fireNotification(evt, flattenAny(data));
+    void this._fireNotification(evt, data);
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.isAdminOrUp) {
         this.clients[socketId].socket.emit(evt, data)
@@ -111,7 +111,7 @@ class SocketAuthority {
    * @param {import('./models/LibraryItem')} libraryItem
    */
   libraryItemEmitter(evt, libraryItem) {
-    void this._fireNotification(evt, flattenAny(libraryItem.toOldJSONMinified()))
+    void this._fireNotification(evt, libraryItem.toOldJSONMinified())
     for (const socketId in this.clients) {
       if (this.clients[socketId].user?.checkCanAccessLibraryItem(libraryItem)) {
         this.clients[socketId].socket.emit(evt, libraryItem.toOldJSONExpanded())
