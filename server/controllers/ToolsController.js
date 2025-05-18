@@ -48,6 +48,7 @@ class ToolsController {
     }
 
     const options = req.query || {}
+    Logger.info(`[ToolsController] encodeM4b: Starting audiobook merge for "${req.libraryItem.media.title}" with options: ${JSON.stringify(options)}`)
     this.abMergeManager.startAudiobookMerge(req.user.id, req.libraryItem, options)
 
     res.sendStatus(200)

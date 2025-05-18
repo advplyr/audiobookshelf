@@ -217,6 +217,16 @@ export default {
         })
       }
 
+      if (this.results.episodes?.length) {
+        shelves.push({
+          id: 'episodes',
+          label: 'Episodes',
+          labelStringKey: 'LabelEpisodes',
+          type: 'episode',
+          entities: this.results.episodes.map((res) => res.libraryItem)
+        })
+      }
+
       if (this.results.series?.length) {
         shelves.push({
           id: 'series',

@@ -74,19 +74,12 @@ export default {
     mediaTracks() {
       return this.media.tracks || []
     },
-    isSingleM4b() {
-      return this.mediaTracks.length === 1 && this.mediaTracks[0].metadata.ext.toLowerCase() === '.m4b'
-    },
     chapters() {
       return this.media.chapters || []
     },
     showM4bDownload() {
       if (!this.mediaTracks.length) return false
-      return !this.isSingleM4b
-    },
-    showMp3Split() {
-      if (!this.mediaTracks.length) return false
-      return this.isSingleM4b && this.chapters.length
+      return true
     },
     queuedEmbedLIds() {
       return this.$store.state.tasks.queuedEmbedLIds || []

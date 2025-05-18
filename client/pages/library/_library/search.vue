@@ -22,6 +22,7 @@ export default {
     })
     results = {
       podcasts: results?.podcast || [],
+      episodes: results?.episodes || [],
       books: results?.book || [],
       authors: results?.authors || [],
       series: results?.series || [],
@@ -61,6 +62,7 @@ export default {
       })
       this.results = {
         podcasts: results?.podcast || [],
+        episodes: results?.episodes || [],
         books: results?.book || [],
         authors: results?.authors || [],
         series: results?.series || [],

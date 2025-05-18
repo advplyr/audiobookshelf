@@ -834,8 +834,8 @@ class LibraryItemController {
     }
 
     if (req.libraryItem.isMissing || !req.libraryItem.isBook || !req.libraryItem.media.includedAudioFiles.length) {
-      Logger.error(`[LibraryItemController] Invalid library item`)
-      return res.sendStatus(500)
+      Logger.error(`[LibraryItemController] getMetadataObject: Invalid library item "${req.libraryItem.media.title}"`)
+      return res.sendStatus(400)
     }
 
     res.json(this.audioMetadataManager.getMetadataObjectForApi(req.libraryItem))
