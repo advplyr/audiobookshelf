@@ -2,7 +2,7 @@
   <div>
     <ui-multi-select-query-input v-model="seriesItems" text-key="displayName" :label="$strings.LabelSeries" :disabled="disabled" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
 
-    <modals-edit-series-input-inner-modal v-model="showSeriesForm" :selected-series="selectedSeries" :existing-series-names="existingSeriesNames" @submit="submitSeriesForm" />
+    <modals-edit-series-input-inner-modal v-model="showSeriesForm" :selected-series="selectedSeries" :existing-series-names="existingSeriesNames" :original-series-sequence="originalSeriesSequence" @submit="submitSeriesForm" />
   </div>
 </template>
 
@@ -18,6 +18,7 @@ export default {
   data() {
     return {
       selectedSeries: null,
+      originalSeriesSequence: null,
       showSeriesForm: false
     }
   },
@@ -59,6 +60,7 @@ export default {
         ..._series
       }
 
+      this.originalSeriesSequence = _series.sequence
       this.showSeriesForm = true
     },
     addNewSeries() {
@@ -68,6 +70,7 @@ export default {
         sequence: ''
       }
 
+      this.originalSeriesSequence = null
       this.showSeriesForm = true
     },
     submitSeriesForm() {
