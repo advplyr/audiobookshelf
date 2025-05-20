@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "Pokreni svaki {0} u {1}",
   "MessageSearchResultsFor": "Rezultati pretrage za",
   "MessageSelected": "{0} odabrano",
+  "MessageSeriesSequenceCannotContainSpaces": "Slijed serijala ne može sadržavati praznine",
   "MessageServerCouldNotBeReached": "Nije moguće pristupiti poslužitelju",
   "MessageSetChaptersFromTracksDescription": "Postavi poglavlja koristeći se zvučnom datotekom kao poglavljem i nazivom datoteke kao naslovom poglavlja",
   "MessageShareExpirationWillBe": "Vrijeme isteka će biti <strong>{0}</strong>",
