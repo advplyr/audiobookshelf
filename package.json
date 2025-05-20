@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "2.22.0",
+  "version": "2.23.0",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",

@@ -14,6 +14,7 @@
               <ui-text-input-with-label ref="sequenceInput" v-model="selectedSeries.sequence" :label="$strings.LabelSequence" />
             </div>
           </div>
+          <div v-if="error" class="text-error text-sm mt-2 p-1">{{ error }}</div>
           <div class="flex justify-end mt-2 p-1">
             <ui-btn type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
@@ -34,12 +35,17 @@ export default {
     existingSeriesNames: {
       type: Array,
       default: () => []
+    },
+    originalSeriesSequence: {
+      type: String,
+      default: null
     }
   },
   data() {
     return {
       el: null,
-      content: null
+      content: null,
+      error: null
     }
   },
   watch: {
@@ -85,8 +91,15 @@ export default {
       }
     },
     submitSeriesForm() {
+      this.error = null
+
       if (this.$refs.newSeriesSelect) {
         this.$refs.newSeriesSelect.blur()
+      }
+
+      if (this.selectedSeries.sequence !== this.originalSeriesSequence && this.selectedSeries.sequence.includes(' ')) {
+        this.error = this.$strings.MessageSeriesSequenceCannotContainSpaces
+        return
       }
 
       this.$emit('submit')
@@ -100,6 +113,7 @@ export default {
       }
     },
     setShow() {
+      this.error = null
       if (!this.el || !this.content) {
         this.init()
       }
