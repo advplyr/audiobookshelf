@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "تشغيل كل {0} في الساعة {1}",
   "MessageSearchResultsFor": "نتائج البحث عن",
   "MessageSelected": "تم تحديد {0}",
+  "MessageSeriesSequenceCannotContainSpaces": "السلسلة المتعاقبة لا يمكن أن تحتوي على مسافات",
   "MessageServerCouldNotBeReached": "تعذر الوصول إلى الخادم",
   "MessageSetChaptersFromTracksDescription": "تعيين الفصول باستخدام كل ملف صوتي كفصل وعنوان الفصل كاسم الملف الصوتي",
   "MessageShareExpirationWillBe": "سيكون تاريخ الانتهاء <strong>{0}</strong>",
