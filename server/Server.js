@@ -310,7 +310,7 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-    router.use(express.json({ limit: '5mb' }))
+    router.use(express.json({ limit: '10mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
