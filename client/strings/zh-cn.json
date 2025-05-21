@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "每隔 {0} 在 {1} 运行一次",
   "MessageSearchResultsFor": "搜索结果",
   "MessageSelected": "{0} 已选择",
+  "MessageSeriesSequenceCannotContainSpaces": "系列序列不能包含空格",
   "MessageServerCouldNotBeReached": "无法访问服务器",
   "MessageSetChaptersFromTracksDescription": "把每个音频文件设置为章节并将章节标题设置为音频文件名",
   "MessageShareExpirationWillBe": "到期日期为 <strong>{0}</strong>",
