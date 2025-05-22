@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "Spustiť každú {0} o {1}",
   "MessageSearchResultsFor": "Výsledky vyhľadávania pre",
   "MessageSelected": "{0} vybrané",
+  "MessageSeriesSequenceCannotContainSpaces": "Poradie série nemôže obsahovať medzery",
   "MessageServerCouldNotBeReached": "Nepodarilo sa pripojiť na server",
   "MessageSetChaptersFromTracksDescription": "Nastaviť jednotlivé zvukové súbory ako kapitoly a názvy zvukových súborov ako názvy týchto kapitol",
   "MessageShareExpirationWillBe": "Expiruje <strong>{0}</strong>",
