@@ -246,9 +246,10 @@ class MediaProgress extends Model {
     // For local sync
     if (progressPayload.lastUpdate) {
       this.updatedAt = progressPayload.lastUpdate
+      this.changed('updatedAt', true)
     }
 
-    return this.save()
+    return this.save({ silent: !!progressPayload.lastUpdate })
   }
 }
 
