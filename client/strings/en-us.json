@@ -924,6 +924,8 @@
   "PlaceholderNewPlaylist": "New playlist name",
   "PlaceholderSearch": "Search..",
   "PlaceholderSearchEpisode": "Search episode..",
+  "PodcastFilenameFormatHelpContent": "%S for Season, %E for Episode, %Y for Year, %M for Month, %D for Day and %T for title",
+  "PodcastFilenameFormatHelp": "Podcast filename format",
   "StatsAuthorsAdded": "authors added",
   "StatsBooksAdded": "books added",
   "StatsBooksAdditional": "Some additions include…",

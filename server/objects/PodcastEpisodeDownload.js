@@ -21,6 +21,7 @@ class PodcastEpisodeDownload {
     this.appendRandomId = false
 
     this.targetFilename = null
+	  this.podcastFilenameFormat = null
 
     this.startedAt = null
     this.createdAt = null
@@ -89,13 +90,38 @@ class PodcastEpisodeDownload {
     if (!this.rssPodcastEpisode.publishedAt) return null
     return new Date(this.rssPodcastEpisode.publishedAt).getFullYear()
   }
+  formatFilename() {
+	  const {publishedAt, season, episode, title} = this.rssPodcastEpisode;
+	  const fileformat = this.libraryItem.media.podcastFilenameFormat || '%T'
+	  let filename = fileformat
+	  if (publishedAt) {
+		  const dt = new Date(publishedAt)
+		  const year = dt.getFullYear()
+		  const month = String(dt.getMonth() + 1).padStart(2, '0')
+		  const day = String(dt.getDate()).padStart(2,'0')
+		  filename = filename
+			  .replace("%Y",year)
+			  .replace("%M",month)
+			  .replace("%D",day)
+	  }
+	  if (season) {
+		  filename = filename.replace("%S",season)
+	  }
+	  if (episode){
+		  filename = filename.replace("%E",episode)
+	  }
+	  if (title){
+		  filename = filename.replace("%T",title.trim() || '')
+	  }
+    return filename
+  }
 
   /**
    * @param {string} title
    */
-  getSanitizedFilename(title) {
+  getSanitizedFilename() {
     const appendage = this.appendRandomId ? ` (${this.id})` : ''
-    const filename = `${title.trim()}${appendage}.${this.fileExtension}`
+    const filename = `${this.formatFilename()}${appendage}.${this.fileExtension}`
     return sanitizeFilename(filename)
   }
 
@@ -104,7 +130,7 @@ class PodcastEpisodeDownload {
    */
   setAppendRandomId(appendRandomId) {
     this.appendRandomId = appendRandomId
-    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode.title || '')
+    this.targetFilename = this.getSanitizedFilename()
   }
 
   /**
@@ -126,9 +152,9 @@ class PodcastEpisodeDownload {
       this.url = encodeURI(url)
     }
 
-    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode.title || '')
 
     this.libraryItem = libraryItem
+    this.targetFilename = this.getSanitizedFilename()
     this.isAutoDownload = isAutoDownload
     this.createdAt = Date.now()
     this.libraryId = libraryId
