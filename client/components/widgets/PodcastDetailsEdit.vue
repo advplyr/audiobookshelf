@@ -45,13 +45,13 @@
         </div>
         <div class="w-1/4 px-1">
           <ui-text-input-with-label ref="podcastFilenameFormatInput" v-model="details.podcastFilenameFormat" :label="$strings.PodcastFilenameFormatHelp" trim-whitespace @input="handleInputChange" >
-          <div class="flex -mb-0.5">
-            <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">{{ $strings.PodcastFilenameFormatHelp }}</p>
-            <ui-tooltip direction="top" :text="$strings.PodcastFilenameFormatHelpContent">
-              <span class="material-symbols text-base">info</span>
-            </ui-tooltip>
-          </div>
-	  </ui-text-input-with-label>
+            <div class="flex -mb-0.5">
+              <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">{{ $strings.PodcastFilenameFormatHelp }}</p>
+              <ui-tooltip direction="top" :text="$strings.PodcastFilenameFormatHelpContent">
+                <span class="material-symbols text-base">info</span>
+              </ui-tooltip>
+            </div>
+          </ui-text-input-with-label>
         </div>
       </div>
     </form>
@@ -81,7 +81,7 @@ export default {
         itunesArtistId: null,
         explicit: false,
         language: null,
-	podcastFilenameFormat: null,
+        podcastFilenameFormat: null,
         type: null
       },
       newTags: []

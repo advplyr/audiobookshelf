@@ -98,7 +98,7 @@ export default {
         itunesArtistId: '',
         autoDownloadEpisodes: false,
         language: '',
-	filenameFormat: '',
+        filenameFormat: '',
         explicit: false,
         type: ''
       }
