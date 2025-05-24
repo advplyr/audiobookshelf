@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "Запуск кожні {0} о {1}",
   "MessageSearchResultsFor": "Результати пошуку для",
   "MessageSelected": "Вибрано: {0}",
+  "MessageSeriesSequenceCannotContainSpaces": "Послідовність серій не може містити пробілів",
   "MessageServerCouldNotBeReached": "Не вдалося підключитися до сервера",
   "MessageSetChaptersFromTracksDescription": "Створити глави з аудіодоріжок, встановивши назви файлів за заголовки",
   "MessageShareExpirationWillBe": "Термін сплине за <strong>{0}</strong>",
