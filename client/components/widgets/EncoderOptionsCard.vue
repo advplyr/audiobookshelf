@@ -162,7 +162,7 @@ export default {
       } else {
         // Find closest bitrate rounding up
         const bitratesToMatch = [32, 64, 128, 192]
-        const closestBitrate = bitratesToMatch.find((bitrate) => bitrate >= this.currentBitrate)
+        const closestBitrate = bitratesToMatch.find((bitrate) => bitrate >= this.currentBitrate) || 192
         this.selectedBitrate = closestBitrate + 'k'
       }
 
