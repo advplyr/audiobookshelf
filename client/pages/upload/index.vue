@@ -359,15 +359,14 @@ export default {
       // Check if path already exists before starting upload
       //  uploading fails if path already exists
       for (const item of items) {
-        const filepath = Path.join(this.selectedFolder.fullPath, item.directory)
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { filepath, directory: item.directory, folderPath: this.selectedFolder.fullPath })
+          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath })
           .then((data) => {
             if (data.exists) {
               if (data.libraryItemTitle) {
                 this.$toast.error(this.$getString('ToastUploaderItemExistsInSubdirectoryError', [data.libraryItemTitle]))
               } else {
-                this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [filepath]))
+                this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [Path.join(this.selectedFolder.fullPath, item.directory)]))
               }
             }
             return data.exists
