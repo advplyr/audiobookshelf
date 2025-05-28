@@ -102,7 +102,7 @@ class Notification {
   }
 
   replaceVariablesInTemplate(templateText, data) {
-    const ptrn = /{{ ?([a-zA-Z]+) ?}}/mg
+    const ptrn = /{{ ?([a-zA-Z.]+) ?}}/mg
 
     var match
     var updatedTemplate = templateText
