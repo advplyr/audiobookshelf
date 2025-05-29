@@ -31,7 +31,7 @@
         </div>
       </div>
     </trix-toolbar>
-    <trix-editor :toolbar="toolbarId" :contenteditable="!disabledEditor" :class="['trix-content']" ref="trix" :input="computedId" :placeholder="placeholder" @trix-change="handleContentChange" @trix-initialize="handleInitialize" @trix-focus="processTrixFocus" @trix-blur="processTrixBlur" />
+    <trix-editor :toolbar="toolbarId" :contenteditable="!disabledEditor" :class="['trix-content']" ref="trix" :input="computedId" :placeholder="placeholder" @trix-change="handleContentChange" @trix-initialize="handleInitialize" @trix-focus="processTrixFocus" @trix-blur="processTrixBlur" @trix-attachment-add="handleAttachmentAdd" />
     <input type="hidden" :name="inputName" :id="computedId" :value="editorContent" />
   </div>
 </template>
@@ -315,6 +315,12 @@ export default {
     blur() {
       if (this.$refs.trix && this.$refs.trix.blur) {
         this.$refs.trix.blur()
+      }
+    },
+    handleAttachmentAdd(event) {
+      // Prevent pasting in images from the browser
+      if (!event.attachment.file) {
+        event.attachment.remove()
       }
     }
   },
