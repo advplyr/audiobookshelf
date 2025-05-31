@@ -377,8 +377,17 @@ class Book extends Model {
         if (typeof payload.metadata[key] == 'number') {
           payload.metadata[key] = String(payload.metadata[key])
         }
-          
+
         if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && this[key] !== payload.metadata[key]) {
+          // Sanitize description HTML
+          if (key === 'description' && payload.metadata[key]) {
+            const sanitizedDescription = htmlSanitizer.sanitize(payload.metadata[key])
+            if (sanitizedDescription !== payload.metadata[key]) {
+              Logger.debug(`[Book] "${this.title}" Sanitized description from "${payload.metadata[key]}" to "${sanitizedDescription}"`)
+              payload.metadata[key] = sanitizedDescription
+            }
+          }
+
           this[key] = payload.metadata[key] || null
 
           if (key === 'title') {
