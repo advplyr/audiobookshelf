@@ -50,8 +50,7 @@ ARG NUSQLITE3_PATH
 RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
-  tini \
-  curl
+  tini
 
 WORKDIR /app
 
@@ -70,7 +69,7 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
-HEALTHCHECK CMD curl --fail http://localhost:${PORT}/healthcheck || exit 1
+HEALTHCHECK CMD wget --spider -q http://localhost:${PORT}/healthcheck || exit 1
 
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
