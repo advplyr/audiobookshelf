@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "Zaženi vsakih {0} ob {1}",
   "MessageSearchResultsFor": "Rezultati iskanja za",
   "MessageSelected": "{0} izbrano",
+  "MessageSeriesSequenceCannotContainSpaces": "Zaporedje serij ne sme vsebovati presledkov",
   "MessageServerCouldNotBeReached": "Strežnika ni bilo mogoče doseči",
   "MessageSetChaptersFromTracksDescription": "Nastavi poglavja z uporabo vsake zvočne datoteke kot poglavja in naslova poglavja kot imena zvočne datoteke",
   "MessageShareExpirationWillBe": "Potečeno bo <strong>{0}</strong>",

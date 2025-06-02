@@ -856,6 +856,7 @@
   "MessageScheduleRunEveryWeekdayAtTime": "Run every {0} at {1}",
   "MessageSearchResultsFor": "Search results for",
   "MessageSelected": "{0} selected",
+  "MessageSeriesSequenceCannotContainSpaces": "Series sequence cannot contain spaces",
   "MessageServerCouldNotBeReached": "Server could not be reached",
   "MessageSetChaptersFromTracksDescription": "Set chapters using each audio file as a chapter and chapter title as the audio file name",
   "MessageShareExpirationWillBe": "Expiration will be <strong>{0}</strong>",

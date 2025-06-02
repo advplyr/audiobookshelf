@@ -205,7 +205,7 @@ function extractEpisodeData(item) {
     } else if (typeof guidItem?._ === 'string') {
       episode.guid = guidItem._
     } else {
-      Logger.error(`[podcastUtils] Invalid guid ${item['guid']} for ${episode.enclosure.url}`)
+      Logger.error(`[podcastUtils] Invalid guid for ${episode.enclosure.url}`, item['guid'])
     }
   }
 
