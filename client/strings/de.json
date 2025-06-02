@@ -858,7 +858,7 @@
   "MessageSelected": "{0} ausgewählt",
   "MessageSeriesSequenceCannotContainSpaces": "Serie Abfolge kann keine Leerzeichen enthalten",
   "MessageServerCouldNotBeReached": "Server kann nicht erreicht werden",
-  "MessageSetChaptersFromTracksDescription": "Kaitelerstellung basiert auf den existierenden einzelnen Audiodateien. Pro existierende Audiodatei wird 1 Kapitel erstellt, wobei deren Kapitelname aus dem Audiodateinamen extrahiert wird",
+  "MessageSetChaptersFromTracksDescription": "Kapitelerstellung basiert auf den existierenden einzelnen Audiodateien. Pro existierende Audiodatei wird 1 Kapitel erstellt, wobei deren Kapitelname aus dem Audiodateinamen extrahiert wird",
   "MessageShareExpirationWillBe": "Läuft am <strong>{0}</strong> ab",
   "MessageShareExpiresIn": "Läuft in {0} ab",
   "MessageShareURLWillBe": "Der Freigabe Link wird <strong>{0}</strong> sein",
