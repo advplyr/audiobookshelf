@@ -9,6 +9,7 @@ const fs = require('../libs/fsExtra')
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
 const { validateUrl } = require('../utils/index')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
@@ -404,6 +405,15 @@ class PodcastController {
     const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
     for (const key in req.body) {
       if (supportedStringKeys.includes(key) && typeof req.body[key] === 'string') {
+        // Sanitize description HTML
+        if (key === 'description' && req.body[key]) {
+          const sanitizedDescription = htmlSanitizer.sanitize(req.body[key])
+          if (sanitizedDescription !== req.body[key]) {
+            Logger.debug(`[PodcastController] Sanitized description from "${req.body[key]}" to "${sanitizedDescription}"`)
+            req.body[key] = sanitizedDescription
+          }
+        }
+
         updatePayload[key] = req.body[key]
       } else if (key === 'chapters' && Array.isArray(req.body[key]) && req.body[key].every((ch) => typeof ch === 'object' && ch.title && ch.start)) {
         updatePayload[key] = req.body[key]

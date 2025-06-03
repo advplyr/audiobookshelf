@@ -356,6 +356,8 @@ export default {
 
       const encodeOptions = this.$refs.encoderOptionsCard.getEncodingOptions()
 
+      this.encodingOptions = encodeOptions
+
       const queryParams = new URLSearchParams(encodeOptions)
 
       this.processing = true

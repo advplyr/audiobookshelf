@@ -310,7 +310,7 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-    router.use(express.json({ limit: '5mb' }))
+    router.use(express.json({ limit: '10mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
@@ -395,10 +395,19 @@ class Server {
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
-    this.server.listen(this.Port, this.Host, () => {
-      if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
-      else Logger.info(`Listening on port :${this.Port}`)
-    })
+    const unixSocketPrefix = 'unix/'
+    if (this.Host?.startsWith(unixSocketPrefix)) {
+      const sockPath = this.Host.slice(unixSocketPrefix.length)
+      this.server.listen(sockPath, async () => {
+        await fs.chmod(sockPath, 0o666)
+        Logger.info(`Listening on unix socket ${sockPath}`)
+      })
+    } else {
+      this.server.listen(this.Port, this.Host, () => {
+        if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+        else Logger.info(`Listening on port :${this.Port}`)
+      })
+    }
 
     // Start listening for socket connections
     SocketAuthority.initialize(this)
