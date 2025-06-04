@@ -87,6 +87,8 @@ class User extends Model {
     /** @type {string} */
     this.username
     /** @type {string} */
+    this.displayName
+    /** @type {string} */
     this.email
     /** @type {string} */
     this.pash
@@ -425,6 +427,7 @@ class User extends Model {
           primaryKey: true
         },
         username: DataTypes.STRING,
+        displayName: DataTypes.STRING,
         email: DataTypes.STRING,
         pash: DataTypes.STRING,
         type: DataTypes.STRING,
@@ -518,6 +521,7 @@ class User extends Model {
     const json = {
       id: this.id,
       username: this.username,
+      displayName: this.displayName,
       email: this.email,
       type: this.type,
       token: this.type === 'root' && hideRootToken ? '' : this.token,

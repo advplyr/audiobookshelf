@@ -172,6 +172,7 @@ class UserController {
       type: userType,
       username: req.body.username,
       email: typeof req.body.email === 'string' ? req.body.email : null,
+      displayName: typeof req.body.displayName === 'string' ? req.body.displayName : null,
       pash,
       token,
       isActive: !!req.body.isActive,
@@ -203,6 +204,13 @@ class UserController {
    * @param {Response} res
    */
   async update(req, res) {
+    Logger.info('[UserController] Update request:', {
+      params: req.params,
+      body: req.body,
+      user: req.user?.username,
+      reqUser: req.reqUser?.username
+    })
+
     const user = req.reqUser
 
     if (user.isRoot && !req.user.isRoot) {
@@ -227,6 +235,9 @@ class UserController {
     }
     if (updatePayload.username && typeof updatePayload.username !== 'string') {
       return res.status(400).send('Invalid username')
+    }
+    if (updatePayload.displayName && typeof updatePayload.displayName !== 'string') {
+      return res.status(400).send('Invalid display name')
     }
     if (updatePayload.type && !Database.userModel.accountTypes.includes(updatePayload.type)) {
       return res.status(400).send('Invalid account type')
@@ -320,6 +331,10 @@ class UserController {
     }
     if (updatePayload.lastSeen && typeof updatePayload.lastSeen === 'number') {
       user.lastSeen = updatePayload.lastSeen
+      hasUpdates = true
+    }
+    if (updatePayload.displayName !== undefined) {
+      user.displayName = updatePayload.displayName
       hasUpdates = true
     }
 
@@ -474,6 +489,14 @@ class UserController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
+    Logger.info('[UserController] Middleware request:', {
+      method: req.method,
+      path: req.path,
+      params: req.params,
+      userId: req.user?.id,
+      username: req.user?.username
+    })
+
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
@@ -505,7 +528,7 @@ class UserController {
         include: [{
           model: Database.userModel,
           as: 'user',
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'displayName']
         }],
         order: [['createdAt', 'DESC']]
       })

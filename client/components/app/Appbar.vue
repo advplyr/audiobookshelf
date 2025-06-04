@@ -116,7 +116,7 @@ export default {
       return this.$store.getters['user/getIsAdminOrUp']
     },
     username() {
-      return this.user ? this.user.username : 'err'
+      return this.user ? this.user.displayName || this.user.username : 'err'
     },
     numMediaItemsSelected() {
       return this.selectedMediaItems.length

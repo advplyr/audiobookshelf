@@ -23,7 +23,11 @@ class MeController {
    * @param {Response} res
    */
   getCurrentUser(req, res) {
-    res.json(req.user.toOldJSONForBrowser())
+    const userJson = req.user.toOldJSONForBrowser()
+    Logger.info('[MeController] getCurrentUser response:', {
+      user: userJson
+    })
+    res.json(userJson)
   }
 
   /**

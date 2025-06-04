@@ -8,6 +8,7 @@
 /media/
 /metadata/
 /plugins/
+*.epub
 /client/.nuxt/
 /client/dist/
 /dist/

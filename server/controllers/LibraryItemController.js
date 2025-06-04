@@ -82,7 +82,7 @@ class LibraryItemController {
         include: [{
           model: Database.userModel,
           as: 'user',
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'displayName']
         }],
         order: [['createdAt', 'DESC']]
       })
@@ -1224,7 +1224,7 @@ class LibraryItemController {
         include: [{
           model: Database.userModel,
           as: 'user',
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'displayName']
         }],
         order: [['createdAt', 'DESC']]
       })
@@ -1267,7 +1267,7 @@ class LibraryItemController {
         include: [{
           model: Database.userModel,
           as: 'user',
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'displayName']
         }]
       })
 
@@ -1291,7 +1291,7 @@ class LibraryItemController {
         include: [{
           model: Database.userModel,
           as: 'user',
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'displayName']
         }]
       })
 

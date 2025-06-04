@@ -2,7 +2,7 @@
   <div class="bg-bg min-h-screen">
     <div class="max-w-6xl mx-auto px-4 py-8">
       <div v-if="user" class="mb-8">
-        <h1 class="text-3xl font-semibold mb-2">{{ user.username }}'s Profile</h1>
+        <h1 class="text-3xl font-semibold mb-2">{{ user.displayName || user.username }}'s Profile</h1>
         <p class="text-gray-400">Member since {{ formatDate(user.createdAt) }}</p>
       </div>
 

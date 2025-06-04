@@ -189,7 +189,7 @@
                   <div v-for="comment in sortedComments" :key="comment.id" class="bg-bg border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
                     <div class="flex justify-between items-start mb-2">
                       <div>
-                        <nuxt-link :to="'/user/' + comment.userId" class="font-semibold hover:text-white hover:underline">{{ comment.user.username }}</nuxt-link>
+                        <nuxt-link :to="'/user/' + comment.userId" class="font-semibold hover:text-white hover:underline">{{ comment.user.displayName || comment.user.username }}</nuxt-link>
                         <span class="text-sm text-gray-400 ml-2">
                           {{ formatDate(comment.createdAt) }}
                         </span>
@@ -1012,6 +1012,7 @@ export default {
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.$root.socket.on('user_updated', this.loadComments)
   },
   beforeDestroy() {
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
@@ -1024,6 +1025,7 @@ export default {
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.$root.socket.off('user_updated', this.loadComments)
   }
 }
 </script>

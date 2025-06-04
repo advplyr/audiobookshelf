@@ -83,7 +83,8 @@ class Comment extends Model {
       updatedAt: this.updatedAt,
       user: this.user ? {
         id: this.user.id,
-        username: this.user.username
+        username: this.user.username,
+        displayName: this.user.displayName
       } : null
     }
   }
