@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  audiobookshelf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audiobookshelf
+    ports:
+      - "13378:80"  # The app will be available on port 13378
+    volumes:
+      # Main storage volumes
+      - ./audiobooks:/audiobooks        # Your audiobooks directory
+      - ./podcasts:/podcasts           # Your podcasts directory
+      - ./metadata:/metadata           # Metadata storage
+      - ./config:/config              # Configuration files
+      - /Users/benjamindonaldson/Downloads:/libraries  # Additional libraries directory (customize this path)
+    environment:
+      - TZ=America/New_York     # Set your timezone
+      - PUID=1000              # Set to your user ID (optional)
+      - PGID=1000              # Set to your group ID (optional)
+      # Additional optional environment variables:
+      # - PORT=80               # Internal port (don't change unless necessary)
+      # - HOST=0.0.0.0         # Listen on all interfaces
+    restart: unless-stopped
+    networks:
+      - abs_network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:80/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  abs_network:
+    driver: bridge
