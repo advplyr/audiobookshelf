@@ -944,16 +944,17 @@ export default {
     },
     async saveEdit(comment) {
       try {
-        const response = await this.$axios.put(`/api/items/${this.libraryItem.id}/comments/${comment.id}`, {
+        const response = await this.$axios.$patch(`/api/items/${this.libraryItemId}/comments/${comment.id}`, {
           text: this.editCommentText.trim(),
           rating: this.editRating || null
         })
 
         const index = this.comments.findIndex((c) => c.id === comment.id)
-        this.comments.splice(index, 1, response.data)
+        this.comments.splice(index, 1, response)
         this.cancelEdit()
         this.$toast.success(this.$strings.MessageCommentUpdated)
       } catch (error) {
+        console.error('Error updating comment:', error)
         this.$toast.error(this.$strings.ErrorUpdatingComment)
       }
     },
