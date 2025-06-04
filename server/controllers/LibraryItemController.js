@@ -1170,7 +1170,6 @@ class LibraryItemController {
   }
 
   /**
-   *
    * @param {RequestWithUser} req
    * @param {Response} res
    * @param {NextFunction} next
@@ -1191,6 +1190,11 @@ class LibraryItemController {
         Logger.error(`[LibraryItemController] Library file "${req.params.fileid}" does not exist for library item`)
         return res.sendStatus(404)
       }
+    }
+
+    // Allow comment operations for all authenticated users
+    if (req.path.includes('/comments')) {
+      return next()
     }
 
     if (req.path.includes('/play')) {
@@ -1240,6 +1244,18 @@ class LibraryItemController {
    */
   async addComment(req, res) {
     try {
+      // Check if user already has a comment for this item
+      const existingComment = await Database.commentModel.findOne({
+        where: {
+          libraryItemId: req.params.id,
+          userId: req.user.id
+        }
+      })
+
+      if (existingComment) {
+        return res.status(400).json({ error: 'You have already submitted a review for this item' })
+      }
+
       const comment = await Database.commentModel.create({
         text: req.body.text,
         rating: req.body.rating,

@@ -149,7 +149,7 @@
           <div class="grow px-2 md:px-10">
             <div class="mt-12">
               <div class="comments-section mt-4 border-t border-gray-700 pt-4">
-                <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelComments }}</h3>
+                <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelRatings }}</h3>
 
                 <!-- Average Rating Display -->
                 <div v-if="comments.length" class="mb-4">
@@ -162,7 +162,7 @@
                 </div>
 
                 <!-- Add Comment Form -->
-                <div class="mb-6">
+                <div v-if="!hasUserComment" class="mb-6">
                   <div class="bg-bg border border-gray-700 rounded-lg p-4">
                     <textarea v-model="newComment" :placeholder="$strings.PlaceholderAddComment" class="w-full p-2 bg-transparent border border-gray-600 rounded resize-none focus:outline-none mb-3" rows="3"></textarea>
 
@@ -174,11 +174,10 @@
                           <span class="abs-icons icon-star"></span>
                         </button>
                       </div>
-                      <button v-if="newRating" class="ml-2 text-sm text-gray-400 hover:text-white" @click="newRating = 0">({{ $strings.ButtonClear }})</button>
                     </div>
 
                     <div class="flex justify-end">
-                      <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75" @click="postComment">
+                      <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!newRating" @click="postComment">
                         {{ $strings.ButtonPost }}
                       </button>
                     </div>
@@ -187,10 +186,15 @@
 
                 <!-- Comments List -->
                 <div v-if="comments.length" class="space-y-4">
-                  <div v-for="comment in comments" :key="comment.id" class="bg-bg border border-gray-700 rounded-lg p-4">
+                  <div v-for="comment in sortedComments" :key="comment.id" class="bg-bg border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
                     <div class="flex justify-between items-start mb-2">
                       <div>
-                        <span class="font-semibold">{{ comment.user.username }}</span>
+                        <template v-if="comment.userId === currentUser.id">
+                          <nuxt-link to="/account" class="font-semibold hover:text-white hover:underline">{{ comment.user.username }}</nuxt-link>
+                        </template>
+                        <template v-else>
+                          <span class="font-semibold">{{ comment.user.username }}</span>
+                        </template>
                         <span class="text-sm text-gray-400 ml-2">
                           {{ formatDate(comment.createdAt) }}
                         </span>
@@ -224,11 +228,10 @@
                             <span class="abs-icons icon-star"></span>
                           </button>
                         </div>
-                        <button v-if="editRating" class="ml-2 text-sm text-gray-400 hover:text-white" @click="editRating = 0">({{ $strings.ButtonClear }})</button>
                       </div>
 
                       <div class="flex space-x-2">
-                        <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75" @click="saveEdit(comment)">
+                        <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!editRating" @click="saveEdit(comment)">
                           {{ $strings.ButtonSave }}
                         </button>
                         <button class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-opacity-75" @click="cancelEdit">
@@ -562,6 +565,18 @@ export default {
       if (!ratedComments.length) return 0
       const sum = ratedComments.reduce((acc, comment) => acc + comment.rating, 0)
       return sum / ratedComments.length
+    },
+    hasUserComment() {
+      return this.comments.some((comment) => comment.userId === this.$store.state.user.user.id)
+    },
+    sortedComments() {
+      return [...this.comments].sort((a, b) => {
+        // Put current user's comment at the top
+        if (a.userId === this.currentUser.id) return -1
+        if (b.userId === this.currentUser.id) return 1
+        // Sort remaining comments by date, newest first
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
     }
   },
   methods: {
@@ -593,7 +608,7 @@ export default {
           .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
           .then(() => {
             this.$toast.success(this.$strings.ToastEpisodeDownloadQueueClearSuccess)
-            this.episodeDownloadQueued = []
+            this.episodeDownloadsQueued = []
           })
           .catch((error) => {
             console.error('Failed to clear queue', error)
@@ -913,20 +928,10 @@ export default {
       if (!this.newComment.trim()) return
 
       try {
-        console.log('Posting comment:', {
-          text: this.newComment.trim(),
-          rating: this.newRating || null
-        })
-
         const response = await this.$axios.$post(`/api/items/${this.libraryItemId}/comments`, {
           text: this.newComment.trim(),
-          rating: this.newRating || null
+          rating: this.newRating
         })
-
-        // Load comments if they haven't been loaded yet
-        if (!this.comments) {
-          this.comments = []
-        }
 
         this.comments.unshift(response)
         this.newComment = ''
@@ -934,7 +939,11 @@ export default {
         this.$toast.success(this.$strings.MessageCommentAdded)
       } catch (error) {
         console.error('Error posting comment:', error)
-        this.$toast.error(this.$strings.ErrorAddingComment)
+        if (error.response?.data?.error) {
+          this.$toast.error(error.response.data.error)
+        } else {
+          this.$toast.error(this.$strings.ErrorAddingComment)
+        }
       }
     },
     startEditing(comment) {
@@ -946,7 +955,7 @@ export default {
       try {
         const response = await this.$axios.$patch(`/api/items/${this.libraryItemId}/comments/${comment.id}`, {
           text: this.editCommentText.trim(),
-          rating: this.editRating || null
+          rating: this.editRating
         })
 
         const index = this.comments.findIndex((c) => c.id === comment.id)
