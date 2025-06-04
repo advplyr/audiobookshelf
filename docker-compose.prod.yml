@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: audiobookshelf
     ports:
-      - "13378:80"  # The app will be available on port 13378
+      - "7696:80"  # The app will be available on port 13378
     volumes:
       # Main storage volumes
       - ./audiobooks:/audiobooks        # Your audiobooks directory
