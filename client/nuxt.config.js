@@ -112,7 +112,11 @@ module.exports = {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  build: {
+    extend(config, { isDev, isClient }) {
+      // Add any necessary build configurations here
+    }
+  },
   watchers: {
     webpack: {
       aggregateTimeout: 300,

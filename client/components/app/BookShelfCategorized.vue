@@ -310,7 +310,7 @@ export default {
       }
     },
     libraryItemAdded(libraryItem) {
-      console.log('libraryItem added', libraryItem)
+      console.log('BookShelfCategorized: libraryItem added', libraryItem)
       // TODO: Check if libraryItem would be on this shelf
       if (!this.search) {
         this.fetchCategories()

@@ -543,7 +543,7 @@ export default {
       this.handleScroll(scrollTop)
     },
     libraryItemAdded(libraryItem) {
-      console.log('libraryItem added', libraryItem)
+      console.log('LazyBookshelf: libraryItem added', libraryItem)
       // TODO: Check if audiobook would be on this shelf
       this.resetEntities()
     },

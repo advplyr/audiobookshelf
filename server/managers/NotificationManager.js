@@ -3,6 +3,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { notificationData } = require('../utils/notifications')
+const Json = require('../libs/archiver/lib/plugins/json')
 
 class NotificationManager {
   constructor() {
@@ -88,6 +89,30 @@ class NotificationManager {
       errorMsg: errorMsg || 'Backup failed'
     }
     this.triggerNotification('onBackupFailed', eventData)
+  }
+
+  /**
+   * @param {import('../models/LibraryItem')} libraryItem
+   */
+  async onLibraryItemAdded(libraryItem) {
+
+    try {
+      if (!Database.notificationSettings.isUseable) return
+
+      if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onLibraryItemAdded')) {
+        Logger.debug(`[NotificationManager] onLibraryItemAdded: No active notifications`)
+        return
+      }
+
+      const eventData = {
+        itemTitle: libraryItem.title,
+        itemAuthor: libraryItem.authorNamesFirstLast,
+        mediaType: libraryItem.mediaType
+      }
+      this.triggerNotification('onLibraryItemAdded', eventData)
+    } catch (error) {
+      Logger.error('[NotificationManager] Error in onLibraryItemAdded:', error)
+    }
   }
 
   onTest() {

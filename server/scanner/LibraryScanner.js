@@ -14,6 +14,7 @@ const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
+const NotificationManager = require('../managers/NotificationManager')
 
 class LibraryScanner {
   constructor() {
@@ -141,6 +142,7 @@ class LibraryScanner {
    * @returns {Promise<boolean>} true if scan canceled
    */
   async scanLibrary(libraryScan, forceRescan) {
+  
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
     await libraryFilters.getFilterData(libraryScan.libraryMediaType, libraryScan.libraryId)
@@ -628,6 +630,7 @@ class LibraryScanner {
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
         SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
+        NotificationManager.onLibraryItemAdded(newLibraryItem)
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
