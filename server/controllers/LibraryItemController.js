@@ -76,6 +76,18 @@ class LibraryItemController {
         }
       }
 
+      // Include comments
+      const comments = await Database.commentModel.findAll({
+        where: { libraryItemId: req.params.id },
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username']
+        }],
+        order: [['createdAt', 'DESC']]
+      })
+      item.comments = comments
+
       return res.json(item)
     }
     res.json(req.libraryItem.toOldJSON())
@@ -1192,6 +1204,122 @@ class LibraryItemController {
     }
 
     next()
+  }
+
+  /**
+   * GET: /api/items/:id/comments
+   * Get comments for a library item
+   * 
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async getComments(req, res) {
+    try {
+      const comments = await Database.commentModel.findAll({
+        where: { libraryItemId: req.params.id },
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username']
+        }],
+        order: [['createdAt', 'DESC']]
+      })
+      res.json(comments)
+    } catch (error) {
+      Logger.error('[LibraryItemController] getComments error:', error)
+      res.status(500).json({ error: 'Failed to get comments' })
+    }
+  }
+
+  /**
+   * POST: /api/items/:id/comments
+   * Add a comment to a library item
+   * 
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async addComment(req, res) {
+    try {
+      const comment = await Database.commentModel.create({
+        text: req.body.text,
+        libraryItemId: req.params.id,
+        userId: req.user.id
+      })
+
+      const commentWithUser = await Database.commentModel.findByPk(comment.id, {
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username']
+        }]
+      })
+
+      res.json(commentWithUser)
+    } catch (error) {
+      Logger.error('[LibraryItemController] addComment error:', error)
+      res.status(500).json({ error: 'Failed to add comment' })
+    }
+  }
+
+  /**
+   * PATCH: /api/items/:id/comments/:commentId
+   * Update a comment
+   * 
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async updateComment(req, res) {
+    try {
+      const comment = await Database.commentModel.findByPk(req.params.commentId, {
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username']
+        }]
+      })
+
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' })
+      }
+
+      // Only allow comment owner or admin to update
+      if (comment.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Not authorized to update this comment' })
+      }
+
+      await comment.update({ text: req.body.text })
+      res.json(comment)
+    } catch (error) {
+      Logger.error('[LibraryItemController] updateComment error:', error)
+      res.status(500).json({ error: 'Failed to update comment' })
+    }
+  }
+
+  /**
+   * DELETE: /api/items/:id/comments/:commentId
+   * Delete a comment
+   * 
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async deleteComment(req, res) {
+    try {
+      const comment = await Database.commentModel.findByPk(req.params.commentId)
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found' })
+      }
+
+      // Only allow comment owner or admin to delete
+      if (comment.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Not authorized to delete this comment' })
+      }
+
+      await comment.destroy()
+      res.json({ success: true })
+    } catch (error) {
+      Logger.error('[LibraryItemController] deleteComment error:', error)
+      res.status(500).json({ error: 'Failed to delete comment' })
+    }
   }
 }
 module.exports = new LibraryItemController()

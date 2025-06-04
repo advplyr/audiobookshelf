@@ -1,0 +1,18 @@
+{
+  "LabelComments": "Comments",
+  "PlaceholderAddComment": "Add a comment... (Ctrl+Enter to post)",
+  "ButtonPost": "Post",
+  "ButtonEdit": "Edit",
+  "ButtonDelete": "Delete",
+  "ButtonCancel": "Cancel",
+  "ButtonSave": "Save",
+  "MessageNoComments": "No comments yet. Be the first to comment!",
+  "MessageCommentAdded": "Comment added successfully",
+  "MessageCommentUpdated": "Comment updated successfully",
+  "MessageCommentDeleted": "Comment deleted successfully",
+  "ErrorLoadingComments": "Error loading comments",
+  "ErrorAddingComment": "Error adding comment",
+  "ErrorUpdatingComment": "Error updating comment",
+  "ErrorDeletingComment": "Error deleting comment",
+  "ConfirmDeleteComment": "Are you sure you want to delete this comment?"
+} 

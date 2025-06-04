@@ -139,6 +139,51 @@
           <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
+
+      <!-- Comments section -->
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col lg:flex-row">
+          <div class="w-full lg:w-52" style="min-width: 208px">
+            <!-- Spacer div to match the layout above -->
+          </div>
+          <div class="grow px-2 md:px-10">
+            <div class="mt-12">
+              <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelComments }}</h3>
+
+              <!-- Add comment form -->
+              <div class="mb-6">
+                <div class="bg-bg rounded-lg border border-gray-600 p-4">
+                  <textarea v-model="newCommentText" placeholder="Add a comment... (Ctrl+Enter to post)" class="w-full bg-bg text-white resize-y min-h-[80px] focus:outline-none" @keydown.ctrl.enter="logNewComment"></textarea>
+                  <div class="flex justify-end mt-2">
+                    <button class="px-4 py-2 bg-success text-white rounded-md hover:bg-success/80" @click="logNewComment">
+                      {{ $strings.ButtonPost }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comments list -->
+              <div v-if="libraryItem.comments && libraryItem.comments.length" class="space-y-4">
+                <div v-for="comment in libraryItem.comments" :key="comment.id" class="bg-bg rounded-lg p-4 border border-gray-600">
+                  <div class="flex justify-between items-start mb-2">
+                    <div>
+                      <span class="font-medium">{{ comment.user.username }}</span>
+                      <span class="text-gray-400 text-sm ml-2">{{ formatDate(comment.createdAt) }}</span>
+                    </div>
+                    <button v-if="canDeleteComment(comment)" @click="deleteComment(comment.id)" class="text-red-500 hover:text-red-400">
+                      {{ $strings.ButtonDelete }}
+                    </button>
+                  </div>
+                  <p class="text-gray-200 whitespace-pre-wrap">{{ comment.text }}</p>
+                </div>
+              </div>
+              <div v-else class="text-gray-400 text-center py-4">
+                {{ $strings.MessageNoComments }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" :download-queue="episodeDownloadsQueued" :episodes-downloading="episodesDownloading" />
@@ -148,6 +193,9 @@
 
 <script>
 export default {
+  components: {
+    // Remove unused comments component registration
+  },
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
@@ -182,7 +230,11 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      newCommentText: '',
+      editingComment: null,
+      isAddingComment: false,
+      isUpdatingComment: false
     }
   },
   computed: {
@@ -431,6 +483,9 @@ export default {
       }
 
       return items
+    },
+    currentUser() {
+      return this.$store.state.user.user
     }
   },
   methods: {
@@ -776,6 +831,65 @@ export default {
       } else if (action === 'share') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
+      }
+    },
+    async logNewComment() {
+      if (!this.newCommentText.trim()) return
+
+      try {
+        // Save the comment first
+        const savedComment = await this.$axios.$post(`/api/items/${this.libraryItemId}/comments`, {
+          text: this.newCommentText
+        })
+
+        // Initialize comments array if it doesn't exist
+        if (!this.libraryItem.comments) {
+          this.libraryItem.comments = []
+        }
+
+        // Add the saved comment to the beginning of the array
+        this.libraryItem.comments.unshift(savedComment)
+
+        // Clear the input after successful save
+        this.newCommentText = ''
+        this.$toast.success(this.$strings.MessageCommentAdded)
+      } catch (error) {
+        console.error('Error saving comment:', error)
+        this.$toast.error(this.$strings.ErrorAddingComment)
+      }
+    },
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    canDeleteComment(comment) {
+      return this.currentUser.id === comment.userId || this.currentUser.isAdmin
+    },
+    async deleteComment(commentId) {
+      if (!confirm(this.$strings.ConfirmDeleteComment)) return
+
+      try {
+        // Remove comment from the array
+        const index = this.libraryItem.comments.findIndex((c) => c.id === commentId)
+        if (index !== -1) {
+          this.libraryItem.comments.splice(index, 1)
+
+          // Delete the comment
+          await this.$axios.$delete(`/api/items/${this.libraryItemId}/comments/${commentId}`)
+          this.$toast.success(this.$strings.MessageCommentDeleted)
+        }
+      } catch (error) {
+        console.error('Error deleting comment:', error)
+        this.$toast.error(this.$strings.ErrorDeletingComment)
+        // Restore the comment if the delete failed
+        if (this.editingComment) {
+          this.libraryItem.comments.splice(index, 0, this.editingComment)
+        }
       }
     }
   },
