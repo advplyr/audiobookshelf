@@ -189,12 +189,7 @@
                   <div v-for="comment in sortedComments" :key="comment.id" class="bg-bg border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
                     <div class="flex justify-between items-start mb-2">
                       <div>
-                        <template v-if="comment.userId === currentUser.id">
-                          <nuxt-link to="/account" class="font-semibold hover:text-white hover:underline">{{ comment.user.username }}</nuxt-link>
-                        </template>
-                        <template v-else>
-                          <span class="font-semibold">{{ comment.user.username }}</span>
-                        </template>
+                        <nuxt-link :to="'/user/' + comment.userId" class="font-semibold hover:text-white hover:underline">{{ comment.user.username }}</nuxt-link>
                         <span class="text-sm text-gray-400 ml-2">
                           {{ formatDate(comment.createdAt) }}
                         </span>

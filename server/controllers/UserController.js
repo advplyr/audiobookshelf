@@ -489,5 +489,72 @@ class UserController {
 
     next()
   }
+
+  /**
+   * GET: /api/users/:id/reviews
+   * Get reviews for a user with associated library items
+   * 
+   * @param {UserControllerRequest} req
+   * @param {Response} res
+   */
+  async getUserReviews(req, res) {
+    try {
+      // First get all reviews for the user
+      const reviews = await Database.commentModel.findAll({
+        where: { userId: req.params.id },
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username']
+        }],
+        order: [['createdAt', 'DESC']]
+      })
+
+      // Get all libraryItemIds from the reviews
+      const libraryItemIds = reviews.map(review => review.libraryItemId)
+
+      // Get all library items with their books
+      const libraryItems = await Database.libraryItemModel.findAll({
+        where: {
+          id: libraryItemIds
+        },
+        attributes: ['id', 'title', 'mediaType', 'path', 'relPath', 'libraryId', 'libraryFolderId', 'isFile', 'updatedAt'],
+        include: [{
+          model: Database.bookModel,
+          as: 'book',
+          attributes: ['id', 'title', 'coverPath']
+        }]
+      })
+
+      // Create a map of library items by id for easy lookup
+      const libraryItemsMap = libraryItems.reduce((map, item) => {
+        map[item.id] = item
+        return map
+      }, {})
+
+      // Merge the data
+      const reviewsWithItems = reviews.map(review => {
+        const reviewJson = review.toJSON()
+        const libraryItem = libraryItemsMap[reviewJson.libraryItemId]
+        
+        if (libraryItem) {
+          const libraryItemJson = libraryItem.toJSON()
+          reviewJson.libraryItem = libraryItemJson
+          if (libraryItemJson.book) {
+            reviewJson.libraryItem.media = {
+              coverPath: libraryItemJson.book.coverPath
+            }
+            reviewJson.book = libraryItemJson.book
+          }
+        }
+        return reviewJson
+      })
+
+      res.json(reviewsWithItems)
+    } catch (error) {
+      Logger.error('[UserController] getUserReviews error:', error)
+      res.status(500).json({ error: 'Failed to get user reviews' })
+    }
+  }
 }
 module.exports = new UserController()

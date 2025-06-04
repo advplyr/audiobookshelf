@@ -144,6 +144,7 @@ class ApiRouter {
     this.router.patch('/users/:id/openid-unlink', UserController.middleware.bind(this), UserController.unlinkFromOpenID.bind(this))
     this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/reviews', UserController.middleware.bind(this), UserController.getUserReviews.bind(this))
 
     //
     // Collection Routes
