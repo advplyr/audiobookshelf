@@ -10,7 +10,7 @@
       <div v-else>
         <!-- Tab Navigation -->
         <div v-if="user" class="flex border-b border-white/10 mb-6">
-          <button class="px-4 py-2 mr-4 font-semibold rounded-t-lg" :class="activeTab === 'account' ? 'text-white bg-primary border-b-0' : 'text-gray-400 hover:text-white'" @click="activeTab = 'account'">Account Settings</button>
+          <button v-if="isCurrentUser" class="px-4 py-2 mr-4 font-semibold rounded-t-lg" :class="activeTab === 'account' ? 'text-white bg-primary border-b-0' : 'text-gray-400 hover:text-white'" @click="activeTab = 'account'">Account Settings</button>
           <button class="px-4 py-2 font-semibold rounded-t-lg" :class="activeTab === 'reviews' ? 'text-white bg-primary border-b-0' : 'text-gray-400 hover:text-white'" @click="activeTab = 'reviews'">Reviews</button>
         </div>
 
@@ -143,7 +143,7 @@ export default {
     return {
       user: null,
       reviews: [],
-      activeTab: 'account',
+      activeTab: 'reviews',
       loading: true,
       // Account tab data
       password: null,
@@ -196,9 +196,13 @@ export default {
       try {
         this.user = await this.$axios.$get('/api/users/' + this.$route.params.id)
         if (this.isCurrentUser) {
+          this.activeTab = 'account'
           this.displayNameInput = this.user.displayName || ''
           this.selectedLanguage = this.$languageCodes.current
           await this.loadEreaderDevices()
+        } else {
+          // Set default tab to reviews for other users
+          this.activeTab = 'reviews'
         }
       } catch (error) {
         console.error('Error loading user:', error)
@@ -367,4 +371,4 @@ export default {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.7);
 }
-</style> 
+</style>

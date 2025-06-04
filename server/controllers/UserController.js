@@ -50,58 +50,30 @@ class UserController {
 
   /**
    * GET: /api/users/:id
-   * Get a single user toJSONForBrowser
-   * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   *
+   * Get a single user
+   * 
    * @param {UserControllerRequest} req
    * @param {Response} res
    */
   async findOne(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`Non-admin user "${req.user.username}" attempted to get user`)
-      return res.sendStatus(403)
+    const user = req.reqUser
+    const hideRootToken = !req.user.isRoot
+
+    // If requesting user is not admin and not the user themselves, return limited public data
+    if (!req.user.isAdminOrUp && req.user.id !== user.id) {
+      const publicUserData = {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        type: user.type,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+      return res.json(publicUserData)
     }
 
-    // Get user media progress with associated mediaItem
-    const mediaProgresses = await Database.mediaProgressModel.findAll({
-      where: {
-        userId: req.reqUser.id
-      },
-      include: [
-        {
-          model: Database.bookModel,
-          attributes: ['id', 'title', 'coverPath', 'updatedAt']
-        },
-        {
-          model: Database.podcastEpisodeModel,
-          attributes: ['id', 'title'],
-          include: {
-            model: Database.podcastModel,
-            attributes: ['id', 'title', 'coverPath', 'updatedAt']
-          }
-        }
-      ]
-    })
-
-    const oldMediaProgresses = mediaProgresses.map((mp) => {
-      const oldMediaProgress = mp.getOldMediaProgress()
-      oldMediaProgress.displayTitle = mp.mediaItem?.title
-      if (mp.mediaItem?.podcast) {
-        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
-        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
-      } else if (mp.mediaItem) {
-        oldMediaProgress.coverPath = mp.mediaItem.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
-      }
-      return oldMediaProgress
-    })
-
-    const userJson = req.reqUser.toOldJSONForBrowser(!req.user.isRoot)
-
-    userJson.mediaProgress = oldMediaProgresses
-
-    res.json(userJson)
+    res.json(user.toOldJSONForBrowser(hideRootToken))
   }
 
   /**
@@ -497,9 +469,11 @@ class UserController {
       username: req.user?.username
     })
 
-    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
-      return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
+    // For GET requests, allow viewing any user's public profile
+    if (req.method === 'GET') {
+      // Continue to next middleware
+    } else if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
+      // For non-GET requests, require admin or self
       return res.sendStatus(403)
     }
 
