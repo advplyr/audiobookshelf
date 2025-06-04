@@ -318,10 +318,8 @@ export default {
       }
     },
     handleAttachmentAdd(event) {
-      // Prevent pasting in images from the browser
-      if (!event.attachment.file) {
-        event.attachment.remove()
-      }
+      // Prevent pasting in images/any files from the browser
+      event.attachment.remove()
     }
   },
   mounted() {
