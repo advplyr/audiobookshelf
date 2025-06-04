@@ -23,7 +23,7 @@ module.exports = {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'Audiobookshelf',
+    title: 'Bookfire',
     htmlAttrs: {
       lang: 'en'
     },
@@ -87,19 +87,21 @@ module.exports = {
       nativeUI: true
     },
     manifest: {
-      name: 'Audiobookshelf',
-      short_name: 'Audiobookshelf',
-      display: 'standalone',
-      background_color: '#232323',
+      name: 'Bookfire',
+      short_name: 'Bookfire',
+      description: 'Self-hosted audiobook server',
+      theme_color: '#111827',
+      background_color: '#111827',
       icons: [
         {
-          src: routerBasePath + '/icon.svg',
-          sizes: 'any'
+          src: routerBasePath + '/bookfire-logo-white.svg',
+          type: 'image/svg+xml',
+          sizes: '512x512'
         },
         {
           src: routerBasePath + '/icon192.png',
           type: 'image/png',
-          sizes: 'any'
+          sizes: '192x192'
         }
       ]
     },
