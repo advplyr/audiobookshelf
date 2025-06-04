@@ -1,12 +1,12 @@
 <template>
-  <div class="bg-bg min-h-screen">
+  <div class="page-container">
     <div class="max-w-6xl mx-auto px-4 py-8">
       <div v-if="user" class="mb-8">
         <h1 class="text-3xl font-semibold mb-2">{{ user.displayName || user.username }}'s Profile</h1>
         <p class="text-gray-400">Member since {{ formatDate(user.createdAt) }}</p>
       </div>
 
-      <div v-if="reviews.length" class="space-y-6">
+      <div v-if="reviews.length" class="space-y-6 pb-24">
         <h2 class="text-2xl font-semibold mb-4">Reviews</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <div v-for="review in reviews" :key="review.id" class="bg-primary rounded-lg overflow-hidden shadow-lg flex flex-col">
@@ -87,6 +87,13 @@ export default {
 </script>
 
 <style>
+.page-container {
+  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: var(--bg-color);
+}
+
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
