@@ -7,7 +7,7 @@
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-xl mr-6 hidden lg:block hover:underline">Draggledon Books</h1>
+          <h1 class="text-xl mr-6 hidden lg:block hover:underline">Bookfire</h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />
