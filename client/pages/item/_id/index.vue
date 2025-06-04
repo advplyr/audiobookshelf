@@ -148,37 +148,104 @@
           </div>
           <div class="grow px-2 md:px-10">
             <div class="mt-12">
-              <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelComments }}</h3>
+              <div class="comments-section mt-4 border-t border-gray-700 pt-4">
+                <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelComments }}</h3>
 
-              <!-- Add comment form -->
-              <div class="mb-6">
-                <div class="bg-bg rounded-lg border border-gray-600 p-4">
-                  <textarea v-model="newCommentText" placeholder="Add a comment... (Ctrl+Enter to post)" class="w-full bg-bg text-white resize-y min-h-[80px] focus:outline-none" @keydown.ctrl.enter="logNewComment"></textarea>
-                  <div class="flex justify-end mt-2">
-                    <button class="px-4 py-2 bg-success text-white rounded-md hover:bg-success/80" @click="logNewComment">
-                      {{ $strings.ButtonPost }}
-                    </button>
-                  </div>
+                <!-- Average Rating Display -->
+                <div v-if="comments.length" class="mb-4">
+                  <p class="text-lg">
+                    {{ $strings.LabelAverageRating.replace('{0}', averageRating.toFixed(1)) }}
+                    <span class="inline-flex ml-2">
+                      <i v-for="i in 5" :key="i" class="fas fa-star" :class="i <= Math.round(averageRating) ? 'text-yellow-500' : 'text-gray-500'"></i>
+                    </span>
+                  </p>
                 </div>
-              </div>
 
-              <!-- Comments list -->
-              <div v-if="libraryItem.comments && libraryItem.comments.length" class="space-y-4">
-                <div v-for="comment in libraryItem.comments" :key="comment.id" class="bg-bg rounded-lg p-4 border border-gray-600">
-                  <div class="flex justify-between items-start mb-2">
-                    <div>
-                      <span class="font-medium">{{ comment.user.username }}</span>
-                      <span class="text-gray-400 text-sm ml-2">{{ formatDate(comment.createdAt) }}</span>
+                <!-- Add Comment Form -->
+                <div class="mb-6">
+                  <div class="bg-bg border border-gray-700 rounded-lg p-4">
+                    <textarea v-model="newComment" :placeholder="$strings.PlaceholderAddComment" class="w-full p-2 bg-transparent border border-gray-600 rounded resize-none focus:outline-none mb-3" rows="3"></textarea>
+
+                    <!-- Star Rating Input -->
+                    <div class="flex items-center mb-3">
+                      <span class="mr-2">{{ $strings.LabelRating }}:</span>
+                      <div class="flex">
+                        <button v-for="star in 5" :key="star" class="text-2xl focus:outline-none" :class="star <= (hoverRating || newRating) ? 'text-yellow-500' : 'text-gray-500'" @click="newRating = star" @mouseover="hoverRating = star" @mouseleave="hoverRating = 0">
+                          <span class="abs-icons icon-star"></span>
+                        </button>
+                      </div>
+                      <button v-if="newRating" class="ml-2 text-sm text-gray-400 hover:text-white" @click="newRating = 0">({{ $strings.ButtonClear }})</button>
                     </div>
-                    <button v-if="canDeleteComment(comment)" @click="deleteComment(comment.id)" class="text-red-500 hover:text-red-400">
-                      {{ $strings.ButtonDelete }}
-                    </button>
+
+                    <div class="flex justify-end">
+                      <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75" @click="postComment">
+                        {{ $strings.ButtonPost }}
+                      </button>
+                    </div>
                   </div>
-                  <p class="text-gray-200 whitespace-pre-wrap">{{ comment.text }}</p>
                 </div>
-              </div>
-              <div v-else class="text-gray-400 text-center py-4">
-                {{ $strings.MessageNoComments }}
+
+                <!-- Comments List -->
+                <div v-if="comments.length" class="space-y-4">
+                  <div v-for="comment in comments" :key="comment.id" class="bg-bg border border-gray-700 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <span class="font-semibold">{{ comment.user.username }}</span>
+                        <span class="text-sm text-gray-400 ml-2">
+                          {{ formatDate(comment.createdAt) }}
+                        </span>
+                      </div>
+                      <div class="flex items-center">
+                        <!-- Star Rating Display -->
+                        <div v-if="comment.rating" class="flex mr-4">
+                          <span v-for="star in 5" :key="star" class="abs-icons icon-star" :class="star <= comment.rating ? 'text-yellow-500' : 'text-gray-500'"></span>
+                        </div>
+
+                        <div v-if="canEditComment(comment)" class="space-x-2">
+                          <button v-if="editingCommentId !== comment.id" class="text-gray-400 hover:text-white" @click="startEditing(comment)">
+                            {{ $strings.ButtonEdit }}
+                          </button>
+                          <button class="text-gray-400 hover:text-white" @click="deleteComment(comment)">
+                            {{ $strings.ButtonDelete }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Edit Comment Form -->
+                    <div v-if="editingCommentId === comment.id">
+                      <textarea v-model="editCommentText" class="w-full p-2 bg-gray-800 rounded mb-2 resize-none focus:outline-none" rows="3"></textarea>
+
+                      <!-- Edit Rating -->
+                      <div class="flex items-center mb-2">
+                        <span class="mr-2">{{ $strings.LabelRating }}:</span>
+                        <div class="flex">
+                          <button v-for="star in 5" :key="star" class="text-2xl focus:outline-none" :class="star <= editRating ? 'text-yellow-500' : 'text-gray-500'" @click="editRating = star">
+                            <span class="abs-icons icon-star"></span>
+                          </button>
+                        </div>
+                        <button v-if="editRating" class="ml-2 text-sm text-gray-400 hover:text-white" @click="editRating = 0">({{ $strings.ButtonClear }})</button>
+                      </div>
+
+                      <div class="flex space-x-2">
+                        <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75" @click="saveEdit(comment)">
+                          {{ $strings.ButtonSave }}
+                        </button>
+                        <button class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-opacity-75" @click="cancelEdit">
+                          {{ $strings.ButtonCancel }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Comment Text Display -->
+                    <div v-else class="text-gray-300">
+                      {{ comment.text }}
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-gray-400">
+                  {{ $strings.MessageNoComments }}
+                </div>
               </div>
             </div>
           </div>
@@ -231,10 +298,13 @@ export default {
       showBookmarksModal: false,
       isDescriptionClamped: false,
       showFullDescription: false,
-      newCommentText: '',
-      editingComment: null,
-      isAddingComment: false,
-      isUpdatingComment: false
+      newComment: '',
+      newRating: 0,
+      hoverRating: 0,
+      editingCommentId: null,
+      editCommentText: '',
+      editRating: 0,
+      comments: []
     }
   },
   computed: {
@@ -486,6 +556,12 @@ export default {
     },
     currentUser() {
       return this.$store.state.user.user
+    },
+    averageRating() {
+      const ratedComments = this.comments.filter((c) => c.rating)
+      if (!ratedComments.length) return 0
+      const sum = ratedComments.reduce((acc, comment) => acc + comment.rating, 0)
+      return sum / ratedComments.length
     }
   },
   methods: {
@@ -833,68 +909,90 @@ export default {
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
     },
-    async logNewComment() {
-      if (!this.newCommentText.trim()) return
+    async postComment() {
+      if (!this.newComment.trim()) return
 
       try {
-        // Save the comment first
-        const savedComment = await this.$axios.$post(`/api/items/${this.libraryItemId}/comments`, {
-          text: this.newCommentText
+        console.log('Posting comment:', {
+          text: this.newComment.trim(),
+          rating: this.newRating || null
         })
 
-        // Initialize comments array if it doesn't exist
-        if (!this.libraryItem.comments) {
-          this.libraryItem.comments = []
+        const response = await this.$axios.$post(`/api/items/${this.libraryItemId}/comments`, {
+          text: this.newComment.trim(),
+          rating: this.newRating || null
+        })
+
+        // Load comments if they haven't been loaded yet
+        if (!this.comments) {
+          this.comments = []
         }
 
-        // Add the saved comment to the beginning of the array
-        this.libraryItem.comments.unshift(savedComment)
-
-        // Clear the input after successful save
-        this.newCommentText = ''
+        this.comments.unshift(response)
+        this.newComment = ''
+        this.newRating = 0
         this.$toast.success(this.$strings.MessageCommentAdded)
       } catch (error) {
-        console.error('Error saving comment:', error)
+        console.error('Error posting comment:', error)
         this.$toast.error(this.$strings.ErrorAddingComment)
       }
     },
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+    startEditing(comment) {
+      this.editingCommentId = comment.id
+      this.editCommentText = comment.text
+      this.editRating = comment.rating || 0
     },
-    canDeleteComment(comment) {
-      return this.currentUser.id === comment.userId || this.currentUser.isAdmin
+    async saveEdit(comment) {
+      try {
+        const response = await this.$axios.put(`/api/items/${this.libraryItem.id}/comments/${comment.id}`, {
+          text: this.editCommentText.trim(),
+          rating: this.editRating || null
+        })
+
+        const index = this.comments.findIndex((c) => c.id === comment.id)
+        this.comments.splice(index, 1, response.data)
+        this.cancelEdit()
+        this.$toast.success(this.$strings.MessageCommentUpdated)
+      } catch (error) {
+        this.$toast.error(this.$strings.ErrorUpdatingComment)
+      }
     },
-    async deleteComment(commentId) {
+    cancelEdit() {
+      this.editingCommentId = null
+      this.editCommentText = ''
+      this.editRating = 0
+    },
+    async deleteComment(comment) {
       if (!confirm(this.$strings.ConfirmDeleteComment)) return
 
       try {
-        // Remove comment from the array
-        const index = this.libraryItem.comments.findIndex((c) => c.id === commentId)
-        if (index !== -1) {
-          this.libraryItem.comments.splice(index, 1)
-
-          // Delete the comment
-          await this.$axios.$delete(`/api/items/${this.libraryItemId}/comments/${commentId}`)
-          this.$toast.success(this.$strings.MessageCommentDeleted)
-        }
+        await this.$axios.delete(`/api/items/${this.libraryItem.id}/comments/${comment.id}`)
+        const index = this.comments.findIndex((c) => c.id === comment.id)
+        this.comments.splice(index, 1)
+        this.$toast.success(this.$strings.MessageCommentDeleted)
       } catch (error) {
-        console.error('Error deleting comment:', error)
         this.$toast.error(this.$strings.ErrorDeletingComment)
-        // Restore the comment if the delete failed
-        if (this.editingComment) {
-          this.libraryItem.comments.splice(index, 0, this.editingComment)
-        }
+      }
+    },
+    canEditComment(comment) {
+      return this.$store.state.user.user.id === comment.userId || this.$store.state.user.user.type === 'admin'
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleDateString()
+    },
+    async loadComments() {
+      try {
+        const response = await this.$axios.$get(`/api/items/${this.libraryItemId}/comments`)
+        this.comments = response || []
+      } catch (error) {
+        console.error('Error loading comments:', error)
+        this.$toast.error(this.$strings.ErrorLoadingComments)
       }
     }
   },
-  mounted() {
+  async mounted() {
     this.checkDescriptionClamped()
+    await this.loadComments()
 
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
@@ -947,5 +1045,10 @@ export default {
 #item-description.show-full {
   -webkit-line-clamp: unset;
   max-height: 999rem;
+}
+
+.comments-section {
+  max-width: 800px;
+  margin: 0 auto;
 }
 </style>

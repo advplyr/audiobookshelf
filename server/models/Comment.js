@@ -13,6 +13,14 @@ class Comment extends Model {
           type: DataTypes.TEXT,
           allowNull: false
         },
+        rating: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+          validate: {
+            min: 1,
+            max: 5
+          }
+        },
         libraryItemId: {
           type: DataTypes.UUID,
           allowNull: false,
@@ -68,6 +76,7 @@ class Comment extends Model {
     return {
       id: this.id,
       text: this.text,
+      rating: this.rating,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
       createdAt: this.createdAt,

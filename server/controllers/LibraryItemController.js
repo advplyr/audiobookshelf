@@ -1242,6 +1242,7 @@ class LibraryItemController {
     try {
       const comment = await Database.commentModel.create({
         text: req.body.text,
+        rating: req.body.rating,
         libraryItemId: req.params.id,
         userId: req.user.id
       })
@@ -1287,7 +1288,10 @@ class LibraryItemController {
         return res.status(403).json({ error: 'Not authorized to update this comment' })
       }
 
-      await comment.update({ text: req.body.text })
+      await comment.update({ 
+        text: req.body.text,
+        rating: req.body.rating
+      })
       res.json(comment)
     } catch (error) {
       Logger.error('[LibraryItemController] updateComment error:', error)
