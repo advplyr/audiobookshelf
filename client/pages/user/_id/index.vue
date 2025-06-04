@@ -1,22 +1,17 @@
 <template>
-  <div class="page-container">
-    <div class="max-w-6xl mx-auto px-4 py-8">
-      <!-- Loading State -->
-      <div v-if="loading" class="flex items-center justify-center py-12">
-        <widgets-loading-spinner />
+  <div class="w-full h-full overflow-y-auto bg-gradient-to-br from-[#2e2e2e] via-[#313131] to-[#1f1f1f]">
+    <div class="max-w-6xl mx-auto px-2 py-6 lg:p-8">
+      <div v-if="loading" class="w-full h-full flex items-center justify-center">
+        <ui-loading-indicator />
       </div>
-
-      <!-- Content when loaded -->
-      <template v-else>
-        <div v-if="user" class="mb-8">
-          <h1 class="text-3xl font-semibold mb-2">{{ user.displayName || user.username }}</h1>
-          <p class="text-gray-400">Member since {{ formatDate(user.createdAt) }}</p>
-        </div>
-
+      <div v-else-if="!user" class="w-full h-full flex items-center justify-center">
+        <p class="text-error text-lg">{{ $strings.MessageUserNotFound }}</p>
+      </div>
+      <div v-else>
         <!-- Tab Navigation -->
         <div v-if="user" class="flex border-b border-white/10 mb-6">
-          <button class="px-4 py-2 mr-4 font-semibold" :class="activeTab === 'account' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white'" @click="activeTab = 'account'">Account Settings</button>
-          <button class="px-4 py-2 font-semibold" :class="activeTab === 'reviews' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white'" @click="activeTab = 'reviews'">Reviews</button>
+          <button class="px-4 py-2 mr-4 font-semibold rounded-t-lg" :class="activeTab === 'account' ? 'text-white bg-primary border-b-0' : 'text-gray-400 hover:text-white'" @click="activeTab = 'account'">Account Settings</button>
+          <button class="px-4 py-2 font-semibold rounded-t-lg" :class="activeTab === 'reviews' ? 'text-white bg-primary border-b-0' : 'text-gray-400 hover:text-white'" @click="activeTab = 'reviews'">Reviews</button>
         </div>
 
         <!-- Reviews Tab -->
@@ -135,12 +130,7 @@
             </div>
           </div>
         </div>
-
-        <!-- Error State -->
-        <div v-if="!user && !loading" class="text-center py-12">
-          <p class="text-error text-lg">Error loading user profile</p>
-        </div>
-      </template>
+      </div>
     </div>
 
     <modals-emails-user-e-reader-device-modal v-if="isCurrentUser" v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />

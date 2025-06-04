@@ -186,11 +186,11 @@
 
                 <!-- Comments List -->
                 <div v-if="comments.length" class="space-y-4">
-                  <div v-for="comment in sortedComments" :key="comment.id" class="bg-bg border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
+                  <div v-for="comment in sortedComments" :key="comment.id" class="bg-primary border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
                     <div class="flex justify-between items-start mb-2">
                       <div>
                         <nuxt-link :to="'/user/' + comment.userId" class="font-semibold hover:text-white hover:underline">{{ comment.user.displayName || comment.user.username }}</nuxt-link>
-                        <span class="text-sm text-gray-400 ml-2">
+                        <span class="text-sm text-gray-300 ml-2">
                           {{ formatDate(comment.createdAt) }}
                         </span>
                       </div>
@@ -201,10 +201,10 @@
                         </div>
 
                         <div v-if="canEditComment(comment)" class="space-x-2">
-                          <button v-if="editingCommentId !== comment.id" class="text-gray-400 hover:text-white" @click="startEditing(comment)">
+                          <button v-if="editingCommentId !== comment.id" class="text-gray-300 hover:text-white" @click="startEditing(comment)">
                             {{ $strings.ButtonEdit }}
                           </button>
-                          <button class="text-gray-400 hover:text-white" @click="deleteComment(comment)">
+                          <button class="text-gray-300 hover:text-white" @click="deleteComment(comment)">
                             {{ $strings.ButtonDelete }}
                           </button>
                         </div>
@@ -236,7 +236,7 @@
                     </div>
 
                     <!-- Comment Text Display -->
-                    <div v-else class="text-gray-300">
+                    <div v-else class="text-gray-200">
                       {{ comment.text }}
                     </div>
                   </div>
