@@ -30,7 +30,7 @@ class PodcastManager {
     this.currentDownload = null
 
     this.failedCheckMap = {}
-    this.MaxFailedEpisodeChecks = process.env.MAX_FAILED_EPISODE_CHECKS || 24
+    this.MaxFailedEpisodeChecks = parseInt(process.env.MAX_FAILED_EPISODE_CHECKS, 10) || 24
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
@@ -345,7 +345,7 @@ class PodcastManager {
       // Allow up to MaxFailedEpisodeChecks failed attempts before disabling auto download
       if (!this.failedCheckMap[libraryItem.id]) this.failedCheckMap[libraryItem.id] = 0
       this.failedCheckMap[libraryItem.id]++
-      if (this.MaxFailedEpisodeChecks != 0 && this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
+      if (this.MaxFailedEpisodeChecks !== 0 && this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
         Logger.error(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}" - disabling auto download`)
         libraryItem.media.autoDownloadEpisodes = false
         delete this.failedCheckMap[libraryItem.id]
