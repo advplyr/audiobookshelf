@@ -880,6 +880,64 @@ export default {
       const shelfOffsetY = this.shelfPaddingHeight * this.sizeMultiplier
       const shelfOffsetX = (entityIndex - 1) * this.totalEntityCardWidth + this.bookshelfMarginLeft
       return `translate3d(${shelfOffsetX}px, ${shelfOffsetY}px, 0px)`
+    },
+    selectAllItems() {
+      // Check if all visible items are already selected
+      const selectedMediaItems = this.$store.state.globals.selectedMediaItems
+      const visibleEntityIds = this.entities.filter((e) => e).map((e) => e.id)
+      const selectedVisibleCount = selectedMediaItems.filter((item) => visibleEntityIds.includes(item.id)).length
+      const shouldDeselect = selectedVisibleCount === visibleEntityIds.length && selectedVisibleCount > 0
+
+      if (shouldDeselect) {
+        // Deselect all visible items
+        this.entities.forEach((entity) => {
+          if (entity) {
+            // Create the media item object the same way the individual deselect does
+            const mediaItem = {
+              id: entity.id,
+              mediaType: entity.mediaType,
+              hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+            }
+
+            // Remove the item from selection
+            this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: false })
+          }
+        })
+      } else {
+        // Select all visible items
+        this.entities.forEach((entity) => {
+          if (entity) {
+            // Create the media item object the same way the individual select does
+            const mediaItem = {
+              id: entity.id,
+              mediaType: entity.mediaType,
+              hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+            }
+
+            // Use the existing store mutation to mark the item as selected
+            this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: true })
+          }
+        })
+      }
+
+      // Force update all card components to reflect the selection state
+      this.$nextTick(() => {
+        this.updateBookSelectionMode(true)
+
+        // Also update the selected property of each card component
+        const updatedSelectedItems = this.$store.state.globals.selectedMediaItems
+
+        for (const key in this.entityComponentRefs) {
+          if (this.entityIndexesMounted.includes(Number(key))) {
+            const component = this.entityComponentRefs[key]
+            const entity = this.entities[key]
+            if (component && entity) {
+              const isSelected = updatedSelectedItems.some((item) => item.id === entity.id)
+              component.selected = isSelected
+            }
+          }
+        }
+      })
     }
   },
   async mounted() {

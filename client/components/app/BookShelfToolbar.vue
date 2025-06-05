@@ -328,6 +328,13 @@ export default {
         })
       }
 
+      if (!this.isBatchSelecting && (!this.page || this.page === 'search')) {
+        items.push({
+          text: 'Select All',
+          action: 'select-all'
+        })
+      }
+
       this.addSubtitlesMenuItem(items)
       this.addCollapseSeriesMenuItem(items)
 
@@ -426,11 +433,18 @@ export default {
       if (action === 'export-opml') {
         this.exportOPML()
         return
+      } else if (action === 'select-all') {
+        this.selectAllItems()
+        return
       } else if (this.handleSubtitlesAction(action)) {
         return
       } else if (this.handleCollapseSeriesAction(action)) {
         return
       }
+    },
+    selectAllItems() {
+      // Emit an event to the parent component to handle selecting all items
+      this.$emit('select-all-items')
     },
     exportOPML() {
       this.$downloadFile(`/api/libraries/${this.currentLibraryId}/opml?token=${this.$store.getters['user/getToken']}`, null, true)
@@ -643,7 +657,6 @@ export default {
   }
 }
 </script>
-
 
 <style>
 #toolbar {

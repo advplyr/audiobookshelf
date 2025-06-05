@@ -499,6 +499,70 @@ export default {
       } else {
         console.error('Error socket not initialized')
       }
+    },
+    selectAllItems() {
+      console.log('BookShelfCategorized: selectAllItems called!')
+      console.log('BookShelfCategorized: shelves:', this.shelves)
+
+      // Get all visible items from shelves
+      const allVisibleEntities = []
+      this.shelves.forEach((shelf) => {
+        console.log('BookShelfCategorized: processing shelf:', shelf.label, 'type:', shelf.type, 'entities:', shelf.entities.length)
+        if (shelf.type === 'book' || shelf.type === 'podcast') {
+          allVisibleEntities.push(...shelf.entities)
+        }
+      })
+
+      // Check if all visible items are already selected
+      const selectedMediaItems = this.$store.state.globals.selectedMediaItems
+      const visibleEntityIds = allVisibleEntities.map((e) => e.id)
+      const selectedVisibleCount = selectedMediaItems.filter((item) => visibleEntityIds.includes(item.id)).length
+      const shouldDeselect = selectedVisibleCount === visibleEntityIds.length && selectedVisibleCount > 0
+
+      console.log('BookShelfCategorized: visible entities:', visibleEntityIds.length, 'selected visible:', selectedVisibleCount, 'shouldDeselect:', shouldDeselect)
+
+      if (shouldDeselect) {
+        // Deselect all visible items
+        this.shelves.forEach((shelf) => {
+          console.log('BookShelfCategorized: processing shelf for deselection:', shelf.label, 'type:', shelf.type, 'entities:', shelf.entities.length)
+          if (shelf.type === 'book' || shelf.type === 'podcast') {
+            shelf.entities.forEach((entity) => {
+              console.log('BookShelfCategorized: deselecting entity:', entity.id, entity.mediaType)
+              // Create the media item object the same way the individual deselect does
+              const mediaItem = {
+                id: entity.id,
+                mediaType: entity.mediaType,
+                hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+              }
+
+              // Remove the item from selection
+              this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: false })
+            })
+          }
+        })
+      } else {
+        // Select all visible items
+        this.shelves.forEach((shelf) => {
+          if (shelf.type === 'book' || shelf.type === 'podcast') {
+            shelf.entities.forEach((entity) => {
+              // Create the media item object the same way the individual select does
+              const mediaItem = {
+                id: entity.id,
+                mediaType: entity.mediaType,
+                hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+              }
+
+              // Use the existing store mutation to mark the item as selected
+              this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: true })
+            })
+          }
+        })
+      }
+
+      // Trigger a single UI update after all items are selected/deselected
+      this.$nextTick(() => {
+        this.$eventBus.$emit('item-selected')
+      })
     }
   },
   mounted() {
