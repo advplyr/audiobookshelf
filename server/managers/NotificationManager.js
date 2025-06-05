@@ -72,6 +72,54 @@ class NotificationManager {
   }
 
   /**
+   * Handles RSS feed updates
+   * @param feedUrl
+   * @param numFailed
+   * @param title
+   * @returns {Promise<void>}
+   */
+  async onRSSFeedFailed(feedUrl, numFailed, title) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedFailed')) {
+      Logger.debug(`[NotificationManager] onRSSFeedFailed: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onRSSFeedFailed: RSS feed update failed for ${feedUrl}`)
+    const eventData = {
+      feedUrl: feedUrl,
+      numFailed: numFailed || 0,
+      title: title || 'Unknown Title'
+    }
+    this.triggerNotification('onRSSFeedFailed', eventData)
+  }
+
+  /**
+   * Handles RSS feed being disabled due to too many failed updates
+   * @param feedUrl
+   * @param numFailed
+   * @param title
+   * @returns {Promise<void>}
+   */
+  async onRSSFeedDisabled(feedUrl, numFailed, title) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedDisabled')) {
+      Logger.debug(`[NotificationManager] onRSSFeedDisabled: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onRSSFeedDisabled: RSS feed disabled due to ${numFailed} failed updates for ${feedUrl}`)
+    const eventData = {
+      feedUrl: feedUrl,
+      numFailed: numFailed || 0,
+      title: title || 'Unknown Title'
+    }
+    this.triggerNotification('onRSSFeedDisabled', eventData)
+  }
+
+  /**
    *
    * @param {string} errorMsg
    */
