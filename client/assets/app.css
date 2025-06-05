@@ -7,6 +7,92 @@
 :root {
   --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
   --bookshelf-divider-bg: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%);
+
+  /* Theme Colors */
+  --color-primary: #1e293b;
+  --color-primary-dark: #0f172a;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  --color-bg: #111827;
+}
+
+/* Color Classes */
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-primary-dark {
+  background-color: var(--color-primary-dark) !important;
+}
+
+.bg-success {
+  background-color: var(--color-success) !important;
+}
+
+.bg-warning {
+  background-color: var(--color-warning) !important;
+}
+
+.bg-error {
+  background-color: var(--color-error) !important;
+}
+
+.bg-info {
+  background-color: var(--color-info) !important;
+}
+
+.bg-bg {
+  background-color: var(--color-bg) !important;
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.text-primary-dark {
+  color: var(--color-primary-dark) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
+.text-warning {
+  color: var(--color-warning) !important;
+}
+
+.text-error {
+  color: var(--color-error) !important;
+}
+
+.text-info {
+  color: var(--color-info) !important;
+}
+
+.border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.border-primary-dark {
+  border-color: var(--color-primary-dark) !important;
+}
+
+.border-success {
+  border-color: var(--color-success) !important;
+}
+
+.border-warning {
+  border-color: var(--color-warning) !important;
+}
+
+.border-error {
+  border-color: var(--color-error) !important;
+}
+
+.border-info {
+  border-color: var(--color-info) !important;
 }
 
 .page {

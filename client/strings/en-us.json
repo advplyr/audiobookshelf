@@ -1119,5 +1119,15 @@
   "LabelRating": "Rating",
   "LabelStarRating": "{0} stars",
   "LabelNoRating": "No rating",
-  "LabelAverageRating": "Average rating: {0}"
+  "LabelAverageRating": "Average rating: {0}",
+  "HeaderStyling": "Styling",
+  "HeaderStylingColors": "Colors",
+  "HeaderStylingPreview": "Preview",
+  "LabelBackgroundColor": "Background Color",
+  "LabelErrorColor": "Error Color",
+  "LabelInfoColor": "Info Color",
+  "LabelPrimaryColor": "Primary Color",
+  "LabelPrimaryDarkColor": "Primary Dark Color",
+  "LabelSuccessColor": "Success Color",
+  "LabelWarningColor": "Warning Color"
 }

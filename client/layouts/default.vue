@@ -1,5 +1,6 @@
 <template>
   <div class="text-white max-h-screen h-screen overflow-hidden bg-bg">
+    <app-global-styling />
     <app-appbar />
 
     <app-side-rail v-if="isShowingSideRail" class="hidden md:block" />
@@ -27,7 +28,12 @@
 </template>
 
 <script>
+import AppGlobalStyling from '~/components/app/GlobalStyling.vue'
+
 export default {
+  components: {
+    AppGlobalStyling
+  },
   middleware: 'authenticated',
   data() {
     return {
