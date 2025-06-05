@@ -91,6 +91,12 @@ class Server {
       global.PodcastDownloadTimeout = 30000
     }
 
+    if (process.env.MAX_FAILED_EPISODE_CHECKS) {
+      global.MaxFailedEpisodeChecks = process.env.MAX_FAILED_EPISODE_CHECKS
+    } else {
+      global.MaxFailedEpisodeChecks = 24
+    }
+
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
     }

@@ -30,7 +30,7 @@ class PodcastManager {
     this.currentDownload = null
 
     this.failedCheckMap = {}
-    this.MaxFailedEpisodeChecks = parseInt(process.env.MAX_FAILED_EPISODE_CHECKS, 10) || 24
+    this.MaxFailedEpisodeChecks = global.MaxFailedEpisodeChecks
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
