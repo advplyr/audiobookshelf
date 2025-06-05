@@ -97,6 +97,9 @@
         </ui-tooltip>
       </div>
     </div>
+
+    <!-- Apply Tags Modal -->
+    <modals-batch-apply-tags-modal v-model="showApplyTagsModal" :selected-media-items="selectedMediaItems" @tagsApplied="tagsApplied" />
   </div>
 </template>
 
@@ -105,7 +108,8 @@ export default {
   data() {
     return {
       totalEntities: 0,
-      showProfileDropdown: false
+      showProfileDropdown: false,
+      showApplyTagsModal: false
     }
   },
   computed: {
@@ -198,6 +202,14 @@ export default {
         action: 'rescan'
       })
 
+      // Add Edit Tags option
+      if (this.userCanUpdate) {
+        options.push({
+          text: 'Edit Tags',
+          action: 'apply-tags'
+        })
+      }
+
       // The limit of 50 is introduced because of the URL length. Each id has 36 chars, so 36 * 40 = 1440
       // + 40 , separators = 1480 chars + base path 280 chars = 1760 chars. This keeps the URL under 2000 chars even with longer domains
       if (this.selectedMediaItems.length <= 40) {
@@ -244,6 +256,8 @@ export default {
         this.batchRescan()
       } else if (action === 'download') {
         this.batchDownload()
+      } else if (action === 'apply-tags') {
+        this.batchApplyTagsClick()
       }
     },
     async batchRescan() {
@@ -393,6 +407,16 @@ export default {
     },
     batchAutoMatchClick() {
       this.$store.commit('globals/setShowBatchQuickMatchModal', true)
+    },
+    batchApplyTagsClick() {
+      this.showApplyTagsModal = true
+    },
+    tagsApplied() {
+      // Clear selection and refresh the bookshelf
+      this.$store.commit('globals/resetSelectedMediaItems', [])
+      this.$eventBus.$emit('bookshelf_clear_selection')
+      // Optionally refresh the current page to show updated tags
+      this.$eventBus.$emit('bookshelf_refresh')
     },
     logout() {
       this.showProfileDropdown = false
