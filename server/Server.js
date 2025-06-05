@@ -12,6 +12,7 @@ const { version } = require('../package.json')
 
 // Utils
 const fileUtils = require('./utils/fileUtils')
+const { toNumber } = require('./utils/index')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -84,12 +85,8 @@ class Server {
         global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
       }
     }
-
-    if (process.env.PODCAST_DOWNLOAD_TIMEOUT) {
-      global.PodcastDownloadTimeout = process.env.PODCAST_DOWNLOAD_TIMEOUT
-    } else {
-      global.PodcastDownloadTimeout = 30000
-    }
+    global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
+    global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
