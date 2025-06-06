@@ -40,6 +40,8 @@ class Podcast extends Model {
     /** @type {string} */
     this.language
     /** @type {string} */
+    this.podcastFilenameFormat
+    /** @type {string} */
     this.podcastType
     /** @type {boolean} */
     this.explicit
@@ -95,6 +97,7 @@ class Podcast extends Model {
         itunesId: typeof payload.metadata.itunesId === 'string' ? payload.metadata.itunesId : null,
         itunesArtistId: typeof payload.metadata.itunesArtistId === 'string' ? payload.metadata.itunesArtistId : null,
         language: typeof payload.metadata.language === 'string' ? payload.metadata.language : null,
+        podcastFilenameFormat: typeof payload.metadata.podcastFilenameFormat === 'string' ? payload.metadata.podcastFilenameFormat : null,
         podcastType: typeof payload.metadata.type === 'string' ? payload.metadata.type : null,
         explicit: !!payload.metadata.explicit,
         autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
@@ -132,6 +135,7 @@ class Podcast extends Model {
         itunesId: DataTypes.STRING,
         itunesArtistId: DataTypes.STRING,
         language: DataTypes.STRING,
+        podcastFilenameFormat: DataTypes.STRING,
         podcastType: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
 
@@ -187,6 +191,7 @@ class Podcast extends Model {
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
       language: this.language,
+	    podcastFilenameFormat: this.podcastFilenameFormat,
       explicit: !!this.explicit,
       podcastType: this.podcastType
     }
@@ -203,7 +208,7 @@ class Podcast extends Model {
     let hasUpdates = false
 
     if (payload.metadata) {
-      const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
+      const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type','podcastFilenameFormat']
       stringKeys.forEach((key) => {
         let newKey = key
         if (key === 'type') {
@@ -396,6 +401,7 @@ class Podcast extends Model {
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
       language: this.language,
+      podcastFilenameFormat: this.podcastFilenameFormat,
       type: this.podcastType
     }
   }
