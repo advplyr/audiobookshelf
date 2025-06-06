@@ -3,6 +3,7 @@ const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
 const { xmlToJSON, levenshteinDistance, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const Fuse = require('fuse.js')
 
 /**
  * @typedef RssPodcastChapter
@@ -407,7 +408,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     })
 }
 
-// Return array of episodes ordered by closest match (Levenshtein distance of 6 or less)
+// Return array of episodes ordered by closest match using fuse.js
 module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   const feed = await this.getPodcastFeed(feedUrl).catch(() => {
     return null
@@ -420,32 +421,28 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
  *
  * @param {RssPodcast} feed
  * @param {string} searchTitle
- * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ * @returns {Array<{ episode: RssPodcastEpisode }>}
  */
 module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
-  searchTitle = searchTitle.toLowerCase().trim()
   if (!feed?.episodes) {
     return null
   }
 
+  const fuseOptions = {
+    ignoreDiacritics: true,
+    threshold: 0.4,  // default 0.6 return too many matches
+    keys: [
+      {name: 'title', weight: 0.7},  // prefer match in title
+      {name: 'subtitle', weight: 0.3}
+    ]
+  }
+  const fuse = new Fuse(feed.episodes, fuseOptions)
+
   const matches = []
-  feed.episodes.forEach((ep) => {
-    if (!ep.title) return
-    const epTitle = ep.title.toLowerCase().trim()
-    if (epTitle === searchTitle) {
-      matches.push({
-        episode: ep,
-        levenshtein: 0
-      })
-    } else {
-      const levenshtein = levenshteinDistance(searchTitle, epTitle, true)
-      if (levenshtein <= 6 && epTitle.length > levenshtein) {
-        matches.push({
-          episode: ep,
-          levenshtein
-        })
-      }
-    }
+  fuse.search(searchTitle).forEach((match) => {
+    matches.push({
+      episode: match.item
+    })
   })
-  return matches.sort((a, b) => a.levenshtein - b.levenshtein)
+  return matches
 }
