@@ -1103,5 +1103,21 @@
   "ToastUserPasswordChangeSuccess": "Password changed successfully",
   "ToastUserPasswordMismatch": "Passwords do not match",
   "ToastUserPasswordMustChange": "New password cannot match old password",
-  "ToastUserRootRequireName": "Must enter a root username"
+  "ToastUserRootRequireName": "Must enter a root username",
+  "ToastChaptersAllLocked": "All chapters are locked. Unlock some chapters to shift their times.",
+  "ToastChapterInvalidShiftAmount": "Invalid shift amount. First chapter would have zero or negative length.",
+  "ToastBulkChapterInvalidCount": "Please enter a valid number between 1 and 150",
+  "PlaceholderBulkChapterInput": "Enter chapter title or use numbering (e.g., 'Episode 1', 'Chapter 10', '1.')",
+  "HeaderBulkChapterModal": "Add Multiple Chapters",
+  "MessageBulkChapterPattern": "How many chapters would you like to add with this numbering pattern?",
+  "LabelDetectedPattern": "Detected pattern:",
+  "LabelNextChapters": "Next chapters will be:",
+  "LabelNumberOfChapters": "Number of chapters:",
+  "TooltipAddChapters": "Add chapter(s)",
+  "TooltipAddOneSecond": "Add 1 second",
+  "TooltipLockAllChapters": "Lock all chapters",
+  "TooltipLockChapter": "Lock chapter (Shift+click for range)",
+  "TooltipSubtractOneSecond": "Subtract 1 second",
+  "TooltipUnlockAllChapters": "Unlock all chapters",
+  "TooltipUnlockChapter": "Unlock chapter (Shift+click for range)"
 }

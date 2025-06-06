@@ -1103,5 +1103,21 @@
   "ToastUserPasswordChangeSuccess": "Contraseña modificada correctamente",
   "ToastUserPasswordMismatch": "No coinciden las contraseñas",
   "ToastUserPasswordMustChange": "La nueva contraseña no puede ser igual que la anterior",
-  "ToastUserRootRequireName": "Debe introducir un nombre de usuario administrativo"
+  "ToastUserRootRequireName": "Debe introducir un nombre de usuario administrativo",
+  "ToastChaptersAllLocked": "Todos los capítulos están bloqueados. Desbloquee algunos capítulos para cambiar sus tiempos.",
+  "ToastChapterInvalidShiftAmount": "Cantidad de desplazamiento inválida. El primer capítulo tendría duración cero o negativa.",
+  "ToastBulkChapterInvalidCount": "Por favor ingrese un número válido entre 1 y 150",
+  "PlaceholderBulkChapterInput": "Ingrese título de capítulo o use numeración (ej. 'Episodio 1', 'Capítulo 10', '1.')",
+  "HeaderBulkChapterModal": "Añadir Múltiples Capítulos",
+  "MessageBulkChapterPattern": "¿Cuántos capítulos desea añadir con este patrón de numeración?",
+  "LabelDetectedPattern": "Patrón detectado:",
+  "LabelNextChapters": "Los próximos capítulos serán:",
+  "LabelNumberOfChapters": "Número de capítulos:",
+  "TooltipAddChapters": "Añadir capítulo(s)",
+  "TooltipAddOneSecond": "Añadir 1 segundo",
+  "TooltipLockAllChapters": "Bloquear todos los capítulos",
+  "TooltipLockChapter": "Bloquear capítulo (Mayús+clic para rango)",
+  "TooltipSubtractOneSecond": "Restar 1 segundo",
+  "TooltipUnlockAllChapters": "Desbloquear todos los capítulos",
+  "TooltipUnlockChapter": "Desbloquear capítulo (Mayús+clic para rango)"
 }

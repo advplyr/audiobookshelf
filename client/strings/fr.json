@@ -1102,5 +1102,21 @@
   "ToastUserPasswordChangeSuccess": "Mot de passe modifié avec succès",
   "ToastUserPasswordMismatch": "Les mots de passe ne correspondent pas",
   "ToastUserPasswordMustChange": "Le nouveau mot de passe ne peut pas être identique à l’ancien",
-  "ToastUserRootRequireName": "Vous devez entrer un nom d’utilisateur root"
+  "ToastUserRootRequireName": "Vous devez entrer un nom d’utilisateur root",
+  "ToastChaptersAllLocked": "Tous les chapitres sont verrouillés. Déverrouillez certains chapitres pour décaler leurs temps.",
+  "ToastChapterInvalidShiftAmount": "Montant de décalage invalide. Le premier chapitre aurait une durée nulle ou négative.",
+  "ToastBulkChapterInvalidCount": "Veuillez entrer un nombre valide entre 1 et 150",
+  "PlaceholderBulkChapterInput": "Entrez le titre du chapitre ou utilisez la numérotation (ex. 'Épisode 1', 'Chapitre 10', '1.')",
+  "HeaderBulkChapterModal": "Ajouter Plusieurs Chapitres",
+  "MessageBulkChapterPattern": "Combien de chapitres souhaitez-vous ajouter avec ce motif de numérotation ?",
+  "LabelDetectedPattern": "Motif détecté :",
+  "LabelNextChapters": "Les prochains chapitres seront :",
+  "LabelNumberOfChapters": "Nombre de chapitres :",
+  "TooltipAddChapters": "Ajouter chapitre(s)",
+  "TooltipAddOneSecond": "Ajouter 1 seconde",
+  "TooltipLockAllChapters": "Verrouiller tous les chapitres",
+  "TooltipLockChapter": "Verrouiller le chapitre (Maj+clic pour plage)",
+  "TooltipSubtractOneSecond": "Soustraire 1 seconde",
+  "TooltipUnlockAllChapters": "Déverrouiller tous les chapitres",
+  "TooltipUnlockChapter": "Déverrouiller le chapitre (Maj+clic pour plage)"
 }
