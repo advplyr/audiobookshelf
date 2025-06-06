@@ -922,14 +922,13 @@ export default {
 
       const { before, after, startingNumber } = this.detectedPattern
       const lastChapter = this.newChapters[this.newChapters.length - 1]
-      const baseStart = lastChapter ? lastChapter.end : 0
-      const defaultDuration = 300 // 5 minutes per chapter
+      const baseStart = lastChapter ? lastChapter.start + 1 : 0
 
       // Add multiple chapters with the detected pattern
       for (let i = 0; i < count; i++) {
         const chapterNumber = startingNumber + i
-        const newStart = baseStart + i * defaultDuration
-        const newEnd = Math.min(newStart + defaultDuration, this.mediaDuration)
+        const newStart = baseStart + i
+        const newEnd = Math.min(newStart + i + i, this.mediaDuration)
 
         const newChapter = {
           id: this.newChapters.length,
