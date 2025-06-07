@@ -16,7 +16,7 @@
         </div>
       </div>
       <p dir="auto" class="text-lg font-semibold mb-6">{{ title }}</p>
-      <div v-if="description" dir="auto" class="default-style less-spacing" v-html="description" />
+      <div v-if="description" dir="auto" class="default-style less-spacing" @click="handleDescriptionClick" v-html="processedDescription" />
       <p v-else class="mb-2">{{ $strings.MessageNoDescription }}</p>
 
       <div class="w-full h-px bg-white/5 my-4" />
@@ -70,6 +70,9 @@ export default {
     description() {
       return this.episode.description || ''
     },
+    processedDescription() {
+      return this.linkifyTimestamps(this.description)
+    },
     media() {
       return this.libraryItem?.media || {}
     },
@@ -94,7 +97,40 @@ export default {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     }
   },
-  methods: {},
+  methods: {
+    timeStringToSeconds(timeStr) {
+      const parts = timeStr.split(':').map(Number)
+      let seconds = 0
+      if (parts.length === 3) {
+        seconds = parts[0] * 3600 + parts[1] * 60 + parts[2]
+      } else if (parts.length === 2) {
+        seconds = parts[0] * 60 + parts[1]
+      }
+      return seconds
+    },
+    linkifyTimestamps(htmlString) {
+      const timeRegex = /\b((\d{1,2}:)?\d{1,2}:\d{2})\b/g
+
+      return htmlString.replace(timeRegex, (match) => {
+        const totalSeconds = this.timeStringToSeconds(match)
+        return `<a href="#" class="timestamp-link" data-time-seconds="${totalSeconds}">${match}</a>`
+      })
+    },
+    handleDescriptionClick(e) {
+      const target = e.target
+      if (target.matches('a.timestamp-link')) {
+        e.preventDefault()
+        const time = parseInt(target.dataset.timeSeconds, 10)
+        if (!isNaN(time)) {
+          this.$eventBus.$emit('play-item', {
+            episodeId: this.episodeId,
+            libraryItemId: this.libraryItem.id,
+            startTime: time
+          })
+        }
+      }
+    }
+  },
   mounted() {}
 }
 </script>
