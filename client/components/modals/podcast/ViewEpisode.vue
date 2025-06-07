@@ -100,20 +100,31 @@ export default {
   methods: {
     timeStringToSeconds(timeStr) {
       const parts = timeStr.split(':').map(Number)
-      let seconds = 0
+      let hours = 0,
+        minutes = 0,
+        seconds = 0
       if (parts.length === 3) {
-        seconds = parts[0] * 3600 + parts[1] * 60 + parts[2]
+        ;[hours, minutes, seconds] = parts
       } else if (parts.length === 2) {
-        seconds = parts[0] * 60 + parts[1]
+        ;[minutes, seconds] = parts
+      } else {
+        return null
       }
-      return seconds
+      if (minutes >= 60 || seconds >= 60 || hours < 0 || minutes < 0 || seconds < 0) {
+        return null
+      }
+
+      return hours * 3600 + minutes * 60 + seconds
     },
     linkifyTimestamps(htmlString) {
       const timeRegex = /\b((\d{1,2}:)?\d{1,2}:\d{2})\b/g
 
       return htmlString.replace(timeRegex, (match) => {
-        const totalSeconds = this.timeStringToSeconds(match)
-        return `<a href="#" class="timestamp-link" data-time-seconds="${totalSeconds}">${match}</a>`
+        const totalSeconds = timeStringToSeconds(match)
+        if (totalSeconds !== null) {
+          return `<a href="#" class="timestamp-link" data-time-seconds="${totalSeconds}">${match}</a>`
+        }
+        return match
       })
     },
     handleDescriptionClick(e) {
