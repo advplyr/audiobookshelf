@@ -53,29 +53,20 @@
 
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="w-8 min-w-8 md:w-12 md:min-w-12"></div>
-          <div class="w-6 min-w-6 px-2">
+          <div class="w-38 min-w-38 md:w-40 md:min-w-40 px-1 pl-8">{{ $strings.LabelStart }}</div>
+          <div class="grow px-1 min-w-54">{{ $strings.LabelTitle }}</div>
+          <div class="w-7 min-w-7 px-1 flex items-center justify-center">
             <ui-tooltip :text="allChaptersLocked ? $strings.TooltipUnlockAllChapters : $strings.TooltipLockAllChapters" direction="bottom">
-              <button class="cursor-pointer transition-colors duration-150" :class="allChaptersLocked ? 'text-orange-400 hover:text-orange-300' : 'text-gray-300 hover:text-white'" @click="toggleAllChaptersLock">
-                <span class="material-symbols text-base">{{ allChaptersLocked ? 'lock' : 'lock_open' }}</span>
+              <button class="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-150" :class="allChaptersLocked ? 'text-orange-400 hover:text-orange-300' : 'text-gray-300 hover:text-white'" @click="toggleAllChaptersLock">
+                <span class="material-symbols text-xl">{{ allChaptersLocked ? 'lock' : 'lock_open' }}</span>
               </button>
             </ui-tooltip>
           </div>
-          <div class="w-32 min-w-32 md:w-40 md:min-w-40 px-1 pl-8">{{ $strings.LabelStart }}</div>
-          <div class="grow px-1">{{ $strings.LabelTitle }}</div>
           <div class="w-32"></div>
         </div>
         <div v-for="chapter in newChapters" :key="chapter.id" class="flex py-1">
           <div class="w-8 min-w-8 md:w-12 md:min-w-12">#{{ chapter.id + 1 }}</div>
-          <div class="w-6 min-w-6 px-1 py-1">
-            <div class="flex items-center">
-              <ui-tooltip :text="lockedChapters.has(chapter.id) ? $strings.TooltipUnlockChapter : $strings.TooltipLockChapter" direction="bottom">
-                <button class="w-6 h-6 rounded-full flex items-center justify-center transform hover:scale-110 duration-150 flex-shrink-0" :class="lockedChapters.has(chapter.id) ? 'text-orange-400 hover:text-orange-300' : 'text-gray-300 hover:text-white'" @click="toggleChapterLock(chapter, $event)">
-                  <span class="material-symbols text-sm">{{ lockedChapters.has(chapter.id) ? 'lock' : 'lock_open' }}</span>
-                </button>
-              </ui-tooltip>
-            </div>
-          </div>
-          <div class="w-32 min-w-32 md:w-40 md:min-w-40 px-1">
+          <div class="w-38 min-w-38 md:w-40 md:min-w-40 px-1">
             <div class="flex items-center gap-1">
               <ui-tooltip :text="$strings.TooltipSubtractOneSecond" direction="bottom">
                 <button
@@ -102,6 +93,15 @@
           </div>
           <div class="grow px-1">
             <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs min-w-52" />
+          </div>
+          <div class="w-7 min-w-7 px-1 py-1">
+            <div class="flex items-center justify-center">
+              <ui-tooltip :text="lockedChapters.has(chapter.id) ? $strings.TooltipUnlockChapter : $strings.TooltipLockChapter" direction="bottom">
+                <button class="w-7 h-7 rounded-full flex items-center justify-center transform hover:scale-110 duration-150 flex-shrink-0" :class="lockedChapters.has(chapter.id) ? 'text-orange-400 hover:text-orange-300' : 'text-gray-300 hover:text-white'" @click="toggleChapterLock(chapter, $event)">
+                  <span class="material-symbols text-base">{{ lockedChapters.has(chapter.id) ? 'lock' : 'lock_open' }}</span>
+                </button>
+              </ui-tooltip>
+            </div>
           </div>
           <div class="w-32 min-w-32 px-2 py-1">
             <div class="flex items-center">
@@ -136,14 +136,13 @@
         </div>
         <div class="flex items-center mt-4 mb-2">
           <div class="w-8 min-w-8 md:w-12 md:min-w-12"></div>
-          <div class="w-6 min-w-6 px-1"></div>
-          <div class="w-32 min-w-32 md:w-40 md:min-w-40 px-1"></div>
+          <div class="w-38 min-w-38 md:w-40 md:min-w-40 px-1"></div>
           <div class="flex items-center gap-2 grow px-1">
-            <ui-text-input v-model="bulkChapterInput" :placeholder="$strings.PlaceholderBulkChapterInput" class="text-xs grow" @keyup.enter="handleBulkChapterAdd" />
+            <ui-text-input v-model="bulkChapterInput" :placeholder="$strings.PlaceholderBulkChapterInput" class="text-xs grow min-w-52" @keyup.enter="handleBulkChapterAdd" />
           </div>
-          <div class="w-32 min-w-32 px-1 py-1">
+          <div class="w-39 min-w-39 px-1 py-1">
             <ui-tooltip :text="$strings.TooltipAddChapters" direction="bottom">
-              <button class="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150 flex-shrink-0" :class="{ 'opacity-50 cursor-not-allowed': !bulkChapterInput.trim() }" :disabled="!bulkChapterInput.trim()" @click="handleBulkChapterAdd">
+              <button class="w-5 h-5 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150 flex-shrink-0" :class="{ 'opacity-50 cursor-not-allowed': !bulkChapterInput.trim() }" :disabled="!bulkChapterInput.trim()" @click="handleBulkChapterAdd">
                 <span class="material-symbols text-lg">add</span>
               </button>
             </ui-tooltip>
@@ -266,15 +265,16 @@
         <div class="flex flex-col space-y-4">
           <p class="text-lg font-semibold">{{ $strings.HeaderBulkChapterModal }}</p>
           <p class="text-gray-300">{{ $strings.MessageBulkChapterPattern }}</p>
+
           <div v-if="detectedPattern" class="text-sm text-gray-400 bg-gray-800 p-2 rounded">
-            <strong>{{ $strings.LabelDetectedPattern }}</strong> "{{ detectedPattern.before }}{{ detectedPattern.startingNumber }}{{ detectedPattern.after }}"
+            <strong>{{ $strings.LabelDetectedPattern }}</strong> "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber, detectedPattern) }}{{ detectedPattern.after }}"
             <br />
             <strong>{{ $strings.LabelNextChapters }}</strong>
-            "{{ detectedPattern.before }}{{ detectedPattern.startingNumber + 1 }}{{ detectedPattern.after }}", "{{ detectedPattern.before }}{{ detectedPattern.startingNumber + 2 }}{{ detectedPattern.after }}", etc.
+            "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 1, detectedPattern) }}{{ detectedPattern.after }}", "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 2, detectedPattern) }}{{ detectedPattern.after }}", etc.
           </div>
           <div class="flex items-center space-x-2">
             <label class="text-sm font-medium">{{ $strings.LabelNumberOfChapters }}</label>
-            <ui-text-input v-model="bulkChapterCount" type="number" min="1" max="50" class="w-20" />
+            <ui-text-input v-model="bulkChapterCount" type="number" min="1" max="50" class="w-20" @keyup.enter="addBulkChapters" />
           </div>
           <div class="flex items-center space-x-2 pt-4">
             <ui-btn color="bg-success" @click="addBulkChapters">{{ $strings.ButtonAddChapters }}</ui-btn>
@@ -394,6 +394,12 @@ export default {
     }
   },
   methods: {
+    formatNumberWithPadding(number, pattern) {
+      if (!pattern || !pattern.hasLeadingZeros || !pattern.originalPadding) {
+        return number.toString()
+      }
+      return number.toString().padStart(pattern.originalPadding, '0')
+    },
     setChaptersFromTracks() {
       let currentStartTime = 0
       let index = 0
@@ -460,15 +466,8 @@ export default {
         return
       }
 
-      // Find the previous chapter to ensure we don't go below it
-      const previousChapter = this.newChapters[chapter.id - 1]
-      if (previousChapter && chapter.start + amount <= previousChapter.start) {
-        return
-      }
-
-      // Find the next chapter to ensure we don't go above it
-      const nextChapter = this.newChapters[chapter.id + 1]
-      if (nextChapter && chapter.start + amount >= nextChapter.start) {
+      if (this.lockedChapters.has(chapter.id)) {
+        this.$toast.warning(this.$strings.ToastChapterLocked)
         return
       }
 
@@ -553,6 +552,10 @@ export default {
       this.checkChapters()
     },
     removeChapter(chapter) {
+      if (this.lockedChapters.has(chapter.id)) {
+        this.$toast.warning(this.$strings.ToastChapterLocked)
+        return
+      }
       this.newChapters = this.newChapters.filter((ch) => ch.id !== chapter.id)
       this.checkChapters()
     },
@@ -874,17 +877,20 @@ export default {
       const numberMatch = input.match(/(\d+)/)
 
       if (numberMatch) {
-        // Extract the base pattern and number
-        const foundNumber = parseInt(numberMatch[1])
+        // Extract the base pattern and number, preserving zero-padding
+        const originalNumberString = numberMatch[1]
+        const foundNumber = parseInt(originalNumberString)
         const numberIndex = numberMatch.index
         const beforeNumber = input.substring(0, numberIndex)
-        const afterNumber = input.substring(numberIndex + numberMatch[1].length)
+        const afterNumber = input.substring(numberIndex + originalNumberString.length)
 
-        // Store pattern info for bulk creation
+        // Store pattern info for bulk creation, preserving padding
         this.detectedPattern = {
           before: beforeNumber,
           after: afterNumber,
-          startingNumber: foundNumber
+          startingNumber: foundNumber,
+          originalPadding: originalNumberString.length,
+          hasLeadingZeros: originalNumberString.length > 1 && originalNumberString.startsWith('0')
         }
 
         // Show modal to ask for number of chapters
@@ -920,13 +926,20 @@ export default {
         return
       }
 
-      const { before, after, startingNumber } = this.detectedPattern
+      const { before, after, startingNumber, originalPadding, hasLeadingZeros } = this.detectedPattern
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       const baseStart = lastChapter ? lastChapter.start + 1 : 0
 
       // Add multiple chapters with the detected pattern
       for (let i = 0; i < count; i++) {
         const chapterNumber = startingNumber + i
+        let formattedNumber = chapterNumber.toString()
+
+        // Apply zero-padding if the original had leading zeros
+        if (hasLeadingZeros && originalPadding > 1) {
+          formattedNumber = chapterNumber.toString().padStart(originalPadding, '0')
+        }
+
         const newStart = baseStart + i
         const newEnd = Math.min(newStart + i + i, this.mediaDuration)
 
@@ -934,7 +947,7 @@ export default {
           id: this.newChapters.length,
           start: newStart,
           end: newEnd,
-          title: `${before}${chapterNumber}${after}`
+          title: `${before}${formattedNumber}${after}`
         }
 
         this.newChapters.push(newChapter)

@@ -982,6 +982,7 @@
   "ToastCachePurgeFailed": "Failed to purge cache",
   "ToastCachePurgeSuccess": "Cache purged successfully",
   "ToastChapterInvalidShiftAmount": "Invalid shift amount. First chapter would have zero or negative length.",
+  "ToastChapterLocked": "Chapter is locked.",
   "ToastChaptersAllLocked": "All chapters are locked. Unlock some chapters to shift their times.",
   "ToastChaptersHaveErrors": "Chapters have errors",
   "ToastChaptersInvalidShiftAmountLast": "Invalid shift amount. The last chapter start time would extend beyond the duration of this audiobook.",
