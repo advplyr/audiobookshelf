@@ -120,7 +120,7 @@ export default {
       const timeRegex = /\b((\d{1,2}:)?\d{1,2}:\d{2})\b/g
 
       return htmlString.replace(timeRegex, (match) => {
-        const totalSeconds = timeStringToSeconds(match)
+        const totalSeconds = this.timeStringToSeconds(match)
         if (totalSeconds !== null) {
           return `<a href="#" class="timestamp-link" data-time-seconds="${totalSeconds}">${match}</a>`
         }
