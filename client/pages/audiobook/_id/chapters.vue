@@ -123,9 +123,9 @@
                   <span v-else class="material-symbols text-base">play_arrow</span>
                 </button>
               </ui-tooltip>
-
-              <!-- Elapsed time display -->
-              <div v-if="selectedChapterId === chapter.id && (isPlayingChapter || isLoadingChapter)" class="ml-2 text-xs text-gray-300 font-mono min-w-10">{{ elapsedTime }}s</div>
+              <ui-tooltip v-if="selectedChapterId === chapter.id && (isPlayingChapter || isLoadingChapter)" :text="$strings.TooltipAdjustChapterStart" direction="bottom">
+                <div class="ml-2 text-xs text-gray-300 font-mono min-w-10 cursor-pointer hover:text-white transition-colors duration-150" @click="adjustChapterStartTime(chapter)">{{ elapsedTime }}s</div>
+              </ui-tooltip>
               <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
                 <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
                   <span class="material-symbols text-lg">error_outline</span>
@@ -456,30 +456,30 @@ export default {
       this.checkChapters()
     },
     incrementChapterTime(chapter, amount) {
-      // Don't allow incrementing first chapter below 0
       if (chapter.id === 0 && chapter.start + amount < 0) {
         return
       }
-
-      // Don't allow incrementing beyond media duration
       if (chapter.start + amount >= this.mediaDuration) {
-        return
-      }
-
-      if (this.lockedChapters.has(chapter.id)) {
-        this.$toast.warning(this.$strings.ToastChapterLocked)
         return
       }
 
       chapter.start = Math.max(0, chapter.start + amount)
       this.checkChapters()
     },
+    adjustChapterStartTime(chapter) {
+      const newStartTime = chapter.start + this.elapsedTime
+      chapter.start = newStartTime
+      this.checkChapters()
+      this.$toast.success(this.$strings.ToastChapterStartTimeAdjusted.replace('{0}', this.elapsedTime))
+
+      this.destroyAudioEl()
+    },
     startElapsedTimeTracking() {
       this.elapsedTime = 0
       this.playStartTime = Date.now()
       this.elapsedTimeInterval = setInterval(() => {
         this.elapsedTime = Math.floor((Date.now() - this.playStartTime) / 1000)
-      }, 100) // Update every 100ms for smooth display
+      }, 100)
     },
     stopElapsedTimeTracking() {
       if (this.elapsedTimeInterval) {
@@ -492,12 +492,9 @@ export default {
     toggleChapterLock(chapter, event) {
       const chapterId = chapter.id
 
-      // Handle shift-click for range selection
       if (event.shiftKey && this.lastSelectedLockIndex !== null) {
         const startIndex = Math.min(this.lastSelectedLockIndex, chapterId)
         const endIndex = Math.max(this.lastSelectedLockIndex, chapterId)
-
-        // Determine if we should lock or unlock based on the target chapter's current state
         const shouldLock = !this.lockedChapters.has(chapterId)
 
         for (let i = startIndex; i <= endIndex; i++) {
@@ -508,7 +505,6 @@ export default {
           }
         }
       } else {
-        // Single chapter toggle
         if (this.lockedChapters.has(chapterId)) {
           this.lockedChapters.delete(chapterId)
         } else {
@@ -517,8 +513,6 @@ export default {
       }
 
       this.lastSelectedLockIndex = chapterId
-
-      // Force reactivity update
       this.lockedChapters = new Set(this.lockedChapters)
     },
     lockAllChapters() {
@@ -873,7 +867,6 @@ export default {
       const input = this.bulkChapterInput.trim()
       if (!input) return
 
-      // Check if input contains any numbers and extract pattern info
       const numberMatch = input.match(/(\d+)/)
 
       if (numberMatch) {
@@ -884,7 +877,6 @@ export default {
         const beforeNumber = input.substring(0, numberIndex)
         const afterNumber = input.substring(numberIndex + originalNumberString.length)
 
-        // Store pattern info for bulk creation, preserving padding
         this.detectedPattern = {
           before: beforeNumber,
           after: afterNumber,
@@ -893,11 +885,9 @@ export default {
           hasLeadingZeros: originalNumberString.length > 1 && originalNumberString.startsWith('0')
         }
 
-        // Show modal to ask for number of chapters
         this.bulkChapterCount = 1
         this.showBulkChapterModal = true
       } else {
-        // Add single chapter with the entered title
         this.addSingleChapterFromInput(input)
       }
     },
@@ -905,7 +895,7 @@ export default {
       // Find the last chapter to determine where to add the new one
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       const newStart = lastChapter ? lastChapter.end : 0
-      const newEnd = Math.min(newStart + 300, this.mediaDuration) // Default 5 minutes or media duration
+      const newEnd = Math.min(newStart + 300, this.mediaDuration)
 
       const newChapter = {
         id: this.newChapters.length,
