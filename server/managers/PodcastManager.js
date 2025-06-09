@@ -347,10 +347,12 @@ class PodcastManager {
       this.failedCheckMap[libraryItem.id]++
       if (this.MaxFailedEpisodeChecks !== 0 && this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
         Logger.error(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}" - disabling auto download`)
+        void NotificationManager.onRSSFeedDisabled(libraryItem.media.feedURL, this.failedCheckMap[libraryItem.id], libraryItem.media.title)
         libraryItem.media.autoDownloadEpisodes = false
         delete this.failedCheckMap[libraryItem.id]
       } else {
         Logger.warn(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}"`)
+        void NotificationManager.onRSSFeedFailed(libraryItem.media.feedURL, this.failedCheckMap[libraryItem.id], libraryItem.media.title)
       }
     } else if (newEpisodes.length) {
       delete this.failedCheckMap[libraryItem.id]
