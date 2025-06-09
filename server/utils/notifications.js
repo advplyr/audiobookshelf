@@ -63,12 +63,12 @@ module.exports.notificationData = {
     {
       name: 'onRSSFeedFailed',
       requiresLibrary: true,
-      description: 'Triggered when an RSS feed request/update fails, but is not disabled',
+      description: 'Triggered when the RSS feed request fails for an automatic episode download',
       descriptionKey: 'NotificationOnRSSFeedFailedDescription',
       variables: ['feedUrl', 'numFailed', 'title'],
       defaults: {
-        title: 'RSS Feed Update Failed',
-        body: 'Failed to update RSS feed for {{title}}.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
+        title: 'RSS Feed Request Failed',
+        body: 'Failed to request RSS feed for {{title}}.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
       },
       testData: {
         title: 'Test RSS Feed',
@@ -79,12 +79,12 @@ module.exports.notificationData = {
     {
       name: 'onRSSFeedDisabled',
       requiresLibrary: true,
-      description: 'Triggered when an RSS feed is disabled due to too many failed attempts',
+      description: 'Triggered when automatic episode downloads are disabled due to too many failed attempts',
       descriptionKey: 'NotificationOnRSSFeedDisabledDescription',
       variables: ['feedUrl', 'numFailed', 'title'],
       defaults: {
-        title: 'RSS Feed Disabled',
-        body: 'RSS feed for {{title}} has been disabled due to too many failed updates.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
+        title: 'Podcast Episode Download Schedule Disabled',
+        body: 'Automatic episode downloads for {{title}} have been disabled due to too many failed RSS feed requests.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
       },
       testData: {
         title: 'Test RSS Feed',

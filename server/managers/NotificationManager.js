@@ -72,11 +72,11 @@ class NotificationManager {
   }
 
   /**
-   * Handles RSS feed updates
-   * @param feedUrl
-   * @param numFailed
-   * @param title
-   * @returns {Promise<void>}
+   * Handles scheduled episode download RSS feed request failed
+   *
+   * @param {string} feedUrl
+   * @param {number} numFailed
+   * @param {string} title
    */
   async onRSSFeedFailed(feedUrl, numFailed, title) {
     if (!Database.notificationSettings.isUseable) return
@@ -86,7 +86,7 @@ class NotificationManager {
       return
     }
 
-    Logger.debug(`[NotificationManager] onRSSFeedFailed: RSS feed update failed for ${feedUrl}`)
+    Logger.debug(`[NotificationManager] onRSSFeedFailed: RSS feed request failed for ${feedUrl}`)
     const eventData = {
       feedUrl: feedUrl,
       numFailed: numFailed || 0,
@@ -96,11 +96,11 @@ class NotificationManager {
   }
 
   /**
-   * Handles RSS feed being disabled due to too many failed updates
-   * @param feedUrl
-   * @param numFailed
-   * @param title
-   * @returns {Promise<void>}
+   * Handles scheduled episode downloads disabled due to too many failed attempts
+   *
+   * @param {string} feedUrl
+   * @param {number} numFailed
+   * @param {string} title
    */
   async onRSSFeedDisabled(feedUrl, numFailed, title) {
     if (!Database.notificationSettings.isUseable) return
@@ -110,7 +110,7 @@ class NotificationManager {
       return
     }
 
-    Logger.debug(`[NotificationManager] onRSSFeedDisabled: RSS feed disabled due to ${numFailed} failed updates for ${feedUrl}`)
+    Logger.debug(`[NotificationManager] onRSSFeedDisabled: Podcast scheduled episode download disabled due to ${numFailed} failed requests for ${feedUrl}`)
     const eventData = {
       feedUrl: feedUrl,
       numFailed: numFailed || 0,
