@@ -7,7 +7,7 @@
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-xl mr-6 hidden lg:block hover:underline">Bookfire</h1>
+          <h1 class="text-xl mr-6 hidden lg:block hover:underline">{{ serverTitle }}</h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />
@@ -220,6 +220,9 @@ export default {
       }
 
       return options
+    },
+    serverTitle() {
+      return this.$store.state.serverSettings?.title || 'Bookfire'
     }
   },
   methods: {

@@ -3,6 +3,14 @@
     <app-settings-content :header-text="$strings.HeaderServerStyling || 'Server Styling'">
       <div class="w-full max-w-3xl">
         <div class="pt-4">
+          <h2 class="font-semibold">Server Title</h2>
+          <p class="text-sm text-gray-400 mt-1">Customize the name of your server.</p>
+          <div class="mt-4">
+            <input type="text" v-model="title" class="w-full bg-primary/20 border border-gray-600 rounded px-3 py-2" />
+          </div>
+        </div>
+
+        <div class="pt-8">
           <h2 class="font-semibold">Theme Colors</h2>
           <p class="text-sm text-gray-400 mt-1">Customize the appearance of your server by adjusting these colors.</p>
         </div>
@@ -118,6 +126,7 @@ export default {
   data() {
     return {
       saving: false,
+      title: '',
       colors: {
         primary: '#1e293b',
         primaryDark: '#0f172a',
@@ -143,6 +152,7 @@ export default {
       this.saving = true
       try {
         await this.$store.dispatch('updateServerSettings', {
+          title: this.title,
           styling: this.colors
         })
         this.$toast.success('Server styling updated')
@@ -159,6 +169,8 @@ export default {
     if (serverStyling) {
       this.colors = { ...this.colors, ...serverStyling }
     }
+    // Load saved title
+    this.title = this.$store.state.serverSettings?.title || 'Bookfire'
   }
 }
 </script> 

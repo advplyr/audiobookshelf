@@ -9,6 +9,9 @@ class ServerSettings {
     this.id = 'server-settings'
     this.tokenSecret = null
 
+    // Server Title
+    this.title = 'Bookfire'
+
     // Styling
     this.styling = {
       primary: '#1e293b',
@@ -99,6 +102,9 @@ class ServerSettings {
 
   construct(settings) {
     this.tokenSecret = settings.tokenSecret
+
+    // Server Title
+    this.title = settings.title || 'Bookfire'
 
     // Styling
     if (settings.styling) {
@@ -224,6 +230,7 @@ class ServerSettings {
     return {
       id: this.id,
       tokenSecret: this.tokenSecret, // Do not return to client
+      title: this.title,
       styling: { ...this.styling },
       scannerFindCovers: this.scannerFindCovers,
       scannerCoverProvider: this.scannerCoverProvider,
