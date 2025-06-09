@@ -63,7 +63,7 @@ module.exports.notificationData = {
     {
       name: 'onRSSFeedFailed',
       requiresLibrary: true,
-      description: 'Triggered when an RSS feed request/update fails, but gets not disabled',
+      description: 'Triggered when an RSS feed request/update fails, but is not disabled',
       descriptionKey: 'NotificationOnRSSFeedFailedDescription',
       variables: ['feedUrl', 'numFailed', 'title'],
       defaults: {
