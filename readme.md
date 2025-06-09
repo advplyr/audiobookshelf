@@ -450,3 +450,28 @@ If you are using VSCode, this project includes a couple of pre-defined targets t
 # How to Support
 
 [See the incomplete "How to Support" page](https://www.audiobookshelf.org/support)
+
+# Development
+
+### Killing Running Processes
+When developing locally, you might need to kill running instances of the client or server. Here are some helpful commands:
+
+```bash
+# Kill process on port 3000 (client)
+sudo kill $(lsof -t -i:3000)
+
+# Kill process on port 3333 (server)
+sudo kill $(lsof -t -i:3333)
+```
+
+You can also find and kill processes manually:
+```bash
+# List all Node.js processes
+ps aux | grep node
+
+# Kill processes by PID
+kill <PID>
+
+# Force kill if process won't exit
+kill -9 <PID>
+```

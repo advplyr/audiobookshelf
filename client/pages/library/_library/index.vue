@@ -1,7 +1,7 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar is-home />
-    <app-book-shelf-categorized />
+    <app-book-shelf-toolbar is-home @select-all-items="selectAllItems" />
+    <app-book-shelf-categorized ref="bookShelfCategorized" />
   </div>
 </template>
 
@@ -25,7 +25,14 @@ export default {
       return this.$store.state.streamLibraryItem
     }
   },
-  methods: {},
+  methods: {
+    selectAllItems() {
+      if (this.$refs.bookShelfCategorized) {
+        this.$refs.bookShelfCategorized.selectAllItems()
+      } else {
+      }
+    }
+  },
   mounted() {},
   beforeDestroy() {}
 }

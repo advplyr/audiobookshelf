@@ -191,7 +191,20 @@ class LibraryItem extends Model {
   static async getExpandedById(libraryItemId) {
     if (!libraryItemId) return null
 
-    const libraryItem = await this.findByPk(libraryItemId)
+    const libraryItem = await this.findByPk(libraryItemId, {
+      include: [
+        {
+          model: this.sequelize.models.comment,
+          as: 'comments',
+          include: [{
+            model: this.sequelize.models.user,
+            as: 'user',
+            attributes: ['id', 'username']
+          }],
+          order: [['createdAt', 'DESC']]
+        }
+      ]
+    })
     if (!libraryItem) {
       Logger.error(`[LibraryItem] Library item not found with id "${libraryItemId}"`)
       return null
@@ -734,31 +747,6 @@ class LibraryItem extends Model {
       }
     )
 
-    const { library, libraryFolder, book, podcast } = sequelize.models
-    library.hasMany(LibraryItem)
-    LibraryItem.belongsTo(library)
-
-    libraryFolder.hasMany(LibraryItem)
-    LibraryItem.belongsTo(libraryFolder)
-
-    book.hasOne(LibraryItem, {
-      foreignKey: 'mediaId',
-      constraints: false,
-      scope: {
-        mediaType: 'book'
-      }
-    })
-    LibraryItem.belongsTo(book, { foreignKey: 'mediaId', constraints: false })
-
-    podcast.hasOne(LibraryItem, {
-      foreignKey: 'mediaId',
-      constraints: false,
-      scope: {
-        mediaType: 'podcast'
-      }
-    })
-    LibraryItem.belongsTo(podcast, { foreignKey: 'mediaId', constraints: false })
-
     LibraryItem.addHook('afterFind', (findResult) => {
       if (!findResult) return
 
@@ -785,6 +773,40 @@ class LibraryItem extends Model {
       if (media) {
         media.destroy()
       }
+    })
+
+    return this
+  }
+
+  static associate(models) {
+    const { library, libraryFolder, book, podcast, comment } = models
+    library.hasMany(LibraryItem)
+    LibraryItem.belongsTo(library)
+
+    libraryFolder.hasMany(LibraryItem)
+    LibraryItem.belongsTo(libraryFolder)
+
+    book.hasOne(LibraryItem, {
+      foreignKey: 'mediaId',
+      constraints: false,
+      scope: {
+        mediaType: 'book'
+      }
+    })
+    LibraryItem.belongsTo(book, { foreignKey: 'mediaId', constraints: false })
+
+    podcast.hasOne(LibraryItem, {
+      foreignKey: 'mediaId',
+      constraints: false,
+      scope: {
+        mediaType: 'podcast'
+      }
+    })
+    LibraryItem.belongsTo(podcast, { foreignKey: 'mediaId', constraints: false })
+
+    LibraryItem.hasMany(comment, {
+      foreignKey: 'libraryItemId',
+      as: 'comments'
     })
   }
 

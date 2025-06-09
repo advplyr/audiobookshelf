@@ -132,7 +132,7 @@ export default {
       ctx.fillText('\ue900', 15, 36)
 
       // Top text
-      addText('audiobookshelf', '28px', 'normal', tanColor, '0px', 65, 28)
+      addText('Bookfire', '28px', 'normal', tanColor, '0px', 65, 28)
       addText(`${this.year} ${this.$strings.StatsYearInReview}`, '18px', 'bold', 'white', '1px', 65, 51)
 
       // Top left box

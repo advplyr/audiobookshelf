@@ -107,7 +107,7 @@ export default {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     username() {
-      return this.user.username
+      return this.user.displayName || this.user.username
     },
     userOnline() {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)

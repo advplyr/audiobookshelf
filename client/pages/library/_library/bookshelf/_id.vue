@@ -1,7 +1,7 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar :page="id || ''" />
-    <app-lazy-bookshelf :page="id || ''" />
+    <app-book-shelf-toolbar :page="id || ''" @select-all-items="selectAllItems" />
+    <app-lazy-bookshelf ref="lazyBookshelf" :page="id || ''" />
   </div>
 </template>
 
@@ -44,6 +44,13 @@ export default {
       return this.$store.state.streamLibraryItem
     }
   },
-  methods: {}
+  methods: {
+    selectAllItems() {
+      if (this.$refs.lazyBookshelf) {
+        this.$refs.lazyBookshelf.selectAllItems()
+      } else {
+      }
+    }
+  }
 }
 </script>

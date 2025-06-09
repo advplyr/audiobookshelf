@@ -36,6 +36,10 @@ export const getters = {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
+  getServerStyling: (state) => {
+    if (!state.serverSettings?.styling) return null
+    return state.serverSettings.styling
+  },
   getLibraryItemIdStreaming: (state) => {
     return state.streamLibraryItem?.id || null
   },

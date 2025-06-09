@@ -139,6 +139,116 @@
           <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
+
+      <!-- Comments section -->
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col lg:flex-row">
+          <div class="w-full lg:w-52" style="min-width: 208px">
+            <!-- Spacer div to match the layout above -->
+          </div>
+          <div class="grow px-2 md:px-10">
+            <div class="mt-12">
+              <div class="comments-section mt-4 border-t border-gray-700 pt-4">
+                <h3 class="text-xl font-semibold mb-4">{{ $strings.LabelRatings }}</h3>
+
+                <!-- Average Rating Display -->
+                <div v-if="comments.length" class="mb-4">
+                  <p class="text-lg">
+                    {{ $strings.LabelAverageRating.replace('{0}', averageRating.toFixed(1)) }}
+                    <span class="inline-flex ml-2">
+                      <i v-for="i in 5" :key="i" class="fas fa-star" :class="i <= Math.round(averageRating) ? 'text-yellow-500' : 'text-gray-500'"></i>
+                    </span>
+                  </p>
+                </div>
+
+                <!-- Add Comment Form -->
+                <div v-if="!hasUserComment" class="mb-6">
+                  <div class="bg-bg border border-gray-700 rounded-lg p-4">
+                    <textarea v-model="newComment" :placeholder="$strings.PlaceholderAddComment" class="w-full p-2 bg-transparent border border-gray-600 rounded resize-none focus:outline-none mb-3" rows="3"></textarea>
+
+                    <!-- Star Rating Input -->
+                    <div class="flex items-center mb-3">
+                      <span class="mr-2">{{ $strings.LabelRating }}:</span>
+                      <div class="flex">
+                        <button v-for="star in 5" :key="star" class="text-2xl focus:outline-none" :class="star <= (hoverRating || newRating) ? 'text-yellow-500' : 'text-gray-500'" @click="newRating = star" @mouseover="hoverRating = star" @mouseleave="hoverRating = 0">
+                          <span class="abs-icons icon-star"></span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                      <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!newRating" @click="postComment">
+                        {{ $strings.ButtonPost }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Comments List -->
+                <div v-if="comments.length" class="space-y-4">
+                  <div v-for="comment in sortedComments" :key="comment.id" class="bg-primary border rounded-lg p-4" :class="comment.userId === currentUser.id ? 'border-white border-4' : 'border-gray-700'">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <nuxt-link :to="'/user/' + comment.userId" class="font-semibold hover:text-white hover:underline">{{ comment.user.displayName || comment.user.username }}</nuxt-link>
+                        <span class="text-sm text-gray-300 ml-2">
+                          {{ formatDate(comment.createdAt) }}
+                        </span>
+                      </div>
+                      <div class="flex items-center">
+                        <!-- Star Rating Display -->
+                        <div v-if="comment.rating" class="flex mr-4">
+                          <span v-for="star in 5" :key="star" class="abs-icons icon-star" :class="star <= comment.rating ? 'text-yellow-500' : 'text-gray-500'"></span>
+                        </div>
+
+                        <div v-if="canEditComment(comment)" class="space-x-2">
+                          <button v-if="editingCommentId !== comment.id" class="text-gray-300 hover:text-white" @click="startEditing(comment)">
+                            {{ $strings.ButtonEdit }}
+                          </button>
+                          <button class="text-gray-300 hover:text-white" @click="deleteComment(comment)">
+                            {{ $strings.ButtonDelete }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Edit Comment Form -->
+                    <div v-if="editingCommentId === comment.id">
+                      <textarea v-model="editCommentText" class="w-full p-2 bg-gray-800 rounded mb-2 resize-none focus:outline-none" rows="3"></textarea>
+
+                      <!-- Edit Rating -->
+                      <div class="flex items-center mb-2">
+                        <span class="mr-2">{{ $strings.LabelRating }}:</span>
+                        <div class="flex">
+                          <button v-for="star in 5" :key="star" class="text-2xl focus:outline-none" :class="star <= editRating ? 'text-yellow-500' : 'text-gray-500'" @click="editRating = star">
+                            <span class="abs-icons icon-star"></span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="flex space-x-2">
+                        <button class="px-4 py-2 bg-primary text-white rounded hover:bg-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!editRating" @click="saveEdit(comment)">
+                          {{ $strings.ButtonSave }}
+                        </button>
+                        <button class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-opacity-75" @click="cancelEdit">
+                          {{ $strings.ButtonCancel }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Comment Text Display -->
+                    <div v-else class="text-gray-200">
+                      {{ comment.text }}
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-gray-400">
+                  {{ $strings.MessageNoComments }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" :download-queue="episodeDownloadsQueued" :episodes-downloading="episodesDownloading" />
@@ -148,6 +258,9 @@
 
 <script>
 export default {
+  components: {
+    // Remove unused comments component registration
+  },
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
@@ -182,7 +295,14 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      newComment: '',
+      newRating: 0,
+      hoverRating: 0,
+      editingCommentId: null,
+      editCommentText: '',
+      editRating: 0,
+      comments: []
     }
   },
   computed: {
@@ -431,6 +551,27 @@ export default {
       }
 
       return items
+    },
+    currentUser() {
+      return this.$store.state.user.user
+    },
+    averageRating() {
+      const ratedComments = this.comments.filter((c) => c.rating)
+      if (!ratedComments.length) return 0
+      const sum = ratedComments.reduce((acc, comment) => acc + comment.rating, 0)
+      return sum / ratedComments.length
+    },
+    hasUserComment() {
+      return this.comments.some((comment) => comment.userId === this.$store.state.user.user.id)
+    },
+    sortedComments() {
+      return [...this.comments].sort((a, b) => {
+        // Put current user's comment at the top
+        if (a.userId === this.currentUser.id) return -1
+        if (b.userId === this.currentUser.id) return 1
+        // Sort remaining comments by date, newest first
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
     }
   },
   methods: {
@@ -462,7 +603,7 @@ export default {
           .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
           .then(() => {
             this.$toast.success(this.$strings.ToastEpisodeDownloadQueueClearSuccess)
-            this.episodeDownloadQueued = []
+            this.episodeDownloadsQueued = []
           })
           .catch((error) => {
             console.error('Failed to clear queue', error)
@@ -777,10 +918,86 @@ export default {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
+    },
+    async postComment() {
+      if (!this.newComment.trim()) return
+
+      try {
+        const response = await this.$axios.$post(`/api/items/${this.libraryItemId}/comments`, {
+          text: this.newComment.trim(),
+          rating: this.newRating
+        })
+
+        this.comments.unshift(response)
+        this.newComment = ''
+        this.newRating = 0
+        this.$toast.success(this.$strings.MessageCommentAdded)
+      } catch (error) {
+        console.error('Error posting comment:', error)
+        if (error.response?.data?.error) {
+          this.$toast.error(error.response.data.error)
+        } else {
+          this.$toast.error(this.$strings.ErrorAddingComment)
+        }
+      }
+    },
+    startEditing(comment) {
+      this.editingCommentId = comment.id
+      this.editCommentText = comment.text
+      this.editRating = comment.rating || 0
+    },
+    async saveEdit(comment) {
+      try {
+        const response = await this.$axios.$patch(`/api/items/${this.libraryItemId}/comments/${comment.id}`, {
+          text: this.editCommentText.trim(),
+          rating: this.editRating
+        })
+
+        const index = this.comments.findIndex((c) => c.id === comment.id)
+        this.comments.splice(index, 1, response)
+        this.cancelEdit()
+        this.$toast.success(this.$strings.MessageCommentUpdated)
+      } catch (error) {
+        console.error('Error updating comment:', error)
+        this.$toast.error(this.$strings.ErrorUpdatingComment)
+      }
+    },
+    cancelEdit() {
+      this.editingCommentId = null
+      this.editCommentText = ''
+      this.editRating = 0
+    },
+    async deleteComment(comment) {
+      if (!confirm(this.$strings.ConfirmDeleteComment)) return
+
+      try {
+        await this.$axios.delete(`/api/items/${this.libraryItem.id}/comments/${comment.id}`)
+        const index = this.comments.findIndex((c) => c.id === comment.id)
+        this.comments.splice(index, 1)
+        this.$toast.success(this.$strings.MessageCommentDeleted)
+      } catch (error) {
+        this.$toast.error(this.$strings.ErrorDeletingComment)
+      }
+    },
+    canEditComment(comment) {
+      return this.$store.state.user.user.id === comment.userId || this.$store.state.user.user.type === 'admin'
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleDateString()
+    },
+    async loadComments() {
+      try {
+        const response = await this.$axios.$get(`/api/items/${this.libraryItemId}/comments`)
+        this.comments = response || []
+      } catch (error) {
+        console.error('Error loading comments:', error)
+        this.$toast.error(this.$strings.ErrorLoadingComments)
+      }
     }
   },
-  mounted() {
+  async mounted() {
     this.checkDescriptionClamped()
+    await this.loadComments()
 
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
@@ -795,6 +1012,7 @@ export default {
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.$root.socket.on('user_updated', this.loadComments)
   },
   beforeDestroy() {
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
@@ -807,6 +1025,7 @@ export default {
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.$root.socket.off('user_updated', this.loadComments)
   }
 }
 </script>
@@ -833,5 +1052,10 @@ export default {
 #item-description.show-full {
   -webkit-line-clamp: unset;
   max-height: 999rem;
+}
+
+.comments-section {
+  max-width: 800px;
+  margin: 0 auto;
 }
 </style>

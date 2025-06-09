@@ -4,6 +4,7 @@
       <table id="accounts">
         <tr>
           <th>{{ $strings.LabelUsername }}</th>
+          <th>{{ $strings.LabelDisplayName }}</th>
           <th class="w-20">{{ $strings.LabelAccountType }}</th>
           <th class="hidden lg:table-cell">{{ $strings.LabelActivity }}</th>
           <th class="w-32 hidden sm:table-cell">{{ $strings.LabelLastSeen }}</th>
@@ -16,6 +17,9 @@
               <widgets-online-indicator :value="!!usersOnline[user.id]" />
               <p class="pl-2 truncate">{{ user.username }}</p>
             </div>
+          </td>
+          <td>
+            <p class="truncate">{{ user.displayName || '-' }}</p>
           </td>
           <td class="text-sm">{{ user.type }}</td>
           <td class="hidden lg:table-cell">

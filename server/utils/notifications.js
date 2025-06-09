@@ -61,17 +61,41 @@ module.exports.notificationData = {
       }
     },
     {
+      name: 'onLibraryItemAdded',
+      requiresLibrary: true,
+      description: 'Triggered when a new item is added to a library',
+      descriptionKey: 'NotificationOnLibraryItemAddedDescription',
+      variables: ['itemTitle', 'itemAuthor', 'mediaType'],
+      defaults: {
+        title: 'New {{mediaType}} Added!',
+        body: '{{itemTitle}} by {{itemAuthor}} has been added to one of your libraries.'
+      },
+      testData: {
+        itemTitle: 'Test Item',
+        itemAuthor: 'Test Author',
+        mediaType: 'Book'
+      }
+    },
+    {
       name: 'onTest',
       requiresLibrary: false,
       description: 'Event for testing the notification system',
       descriptionKey: 'NotificationOnTestDescription',
       variables: ['version'],
       defaults: {
-        title: 'Test Notification on Abs {{version}}',
-        body: 'Test notificataion body for abs {{version}}.'
+        title: 'New Book Added!',
+        body: '{{bookTitle}} by {{bookAuthor}} has been added to {{libraryName}} library.'
       },
       testData: {
-        version: 'v' + version
+        libraryItemId: 'li_notification_test',
+        libraryId: 'lib_test',
+        libraryName: 'Audiobooks',
+        mediaTags: 'TestTag1, TestTag2',
+        bookTitle: 'Test Book',
+        bookAuthor: 'Test Author',
+        bookDescription: 'Description of the test book.',
+        bookGenres: 'TestGenre1, TestGenre2',
+        bookNarrator: 'Test Narrator'
       }
     }
   ]

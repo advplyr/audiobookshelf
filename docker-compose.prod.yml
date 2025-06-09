@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  audiobookshelf:
+    build:
+      context: https://github.com/zipben/audiobookshelf.git#workingitout
+      dockerfile: Dockerfile
+    container_name: audiobookshelf
+    ports:
+      - "7696:80"  # The app will be available on port 7696
+    volumes:
+      # Named volumes for persistent data
+      - audiobooks:/audiobooks
+      - podcasts:/podcasts
+      - metadata:/metadata
+      - config:/config
+      # Mount point for external libraries - customize this path in Portainer
+      - type: bind
+        source: /path/to/your/libraries
+        target: /libraries
+    environment:
+      - TZ=America/New_York     # Set your timezone
+      - PUID=1000              # User ID for permissions
+      - PGID=1000              # Group ID for permissions
+      # Optional environment variables
+      - PORT=80               # Internal port (don't change unless necessary)
+      - HOST=0.0.0.0         # Listen on all interfaces
+    restart: unless-stopped
+    networks:
+      - abs_network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:80/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  abs_network:
+    driver: bridge
+
+volumes:
+  # Define named volumes - these will be created automatically
+  audiobooks:
+    name: audiobookshelf_audiobooks
+  podcasts:
+    name: audiobookshelf_podcasts
+  metadata:
+    name: audiobookshelf_metadata
+  config:
+    name: audiobookshelf_config

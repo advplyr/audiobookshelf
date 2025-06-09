@@ -152,6 +152,11 @@ class Database {
     return this.models.device
   }
 
+  /** @type {typeof import('./models/Comment')} */
+  get commentModel() {
+    return this.models.comment
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -333,6 +338,14 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/Comment').init(this.sequelize)
+
+    // Set up associations after all models are initialized
+    Object.values(this.sequelize.models).forEach(model => {
+      if (typeof model.associate === 'function') {
+        model.associate(this.sequelize.models)
+      }
+    })
 
     return this.sequelize.sync({ force, alter: false })
   }

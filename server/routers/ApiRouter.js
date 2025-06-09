@@ -126,6 +126,12 @@ class ApiRouter {
     this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
     this.router.patch('/items/:id/ebook/:fileid/status', LibraryItemController.middleware.bind(this), LibraryItemController.updateEbookFileStatus.bind(this))
 
+    // Comment routes
+    this.router.get('/items/:id/comments', LibraryItemController.middleware.bind(this), LibraryItemController.getComments.bind(this))
+    this.router.post('/items/:id/comments', LibraryItemController.middleware.bind(this), LibraryItemController.addComment.bind(this))
+    this.router.patch('/items/:id/comments/:commentId', LibraryItemController.middleware.bind(this), LibraryItemController.updateComment.bind(this))
+    this.router.delete('/items/:id/comments/:commentId', LibraryItemController.middleware.bind(this), LibraryItemController.deleteComment.bind(this))
+
     //
     // User Routes
     //
@@ -138,6 +144,7 @@ class ApiRouter {
     this.router.patch('/users/:id/openid-unlink', UserController.middleware.bind(this), UserController.unlinkFromOpenID.bind(this))
     this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/reviews', UserController.middleware.bind(this), UserController.getUserReviews.bind(this))
 
     //
     // Collection Routes

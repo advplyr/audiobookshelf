@@ -3,11 +3,11 @@
     <div id="appbar" role="toolbar" aria-label="Appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
+          <img src="~static/bookfire-logo-white.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-xl mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
+          <h1 class="text-xl mr-6 hidden lg:block hover:underline">{{ serverTitle }}</h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />
@@ -42,14 +42,31 @@
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
-          <span class="items-center hidden md:flex">
-            <span class="block truncate">{{ username }}</span>
-          </span>
-          <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
-            <span class="material-symbols text-xl text-gray-100">&#xe7fd;</span>
-          </span>
-        </nuxt-link>
+        <div class="relative">
+          <button @click="showProfileDropdown = !showProfileDropdown" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="true" :aria-expanded="showProfileDropdown">
+            <span class="items-center hidden md:flex">
+              <span class="block truncate">{{ username }}</span>
+            </span>
+            <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
+              <span class="material-symbols text-xl text-gray-100">&#xe7fd;</span>
+            </span>
+          </button>
+
+          <div v-if="showProfileDropdown" class="absolute right-0 mt-1 w-48 bg-bg border border-gray-500 rounded-sm shadow-lg z-50 overflow-hidden">
+            <nuxt-link :to="'/user/' + user.id" class="block px-4 py-2.5 text-sm text-white hover:bg-primary/40 transition-colors duration-150">
+              <div class="flex items-center">
+                <span class="material-symbols text-lg mr-2">&#xe7fd;</span>
+                Profile
+              </div>
+            </nuxt-link>
+            <button @click="logout" class="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-primary/40 transition-colors duration-150">
+              <div class="flex items-center">
+                <span class="material-symbols text-lg mr-2">&#xe9ba;</span>
+                Logout
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
       <div v-show="numMediaItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-lg md:text-2xl px-4">{{ $getString('MessageItemsSelected', [numMediaItemsSelected]) }}</h1>
@@ -80,6 +97,9 @@
         </ui-tooltip>
       </div>
     </div>
+
+    <!-- Apply Tags Modal -->
+    <modals-batch-apply-tags-modal v-model="showApplyTagsModal" :selected-media-items="selectedMediaItems" @tagsApplied="tagsApplied" />
   </div>
 </template>
 
@@ -87,7 +107,9 @@
 export default {
   data() {
     return {
-      totalEntities: 0
+      totalEntities: 0,
+      showProfileDropdown: false,
+      showApplyTagsModal: false
     }
   },
   computed: {
@@ -116,7 +138,7 @@ export default {
       return this.$store.getters['user/getIsAdminOrUp']
     },
     username() {
-      return this.user ? this.user.username : 'err'
+      return this.user ? this.user.displayName || this.user.username : 'err'
     },
     numMediaItemsSelected() {
       return this.selectedMediaItems.length
@@ -180,6 +202,14 @@ export default {
         action: 'rescan'
       })
 
+      // Add Edit Tags option
+      if (this.userCanUpdate) {
+        options.push({
+          text: 'Edit Tags',
+          action: 'apply-tags'
+        })
+      }
+
       // The limit of 50 is introduced because of the URL length. Each id has 36 chars, so 36 * 40 = 1440
       // + 40 , separators = 1480 chars + base path 280 chars = 1760 chars. This keeps the URL under 2000 chars even with longer domains
       if (this.selectedMediaItems.length <= 40) {
@@ -190,6 +220,9 @@ export default {
       }
 
       return options
+    },
+    serverTitle() {
+      return this.$store.state.serverSettings?.title || 'Bookfire'
     }
   },
   methods: {
@@ -226,6 +259,8 @@ export default {
         this.batchRescan()
       } else if (action === 'download') {
         this.batchDownload()
+      } else if (action === 'apply-tags') {
+        this.batchApplyTagsClick()
       }
     },
     async batchRescan() {
@@ -375,13 +410,64 @@ export default {
     },
     batchAutoMatchClick() {
       this.$store.commit('globals/setShowBatchQuickMatchModal', true)
+    },
+    batchApplyTagsClick() {
+      this.showApplyTagsModal = true
+    },
+    tagsApplied() {
+      // Clear selection and refresh the bookshelf
+      this.$store.commit('globals/resetSelectedMediaItems', [])
+      this.$eventBus.$emit('bookshelf_clear_selection')
+      // Optionally refresh the current page to show updated tags
+      this.$eventBus.$emit('bookshelf_refresh')
+    },
+    logout() {
+      this.showProfileDropdown = false
+
+      // Disconnect from socket if it exists and is connected
+      if (this.$root.socket && this.$root.socket.connected) {
+        try {
+          console.log('Disconnecting from socket', this.$root.socket.id)
+          this.$root.socket.removeAllListeners()
+          this.$root.socket.disconnect()
+        } catch (error) {
+          console.error('Error disconnecting socket:', error)
+        }
+      }
+
+      // Clear user data
+      localStorage.removeItem('token')
+      this.$store.commit('libraries/setUserPlaylists', [])
+      this.$store.commit('libraries/setCollections', [])
+      this.$store.commit('user/setUser', null)
+
+      // Logout request
+      this.$axios
+        .$post('/logout')
+        .catch((error) => {
+          console.error('Logout error:', error)
+        })
+        .finally(() => {
+          this.$router.push('/login')
+        })
     }
   },
   mounted() {
     this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
+    // Close dropdown when clicking outside
+    this.handleClickOutside = (e) => {
+      if (!this.$el.contains(e.target)) {
+        this.showProfileDropdown = false
+      }
+    }
+    document.addEventListener('click', this.handleClickOutside)
   },
   beforeDestroy() {
     this.$eventBus.$off('bookshelf-total-entities', this.setBookshelfTotalEntities)
+    // Remove event listener with proper reference
+    if (this.handleClickOutside) {
+      document.removeEventListener('click', this.handleClickOutside)
+    }
   }
 }
 </script>

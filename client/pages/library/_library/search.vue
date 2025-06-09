@@ -1,6 +1,6 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar is-home page="search" :search-query="query" />
+    <app-book-shelf-toolbar is-home page="search" :search-query="query" @select-all-items="selectAllItems" />
     <app-book-shelf-categorized v-if="hasResults" ref="bookshelf" search :results="results" />
     <div v-else class="w-full py-16">
       <p class="text-xl text-center">{{ $getString('MessageNoSearchResultsFor', [query]) }}</p>
@@ -11,10 +11,13 @@
 <script>
 export default {
   async asyncData({ store, params, redirect, query, app }) {
+    if (!query.q) {
+      return redirect(`/library/${params.library}`)
+    }
     const libraryId = params.library
     const library = await store.dispatch('libraries/fetch', libraryId)
     if (!library) {
-      return redirect('/oops?message=Library not found')
+      return redirect(`/oops?message=Library "${libraryId}" not found`)
     }
     let results = await app.$axios.$get(`/api/libraries/${libraryId}/search?q=${encodeURIComponent(query.q)}`).catch((error) => {
       console.error('Failed to search library', error)
@@ -74,6 +77,12 @@ export default {
           this.$refs.bookshelf.setShelvesFromSearch()
         }
       })
+    },
+    selectAllItems() {
+      if (this.$refs.bookshelf) {
+        this.$refs.bookshelf.selectAllItems()
+      } else {
+      }
     }
   },
   mounted() {},

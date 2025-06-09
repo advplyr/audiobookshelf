@@ -9,6 +9,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -58,22 +59,23 @@
   --spacing-80e: 20em;
   --spacing-96e: 24em;
 
-  --color-bg: #373838;
-  --color-primary: #232323;
+  --color-bg: #2F4F4F;
+  --color-primary: #2E8B57;
+  --color-mid-purple: #3CB371;
   --color-accent: #1ad691;
   --color-error: #ff5252;
   --color-info: #2196f3;
   --color-success: #4caf50;
   --color-warning: #fb8c00;
   --color-darkgreen: rgb(34, 127, 35);
-  --color-black-50: #bbbbbb;
-  --color-black-100: #666666;
-  --color-black-200: #555555;
-  --color-black-300: #444444;
-  --color-black-400: #333333;
-  --color-black-500: #222222;
-  --color-black-600: #111111;
-  --color-black-700: #101010;
+  --color-black-50: #F0FFF0;
+  --color-black-100: #98FB98;
+  --color-black-200: #90EE90;
+  --color-black-300: #3CB371;
+  --color-black-400: #2E8B57;
+  --color-black-500: #228B22;
+  --color-black-600: #006400;
+  --color-black-700: #004225;
 
   --font-sans: 'Source Sans Pro';
   --font-mono: 'Ubuntu Mono';

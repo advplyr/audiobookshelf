@@ -12,6 +12,16 @@
             <ui-text-input-with-label disabled :value="usertype" :label="$strings.LabelAccountType" />
           </div>
         </div>
+        <form @submit.prevent="submitDisplayName">
+          <div class="flex -mx-2 mt-4">
+            <div class="w-2/3 px-2">
+              <ui-text-input-with-label v-model="displayNameInput" :label="'Display Name'" />
+            </div>
+            <div class="px-2 flex items-end">
+              <ui-btn type="submit" color="bg-success">Update</ui-btn>
+            </div>
+          </div>
+        </form>
         <div class="py-4">
           <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguage }}</p>
           <ui-dropdown v-model="selectedLanguage" :items="$languageCodeOptions" small class="max-w-48" @input="updateLocalLanguage" />
@@ -88,6 +98,7 @@ export default {
       confirmPassword: null,
       changingPassword: false,
       selectedLanguage: '',
+      displayNameInput: '',
       newEReaderDevice: {
         name: '',
         email: ''
@@ -103,13 +114,18 @@ export default {
       return this.$store.state.streamLibraryItem
     },
     user() {
-      return this.$store.state.user.user || null
+      const user = this.$store.state.user.user || null
+      console.log('[Account Page] Current user object:', user)
+      return user
     },
     username() {
       return this.user.username
     },
     usertype() {
       return this.user.type
+    },
+    displayName() {
+      return this.user.displayName || ''
     },
     isRoot() {
       return this.usertype === 'root'
@@ -237,11 +253,26 @@ export default {
     },
     ereaderDevicesUpdated(ereaderDevices) {
       this.ereaderDevices = ereaderDevices
+    },
+    async submitDisplayName() {
+      try {
+        await this.$axios.$patch(`/api/users/${this.user.id}`, {
+          displayName: this.displayNameInput
+        })
+        this.$toast.success('Display name updated successfully')
+        // Update the user in the store
+        const user = { ...this.user, displayName: this.displayNameInput }
+        this.$store.commit('user/setUser', user)
+      } catch (error) {
+        console.error('Failed to update display name:', error)
+        this.$toast.error('Failed to update display name')
+      }
     }
   },
   mounted() {
     this.selectedLanguage = this.$languageCodes.current
     this.ereaderDevices = this.$store.state.libraries.ereaderDevices || []
+    this.displayNameInput = this.displayName
   }
 }
 </script>

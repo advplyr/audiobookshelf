@@ -50,58 +50,30 @@ class UserController {
 
   /**
    * GET: /api/users/:id
-   * Get a single user toJSONForBrowser
-   * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   *
+   * Get a single user
+   * 
    * @param {UserControllerRequest} req
    * @param {Response} res
    */
   async findOne(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`Non-admin user "${req.user.username}" attempted to get user`)
-      return res.sendStatus(403)
+    const user = req.reqUser
+    const hideRootToken = !req.user.isRoot
+
+    // If requesting user is not admin and not the user themselves, return limited public data
+    if (!req.user.isAdminOrUp && req.user.id !== user.id) {
+      const publicUserData = {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        type: user.type,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+      return res.json(publicUserData)
     }
 
-    // Get user media progress with associated mediaItem
-    const mediaProgresses = await Database.mediaProgressModel.findAll({
-      where: {
-        userId: req.reqUser.id
-      },
-      include: [
-        {
-          model: Database.bookModel,
-          attributes: ['id', 'title', 'coverPath', 'updatedAt']
-        },
-        {
-          model: Database.podcastEpisodeModel,
-          attributes: ['id', 'title'],
-          include: {
-            model: Database.podcastModel,
-            attributes: ['id', 'title', 'coverPath', 'updatedAt']
-          }
-        }
-      ]
-    })
-
-    const oldMediaProgresses = mediaProgresses.map((mp) => {
-      const oldMediaProgress = mp.getOldMediaProgress()
-      oldMediaProgress.displayTitle = mp.mediaItem?.title
-      if (mp.mediaItem?.podcast) {
-        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
-        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
-      } else if (mp.mediaItem) {
-        oldMediaProgress.coverPath = mp.mediaItem.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
-      }
-      return oldMediaProgress
-    })
-
-    const userJson = req.reqUser.toOldJSONForBrowser(!req.user.isRoot)
-
-    userJson.mediaProgress = oldMediaProgresses
-
-    res.json(userJson)
+    res.json(user.toOldJSONForBrowser(hideRootToken))
   }
 
   /**
@@ -172,6 +144,7 @@ class UserController {
       type: userType,
       username: req.body.username,
       email: typeof req.body.email === 'string' ? req.body.email : null,
+      displayName: typeof req.body.displayName === 'string' ? req.body.displayName : null,
       pash,
       token,
       isActive: !!req.body.isActive,
@@ -203,6 +176,13 @@ class UserController {
    * @param {Response} res
    */
   async update(req, res) {
+    Logger.info('[UserController] Update request:', {
+      params: req.params,
+      body: req.body,
+      user: req.user?.username,
+      reqUser: req.reqUser?.username
+    })
+
     const user = req.reqUser
 
     if (user.isRoot && !req.user.isRoot) {
@@ -227,6 +207,9 @@ class UserController {
     }
     if (updatePayload.username && typeof updatePayload.username !== 'string') {
       return res.status(400).send('Invalid username')
+    }
+    if (updatePayload.displayName && typeof updatePayload.displayName !== 'string') {
+      return res.status(400).send('Invalid display name')
     }
     if (updatePayload.type && !Database.userModel.accountTypes.includes(updatePayload.type)) {
       return res.status(400).send('Invalid account type')
@@ -320,6 +303,10 @@ class UserController {
     }
     if (updatePayload.lastSeen && typeof updatePayload.lastSeen === 'number') {
       user.lastSeen = updatePayload.lastSeen
+      hasUpdates = true
+    }
+    if (updatePayload.displayName !== undefined) {
+      user.displayName = updatePayload.displayName
       hasUpdates = true
     }
 
@@ -474,9 +461,19 @@ class UserController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
-    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
-      return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
+    Logger.info('[UserController] Middleware request:', {
+      method: req.method,
+      path: req.path,
+      params: req.params,
+      userId: req.user?.id,
+      username: req.user?.username
+    })
+
+    // For GET requests, allow viewing any user's public profile
+    if (req.method === 'GET') {
+      // Continue to next middleware
+    } else if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
+      // For non-GET requests, require admin or self
       return res.sendStatus(403)
     }
 
@@ -488,6 +485,73 @@ class UserController {
     }
 
     next()
+  }
+
+  /**
+   * GET: /api/users/:id/reviews
+   * Get reviews for a user with associated library items
+   * 
+   * @param {UserControllerRequest} req
+   * @param {Response} res
+   */
+  async getUserReviews(req, res) {
+    try {
+      // First get all reviews for the user
+      const reviews = await Database.commentModel.findAll({
+        where: { userId: req.params.id },
+        include: [{
+          model: Database.userModel,
+          as: 'user',
+          attributes: ['id', 'username', 'displayName']
+        }],
+        order: [['createdAt', 'DESC']]
+      })
+
+      // Get all libraryItemIds from the reviews
+      const libraryItemIds = reviews.map(review => review.libraryItemId)
+
+      // Get all library items with their books
+      const libraryItems = await Database.libraryItemModel.findAll({
+        where: {
+          id: libraryItemIds
+        },
+        attributes: ['id', 'title', 'mediaType', 'path', 'relPath', 'libraryId', 'libraryFolderId', 'isFile', 'updatedAt'],
+        include: [{
+          model: Database.bookModel,
+          as: 'book',
+          attributes: ['id', 'title', 'coverPath']
+        }]
+      })
+
+      // Create a map of library items by id for easy lookup
+      const libraryItemsMap = libraryItems.reduce((map, item) => {
+        map[item.id] = item
+        return map
+      }, {})
+
+      // Merge the data
+      const reviewsWithItems = reviews.map(review => {
+        const reviewJson = review.toJSON()
+        const libraryItem = libraryItemsMap[reviewJson.libraryItemId]
+        
+        if (libraryItem) {
+          const libraryItemJson = libraryItem.toJSON()
+          reviewJson.libraryItem = libraryItemJson
+          if (libraryItemJson.book) {
+            reviewJson.libraryItem.media = {
+              coverPath: libraryItemJson.book.coverPath
+            }
+            reviewJson.book = libraryItemJson.book
+          }
+        }
+        return reviewJson
+      })
+
+      res.json(reviewsWithItems)
+    } catch (error) {
+      Logger.error('[UserController] getUserReviews error:', error)
+      res.status(500).json({ error: 'Failed to get user reviews' })
+    }
   }
 }
 module.exports = new UserController()

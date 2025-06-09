@@ -138,7 +138,8 @@ export default {
     },
     setInputWidth() {
       setTimeout(() => {
-        var value = this.$refs.input.value
+        if (!this.$refs.input) return
+        var value = this.$refs.input.value || ''
         var len = value.length * 7 + 24
         this.$refs.input.style.width = len + 'px'
         this.recalcMenuPos()
