@@ -125,7 +125,13 @@ class FileSystemController {
       return res.sendStatus(404)
     }
 
-    const filepath = Path.join(libraryFolder.path, directory)
+    if (!req.user.checkCanAccessLibrary(libraryFolder.libraryId)) {
+      Logger.error(`[FileSystemController] User "${req.user.username}" attempting to check path exists for library "${libraryFolder.libraryId}" without access`)
+      return res.sendStatus(403)
+    }
+
+    let filepath = Path.join(libraryFolder.path, directory)
+    filepath = fileUtils.filePathToPOSIX(filepath)
 
     // Ensure filepath is inside library folder (prevents directory traversal) (And convert libraryFolder to Path to normalize)
     if (!filepath.startsWith(Path.join(libraryFolder.path))) {
