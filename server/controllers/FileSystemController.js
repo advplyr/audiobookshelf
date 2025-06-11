@@ -134,7 +134,7 @@ class FileSystemController {
     filepath = fileUtils.filePathToPOSIX(filepath)
 
     // Ensure filepath is inside library folder (prevents directory traversal) (And convert libraryFolder to Path to normalize)
-    if (!filepath.startsWith(Path.join(libraryFolder.path))) {
+    if (!filepath.startsWith(libraryFolder.path)) {
       Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
       return res.sendStatus(400)
     }
