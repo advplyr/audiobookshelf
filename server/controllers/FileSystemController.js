@@ -113,7 +113,8 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    const filepath = Path.join(libraryFolder.path, directory)
+    let filepath = Path.join(libraryFolder.path, directory)
+    filepath = fileUtils.filePathToPOSIX(filepath)
 
     // Ensure filepath is inside library folder (prevents directory traversal)
     if (!filepath.startsWith(libraryFolder.path)) {
