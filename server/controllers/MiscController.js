@@ -6,11 +6,12 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
+const globals = require('../utils/globals')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
-const { sanitizeFilename } = require('../utils/fileUtils')
+const { sanitizeFilename, validatePathExists } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
@@ -77,6 +78,16 @@ class MiscController {
     // the base folder path
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+
+    const containsBook = files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase()))
+    const containsAudio = files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase()))
+
+    console.log(`Uploading files to ${outputDirectory} with containsBook: ${containsBook}, containsAudio: ${containsAudio}`)
+
+    if ((await validatePathExists(folder, outputDirectory, undefined, !containsBook, !containsAudio)).exists) {
+      Logger.error(`Upload path already exists: ${outputDirectory}`)
+      return res.status(400).send('Uploaded file already exists')
+    }
 
     await fs.ensureDir(outputDirectory)
 

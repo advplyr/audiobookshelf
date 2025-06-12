@@ -6,6 +6,7 @@ const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
+const globals = require('./globals')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -577,3 +578,80 @@ async function copyToExisting(srcPath, destPath) {
   })
 }
 module.exports.copyToExisting = copyToExisting
+
+module.exports.validatePathExists = async function validatePathExists(libraryFolder, directory, filename, allowBookFiles, allowAudioFiles) {
+  let filepath = Path.join(libraryFolder.path, directory)
+  filepath = filePathToPOSIX(filepath)
+
+  // Ensure filepath is inside library folder (prevents directory traversal) (And convert libraryFolder to Path to normalize)
+  if (!filepath.startsWith(libraryFolder.path)) {
+    Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
+    return null
+  }
+
+  if (await fs.pathExists(filepath)) {
+    if (filename) {
+      // Check if a specific file exists
+      const filePath = Path.join(filepath, filename)
+      if (await fs.pathExists(filePath)) {
+        return {
+          exists: true,
+        }
+      }
+    } else if(allowBookFiles || allowAudioFiles) {
+      let allowedExtensions = []
+      if (allowBookFiles && !allowAudioFiles) {
+        allowedExtensions = globals.SupportedEbookTypes
+      } else if (allowAudioFiles && !allowBookFiles) {
+        allowedExtensions = globals.SupportedAudioTypes
+      } else {
+        allowedExtensions = []
+      }
+      const files = await fs.readdir(filepath)
+      const exists = allowedExtensions.length === 0
+        ? files.length > 0
+        : files.some((file) => {
+          const ext = Path.extname(file).toLowerCase().replace(/^\./, '')
+          return allowedExtensions.includes(ext)
+        })
+
+      // To let the sub dir check run
+      if(exists) return exists
+    } else {
+      return {
+        exists: true
+      }
+    }
+  }
+
+  // Check if a library item exists in a subdirectory
+  // See: https://github.com/advplyr/audiobookshelf/issues/4146
+  // For filenames it does not matter if the file is in a subdirectory or not because the file is not allowed to be created
+  const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
+  if (cleanedDirectory.includes('/')) {
+    // Can only be 2 levels deep
+    const possiblePaths = []
+    const subdir = Path.dirname(directory)
+    possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
+    if (subdir.includes('/')) {
+      possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
+    }
+
+    const libraryItem = await Database.libraryItemModel.findOne({
+      where: {
+        path: possiblePaths
+      }
+    })
+
+    if (libraryItem) {
+      return {
+        exists: true,
+        libraryItemTitle: libraryItem.title
+      }
+    }
+  }
+
+  return {
+    exists: false
+  }
+}
