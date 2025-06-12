@@ -89,10 +89,11 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    // filename - If fileName is provided, the check only returns true if the actual file exists, not just the directory
+    // filenames - If filenames is provided, the check only returns true if the actual files exist, not just the directory
     // allowBookFiles - If true, allows containing other book related files (e.g. .pdf, .epub, etc.)
     // allowAudioFiles - If true, allows containing other audio related files (e.g. .mp3, .m4b, etc.)
-    const { directory, folderPath, filename, allowBookFiles, allowAudioFiles } = req.body
+    const { directory, folderPath, filenames, allowBookFiles, allowAudioFiles } = req.body
+
     if (!directory?.length || typeof directory !== 'string' || !folderPath?.length || typeof folderPath !== 'string') {
       Logger.error(`[FileSystemController] Invalid request body: ${JSON.stringify(req.body)}`)
       return res.status(400).json({
@@ -100,14 +101,15 @@ class FileSystemController {
       })
     }
 
-    if (filename && typeof filename !== 'string') {
-      Logger.error(`[FileSystemController] Invalid filename in request body: ${JSON.stringify(req.body)}`)
+    // Validate filenames: must be undefined or an array of non-empty strings
+    if (filenames !== undefined && (!Array.isArray(filenames) || filenames.some((f) => typeof f !== 'string' || f.trim().length === 0))) {
+      Logger.error(`[FileSystemController] Invalid filenames in request body: ${JSON.stringify(req.body)}`)
       return res.status(400).json({
-        error: 'Invalid filename'
+        error: 'Invalid filenames'
       })
     }
 
-    if (allowBookFiles && typeof allowBookFiles !== 'boolean' || allowAudioFiles && typeof allowAudioFiles !== 'boolean' || (allowBookFiles && allowAudioFiles)) {
+    if ((allowBookFiles && typeof allowBookFiles !== 'boolean') || (allowAudioFiles && typeof allowAudioFiles !== 'boolean') || (allowBookFiles && allowAudioFiles)) {
       Logger.error(`[FileSystemController] Invalid allowBookFiles or allowAudioFiles in request body: ${JSON.stringify(req.body)}`)
       return res.status(400).json({
         error: 'Invalid allowBookFiles or allowAudioFiles'
@@ -131,11 +133,11 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    const result = await validatePathExists(libraryFolder, directory, filename, allowBookFiles, allowAudioFiles)
+    const result = await validatePathExists(libraryFolder, directory, filenames, allowBookFiles, allowAudioFiles)
 
-    if (!result) return res.status(400)
+    if (!result) return res.status(400).end()
 
-    console.log(`[FileSystemController] Path exists check for "${directory}" in library "${libraryFolder.libraryId}" with filename "${filename}" returned: ${result.exists}`)
+    console.log(`[FileSystemController] Path exists check for "${directory}" in library "${libraryFolder.libraryId}" with filenames "${Array.isArray(filenames) ? filenames.join(', ') : 'N/A'}", allowBookFiles: ${allowBookFiles}, allowAudioFiles: ${allowAudioFiles} - Result: ${result.exists}`)
 
     return res.json(result)
   }

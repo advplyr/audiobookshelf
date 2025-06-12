@@ -579,48 +579,62 @@ async function copyToExisting(srcPath, destPath) {
 }
 module.exports.copyToExisting = copyToExisting
 
-module.exports.validatePathExists = async function validatePathExists(libraryFolder, directory, filename, allowBookFiles, allowAudioFiles) {
-  let filepath = Path.join(libraryFolder.path, directory)
-  filepath = filePathToPOSIX(filepath)
+module.exports.validatePathExists = async function validatePathExists(
+  libraryFolder,
+  directory,
+  filenames,
+  allowBookFiles,
+  allowAudioFiles,
+  skipLibraryFolder = false
+) {
+  let filepath = Path.join(skipLibraryFolder ? '' : libraryFolder.path, directory);
+  filepath = filePathToPOSIX(filepath);
 
-  // Ensure filepath is inside library folder (prevents directory traversal) (And convert libraryFolder to Path to normalize)
+  // Ensure filepath is inside library folder (prevents directory traversal)
   if (!filepath.startsWith(libraryFolder.path)) {
-    Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
-    return null
+    Logger.error(
+      `[FileSystemController] Filepath is not inside library folder: ${filepath}`
+    );
+    return null;
   }
 
+  console.log(`[FileSystemController] Checking if path exists: "${filepath}"`);
+
   if (await fs.pathExists(filepath)) {
-    if (filename) {
-      // Check if a specific file exists
-      const filePath = Path.join(filepath, filename)
-      if (await fs.pathExists(filePath)) {
-        return {
-          exists: true,
+    if (filenames && filenames.length > 0) {
+      // If any filename exists, not allowed to upload (exists: true)
+      for (const filename of filenames) {
+        const filePath = Path.join(filepath, filename);
+        if (await fs.pathExists(filePath)) {
+          return {
+            exists: true,
+          };
         }
       }
-    } else if(allowBookFiles || allowAudioFiles) {
-      let allowedExtensions = []
-      if (allowBookFiles && !allowAudioFiles) {
-        allowedExtensions = globals.SupportedEbookTypes
-      } else if (allowAudioFiles && !allowBookFiles) {
-        allowedExtensions = globals.SupportedAudioTypes
-      } else {
-        allowedExtensions = []
-      }
-      const files = await fs.readdir(filepath)
-      const exists = allowedExtensions.length === 0
-        ? files.length > 0
-        : files.some((file) => {
-          const ext = Path.extname(file).toLowerCase().replace(/^\./, '')
-          return allowedExtensions.includes(ext)
-        })
+    } } else if (allowBookFiles || allowAudioFiles) {
+    let restrictedExtensions = [];
+    if (allowBookFiles && !allowAudioFiles) {
+      restrictedExtensions = globals.SupportedAudioTypes; // Block audio files
+    } else if (allowAudioFiles && !allowBookFiles) {
+      restrictedExtensions = globals.SupportedEbookTypes; // Block book files
+    }
 
-      // To let the sub dir check run
-      if(exists) return exists
+    console.log(`[FileSystemController] Checking for restricted files in "${filepath}" with extensions: ${restrictedExtensions.join(', ')}`);
+
+    if (restrictedExtensions.length > 0) {
+      const files = await fs.readdir(filepath);
+      const hasRestrictedFiles = files.some((file) => {
+        const ext = Path.extname(file).toLowerCase().replace(/^\./, "");
+        return restrictedExtensions.includes(ext);
+      });
+
+      if (hasRestrictedFiles) {
+        return { exists: true };
+      }
     } else {
       return {
-        exists: true
-      }
+        exists: true,
+      };
     }
   }
 

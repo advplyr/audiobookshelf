@@ -360,7 +360,7 @@ export default {
       //  uploading fails if path already exists
       for (const item of items) {
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath })
+          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath, filenames: item.files.map((f) => f.name) })
           .then((data) => {
             if (data.exists) {
               if (data.libraryItemTitle) {
