@@ -44,8 +44,9 @@ class MiscController {
     }
 
     const files = Object.values(req.files)
-    // If allowAdditionalFiles the upload endpoint allows adding items even if the type of file already exists in the library.
-    let { title, author, series, folder: folderId, library: libraryId, allowAdditionalFiles } = req.body
+    // If allowAdditionalFiles is true, the upload endpoint allows adding items even if the type of file already exists in the library.
+    // If allowOverwrite is true, it will allow overwriting existing files.
+    let { title, author, series, folder: folderId, library: libraryId, allowAdditionalFiles, allowOverwrite } = req.body
     // Validate request body
     if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
       return res.status(400).send('Invalid request body')
@@ -80,12 +81,14 @@ class MiscController {
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
-    const containsBook = allowAdditionalFiles || files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
-    const containsAudio = allowAdditionalFiles || files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+    if (allowOverwrite === undefined || allowOverwrite === null || !allowOverwrite) {
+      const containsBook = allowAdditionalFiles || files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+      const containsAudio = allowAdditionalFiles || files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
 
-    if ((await validatePathExists(folder, outputDirectory, files.map((f) => f.name), !containsBook, !containsAudio, true)).exists) {
-      Logger.error(`Upload path already exists: ${outputDirectory}`)
-      return res.status(400).send('Uploaded file already exists')
+      if ((await validatePathExists(folder, outputDirectory, files.map((f) => f.name), !containsBook, !containsAudio, true)).exists) {
+        Logger.error(`Upload path already exists: ${outputDirectory}`)
+        return res.status(400).send('Uploaded file already exists')
+      }
     }
 
     await fs.ensureDir(outputDirectory)
