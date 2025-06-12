@@ -91,6 +91,7 @@
 <script>
 import Path from 'path'
 import uploadHelpers from '@/mixins/uploadHelpers'
+import globals from '../../../server/utils/globals'
 
 export default {
   mixins: [uploadHelpers],
@@ -359,8 +360,11 @@ export default {
       // Check if path already exists before starting upload
       //  uploading fails if path already exists
       for (const item of items) {
+        const containsBook = item.files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+        const containsAudio = item.files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath, filenames: item.files.map((f) => f.name) })
+          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath, filenames: item.files.map((f) => f.name), allowBookFiles: !containsBook, allowAudioFiles: !containsAudio })
           .then((data) => {
             if (data.exists) {
               if (data.libraryItemTitle) {

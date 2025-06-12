@@ -44,7 +44,8 @@ class MiscController {
     }
 
     const files = Object.values(req.files)
-    let { title, author, series, folder: folderId, library: libraryId } = req.body
+    // If allowAdditionalFiles the upload endpoint allows adding items even if the type of file already exists in the library.
+    let { title, author, series, folder: folderId, library: libraryId, allowAdditionalFiles } = req.body
     // Validate request body
     if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
       return res.status(400).send('Invalid request body')
@@ -79,12 +80,10 @@ class MiscController {
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
-    const containsBook = files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
-    const containsAudio = files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+    const containsBook = allowAdditionalFiles || files.some(file => globals.SupportedEbookTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
+    const containsAudio = allowAdditionalFiles || files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
 
-    console.log(`Uploading files to ${outputDirectory} with containsBook: ${containsBook}, containsAudio: ${containsAudio}`)
-
-    if ((await validatePathExists(folder, outputDirectory, undefined, !containsBook, !containsAudio, true)).exists) {
+    if ((await validatePathExists(folder, outputDirectory, files.map((f) => f.name), !containsBook, !containsAudio, true)).exists) {
       Logger.error(`Upload path already exists: ${outputDirectory}`)
       return res.status(400).send('Uploaded file already exists')
     }

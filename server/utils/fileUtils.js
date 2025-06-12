@@ -598,8 +598,6 @@ module.exports.validatePathExists = async function validatePathExists(
     return null;
   }
 
-  console.log(`[FileSystemController] Checking if path exists: "${filepath}"`);
-
   if (await fs.pathExists(filepath)) {
     if (filenames && filenames.length > 0) {
       // If any filename exists, not allowed to upload (exists: true)
@@ -611,30 +609,32 @@ module.exports.validatePathExists = async function validatePathExists(
           };
         }
       }
-    } } else if (allowBookFiles || allowAudioFiles) {
-    let restrictedExtensions = [];
-    if (allowBookFiles && !allowAudioFiles) {
-      restrictedExtensions = globals.SupportedAudioTypes; // Block audio files
-    } else if (allowAudioFiles && !allowBookFiles) {
-      restrictedExtensions = globals.SupportedEbookTypes; // Block book files
     }
-
-    console.log(`[FileSystemController] Checking for restricted files in "${filepath}" with extensions: ${restrictedExtensions.join(', ')}`);
-
-    if (restrictedExtensions.length > 0) {
-      const files = await fs.readdir(filepath);
-      const hasRestrictedFiles = files.some((file) => {
-        const ext = Path.extname(file).toLowerCase().replace(/^\./, "");
-        return restrictedExtensions.includes(ext);
-      });
-
-      if (hasRestrictedFiles) {
-        return { exists: true };
+    if (allowBookFiles || allowAudioFiles) {
+      let restrictedExtensions = [];
+      if (allowBookFiles && !allowAudioFiles) {
+        restrictedExtensions = globals.SupportedAudioTypes;
+      } else if (allowAudioFiles && !allowBookFiles) {
+        restrictedExtensions = globals.SupportedEbookTypes;
+      } else {
+        restrictedExtensions = []
       }
-    } else {
-      return {
-        exists: true,
-      };
+
+      if (restrictedExtensions.length > 0) {
+        const files = await fs.readdir(filepath);
+        const hasRestrictedFiles = files.some((file) => {
+          const ext = Path.extname(file).toLowerCase().replace(/^\./, "");
+          return restrictedExtensions.includes(ext);
+        });
+
+        if (hasRestrictedFiles) {
+          return { exists: true };
+        }
+      } else {
+        return {
+          exists: true,
+        };
+      }
     }
   }
 
