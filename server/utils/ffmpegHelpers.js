@@ -108,7 +108,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       method: 'GET',
       responseType: 'stream',
       headers: {
-        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
+        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
       },
       timeout: global.PodcastDownloadTimeout
     }).catch((error) => {
