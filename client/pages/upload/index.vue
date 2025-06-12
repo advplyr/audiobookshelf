@@ -364,7 +364,11 @@ export default {
         const containsAudio = item.files.some(file => globals.SupportedAudioTypes.includes(Path.extname(file.name).toLowerCase().slice(1)))
 
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath, filenames: item.files.map((f) => f.name), allowBookFiles: !containsBook, allowAudioFiles: !containsAudio })
+          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath, filenames: item.files.map((f) => f.name),
+                      ...(this.selectedLibrary.mediaType === 'podcast'
+                        ? { allowBookFiles: !containsBook, allowAudioFiles: true }
+                        : { allowBookFiles: !containsBook, allowAudioFiles: !containsAudio })
+                    })
           .then((data) => {
             if (data.exists) {
               if (data.libraryItemTitle) {

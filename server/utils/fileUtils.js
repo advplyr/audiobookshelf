@@ -630,10 +630,6 @@ module.exports.validatePathExists = async function validatePathExists(
         if (hasRestrictedFiles) {
           return { exists: true };
         }
-      } else {
-        return {
-          exists: true,
-        };
       }
     }
   }
