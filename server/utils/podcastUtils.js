@@ -1,9 +1,9 @@
 const axios = require('axios')
 const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
-const { xmlToJSON, levenshteinDistance, timestampToSeconds } = require('./index')
+const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
-const Fuse = require('fuse.js')
+const Fuse = require('../libs/fusejs')
 
 /**
  * @typedef RssPodcastChapter
@@ -421,19 +421,20 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
  *
  * @param {RssPodcast} feed
  * @param {string} searchTitle
+ * @param {number} [threshold=0.4] - 0.0 for perfect match, 1.0 for match anything
  * @returns {Array<{ episode: RssPodcastEpisode }>}
  */
-module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
+module.exports.findMatchingEpisodesInFeed = (feed, searchTitle, threshold = 0.4) => {
   if (!feed?.episodes) {
     return null
   }
 
   const fuseOptions = {
     ignoreDiacritics: true,
-    threshold: 0.4,  // default 0.6 return too many matches
+    threshold,
     keys: [
-      {name: 'title', weight: 0.7},  // prefer match in title
-      {name: 'subtitle', weight: 0.3}
+      { name: 'title', weight: 0.7 }, // prefer match in title
+      { name: 'subtitle', weight: 0.3 }
     ]
   }
   const fuse = new Fuse(feed.episodes, fuseOptions)
