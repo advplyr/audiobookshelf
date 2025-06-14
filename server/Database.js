@@ -767,13 +767,13 @@ class Database {
     }
 
     // Remove mediaProgresses with duplicate mediaItemId (remove the oldest updatedAt)
-    const [duplicateMediaProgresses] = await this.sequelize.query(`SELECT id, mediaItemId FROM mediaProgresses WHERE (mediaItemId, updatedAt) IN (SELECT mediaItemId, MIN(updatedAt) FROM mediaProgresses GROUP BY mediaItemId HAVING COUNT(*) > 1)`)
-    for (const duplicateMediaProgress of duplicateMediaProgresses) {
-      Logger.warn(`Found duplicate mediaProgress for mediaItem "${duplicateMediaProgress.mediaItemId}" - removing it`)
-      await this.mediaProgressModel.destroy({
-        where: { id: duplicateMediaProgress.id }
-      })
-    }
+    // const [duplicateMediaProgresses] = await this.sequelize.query(`SELECT id, mediaItemId FROM mediaProgresses WHERE (mediaItemId, userId, updatedAt) IN (SELECT mediaItemId, userId, MIN(updatedAt) FROM mediaProgresses GROUP BY mediaItemId, userId HAVING COUNT(*) > 1)`)
+    // for (const duplicateMediaProgress of duplicateMediaProgresses) {
+    //   Logger.warn(`Found duplicate mediaProgress for mediaItem "${duplicateMediaProgress.mediaItemId}" - removing it`)
+    //   await this.mediaProgressModel.destroy({
+    //     where: { id: duplicateMediaProgress.id }
+    //   })
+    // }
   }
 
   async createTextSearchQuery(query) {
