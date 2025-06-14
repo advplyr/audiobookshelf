@@ -52,6 +52,7 @@ class ServerSettings {
     this.dateFormat = 'MM/dd/yyyy'
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
+    this.calendarFirstDayOfWeek = 0
 
     this.logLevel = Logger.logLevel
 
@@ -119,6 +120,7 @@ class ServerSettings {
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
+    this.calendarFirstDayOfWeek = settings.calendarFirstDayOfWeek !== undefined ? Number(settings.calendarFirstDayOfWeek) : 0
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
@@ -230,6 +232,7 @@ class ServerSettings {
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,
       language: this.language,
+      calendarFirstDayOfWeek: this.calendarFirstDayOfWeek,
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,

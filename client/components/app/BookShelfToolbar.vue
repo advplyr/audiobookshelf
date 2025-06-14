@@ -65,7 +65,7 @@
         <ui-context-menu-dropdown v-if="!isBatchSelecting && seriesContextMenuItems.length" :items="seriesContextMenuItems" class="mx-px" @action="seriesContextMenuAction" />
       </template>
       <!-- library & collections page -->
-      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome && !isAuthorsPage">
+      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && page !== 'calendar' && !isHome && !isAuthorsPage">
         <p class="hidden md:block">{{ $formatNumber(numShowing) }} {{ entityName }}</p>
 
         <div class="grow hidden sm:inline-block" />
@@ -246,6 +246,9 @@ export default {
     },
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
+    },
+    isCalendarPage() {
+      return this.page === 'calendar'
     },
     isLibraryPage() {
       return this.page === ''
