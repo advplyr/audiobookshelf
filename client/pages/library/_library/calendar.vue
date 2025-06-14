@@ -94,7 +94,7 @@
               </div>
 
               <div class="px-1 sm:px-2 pb-1 sm:pb-2 space-y-1 relative" style="z-index: 1">
-                <div v-for="episode in day.episodes" :key="episode.id" @click="clickEpisode(episode)" class="p-1 rounded text-xs cursor-pointer hover:bg-white/10 transition-colors" :class="getEpisodeColorClass(episode)">
+                <div v-for="episode in day.episodes" :key="episode.id" @click="clickEpisode(episode)" class="p-1 rounded text-xs cursor-pointer hover:bg-white/10 transition-colors" :class="getItemColorClass(episode)">
                   <div class="font-medium truncate text-xs">
                     {{ episode.podcastTitle }}
                   </div>
@@ -346,12 +346,12 @@ export default {
     isSameDay(date1, date2) {
       return this.formatDateKey(date1) === this.formatDateKey(date2)
     },
-    getEpisodeColorClass(episode) {
+    getItemColorClass(episode) {
       const podcastId = episode.podcastId || episode.libraryItemId
-      const hash = this.simpleHash(podcastId)
+      const hash = this.itemGroupingHash(podcastId)
       return this.itemColors[hash % this.itemColors.length]
     },
-    simpleHash(str) {
+    itemGroupingHash(str) {
       let hash = 0
       if (!str) return hash
 
