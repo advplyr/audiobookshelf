@@ -16,6 +16,7 @@
         <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">{{ $getString('LabelByAuthor', [book.author]) }}</p>
         <p v-if="book.narrator" class="text-gray-400 text-xs">{{ $strings.LabelNarrators }}: {{ book.narrator }}</p>
         <p v-if="book.duration" class="text-gray-400 text-xs">{{ $strings.LabelDuration }}: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
+        <p v-if="book.matchConfidence" class="text-gray-400 text-xs">{{ $strings.LabelMatchConfidence }}: {{ book.matchConfidence.toFixed(3) }}</p>
         <div v-if="book.series?.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white/10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">
