@@ -75,7 +75,8 @@
               :class="{
                 'bg-black/20': !day.isCurrentMonth,
                 'bg-blue-600/30': day.isCurrentMonth && day.isToday,
-                'bg-transparent': day.isCurrentMonth && !day.isToday
+                'bg-transparent': day.isCurrentMonth && !day.isToday && !day.isWeekend,
+                'bg-slate-700/50': day.isCurrentMonth && !day.isToday && day.isWeekend
               }"
             >
               <div v-if="day.isToday" class="absolute inset-0 border-2 border-blue-500 pointer-events-none" style="z-index: 5"></div>
@@ -259,6 +260,7 @@ export default {
           dayNumber: currentDay.getDate(),
           isCurrentMonth: currentDay.getMonth() === month,
           isToday: this.isSameDay(currentDay, today),
+          isWeekend: this.isWeekendDay(currentDay),
           episodes: dayEpisodes
         })
 
@@ -345,6 +347,10 @@ export default {
     },
     isSameDay(date1, date2) {
       return this.formatDateKey(date1) === this.formatDateKey(date2)
+    },
+    isWeekendDay(date) {
+      const dayOfWeek = date.getDay()
+      return dayOfWeek === 0 || dayOfWeek === 6
     },
     getItemColorClass(episode) {
       const podcastId = episode.podcastId || episode.libraryItemId
