@@ -84,49 +84,73 @@ class FileSystemController {
    */
   async checkPathExists(req, res) {
     if (!req.user.canUpload) {
-      Logger.error(`[FileSystemController] Non-admin user "${req.user.username}" attempting to check path exists`)
+      Logger.error(`[FileSystemController] User "${req.user.username}" without upload permissions attempting to check path exists`)
       return res.sendStatus(403)
     }
 
-    const { filepath, directory, folderPath } = req.body
+    const { directory, folderPath } = req.body
+    if (!directory?.length || typeof directory !== 'string' || !folderPath?.length || typeof folderPath !== 'string') {
+      Logger.error(`[FileSystemController] Invalid request body: ${JSON.stringify(req.body)}`)
+      return res.status(400).json({
+        error: 'Invalid request body'
+      })
+    }
 
-    if (!filepath?.length || typeof filepath !== 'string') {
+    // Check that library folder exists
+    const libraryFolder = await Database.libraryFolderModel.findOne({
+      where: {
+        path: folderPath
+      }
+    })
+
+    if (!libraryFolder) {
+      Logger.error(`[FileSystemController] Library folder not found: ${folderPath}`)
+      return res.sendStatus(404)
+    }
+
+    if (!req.user.checkCanAccessLibrary(libraryFolder.libraryId)) {
+      Logger.error(`[FileSystemController] User "${req.user.username}" attempting to check path exists for library "${libraryFolder.libraryId}" without access`)
+      return res.sendStatus(403)
+    }
+
+    let filepath = Path.join(libraryFolder.path, directory)
+    filepath = fileUtils.filePathToPOSIX(filepath)
+
+    // Ensure filepath is inside library folder (prevents directory traversal)
+    if (!filepath.startsWith(libraryFolder.path)) {
+      Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
       return res.sendStatus(400)
     }
 
-    const exists = await fs.pathExists(filepath)
-
-    if (exists) {
+    if (await fs.pathExists(filepath)) {
       return res.json({
         exists: true
       })
     }
 
-    // If directory and folderPath are passed in, check if a library item exists in a subdirectory
+    // Check if a library item exists in a subdirectory
     // See: https://github.com/advplyr/audiobookshelf/issues/4146
-    if (typeof directory === 'string' && typeof folderPath === 'string' && directory.length > 0 && folderPath.length > 0) {
-      const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
-      if (cleanedDirectory.includes('/')) {
-        // Can only be 2 levels deep
-        const possiblePaths = []
-        const subdir = Path.dirname(directory)
-        possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
-        if (subdir.includes('/')) {
-          possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
-        }
+    const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
+    if (cleanedDirectory.includes('/')) {
+      // Can only be 2 levels deep
+      const possiblePaths = []
+      const subdir = Path.dirname(directory)
+      possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
+      if (subdir.includes('/')) {
+        possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
+      }
 
-        const libraryItem = await Database.libraryItemModel.findOne({
-          where: {
-            path: possiblePaths
-          }
+      const libraryItem = await Database.libraryItemModel.findOne({
+        where: {
+          path: possiblePaths
+        }
+      })
+
+      if (libraryItem) {
+        return res.json({
+          exists: true,
+          libraryItemTitle: libraryItem.title
         })
-
-        if (libraryItem) {
-          return res.json({
-            exists: true,
-            libraryItemTitle: libraryItem.title
-          })
-        }
       }
     }
 

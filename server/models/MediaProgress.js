@@ -222,13 +222,13 @@ class MediaProgress extends Model {
         const markAsFinishedPercentComplete = Number(progressPayload.markAsFinishedPercentComplete) / 100
         shouldMarkAsFinished = markAsFinishedPercentComplete < this.progress
         if (shouldMarkAsFinished) {
-          Logger.debug(`[MediaProgress] Marking media progress as finished because progress (${this.progress}) is greater than ${markAsFinishedPercentComplete}`)
+          Logger.info(`[MediaProgress] Marking media progress as finished because progress (${this.progress}) is greater than ${markAsFinishedPercentComplete} (media item ${this.mediaItemId})`)
         }
       } else {
         const markAsFinishedTimeRemaining = isNullOrNaN(progressPayload.markAsFinishedTimeRemaining) ? 10 : Number(progressPayload.markAsFinishedTimeRemaining)
         shouldMarkAsFinished = timeRemaining < markAsFinishedTimeRemaining
         if (shouldMarkAsFinished) {
-          Logger.debug(`[MediaProgress] Marking media progress as finished because time remaining (${timeRemaining}) is less than ${markAsFinishedTimeRemaining} seconds`)
+          Logger.info(`[MediaProgress] Marking media progress as finished because time remaining (${timeRemaining}) is less than ${markAsFinishedTimeRemaining} seconds (media item ${this.mediaItemId})`)
         }
       }
     }
@@ -246,9 +246,11 @@ class MediaProgress extends Model {
     // For local sync
     if (progressPayload.lastUpdate) {
       this.updatedAt = progressPayload.lastUpdate
+      Logger.info(`[MediaProgress] Manually setting updatedAt to ${this.updatedAt} (media item ${this.mediaItemId})`)
+      this.changed('updatedAt', true)
     }
 
-    return this.save()
+    return this.save({ silent: !!progressPayload.lastUpdate })
   }
 }
 

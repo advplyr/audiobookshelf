@@ -149,11 +149,12 @@ module.exports = {
       libraryId
     }
     const libraryItemIncludes = []
-    if (includeRSSFeed) {
+    if (filterGroup === 'feed-open' || includeRSSFeed) {
+      const rssFeedRequired = filterGroup === 'feed-open'
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open',
-        separate: true
+        required: rssFeedRequired,
+        separate: !rssFeedRequired
       })
     }
     if (filterGroup === 'issues') {

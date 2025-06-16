@@ -72,6 +72,54 @@ class NotificationManager {
   }
 
   /**
+   * Handles scheduled episode download RSS feed request failed
+   *
+   * @param {string} feedUrl
+   * @param {number} numFailed
+   * @param {string} title
+   */
+  async onRSSFeedFailed(feedUrl, numFailed, title) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedFailed')) {
+      Logger.debug(`[NotificationManager] onRSSFeedFailed: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onRSSFeedFailed: RSS feed request failed for ${feedUrl}`)
+    const eventData = {
+      feedUrl: feedUrl,
+      numFailed: numFailed || 0,
+      title: title || 'Unknown Title'
+    }
+    this.triggerNotification('onRSSFeedFailed', eventData)
+  }
+
+  /**
+   * Handles scheduled episode downloads disabled due to too many failed attempts
+   *
+   * @param {string} feedUrl
+   * @param {number} numFailed
+   * @param {string} title
+   */
+  async onRSSFeedDisabled(feedUrl, numFailed, title) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedDisabled')) {
+      Logger.debug(`[NotificationManager] onRSSFeedDisabled: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onRSSFeedDisabled: Podcast scheduled episode download disabled due to ${numFailed} failed requests for ${feedUrl}`)
+    const eventData = {
+      feedUrl: feedUrl,
+      numFailed: numFailed || 0,
+      title: title || 'Unknown Title'
+    }
+    this.triggerNotification('onRSSFeedDisabled', eventData)
+  }
+
+  /**
    *
    * @param {string} errorMsg
    */
