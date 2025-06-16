@@ -918,6 +918,8 @@
   "NotificationOnBackupCompletedDescription": "Pokreće se po završetku sigurnosnog kopiranja",
   "NotificationOnBackupFailedDescription": "Pokreće se kada sigurnosno kopiranje ne uspije",
   "NotificationOnEpisodeDownloadedDescription": "Pokreće se kada se nastavak podcasta automatski preuzme",
+  "NotificationOnRSSFeedDisabledDescription": "Pokreće se kada su automatska preuzimanja nastavaka onemogućena zbog previše neuspjelih pokušaja",
+  "NotificationOnRSSFeedFailedDescription": "Pokreće se u slučaju pogreške pri pokušaju automatskog preuzimanja nastavka s RSS izvora",
   "NotificationOnTestDescription": "Događaj za testiranje sustava obavijesti",
   "PlaceholderNewCollection": "Ime nove zbirke",
   "PlaceholderNewFolderPath": "Nova putanja mape",
