@@ -919,6 +919,7 @@
   "NotificationOnBackupFailedDescription": "Wird ausgeführt wenn ein Backup fehlgeschlagen ist",
   "NotificationOnEpisodeDownloadedDescription": "Wird ausgeführt wenn eine Podcast Folge automatisch heruntergeladen wird",
   "NotificationOnRSSFeedDisabledDescription": "Wird ausgeführt wenn automatische Downloads von Episoden wegen zu vielen fehlgeschlagenen Versuchen deaktiviert sind",
+  "NotificationOnRSSFeedFailedDescription": "Wird ausgelöst, wenn die RSS-Feed-Anforderung für einen automatischen Episoden-Download fehlschlägt",
   "NotificationOnTestDescription": "Wird ausgeführt wenn das Benachrichtigungssystem getestet wird",
   "PlaceholderNewCollection": "Neuer Sammlungsname",
   "PlaceholderNewFolderPath": "Neuer Ordnerpfad",
