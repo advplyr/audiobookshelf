@@ -61,6 +61,38 @@ module.exports.notificationData = {
       }
     },
     {
+      name: 'onRSSFeedFailed',
+      requiresLibrary: true,
+      description: 'Triggered when the RSS feed request fails for an automatic episode download',
+      descriptionKey: 'NotificationOnRSSFeedFailedDescription',
+      variables: ['feedUrl', 'numFailed', 'title'],
+      defaults: {
+        title: 'RSS Feed Request Failed',
+        body: 'Failed to request RSS feed for {{title}}.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
+      },
+      testData: {
+        title: 'Test RSS Feed',
+        feedUrl: 'https://example.com/rss',
+        numFailed: 3
+      }
+    },
+    {
+      name: 'onRSSFeedDisabled',
+      requiresLibrary: true,
+      description: 'Triggered when automatic episode downloads are disabled due to too many failed attempts',
+      descriptionKey: 'NotificationOnRSSFeedDisabledDescription',
+      variables: ['feedUrl', 'numFailed', 'title'],
+      defaults: {
+        title: 'Podcast Episode Download Schedule Disabled',
+        body: 'Automatic episode downloads for {{title}} have been disabled due to too many failed RSS feed requests.\nFeed URL: {{feedUrl}}\nNumber of failed attempts: {{numFailed}}'
+      },
+      testData: {
+        title: 'Test RSS Feed',
+        feedUrl: 'https://example.com/rss',
+        numFailed: 5
+      }
+    },
+    {
       name: 'onTest',
       requiresLibrary: false,
       description: 'Event for testing the notification system',

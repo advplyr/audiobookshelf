@@ -264,9 +264,15 @@ module.exports = {
     } else if (sortBy === 'media.metadata.publishedYear') {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
-      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir]]
+      return [
+        [Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir],
+        [Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]
+      ]
     } else if (sortBy === 'media.metadata.authorName') {
-      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir]]
+      return [
+        [Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir],
+        [Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]
+      ]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]

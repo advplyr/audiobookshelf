@@ -143,10 +143,18 @@ export default {
       localStorage.setItem('embedMetadataCodec', val)
     },
     getEncodingOptions() {
-      return {
-        codec: this.selectedCodec || 'aac',
-        bitrate: this.selectedBitrate || '128k',
-        channels: this.selectedChannels || 2
+      if (this.showAdvancedView) {
+        return {
+          codec: this.customCodec || this.selectedCodec || 'aac',
+          bitrate: this.customBitrate || this.selectedBitrate || '128k',
+          channels: this.customChannels || this.selectedChannels || 2
+        }
+      } else {
+        return {
+          codec: this.selectedCodec || 'aac',
+          bitrate: this.selectedBitrate || '128k',
+          channels: this.selectedChannels || 2
+        }
       }
     },
     setPreset() {
