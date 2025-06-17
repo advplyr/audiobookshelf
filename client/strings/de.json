@@ -852,7 +852,7 @@
   "MessageResetChaptersConfirm": "Kapitel und vorgenommenen Änderungen werden zurückgesetzt und rückgängig gemacht! Bist du dir sicher?",
   "MessageRestoreBackupConfirm": "Bist du dir sicher, dass du die Sicherung wiederherstellen willst, welche am",
   "MessageRestoreBackupWarning": "Bei der Wiederherstellung einer Sicherung wird die gesamte Datenbank unter /config und die Titelbilder in /metadata/items und /metadata/authors überschrieben.<br /><br />Bei der Sicherung werden keine Dateien in deinen Bibliotheksordnern verändert. Wenn du die Servereinstellungen aktiviert hast, um Cover und Metadaten in deinen Bibliotheksordnern zu speichern, werden diese nicht gesichert oder überschrieben.<br /><br />Alle Clients, die Ihren Server nutzen, werden automatisch aktualisiert.",
-  "MessageScheduleLibraryScanNote": "Für die meisten Nutzer wird empfohlen, diese Funktion deaktiviert zu lassen und stattdessen die Ordnerüberwachung aktiviert zu lassen. Die Ordnerüberwachung erkennt automatisch Änderungen in deinen Bibliotheksordnern. Da die Ordnerüberwachung jedoch nicht mit jedem Dateisystem (z.B. NFS) funktioniert, können alternativ hier geplante Bibliotheks-Scans aktiviert werden.",
+  "MessageScheduleLibraryScanNote": "Für die meisten Anwender wird empfohlen, diese Funktion deaktiviert und die Ordnerüberwachung aktiviert zu lassen. Die Ordnerüberwachung wird Änderungen in den Bibliotheksordnern automatisch erkennen. Die Ordnerüberwachung funktioniert nicht mit allen Dateisystemen (wie NFS), hier kann stattdessen die automatischen Bibliothekssuchen verwendet werden.",
   "MessageScheduleRunEveryWeekdayAtTime": "Immer {0} um {1} ausführen",
   "MessageSearchResultsFor": "Suchergebnisse für",
   "MessageSelected": "{0} ausgewählt",
