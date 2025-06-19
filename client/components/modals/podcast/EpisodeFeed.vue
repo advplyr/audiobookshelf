@@ -35,7 +35,14 @@
               <widgets-podcast-type-indicator :type="episode.episodeType" />
             </div>
             <p v-if="episode.subtitle" class="mb-1 text-sm text-gray-300 line-clamp-2">{{ episode.subtitle }}</p>
-            <p class="text-xs text-gray-300">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
+            <div class="flex items-center space-x-2">
+              <!-- published -->
+              <p class="text-xs text-gray-300 w-40">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
+              <!-- duration -->
+              <p v-if="episode.durationSeconds && !isNaN(episode.durationSeconds)" class="text-xs text-gray-300 min-w-28">{{ $strings.LabelDuration }}: {{ $elapsedPretty(episode.durationSeconds) }}</p>
+              <!-- size -->
+              <p v-if="episode.enclosure?.length && !isNaN(episode.enclosure.length) && Number(episode.enclosure.length) > 0" class="text-xs text-gray-300">{{ $strings.LabelSize }}: {{ $bytesPretty(Number(episode.enclosure.length)) }}</p>
+            </div>
           </div>
         </div>
       </div>
