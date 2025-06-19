@@ -34,6 +34,12 @@
             {{ audioFileSize }}
           </p>
         </div>
+        <div class="grow">
+          <p class="font-semibold text-xs mb-1">{{ $strings.LabelDuration }}</p>
+          <p class="mb-2 text-xs">
+            {{ audioFileDuration }}
+          </p>
+        </div>
       </div>
     </div>
   </modals-modal>
@@ -89,6 +95,10 @@ export default {
       const size = this.episode.audioFile?.metadata?.size || 0
 
       return this.$bytesPretty(size)
+    },
+    audioFileDuration() {
+      const duration = this.episode.duration || 0
+      return this.$elapsedPretty(duration)
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
