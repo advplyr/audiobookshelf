@@ -1461,6 +1461,86 @@ class LibraryController {
   }
 
   /**
+   * GET: /api/libraries/:id/episodes-calendar
+   * Get podcast episodes for calendar view within date range
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async getEpisodesCalendar(req, res) {
+    const { start, end, limit = 1000 } = req.query
+
+    if (!start || !end) {
+      return res.status(400).send('Start and end date parameters are required')
+    }
+
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).send('Invalid date format')
+    }
+
+    if (req.library.mediaType !== 'podcast') {
+      return res.status(400).send('Library is not a podcast library')
+    }
+
+    const libraryItems = await Database.libraryItemModel.findAll({
+      where: { libraryId: req.library.id },
+      include: [
+        {
+          model: Database.podcastModel,
+          include: [
+            {
+              model: Database.podcastEpisodeModel,
+              where: {
+                publishedAt: {
+                  [Sequelize.Op.between]: [startDate, endDate]
+                }
+              },
+              required: true
+            }
+          ],
+          required: true
+        }
+      ]
+    })
+
+    const episodes = []
+    for (const libraryItem of libraryItems) {
+      for (const episode of libraryItem.media.podcastEpisodes) {
+        episodes.push({
+          id: episode.id,
+          title: episode.title,
+          subtitle: episode.subtitle,
+          description: episode.description,
+          season: episode.season,
+          episode: episode.episode,
+          episodeType: episode.episodeType,
+          publishedAt: episode.publishedAt,
+          duration: episode.audioFile?.duration || 0,
+          audioFile: episode.audioFile,
+          libraryItemId: libraryItem.id,
+          podcastId: libraryItem.media.id,
+          podcastTitle: libraryItem.media.title,
+          podcastAuthor: libraryItem.media.author,
+          podcastExplicit: libraryItem.media.explicit,
+          coverPath: libraryItem.media.coverPath
+        })
+      }
+    }
+
+    episodes.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+
+    const limitedEpisodes = episodes.slice(0, parseInt(limit))
+
+    res.json({
+      episodes: limitedEpisodes,
+      total: episodes.length
+    })
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
