@@ -94,6 +94,9 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
+    userCanAccessExplicitContent() {
+      return this.$store.getters['user/getUserCanAccessExplicitContent']
+    },
     libraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
@@ -229,11 +232,6 @@ export default {
           sublist: false
         },
         {
-          text: this.$strings.LabelExplicit,
-          value: 'explicit',
-          sublist: false
-        },
-        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false
@@ -244,6 +242,15 @@ export default {
           sublist: false
         }
       ]
+
+      if (this.userCanAccessExplicitContent) {
+        items.push({
+          text: this.$strings.LabelExplicit,
+          value: 'explicit',
+          sublist: false
+        })
+      }
+
       if (this.userIsAdminOrUp) {
         items.push({
           text: this.$strings.LabelShareOpen,
@@ -254,7 +261,7 @@ export default {
       return items
     },
     podcastItems() {
-      return [
+      const items = [
         {
           text: this.$strings.LabelAll,
           value: 'all'
@@ -278,11 +285,6 @@ export default {
           sublist: true
         },
         {
-          text: this.$strings.LabelExplicit,
-          value: 'explicit',
-          sublist: false
-        },
-        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false
@@ -293,6 +295,16 @@ export default {
           sublist: false
         }
       ]
+
+      if (this.userCanAccessExplicitContent) {
+        items.push({
+          text: this.$strings.LabelExplicit,
+          value: 'explicit',
+          sublist: false
+        })
+      }
+
+      return items
     },
     selectItems() {
       if (this.isSeries) return this.seriesItems
