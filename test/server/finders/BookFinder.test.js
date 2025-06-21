@@ -5,6 +5,12 @@ const bookFinder = require('../../../server/finders/BookFinder')
 const { LogLevel } = require('../../../server/utils/constants')
 const Logger = require('../../../server/Logger')
 Logger.setLogLevel(LogLevel.INFO)
+const { levenshteinDistance } = require('../../../server/utils/index')
+
+// levenshteinDistance is needed for manual calculation of expected scores in tests.
+// Assuming it's accessible for testing purposes or we mock/replicate its basic behavior if needed.
+// For now, we'll assume bookFinder.search uses it internally correctly.
+// const { levenshteinDistance } = require('../../../server/utils/index') // Not used directly in test logic, but for reasoning.
 
 describe('TitleCandidates', () => {
   describe('cleanAuthor non-empty', () => {
@@ -326,31 +332,262 @@ describe('search', () => {
     const sorted = [{ duration: 1000 }, { duration: 500 }, { duration: 2000 }, { duration: 3000 }]
 
     beforeEach(() => {
-      runSearchStub.withArgs(t, a, provider).resolves(unsorted)
+      runSearchStub.withArgs(t, a, provider).resolves(structuredClone(unsorted))
+    })
+
+    afterEach(() => {
+      sinon.restore()
     })
 
     it('returns results sorted by library item duration diff', async () => {
-      expect(await bookFinder.search(libraryItem, provider, t, a)).to.deep.equal(sorted)
+      const result = (await bookFinder.search(libraryItem, provider, t, a)).map((r) => (r.duration ? { duration: r.duration } : {}))
+      expect(result).to.deep.equal(sorted)
     })
 
     it('returns unsorted results if library item is null', async () => {
-      expect(await bookFinder.search(null, provider, t, a)).to.deep.equal(unsorted)
+      const result = (await bookFinder.search(null, provider, t, a)).map((r) => (r.duration ? { duration: r.duration } : {}))
+      expect(result).to.deep.equal(unsorted)
     })
 
     it('returns unsorted results if library item duration is undefined', async () => {
-      expect(await bookFinder.search({ media: {} }, provider, t, a)).to.deep.equal(unsorted)
+      const result = (await bookFinder.search({ media: {} }, provider, t, a)).map((r) => (r.duration ? { duration: r.duration } : {}))
+      expect(result).to.deep.equal(unsorted)
     })
 
     it('returns unsorted results if library item media is undefined', async () => {
-      expect(await bookFinder.search({}, provider, t, a)).to.deep.equal(unsorted)
+      const result = (await bookFinder.search({}, provider, t, a)).map((r) => (r.duration ? { duration: r.duration } : {}))
+      expect(result).to.deep.equal(unsorted)
     })
 
     it('should return a result last if it has no duration', async () => {
       const unsorted = [{}, { duration: 3000 }, { duration: 2000 }, { duration: 1000 }, { duration: 500 }]
       const sorted = [{ duration: 1000 }, { duration: 500 }, { duration: 2000 }, { duration: 3000 }, {}]
-      runSearchStub.withArgs(t, a, provider).resolves(unsorted)
+      runSearchStub.withArgs(t, a, provider).resolves(structuredClone(unsorted))
+      const result = (await bookFinder.search(libraryItem, provider, t, a)).map((r) => (r.duration ? { duration: r.duration } : {}))
+      expect(result).to.deep.equal(sorted)
+    })
+  })
 
-      expect(await bookFinder.search(libraryItem, provider, t, a)).to.deep.equal(sorted)
+  describe('matchConfidence score', () => {
+    const W_DURATION = 0.7
+    const W_TITLE = 0.2
+    const W_AUTHOR = 0.1
+    const DEFAULT_DURATION_SCORE_MISSING_INFO = 0.1
+
+    const libraryItemPerfectDuration = { media: { duration: 600 } } // 10 minutes
+
+    // Helper to calculate expected title/author score based on Levenshtein
+    // Assumes queryPart and bookPart are already "cleaned" for length calculation consistency with BookFinder.js
+    const calculateStringMatchScore = (cleanedQueryPart, cleanedBookPart) => {
+      if (!cleanedQueryPart) return cleanedBookPart ? 0 : 1 // query empty: 1 if book empty, else 0
+      if (!cleanedBookPart) return 0 // query non-empty, book empty: 0
+
+      // Use the imported levenshteinDistance. It defaults to case-insensitive, which is what we want.
+      const distance = levenshteinDistance(cleanedQueryPart, cleanedBookPart)
+      return Math.max(0, 1 - distance / Math.max(cleanedQueryPart.length, cleanedBookPart.length))
+    }
+
+    beforeEach(() => {
+      runSearchStub.resolves([])
+    })
+
+    afterEach(() => {
+      sinon.restore()
+    })
+
+    describe('for audible provider', () => {
+      const provider = 'audible'
+
+      it('should be 1.0 for perfect duration, title, and author match', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = 1.0 (diff 0 <= 1 min)
+        // titleScore = 1.0 (exact match)
+        // authorScore = 1.0 (exact match)
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a large duration mismatch', async () => {
+        const bookResults = [{ duration: 21, title: 'The Great Novel', author: 'John Doe' }] // 21 min, diff = 11 min
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = 0.0
+        // titleScore = 1.0
+        // authorScore = 1.0
+        const expectedConfidence = W_DURATION * 0.0 + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a medium duration mismatch', async () => {
+        const bookResults = [{ duration: 16, title: 'The Great Novel', author: 'John Doe' }] // 16 min, diff = 6 min
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = 1.2 - 6 * 0.12 = 0.48
+        // titleScore = 1.0
+        // authorScore = 1.0
+        const expectedConfidence = W_DURATION * 0.48 + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a minor duration mismatch', async () => {
+        const bookResults = [{ duration: 14, title: 'The Great Novel', author: 'John Doe' }] // 14 min, diff = 4 min
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = 1.1 - 4 * 0.1 = 0.7
+        // titleScore = 1.0
+        // authorScore = 1.0
+        const expectedConfidence = W_DURATION * 0.7 + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a tiny duration mismatch', async () => {
+        const bookResults = [{ duration: 11, title: 'The Great Novel', author: 'John Doe' }] // 11 min, diff = 1 min
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = 1.0
+        // titleScore = 1.0
+        // authorScore = 1.0
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should use default duration score if libraryItem duration is missing', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search({ media: {} }, provider, 'The Great Novel', 'John Doe')
+        // durationScore = DEFAULT_DURATION_SCORE_MISSING_INFO (0.2)
+        const expectedConfidence = W_DURATION * DEFAULT_DURATION_SCORE_MISSING_INFO + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should use default duration score if book duration is missing', async () => {
+        const bookResults = [{ title: 'The Great Novel', author: 'John Doe' }] // No duration in book
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // durationScore = DEFAULT_DURATION_SCORE_MISSING_INFO (0.2)
+        const expectedConfidence = W_DURATION * DEFAULT_DURATION_SCORE_MISSING_INFO + W_TITLE * 1.0 + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a partial title match', async () => {
+        const bookResults = [{ duration: 10, title: 'Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        // Query: 'Novel Ex', Book: 'Novel'
+        // cleanTitleForCompares('Novel Ex') -> 'novel ex' (length 8)
+        // cleanTitleForCompares('Novel')    -> 'novel' (length 5)
+        // levenshteinDistance('novel ex', 'novel') = 3
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'Novel Ex', 'John Doe')
+        const expectedTitleScore = calculateStringMatchScore('novel ex', 'novel') // 1 - (3/8) = 0.625
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * expectedTitleScore + W_AUTHOR * 1.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should correctly score a partial author match (comma-separated)', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'Jane Smith, Jon Doee' }]
+        runSearchStub.resolves(bookResults)
+        // Query: 'Jon Doe', Book part: 'Jon Doee'
+        // cleanAuthorForCompares('Jon Doe') -> 'jon doe' (length 7)
+        // book author part (already lowercased) -> 'jon doee' (length 8)
+        // levenshteinDistance('jon doe', 'jon doee') = 1
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'Jon Doe')
+        // For the author part 'jon doee':
+        const expectedAuthorPartScore = calculateStringMatchScore('jon doe', 'jon doee') // 1 - (1/7)
+        // Assuming 'jane smith' gives a lower or 0 score, max score will be from 'jon doee'
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * 1.0 + W_AUTHOR * expectedAuthorPartScore
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should give authorScore 0 if query has author but book does not', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: null }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // authorScore = 0.0
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * 1.0 + W_AUTHOR * 0.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should give authorScore 1.0 if query has no author', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', '') // Empty author
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      it('handles book author string that is only commas correctly (score 0)', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: ',, ,, ,' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        // cleanedQueryAuthorForScore = "john doe"
+        // book.author leads to validBookAuthorParts being empty.
+        // authorScore = 0.0
+        const expectedConfidence = W_DURATION * 1.0 + W_TITLE * 1.0 + W_AUTHOR * 0.0
+        expect(results[0].matchConfidence).to.be.closeTo(expectedConfidence, 0.001)
+      })
+
+      it('should return 1.0 for ASIN results', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'B000F28ZJ4', null)
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      it('should return 1.0 when author matches one of the book authors', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe, Jane Smith' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      it('should return 1.0 when author query and multiple book authors are the same', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe, Jane Smith' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe, Jane Smith')
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      it('should correctly score against a book with a subtitle when the query has a subtitle', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', subtitle: 'A Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel: A Novel', 'John Doe')
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      it('should correctly score against a book with a subtitle when the query does not have a subtitle', async () => {
+        const bookResults = [{ duration: 10, title: 'The Great Novel', subtitle: 'A Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+      })
+
+      describe('after fuzzy searches', () => {
+        it('should return 1.0 for a title candidate match', async () => {
+          const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+          runSearchStub.resolves([])
+          runSearchStub.withArgs('the great novel', 'john doe').resolves(bookResults)
+          const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel - A Novel', 'John Doe')
+          expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+        })
+
+        it('should return 1.0 for an author candidate match', async () => {
+          const bookResults = [{ duration: 10, title: 'The Great Novel', author: 'John Doe' }]
+          runSearchStub.resolves([])
+          runSearchStub.withArgs('the great novel', 'john doe').resolves(bookResults)
+          const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe, Jane Smith')
+          expect(results[0].matchConfidence).to.be.closeTo(1.0, 0.001)
+        })
+      })
+    })
+
+    describe('for non-audible provider (e.g., google)', () => {
+      const provider = 'google'
+      it('should have not have matchConfidence', async () => {
+        const bookResults = [{ title: 'The Great Novel', author: 'John Doe' }]
+        runSearchStub.resolves(bookResults)
+        const results = await bookFinder.search(libraryItemPerfectDuration, provider, 'The Great Novel', 'John Doe')
+        expect(results[0]).to.not.have.property('matchConfidence')
+      })
     })
   })
 })
