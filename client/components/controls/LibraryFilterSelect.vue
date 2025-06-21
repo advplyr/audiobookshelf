@@ -229,6 +229,11 @@ export default {
           sublist: false
         },
         {
+          text: this.$strings.LabelExplicit,
+          value: 'explicit',
+          sublist: false
+        },
+        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false

@@ -186,6 +186,8 @@ module.exports = {
       mediaWhere['$series.id$'] = null
     } else if (group === 'abridged') {
       mediaWhere['abridged'] = true
+    } else if (group === 'explicit') {
+      mediaWhere['explicit'] = true
     } else if (['genres', 'tags', 'narrators'].includes(group)) {
       mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
         [Sequelize.Op.gte]: 1
