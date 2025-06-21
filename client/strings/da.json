@@ -910,6 +910,8 @@
   "NotificationOnBackupCompletedDescription": "Udløst når backup er færdig",
   "NotificationOnBackupFailedDescription": "Udløst når backup fejler",
   "NotificationOnEpisodeDownloadedDescription": "Udløst når et podcast afsnit er automatisk downloadet",
+  "NotificationOnRSSFeedDisabledDescription": "Aktiveret når automatiske episode-downloads er slået fra, på grund af for mange forsøg",
+  "NotificationOnRSSFeedFailedDescription": "Aktiveret når anmodning om RSS-feedet fejler for en automatisk episode-download",
   "NotificationOnTestDescription": "Event for test af notifikationssystemet",
   "PlaceholderNewCollection": "Nyt samlingnavn",
   "PlaceholderNewFolderPath": "Ny mappes sti",

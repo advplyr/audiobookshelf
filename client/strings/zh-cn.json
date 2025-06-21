@@ -918,6 +918,8 @@
   "NotificationOnBackupCompletedDescription": "备份完成时触发",
   "NotificationOnBackupFailedDescription": "备份失败时触发",
   "NotificationOnEpisodeDownloadedDescription": "当播客节目自动下载时触发",
+  "NotificationOnRSSFeedDisabledDescription": "由于尝试失败次数过多而导致剧集自动下载被禁用时触发",
+  "NotificationOnRSSFeedFailedDescription": "当 RSS 源请求自动下载剧集失败时触发",
   "NotificationOnTestDescription": "测试通知系统的事件",
   "PlaceholderNewCollection": "输入收藏夹名称",
   "PlaceholderNewFolderPath": "输入文件夹路径",
