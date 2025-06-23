@@ -7,7 +7,7 @@
  * @property {MigrationContext} context - an object containing the migration context.
  */
 
-const migrationVersion = '2.20.1'
+const migrationVersion = '2.25.2'
 const migrationName = `${migrationVersion}-add-ipaddress-to-playbacksession`
 const loggerPrefix = `[${migrationVersion} migration]`
 
