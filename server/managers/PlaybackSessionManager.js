@@ -62,7 +62,6 @@ class PlaybackSessionManager {
         if (existingDevice.update(deviceInfo)) {
           await Database.deviceModel.updateFromOld(existingDevice)
         }
-        existingDevice.ipAddress = ip
         return existingDevice
       }
     }

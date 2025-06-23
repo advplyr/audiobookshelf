@@ -226,7 +226,7 @@ class PlaybackSession {
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
-    this.ipAddress = this.deviceInfo.ipAddress
+    this.ipAddress = deviceInfo?.ipAddress || null
     this.serverVersion = serverVersion
 
     this.timeListening = 0

@@ -136,7 +136,7 @@ export default {
       return this._session.deviceInfo || {}
     },
     hasDeviceInfo() {
-      return Object.keys(this.deviceInfo).length || this._session.ipAddress
+      return Object.keys(this.deviceInfo).length
     },
     osDisplayName() {
       if (!this.deviceInfo.osName) return null
