@@ -89,7 +89,7 @@
 
           <p v-if="hasDeviceInfo" class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">{{ $strings.LabelDevice }}</p>
           <p v-if="clientDisplayName" class="mb-1">{{ clientDisplayName }}</p>
-          <p v-if="deviceInfo.ipAddress" class="mb-1">{{ deviceInfo.ipAddress }}</p>
+          <p v-if="_session.ipAddress" class="mb-1">{{ _session.ipAddress }}</p>
           <p v-if="osDisplayName" class="mb-1">{{ osDisplayName }}</p>
           <p v-if="deviceInfo.browserName" class="mb-1">{{ deviceInfo.browserName }}</p>
           <p v-if="deviceDisplayName" class="mb-1">{{ deviceDisplayName }}</p>
@@ -136,7 +136,7 @@ export default {
       return this._session.deviceInfo || {}
     },
     hasDeviceInfo() {
-      return Object.keys(this.deviceInfo).length
+      return Object.keys(this.deviceInfo).length || this._session.ipAddress
     },
     osDisplayName() {
       if (!this.deviceInfo.osName) return null

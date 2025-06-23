@@ -62,6 +62,7 @@ class PlaybackSessionManager {
         if (existingDevice.update(deviceInfo)) {
           await Database.deviceModel.updateFromOld(existingDevice)
         }
+        existingDevice.ipAddress = ip
         return existingDevice
       }
     }
@@ -181,6 +182,7 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
+      session.ipAddress = deviceInfo.ipAddress
 
       if (session.mediaMetadata == null) {
         session.mediaMetadata = {}

@@ -23,6 +23,7 @@ class PlaybackSession {
     this.playMethod = null
     this.mediaPlayer = null
     this.deviceInfo = null
+    this.ipAddress = null
     this.serverVersion = null
 
     this.date = null
@@ -67,6 +68,7 @@ class PlaybackSession {
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
       deviceInfo: this.deviceInfo?.toJSON() || null,
+      ipAddress: this.ipAddress,
       serverVersion: this.serverVersion,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
@@ -101,6 +103,7 @@ class PlaybackSession {
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
       deviceInfo: this.deviceInfo?.toJSON() || null,
+      ipAddress: this.ipAddress,
       serverVersion: this.serverVersion,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
@@ -125,6 +128,7 @@ class PlaybackSession {
     this.duration = session.duration
     this.playMethod = session.playMethod
     this.mediaPlayer = session.mediaPlayer || null
+    this.ipAddress = session.ipAddress || null
 
     // Temp do not store old IDs
     if (this.libraryId?.startsWith('lib_')) {
@@ -222,6 +226,7 @@ class PlaybackSession {
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
+    this.ipAddress = this.deviceInfo.ipAddress
     this.serverVersion = serverVersion
 
     this.timeListening = 0
