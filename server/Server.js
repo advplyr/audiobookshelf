@@ -220,6 +220,7 @@ class Server {
 
   async start() {
     Logger.info('=== Starting Server ===')
+
     this.initProcessEventListeners()
     await this.init()
 
@@ -281,6 +282,7 @@ class Server {
     await this.auth.initPassportJs()
 
     const router = express.Router()
+
     // if RouterBasePath is set, modify all requests to include the base path
     app.use((req, res, next) => {
       const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
@@ -313,10 +315,6 @@ class Server {
     router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
 
-    // Static path to generated nuxt
-    const distPath = Path.join(global.appRoot, '/client/dist')
-    router.use(express.static(distPath))
-
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
@@ -335,32 +333,6 @@ class Server {
 
     // Auth routes
     await this.auth.initAuthRoutes(router)
-
-    // Client dynamic routes
-    const dynamicRoutes = [
-      '/item/:id',
-      '/author/:id',
-      '/audiobook/:id/chapters',
-      '/audiobook/:id/edit',
-      '/audiobook/:id/manage',
-      '/library/:library',
-      '/library/:library/search',
-      '/library/:library/bookshelf/:id?',
-      '/library/:library/authors',
-      '/library/:library/narrators',
-      '/library/:library/stats',
-      '/library/:library/series/:id?',
-      '/library/:library/podcast/search',
-      '/library/:library/podcast/latest',
-      '/library/:library/podcast/download-queue',
-      '/config/users/:id',
-      '/config/users/:id/sessions',
-      '/config/item-metadata-utils/:id',
-      '/collection/:id',
-      '/playlist/:id',
-      '/share/:slug'
-    ]
-    dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
@@ -391,6 +363,48 @@ class Server {
       res.json({ success: true })
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
+
+    const ReactClientPath = process.env.REACT_CLIENT_PATH
+    if (!ReactClientPath) {
+      // Static path to generated nuxt
+      const distPath = Path.join(global.appRoot, '/client/dist')
+      router.use(express.static(distPath))
+
+      // Client dynamic routes
+      const dynamicRoutes = [
+        '/item/:id',
+        '/author/:id',
+        '/audiobook/:id/chapters',
+        '/audiobook/:id/edit',
+        '/audiobook/:id/manage',
+        '/library/:library',
+        '/library/:library/search',
+        '/library/:library/bookshelf/:id?',
+        '/library/:library/authors',
+        '/library/:library/narrators',
+        '/library/:library/stats',
+        '/library/:library/series/:id?',
+        '/library/:library/podcast/search',
+        '/library/:library/podcast/latest',
+        '/library/:library/podcast/download-queue',
+        '/config/users/:id',
+        '/config/users/:id/sessions',
+        '/config/item-metadata-utils/:id',
+        '/collection/:id',
+        '/playlist/:id',
+        '/share/:slug'
+      ]
+      dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    } else {
+      // This is for using the experimental Next.js client
+      Logger.info(`Using React client at ${ReactClientPath}`)
+      const nextPath = Path.join(ReactClientPath, 'node_modules/next')
+      const next = require(nextPath)
+      const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
+      const handle = nextApp.getRequestHandler()
+      await nextApp.prepare()
+      router.get('*', (req, res) => handle(req, res))
+    }
 
     const unixSocketPrefix = 'unix/'
     if (this.Host?.startsWith(unixSocketPrefix)) {
