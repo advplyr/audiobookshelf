@@ -262,7 +262,7 @@
   "LabelBackupsNumberToKeepHelp": "Видаляється лише 1 резервна копія за раз, тому якщо у вас більше копій, видаліть їх вручну.",
   "LabelBitrate": "Бітрейт",
   "LabelBonus": "Бонус",
-  "LabelBooks": "Книги",
+  "LabelBooks": "Книг",
   "LabelButtonText": "Текст кнопки",
   "LabelByAuthor": "від {0}",
   "LabelChangePassword": "Змінити пароль",
