@@ -32,6 +32,8 @@
                 </div>
               </h1>
 
+              <p v-if="bookTitle" class="text-gray-200 text-3xl md:text-4xl leading-snug">{{ bookTitle }}</p>
+
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
 
               <template v-for="(_series, index) in seriesList">
@@ -44,6 +46,19 @@
                 {{ $getString('LabelByAuthor', ['']) }}<nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
+
+              <div class="flex items-center space-x-4 mt-2">
+                <div v-if="userRating > 0" class="flex items-center">
+                  <ui-rating-input :value="userRating" :label="$strings.LabelYourRating" :read-only="true" />
+                </div>
+                <div v-if="provider === 'audible' && providerRating != null" class="flex items-center bg-zinc-800 rounded-lg p-1.5 space-x-1.5 opacity-80">
+                  <img src="~/assets/logos/audible.svg" alt="Audible Logo" class="w-12 h-auto" />
+                  <span class="font-semibold text-white">{{ providerRating.toFixed(1) }}/5</span>
+                </div>
+                <div v-else-if="providerRating > 0" class="flex items-center">
+                  <ui-rating-input :value="providerRating" :read-only="true" />
+                </div>
+              </div>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -147,7 +162,12 @@
 </template>
 
 <script>
+import UiRatingInput from '~/components/ui/RatingInput.vue'
+
 export default {
+  components: {
+    UiRatingInput
+  },
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
@@ -308,6 +328,17 @@ export default {
     },
     description() {
       return this.mediaMetadata.description || ''
+    },
+    userRating() {
+      return this.mediaMetadata.rating || 0
+    },
+    providerRating() {
+      console.log('Provider Rating: ', this.media.providerRating)
+      return this.media.providerRating || 0
+    },
+    provider() {
+      console.log('Provider: ', this.media.provider)
+      return this.media.provider || null
     },
     userMediaProgress() {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)

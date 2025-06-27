@@ -21,9 +21,9 @@
       <p>{{ $strings.MessageNoResults }}</p>
     </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
-      <template v-for="(res, index) in searchResults">
-        <cards-book-match-card :key="index" :book="res" :current-book-duration="currentBookDuration" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
-      </template>
+      <div v-for="(res, index) in searchResults" :key="index">
+        <cards-book-match-card :book="res" :current-book-duration="currentBookDuration" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
+      </div>
     </div>
     <div v-if="selectedMatchOrig" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
       <div class="flex mb-4">
@@ -225,6 +225,16 @@
           </div>
         </div>
 
+        <div v-if="selectedMatchOrig.rating != null" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.rating" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="grow ml-4">
+            <ui-rating-input v-model="selectedMatch.rating" :disabled="!selectedMatchUsage.rating" :label="$strings.LabelRating" />
+            <p v-if="mediaMetadata.rating" class="text-xs ml-1 text-white/60">
+              {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('rating', mediaMetadata.rating)">{{ mediaMetadata.rating }}/5</a>
+            </p>
+          </div>
+        </div>
+
         <div class="flex items-center justify-end py-2">
           <ui-btn color="bg-success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
         </div>
@@ -234,7 +244,12 @@
 </template>
 
 <script>
+import UiRatingInput from '~/components/ui/RatingInput.vue'
+
 export default {
+  components: {
+    UiRatingInput
+  },
   props: {
     processing: Boolean,
     libraryItem: {
@@ -270,6 +285,7 @@ export default {
         asin: true,
         isbn: true,
         abridged: true,
+        rating: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -452,6 +468,7 @@ export default {
         asin: true,
         isbn: true,
         abridged: true,
+        rating: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -534,6 +551,9 @@ export default {
         if (match.narrator && !Array.isArray(match.narrator)) {
           match.narrator = match.narrator.split(',').map((g) => g.trim())
         }
+        if (match.rating) {
+          match.rating = parseFloat(match.rating)
+        }
       }
 
       console.log('Select Match', match)
@@ -587,6 +607,14 @@ export default {
           } else {
             updatePayload.metadata[key] = this.selectedMatch[key]
           }
+        }
+      }
+
+      if (this.selectedMatchUsage.rating && this.selectedMatchOrig.rating) {
+        updatePayload.provider_data = {
+          provider: this.provider,
+          providerId: this.selectedMatchOrig.asin || this.selectedMatchOrig.id,
+          rating: this.selectedMatchOrig.rating
         }
       }
 

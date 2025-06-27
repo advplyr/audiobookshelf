@@ -50,20 +50,33 @@
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
-        <div class="w-full md:w-1/4 px-1">
+        <div class="w-full md:w-1/2 px-1">
           <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" :label="$strings.LabelPublisher" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
+        <div class="w-full md:w-1/2 px-1 mt-2 md:mt-0">
           <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" trim-whitespace @input="handleInputChange" />
         </div>
-        <div class="grow px-1 pt-6 mt-2 md:mt-0">
-          <div class="flex justify-center">
-            <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+      </div>
+
+      <div class="flex flex-wrap mt-2 -mx-1 items-end">
+        <div class="w-full md:w-1/2 px-1">
+          <div class="flex -mx-1">
+            <div class="w-1/2 px-1">
+              <div class="flex justify-center">
+                <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+              </div>
+            </div>
+            <div class="w-1/2 px-1">
+              <div class="flex justify-center">
+                <ui-checkbox v-model="details.abridged" :label="$strings.LabelAbridged" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+              </div>
+            </div>
           </div>
         </div>
-        <div class="grow px-1 pt-6 mt-2 md:mt-0">
-          <div class="flex justify-center">
-            <ui-checkbox v-model="details.abridged" :label="$strings.LabelAbridged" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+        <div class="w-full md:w-1/2 px-1 mt-2 md:mt-0">
+          <div class="flex justify-center items-center">
+            <label class="px-1 text-sm font-semibold mr-2">{{ $strings.LabelRating }}</label>
+            <ui-rating-input v-model="details.rating" @input="handleInputChange" />
           </div>
         </div>
       </div>
@@ -72,7 +85,12 @@
 </template>
 
 <script>
+import UiRatingInput from '~/components/ui/RatingInput.vue'
+
 export default {
+  components: {
+    UiRatingInput
+  },
   props: {
     libraryItem: {
       type: Object,
@@ -95,7 +113,8 @@ export default {
         asin: null,
         genres: [],
         explicit: false,
-        abridged: false
+        abridged: false,
+        rating: 0
       },
       newTags: []
     }
@@ -285,6 +304,7 @@ export default {
       this.details.asin = this.mediaMetadata.asin || null
       this.details.explicit = !!this.mediaMetadata.explicit
       this.details.abridged = !!this.mediaMetadata.abridged
+      this.details.rating = this.mediaMetadata.rating || 0
       this.newTags = [...(this.media.tags || [])]
     },
     submitForm() {

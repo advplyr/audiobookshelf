@@ -130,6 +130,15 @@ class Book extends Model {
     this.authors
     /** @type {import('./Series')[]} - optional if expanded */
     this.series
+
+    /** @type {number} */
+    this.rating
+    /** @type {number} */
+    this.providerRating
+    /** @type {string} */
+    this.provider
+    /** @type {string} */
+    this.providerId
   }
 
   /**
@@ -158,6 +167,11 @@ class Book extends Model {
         abridged: DataTypes.BOOLEAN,
         coverPath: DataTypes.STRING,
         duration: DataTypes.FLOAT,
+
+        rating: DataTypes.FLOAT,
+        providerRating: DataTypes.FLOAT,
+        provider: DataTypes.STRING,
+        providerId: DataTypes.STRING,
 
         narrators: DataTypes.JSON,
         audioFiles: DataTypes.JSON,
@@ -357,7 +371,8 @@ class Book extends Model {
       asin: this.asin,
       language: this.language,
       explicit: !!this.explicit,
-      abridged: !!this.abridged
+      abridged: !!this.abridged,
+      rating: this.rating
     }
   }
 
@@ -405,6 +420,10 @@ class Book extends Model {
         this.abridged = !!payload.metadata.abridged
         hasUpdates = true
       }
+      if (payload.metadata.rating !== undefined && this.rating !== payload.metadata.rating) {
+        this.rating = payload.metadata.rating
+        hasUpdates = true
+      }
       const arrayOfStringsKeys = ['narrators', 'genres']
       arrayOfStringsKeys.forEach((key) => {
         if (Array.isArray(payload.metadata[key]) && !payload.metadata[key].some((item) => typeof item !== 'string') && JSON.stringify(this[key]) !== JSON.stringify(payload.metadata[key])) {
@@ -413,6 +432,21 @@ class Book extends Model {
           hasUpdates = true
         }
       })
+    }
+
+    if (payload.provider_data) {
+      if (this.providerRating !== payload.provider_data.rating) {
+        this.providerRating = payload.provider_data.rating
+        hasUpdates = true
+      }
+      if (this.provider !== payload.provider_data.provider) {
+        this.provider = payload.provider_data.provider
+        hasUpdates = true
+      }
+      if (this.providerId !== payload.provider_data.providerId) {
+        this.providerId = payload.provider_data.providerId
+        hasUpdates = true
+      }
     }
 
     if (Array.isArray(payload.tags) && !payload.tags.some((tag) => typeof tag !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
@@ -569,7 +603,8 @@ class Book extends Model {
       asin: this.asin,
       language: this.language,
       explicit: this.explicit,
-      abridged: this.abridged
+      abridged: this.abridged,
+      rating: this.rating
     }
   }
 
@@ -591,7 +626,8 @@ class Book extends Model {
       asin: this.asin,
       language: this.language,
       explicit: this.explicit,
-      abridged: this.abridged
+      abridged: this.abridged,
+      rating: this.rating
     }
   }
 
@@ -603,6 +639,7 @@ class Book extends Model {
     oldMetadataJSON.narratorName = (this.narrators || []).join(', ')
     oldMetadataJSON.seriesName = this.seriesName
     oldMetadataJSON.descriptionPlain = this.description ? htmlSanitizer.stripAllTags(this.description) : null
+    oldMetadataJSON.rating = this.rating
     return oldMetadataJSON
   }
 
@@ -680,7 +717,10 @@ class Book extends Model {
       ebookFile: structuredClone(this.ebookFile),
       duration: this.duration,
       size: this.size,
-      tracks: this.getTracklist(libraryItemId)
+      tracks: this.getTracklist(libraryItemId),
+      provider: this.provider,
+      providerId: this.providerId,
+      providerRating: this.providerRating
     }
   }
 }

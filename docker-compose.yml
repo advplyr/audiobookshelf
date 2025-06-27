@@ -1,7 +1,8 @@
 ### EXAMPLE DOCKER COMPOSE ###
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    #image: ghcr.io/advplyr/audiobookshelf:latest
+    build: .
     # ABS runs on port 13378 by default. If you want to change
     # the port, only change the external port, not the internal port
     ports:
