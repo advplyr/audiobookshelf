@@ -37,6 +37,7 @@ const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
+const LastSeenManager = require('./managers/LastSeenManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
@@ -107,6 +108,7 @@ class Server {
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
+    this.lastSeenManager = new LastSeenManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -128,6 +130,20 @@ class Server {
   authMiddleware(req, res, next) {
     // ask passportjs if the current request is authenticated
     this.auth.isAuthenticated(req, res, next)
+  }
+
+  /**
+   * Middleware to track user activity for lastSeen updates
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @param {import('express').NextFunction} next
+   */
+  lastSeenMiddleware(req, res, next) {
+    if (req.user && req.user.id) {
+      this.lastSeenManager.addActiveUser(req.user.id)
+    }
+    next()
   }
 
   cancelLibraryScan(libraryId) {
@@ -174,6 +190,7 @@ class Server {
     const libraries = await Database.libraryModel.getAllWithFolders()
     await this.cronManager.init(libraries)
     this.apiCacheManager.init()
+    this.lastSeenManager.init()
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -311,7 +328,7 @@ class Server {
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
     router.use(express.json({ limit: '10mb' }))
 
-    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
+    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.lastSeenMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
 
@@ -499,6 +516,13 @@ class Server {
    */
   async stop() {
     Logger.info('=== Stopping Server ===')
+
+    // Cleanup LastSeenManager first to flush any pending updates
+    if (this.lastSeenManager) {
+      await this.lastSeenManager.cleanup()
+      Logger.info('[Server] LastSeenManager Cleaned Up')
+    }
+
     Watcher.close()
     Logger.info('[Server] Watcher Closed')
     await SocketAuthority.close()
