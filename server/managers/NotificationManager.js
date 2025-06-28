@@ -43,7 +43,7 @@ class NotificationManager {
       episodeSubtitle: episode.subtitle || '',
       episodeDescription: episode.description || ''
     }
-    this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
+    void this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
   }
 
   /**
@@ -68,7 +68,7 @@ class NotificationManager {
       backupCount: totalBackupCount || 'Invalid',
       removedOldest: removedOldest || 'false'
     }
-    this.triggerNotification('onBackupCompleted', eventData)
+    void this.triggerNotification('onBackupCompleted', eventData)
   }
 
   /**
@@ -135,11 +135,11 @@ class NotificationManager {
     const eventData = {
       errorMsg: errorMsg || 'Backup failed'
     }
-    this.triggerNotification('onBackupFailed', eventData)
+    void this.triggerNotification('onBackupFailed', eventData)
   }
 
   onTest() {
-    this.triggerNotification('onTest')
+    void this.triggerNotification('onTest')
   }
 
   /**
@@ -172,7 +172,8 @@ class NotificationManager {
     }
 
     await Database.updateSetting(Database.notificationSettings)
-    SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
+    // Currently results in circular dependency TODO: Fix this
+    // SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
 
     this.notificationFinished()
   }
@@ -204,7 +205,7 @@ class NotificationManager {
       if (this.notificationQueue.length) {
         // Send next notification in queue
         const nextNotificationEvent = this.notificationQueue.shift()
-        this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
+        void this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
       }
     }, Database.notificationSettings.notificationDelay)
   }
@@ -231,6 +232,23 @@ class NotificationManager {
         Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)
         return false
       })
+  }
+
+  fireNotificationFromSocket(eventName, eventData) {
+    if (!Database.notificationSettings || !Database.notificationSettings.isUseable) return
+
+    const eventNameModified = eventName.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+    const eventKey = `on${eventNameModified.charAt(0).toUpperCase()}${eventNameModified.slice(1)}`
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent(eventKey)) {
+      // No logging to prevent console spam
+      //Logger.debug(`[NotificationManager] fireSocketNotification: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] fireNotificationFromSocket: ${eventKey} event fired`)
+
+    void this.triggerNotification(eventKey, eventData)
   }
 }
 module.exports = new NotificationManager()
