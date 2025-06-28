@@ -53,6 +53,14 @@ class LibraryItemController {
     if (req.query.expanded == 1) {
       const item = req.libraryItem.toOldJSONExpanded()
 
+      // Include users personal rating
+      const userBookRating = await Database.models.userBookRating.findOne({
+        where: { userId: req.user.id, bookId: req.libraryItem.media.id }
+      })
+      if (userBookRating) {
+        item.personalRating = userBookRating.rating
+      }
+
       // Include users media progress
       if (includeEntities.includes('progress')) {
         const episodeId = req.query.episode || null
@@ -1181,8 +1189,8 @@ class LibraryItemController {
       }
     }
 
-    if (req.path.includes('/play')) {
-      // allow POST requests using /play and /play/:episodeId
+    if (req.path.includes('/play') || req.path.includes('/rate')) {
+      // allow POST requests using /play and /play/:episodeId OR /rate
     } else if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[LibraryItemController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
@@ -1193,5 +1201,31 @@ class LibraryItemController {
 
     next()
   }
+
+  /**
+   * POST: /api/items/:id/rate
+   *
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async rate(req, res) {
+    try {
+      const { rating } = req.body
+      if (rating === null || typeof rating !== 'number' || rating < 0 || rating > 5) {
+        return res.status(400).json({ error: 'Invalid rating' })
+      }
+
+      const bookId = req.libraryItem.media.id
+      const userId = req.user.id
+
+      await Database.models.userBookRating.upsert({ userId, bookId, rating })
+
+      res.status(200).json({ success: true })
+    } catch (err) {
+      Logger.error(err)
+      res.status(500).json({ error: 'An error occurred while saving the rating' })
+    }
+  }
 }
+
 module.exports = new LibraryItemController()

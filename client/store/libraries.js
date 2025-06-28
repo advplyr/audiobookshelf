@@ -1,3 +1,4 @@
+import Vue from 'vue'
 const { Constants } = require('../plugins/constants')
 
 export const state = () => ({
@@ -12,7 +13,8 @@ export const state = () => ({
   numUserPlaylists: 0,
   collections: [],
   userPlaylists: [],
-  ereaderDevices: []
+  ereaderDevices: [],
+  libraryItemsCache: {}
 })
 
 export const getters = {
@@ -170,6 +172,9 @@ export const actions = {
 }
 
 export const mutations = {
+  UPDATE_LIBRARY_ITEM(state, libraryItem) {
+    Vue.set(state.libraryItemsCache, libraryItem.id, libraryItem)
+  },
   setFolders(state, folders) {
     state.folders = folders
   },
