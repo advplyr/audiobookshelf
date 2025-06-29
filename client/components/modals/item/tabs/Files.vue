@@ -29,9 +29,6 @@ export default {
     media() {
       return this.libraryItem.media || {}
     },
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },

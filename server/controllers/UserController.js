@@ -237,6 +237,7 @@ class UserController {
 
     let hasUpdates = false
     let shouldUpdateToken = false
+    let shouldInvalidateJwtSessions = false
     // When changing username create a new API token
     if (updatePayload.username && updatePayload.username !== user.username) {
       const usernameExists = await Database.userModel.checkUserExistsWithUsername(updatePayload.username)
@@ -245,6 +246,7 @@ class UserController {
       }
       user.username = updatePayload.username
       shouldUpdateToken = true
+      shouldInvalidateJwtSessions = true
       hasUpdates = true
     }
 
@@ -328,6 +330,18 @@ class UserController {
         user.token = await this.auth.generateAccessToken(user)
         Logger.info(`[UserController] User ${user.username} has generated a new api token`)
       }
+
+      // Handle JWT session invalidation for username changes
+      if (shouldInvalidateJwtSessions) {
+        const newAccessToken = await this.auth.invalidateJwtSessionsForUser(user, req, res)
+        if (newAccessToken) {
+          user.accessToken = newAccessToken
+          Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username} and rotated tokens for current session`)
+        } else {
+          Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username}`)
+        }
+      }
+
       await user.save()
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toOldJSONForBrowser())
     }

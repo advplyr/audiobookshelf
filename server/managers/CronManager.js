@@ -31,10 +31,11 @@ class CronManager {
   }
 
   /**
-   * Initialize open session cleanup cron
+   * Initialize open session & auth session cleanup cron
    * Runs every day at 00:30
    * Closes open share sessions that have not been updated in 24 hours
    * Closes open playback sessions that have not been updated in 36 hours
+   * Cleans up expired auth sessions
    * TODO: Clients should re-open the session if it is closed so that stale sessions can be closed sooner
    */
   initOpenSessionCleanupCron() {
@@ -42,6 +43,7 @@ class CronManager {
       Logger.debug('[CronManager] Open session cleanup cron executing')
       ShareManager.closeStaleOpenShareSessions()
       await this.playbackSessionManager.closeStaleOpenSessions()
+      await Database.cleanupExpiredSessions()
     })
   }
 
