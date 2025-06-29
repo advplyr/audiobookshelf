@@ -129,9 +129,6 @@ export default {
         return `${hoursRounded}h`
       }
     },
-    token() {
-      return this.$store.getters['user/getToken']
-    },
     timeRemaining() {
       if (this.useChapterTrack && this.currentChapter) {
         var currChapTime = this.currentTime - this.currentChapter.start

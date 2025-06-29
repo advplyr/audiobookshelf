@@ -42,6 +42,16 @@ class Database {
     return this.models.user
   }
 
+  /** @type {typeof import('./models/Session')} */
+  get sessionModel() {
+    return this.models.session
+  }
+
+  /** @type {typeof import('./models/ApiToken')} */
+  get apiTokenModel() {
+    return this.models.apiToken
+  }
+
   /** @type {typeof import('./models/Library')} */
   get libraryModel() {
     return this.models.library
@@ -311,6 +321,8 @@ class Database {
 
   buildModels(force = false) {
     require('./models/User').init(this.sequelize)
+    require('./models/Session').init(this.sequelize)
+    require('./models/ApiToken').init(this.sequelize)
     require('./models/Library').init(this.sequelize)
     require('./models/LibraryFolder').init(this.sequelize)
     require('./models/Book').init(this.sequelize)
@@ -656,6 +668,8 @@ class Database {
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem (and vice versa)
    * Remove playback sessions that are 3 seconds or less
+   * Remove duplicate mediaProgresses
+   * Remove expired auth sessions
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -784,6 +798,23 @@ WHERE EXISTS (
       await this.mediaProgressModel.destroy({
         where: { id: duplicateMediaProgress.id }
       })
+    }
+
+    // Remove expired Session records
+    await this.cleanupExpiredSessions()
+  }
+
+  /**
+   * Clean up expired sessions from the database
+   */
+  async cleanupExpiredSessions() {
+    try {
+      const deletedCount = await this.sessionModel.cleanupExpiredSessions()
+      if (deletedCount > 0) {
+        Logger.info(`[Database] Cleaned up ${deletedCount} expired sessions`)
+      }
+    } catch (error) {
+      Logger.error(`[Database] Error cleaning up expired sessions: ${error.message}`)
     }
   }
 

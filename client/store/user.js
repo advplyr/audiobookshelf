@@ -25,19 +25,19 @@ export const getters = {
   getIsRoot: (state) => state.user && state.user.type === 'root',
   getIsAdminOrUp: (state) => state.user && (state.user.type === 'admin' || state.user.type === 'root'),
   getToken: (state) => {
-    return state.user?.token || null
+    return state.user?.accessToken || null
   },
   getUserMediaProgress:
     (state) =>
     (libraryItemId, episodeId = null) => {
-      if (!state.user.mediaProgress) return null
+      if (!state.user?.mediaProgress) return null
       return state.user.mediaProgress.find((li) => {
         if (episodeId && li.episodeId !== episodeId) return false
         return li.libraryItemId == libraryItemId
       })
     },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
-    if (!state.user.bookmarks) return []
+    if (!state.user?.bookmarks) return []
     return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
   },
   getUserSetting: (state) => (key) => {
@@ -152,13 +152,17 @@ export const mutations = {
   setUser(state, user) {
     state.user = user
     if (user) {
-      if (user.token) localStorage.setItem('token', user.token)
+      if (user.accessToken) localStorage.setItem('token', user.accessToken)
+      else {
+        console.error('No access token found for user', user)
+      }
     } else {
       localStorage.removeItem('token')
     }
   },
   setUserToken(state, token) {
-    state.user.token = token
+    if (!state.user) return
+    state.user.accessToken = token
     localStorage.setItem('token', token)
   },
   updateMediaProgress(state, { id, data }) {

@@ -85,9 +85,6 @@ export default {
         this.$emit('input', val)
       }
     },
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     wrapperClass() {
       var classes = []
       if (this.disabled) classes.push('bg-black-300')
