@@ -80,7 +80,11 @@ async function up({ context: { queryInterface, logger } }) {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
       },
-      name: DataTypes.STRING,
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      description: DataTypes.TEXT,
       expiresAt: DataTypes.DATE,
       lastUsedAt: DataTypes.DATE,
       isActive: {
@@ -102,6 +106,17 @@ async function up({ context: { queryInterface, logger } }) {
         references: {
           model: {
             tableName: 'users'
+          },
+          key: 'id'
+        },
+        onDelete: 'CASCADE'
+      },
+      createdByUserId: {
+        type: DataTypes.UUID,
+        references: {
+          model: {
+            tableName: 'users',
+            as: 'createdByUser'
           },
           key: 'id'
         },

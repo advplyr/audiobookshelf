@@ -670,6 +670,7 @@ class Database {
    * Remove playback sessions that are 3 seconds or less
    * Remove duplicate mediaProgresses
    * Remove expired auth sessions
+   * Deactivate expired api keys
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -802,6 +803,23 @@ WHERE EXISTS (
 
     // Remove expired Session records
     await this.cleanupExpiredSessions()
+
+    // Deactivate expired api keys
+    await this.deactivateExpiredApiKeys()
+  }
+
+  /**
+   * Deactivate expired api keys
+   */
+  async deactivateExpiredApiKeys() {
+    try {
+      const affectedCount = await this.apiKeyModel.deactivateExpiredApiKeys()
+      if (affectedCount > 0) {
+        Logger.info(`[Database] Deactivated ${affectedCount} expired api keys`)
+      }
+    } catch (error) {
+      Logger.error(`[Database] Error deactivating expired api keys: ${error.message}`)
+    }
   }
 
   /**

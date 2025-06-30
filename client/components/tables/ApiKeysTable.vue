@@ -4,8 +4,8 @@
       <table v-if="apiKeys.length > 0" id="api-keys">
         <tr>
           <th>{{ $strings.LabelName }}</th>
+          <th class="w-44">{{ $strings.LabelApiKeyUser }}</th>
           <th class="w-32">{{ $strings.LabelExpiresAt }}</th>
-          <th class="w-32">{{ $strings.LabelLastUsed }}</th>
           <th class="w-32">{{ $strings.LabelCreatedAt }}</th>
           <th class="w-32"></th>
         </tr>
@@ -15,11 +15,15 @@
               <p class="pl-2 truncate">{{ apiKey.name }}</p>
             </div>
           </td>
-          <td class="text-xs">{{ apiKey.expiresAt ? $formatJsDatetime(new Date(apiKey.expiresAt), dateFormat, timeFormat) : $strings.LabelExpiresNever }}</td>
           <td class="text-xs">
-            <ui-tooltip v-if="apiKey.lastUsedAt" direction="top" :text="$formatJsDatetime(new Date(apiKey.lastUsedAt), dateFormat, timeFormat)">
-              {{ $dateDistanceFromNow(new Date(apiKey.lastUsedAt).getTime()) }}
-            </ui-tooltip>
+            <nuxt-link v-if="apiKey.user" :to="`/config/users/${apiKey.user.id}`" class="text-xs hover:underline">
+              {{ apiKey.user.username }}
+            </nuxt-link>
+            <p v-else class="text-xs">Error</p>
+          </td>
+          <td class="text-xs">
+            <p v-if="apiKey.expiresAt" class="text-xs" :title="apiKey.expiresAt">{{ getExpiresAtText(apiKey) }}</p>
+            <p v-else class="text-xs">{{ $strings.LabelExpiresNever }}</p>
           </td>
           <td class="text-xs font-mono">
             <ui-tooltip direction="top" :text="$formatJsDatetime(new Date(apiKey.createdAt), dateFormat, timeFormat)">
@@ -60,6 +64,12 @@ export default {
     }
   },
   methods: {
+    getExpiresAtText(apiKey) {
+      if (new Date(apiKey.expiresAt).getTime() < Date.now()) {
+        return this.$strings.LabelExpired
+      }
+      return this.$formatJsDatetime(new Date(apiKey.expiresAt), this.dateFormat, this.timeFormat)
+    },
     deleteApiKeyClick(apiKey) {
       if (this.isDeletingApiKey) return
 

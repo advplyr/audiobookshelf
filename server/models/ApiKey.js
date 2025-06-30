@@ -1,5 +1,6 @@
 const { DataTypes, Model, Op } = require('sequelize')
 const jwt = require('jsonwebtoken')
+const { LRUCache } = require('lru-cache')
 const Logger = require('../Logger')
 
 /**
@@ -17,6 +18,32 @@ const Logger = require('../Logger')
  * @property {string[]} itemTagsSelected
  */
 
+class ApiKeyCache {
+  constructor() {
+    this.cache = new LRUCache({ max: 100 })
+  }
+
+  getById(id) {
+    const apiKey = this.cache.get(id)
+    return apiKey
+  }
+
+  set(apiKey) {
+    apiKey.fromCache = true
+    this.cache.set(apiKey.id, apiKey)
+  }
+
+  delete(apiKeyId) {
+    this.cache.delete(apiKeyId)
+  }
+
+  maybeInvalidate(apiKey) {
+    if (!apiKey.fromCache) this.delete(apiKey.id)
+  }
+}
+
+const apiKeyCache = new ApiKeyCache()
+
 class ApiKey extends Model {
   constructor(values, options) {
     super(values, options)
@@ -25,13 +52,15 @@ class ApiKey extends Model {
     this.id
     /** @type {string} */
     this.name
+    /** @type {string} */
+    this.description
     /** @type {Date} */
     this.expiresAt
     /** @type {Date} */
     this.lastUsedAt
     /** @type {boolean} */
     this.isActive
-    /** @type {Object} */
+    /** @type {ApiKeyPermissions} */
     this.permissions
     /** @type {Date} */
     this.createdAt
@@ -39,6 +68,8 @@ class ApiKey extends Model {
     this.updatedAt
     /** @type {UUIDV4} */
     this.userId
+    /** @type {UUIDV4} */
+    this.createdByUserId
 
     // Expanded properties
 
@@ -104,18 +135,24 @@ class ApiKey extends Model {
   }
 
   /**
-   * Clean up expired api keys from the database
-   * @returns {Promise<number>} Number of api keys deleted
+   * Deactivate expired api keys
+   * @returns {Promise<number>} Number of api keys affected
    */
-  static async cleanupExpiredApiKeys() {
-    const deletedCount = await ApiKey.destroy({
-      where: {
-        expiresAt: {
-          [Op.lt]: new Date()
+  static async deactivateExpiredApiKeys() {
+    const [affectedCount] = await ApiKey.update(
+      {
+        isActive: false
+      },
+      {
+        where: {
+          isActive: true,
+          expiresAt: {
+            [Op.lt]: new Date()
+          }
         }
       }
-    })
-    return deletedCount
+    )
+    return affectedCount
   }
 
   /**
@@ -153,6 +190,24 @@ class ApiKey extends Model {
   }
 
   /**
+   * Get an api key by id, from cache or database
+   * @param {string} apiKeyId
+   * @returns {Promise<ApiKey | null>}
+   */
+  static async getById(apiKeyId) {
+    if (!apiKeyId) return null
+
+    const cachedApiKey = apiKeyCache.getById(apiKeyId)
+    if (cachedApiKey) return cachedApiKey
+
+    const apiKey = await ApiKey.findByPk(apiKeyId)
+    if (!apiKey) return null
+
+    apiKeyCache.set(apiKey)
+    return apiKey
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
@@ -164,7 +219,11 @@ class ApiKey extends Model {
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true
         },
-        name: DataTypes.STRING,
+        name: {
+          type: DataTypes.STRING,
+          allowNull: false
+        },
+        description: DataTypes.TEXT,
         expiresAt: DataTypes.DATE,
         lastUsedAt: DataTypes.DATE,
         isActive: {
@@ -182,9 +241,30 @@ class ApiKey extends Model {
 
     const { user } = sequelize.models
     user.hasMany(ApiKey, {
-      onDelete: 'SET NULL'
+      onDelete: 'CASCADE'
     })
     ApiKey.belongsTo(user)
+
+    user.hasMany(ApiKey, {
+      foreignKey: 'createdByUserId',
+      onDelete: 'SET NULL'
+    })
+    ApiKey.belongsTo(user, { as: 'createdByUser', foreignKey: 'createdByUserId' })
+  }
+
+  async update(values, options) {
+    apiKeyCache.maybeInvalidate(this)
+    return await super.update(values, options)
+  }
+
+  async save(options) {
+    apiKeyCache.maybeInvalidate(this)
+    return await super.save(options)
+  }
+
+  async destroy(options) {
+    apiKeyCache.delete(this.id)
+    await super.destroy(options)
   }
 }
 

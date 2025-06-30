@@ -14,12 +14,12 @@
 
         <div class="grow" />
 
-        <ui-btn color="bg-primary" small @click="setShowApiKeyModal()">{{ $strings.ButtonAddApiKey }}</ui-btn>
+        <ui-btn color="bg-primary" :disabled="loadingUsers || users.length === 0" small @click="setShowApiKeyModal()">{{ $strings.ButtonAddApiKey }}</ui-btn>
       </template>
 
       <tables-api-keys-table ref="apiKeysTable" class="pt-2" @edit="setShowApiKeyModal" @numApiKeys="(count) => (numApiKeys = count)" />
     </app-settings-content>
-    <modals-api-key-modal ref="apiKeyModal" v-model="showApiKeyModal" :api-key="selectedApiKey" @created="apiKeyCreated" @deleted="apiKeyDeleted" @updated="apiKeyUpdated" />
+    <modals-api-key-modal ref="apiKeyModal" v-model="showApiKeyModal" :api-key="selectedApiKey" :users="users" @created="apiKeyCreated" @deleted="apiKeyDeleted" @updated="apiKeyUpdated" />
     <modals-api-key-created-modal ref="apiKeyCreatedModal" v-model="showApiKeyCreatedModal" :api-key="selectedApiKey" />
   </div>
 </template>
@@ -33,10 +33,12 @@ export default {
   },
   data() {
     return {
+      loadingUsers: false,
       selectedApiKey: null,
       showApiKeyModal: false,
       showApiKeyCreatedModal: false,
-      numApiKeys: 0
+      numApiKeys: 0,
+      users: []
     }
   },
   methods: {
@@ -45,7 +47,6 @@ export default {
       this.selectedApiKey = apiKey
       this.showApiKeyCreatedModal = true
       if (this.$refs.apiKeysTable) {
-        console.log('apiKeyCreated', apiKey)
         this.$refs.apiKeysTable.addApiKey(apiKey)
       }
     },
@@ -60,9 +61,27 @@ export default {
     setShowApiKeyModal(selectedApiKey) {
       this.selectedApiKey = selectedApiKey
       this.showApiKeyModal = true
+    },
+    loadUsers() {
+      this.loadingUsers = true
+      this.$axios
+        .$get('/api/users')
+        .then((res) => {
+          this.users = res.users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+        })
+        .finally(() => {
+          this.loadingUsers = false
+        })
     }
   },
-  mounted() {},
+  mounted() {
+    this.loadUsers()
+  },
   beforeDestroy() {}
 }
 </script>

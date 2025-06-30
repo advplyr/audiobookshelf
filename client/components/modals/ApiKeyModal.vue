@@ -13,102 +13,23 @@
               <ui-text-input-with-label v-model.trim="newApiKey.name" :readonly="!isNew" :label="$strings.LabelName" />
             </div>
             <div v-if="isNew" class="w-1/2 px-2">
-              <ui-text-input-with-label v-model.trim="newApiKey.expiresIn" :label="$strings.LabelExpiresInSeconds" type="number" />
+              <ui-text-input-with-label v-model.trim="newApiKey.expiresIn" :label="$strings.LabelExpiresInSeconds" type="number" :min="0" />
             </div>
           </div>
-          <div class="flex py-2">
-            <div class="flex items-center pt-4 px-2">
+          <div class="flex items-center pt-4 pb-2 gap-2">
+            <div class="flex items-center px-2">
               <p class="px-3 font-semibold" id="user-enabled-toggle">{{ $strings.LabelEnable }}</p>
-              <ui-toggle-switch labeledBy="user-enabled-toggle" v-model="newApiKey.isActive" />
+              <ui-toggle-switch :disabled="isExpired && !apiKey.isActive" labeledBy="user-enabled-toggle" v-model="newApiKey.isActive" />
+            </div>
+            <div v-if="isExpired" class="px-2">
+              <p class="text-sm text-error">{{ $strings.LabelExpired }}</p>
             </div>
           </div>
 
-          <div v-if="newApiKey.permissions" class="w-full border-t border-b border-black-200 py-2 px-3 mt-4">
-            <p class="text-lg mb-2 font-semibold">{{ $strings.HeaderPermissions }}</p>
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="download-permissions-toggle">{{ $strings.LabelPermissionsDownload }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="download-permissions-toggle" v-model="newApiKey.permissions.download" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="update-permissions-toggle">{{ $strings.LabelPermissionsUpdate }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="update-permissions-toggle" v-model="newApiKey.permissions.update" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="delete-permissions-toggle">{{ $strings.LabelPermissionsDelete }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="delete-permissions-toggle" v-model="newApiKey.permissions.delete" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="upload-permissions-toggle">{{ $strings.LabelPermissionsUpload }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="upload-permissions-toggle" v-model="newApiKey.permissions.upload" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="ereader-permissions-toggle">{{ $strings.LabelPermissionsCreateEreader }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="ereader-permissions-toggle" v-model="newApiKey.permissions.createEreader" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="explicit-content-permissions-toggle">{{ $strings.LabelPermissionsAccessExplicitContent }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="explicit-content-permissions-toggle" v-model="newApiKey.permissions.accessExplicitContent" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p id="access-all-libs--permissions-toggle">{{ $strings.LabelPermissionsAccessAllLibraries }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch labeledBy="access-all-libs--permissions-toggle" v-model="newApiKey.permissions.accessAllLibraries" @input="accessAllLibrariesToggled" />
-              </div>
-            </div>
-
-            <div v-if="!newApiKey.permissions.accessAllLibraries" class="my-4">
-              <ui-multi-select-dropdown v-model="newApiKey.permissions.librariesAccessible" :items="libraryItems" :label="$strings.LabelLibrariesAccessibleToUser" />
-            </div>
-
-            <div class="flex items-cen~ter my-2 max-w-md">
-              <div class="w-1/2">
-                <p>{{ $strings.LabelPermissionsAccessAllTags }}</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newApiKey.permissions.accessAllTags" @input="accessAllTagsToggled" />
-              </div>
-            </div>
-            <div v-if="!newApiKey.permissions.accessAllTags" class="my-4">
-              <div class="flex items-center">
-                <ui-multi-select-dropdown v-model="newApiKey.itemTagsSelected" :items="itemTags" :label="tagsSelectionText" />
-                <div class="flex items-center pt-4 px-2">
-                  <p class="px-3 font-semibold" id="selected-tags-not-accessible--permissions-toggle">{{ $strings.LabelInvert }}</p>
-                  <ui-toggle-switch labeledBy="selected-tags-not-accessible--permissions-toggle" v-model="newApiKey.permissions.selectedTagsNotAccessible" />
-                </div>
-              </div>
-            </div>
+          <div class="w-full border-t border-b border-black-200 py-4 px-3 mt-4">
+            <p class="text-lg mb-2 font-semibold">{{ $strings.LabelApiKeyUser }}</p>
+            <p class="text-sm mb-2 text-gray-400">{{ $strings.LabelApiKeyUserDescription }}</p>
+            <ui-select-input v-model="newApiKey.userId" :disabled="isExpired && !apiKey.isActive" :items="userItems" :placeholder="$strings.LabelSelectUser" :label="$strings.LabelApiKeyUser" label-hidden />
           </div>
 
           <div class="flex pt-4 px-2">
@@ -128,15 +49,17 @@ export default {
     apiKey: {
       type: Object,
       default: () => null
+    },
+    users: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
     return {
       processing: false,
       newApiKey: {},
-      isNew: true,
-      tags: [],
-      loadingTags: false
+      isNew: true
     }
   },
   watch: {
@@ -160,64 +83,29 @@ export default {
     title() {
       return this.isNew ? this.$strings.HeaderNewApiKey : this.$strings.HeaderUpdateApiKey
     },
-    libraries() {
-      return this.$store.state.libraries.libraries
+    userItems() {
+      return this.users
+        .filter((u) => {
+          // Only show root user if the current user is root
+          return u.type !== 'root' || this.$store.getters['user/getIsRoot']
+        })
+        .map((u) => ({ text: u.username, value: u.id, subtext: u.type }))
     },
-    libraryItems() {
-      return this.libraries.map((lib) => ({ text: lib.name, value: lib.id }))
-    },
-    itemTags() {
-      return this.tags.map((t) => {
-        return {
-          text: t,
-          value: t
-        }
-      })
-    },
-    tagsSelectionText() {
-      return this.newApiKey.permissions.selectedTagsNotAccessible ? this.$strings.LabelTagsNotAccessibleToUser : this.$strings.LabelTagsAccessibleToUser
+    isExpired() {
+      if (!this.apiKey || !this.apiKey.expiresAt) return false
+
+      return new Date(this.apiKey.expiresAt).getTime() < Date.now()
     }
   },
   methods: {
-    accessAllTagsToggled(val) {
-      if (val) {
-        if (this.newApiKey.itemTagsSelected?.length) {
-          this.newApiKey.itemTagsSelected = []
-        }
-        this.newApiKey.permissions.selectedTagsNotAccessible = false
-      }
-    },
-    fetchAllTags() {
-      this.loadingTags = true
-      this.$axios
-        .$get(`/api/tags`)
-        .then((res) => {
-          this.tags = res.tags
-          this.loadingTags = false
-        })
-        .catch((error) => {
-          console.error('Failed to load tags', error)
-          this.loadingTags = false
-        })
-    },
-    accessAllLibrariesToggled(val) {
-      if (!val && !this.newApiKey.permissions.librariesAccessible.length) {
-        this.newApiKey.permissions.librariesAccessible = this.libraries.map((l) => l.id)
-      } else if (val && this.newApiKey.permissions.librariesAccessible.length) {
-        this.newApiKey.permissions.librariesAccessible = []
-      }
-    },
     submitForm() {
       if (!this.newApiKey.name) {
-        this.$toast.error(this.$strings.ToastNewApiKeyNameError)
+        this.$toast.error(this.$strings.ToastNameRequired)
         return
       }
-      if (!this.newApiKey.permissions.accessAllLibraries && !this.newApiKey.permissions.librariesAccessible.length) {
-        this.$toast.error(this.$strings.ToastNewApiKeyLibraryError)
-        return
-      }
-      if (!this.newApiKey.permissions.accessAllTags && !this.newApiKey.itemTagsSelected.length) {
-        this.$toast.error(this.$strings.ToastNewApiKeyTagError)
+
+      if (!this.newApiKey.userId) {
+        this.$toast.error(this.$strings.ToastNewApiKeyUserError)
         return
       }
 
@@ -228,9 +116,15 @@ export default {
       }
     },
     submitUpdateApiKey() {
-      var apiKey = {
+      if (this.newApiKey.isActive === this.apiKey.isActive && this.newApiKey.userId === this.apiKey.userId) {
+        this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
+        this.show = false
+        return
+      }
+
+      const apiKey = {
         isActive: this.newApiKey.isActive,
-        permissions: this.newApiKey.permissions
+        userId: this.newApiKey.userId
       }
 
       this.processing = true
@@ -281,33 +175,20 @@ export default {
         })
     },
     init() {
-      this.fetchAllTags()
       this.isNew = !this.apiKey
 
       if (this.apiKey) {
         this.newApiKey = {
           name: this.apiKey.name,
           isActive: this.apiKey.isActive,
-          permissions: { ...this.apiKey.permissions }
+          userId: this.apiKey.userId
         }
       } else {
         this.newApiKey = {
           name: null,
           expiresIn: null,
           isActive: true,
-          permissions: {
-            download: true,
-            update: false,
-            delete: false,
-            upload: false,
-            accessAllLibraries: true,
-            accessAllTags: true,
-            accessExplicitContent: false,
-            selectedTagsNotAccessible: false,
-            createEreader: false,
-            librariesAccessible: [],
-            itemTagsSelected: []
-          }
+          userId: null
         }
       }
     }

@@ -36,6 +36,7 @@ class CronManager {
    * Closes open share sessions that have not been updated in 24 hours
    * Closes open playback sessions that have not been updated in 36 hours
    * Cleans up expired auth sessions
+   * Deactivates expired api keys
    * TODO: Clients should re-open the session if it is closed so that stale sessions can be closed sooner
    */
   initOpenSessionCleanupCron() {
@@ -44,6 +45,7 @@ class CronManager {
       ShareManager.closeStaleOpenShareSessions()
       await this.playbackSessionManager.closeStaleOpenSessions()
       await Database.cleanupExpiredSessions()
+      await Database.deactivateExpiredApiKeys()
     })
   }
 

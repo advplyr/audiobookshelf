@@ -65,7 +65,9 @@ class Auth {
       new JwtStrategy(
         {
           jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), ExtractJwt.fromUrlQueryParameter('token')]),
-          secretOrKey: Database.serverSettings.tokenSecret
+          secretOrKey: Database.serverSettings.tokenSecret,
+          // Handle expiration manaully in order to disable api keys that are expired
+          ignoreExpiration: true
         },
         this.jwtAuthCheck.bind(this)
       )
@@ -1044,6 +1046,7 @@ class Auth {
     }
     await Database.updateServerSettings()
 
+    // TODO: Old method of non-expiring tokens
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
     const users = await Database.userModel.findAll({
       attributes: ['id', 'username', 'token']
@@ -1057,22 +1060,49 @@ class Auth {
   }
 
   /**
-   * Checks if the user in the validated jwt_payload really exists and is active.
+   * Checks if the user or api key in the validated jwt_payload exists and is active.
    * @param {Object} jwt_payload
    * @param {function} done
    */
   async jwtAuthCheck(jwt_payload, done) {
-    // load user by id from the jwt token
-    const user = await Database.userModel.getUserByIdOrOldId(jwt_payload.userId)
+    if (jwt_payload.type === 'api') {
+      const apiKey = await Database.apiKeyModel.getById(jwt_payload.keyId)
 
-    if (!user?.isActive) {
-      // deny login
-      done(null, null)
-      return
+      if (!apiKey?.isActive) {
+        done(null, null)
+        return
+      }
+
+      // Check if the api key is expired and deactivate it
+      if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
+        done(null, null)
+
+        apiKey.isActive = false
+        await apiKey.save()
+        Logger.info(`[Auth] API key ${apiKey.id} is expired - deactivated`)
+        return
+      }
+
+      const user = await Database.userModel.getUserById(apiKey.userId)
+      done(null, user)
+    } else {
+      // Check if the jwt is expired
+      if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
+        done(null, null)
+        return
+      }
+
+      // load user by id from the jwt token
+      const user = await Database.userModel.getUserByIdOrOldId(jwt_payload.userId)
+
+      if (!user?.isActive) {
+        // deny login
+        done(null, null)
+        return
+      }
+      // approve login
+      done(null, user)
     }
-    // approve login
-    done(null, user)
-    return
   }
 
   /**
