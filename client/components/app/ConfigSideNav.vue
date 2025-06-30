@@ -71,6 +71,11 @@ export default {
           path: '/config/users'
         },
         {
+          id: 'config-api-keys',
+          title: this.$strings.HeaderApiKeys,
+          path: '/config/api-keys'
+        },
+        {
           id: 'config-sessions',
           title: this.$strings.HeaderListeningSessions,
           path: '/config/sessions'

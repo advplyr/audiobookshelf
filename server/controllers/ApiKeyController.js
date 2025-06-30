@@ -14,6 +14,20 @@ class ApiKeyController {
   constructor() {}
 
   /**
+   * GET: /api/api-keys
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getAll(req, res) {
+    const apiKeys = await Database.apiKeyModel.findAll()
+
+    return res.json({
+      apiKeys: apiKeys.map((a) => a.toJSON())
+    })
+  }
+
+  /**
    * POST: /api/api-keys
    *
    * @param {RequestWithUser} req
@@ -47,16 +61,70 @@ class ApiKeyController {
       name: req.body.name,
       expiresAt,
       permissions,
-      userId: req.user.id
+      userId: req.user.id,
+      isActive: !!req.body.isActive
     })
 
+    Logger.info(`[ApiKeyController] Created API key "${apiKeyInstance.name}"`)
     return res.json({
-      id: apiKeyInstance.id,
-      name: apiKeyInstance.name,
-      apiKey,
-      expiresAt: apiKeyInstance.expiresAt,
-      permissions: apiKeyInstance.permissions
+      apiKey: {
+        apiKey, // Actual key only shown to user on creation
+        ...apiKeyInstance.toJSON()
+      }
     })
+  }
+
+  /**
+   * PATCH: /api/api-keys/:id
+   * Only isActive and permissions can be updated because name and expiresIn are in the JWT
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async update(req, res) {
+    const apiKey = await Database.apiKeyModel.findByPk(req.params.id)
+    if (!apiKey) {
+      return res.sendStatus(404)
+    }
+
+    if (req.body.isActive !== undefined) {
+      if (typeof req.body.isActive !== 'boolean') {
+        return res.sendStatus(400)
+      }
+
+      apiKey.isActive = req.body.isActive
+    }
+
+    if (req.body.permissions && Object.keys(req.body.permissions).length > 0) {
+      const permissions = Database.apiKeyModel.mergePermissionsWithDefault(req.body.permissions)
+      apiKey.permissions = permissions
+    }
+
+    await apiKey.save()
+
+    Logger.info(`[ApiKeyController] Updated API key "${apiKey.name}"`)
+
+    return res.json({
+      apiKey: apiKey.toJSON()
+    })
+  }
+
+  /**
+   * DELETE: /api/api-keys/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async delete(req, res) {
+    const apiKey = await Database.apiKeyModel.findByPk(req.params.id)
+    if (!apiKey) {
+      return res.sendStatus(404)
+    }
+
+    await apiKey.destroy()
+    Logger.info(`[ApiKeyController] Deleted API key "${apiKey.name}"`)
+
+    return res.sendStatus(200)
   }
 
   /**

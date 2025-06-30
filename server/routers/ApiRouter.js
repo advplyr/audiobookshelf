@@ -329,7 +329,10 @@ class ApiRouter {
     //
     // API Key Routes
     //
+    this.router.get('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.getAll.bind(this))
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
+    this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
+    this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
 
     //
     // Misc Routes

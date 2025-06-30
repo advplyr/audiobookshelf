@@ -351,9 +351,6 @@ export default {
           this.$toast.error(errMsg || 'Failed to create account')
         })
     },
-    toggleActive() {
-      this.newUser.isActive = !this.newUser.isActive
-    },
     userTypeUpdated(type) {
       this.newUser.permissions = {
         download: type !== 'guest',
