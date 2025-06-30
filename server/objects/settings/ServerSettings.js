@@ -58,6 +58,11 @@ class ServerSettings {
     this.version = packageJson.version
     this.buildNumber = packageJson.buildNumber
 
+    // Ratings
+    this.enableRating = true
+    this.enableCommunityRating = false
+    this.enableExplicitRating = false
+
     // Auth settings
     this.authLoginCustomMessage = null
     this.authActiveAuthMethods = ['local']
@@ -122,6 +127,10 @@ class ServerSettings {
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
+
+    this.enableRating = settings.enableRating !== false
+    this.enableCommunityRating = !!settings.enableCommunityRating
+    this.enableExplicitRating = !!settings.enableExplicitRating
 
     this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.8.0
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
@@ -233,6 +242,9 @@ class ServerSettings {
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
+      enableRating: this.enableRating,
+      enableCommunityRating: this.enableCommunityRating,
+      enableExplicitRating: this.enableExplicitRating,
       authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,

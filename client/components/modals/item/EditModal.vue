@@ -6,8 +6,8 @@
       </div>
     </template>
     <div role="tablist" class="absolute -top-10 left-0 z-10 w-full flex">
-      <template v-for="tab in availableTabs">
-        <button :key="tab.id" role="tab" class="w-28 rounded-t-lg flex items-center justify-center mr-0.5 sm:mr-1 cursor-pointer hover:bg-bg border-t border-l border-r border-black-300 tab text-xs sm:text-base" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</button>
+      <template v-for="tab in availableTabs" :key="tab.id">
+        <button role="tab" class="w-28 rounded-t-lg flex items-center justify-center mr-0.5 sm:mr-1 cursor-pointer hover:bg-bg border-t border-l border-r border-black-300 tab text-xs sm:text-base" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</button>
       </template>
     </div>
 
@@ -245,8 +245,22 @@ export default {
         this.processing = false
       }
     },
-    libraryItemUpdated(expandedLibraryItem) {
-      this.libraryItem = expandedLibraryItem
+    libraryItemUpdated(updatedLibraryItem) {
+      if (this.libraryItem && this.libraryItem.id === updatedLibraryItem.id) {
+        // The updated item from the server doesn't contain rating data, so we preserve it from the client-side model.
+        if (this.libraryItem.media) {
+          updatedLibraryItem.media = {
+            ...(updatedLibraryItem.media || {}),
+            myRating: this.libraryItem.media.myRating,
+            communityRating: this.libraryItem.media.communityRating,
+            myExplicitRating: this.libraryItem.media.myExplicitRating,
+            communityExplicitRating: this.libraryItem.media.communityExplicitRating,
+          }
+        }
+        this.libraryItem = updatedLibraryItem
+      } else {
+        this.libraryItem = updatedLibraryItem
+      }
     },
     init() {
       this.fetchFull()

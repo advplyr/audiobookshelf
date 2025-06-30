@@ -147,9 +147,19 @@ class Database {
     return this.models.mediaItemShare
   }
 
+  /** @type {typeof import('./models/UserBookRating')} */
+  get userBookRatingModel() {
+    return this.models.userBookRating
+  }
+
   /** @type {typeof import('./models/Device')} */
   get deviceModel() {
     return this.models.device
+  }
+
+  /** @type {typeof import('./models/UserBookExplicitRating')} */
+  get userBookExplicitRatingModel() {
+    return this.models.userBookExplicitRating
   }
 
   /**
@@ -334,6 +344,7 @@ class Database {
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
     require('./models/UserBookRating').init(this.sequelize)
+    require('./models/UserBookExplicitRating').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }

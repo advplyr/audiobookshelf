@@ -47,19 +47,34 @@
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
-              <div class="flex items-center space-x-4 mt-2">
+              <!-- RATING SECTION -->
+              <div v-if="serverSettings.enableRating" class="flex items-center space-x-4 mt-2">
                 <div class="flex items-center">
-                  <ui-rating-input v-model="personalRating" :label="$strings.LabelYourRating" />
+                  <ui-rating-input :value="myRating" :label="$strings.LabelYourRating" @input="updateRating" />
                 </div>
-                <div v-if="globalRating > 0" class="flex items-center">
-                  <ui-rating-input :value="globalRating" label="Community Rating" :read-only="true" />
+                <div v-if="serverSettings.enableCommunityRating && communityRating.count > 0" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <span class="material-symbols text-lg -ml-0.5">groups</span>
+                  <span class="font-semibold text-white">{{ communityRating.average.toFixed(1) }}/5</span>
+                  <span class="text-xs text-white/50">({{ communityRating.count }})</span>
                 </div>
-                <div v-if="provider === 'audible' && providerRating != null" class="flex items-center bg-zinc-800 rounded-lg p-1.5 space-x-1.5 opacity-80">
-                  <img src="~/assets/logos/audible.svg" alt="Audible Logo" class="w-12 h-auto" />
+                <div v-if="providerRating > 0 && provider === 'audible'" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <img src="/audible.svg" alt="Audible Logo" class="h-5 w-auto" />
                   <span class="font-semibold text-white">{{ providerRating.toFixed(1) }}/5</span>
                 </div>
                 <div v-else-if="providerRating > 0" class="flex items-center">
-                  <ui-rating-input :value="providerRating" :read-only="true" />
+                  <ui-rating-input :value="providerRating" :label="provider" :read-only="true" />
+                </div>
+              </div>
+
+              <!-- EXPLICIT RATING SECTION -->
+              <div v-if="serverSettings.enableExplicitRating && isExplicit" class="flex items-center space-x-4 mt-3">
+                <div class="flex items-center">
+                  <ui-rating-input :value="myExplicitRating" :label="$strings.LabelExplicitRating" icon="flame" @input="updateExplicitRating" />
+                </div>
+                <div v-if="serverSettings.enableCommunityRating && communityExplicitRating.count > 0" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <ui-flame-icon class="h-5 w-5 -ml-0.5" />
+                  <span class="font-semibold text-white">{{ communityExplicitRating.average.toFixed(1) }}/5</span>
+                  <span class="text-xs text-white/50">({{ communityExplicitRating.count }})</span>
                 </div>
               </div>
 
@@ -206,7 +221,6 @@ export default {
       showBookmarksModal: false,
       isDescriptionClamped: false,
       showFullDescription: false,
-      localPersonalRating: 0
     }
   },
   computed: {
@@ -215,6 +229,9 @@ export default {
     },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
     },
     downloadUrl() {
       return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
@@ -336,22 +353,23 @@ export default {
     description() {
       return this.mediaMetadata.description || ''
     },
-    globalRating() {
-      return this.mediaMetadata.rating || 0
+    myRating() {
+      return this.media.myRating
+    },
+    communityRating() {
+      return this.media.communityRating || { average: 0, count: 0 }
+    },
+    myExplicitRating() {
+      return this.media.myExplicitRating
+    },
+    communityExplicitRating() {
+      return this.media.communityExplicitRating || { average: 0, count: 0 }
     },
     providerRating() {
       return this.media.providerRating || 0
     },
     provider() {
       return this.media.provider || null
-    },
-    personalRating: {
-      get() {
-        return this.localPersonalRating
-      },
-      set(val) {
-        this.updatePersonalRating(val)
-      }
     },
     userMediaProgress() {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
@@ -478,7 +496,6 @@ export default {
     }
   },
   mounted() {
-    this.localPersonalRating = this.libraryItem.personalRating || 0
     this.$root.$on('progress-updated', this.progressUpdated)
     this.$root.$on('libraryitem-updated', this.libraryItemUpdated)
     this.$root.$on('rss-updated', this.rssUpdated)
@@ -683,9 +700,7 @@ export default {
     },
     libraryItemUpdated(libraryItem) {
       if (libraryItem.id === this.libraryItemId) {
-        libraryItem.personalRating = this.localPersonalRating
         this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', libraryItem)
-        this.localPersonalRating = libraryItem.personalRating || 0
       }
     },
     clearProgressClick() {
@@ -867,12 +882,26 @@ export default {
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
     },
-    async updatePersonalRating(rating) {
-      this.localPersonalRating = rating
+    async updateRating(rating) {
       try {
-        await this.$axios.post(`/api/items/${this.libraryItemId}/rate`, { rating })
+        const res = await this.$axios.$post(`/api/items/${this.libraryItemId}/rate`, { rating })
+        if (res.libraryItem) {
+          this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', res.libraryItem)
+        }
       } catch (err) {
         console.error(err)
+        this.$toast.error(this.$strings.ToastFailedToUpdate)
+      }
+    },
+    async updateExplicitRating(rating) {
+      try {
+        const res = await this.$axios.$post(`/api/items/${this.libraryItemId}/rate-explicit`, { rating })
+        if (res.libraryItem) {
+          this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', res.libraryItem)
+        }
+      } catch (err) {
+        console.error(err)
+        this.$toast.error(this.$strings.ToastFailedToUpdate)
       }
     },
     progressUpdated(data) {

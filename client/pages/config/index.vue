@@ -43,6 +43,40 @@
           </div>
 
           <div class="pt-4">
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsRatings }}</h2>
+          </div>
+
+          <div role="article" :aria-label="$strings.LabelSettingsEnableRatingHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableRating" v-model="newServerSettings.enableRating" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableRating', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableRatingHelp">
+              <p class="pl-4">
+                <span id="settings-enable-rating">{{ $strings.LabelSettingsEnableRating }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div role="article" :aria-label="$strings.LabelSettingsEnableCommunityRatingHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableCommunityRating" v-model="newServerSettings.enableCommunityRating" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableCommunityRating', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableCommunityRatingHelp">
+              <p class="pl-4">
+                <span id="settings-enable-community-rating">{{ $strings.LabelSettingsEnableCommunityRating }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div role="article" :aria-label="$strings.LabelSettingsEnableExplicitRatingHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableExplicitRating" v-model="newServerSettings.enableExplicitRating" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableExplicitRating', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableExplicitRatingHelp">
+              <p class="pl-4">
+                <span id="settings-enable-explicit-rating">{{ $strings.LabelSettingsEnableExplicitRating }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsScanner }}</h2>
           </div>
 

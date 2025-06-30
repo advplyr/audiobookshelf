@@ -1,32 +1,34 @@
 <template>
-  <div class="rating-input-container">
-    <label v-if="label" class="px-1 text-sm font-semibold">{{ label }}</label>
+  <div class="rating-input flex items-center" :aria-label="label" :class="{ 'read-only': readOnly }">
     <div
-      class="flex items-center"
+      v-for="star in 5"
+      :key="star"
+      class="star-container relative"
+      :data-star="star"
       @mouseleave="handleMouseleave"
+      @mousemove="handleMousemove"
+      @click="handleClick()"
     >
-      <div
-        v-for="star in 5"
-        :key="star"
-        class="star-container relative"
-        :data-star="star"
-        @mousemove="handleMousemove"
-        @click="handleClick()"
-      >
+      <template v-if="icon === 'star'">
         <svg class="star star-empty" viewBox="0 0 24 24">
           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
         </svg>
-        <svg class="star star-filled absolute top-0 left-0" :style="{ clipPath: getClipPath(star) }" viewBox="0 0 24 24">
+        <svg class="star star-filled absolute top-0 left-0" :style="{ clipPath: getClipPath(star), fill: color, stroke: color }" viewBox="0 0 24 24">
           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
         </svg>
-      </div>
-      <span class="ml-2 text-white/70">{{ displayValue }}/5</span>
+      </template>
+      <template v-if="icon === 'flame'">
+        <ui-flame-icon class="star" :empty="true" />
+        <ui-flame-icon class="star star-filled absolute top-0 left-0" :style="{ clipPath: getClipPath(star) }" />
+      </template>
     </div>
+    <span class="ml-2 text-white/70">{{ displayValue }}/5</span>
   </div>
 </template>
 
 <script>
 export default {
+  name: 'RatingInput',
   props: {
     value: {
       type: Number,
@@ -34,11 +36,19 @@ export default {
     },
     label: {
       type: String,
-      default: ''
+      default: 'Rating'
     },
     readOnly: {
       type: Boolean,
       default: false
+    },
+    icon: {
+      type: String,
+      default: 'star'
+    },
+    color: {
+      type: String,
+      default: '#f59e0b'
     }
   },
   data() {
@@ -97,11 +107,8 @@ export default {
 .star-empty {
   fill: transparent;
   stroke: #d1d5db;
-  stroke-width: 1.5;
 }
 .star-filled {
-  fill: #f59e0b;
-  stroke: #f59e0b;
   stroke-width: 1.5;
 }
 </style> 
