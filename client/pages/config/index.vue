@@ -57,7 +57,7 @@
           </div>
 
           <div role="article" :aria-label="$strings.LabelSettingsEnableCommunityRatingHelp" class="flex items-center py-2">
-            <ui-toggle-switch :label="$strings.LabelSettingsEnableCommunityRating" v-model="newServerSettings.enableCommunityRating" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableCommunityRating', val)" />
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableCommunityRating" v-model="newServerSettings.enableCommunityRating" :disabled="updatingServerSettings || communityRatingDisabled" @input="(val) => updateSettingsKey('enableCommunityRating', val)" />
             <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableCommunityRatingHelp">
               <p class="pl-4">
                 <span id="settings-enable-community-rating">{{ $strings.LabelSettingsEnableCommunityRating }}</span>
@@ -279,6 +279,12 @@ export default {
     }
   },
   watch: {
+    communityRatingDisabled(isDisabled) {
+      if (isDisabled && this.newServerSettings.enableCommunityRating) {
+        this.newServerSettings.enableCommunityRating = false
+        this.updateSettingsKey('enableCommunityRating', false)
+      }
+    },
     serverSettings(newVal, oldVal) {
       if (newVal && !oldVal) {
         this.initServerSettings()
@@ -286,6 +292,9 @@ export default {
     }
   },
   computed: {
+    communityRatingDisabled() {
+      return !this.newServerSettings.enableRating && !this.newServerSettings.enableExplicitRating
+    },
     serverSettings() {
       return this.$store.state.serverSettings
     },

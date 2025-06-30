@@ -6,14 +6,6 @@ module.exports = {
     try {
       await queryInterface.addColumn(
         'books',
-        'rating',
-        {
-          type: DataTypes.FLOAT
-        },
-        { transaction }
-      )
-      await queryInterface.addColumn(
-        'books',
         'providerRating',
         {
           type: DataTypes.FLOAT
@@ -45,7 +37,6 @@ module.exports = {
   down: async ({ context: queryInterface }) => {
     const transaction = await queryInterface.sequelize.transaction()
     try {
-      await queryInterface.removeColumn('books', 'rating', { transaction })
       await queryInterface.removeColumn('books', 'providerRating', { transaction })
       await queryInterface.removeColumn('books', 'provider', { transaction })
       await queryInterface.removeColumn('books', 'providerId', { transaction })

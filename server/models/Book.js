@@ -132,8 +132,6 @@ class Book extends Model {
     this.series
 
     /** @type {number} */
-    this.rating
-    /** @type {number} */
     this.providerRating
     /** @type {string} */
     this.provider
@@ -168,7 +166,6 @@ class Book extends Model {
         coverPath: DataTypes.STRING,
         duration: DataTypes.FLOAT,
 
-        rating: DataTypes.FLOAT,
         providerRating: DataTypes.FLOAT,
         provider: DataTypes.STRING,
         providerId: DataTypes.STRING,
@@ -372,7 +369,7 @@ class Book extends Model {
       language: this.language,
       explicit: !!this.explicit,
       abridged: !!this.abridged,
-      rating: this.rating
+      rating: this.providerRating
     }
   }
 
@@ -420,8 +417,8 @@ class Book extends Model {
         this.abridged = !!payload.metadata.abridged
         hasUpdates = true
       }
-      if (payload.metadata.rating !== undefined && this.rating !== payload.metadata.rating) {
-        this.rating = payload.metadata.rating
+      if (payload.metadata.rating !== undefined && this.providerRating !== payload.metadata.rating) {
+        this.providerRating = payload.metadata.rating
         hasUpdates = true
       }
       const arrayOfStringsKeys = ['narrators', 'genres']
@@ -604,7 +601,7 @@ class Book extends Model {
       language: this.language,
       explicit: this.explicit,
       abridged: this.abridged,
-      rating: this.rating
+      rating: this.providerRating
     }
   }
 
@@ -627,7 +624,7 @@ class Book extends Model {
       language: this.language,
       explicit: this.explicit,
       abridged: this.abridged,
-      rating: this.rating
+      rating: this.providerRating
     }
   }
 
@@ -639,7 +636,7 @@ class Book extends Model {
     oldMetadataJSON.narratorName = (this.narrators || []).join(', ')
     oldMetadataJSON.seriesName = this.seriesName
     oldMetadataJSON.descriptionPlain = this.description ? htmlSanitizer.stripAllTags(this.description) : null
-    oldMetadataJSON.rating = this.rating
+    oldMetadataJSON.rating = this.providerRating
     return oldMetadataJSON
   }
 
