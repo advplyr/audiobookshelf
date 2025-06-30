@@ -112,10 +112,6 @@ class User extends Model {
     this.updatedAt
     /** @type {import('./MediaProgress')[]?} - Only included when extended */
     this.mediaProgresses
-
-    // Temporary accessToken, not stored in database
-    /** @type {string} */
-    this.accessToken
   }
 
   // Excludes "root" since their can only be 1 root user
@@ -526,7 +522,6 @@ class User extends Model {
       type: this.type,
       // TODO: Old non-expiring token
       token: this.type === 'root' && hideRootToken ? '' : this.token,
-      accessToken: this.accessToken || null,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],

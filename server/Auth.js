@@ -466,14 +466,29 @@ class Auth {
       // return the user login response json if the login was successfull
       const userResponse = await this.getUserLoginResponsePayload(req.user)
 
-      this.setRefreshTokenCookie(req, res, req.user.refreshToken)
+      // Check if mobile app wants refresh token in response
+      const returnTokens = req.query.return_tokens === 'true' || req.headers['x-return-tokens'] === 'true'
+
+      userResponse.user.refreshToken = returnTokens ? req.user.refreshToken : null
+      userResponse.user.accessToken = req.user.accessToken
+
+      if (!returnTokens) {
+        this.setRefreshTokenCookie(req, res, req.user.refreshToken)
+      }
 
       res.json(userResponse)
     })
 
     // Refresh token route
     router.post('/auth/refresh', async (req, res) => {
-      const refreshToken = req.cookies.refresh_token
+      let refreshToken = req.cookies.refresh_token
+
+      // For mobile clients, the refresh token is sent in the authorization header
+      let shouldReturnRefreshToken = false
+      if (!refreshToken && req.headers.authorization?.startsWith('Bearer ')) {
+        refreshToken = req.headers.authorization.split(' ')[1]
+        shouldReturnRefreshToken = true
+      }
 
       if (!refreshToken) {
         return res.status(401).json({ error: 'No refresh token provided' })
@@ -507,10 +522,12 @@ class Auth {
           return res.status(401).json({ error: 'User not found or inactive' })
         }
 
-        const newAccessToken = await this.rotateTokensForSession(session, user, req, res)
+        const newTokens = await this.rotateTokensForSession(session, user, req, res)
 
-        user.accessToken = newAccessToken
         const userResponse = await this.getUserLoginResponsePayload(user)
+
+        userResponse.user.accessToken = newTokens.accessToken
+        userResponse.user.refreshToken = shouldReturnRefreshToken ? newTokens.refreshToken : null
         res.json(userResponse)
       } catch (error) {
         if (error.name === 'TokenExpiredError') {
@@ -961,7 +978,7 @@ class Auth {
    * @param {import('./models/User')} user
    * @param {Request} req
    * @param {Response} res
-   * @returns {Promise<string>} newAccessToken
+   * @returns {Promise<{ accessToken:string, refreshToken:string }>}
    */
   async rotateTokensForSession(session, user, req, res) {
     // Generate new tokens
@@ -978,7 +995,10 @@ class Auth {
     // Set new refresh token cookie
     this.setRefreshTokenCookie(req, res, newRefreshToken)
 
-    return newAccessToken
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
+    }
   }
 
   /**
@@ -996,7 +1016,7 @@ class Auth {
       // So rotate token for current session
       const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
       if (currentSession) {
-        const newAccessToken = await this.rotateTokensForSession(currentSession, user, req, res)
+        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res)
 
         // Invalidate all sessions for the user except the current one
         await Database.sessionModel.destroy({
@@ -1008,7 +1028,7 @@ class Auth {
           }
         })
 
-        return newAccessToken
+        return newTokens.accessToken
       } else {
         Logger.error(`[Auth] No session found to rotate tokens for refresh token ${currentRefreshToken}`)
       }

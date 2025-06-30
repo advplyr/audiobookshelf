@@ -336,6 +336,9 @@ class UserController {
         const newAccessToken = await this.auth.invalidateJwtSessionsForUser(user, req, res)
         if (newAccessToken) {
           user.accessToken = newAccessToken
+          // Refresh tokens are only returned for mobile clients
+          // Mobile apps currently do not use this API endpoint so always set to null
+          user.refreshToken = null
           Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username} and rotated tokens for current session`)
         } else {
           Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username}`)

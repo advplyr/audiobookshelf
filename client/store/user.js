@@ -152,8 +152,11 @@ export const mutations = {
   setUser(state, user) {
     state.user = user
     if (user) {
+      // Use accessToken from user if included in response (for login)
       if (user.accessToken) localStorage.setItem('token', user.accessToken)
-      else {
+      else if (localStorage.getItem('token')) {
+        user.accessToken = localStorage.getItem('token')
+      } else {
         console.error('No access token found for user', user)
       }
     } else {
