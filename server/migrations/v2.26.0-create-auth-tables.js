@@ -8,11 +8,11 @@
  */
 
 const migrationVersion = '2.26.0'
-const migrationName = `${migrationVersion}-create-sessions-table`
+const migrationName = `${migrationVersion}-create-auth-tables`
 const loggerPrefix = `[${migrationVersion} migration]`
 
 /**
- * This upward migration creates a sessions table and apiTokens table.
+ * This upward migration creates a sessions table and apiKeys table.
  *
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
@@ -68,23 +68,19 @@ async function up({ context: { queryInterface, logger } }) {
   }
 
   // Check if table exists
-  if (await queryInterface.tableExists('apiTokens')) {
-    logger.info(`${loggerPrefix} table "apiTokens" already exists`)
+  if (await queryInterface.tableExists('apiKeys')) {
+    logger.info(`${loggerPrefix} table "apiKeys" already exists`)
   } else {
     // Create table
-    logger.info(`${loggerPrefix} creating table "apiTokens"`)
+    logger.info(`${loggerPrefix} creating table "apiKeys"`)
     const DataTypes = queryInterface.sequelize.Sequelize.DataTypes
-    await queryInterface.createTable('apiTokens', {
+    await queryInterface.createTable('apiKeys', {
       id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
       },
       name: DataTypes.STRING,
-      tokenHash: {
-        type: DataTypes.STRING,
-        allowNull: false
-      },
       expiresAt: DataTypes.DATE,
       lastUsedAt: DataTypes.DATE,
       isActive: {
@@ -109,18 +105,17 @@ async function up({ context: { queryInterface, logger } }) {
           },
           key: 'id'
         },
-        allowNull: false,
-        onDelete: 'CASCADE'
+        onDelete: 'SET NULL'
       }
     })
-    logger.info(`${loggerPrefix} created table "apiTokens"`)
+    logger.info(`${loggerPrefix} created table "apiKeys"`)
   }
 
   logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)
 }
 
 /**
- * This downward migration script removes the sessions table and apiTokens table.
+ * This downward migration script removes the sessions table and apiKeys table.
  *
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
@@ -139,12 +134,12 @@ async function down({ context: { queryInterface, logger } }) {
     logger.info(`${loggerPrefix} table "sessions" does not exist`)
   }
 
-  if (await queryInterface.tableExists('apiTokens')) {
-    logger.info(`${loggerPrefix} dropping table "apiTokens"`)
-    await queryInterface.dropTable('apiTokens')
-    logger.info(`${loggerPrefix} dropped table "apiTokens"`)
+  if (await queryInterface.tableExists('apiKeys')) {
+    logger.info(`${loggerPrefix} dropping table "apiKeys"`)
+    await queryInterface.dropTable('apiKeys')
+    logger.info(`${loggerPrefix} dropped table "apiKeys"`)
   } else {
-    logger.info(`${loggerPrefix} table "apiTokens" does not exist`)
+    logger.info(`${loggerPrefix} table "apiKeys" does not exist`)
   }
 
   logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)

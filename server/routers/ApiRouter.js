@@ -34,6 +34,7 @@ const CustomMetadataProviderController = require('../controllers/CustomMetadataP
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
+const ApiKeyController = require('../controllers/ApiKeyController')
 
 class ApiRouter {
   constructor(Server) {
@@ -324,6 +325,11 @@ class ApiRouter {
     //
     this.router.get('/stats/year/:year', StatsController.middleware.bind(this), StatsController.getAdminStatsForYear.bind(this))
     this.router.get('/stats/server', StatsController.middleware.bind(this), StatsController.getServerStats.bind(this))
+
+    //
+    // API Key Routes
+    //
+    this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
 
     //
     // Misc Routes

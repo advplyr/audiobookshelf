@@ -47,9 +47,9 @@ class Database {
     return this.models.session
   }
 
-  /** @type {typeof import('./models/ApiToken')} */
-  get apiTokenModel() {
-    return this.models.apiToken
+  /** @type {typeof import('./models/ApiKey')} */
+  get apiKeyModel() {
+    return this.models.apiKey
   }
 
   /** @type {typeof import('./models/Library')} */
@@ -322,7 +322,7 @@ class Database {
   buildModels(force = false) {
     require('./models/User').init(this.sequelize)
     require('./models/Session').init(this.sequelize)
-    require('./models/ApiToken').init(this.sequelize)
+    require('./models/ApiKey').init(this.sequelize)
     require('./models/Library').init(this.sequelize)
     require('./models/LibraryFolder').init(this.sequelize)
     require('./models/Book').init(this.sequelize)
