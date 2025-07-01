@@ -44,51 +44,59 @@ class LibraryItemController {
     const item = libraryItem.toOldJSONExpanded()
 
     if (libraryItem.isBook) {
-      // Include users personal rating
-      const userBookRating = await Database.userBookRatingModel.findOne({
-        where: { userId: user.id, bookId: libraryItem.media.id }
-      })
-      if (userBookRating) {
-        item.media.myRating = userBookRating.rating
+      if (global.ServerSettings.enableRating) {
+        // Include users personal rating
+        const userBookRating = await Database.userBookRatingModel.findOne({
+          where: { userId: user.id, bookId: libraryItem.media.id }
+        })
+        if (userBookRating) {
+          item.media.myRating = userBookRating.rating
+        }
+
+        if (global.ServerSettings.enableCommunityRating) {
+          // Include all users ratings for community rating
+          const allBookRatings = await Database.userBookRatingModel.findAll({
+            where: {
+              bookId: libraryItem.media.id,
+              userId: { [Op.ne]: user.id }
+            }
+          })
+
+          if (allBookRatings.length > 0) {
+            const totalRating = allBookRatings.reduce((acc, cur) => acc + cur.rating, 0)
+            item.media.communityRating = {
+              average: totalRating / allBookRatings.length,
+              count: allBookRatings.length
+            }
+          }
+        }
       }
 
-      // Include all users ratings for community rating
-      const allBookRatings = await Database.userBookRatingModel.findAll({
-        where: {
-          bookId: libraryItem.media.id,
-          userId: { [Op.ne]: user.id }
+      if (global.ServerSettings.enableExplicitRating) {
+        // Include users personal explicit rating
+        const userBookExplicitRating = await Database.userBookExplicitRatingModel.findOne({
+          where: { userId: user.id, bookId: libraryItem.media.id }
+        })
+        if (userBookExplicitRating) {
+          item.media.myExplicitRating = userBookExplicitRating.rating
         }
-      })
 
-      if (allBookRatings.length > 0) {
-        const totalRating = allBookRatings.reduce((acc, cur) => acc + cur.rating, 0)
-        item.media.communityRating = {
-          average: totalRating / allBookRatings.length,
-          count: allBookRatings.length
-        }
-      }
+        if (global.ServerSettings.enableCommunityRating) {
+          // Include all users explicit ratings for community explicit rating
+          const allBookExplicitRatings = await Database.userBookExplicitRatingModel.findAll({
+            where: {
+              bookId: libraryItem.media.id,
+              userId: { [Op.ne]: user.id }
+            }
+          })
 
-      // Include users personal explicit rating
-      const userBookExplicitRating = await Database.userBookExplicitRatingModel.findOne({
-        where: { userId: user.id, bookId: libraryItem.media.id }
-      })
-      if (userBookExplicitRating) {
-        item.media.myExplicitRating = userBookExplicitRating.rating
-      }
-
-      // Include all users explicit ratings for community explicit rating
-      const allBookExplicitRatings = await Database.userBookExplicitRatingModel.findAll({
-        where: {
-          bookId: libraryItem.media.id,
-          userId: { [Op.ne]: user.id }
-        }
-      })
-
-      if (allBookExplicitRatings.length > 0) {
-        const totalExplicitRating = allBookExplicitRatings.reduce((acc, cur) => acc + cur.rating, 0)
-        item.media.communityExplicitRating = {
-          average: totalExplicitRating / allBookExplicitRatings.length,
-          count: allBookExplicitRatings.length
+          if (allBookExplicitRatings.length > 0) {
+            const totalExplicitRating = allBookExplicitRatings.reduce((acc, cur) => acc + cur.rating, 0)
+            item.media.communityExplicitRating = {
+              average: totalExplicitRating / allBookExplicitRatings.length,
+              count: allBookExplicitRatings.length
+            }
+          }
         }
       }
     }
@@ -108,7 +116,7 @@ class LibraryItemController {
   async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
     if (req.query.expanded == 1) {
-      const item = await this._getExpandedItemWithRatings(req.libraryItem, req.user)
+      const item = await LibraryItemController.prototype._getExpandedItemWithRatings(req.libraryItem, req.user)
 
       // Include users media progress
       if (includeEntities.includes('progress')) {
@@ -314,7 +322,7 @@ class LibraryItemController {
     }
 
     const updatedLibraryItem = await Database.libraryItemModel.getExpandedById(req.libraryItem.id)
-    const itemWithRatings = await this._getExpandedItemWithRatings(updatedLibraryItem, req.user)
+    const itemWithRatings = await LibraryItemController.prototype._getExpandedItemWithRatings(updatedLibraryItem, req.user)
 
     res.json({
       updated: hasUpdates,
@@ -1262,6 +1270,9 @@ class LibraryItemController {
    * @param {Response} res
    */
   async rate(req, res) {
+    if (!global.ServerSettings.enableRating) {
+      return res.status(403).json({ error: 'Rating is disabled' })
+    }
     try {
       const { rating } = req.body
       if (rating === null || typeof rating !== 'number' || rating < 0 || rating > 5) {
@@ -1274,7 +1285,7 @@ class LibraryItemController {
       await Database.userBookRatingModel.upsert({ userId, bookId, rating })
 
       const updatedLibraryItem = await Database.libraryItemModel.getExpandedById(req.libraryItem.id)
-      const itemWithRatings = await this._getExpandedItemWithRatings(updatedLibraryItem, req.user)
+      const itemWithRatings = await LibraryItemController.prototype._getExpandedItemWithRatings(updatedLibraryItem, req.user)
 
       res.status(200).json({ success: true, libraryItem: itemWithRatings })
     } catch (err) {
@@ -1290,6 +1301,9 @@ class LibraryItemController {
    * @param {Response} res
    */
   async rateExplicit(req, res) {
+    if (!global.ServerSettings.enableExplicitRating) {
+      return res.status(403).json({ error: 'Explicit rating is disabled' })
+    }
     try {
       const { rating } = req.body
       if (rating === null || typeof rating !== 'number' || rating < 0 || rating > 5) {
@@ -1302,7 +1316,7 @@ class LibraryItemController {
       await Database.userBookExplicitRatingModel.upsert({ userId, bookId, rating })
 
       const updatedLibraryItem = await Database.libraryItemModel.getExpandedById(req.libraryItem.id)
-      const itemWithRatings = await this._getExpandedItemWithRatings(updatedLibraryItem, req.user)
+      const itemWithRatings = await LibraryItemController.prototype._getExpandedItemWithRatings(updatedLibraryItem, req.user)
 
       res.status(200).json({ success: true, libraryItem: itemWithRatings })
     } catch (err) {
@@ -1313,12 +1327,5 @@ class LibraryItemController {
 }
 
 const controller = new LibraryItemController()
-
-// Manually bind 'this' for all methods
-for (const methodName of Object.getOwnPropertyNames(LibraryItemController.prototype)) {
-  if (methodName !== 'constructor' && typeof controller[methodName] === 'function') {
-    controller[methodName] = controller[methodName].bind(controller)
-  }
-}
 
 module.exports = controller

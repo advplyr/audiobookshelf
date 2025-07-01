@@ -6,7 +6,7 @@ FROM node:20-alpine AS build-client
 
 WORKDIR /client
 COPY /client /client
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###

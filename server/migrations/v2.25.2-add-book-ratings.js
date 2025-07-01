@@ -8,124 +8,137 @@ module.exports = {
     logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
     const transaction = await queryInterface.sequelize.transaction()
     try {
+      const booksTable = await queryInterface.describeTable('books')
       logger.info(`${loggerPrefix} adding columns to books table`)
-      await queryInterface.addColumn(
-        'books',
-        'providerRating',
-        {
-          type: DataTypes.FLOAT
-        },
-        { transaction }
-      )
-      await queryInterface.addColumn(
-        'books',
-        'provider',
-        {
-          type: DataTypes.STRING
-        },
-        { transaction }
-      )
-      await queryInterface.addColumn(
-        'books',
-        'providerId',
-        {
-          type: DataTypes.STRING
-        },
-        { transaction }
-      )
+      if (!booksTable.providerRating) {
+        await queryInterface.addColumn(
+          'books',
+          'providerRating',
+          {
+            type: DataTypes.FLOAT
+          },
+          { transaction }
+        )
+      }
+      if (!booksTable.provider) {
+        await queryInterface.addColumn(
+          'books',
+          'provider',
+          {
+            type: DataTypes.STRING
+          },
+          { transaction }
+        )
+      }
+      if (!booksTable.providerId) {
+        await queryInterface.addColumn(
+          'books',
+          'providerId',
+          {
+            type: DataTypes.STRING
+          },
+          { transaction }
+        )
+      }
       logger.info(`${loggerPrefix} added columns to books table`)
 
-      logger.info(`${loggerPrefix} creating userBookRatings table`)
-      await queryInterface.createTable(
-        'userBookRatings',
-        {
-          id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-          },
-          userId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: { model: 'users', key: 'id' },
-            onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
-          },
-          bookId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: { model: 'books', key: 'id' },
-            onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
-          },
-          rating: {
-            type: DataTypes.FLOAT,
-            allowNull: false
-          },
-          createdAt: {
-            type: DataTypes.DATE,
-            allowNull: false
-          },
-          updatedAt: {
-            type: DataTypes.DATE,
-            allowNull: false
-          }
-        },
-        { transaction }
-      )
-      await queryInterface.addConstraint('userBookRatings', {
-        fields: ['userId', 'bookId'],
-        type: 'unique',
-        name: 'user_book_ratings_unique_constraint',
-        transaction
-      })
-      logger.info(`${loggerPrefix} created userBookRatings table`)
+      const tables = await queryInterface.showAllTables()
 
-      logger.info(`${loggerPrefix} creating userBookExplicitRatings table`)
-      await queryInterface.createTable(
-        'userBookExplicitRatings',
-        {
-          id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
+      if (!tables.includes('userBookRatings')) {
+        logger.info(`${loggerPrefix} creating userBookRatings table`)
+        await queryInterface.createTable(
+          'userBookRatings',
+          {
+            id: {
+              type: DataTypes.INTEGER,
+              primaryKey: true,
+              autoIncrement: true
+            },
+            userId: {
+              type: DataTypes.STRING,
+              allowNull: false,
+              references: { model: 'users', key: 'id' },
+              onUpdate: 'CASCADE',
+              onDelete: 'CASCADE'
+            },
+            bookId: {
+              type: DataTypes.STRING,
+              allowNull: false,
+              references: { model: 'books', key: 'id' },
+              onUpdate: 'CASCADE',
+              onDelete: 'CASCADE'
+            },
+            rating: {
+              type: DataTypes.FLOAT,
+              allowNull: false
+            },
+            createdAt: {
+              type: DataTypes.DATE,
+              allowNull: false
+            },
+            updatedAt: {
+              type: DataTypes.DATE,
+              allowNull: false
+            }
           },
-          userId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: { model: 'users', key: 'id' },
-            onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
+          { transaction }
+        )
+        await queryInterface.addConstraint('userBookRatings', {
+          fields: ['userId', 'bookId'],
+          type: 'unique',
+          name: 'user_book_ratings_unique_constraint',
+          transaction
+        })
+        logger.info(`${loggerPrefix} created userBookRatings table`)
+      }
+
+      if (!tables.includes('userBookExplicitRatings')) {
+        logger.info(`${loggerPrefix} creating userBookExplicitRatings table`)
+        await queryInterface.createTable(
+          'userBookExplicitRatings',
+          {
+            id: {
+              type: DataTypes.INTEGER,
+              primaryKey: true,
+              autoIncrement: true
+            },
+            userId: {
+              type: DataTypes.STRING,
+              allowNull: false,
+              references: { model: 'users', key: 'id' },
+              onUpdate: 'CASCADE',
+              onDelete: 'CASCADE'
+            },
+            bookId: {
+              type: DataTypes.STRING,
+              allowNull: false,
+              references: { model: 'books', key: 'id' },
+              onUpdate: 'CASCADE',
+              onDelete: 'CASCADE'
+            },
+            rating: {
+              type: DataTypes.FLOAT,
+              allowNull: false
+            },
+            createdAt: {
+              type: DataTypes.DATE,
+              allowNull: false
+            },
+            updatedAt: {
+              type: DataTypes.DATE,
+              allowNull: false
+            }
           },
-          bookId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            references: { model: 'books', key: 'id' },
-            onUpdate: 'CASCADE',
-            onDelete: 'CASCADE'
-          },
-          rating: {
-            type: DataTypes.FLOAT,
-            allowNull: false
-          },
-          createdAt: {
-            type: DataTypes.DATE,
-            allowNull: false
-          },
-          updatedAt: {
-            type: DataTypes.DATE,
-            allowNull: false
-          }
-        },
-        { transaction }
-      )
-      await queryInterface.addConstraint('userBookExplicitRatings', {
-        fields: ['userId', 'bookId'],
-        type: 'unique',
-        name: 'user_book_explicit_ratings_unique_constraint',
-        transaction
-      })
-      logger.info(`${loggerPrefix} created userBookExplicitRatings table`)
+          { transaction }
+        )
+        await queryInterface.addConstraint('userBookExplicitRatings', {
+          fields: ['userId', 'bookId'],
+          type: 'unique',
+          name: 'user_book_explicit_ratings_unique_constraint',
+          transaction
+        })
+        logger.info(`${loggerPrefix} created userBookExplicitRatings table`)
+      }
 
       await transaction.commit()
       logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)

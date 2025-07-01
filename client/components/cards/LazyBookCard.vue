@@ -78,7 +78,7 @@
         </div>
 
         <!-- Error widget -->
-        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
+        <ui-tooltip cy-id="errorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
           <div :style="{ height: 1.5 + 'em', width: 2.5 + 'em' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
             <span class="material-symbols text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
           </div>
@@ -136,7 +136,7 @@
 
 <script>
 import Vue from 'vue'
-import MoreMenu from '@/components/widgets/MoreMenu'
+import MoreMenu from '@/components/widgets/MoreMenu.vue'
 
 export default {
   props: {
