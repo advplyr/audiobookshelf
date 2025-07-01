@@ -48,7 +48,7 @@
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
               <!-- RATING SECTION -->
-              <div v-if="serverSettings.enableRating" class="flex items-center space-x-4 mt-2">
+              <div v-if="serverSettings.enableRating && !isPodcast" class="flex items-center space-x-4 mt-2">
                 <div class="flex items-center">
                   <ui-rating-input :value="myRating" :label="$strings.LabelYourRating" @input="updateRating" />
                 </div>
@@ -67,7 +67,7 @@
               </div>
 
               <!-- EXPLICIT RATING SECTION -->
-              <div v-if="serverSettings.enableExplicitRating && isExplicit" class="flex items-center space-x-4 mt-3">
+              <div v-if="serverSettings.enableExplicitRating && isExplicit && !isPodcast" class="flex items-center space-x-4 mt-3">
                 <div class="flex items-center">
                   <ui-rating-input :value="myExplicitRating" :label="$strings.LabelExplicitRating" icon="flame" @input="updateExplicitRating" />
                 </div>

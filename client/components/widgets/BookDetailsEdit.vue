@@ -59,7 +59,7 @@
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1 items-end">
-        <div class="w-full md:w-1/2 px-1">
+        <div :class="isPodcast ? 'w-full px-1' : 'w-full md:w-1/2 px-1'">
           <div class="flex -mx-1">
             <div class="w-1/2 px-1">
               <div class="flex justify-center">
@@ -73,7 +73,7 @@
             </div>
           </div>
         </div>
-        <div class="w-full md:w-1/2 px-1 mt-2 md:mt-0">
+        <div v-if="!isPodcast" class="w-full md:w-1/2 px-1 mt-2 md:mt-0">
           <div class="flex justify-center items-center">
             <label class="px-1 text-sm font-semibold mr-2">{{ $strings.LabelRating }}</label>
             <ui-rating-input v-model="details.rating" @input="handleInputChange" />
@@ -128,6 +128,10 @@ export default {
     }
   },
   computed: {
+    isPodcast() {
+      if (!this.libraryItem) return false
+      return this.libraryItem.mediaType === 'podcast'
+    },
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
     },
@@ -259,6 +263,7 @@ export default {
     checkForChanges() {
       var metadata = {}
       for (const key in this.details) {
+        if (this.isPodcast && key === 'rating') continue
         var newValue = this.details[key]
         var oldValue = this.mediaMetadata[key]
         // Key cleared out or key first populated

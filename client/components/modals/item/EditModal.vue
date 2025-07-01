@@ -248,7 +248,7 @@ export default {
     libraryItemUpdated(updatedLibraryItem) {
       if (this.libraryItem && this.libraryItem.id === updatedLibraryItem.id) {
         // The updated item from the server doesn't contain rating data, so we preserve it from the client-side model.
-        if (this.libraryItem.media) {
+        if (this.libraryItem.media && this.mediaType !== 'podcast') {
           updatedLibraryItem.media = {
             ...(updatedLibraryItem.media || {}),
             myRating: this.libraryItem.media.myRating,

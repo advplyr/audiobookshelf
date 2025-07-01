@@ -225,7 +225,7 @@
           </div>
         </div>
 
-        <div v-if="selectedMatchOrig.rating != null" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.rating != null && !isPodcast" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.rating" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
             <ui-rating-input v-model="selectedMatch.rating" :disabled="!selectedMatchUsage.rating" :label="$strings.LabelRating" />
@@ -610,7 +610,7 @@ export default {
         }
       }
 
-      if (this.selectedMatchUsage.rating && this.selectedMatchOrig.rating) {
+      if (this.selectedMatchUsage.rating && this.selectedMatchOrig.rating && !this.isPodcast) {
         updatePayload.provider_data = {
           provider: this.provider,
           providerId: this.selectedMatchOrig.asin || this.selectedMatchOrig.id,
