@@ -484,8 +484,9 @@ class Auth {
       let refreshToken = req.cookies.refresh_token
 
       // For mobile clients, the refresh token is sent in the authorization header
+      // Force return refresh token if x-return-tokens header is true
       let shouldReturnRefreshToken = false
-      if (!refreshToken && req.headers.authorization?.startsWith('Bearer ')) {
+      if (req.headers.authorization?.startsWith('Bearer ') && (!refreshToken || req.headers['x-return-tokens'] === 'true')) {
         refreshToken = req.headers.authorization.split(' ')[1]
         shouldReturnRefreshToken = true
       }
