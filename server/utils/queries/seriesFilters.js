@@ -205,6 +205,7 @@ module.exports = {
         delete bs.book.libraryItem
         libraryItem.media = bs.book
         const oldLibraryItem = libraryItem.toOldJSONMinified()
+        oldLibraryItem.sequence = bs.sequence
         return oldLibraryItem
       })
       allOldSeries.push(oldSeries)
