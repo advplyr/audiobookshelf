@@ -119,6 +119,10 @@ class Book extends Model {
     this.tags
     /** @type {string[]} */
     this.genres
+    /** @type {string} */
+    this.md5FileHash
+    /** @type {string} */
+    this.md5FilenameHash
     /** @type {Date} */
     this.updatedAt
     /** @type {Date} */
@@ -164,7 +168,9 @@ class Book extends Model {
         ebookFile: DataTypes.JSON,
         chapters: DataTypes.JSON,
         tags: DataTypes.JSON,
-        genres: DataTypes.JSON
+        genres: DataTypes.JSON,
+        md5FileHash: DataTypes.STRING,
+        md5FilenameHash: DataTypes.STRING
       },
       {
         sequelize,
@@ -632,7 +638,11 @@ class Book extends Model {
       tags: [...(this.tags || [])],
       audioFiles: structuredClone(this.audioFiles),
       chapters: structuredClone(this.chapters),
-      ebookFile: structuredClone(this.ebookFile)
+      ebookFile: structuredClone(this.ebookFile),
+      md5: {
+        file: this.md5FileHash,
+        filename: this.md5FilenameHash
+      }
     }
   }
 
@@ -680,7 +690,11 @@ class Book extends Model {
       ebookFile: structuredClone(this.ebookFile),
       duration: this.duration,
       size: this.size,
-      tracks: this.getTracklist(libraryItemId)
+      tracks: this.getTracklist(libraryItemId),
+      md5: {
+        file: this.md5FileHash,
+        filename: this.md5FilenameHash
+      }
     }
   }
 }

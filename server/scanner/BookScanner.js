@@ -19,6 +19,7 @@ const LibraryFile = require('../objects/files/LibraryFile')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CoverManager = require('../managers/CoverManager')
+const { generateBookHashes } = require('../utils/hashUtils')
 
 const LibraryScan = require('./LibraryScan')
 const OpfFileScanner = require('./OpfFileScanner')
@@ -206,6 +207,25 @@ class BookScanner {
     }
 
     const ebookFileScanData = await parseEbookMetadata.parse(media.ebookFile)
+
+    // Generate/update MD5 hashes for KOReader sync if ebook file exists
+    if (media.ebookFile) {
+      try {
+        const hashes = await generateBookHashes(media.ebookFile.metadata.path)
+        if (media.md5FileHash !== hashes.fileHash || media.md5FilenameHash !== hashes.filenameHash) {
+          libraryScan.addLog(LogLevel.DEBUG, `Updating KOReader hashes for book "${media.title}": file=${hashes.fileHash}, filename=${hashes.filenameHash}`)
+          media.md5FileHash = hashes.fileHash
+          media.md5FilenameHash = hashes.filenameHash
+          hasMediaChanges = true
+        }
+      } catch (error) {
+        libraryScan.addLog(LogLevel.WARN, `Failed to generate KOReader hashes for book "${media.title}": ${error.message}`)
+      }
+    } else if (media.md5FileHash || media.md5FilenameHash) {
+      media.md5FileHash = null
+      media.md5FilenameHash = null
+      hasMediaChanges = true
+    }
 
     const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, ebookFileScanData, libraryItemData, libraryScan, librarySettings, existingLibraryItem.id)
     let authorsUpdated = false
@@ -467,11 +487,28 @@ class BookScanner {
 
     let duration = 0
     scannedAudioFiles.forEach((af) => (duration += !isNaN(af.duration) ? Number(af.duration) : 0))
+
+    // Generate MD5 hashes for KOReader sync if ebook file exists
+    let md5FileHash = null
+    let md5FilenameHash = null
+    if (ebookLibraryFile) {
+      try {
+        const hashes = await generateBookHashes(ebookLibraryFile.metadata.path)
+        md5FileHash = hashes.fileHash
+        md5FilenameHash = hashes.filenameHash
+        libraryScan.addLog(LogLevel.DEBUG, `Generated KOReader hashes for book "${bookMetadata.title}": file=${md5FileHash}, filename=${md5FilenameHash}`)
+      } catch (error) {
+        libraryScan.addLog(LogLevel.WARN, `Failed to generate KOReader hashes for book "${bookMetadata.title}": ${error.message}`)
+      }
+    }
+
     const bookObject = {
       ...bookMetadata,
       audioFiles: scannedAudioFiles,
       ebookFile: ebookLibraryFile || null,
       duration,
+      md5FileHash,
+      md5FilenameHash,
       bookAuthors: [],
       bookSeries: []
     }
