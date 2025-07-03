@@ -309,11 +309,13 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-    router.use(express.json({ limit: '10mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
+
+    // Skip JSON parsing for internal-api routes
+    router.use(/^(?!\/internal-api).*/, express.json({ limit: '10mb' }))
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
@@ -404,6 +406,7 @@ class Server {
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
       router.get('*', (req, res) => handle(req, res))
+      router.post('/internal-api/*', (req, res) => handle(req, res))
     }
 
     const unixSocketPrefix = 'unix/'
