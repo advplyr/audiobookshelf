@@ -483,17 +483,19 @@ class Auth {
     router.post('/auth/refresh', async (req, res) => {
       let refreshToken = req.cookies.refresh_token
 
-      // For mobile clients, the refresh token is sent in the authorization header
-      // Force return refresh token if x-return-tokens header is true
+      // If x-refresh-token header is present, use it instead of the cookie
+      // and return the refresh token in the response
       let shouldReturnRefreshToken = false
-      if (req.headers.authorization?.startsWith('Bearer ') && (!refreshToken || req.headers['x-return-tokens'] === 'true')) {
-        refreshToken = req.headers.authorization.split(' ')[1]
+      if (req.headers['x-refresh-token']) {
+        refreshToken = req.headers['x-refresh-token']
         shouldReturnRefreshToken = true
       }
 
       if (!refreshToken) {
         return res.status(401).json({ error: 'No refresh token provided' })
       }
+
+      Logger.debug(`[Auth] refreshing token. shouldReturnRefreshToken: ${shouldReturnRefreshToken}`)
 
       try {
         // Verify the refresh token
@@ -820,7 +822,9 @@ class Auth {
 
     // Logout route
     router.post('/logout', async (req, res) => {
-      const refreshToken = req.cookies.refresh_token
+      // Refresh token be alternatively be sent in the header
+      const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
+
       // Clear refresh token cookie
       res.clearCookie('refresh_token', {
         path: '/'
@@ -829,12 +833,15 @@ class Auth {
       // Invalidate the session in database using refresh token
       if (refreshToken) {
         try {
+          Logger.info(`[Auth] logout: Invalidating session for refresh token: ${refreshToken}`)
           await Database.sessionModel.destroy({
             where: { refreshToken }
           })
         } catch (error) {
           Logger.error(`[Auth] Error destroying session: ${error.message}`)
         }
+      } else {
+        Logger.info(`[Auth] logout: No refresh token on request`)
       }
 
       // TODO: invalidate possible JWTs
