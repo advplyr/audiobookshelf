@@ -1,9 +1,9 @@
 <template>
   <div class="relative w-full">
-    <p v-if="label" class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
+    <p v-if="label && !labelHidden" class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
     <button ref="buttonWrapper" type="button" :aria-label="longLabel" :disabled="disabled" class="relative w-full border rounded-sm shadow-xs pl-3 pr-8 py-2 text-left sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
-        <span class="block truncate font-sans" :class="{ 'font-semibold': selectedSubtext, 'text-sm': small }">{{ selectedText }}</span>
+        <span class="block truncate font-sans" :class="{ 'font-semibold': selectedSubtext, 'text-sm': small, 'text-gray-400': !selectedText }">{{ selectedText || placeholder }}</span>
         <span v-if="selectedSubtext">:&nbsp;</span>
         <span v-if="selectedSubtext" class="font-normal block truncate font-sans text-sm text-gray-400">{{ selectedSubtext }}</span>
       </span>
@@ -36,9 +36,14 @@ export default {
       type: String,
       default: ''
     },
+    labelHidden: Boolean,
     items: {
       type: Array,
       default: () => []
+    },
+    placeholder: {
+      type: String,
+      default: ''
     },
     disabled: Boolean,
     small: Boolean,

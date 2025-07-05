@@ -520,7 +520,11 @@ class User extends Model {
       username: this.username,
       email: this.email,
       type: this.type,
+      // TODO: Old non-expiring token
       token: this.type === 'root' && hideRootToken ? '' : this.token,
+      // TODO: Temporary flag not saved in db that is set in Auth.js jwtAuthCheck
+      // Necessary to detect apps using old tokens that no longer match the old token stored on the user
+      isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],

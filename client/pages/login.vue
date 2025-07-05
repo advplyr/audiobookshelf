@@ -40,6 +40,15 @@
 
           <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
 
+          <div v-if="showNewAuthSystemAdminMessage" class="mb-4">
+            <widgets-alert type="warning">
+              <div>
+                <p>Authentication has been improved for security. All users will be required to re-login.</p>
+                <a href="https://github.com/advplyr/audiobookshelf/discussions/4460" target="_blank" class="underline">More info</a>
+              </div>
+            </widgets-alert>
+          </div>
+
           <form v-show="login_local" @submit.prevent="submitForm">
             <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
             <ui-text-input v-model.trim="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
@@ -85,7 +94,8 @@ export default {
       MetadataPath: '',
       login_local: true,
       login_openid: false,
-      authFormData: null
+      authFormData: null,
+      showNewAuthSystemAdminMessage: false
     }
   },
   watch: {
@@ -184,6 +194,7 @@ export default {
     },
     async submitForm() {
       this.error = null
+      this.showNewAuthSystemAdminMessage = false
       this.processing = true
 
       const payload = {
@@ -217,14 +228,27 @@ export default {
           }
         })
         .then((res) => {
+          // Force re-login if user is using an old token with no expiration
+          if (res.user.isOldToken) {
+            if (res.user.type === 'admin' || res.user.type === 'root') {
+              this.username = res.user.username
+              // Show message to admin users about new auth system
+              this.showNewAuthSystemAdminMessage = true
+            } else {
+              // Regular users just shown login
+              this.username = res.user.username
+            }
+            return false
+          }
           this.setUser(res)
-          this.processing = false
           return true
         })
         .catch((error) => {
           console.error('Authorize error', error)
-          this.processing = false
           return false
+        })
+        .finally(() => {
+          this.processing = false
         })
     },
     checkStatus() {

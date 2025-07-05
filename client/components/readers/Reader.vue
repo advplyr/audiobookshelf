@@ -266,9 +266,6 @@ export default {
     isComic() {
       return this.ebookFormat == 'cbz' || this.ebookFormat == 'cbr'
     },
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     keepProgress() {
       return this.$store.state.ereaderKeepProgress
     },

@@ -53,6 +53,7 @@ export default {
         else if (pageName === 'sessions') return this.$strings.HeaderListeningSessions
         else if (pageName === 'stats') return this.$strings.HeaderYourStats
         else if (pageName === 'users') return this.$strings.HeaderUsers
+        else if (pageName === 'api-keys') return this.$strings.HeaderApiKeys
         else if (pageName === 'item-metadata-utils') return this.$strings.HeaderItemMetadataUtils
         else if (pageName === 'rss-feeds') return this.$strings.HeaderRSSFeeds
         else if (pageName === 'email') return this.$strings.HeaderEmail

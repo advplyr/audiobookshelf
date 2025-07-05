@@ -23,7 +23,7 @@ export default {
     processing: Boolean,
     persistent: {
       type: Boolean,
-      default: true
+      default: false
     },
     width: {
       type: [String, Number],
@@ -99,7 +99,7 @@ export default {
         this.preventClickoutside = false
         return
       }
-      if (this.processing && this.persistent) return
+      if (this.processing || this.persistent) return
       if (ev.srcElement && ev.srcElement.classList.contains('modal-bg')) {
         this.show = false
       }
