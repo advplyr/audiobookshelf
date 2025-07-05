@@ -492,6 +492,7 @@ class Auth {
       }
 
       if (!refreshToken) {
+        Logger.error(`[Auth] Failed to refresh token. No refresh token provided`)
         return res.status(401).json({ error: 'No refresh token provided' })
       }
 
@@ -502,6 +503,7 @@ class Auth {
         const decoded = jwt.verify(refreshToken, global.ServerSettings.tokenSecret)
 
         if (decoded.type !== 'refresh') {
+          Logger.error(`[Auth] Failed to refresh token. Invalid token type: ${decoded.type}`)
           return res.status(401).json({ error: 'Invalid token type' })
         }
 
@@ -510,6 +512,7 @@ class Auth {
         })
 
         if (!session) {
+          Logger.error(`[Auth] Failed to refresh token. Session not found for refresh token: ${refreshToken}`)
           return res.status(401).json({ error: 'Invalid refresh token' })
         }
 
@@ -522,6 +525,7 @@ class Auth {
 
         const user = await Database.userModel.getUserById(decoded.userId)
         if (!user?.isActive) {
+          Logger.error(`[Auth] Failed to refresh token. User not found or inactive for user id: ${decoded.userId}`)
           return res.status(401).json({ error: 'User not found or inactive' })
         }
 
@@ -1128,6 +1132,16 @@ class Auth {
         done(null, null)
         return
       }
+
+      // TODO: Temporary flag to report old tokens to users
+      // May be a better place for this but here means we dont have to decode the token again
+      if (!jwt_payload.exp && !user.isOldToken) {
+        Logger.debug(`[Auth] User ${user.username} is using an access token without an expiration`)
+        user.isOldToken = true
+      } else if (jwt_payload.exp && user.isOldToken !== undefined) {
+        delete user.isOldToken
+      }
+
       // approve login
       done(null, user)
     }
