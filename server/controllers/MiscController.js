@@ -59,6 +59,12 @@ class MiscController {
     if (!library) {
       return res.status(404).send('Library not found')
     }
+
+    if (!req.user.checkCanAccessLibrary(library.id)) {
+      Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
+      return res.sendStatus(403)
+    }
+
     const folder = library.libraryFolders.find((fold) => fold.id === folderId)
     if (!folder) {
       return res.status(404).send('Folder not found')

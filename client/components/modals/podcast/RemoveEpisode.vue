@@ -11,7 +11,7 @@
           {{ $getString('MessageConfirmRemoveEpisode', [episodeTitle]) }}
         </p>
         <p v-else class="text-lg text-gray-200 mb-4">{{ $getString('MessageConfirmRemoveEpisodes', [episodes.length]) }}</p>
-        <p class="text-xs font-semibold text-warning/90">Note: This does not delete the audio file unless toggling "Hard delete file"</p>
+        <p class="text-xs font-semibold text-warning/90">{{ $strings.MessageConfirmRemoveEpisodeNote }}</p>
       </div>
       <div class="flex justify-between items-center pt-4">
         <ui-checkbox v-model="hardDeleteFile" :label="$strings.LabelHardDeleteFile" check-color="error" checkbox-bg="bg" small label-class="text-base text-gray-200 pl-3" />

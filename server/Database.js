@@ -765,6 +765,26 @@ class Database {
     if (badSessionsRemoved > 0) {
       Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
     }
+
+    // Remove mediaProgresses with duplicate mediaItemId (remove the oldest updatedAt or if updatedAt is the same, remove arbitrary one)
+    const [duplicateMediaProgresses] = await this.sequelize.query(`SELECT mp1.id, mp1.mediaItemId
+FROM mediaProgresses mp1
+WHERE EXISTS (
+    SELECT 1
+    FROM mediaProgresses mp2
+    WHERE mp2.mediaItemId = mp1.mediaItemId
+    AND mp2.userId = mp1.userId
+    AND (
+        mp2.updatedAt > mp1.updatedAt
+        OR (mp2.updatedAt = mp1.updatedAt AND mp2.id < mp1.id)
+    )
+)`)
+    for (const duplicateMediaProgress of duplicateMediaProgresses) {
+      Logger.warn(`Found duplicate mediaProgress for mediaItem "${duplicateMediaProgress.mediaItemId}" - removing it`)
+      await this.mediaProgressModel.destroy({
+        where: { id: duplicateMediaProgress.id }
+      })
+    }
   }
 
   async createTextSearchQuery(query) {

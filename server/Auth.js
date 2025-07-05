@@ -20,10 +20,7 @@ class Auth {
     // Map of openId sessions indexed by oauth2 state-variable
     this.openIdAuthSession = new Map()
     const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
-    this.ignorePatterns = [
-      new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), 
-      new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)
-    ]
+    this.ignorePatterns = [new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)]
   }
 
   /**
@@ -445,7 +442,17 @@ class Auth {
     // Local strategy login route (takes username and password)
     router.post('/login', passport.authenticate('local'), async (req, res) => {
       // return the user login response json if the login was successfull
-      res.json(await this.getUserLoginResponsePayload(req.user))
+      const userResponse = await this.getUserLoginResponsePayload(req.user)
+
+      // Experimental Next.js client uses bearer token in cookies
+      res.cookie('auth_token', userResponse.user.token, {
+        httpOnly: true,
+        secure: req.secure || req.get('x-forwarded-proto') === 'https',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      })
+
+      res.json(userResponse)
     })
 
     // openid strategy login route (this redirects to the configured openid login provider)
@@ -721,6 +728,7 @@ class Auth {
           const authMethod = req.cookies.auth_method
 
           res.clearCookie('auth_method')
+          res.clearCookie('auth_token')
 
           let logoutUrl = null
 

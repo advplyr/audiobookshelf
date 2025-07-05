@@ -107,7 +107,7 @@ class PlaybackSessionManager {
 
     const syncResults = []
     for (const sessionJson of sessions) {
-      Logger.info(`[PlaybackSessionManager] Syncing local session "${sessionJson.displayTitle}" (${sessionJson.id})`)
+      Logger.info(`[PlaybackSessionManager] Syncing local session "${sessionJson.displayTitle}" (${sessionJson.id}) (updatedAt: ${sessionJson.updatedAt})`)
       const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
       syncResults.push(result)
     }
@@ -230,9 +230,9 @@ class PlaybackSessionManager {
     let userProgressForItem = user.getMediaProgress(mediaItemId)
     if (userProgressForItem) {
       if (userProgressForItem.updatedAt.valueOf() > session.updatedAt) {
-        Logger.debug(`[PlaybackSessionManager] Not updating progress for "${session.displayTitle}" because it has been updated more recently`)
+        Logger.info(`[PlaybackSessionManager] Not updating progress for "${session.displayTitle}" because it has been updated more recently (${userProgressForItem.updatedAt.valueOf()} > ${session.updatedAt}) (incoming currentTime: ${session.currentTime}) (current currentTime: ${userProgressForItem.currentTime})`)
       } else {
-        Logger.debug(`[PlaybackSessionManager] Updating progress for "${session.displayTitle}" with current time ${session.currentTime} (previously ${userProgressForItem.currentTime})`)
+        Logger.info(`[PlaybackSessionManager] Updating progress for "${session.displayTitle}" with current time ${session.currentTime} (previously ${userProgressForItem.currentTime})`)
         const updateResponse = await user.createUpdateMediaProgressFromPayload({
           libraryItemId: libraryItem.id,
           episodeId: session.episodeId,
@@ -246,7 +246,7 @@ class PlaybackSessionManager {
         }
       }
     } else {
-      Logger.debug(`[PlaybackSessionManager] Creating new media progress for media item "${session.displayTitle}"`)
+      Logger.info(`[PlaybackSessionManager] Creating new media progress for media item "${session.displayTitle}"`)
       const updateResponse = await user.createUpdateMediaProgressFromPayload({
         libraryItemId: libraryItem.id,
         episodeId: session.episodeId,

@@ -12,6 +12,7 @@ const { version } = require('../package.json')
 
 // Utils
 const fileUtils = require('./utils/fileUtils')
+const { toNumber } = require('./utils/index')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -84,12 +85,8 @@ class Server {
         global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
       }
     }
-
-    if (process.env.PODCAST_DOWNLOAD_TIMEOUT) {
-      global.PodcastDownloadTimeout = process.env.PODCAST_DOWNLOAD_TIMEOUT
-    } else {
-      global.PodcastDownloadTimeout = 30000
-    }
+    global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
+    global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -223,6 +220,7 @@ class Server {
 
   async start() {
     Logger.info('=== Starting Server ===')
+
     this.initProcessEventListeners()
     await this.init()
 
@@ -284,6 +282,7 @@ class Server {
     await this.auth.initPassportJs()
 
     const router = express.Router()
+
     // if RouterBasePath is set, modify all requests to include the base path
     app.use((req, res, next) => {
       const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
@@ -310,15 +309,11 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-    router.use(express.json({ limit: '5mb' }))
+    router.use(express.json({ limit: '10mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
-
-    // Static path to generated nuxt
-    const distPath = Path.join(global.appRoot, '/client/dist')
-    router.use(express.static(distPath))
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
@@ -338,32 +333,6 @@ class Server {
 
     // Auth routes
     await this.auth.initAuthRoutes(router)
-
-    // Client dynamic routes
-    const dynamicRoutes = [
-      '/item/:id',
-      '/author/:id',
-      '/audiobook/:id/chapters',
-      '/audiobook/:id/edit',
-      '/audiobook/:id/manage',
-      '/library/:library',
-      '/library/:library/search',
-      '/library/:library/bookshelf/:id?',
-      '/library/:library/authors',
-      '/library/:library/narrators',
-      '/library/:library/stats',
-      '/library/:library/series/:id?',
-      '/library/:library/podcast/search',
-      '/library/:library/podcast/latest',
-      '/library/:library/podcast/download-queue',
-      '/config/users/:id',
-      '/config/users/:id/sessions',
-      '/config/item-metadata-utils/:id',
-      '/collection/:id',
-      '/playlist/:id',
-      '/share/:slug'
-    ]
-    dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     router.post('/init', (req, res) => {
       if (Database.hasRootUser) {
@@ -395,10 +364,61 @@ class Server {
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
-    this.server.listen(this.Port, this.Host, () => {
-      if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
-      else Logger.info(`Listening on port :${this.Port}`)
-    })
+    const ReactClientPath = process.env.REACT_CLIENT_PATH
+    if (!ReactClientPath) {
+      // Static path to generated nuxt
+      const distPath = Path.join(global.appRoot, '/client/dist')
+      router.use(express.static(distPath))
+
+      // Client dynamic routes
+      const dynamicRoutes = [
+        '/item/:id',
+        '/author/:id',
+        '/audiobook/:id/chapters',
+        '/audiobook/:id/edit',
+        '/audiobook/:id/manage',
+        '/library/:library',
+        '/library/:library/search',
+        '/library/:library/bookshelf/:id?',
+        '/library/:library/authors',
+        '/library/:library/narrators',
+        '/library/:library/stats',
+        '/library/:library/series/:id?',
+        '/library/:library/podcast/search',
+        '/library/:library/podcast/latest',
+        '/library/:library/podcast/download-queue',
+        '/config/users/:id',
+        '/config/users/:id/sessions',
+        '/config/item-metadata-utils/:id',
+        '/collection/:id',
+        '/playlist/:id',
+        '/share/:slug'
+      ]
+      dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    } else {
+      // This is for using the experimental Next.js client
+      Logger.info(`Using React client at ${ReactClientPath}`)
+      const nextPath = Path.join(ReactClientPath, 'node_modules/next')
+      const next = require(nextPath)
+      const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
+      const handle = nextApp.getRequestHandler()
+      await nextApp.prepare()
+      router.get('*', (req, res) => handle(req, res))
+    }
+
+    const unixSocketPrefix = 'unix/'
+    if (this.Host?.startsWith(unixSocketPrefix)) {
+      const sockPath = this.Host.slice(unixSocketPrefix.length)
+      this.server.listen(sockPath, async () => {
+        await fs.chmod(sockPath, 0o666)
+        Logger.info(`Listening on unix socket ${sockPath}`)
+      })
+    } else {
+      this.server.listen(this.Port, this.Host, () => {
+        if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+        else Logger.info(`Listening on port :${this.Port}`)
+      })
+    }
 
     // Start listening for socket connections
     SocketAuthority.initialize(this)

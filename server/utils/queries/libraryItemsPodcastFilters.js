@@ -59,6 +59,8 @@ module.exports = {
       replacements.filterValue = value
     } else if (group === 'languages') {
       mediaWhere['language'] = value
+    } else if (group === 'explicit') {
+      mediaWhere['explicit'] = true
     }
 
     return {
@@ -149,11 +151,12 @@ module.exports = {
       libraryId
     }
     const libraryItemIncludes = []
-    if (includeRSSFeed) {
+    if (filterGroup === 'feed-open' || includeRSSFeed) {
+      const rssFeedRequired = filterGroup === 'feed-open'
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open',
-        separate: true
+        required: rssFeedRequired,
+        separate: !rssFeedRequired
       })
     }
     if (filterGroup === 'issues') {
@@ -411,6 +414,43 @@ module.exports = {
       })
     }
 
+    // Search podcast episode title
+    const podcastEpisodes = await Database.podcastEpisodeModel.findAll({
+      where: [
+        Sequelize.literal(textSearchQuery.matchExpression('podcastEpisode.title')),
+        {
+          '$podcast.libraryItem.libraryId$': library.id
+        }
+      ],
+      replacements: userPermissionPodcastWhere.replacements,
+      include: [
+        {
+          model: Database.podcastModel,
+          where: [...userPermissionPodcastWhere.podcastWhere],
+          include: [
+            {
+              model: Database.libraryItemModel
+            }
+          ]
+        }
+      ],
+      distinct: true,
+      offset,
+      limit
+    })
+    const episodeMatches = []
+    for (const episode of podcastEpisodes) {
+      const libraryItem = episode.podcast.libraryItem
+      libraryItem.media = episode.podcast
+      libraryItem.media.podcastEpisodes = []
+      const oldPodcastEpisodeJson = episode.toOldJSONExpanded(libraryItem.id)
+      const libraryItemJson = libraryItem.toOldJSONExpanded()
+      libraryItemJson.recentEpisode = oldPodcastEpisodeJson
+      episodeMatches.push({
+        libraryItem: libraryItemJson
+      })
+    }
+
     const matchJsonValue = textSearchQuery.matchExpression('json_each.value')
 
     // Search tags
@@ -450,7 +490,8 @@ module.exports = {
     return {
       podcast: itemMatches,
       tags: tagMatches,
-      genres: genreMatches
+      genres: genreMatches,
+      episodes: episodeMatches
     }
   },
 
