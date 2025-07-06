@@ -19,7 +19,7 @@
 
       <tables-api-keys-table ref="apiKeysTable" class="pt-2" @edit="setShowApiKeyModal" @numApiKeys="(count) => (numApiKeys = count)" />
     </app-settings-content>
-    <modals-api-key-modal ref="apiKeyModal" v-model="showApiKeyModal" :api-key="selectedApiKey" :users="users" @created="apiKeyCreated" @deleted="apiKeyDeleted" @updated="apiKeyUpdated" />
+    <modals-api-key-modal ref="apiKeyModal" v-model="showApiKeyModal" :api-key="selectedApiKey" :users="users" @created="apiKeyCreated" @updated="apiKeyUpdated" />
     <modals-api-key-created-modal ref="apiKeyCreatedModal" v-model="showApiKeyCreatedModal" :api-key="selectedApiKey" />
   </div>
 </template>
@@ -49,9 +49,6 @@ export default {
       if (this.$refs.apiKeysTable) {
         this.$refs.apiKeysTable.addApiKey(apiKey)
       }
-    },
-    apiKeyDeleted() {
-      this.numApiKeys--
     },
     apiKeyUpdated(apiKey) {
       if (this.$refs.apiKeysTable) {

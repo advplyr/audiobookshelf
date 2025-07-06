@@ -25,6 +25,12 @@ class Auth {
 
     this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 7 * 24 * 60 * 60 // 7 days
     this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 12 * 60 * 60 // 12 hours
+    if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
+      Logger.info(`[Auth] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)
+    }
+    if (parseInt(process.env.ACCESS_TOKEN_EXPIRY) > 0) {
+      Logger.info(`[Auth] Access token expiry set from ENV variable to ${this.AccessTokenExpiry} seconds`)
+    }
   }
 
   /**

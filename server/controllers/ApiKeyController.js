@@ -87,6 +87,9 @@ class ApiKeyController {
       isActive: !!req.body.isActive,
       createdByUserId: req.user.id
     })
+    apiKeyInstance.dataValues.user = await apiKeyInstance.getUser({
+      attributes: ['id', 'username', 'type']
+    })
 
     Logger.info(`[ApiKeyController] Created API key "${apiKeyInstance.name}"`)
     return res.json({
@@ -152,6 +155,9 @@ class ApiKeyController {
 
     if (hasUpdates) {
       await apiKey.save()
+      apiKey.dataValues.user = await apiKey.getUser({
+        attributes: ['id', 'username', 'type']
+      })
       Logger.info(`[ApiKeyController] Updated API key "${apiKey.name}"`)
     } else {
       Logger.info(`[ApiKeyController] No updates needed to API key "${apiKey.name}"`)

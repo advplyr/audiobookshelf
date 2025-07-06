@@ -93,7 +93,7 @@ export default {
             this.$toast.error(data.error)
           } else {
             this.removeApiKey(apiKey.id)
-            this.$emit('deleted', apiKey.id)
+            this.$emit('numApiKeys', this.apiKeys.length)
           }
         })
         .catch((error) => {
