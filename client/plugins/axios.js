@@ -1,4 +1,4 @@
-export default function ({ $axios, store, $config, app }) {
+export default function ({ $axios, store, $root, app }) {
   // Track if we're currently refreshing to prevent multiple refresh attempts
   let isRefreshing = false
   let failedQueue = []
@@ -81,6 +81,11 @@ export default function ({ $axios, store, $config, app }) {
 
         // Update the token in store and localStorage
         store.commit('user/setUser', response.user)
+
+        // Emit event used to re-authenticate socket in default.vue since $root is not available here
+        if (app.$eventBus) {
+          app.$eventBus.$emit('token_refreshed', newAccessToken)
+        }
 
         // Update the original request with new token
         if (!originalRequest.headers) {

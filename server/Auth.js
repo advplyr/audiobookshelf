@@ -1054,6 +1054,8 @@ class Auth {
 
   /**
    * Function to validate a jwt token for a given user
+   * Used to authenticate socket connections
+   * TODO: Support API keys for web socket connections
    *
    * @param {string} token
    * @returns {Object} tokens data

@@ -231,6 +231,9 @@ class SocketAuthority {
    * When setting up a socket connection the user needs to be associated with a socket id
    * for this the client will send a 'auth' event that includes the users API token
    *
+   * Sends event 'init' to the socket. For admins this contains an array of users online.
+   * For failed authentication it sends event 'auth_failed' with a message
+   *
    * @param {SocketIO.Socket} socket
    * @param {string} token JWT
    */
@@ -242,7 +245,7 @@ class SocketAuthority {
     if (!token_data?.userId) {
       // Token invalid
       Logger.error('Cannot validate socket - invalid token')
-      return socket.emit('invalid_token')
+      return socket.emit('auth_failed', { message: 'Invalid token' })
     }
 
     // get the user via the id from the decoded jwt.
@@ -250,7 +253,11 @@ class SocketAuthority {
     if (!user) {
       // user not found
       Logger.error('Cannot validate socket - invalid token')
-      return socket.emit('invalid_token')
+      return socket.emit('auth_failed', { message: 'Invalid token' })
+    }
+    if (!user.isActive) {
+      Logger.error('Cannot validate socket - user is not active')
+      return socket.emit('auth_failed', { message: 'Invalid user' })
     }
 
     const client = this.clients[socket.id]
@@ -260,13 +267,18 @@ class SocketAuthority {
     }
 
     if (client.user !== undefined) {
-      Logger.debug(`[SocketAuthority] Authenticating socket client already has user`, client.user.username)
+      if (client.user.id === user.id) {
+        // Allow re-authentication of a socket to the same user
+        Logger.info(`[SocketAuthority] Authenticating socket already associated to user "${client.user.username}"`)
+      } else {
+        // Allow re-authentication of a socket to a different user but shouldn't happen
+        Logger.warn(`[SocketAuthority] Authenticating socket to user "${user.username}", but is already associated with a different user "${client.user.username}"`)
+      }
+    } else {
+      Logger.debug(`[SocketAuthority] Authenticating socket to user "${user.username}"`)
     }
 
     client.user = user
-
-    Logger.debug(`[SocketAuthority] User Online ${client.user.username}`)
-
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
     // Update user lastSeen without firing sequelize bulk update hooks
