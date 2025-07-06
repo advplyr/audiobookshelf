@@ -757,7 +757,7 @@
   "MessageConfirmRemoveAuthor": "Opravdu chcete odstranit autora \"{0}\"?",
   "MessageConfirmRemoveCollection": "Opravdu chcete odstranit kolekci \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Opravdu chcete odstranit epizodu \"{0}\"?",
-  "MessageConfirmRemoveEpisodeNote": "Poznámka: Tím se zvukový soubor neodstraní, pokud nepřepnete volbu “Tvrdé odstranění souboru„“.",
+  "MessageConfirmRemoveEpisodeNote": "Poznámka: Tím se zvukový soubor neodstraní, pokud nepřepnete volbu “Tvrdé odstranění souboru“",
   "MessageConfirmRemoveEpisodes": "Opravdu chcete odstranit {0} epizody?",
   "MessageConfirmRemoveListeningSessions": "Opravdu chcete odebrat {0} poslechových relací?",
   "MessageConfirmRemoveMetadataFiles": "Jste si jisti, že chcete odstranit všechny metadata.{0} soubory ve složkách s položkami ve vaší knihovně?",
