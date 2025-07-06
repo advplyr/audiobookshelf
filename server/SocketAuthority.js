@@ -1,7 +1,7 @@
 const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
-const Auth = require('./Auth')
+const TokenManager = require('./auth/TokenManager')
 
 /**
  * @typedef SocketClient
@@ -240,7 +240,8 @@ class SocketAuthority {
   async authenticateSocket(socket, token) {
     // we don't use passport to authenticate the jwt we get over the socket connection.
     // it's easier to directly verify/decode it.
-    const token_data = Auth.validateAccessToken(token)
+    // TODO: Support API keys for web socket connections
+    const token_data = TokenManager.validateAccessToken(token)
 
     if (!token_data?.userId) {
       // Token invalid

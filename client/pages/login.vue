@@ -304,6 +304,7 @@ export default {
     }
   },
   async mounted() {
+    // Token passed as query parameter after successful oidc login
     if (this.$route.query?.setToken) {
       localStorage.setItem('token', this.$route.query.setToken)
     }

@@ -128,7 +128,7 @@ class UserController {
 
     const userId = uuidv4()
     const pash = await this.auth.hashPass(req.body.password)
-    const token = await this.auth.generateAccessToken({ id: userId, username: req.body.username })
+    const token = this.auth.generateAccessToken({ id: userId, username: req.body.username })
     const userType = req.body.type || 'user'
 
     // librariesAccessible and itemTagsSelected can be on req.body or req.body.permissions
@@ -327,7 +327,7 @@ class UserController {
 
     if (hasUpdates) {
       if (shouldUpdateToken) {
-        user.token = await this.auth.generateAccessToken(user)
+        user.token = this.auth.generateAccessToken(user)
         Logger.info(`[UserController] User ${user.username} has generated a new api token`)
       }
 

@@ -1,16 +1,17 @@
+const { Request, Response, NextFunction } = require('express')
 const axios = require('axios')
 const passport = require('passport')
-const { Op } = require('sequelize')
-const { Request, Response, NextFunction } = require('express')
-const bcrypt = require('./libs/bcryptjs')
-const jwt = require('./libs/jsonwebtoken')
-const requestIp = require('./libs/requestIp')
-const LocalStrategy = require('./libs/passportLocal')
+const OpenIDClient = require('openid-client')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
-const OpenIDClient = require('openid-client')
+
 const Database = require('./Database')
 const Logger = require('./Logger')
+const TokenManager = require('./auth/TokenManager')
+
+const bcrypt = require('./libs/bcryptjs')
+const requestIp = require('./libs/requestIp')
+const LocalStrategy = require('./libs/passportLocal')
 const { escapeRegExp } = require('./utils')
 
 /**
@@ -23,26 +24,23 @@ class Auth {
     const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
     this.ignorePatterns = [new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)]
 
-    this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 7 * 24 * 60 * 60 // 7 days
-    this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 12 * 60 * 60 // 12 hours
-    if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
-      Logger.info(`[Auth] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)
-    }
-    if (parseInt(process.env.ACCESS_TOKEN_EXPIRY) > 0) {
-      Logger.info(`[Auth] Access token expiry set from ENV variable to ${this.AccessTokenExpiry} seconds`)
-    }
+    this.tokenManager = new TokenManager()
   }
 
   /**
    * Checks if the request should not be authenticated.
    * @param {Request} req
    * @returns {boolean}
-   * @private
    */
   authNotNeeded(req) {
     return req.method === 'GET' && this.ignorePatterns.some((pattern) => pattern.test(req.path))
   }
 
+  /**
+   * Middleware to register passport in express-session
+   *
+   * @param {function} middleware
+   */
   ifAuthNeeded(middleware) {
     return (req, res, next) => {
       if (this.authNotNeeded(req)) {
@@ -52,6 +50,67 @@ class Auth {
     }
   }
 
+  /**
+   * middleware to use in express to only allow authenticated users.
+   *
+   * @param {Request} req
+   * @param {Response} res
+   * @param {NextFunction} next
+   */
+  isAuthenticated(req, res, next) {
+    return passport.authenticate('jwt', { session: false })(req, res, next)
+  }
+
+  /**
+   * Generate a token which is used to encrpt/protect the jwts.
+   */
+  async initTokenSecret() {
+    return this.tokenManager.initTokenSecret()
+  }
+
+  /**
+   * Function to generate a jwt token for a given user
+   * TODO: Old method with no expiration
+   * @deprecated
+   *
+   * @param {{ id:string, username:string }} user
+   * @returns {string}
+   */
+  generateAccessToken(user) {
+    return this.tokenManager.generateAccessToken(user)
+  }
+
+  /**
+   * Invalidate all JWT sessions for a given user
+   * If user is current user and refresh token is valid, rotate tokens for the current session
+   *
+   * @param {import('./models/User')} user
+   * @param {Request} req
+   * @param {Response} res
+   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   */
+  async invalidateJwtSessionsForUser(user, req, res) {
+    return this.tokenManager.invalidateJwtSessionsForUser(user, req, res)
+  }
+
+  /**
+   * Return the login info payload for a user
+   *
+   * @param {import('./models/User')} user
+   * @returns {Promise<Object>} jsonPayload
+   */
+  async getUserLoginResponsePayload(user) {
+    const libraryIds = await Database.libraryModel.getAllLibraryIds()
+    return {
+      user: user.toOldJSONForBrowser(),
+      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
+      serverSettings: Database.serverSettings.toJSONForBrowser(),
+      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
+      Source: global.Source
+    }
+  }
+
+  // #region Passport strategies
   /**
    * Inializes all passportjs strategies and other passportjs ralated initialization.
    */
@@ -75,7 +134,7 @@ class Auth {
           // Handle expiration manaully in order to disable api keys that are expired
           ignoreExpiration: true
         },
-        this.jwtAuthCheck.bind(this)
+        this.tokenManager.jwtAuthCheck.bind(this)
       )
     )
 
@@ -161,7 +220,7 @@ class Auth {
               throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
             }
 
-            let user = await this.findOrCreateUser(userinfo)
+            let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo, this)
 
             if (!user?.isActive) {
               throw new Error('User not active or not found')
@@ -183,94 +242,7 @@ class Auth {
       )
     )
   }
-
-  /**
-   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
-   * or creates a new user if configured to do so.
-   *
-   * @returns {Promise<import('./models/User')|null>}
-   */
-  async findOrCreateUser(userinfo) {
-    let user = await Database.userModel.getUserByOpenIDSub(userinfo.sub)
-
-    // Matched by sub
-    if (user) {
-      Logger.debug(`[Auth] openid: User found by sub`)
-      return user
-    }
-
-    // Match existing user by email
-    if (Database.serverSettings.authOpenIDMatchExistingBy === 'email') {
-      if (userinfo.email) {
-        // Only disallow when email_verified explicitly set to false (allow both if not set or true)
-        if (userinfo.email_verified === false) {
-          Logger.warn(`[Auth] openid: User not found and email "${userinfo.email}" is not verified`)
-          return null
-        } else {
-          Logger.info(`[Auth] openid: User not found, checking existing with email "${userinfo.email}"`)
-          user = await Database.userModel.getUserByEmail(userinfo.email)
-
-          if (user?.authOpenIDSub) {
-            Logger.warn(`[Auth] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-            return null // User is linked to a different OpenID subject; do not proceed.
-          }
-        }
-      } else {
-        Logger.warn(`[Auth] openid: User not found and no email in userinfo`)
-        // We deny login, because if the admin whishes to match email, it makes sense to require it
-        return null
-      }
-    }
-    // Match existing user by username
-    else if (Database.serverSettings.authOpenIDMatchExistingBy === 'username') {
-      let username
-
-      if (userinfo.preferred_username) {
-        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.preferred_username "${userinfo.preferred_username}"`)
-        username = userinfo.preferred_username
-      } else if (userinfo.username) {
-        Logger.info(`[Auth] openid: User not found, checking existing with userinfo.username "${userinfo.username}"`)
-        username = userinfo.username
-      } else {
-        Logger.warn(`[Auth] openid: User not found and neither preferred_username nor username in userinfo`)
-        return null
-      }
-
-      user = await Database.userModel.getUserByUsername(username)
-
-      if (user?.authOpenIDSub) {
-        Logger.warn(`[Auth] openid: User found with username "${username}" but is already matched with sub "${user.authOpenIDSub}"`)
-        return null // User is linked to a different OpenID subject; do not proceed.
-      }
-    }
-
-    // Found existing user via email or username
-    if (user) {
-      if (!user.isActive) {
-        Logger.warn(`[Auth] openid: User found but is not active`)
-        return null
-      }
-
-      // Update user with OpenID sub
-      if (!user.extraData) user.extraData = {}
-      user.extraData.authOpenIDSub = userinfo.sub
-      user.changed('extraData', true)
-      await user.save()
-
-      Logger.debug(`[Auth] openid: User found by email/username`)
-      return user
-    }
-
-    // If no existing user was matched, auto-register if configured
-    if (Database.serverSettings.authOpenIDAutoRegister) {
-      Logger.info(`[Auth] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-      user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo, this)
-      return user
-    }
-
-    Logger.warn(`[Auth] openid: User not found and auto-register is disabled`)
-    return null
-  }
+  // #endregion
 
   /**
    * Validates the presence and content of the group claim in userinfo.
@@ -419,22 +391,6 @@ class Auth {
   }
 
   /**
-   * Sets the refresh token cookie
-   * @param {Request} req
-   * @param {Response} res
-   * @param {string} refreshToken
-   */
-  setRefreshTokenCookie(req, res, refreshToken) {
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: req.secure || req.get('x-forwarded-proto') === 'https',
-      sameSite: 'lax',
-      maxAge: this.RefreshTokenExpiry * 1000,
-      path: '/'
-    })
-  }
-
-  /**
    * Informs the client in the right mode about a successfull login and the token
    * (clients choise is restored from cookies).
    *
@@ -442,25 +398,56 @@ class Auth {
    * @param {Response} res
    */
   async handleLoginSuccessBasedOnCookie(req, res) {
-    // get userLogin json (information about the user, server and the session)
-    const data_json = await this.getUserLoginResponsePayload(req.user)
+    // Handle token generation and get userResponse object
+    // TODO: where to check if refresh tokens should be returned?
+    const userResponse = await this.handleLoginSuccess(req, res, false)
 
     if (this.isAuthMethodAPIBased(req.cookies.auth_method)) {
       // REST request - send data
-      res.json(data_json)
+      res.json(userResponse)
     } else {
       // UI request -> check if we have a callback url
       // TODO: do we want to somehow limit the values for auth_cb?
       if (req.cookies.auth_cb) {
         let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
         // UI request -> redirect to auth_cb url and send the jwt token as parameter
-        res.redirect(302, `${req.cookies.auth_cb}?setToken=${data_json.user.token}${stateQuery}`)
+        res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.accessToken}${stateQuery}`)
       } else {
         res.status(400).send('No callback or already expired')
       }
     }
   }
 
+  /**
+   * After login success from local or oidc
+   * req.user is set by passport.authenticate
+   *
+   * attaches the access token to the user in the response
+   * if returnTokens is true, also attaches the refresh token to the user in the response
+   *
+   * if returnTokens is false, sets the refresh token cookie
+   *
+   * @param {Request} req
+   * @param {Response} res
+   * @param {boolean} returnTokens
+   */
+  async handleLoginSuccess(req, res, returnTokens = false) {
+    // Create tokens and session
+    const { accessToken, refreshToken } = await this.tokenManager.createTokensAndSession(req.user, req)
+
+    const userResponse = await this.getUserLoginResponsePayload(req.user)
+
+    userResponse.user.refreshToken = returnTokens ? refreshToken : null
+    userResponse.user.accessToken = accessToken
+
+    if (!returnTokens) {
+      this.tokenManager.setRefreshTokenCookie(req, res, refreshToken)
+    }
+
+    return userResponse
+  }
+
+  // #region Auth routes
   /**
    * Creates all (express) routes required for authentication.
    *
@@ -469,19 +456,10 @@ class Auth {
   async initAuthRoutes(router) {
     // Local strategy login route (takes username and password)
     router.post('/login', passport.authenticate('local'), async (req, res) => {
-      // return the user login response json if the login was successfull
-      const userResponse = await this.getUserLoginResponsePayload(req.user)
-
       // Check if mobile app wants refresh token in response
       const returnTokens = req.query.return_tokens === 'true' || req.headers['x-return-tokens'] === 'true'
 
-      userResponse.user.refreshToken = returnTokens ? req.user.refreshToken : null
-      userResponse.user.accessToken = req.user.accessToken
-
-      if (!returnTokens) {
-        this.setRefreshTokenCookie(req, res, req.user.refreshToken)
-      }
-
+      const userResponse = await this.handleLoginSuccess(req, res, returnTokens)
       res.json(userResponse)
     })
 
@@ -504,67 +482,16 @@ class Auth {
 
       Logger.debug(`[Auth] refreshing token. shouldReturnRefreshToken: ${shouldReturnRefreshToken}`)
 
-      try {
-        // Verify the refresh token
-        const decoded = jwt.verify(refreshToken, global.ServerSettings.tokenSecret)
-
-        if (decoded.type !== 'refresh') {
-          Logger.error(`[Auth] Failed to refresh token. Invalid token type: ${decoded.type}`)
-          return res.status(401).json({ error: 'Invalid token type' })
-        }
-
-        const session = await Database.sessionModel.findOne({
-          where: { refreshToken: refreshToken }
-        })
-
-        if (!session) {
-          Logger.error(`[Auth] Failed to refresh token. Session not found for refresh token: ${refreshToken}`)
-          return res.status(401).json({ error: 'Invalid refresh token' })
-        }
-
-        // Check if session is expired in database
-        if (session.expiresAt < new Date()) {
-          Logger.info(`[Auth] Session expired in database, cleaning up`)
-          await session.destroy()
-          return res.status(401).json({ error: 'Refresh token expired' })
-        }
-
-        const user = await Database.userModel.getUserById(decoded.userId)
-        if (!user?.isActive) {
-          Logger.error(`[Auth] Failed to refresh token. User not found or inactive for user id: ${decoded.userId}`)
-          return res.status(401).json({ error: 'User not found or inactive' })
-        }
-
-        const newTokens = await this.rotateTokensForSession(session, user, req, res)
-
-        const userResponse = await this.getUserLoginResponsePayload(user)
-
-        userResponse.user.accessToken = newTokens.accessToken
-        userResponse.user.refreshToken = shouldReturnRefreshToken ? newTokens.refreshToken : null
-        res.json(userResponse)
-      } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-          Logger.info(`[Auth] Refresh token expired, cleaning up session`)
-
-          // Clean up the expired session from database
-          try {
-            await Database.sessionModel.destroy({
-              where: { refreshToken: refreshToken }
-            })
-            Logger.info(`[Auth] Expired session cleaned up`)
-          } catch (cleanupError) {
-            Logger.error(`[Auth] Error cleaning up expired session: ${cleanupError.message}`)
-          }
-
-          return res.status(401).json({ error: 'Refresh token expired' })
-        } else if (error.name === 'JsonWebTokenError') {
-          Logger.error(`[Auth] Invalid refresh token format: ${error.message}`)
-          return res.status(401).json({ error: 'Invalid refresh token' })
-        } else {
-          Logger.error(`[Auth] Refresh token error: ${error.message}`)
-          return res.status(401).json({ error: 'Invalid refresh token' })
-        }
+      const refreshResponse = await this.tokenManager.handleRefreshToken(refreshToken, req, res)
+      if (refreshResponse.error) {
+        return res.status(401).json({ error: refreshResponse.error })
       }
+
+      const userResponse = await this.getUserLoginResponsePayload(refreshResponse.user)
+
+      userResponse.user.accessToken = refreshResponse.accessToken
+      userResponse.user.refreshToken = shouldReturnRefreshToken ? refreshResponse.refreshToken : null
+      res.json(userResponse)
     })
 
     // openid strategy login route (this redirects to the configured openid login provider)
@@ -906,255 +833,9 @@ class Auth {
       })
     })
   }
+  // #endregion
 
-  /**
-   * middleware to use in express to only allow authenticated users.
-   *
-   * @param {Request} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  isAuthenticated(req, res, next) {
-    return passport.authenticate('jwt', { session: false })(req, res, next)
-  }
-
-  /**
-   * Function to generate a jwt token for a given user
-   * TODO: Old method with no expiration
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {string} token
-   */
-  generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, username: user.username }, global.ServerSettings.tokenSecret)
-  }
-
-  /**
-   * Generate access token for a given user
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {Promise<string>}
-   */
-  generateTempAccessToken(user) {
-    return new Promise((resolve) => {
-      jwt.sign({ userId: user.id, username: user.username, type: 'access' }, global.ServerSettings.tokenSecret, { expiresIn: this.AccessTokenExpiry }, (err, token) => {
-        if (err) {
-          Logger.error(`[Auth] Error generating access token for user ${user.id}: ${err}`)
-          resolve(null)
-        } else {
-          resolve(token)
-        }
-      })
-    })
-  }
-
-  /**
-   * Generate refresh token for a given user
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {Promise<string>}
-   */
-  generateRefreshToken(user) {
-    return new Promise((resolve) => {
-      jwt.sign({ userId: user.id, username: user.username, type: 'refresh' }, global.ServerSettings.tokenSecret, { expiresIn: this.RefreshTokenExpiry }, (err, token) => {
-        if (err) {
-          Logger.error(`[Auth] Error generating refresh token for user ${user.id}: ${err}`)
-          resolve(null)
-        } else {
-          resolve(token)
-        }
-      })
-    })
-  }
-
-  /**
-   * Create tokens and session for a given user
-   *
-   * @param {{ id:string, username:string }} user
-   * @param {Request} req
-   * @returns {Promise<{ accessToken:string, refreshToken:string, session:import('./models/Session') }>}
-   */
-  async createTokensAndSession(user, req) {
-    const ipAddress = requestIp.getClientIp(req)
-    const userAgent = req.headers['user-agent']
-    const [accessToken, refreshToken] = await Promise.all([this.generateTempAccessToken(user), this.generateRefreshToken(user)])
-
-    // Calculate expiration time for the refresh token
-    const expiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
-
-    const session = await Database.sessionModel.createSession(user.id, ipAddress, userAgent, refreshToken, expiresAt)
-    user.accessToken = accessToken
-    // Store refresh token on user object for cookie setting
-    user.refreshToken = refreshToken
-    return { accessToken, refreshToken, session }
-  }
-
-  /**
-   * Rotate tokens for a given session
-   *
-   * @param {import('./models/Session')} session
-   * @param {import('./models/User')} user
-   * @param {Request} req
-   * @param {Response} res
-   * @returns {Promise<{ accessToken:string, refreshToken:string }>}
-   */
-  async rotateTokensForSession(session, user, req, res) {
-    // Generate new tokens
-    const [newAccessToken, newRefreshToken] = await Promise.all([this.generateTempAccessToken(user), this.generateRefreshToken(user)])
-
-    // Calculate new expiration time
-    const newExpiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
-
-    // Update the session with the new refresh token and expiration
-    session.refreshToken = newRefreshToken
-    session.expiresAt = newExpiresAt
-    await session.save()
-
-    // Set new refresh token cookie
-    this.setRefreshTokenCookie(req, res, newRefreshToken)
-
-    return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken
-    }
-  }
-
-  /**
-   * Invalidate all JWT sessions for a given user
-   * If user is current user and refresh token is valid, rotate tokens for the current session
-   *
-   * @param {Request} req
-   * @param {Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
-   */
-  async invalidateJwtSessionsForUser(user, req, res) {
-    const currentRefreshToken = req.cookies.refresh_token
-    if (req.user.id === user.id && currentRefreshToken) {
-      // Current user is the same as the user to invalidate sessions for
-      // So rotate token for current session
-      const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
-      if (currentSession) {
-        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res)
-
-        // Invalidate all sessions for the user except the current one
-        await Database.sessionModel.destroy({
-          where: {
-            id: {
-              [Op.ne]: currentSession.id
-            },
-            userId: user.id
-          }
-        })
-
-        return newTokens.accessToken
-      } else {
-        Logger.error(`[Auth] No session found to rotate tokens for refresh token ${currentRefreshToken}`)
-      }
-    }
-
-    // Current user is not the same as the user to invalidate sessions for (or no refresh token)
-    // So invalidate all sessions for the user
-    await Database.sessionModel.destroy({ where: { userId: user.id } })
-    return null
-  }
-
-  /**
-   * Function to validate a jwt token for a given user
-   * Used to authenticate socket connections
-   * TODO: Support API keys for web socket connections
-   *
-   * @param {string} token
-   * @returns {Object} tokens data
-   */
-  static validateAccessToken(token) {
-    try {
-      return jwt.verify(token, global.ServerSettings.tokenSecret)
-    } catch (err) {
-      return null
-    }
-  }
-
-  /**
-   * Generate a token which is used to encrpt/protect the jwts.
-   */
-  async initTokenSecret() {
-    if (process.env.TOKEN_SECRET) {
-      // User can supply their own token secret
-      Database.serverSettings.tokenSecret = process.env.TOKEN_SECRET
-    } else {
-      Database.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
-    }
-    await Database.updateServerSettings()
-
-    // TODO: Old method of non-expiring tokens
-    // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    const users = await Database.userModel.findAll({
-      attributes: ['id', 'username', 'token']
-    })
-    if (users.length) {
-      for (const user of users) {
-        user.token = await this.generateAccessToken(user)
-        await user.save({ hooks: false })
-      }
-    }
-  }
-
-  /**
-   * Checks if the user or api key in the validated jwt_payload exists and is active.
-   * @param {Object} jwt_payload
-   * @param {function} done
-   */
-  async jwtAuthCheck(jwt_payload, done) {
-    if (jwt_payload.type === 'api') {
-      const apiKey = await Database.apiKeyModel.getById(jwt_payload.keyId)
-
-      if (!apiKey?.isActive) {
-        done(null, null)
-        return
-      }
-
-      // Check if the api key is expired and deactivate it
-      if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
-        done(null, null)
-
-        apiKey.isActive = false
-        await apiKey.save()
-        Logger.info(`[Auth] API key ${apiKey.id} is expired - deactivated`)
-        return
-      }
-
-      const user = await Database.userModel.getUserById(apiKey.userId)
-      done(null, user)
-    } else {
-      // Check if the jwt is expired
-      if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
-        done(null, null)
-        return
-      }
-
-      // load user by id from the jwt token
-      const user = await Database.userModel.getUserByIdOrOldId(jwt_payload.userId)
-
-      if (!user?.isActive) {
-        // deny login
-        done(null, null)
-        return
-      }
-
-      // TODO: Temporary flag to report old tokens to users
-      // May be a better place for this but here means we dont have to decode the token again
-      if (!jwt_payload.exp && !user.isOldToken) {
-        Logger.debug(`[Auth] User ${user.username} is using an access token without an expiration`)
-        user.isOldToken = true
-      } else if (jwt_payload.exp && user.isOldToken !== undefined) {
-        delete user.isOldToken
-      }
-
-      // approve login
-      done(null, user)
-    }
-  }
-
+  // #region Local Auth
   /**
    * Checks if a username and password tuple is valid and the user active.
    * @param {Request} req
@@ -1187,9 +868,6 @@ class Auth {
       // approve login
       Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
 
-      // Create tokens and session, updates user.accessToken and user.refreshToken
-      await this.createTokensAndSession(user, req)
-
       done(null, user)
       return
     } else if (!user.pash) {
@@ -1203,9 +881,6 @@ class Auth {
     if (compare) {
       // approve login
       Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
-
-      // Create tokens and session, updates user.accessToken and user.refreshToken
-      await this.createTokensAndSession(user, req)
 
       done(null, user)
       return
@@ -1242,23 +917,6 @@ class Auth {
         }
       })
     })
-  }
-
-  /**
-   * Return the login info payload for a user
-   *
-   * @param {import('./models/User')} user
-   * @returns {Promise<Object>} jsonPayload
-   */
-  async getUserLoginResponsePayload(user) {
-    const libraryIds = await Database.libraryModel.getAllLibraryIds()
-    return {
-      user: user.toOldJSONForBrowser(),
-      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
-      serverSettings: Database.serverSettings.toJSONForBrowser(),
-      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
-      Source: global.Source
-    }
   }
 
   /**
@@ -1322,6 +980,7 @@ class Auth {
       })
     }
   }
+  // #endregion
 }
 
 module.exports = Auth
