@@ -141,7 +141,7 @@ export default {
       return episodeIds
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     }
   },
   methods: {
