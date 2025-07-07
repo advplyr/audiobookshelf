@@ -1,17 +1,14 @@
 const { Request, Response, NextFunction } = require('express')
-const axios = require('axios')
 const passport = require('passport')
-const OpenIDClient = require('openid-client')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
 
 const Database = require('./Database')
 const Logger = require('./Logger')
 const TokenManager = require('./auth/TokenManager')
+const LocalAuthStrategy = require('./auth/LocalAuthStrategy')
+const OidcAuthStrategy = require('./auth/OidcAuthStrategy')
 
-const bcrypt = require('./libs/bcryptjs')
-const requestIp = require('./libs/requestIp')
-const LocalStrategy = require('./libs/passportLocal')
 const { escapeRegExp } = require('./utils')
 
 /**
@@ -19,12 +16,12 @@ const { escapeRegExp } = require('./utils')
  */
 class Auth {
   constructor() {
-    // Map of openId sessions indexed by oauth2 state-variable
-    this.openIdAuthSession = new Map()
     const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
     this.ignorePatterns = [new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)]
 
     this.tokenManager = new TokenManager()
+    this.localAuthStrategy = new LocalAuthStrategy()
+    this.oidcAuthStrategy = new OidcAuthStrategy()
   }
 
   /**
@@ -117,12 +114,12 @@ class Auth {
   async initPassportJs() {
     // Check if we should load the local strategy (username + password login)
     if (global.ServerSettings.authActiveAuthMethods.includes('local')) {
-      this.initAuthStrategyPassword()
+      this.localAuthStrategy.init()
     }
 
     // Check if we should load the openid strategy
     if (global.ServerSettings.authActiveAuthMethods.includes('openid')) {
-      this.initAuthStrategyOpenID()
+      this.oidcAuthStrategy.init()
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth
@@ -165,161 +162,7 @@ class Auth {
       }.bind(this)
     )
   }
-
-  /**
-   * Passport use LocalStrategy
-   */
-  initAuthStrategyPassword() {
-    passport.use(new LocalStrategy({ passReqToCallback: true }, this.localAuthCheckUserPw.bind(this)))
-  }
-
-  /**
-   * Passport use OpenIDClient.Strategy
-   */
-  initAuthStrategyOpenID() {
-    if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
-      Logger.error(`[Auth] Cannot init openid auth strategy - invalid settings`)
-      return
-    }
-
-    // Custom req timeout see: https://github.com/panva/node-openid-client/blob/main/docs/README.md#customizing
-    OpenIDClient.custom.setHttpOptionsDefaults({ timeout: 10000 })
-
-    const openIdIssuerClient = new OpenIDClient.Issuer({
-      issuer: global.ServerSettings.authOpenIDIssuerURL,
-      authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
-      token_endpoint: global.ServerSettings.authOpenIDTokenURL,
-      userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
-      jwks_uri: global.ServerSettings.authOpenIDJwksURL,
-      end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
-    }).Client
-    const openIdClient = new openIdIssuerClient({
-      client_id: global.ServerSettings.authOpenIDClientID,
-      client_secret: global.ServerSettings.authOpenIDClientSecret,
-      id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
-    })
-    passport.use(
-      'openid-client',
-      new OpenIDClient.Strategy(
-        {
-          client: openIdClient,
-          params: {
-            redirect_uri: `${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`,
-            scope: 'openid profile email'
-          }
-        },
-        async (tokenset, userinfo, done) => {
-          try {
-            Logger.debug(`[Auth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
-
-            if (!userinfo.sub) {
-              throw new Error('Invalid userinfo, no sub')
-            }
-
-            if (!this.validateGroupClaim(userinfo)) {
-              throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
-            }
-
-            let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo, this)
-
-            if (!user?.isActive) {
-              throw new Error('User not active or not found')
-            }
-
-            await this.setUserGroup(user, userinfo)
-            await this.updateUserPermissions(user, userinfo)
-
-            // We also have to save the id_token for later (used for logout) because we cannot set cookies here
-            user.openid_id_token = tokenset.id_token
-
-            return done(null, user)
-          } catch (error) {
-            Logger.error(`[Auth] openid callback error: ${error?.message}\n${error?.stack}`)
-
-            return done(null, null, 'Unauthorized')
-          }
-        }
-      )
-    )
-  }
   // #endregion
-
-  /**
-   * Validates the presence and content of the group claim in userinfo.
-   */
-  validateGroupClaim(userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
-    if (!groupClaimName)
-      // Allow no group claim when configured like this
-      return true
-
-    // If configured it must exist in userinfo
-    if (!userinfo[groupClaimName]) {
-      return false
-    }
-    return true
-  }
-
-  /**
-   * Sets the user group based on group claim in userinfo.
-   *
-   * @param {import('./models/User')} user
-   * @param {Object} userinfo
-   */
-  async setUserGroup(user, userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
-    if (!groupClaimName)
-      // No group claim configured, don't set anything
-      return
-
-    if (!userinfo[groupClaimName]) throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
-
-    const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase())
-    const rolesInOrderOfPriority = ['admin', 'user', 'guest']
-
-    let userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role))
-    if (userType) {
-      if (user.type === 'root') {
-        // Check OpenID Group
-        if (userType !== 'admin') {
-          throw new Error(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`)
-        } else {
-          // If root user is logging in via OpenID, we will not change the type
-          return
-        }
-      }
-
-      if (user.type !== userType) {
-        Logger.info(`[Auth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
-        user.type = userType
-        await user.save()
-      }
-    } else {
-      throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
-    }
-  }
-
-  /**
-   * Updates user permissions based on the advanced permissions claim.
-   *
-   * @param {import('./models/User')} user
-   * @param {Object} userinfo
-   */
-  async updateUserPermissions(user, userinfo) {
-    const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
-    if (!absPermissionsClaim)
-      // No advanced permissions claim configured, don't set anything
-      return
-
-    if (user.type === 'admin' || user.type === 'root') return
-
-    const absPermissions = userinfo[absPermissionsClaim]
-    if (!absPermissions) throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
-
-    if (await user.updatePermissionsFromExternalJSON(absPermissions)) {
-      Logger.info(`[Auth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
-    }
-  }
 
   /**
    * Unuse strategy
@@ -327,7 +170,13 @@ class Auth {
    * @param {string} name
    */
   unuseAuthStrategy(name) {
-    passport.unuse(name)
+    if (name === 'openid') {
+      this.oidcAuthStrategy.unuse()
+    } else if (name === 'local') {
+      this.localAuthStrategy.unuse()
+    } else {
+      Logger.error('[Auth] Invalid auth strategy ' + name)
+    }
   }
 
   /**
@@ -337,9 +186,9 @@ class Auth {
    */
   useAuthStrategy(name) {
     if (name === 'openid') {
-      this.initAuthStrategyOpenID()
+      this.oidcAuthStrategy.init()
     } else if (name === 'local') {
-      this.initAuthStrategyPassword()
+      this.localAuthStrategy.init()
     } else {
       Logger.error('[Auth] Invalid auth strategy ' + name)
     }
@@ -496,153 +345,27 @@ class Auth {
     })
 
     // openid strategy login route (this redirects to the configured openid login provider)
-    router.get('/auth/openid', (req, res, next) => {
-      // Get the OIDC client from the strategy
-      // We need to call the client manually, because the strategy does not support forwarding the code challenge
-      //    for API or mobile clients
-      const oidcStrategy = passport._strategy('openid-client')
-      const client = oidcStrategy._client
-      const sessionKey = oidcStrategy._key
+    router.get('/auth/openid', (req, res) => {
+      const authorizationUrlResponse = this.oidcAuthStrategy.getAuthorizationUrl(req)
 
-      try {
-        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
-        const hostUrl = new URL(`${protocol}://${req.get('host')}`)
-        const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
-
-        // Only allow code flow (for mobile clients)
-        if (req.query.response_type && req.query.response_type !== 'code') {
-          Logger.debug(`[Auth] OIDC Invalid response_type=${req.query.response_type}`)
-          return res.status(400).send('Invalid response_type, only code supported')
-        }
-
-        // Generate a state on web flow or if no state supplied
-        const state = !isMobileFlow || !req.query.state ? OpenIDClient.generators.random() : req.query.state
-
-        // Redirect URL for the SSO provider
-        let redirectUri
-        if (isMobileFlow) {
-          // Mobile required redirect uri
-          // If it is in the whitelist, we will save into this.openIdAuthSession and set the redirect uri to /auth/openid/mobile-redirect
-          //    where we will handle the redirect to it
-          if (!req.query.redirect_uri || !isValidRedirectUri(req.query.redirect_uri)) {
-            Logger.debug(`[Auth] Invalid redirect_uri=${req.query.redirect_uri}`)
-            return res.status(400).send('Invalid redirect_uri')
-          }
-          // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
-          //   for the request to mobile-redirect and as such the session is not shared
-          this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
-
-          redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
-        } else {
-          redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`, hostUrl).toString()
-
-          if (req.query.state) {
-            Logger.debug(`[Auth] Invalid state - not allowed on web openid flow`)
-            return res.status(400).send('Invalid state, not allowed on web flow')
-          }
-        }
-        oidcStrategy._params.redirect_uri = redirectUri
-        Logger.debug(`[Auth] OIDC redirect_uri=${redirectUri}`)
-
-        let { code_challenge, code_challenge_method, code_verifier } = generatePkce(req, isMobileFlow)
-
-        req.session[sessionKey] = {
-          ...req.session[sessionKey],
-          state: state,
-          max_age: oidcStrategy._params.max_age,
-          response_type: 'code',
-          code_verifier: code_verifier, // not null if web flow
-          mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
-          sso_redirect_uri: oidcStrategy._params.redirect_uri // Save the redirect_uri (for the SSO Provider) for the callback
-        }
-
-        var scope = 'openid profile email'
-        if (global.ServerSettings.authOpenIDGroupClaim) {
-          scope += ' ' + global.ServerSettings.authOpenIDGroupClaim
-        }
-        if (global.ServerSettings.authOpenIDAdvancedPermsClaim) {
-          scope += ' ' + global.ServerSettings.authOpenIDAdvancedPermsClaim
-        }
-
-        const authorizationUrl = client.authorizationUrl({
-          ...oidcStrategy._params,
-          state: state,
-          response_type: 'code',
-          scope: scope,
-          code_challenge,
-          code_challenge_method
-        })
-
-        this.paramsToCookies(req, res, isMobileFlow ? 'openid-mobile' : 'openid')
-
-        res.redirect(authorizationUrl)
-      } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid route: ${error}\n${error?.stack}`)
-        res.status(500).send('Internal Server Error')
+      if (authorizationUrlResponse.error) {
+        return res.status(authorizationUrlResponse.status).send(authorizationUrlResponse.error)
       }
 
-      function generatePkce(req, isMobileFlow) {
-        if (isMobileFlow) {
-          if (!req.query.code_challenge) {
-            throw new Error('code_challenge required for mobile flow (PKCE)')
-          }
-          if (req.query.code_challenge_method && req.query.code_challenge_method !== 'S256') {
-            throw new Error('Only S256 code_challenge_method method supported')
-          }
-          return {
-            code_challenge: req.query.code_challenge,
-            code_challenge_method: req.query.code_challenge_method || 'S256'
-          }
-        } else {
-          const code_verifier = OpenIDClient.generators.codeVerifier()
-          const code_challenge = OpenIDClient.generators.codeChallenge(code_verifier)
-          return { code_challenge, code_challenge_method: 'S256', code_verifier }
-        }
-      }
+      this.paramsToCookies(req, res, authorizationUrlResponse.isMobileFlow ? 'openid-mobile' : 'openid')
 
-      function isValidRedirectUri(uri) {
-        // Check if the redirect_uri is in the whitelist
-        return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) || (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
-      }
+      res.redirect(authorizationUrlResponse.authorizationUrl)
     })
 
     // This will be the oauth2 callback route for mobile clients
     // It will redirect to an app-link like audiobookshelf://oauth
-    router.get('/auth/openid/mobile-redirect', (req, res) => {
-      try {
-        // Extract the state parameter from the request
-        const { state, code } = req.query
-
-        // Check if the state provided is in our list
-        if (!state || !this.openIdAuthSession.has(state)) {
-          Logger.error('[Auth] /auth/openid/mobile-redirect route: State parameter mismatch')
-          return res.status(400).send('State parameter mismatch')
-        }
-
-        let mobile_redirect_uri = this.openIdAuthSession.get(state).mobile_redirect_uri
-
-        if (!mobile_redirect_uri) {
-          Logger.error('[Auth] No redirect URI')
-          return res.status(400).send('No redirect URI')
-        }
-
-        this.openIdAuthSession.delete(state)
-
-        const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
-        // Redirect to the overwrite URI saved in the map
-        res.redirect(redirectUri)
-      } catch (error) {
-        Logger.error(`[Auth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
-        res.status(500).send('Internal Server Error')
-      }
-    })
+    router.get('/auth/openid/mobile-redirect', (req, res) => this.oidcAuthStrategy.handleMobileRedirect(req, res))
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get(
       '/auth/openid/callback',
       (req, res, next) => {
-        const oidcStrategy = passport._strategy('openid-client')
-        const sessionKey = oidcStrategy._key
+        const sessionKey = this.oidcAuthStrategy.getStrategy()._key
 
         if (!req.session[sessionKey]) {
           return res.status(400).send('No session')
@@ -719,43 +442,16 @@ class Auth {
         return res.sendStatus(403)
       }
 
-      if (!req.query.issuer) {
+      if (!req.query.issuer || typeof req.query.issuer !== 'string') {
         return res.status(400).send("Invalid request. Query param 'issuer' is required")
       }
 
-      // Strip trailing slash
-      let issuerUrl = req.query.issuer
-      if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
-
-      // Append config pathname and validate URL
-      let configUrl = null
-      try {
-        configUrl = new URL(`${issuerUrl}/.well-known/openid-configuration`)
-        if (!configUrl.pathname.endsWith('/.well-known/openid-configuration')) {
-          throw new Error('Invalid pathname')
-        }
-      } catch (error) {
-        Logger.error(`[Auth] Failed to get openid configuration. Invalid URL "${configUrl}"`, error)
-        return res.status(400).send("Invalid request. Query param 'issuer' is invalid")
+      const openIdIssuerConfig = await this.oidcAuthStrategy.getIssuerConfig(req.query.issuer)
+      if (openIdIssuerConfig.error) {
+        return res.status(openIdIssuerConfig.status).send(openIdIssuerConfig.error)
       }
 
-      axios
-        .get(configUrl.toString())
-        .then(({ data }) => {
-          res.json({
-            issuer: data.issuer,
-            authorization_endpoint: data.authorization_endpoint,
-            token_endpoint: data.token_endpoint,
-            userinfo_endpoint: data.userinfo_endpoint,
-            end_session_endpoint: data.end_session_endpoint,
-            jwks_uri: data.jwks_uri,
-            id_token_signing_alg_values_supported: data.id_token_signing_alg_values_supported
-          })
-        })
-        .catch((error) => {
-          Logger.error(`[Auth] Failed to get openid configuration at "${configUrl}"`, error)
-          res.status(error.statusCode || 400).send(`${error.code || 'UNKNOWN'}: Failed to get openid configuration`)
-        })
+      res.json(openIdIssuerConfig)
     })
 
     // Logout route
@@ -782,7 +478,6 @@ class Auth {
         Logger.info(`[Auth] logout: No refresh token on request`)
       }
 
-      // TODO: invalidate possible JWTs
       req.logout((err) => {
         if (err) {
           res.sendStatus(500)
@@ -794,36 +489,7 @@ class Auth {
           let logoutUrl = null
 
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
-            // If we are using openid, we need to redirect to the logout endpoint
-            // node-openid-client does not support doing it over passport
-            const oidcStrategy = passport._strategy('openid-client')
-            const client = oidcStrategy._client
-
-            if (client.issuer.end_session_endpoint && client.issuer.end_session_endpoint.length > 0) {
-              let postLogoutRedirectUri = null
-
-              if (authMethod === 'openid') {
-                const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
-                const host = req.get('host')
-                // TODO: ABS does currently not support subfolders for installation
-                // If we want to support it we need to include a config for the serverurl
-                postLogoutRedirectUri = `${protocol}://${host}${global.RouterBasePath}/login`
-              }
-              // else for openid-mobile we keep postLogoutRedirectUri on null
-              //  nice would be to redirect to the app here, but for example Authentik does not implement
-              //  the post_logout_redirect_uri parameter at all and for other providers
-              //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
-              //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
-              //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
-              //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
-              //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
-
-              logoutUrl = client.endSessionUrl({
-                id_token_hint: req.cookies.openid_id_token,
-                post_logout_redirect_uri: postLogoutRedirectUri
-              })
-            }
-
+            logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, req.cookies.openid_id_token, authMethod)
             res.clearCookie('openid_id_token')
           }
 
@@ -833,153 +499,6 @@ class Auth {
         }
       })
     })
-  }
-  // #endregion
-
-  // #region Local Auth
-  /**
-   * Checks if a username and password tuple is valid and the user active.
-   * @param {Request} req
-   * @param {string} username
-   * @param {string} password
-   * @param {Promise<function>} done
-   */
-  async localAuthCheckUserPw(req, username, password, done) {
-    // Load the user given it's username
-    const user = await Database.userModel.getUserByUsername(username.toLowerCase())
-
-    if (!user?.isActive) {
-      if (user) {
-        this.logFailedLocalAuthLoginAttempt(req, user.username, 'User is not active')
-      } else {
-        this.logFailedLocalAuthLoginAttempt(req, username, 'User not found')
-      }
-      done(null, null)
-      return
-    }
-
-    // Check passwordless root user
-    if (user.type === 'root' && !user.pash) {
-      if (password) {
-        // deny login
-        this.logFailedLocalAuthLoginAttempt(req, user.username, 'Root user has no password set')
-        done(null, null)
-        return
-      }
-      // approve login
-      Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
-
-      done(null, user)
-      return
-    } else if (!user.pash) {
-      this.logFailedLocalAuthLoginAttempt(req, user.username, 'User has no password set. Might have been created with OpenID')
-      done(null, null)
-      return
-    }
-
-    // Check password match
-    const compare = await bcrypt.compare(password, user.pash)
-    if (compare) {
-      // approve login
-      Logger.info(`[Auth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
-
-      done(null, user)
-      return
-    }
-    // deny login
-    this.logFailedLocalAuthLoginAttempt(req, user.username, 'Invalid password')
-    done(null, null)
-    return
-  }
-
-  /**
-   *
-   * @param {Request} req
-   * @param {string} username
-   * @param {string} message
-   */
-  logFailedLocalAuthLoginAttempt(req, username, message) {
-    if (!req || !username || !message) return
-    Logger.error(`[Auth] Failed login attempt for username "${username}" from ip ${requestIp.getClientIp(req)} (${message})`)
-  }
-
-  /**
-   * Hashes a password with bcrypt.
-   * @param {string} password
-   * @returns {Promise<string>} hash
-   */
-  hashPass(password) {
-    return new Promise((resolve) => {
-      bcrypt.hash(password, 8, (err, hash) => {
-        if (err) {
-          resolve(null)
-        } else {
-          resolve(hash)
-        }
-      })
-    })
-  }
-
-  /**
-   *
-   * @param {string} password
-   * @param {import('./models/User')} user
-   * @returns {Promise<boolean>}
-   */
-  comparePassword(password, user) {
-    if (user.type === 'root' && !password && !user.pash) return true
-    if (!password || !user.pash) return false
-    return bcrypt.compare(password, user.pash)
-  }
-
-  /**
-   * User changes their password from request
-   * TODO: Update responses to use error status codes
-   *
-   * @param {import('./controllers/MeController').RequestWithUser} req
-   * @param {Response} res
-   */
-  async userChangePassword(req, res) {
-    let { password, newPassword } = req.body
-    newPassword = newPassword || ''
-    const matchingUser = req.user
-
-    // Only root can have an empty password
-    if (matchingUser.type !== 'root' && !newPassword) {
-      return res.json({
-        error: 'Invalid new password - Only root can have an empty password'
-      })
-    }
-
-    // Check password match
-    const compare = await this.comparePassword(password, matchingUser)
-    if (!compare) {
-      return res.json({
-        error: 'Invalid password'
-      })
-    }
-
-    let pw = ''
-    if (newPassword) {
-      pw = await this.hashPass(newPassword)
-      if (!pw) {
-        return res.json({
-          error: 'Hash failed'
-        })
-      }
-    }
-    try {
-      await matchingUser.update({ pash: pw })
-      Logger.info(`[Auth] User "${matchingUser.username}" changed password`)
-      res.json({
-        success: true
-      })
-    } catch (error) {
-      Logger.error(`[Auth] User "${matchingUser.username}" failed to change password`, error)
-      res.json({
-        error: 'Unknown error'
-      })
-    }
   }
   // #endregion
 }

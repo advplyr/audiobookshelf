@@ -182,18 +182,19 @@ export default {
           password: this.password,
           newPassword: this.newPassword
         })
-        .then((res) => {
-          if (res.success) {
-            this.$toast.success(this.$strings.ToastUserPasswordChangeSuccess)
-            this.resetForm()
-          } else {
-            this.$toast.error(res.error || this.$strings.ToastUnknownError)
-          }
-          this.changingPassword = false
+        .then(() => {
+          this.$toast.success(this.$strings.ToastUserPasswordChangeSuccess)
+          this.resetForm()
         })
         .catch((error) => {
-          console.error(error)
-          this.$toast.error(this.$strings.ToastUnknownError)
+          console.error('Failed to change password', error)
+          let errorMessage = this.$strings.ToastUnknownError
+          if (error.response?.data && typeof error.response.data === 'string') {
+            errorMessage = error.response.data
+          }
+          this.$toast.error(errorMessage)
+        })
+        .finally(() => {
           this.changingPassword = false
         })
     },
