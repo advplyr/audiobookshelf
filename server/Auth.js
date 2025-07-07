@@ -266,7 +266,8 @@ class Auth {
       if (req.cookies.auth_cb) {
         let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
         // UI request -> redirect to auth_cb url and send the jwt token as parameter
-        res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.accessToken}${stateQuery}`)
+        // TODO: Temporarily continue sending the old token as setToken
+        res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.token}&accessToken=${userResponse.user.accessToken}${stateQuery}`)
       } else {
         res.status(400).send('No callback or already expired')
       }

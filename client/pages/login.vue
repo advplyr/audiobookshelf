@@ -305,8 +305,8 @@ export default {
   },
   async mounted() {
     // Token passed as query parameter after successful oidc login
-    if (this.$route.query?.setToken) {
-      localStorage.setItem('token', this.$route.query.setToken)
+    if (this.$route.query?.accessToken) {
+      localStorage.setItem('token', this.$route.query.accessToken)
     }
     if (localStorage.getItem('token')) {
       if (await this.checkAuth()) return // if valid user no need to check status
