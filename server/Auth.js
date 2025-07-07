@@ -399,10 +399,11 @@ class Auth {
    */
   async handleLoginSuccessBasedOnCookie(req, res) {
     // Handle token generation and get userResponse object
-    // TODO: where to check if refresh tokens should be returned?
-    const userResponse = await this.handleLoginSuccess(req, res, false)
+    // For API based auth (e.g. mobile), we will return the refresh token in the response
+    const isApiBased = this.isAuthMethodAPIBased(req.cookies.auth_method)
+    const userResponse = await this.handleLoginSuccess(req, res, isApiBased)
 
-    if (this.isAuthMethodAPIBased(req.cookies.auth_method)) {
+    if (isApiBased) {
       // REST request - send data
       res.json(userResponse)
     } else {
