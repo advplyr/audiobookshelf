@@ -354,7 +354,7 @@
   "LabelFetchingMetadata": "正在获取元数据",
   "LabelFile": "文件",
   "LabelFileBirthtime": "文件创建时间",
-  "LabelFileBornDate": "生于 {0}",
+  "LabelFileBornDate": "添加于 {0}",
   "LabelFileModified": "文件修改时间",
   "LabelFileModifiedDate": "已修改 {0}",
   "LabelFilename": "文件名",
