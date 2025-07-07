@@ -112,7 +112,7 @@ export default {
       return this.episode?.publishedAt
     },
     dateFormat() {
-      return this.store.state.serverSettings.dateFormat
+      return this.store.getters['getServerSetting']('dateFormat')
     },
     itemProgress() {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.episodeId)
