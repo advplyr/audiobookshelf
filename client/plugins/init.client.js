@@ -128,12 +128,11 @@ Vue.prototype.$sanitizeSlug = (str) => {
   return str
 }
 
-Vue.prototype.$copyToClipboard = (str, ctx) => {
+Vue.prototype.$copyToClipboard = (str) => {
   return new Promise((resolve) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(str).then(
         () => {
-          if (ctx) ctx.$toast.success('Copied to clipboard')
           resolve(true)
         },
         (err) => {
@@ -152,7 +151,6 @@ Vue.prototype.$copyToClipboard = (str, ctx) => {
       document.execCommand('copy')
       document.body.removeChild(el)
 
-      if (ctx) ctx.$toast.success('Copied to clipboard')
       resolve(true)
     }
   })

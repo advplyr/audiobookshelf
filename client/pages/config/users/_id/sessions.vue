@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-0 sm:p-4 mb-8">
-      <nuxt-link :to="`/config/users/${user.id}`" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
+    <div class="bg-bg rounded-md shadow-lg border border-white/5 p-0 sm:p-4 mb-8">
+      <nuxt-link :to="`/config/users/${user.id}`" class="text-white/70 hover:text-white/100 hover:bg-white/5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
             <span class="material-symbols text-2xl">arrow_back</span>
@@ -14,19 +14,19 @@
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
 
-      <div class="w-full h-px bg-white bg-opacity-10 my-2" />
+      <div class="w-full h-px bg-white/10 my-2" />
 
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderListeningSessions }}</h1>
+        <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderListeningSessions }}</h1>
         <div v-if="listeningSessions.length">
           <table class="userSessionsTable">
-            <tr class="bg-primary bg-opacity-40">
+            <tr class="bg-primary/40">
               <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
               <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
               <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
               <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
               <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
-              <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
+              <th class="grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
             </tr>
             <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
               <td class="py-1 max-w-48">
@@ -58,7 +58,7 @@
             <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
           </div>
         </div>
-        <p v-else class="text-white text-opacity-50">No sessions yet...</p>
+        <p v-else class="text-white/50">No sessions yet...</p>
       </div>
     </div>
 
@@ -98,10 +98,10 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {

@@ -48,13 +48,7 @@ class Scanner {
     let updatePayload = {}
     let hasUpdated = false
 
-    let existingAuthors = [] // Used for checking if authors or series are now empty
-    let existingSeries = []
-
     if (libraryItem.isBook) {
-      existingAuthors = libraryItem.media.authors.map((a) => a.id)
-      existingSeries = libraryItem.media.series.map((s) => s.id)
-
       const searchISBN = options.isbn || libraryItem.media.isbn
       const searchASIN = options.asin || libraryItem.media.asin
 
@@ -132,7 +126,7 @@ class Scanner {
 
       await libraryItem.saveMetadataFile()
 
-      SocketAuthority.emitter('item_updated', libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     }
 
     return {
@@ -376,7 +370,7 @@ class Scanner {
 
     let numEpisodesUpdated = 0
     for (const episode of episodesToQuickMatch) {
-      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title)
+      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title, 0.1)
       if (episodeMatches?.length) {
         const wasUpdated = await this.updateEpisodeWithMatch(episode, episodeMatches[0].episode, options)
         if (wasUpdated) numEpisodesUpdated++

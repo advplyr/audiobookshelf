@@ -1,8 +1,17 @@
 const axios = require('axios')
 const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
-const { xmlToJSON, levenshteinDistance } = require('./index')
+const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const Fuse = require('../libs/fusejs')
+
+/**
+ * @typedef RssPodcastChapter
+ * @property {number} id
+ * @property {string} title
+ * @property {number} start
+ * @property {number} end
+ */
 
 /**
  * @typedef RssPodcastEpisode
@@ -16,12 +25,14 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
  * @property {string} episode
  * @property {string} author
  * @property {string} duration
+ * @property {number|null} durationSeconds - Parsed from duration string if duration is valid
  * @property {string} explicit
  * @property {number} publishedAt - Unix timestamp
  * @property {{ url: string, type?: string, length?: string }} enclosure
  * @property {string} guid
  * @property {string} chaptersUrl
  * @property {string} chaptersType
+ * @property {RssPodcastChapter[]} chapters
  */
 
 /**
@@ -50,6 +61,29 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
 function extractFirstArrayItem(json, key) {
   if (!json[key]?.length) return null
   return json[key][0]
+}
+
+function extractStringOrStringify(json) {
+  try {
+    if (typeof json[Object.keys(json)[0]]?.[0] === 'string') {
+      return json[Object.keys(json)[0]][0]
+    }
+    // Handles case where html was included without being wrapped in CDATA
+    return JSON.stringify(value)
+  } catch {
+    return ''
+  }
+}
+
+function extractFirstArrayItemString(json, key) {
+  const item = extractFirstArrayItem(json, key)
+  if (!item) return ''
+  if (typeof item === 'object') {
+    if (item?.['_'] && typeof item['_'] === 'string') return item['_']
+
+    return extractStringOrStringify(item)
+  }
+  return typeof item === 'string' ? item : ''
 }
 
 function extractImage(channel) {
@@ -101,7 +135,7 @@ function extractPodcastMetadata(channel) {
   }
 
   if (channel['description']) {
-    const rawDescription = extractFirstArrayItem(channel, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(channel, 'description')
     metadata.description = htmlSanitizer.sanitize(rawDescription.trim())
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -118,15 +152,19 @@ function extractPodcastMetadata(channel) {
 
 function extractEpisodeData(item) {
   // Episode must have url
-  if (!item.enclosure?.[0]?.['$']?.url) {
+  let enclosure
+
+  if (item.enclosure?.[0]?.['$']?.url) {
+    enclosure = item.enclosure[0]['$']
+  } else if (item['media:content']?.find((c) => c?.['$']?.url && (c?.['$']?.type ?? '').startsWith('audio'))) {
+    enclosure = item['media:content'].find((c) => (c['$']?.type ?? '').startsWith('audio'))['$']
+  } else {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
   const episode = {
-    enclosure: {
-      ...item.enclosure[0]['$']
-    }
+    enclosure: enclosure
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
@@ -145,7 +183,8 @@ function extractEpisodeData(item) {
 
   // Supposed to be the plaintext description but not always followed
   if (item['description']) {
-    const rawDescription = extractFirstArrayItem(item, 'description') || ''
+    const rawDescription = extractFirstArrayItemString(item, 'description')
+
     if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription.trim())
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
@@ -168,23 +207,63 @@ function extractEpisodeData(item) {
     } else if (typeof guidItem?._ === 'string') {
       episode.guid = guidItem._
     } else {
-      Logger.error(`[podcastUtils] Invalid guid ${item['guid']} for ${episode.enclosure.url}`)
+      Logger.error(`[podcastUtils] Invalid guid for ${episode.enclosure.url}`, item['guid'])
     }
   }
 
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
-    let value = extractFirstArrayItem(item, key)
-    if (value?.['_']) value = value['_']
-    episode[cleanKey] = value
+    episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
+
+  // Extract psc:chapters if duration is set
+  episode.durationSeconds = episode.duration ? timestampToSeconds(episode.duration) : null
+
+  if (item['psc:chapters']?.[0]?.['psc:chapter']?.length && episode.durationSeconds) {
+    // Example chapter:
+    // {"id":0,"start":0,"end":43.004286,"title":"chapter 1"}
+
+    const cleanedChapters = item['psc:chapters'][0]['psc:chapter'].map((chapter, index) => {
+      if (!chapter['$']?.title || !chapter['$']?.start || typeof chapter['$']?.start !== 'string' || typeof chapter['$']?.title !== 'string') {
+        return null
+      }
+
+      const start = timestampToSeconds(chapter['$'].start)
+      if (start === null) {
+        return null
+      }
+
+      return {
+        id: index,
+        title: chapter['$'].title,
+        start
+      }
+    })
+
+    if (cleanedChapters.some((chapter) => !chapter)) {
+      Logger.warn(`[podcastUtils] Invalid chapter data for ${episode.enclosure.url}`)
+    } else {
+      episode.chapters = cleanedChapters.map((chapter, index) => {
+        const nextChapter = cleanedChapters[index + 1]
+        const end = nextChapter ? nextChapter.start : episode.durationSeconds
+        return {
+          id: chapter.id,
+          title: chapter.title,
+          start: chapter.start,
+          end
+        }
+      })
+    }
+  }
+
   return episode
 }
 
 function cleanEpisodeData(data) {
   const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
   const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
+
   return {
     title: data.title,
     subtitle: data.subtitle || '',
@@ -196,12 +275,14 @@ function cleanEpisodeData(data) {
     episode: data.episode || '',
     author: data.author || '',
     duration: data.duration || '',
+    durationSeconds: data.durationSeconds || null,
     explicit: data.explicit || '',
     publishedAt,
     enclosure: data.enclosure,
     guid: data.guid || null,
     chaptersUrl: data.chaptersUrl || null,
-    chaptersType: data.chaptersType || null
+    chaptersType: data.chaptersType || null,
+    chapters: data.chapters || []
   }
 }
 
@@ -281,10 +362,11 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   return axios({
     url: feedUrl,
     method: 'GET',
-    timeout: 12000,
+    timeout: global.PodcastDownloadTimeout,
     responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
+      'Accept-Encoding': 'gzip, compress, deflate',
       'User-Agent': userAgent
     },
     httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
@@ -316,12 +398,20 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       return payload.podcast
     })
     .catch((error) => {
+      // Check for failures due to redirecting from http to https. If original url was http, upgrade to https and try again
+      if (error.code === 'ERR_FR_REDIRECTION_FAILURE' && error.cause.code === 'ERR_INVALID_PROTOCOL') {
+        if (feedUrl.startsWith('http://') && error.request._options.protocol === 'https:') {
+          Logger.info('Redirection from http to https detected. Upgrading Request', error.request._options.href)
+          feedUrl = feedUrl.replace('http://', 'https://')
+          return this.getPodcastFeed(feedUrl, excludeEpisodeMetadata)
+        }
+      }
       Logger.error('[podcastUtils] getPodcastFeed Error', error)
       return null
     })
 }
 
-// Return array of episodes ordered by closest match (Levenshtein distance of 6 or less)
+// Return array of episodes ordered by closest match using fuse.js
 module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
   const feed = await this.getPodcastFeed(feedUrl).catch(() => {
     return null
@@ -334,32 +424,29 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
  *
  * @param {RssPodcast} feed
  * @param {string} searchTitle
- * @returns {Array<{ episode: RssPodcastEpisode, levenshtein: number }>}
+ * @param {number} [threshold=0.4] - 0.0 for perfect match, 1.0 for match anything
+ * @returns {Array<{ episode: RssPodcastEpisode }>}
  */
-module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
-  searchTitle = searchTitle.toLowerCase().trim()
+module.exports.findMatchingEpisodesInFeed = (feed, searchTitle, threshold = 0.4) => {
   if (!feed?.episodes) {
     return null
   }
 
+  const fuseOptions = {
+    ignoreDiacritics: true,
+    threshold,
+    keys: [
+      { name: 'title', weight: 0.7 }, // prefer match in title
+      { name: 'subtitle', weight: 0.3 }
+    ]
+  }
+  const fuse = new Fuse(feed.episodes, fuseOptions)
+
   const matches = []
-  feed.episodes.forEach((ep) => {
-    if (!ep.title) return
-    const epTitle = ep.title.toLowerCase().trim()
-    if (epTitle === searchTitle) {
-      matches.push({
-        episode: ep,
-        levenshtein: 0
-      })
-    } else {
-      const levenshtein = levenshteinDistance(searchTitle, epTitle, true)
-      if (levenshtein <= 6 && epTitle.length > levenshtein) {
-        matches.push({
-          episode: ep,
-          levenshtein
-        })
-      }
-    }
+  fuse.search(searchTitle).forEach((match) => {
+    matches.push({
+      episode: match.item
+    })
   })
-  return matches.sort((a, b) => a.levenshtein - b.levenshtein)
+  return matches
 }

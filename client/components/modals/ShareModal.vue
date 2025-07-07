@@ -16,7 +16,7 @@
       <template v-if="currentShare">
         <div class="w-full py-2">
           <label class="px-1 text-sm font-semibold block">{{ $strings.LabelShareURL }}</label>
-          <ui-text-input v-model="currentShareUrl" show-copy readonly class="text-base h-10" />
+          <ui-text-input v-model="currentShareUrl" show-copy readonly />
         </div>
         <div class="w-full py-2 px-1">
           <p v-if="currentShare.isDownloadable" class="text-sm mb-2">{{ $strings.LabelDownloadable }}</p>
@@ -30,7 +30,7 @@
             <label class="px-1 text-sm font-semibold block">{{ $strings.LabelSlug }}</label>
             <ui-text-input v-model="newShareSlug" class="text-base h-10" />
           </div>
-          <div class="flex-grow" />
+          <div class="grow" />
           <div class="w-full sm:w-80">
             <label class="px-1 text-sm font-semibold block">{{ $strings.LabelDuration }}</label>
             <div class="inline-flex items-center space-x-2">
@@ -60,9 +60,9 @@
         <p class="text-sm text-gray-300 py-1 px-1" v-html="$getString('MessageShareExpirationWillBe', [expirationDateString])" />
       </template>
       <div class="flex items-center pt-6">
-        <div class="flex-grow" />
-        <ui-btn v-if="currentShare" color="error" small @click="deleteShare">{{ $strings.ButtonDelete }}</ui-btn>
-        <ui-btn v-if="!currentShare" color="success" small @click="openShare">{{ $strings.ButtonShare }}</ui-btn>
+        <div class="grow" />
+        <ui-btn v-if="currentShare" color="bg-error" small @click="deleteShare">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-if="!currentShare" color="bg-success" small @click="openShare">{{ $strings.ButtonShare }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -144,7 +144,7 @@ export default {
     expirationDateString() {
       if (!this.expireDurationSeconds) return this.$strings.LabelPermanent
       const dateMs = Date.now() + this.expireDurationSeconds * 1000
-      return this.$formatDatetime(dateMs, this.$store.state.serverSettings.dateFormat, this.$store.state.serverSettings.timeFormat)
+      return this.$formatDatetime(dateMs, this.$store.getters['getServerSetting']('dateFormat'), this.$store.getters['getServerSetting']('timeFormat'))
     }
   },
   methods: {

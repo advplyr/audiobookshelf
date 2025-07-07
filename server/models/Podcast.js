@@ -1,6 +1,8 @@
 const { DataTypes, Model } = require('sequelize')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const Logger = require('../Logger')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -61,6 +63,8 @@ class Podcast extends Model {
     this.createdAt
     /** @type {Date} */
     this.updatedAt
+    /** @type {number} */
+    this.numEpisodes
 
     /** @type {import('./PodcastEpisode')[]} */
     this.podcastEpisodes
@@ -138,13 +142,22 @@ class Podcast extends Model {
         maxNewEpisodesToDownload: DataTypes.INTEGER,
         coverPath: DataTypes.STRING,
         tags: DataTypes.JSON,
-        genres: DataTypes.JSON
+        genres: DataTypes.JSON,
+        numEpisodes: DataTypes.INTEGER
       },
       {
         sequelize,
         modelName: 'podcast'
       }
     )
+
+    Podcast.addHook('afterDestroy', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterDestroy')
+    })
+
+    Podcast.addHook('afterCreate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcast', 'afterCreate')
+    })
   }
 
   get hasMediaFiles() {
@@ -202,8 +215,18 @@ class Podcast extends Model {
         } else if (key === 'itunesPageUrl') {
           newKey = 'itunesPageURL'
         }
-        if (typeof payload.metadata[key] === 'string' && payload.metadata[key] !== this[newKey]) {
-          this[newKey] = payload.metadata[key]
+        if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && payload.metadata[key] !== this[newKey]) {
+          // Sanitize description HTML
+          if (key === 'description' && payload.metadata[key]) {
+            const sanitizedDescription = htmlSanitizer.sanitize(payload.metadata[key])
+            if (sanitizedDescription !== payload.metadata[key]) {
+              Logger.debug(`[Podcast] "${this.title}" Sanitized description from "${payload.metadata[key]}" to "${sanitizedDescription}"`)
+              payload.metadata[key] = sanitizedDescription
+            }
+          }
+
+          this[newKey] = payload.metadata[key] || null
+
           if (key === 'title') {
             this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
           }

@@ -1,17 +1,17 @@
 <template>
-  <div class="w-full border border-white border-opacity-10 rounded-xl p-4 my-2" :class="notification.enabled ? 'bg-primary bg-opacity-25' : 'bg-error bg-opacity-5'">
+  <div class="w-full border border-white/10 rounded-xl p-4 my-2" :class="notification.enabled ? 'bg-primary/25' : 'bg-error/5'">
     <div class="flex flex-wrap items-center">
       <p class="text-base md:text-lg font-semibold pr-4">{{ eventName }}</p>
-      <div class="flex-grow" />
+      <div class="grow" />
 
       <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="fireTestEventAndSucceed">{{ this.$strings.ButtonFireOnTest }}</ui-btn>
-      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" color="red-600" @click.stop="fireTestEventAndFail">{{ this.$strings.ButtonFireAndFail }}</ui-btn>
+      <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" color="bg-red-600" @click.stop="fireTestEventAndFail">{{ this.$strings.ButtonFireAndFail }}</ui-btn>
       <!-- <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="rapidFireTestEvents">Rapid Fire</ui-btn> -->
       <ui-btn v-else-if="notification.enabled" :loading="sendingTest" small class="mr-2" @click.stop="sendTestClick">{{ this.$strings.ButtonTest }}</ui-btn>
-      <ui-btn v-else :loading="enabling" small color="success" class="mr-2" @click="enableNotification">{{ this.$strings.ButtonEnable }}</ui-btn>
+      <ui-btn v-else :loading="enabling" small color="bg-success" class="mr-2" @click="enableNotification">{{ this.$strings.ButtonEnable }}</ui-btn>
 
       <ui-icon-btn :size="7" icon-font-size="1.1rem" icon="edit" class="mr-2" @click="editNotification" />
-      <ui-icon-btn bg-color="error" :size="7" icon-font-size="1.2rem" icon="delete" @click="deleteNotificationClick" />
+      <ui-icon-btn bg-color="bg-error" :size="7" icon-font-size="1.2rem" icon="delete" @click="deleteNotificationClick" />
     </div>
     <div class="pt-4">
       <p class="text-gray-300 text-xs md:text-sm mb-2">{{ notification.urls.join(', ') }}</p>

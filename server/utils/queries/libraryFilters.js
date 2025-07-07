@@ -4,6 +4,7 @@ const Database = require('../../Database')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 const { createNewSortInstance } = require('../../libs/fastSort')
+const { profile } = require('../../utils/profiler')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -474,7 +475,8 @@ module.exports = {
       // Check how many podcasts are in library to determine if we need to load all of the data
       // This is done to handle the edge case of podcasts having been deleted and not having
       // an updatedAt timestamp to trigger a reload of the filter data
-      const podcastCountFromDatabase = await Database.podcastModel.count({
+      const podcastModelCount = process.env.QUERY_PROFILING ? profile(Database.podcastModel.count.bind(Database.podcastModel)) : Database.podcastModel.count.bind(Database.podcastModel)
+      const podcastCountFromDatabase = await podcastModelCount({
         include: {
           model: Database.libraryItemModel,
           attributes: [],
@@ -489,7 +491,7 @@ module.exports = {
       // data was loaded. If so, we can skip loading all of the data.
       // Because many items could change, just check the count of items instead
       // of actually loading the data twice
-      const changedPodcasts = await Database.podcastModel.count({
+      const changedPodcasts = await podcastModelCount({
         include: {
           model: Database.libraryItemModel,
           attributes: [],
@@ -520,7 +522,8 @@ module.exports = {
       }
 
       // Something has changed in the podcasts table, so reload all of the filter data for library
-      const podcasts = await Database.podcastModel.findAll({
+      const findAll = process.env.QUERY_PROFILING ? profile(Database.podcastModel.findAll.bind(Database.podcastModel)) : Database.podcastModel.findAll.bind(Database.podcastModel)
+      const podcasts = await findAll({
         include: {
           model: Database.libraryItemModel,
           attributes: [],

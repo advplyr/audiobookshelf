@@ -47,7 +47,6 @@ Check out the web client demo: https://audiobooks.dev/ (thanks for hosting [@Vit
 
 Username/password: `demo`/`demo` (user account)
 
-
 ### Android App (beta)
 
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
@@ -86,7 +85,7 @@ See [install docs](https://www.audiobookshelf.org/docs)
 
 #### Important! Audiobookshelf requires a websocket connection.
 
-#### Note: Subfolder paths (e.g. /audiobooks) are not supported yet. See [issue](https://github.com/advplyr/audiobookshelf/issues/385)
+#### Note: Using a subfolder is supported with no additional changes but the path must be `/audiobookshelf` (this is not changeable). See [discussion](https://github.com/advplyr/audiobookshelf/discussions/3535)
 
 ### NGINX Proxy Manager
 
@@ -111,8 +110,8 @@ server {
 
    location / {
       proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
-      proxy_set_header  X-Forwarded-Proto $scheme;
-      proxy_set_header  Host              $host;
+      proxy_set_header X-Forwarded-Proto  $scheme;
+      proxy_set_header Host               $http_host;
       proxy_set_header Upgrade            $http_upgrade;
       proxy_set_header Connection         "upgrade";
 
@@ -163,6 +162,16 @@ For this to work you must enable at least the following mods using `a2enmod`:
     SSLCertificateKeyFile /path/to/key/file
 </VirtualHost>
 </IfModule>
+```
+
+If using Apache >= 2.4.47 you can use the following, without having to use any of the `RewriteEngine`, `RewriteCond`, or `RewriteRule` directives. For example:
+
+```xml
+    <Location /audiobookshelf>
+        ProxyPreserveHost on
+        ProxyPass http://localhost:<audiobookshelf_port>/audiobookshelf upgrade=websocket
+        ProxyPassReverse http://localhost:<audiobookshelf_port>/audiobookshelf
+    </Location>
 ```
 
 Some SSL certificates like those signed by Let's Encrypt require ACME validation. To allow Let's Encrypt to write and confirm the ACME challenge, edit your VirtualHost definition to prevent proxying traffic that queries `/.well-known` and instead serve that directly:

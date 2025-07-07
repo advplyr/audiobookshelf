@@ -23,7 +23,7 @@
           <span class="pl-1 material-symbols icon-text text-sm cursor-pointer">info</span>
         </ui-tooltip>
 
-        <div class="flex-grow ml-4">
+        <div class="grow ml-4">
           <ui-dropdown v-model="fetchMetadata.provider" :items="providers" :label="$strings.LabelProvider" />
         </div>
       </div>
@@ -33,7 +33,7 @@
       </widgets-alert>
 
       <!-- Picker display -->
-      <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-4 md:px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
+      <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white/20 px-4 md:px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary/40' : 'border-dashed'">
         <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : isIOS ? $strings.LabelUploaderDragAndDropFilesOnly : $strings.LabelUploaderDragAndDrop }}</p>
         <p class="text-center text-sm my-5">{{ $strings.MessageOr }}</p>
         <div class="w-full max-w-xl mx-auto">
@@ -43,20 +43,19 @@
           </div>
         </div>
         <div class="pt-8 text-center">
-          <p class="text-xs text-white text-opacity-50 font-mono mb-4">
+          <p class="text-xs text-white/50 font-mono mb-4">
             <strong>{{ $strings.LabelSupportedFileTypes }}: </strong>{{ inputAccept.join(', ') }}
           </p>
 
-          <p class="text-sm text-white text-opacity-70">
+          <p class="text-sm text-white/70">
             <span v-if="!isIOS">{{ $strings.NoteUploaderFoldersWithMediaFiles }}</span> <span v-if="selectedLibraryMediaType === 'book'">{{ $strings.NoteUploaderOnlyAudioFiles }}</span>
           </p>
         </div>
       </div>
       <!-- Item list header -->
-      <div v-else class="w-full flex items-center pb-4 border-b border-white border-opacity-10">
-        <p class="text-lg">{{ items.length }} item{{ items.length === 1 ? '' : 's' }}</p>
-        <p v-if="ignoredFiles.length" class="text-lg">&nbsp;|&nbsp;{{ ignoredFiles.length }} file{{ ignoredFiles.length === 1 ? '' : 's' }} ignored</p>
-        <div class="flex-grow" />
+      <div v-else class="w-full flex items-center pb-4 border-b border-white/10">
+        <p class="text-lg lowercase">{{ items.length === 1 ? `1 ${$strings.LabelItem}` : $getString('LabelXItems', [items.length]) }}</p>
+        <div class="grow" />
         <ui-btn :disabled="processing" small @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
 
@@ -68,7 +67,7 @@
         <div class="w-full pr-12">
           <p class="text-base mb-1">{{ $strings.NoteUploaderUnsupportedFiles }}</p>
           <tables-uploaded-files-table :files="ignoredFiles" :title="$strings.HeaderIgnoredFiles" class="text-white" />
-          <p class="text-xs text-white text-opacity-50 font-mono pt-1">
+          <p class="text-xs text-white/50 font-mono pt-1">
             <strong>{{ $strings.LabelSupportedFileTypes }}: </strong>{{ inputAccept.join(', ') }}
           </p>
         </div>
@@ -79,7 +78,7 @@
 
       <!-- Upload/Reset btns -->
       <div v-show="items.length" class="flex justify-end pb-8 pt-4">
-        <ui-btn v-if="!uploadFinished" color="success" :loading="processing" @click="submit">{{ $strings.ButtonUpload }}</ui-btn>
+        <ui-btn v-if="!uploadFinished" color="bg-success" :loading="processing" @click="submit">{{ $strings.ButtonUpload }}</ui-btn>
         <ui-btn v-else @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
     </div>
@@ -317,9 +316,8 @@ export default {
         .$post('/api/upload', form)
         .then(() => true)
         .catch((error) => {
-          console.error('Failed', error)
-          var errorMessage = error.response && error.response.data ? error.response.data : 'Oops, something went wrong...'
-          this.$toast.error(errorMessage)
+          console.error('Failed to upload item', error)
+          this.$toast.error(error.response?.data || 'Oops, something went wrong...')
           return false
         })
     },
@@ -361,12 +359,15 @@ export default {
       // Check if path already exists before starting upload
       //  uploading fails if path already exists
       for (const item of items) {
-        const filepath = Path.join(this.selectedFolder.fullPath, item.directory)
         const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { filepath })
+          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath })
           .then((data) => {
             if (data.exists) {
-              this.$toast.error(`Filepath "${filepath}" already exists on server`)
+              if (data.libraryItemTitle) {
+                this.$toast.error(this.$getString('ToastUploaderItemExistsInSubdirectoryError', [data.libraryItemTitle]))
+              } else {
+                this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [Path.join(this.selectedFolder.fullPath, item.directory)]))
+              }
             }
             return data.exists
           })
@@ -379,13 +380,9 @@ export default {
         }
       }
 
-      let itemsUploaded = 0
-      let itemsFailed = 0
       for (const item of itemsToUpload) {
         this.updateItemCardStatus(item.index, 'uploading')
         const result = await this.uploadItem(item)
-        if (result) itemsUploaded++
-        else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')
       }
       this.processing = false

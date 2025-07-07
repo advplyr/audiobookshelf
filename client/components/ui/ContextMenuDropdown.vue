@@ -1,7 +1,7 @@
 <template>
   <div class="relative h-9 w-9" v-click-outside="clickOutsideObj">
     <slot :disabled="disabled" :showMenu="showMenu" :clickShowMenu="clickShowMenu" :processing="processing">
-      <button v-if="!processing" type="button" :disabled="disabled" class="relative h-full w-full flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5" :aria-label="$strings.LabelMore" aria-haspopup="menu" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+      <button v-if="!processing" type="button" :disabled="disabled" class="relative h-full w-full flex items-center justify-center shadow-xs pl-3 pr-3 text-left focus:outline-hidden cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5" :aria-label="$strings.LabelMore" aria-haspopup="menu" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
         <span class="material-symbols text-2xl" :class="iconClass">&#xe5d4;</span>
       </button>
       <div v-else class="h-full w-full flex items-center justify-center">
@@ -10,7 +10,7 @@
     </slot>
 
     <transition name="menu">
-      <div v-show="showMenu" ref="menuWrapper" role="menu" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg rounded-md py-1 focus:outline-none sm:text-sm" :style="{ width: menuWidth + 'px' }">
+      <div v-show="showMenu" ref="menuWrapper" role="menu" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg rounded-md py-1 focus:outline-hidden sm:text-sm" :style="{ width: menuWidth + 'px' }">
         <template v-for="(item, index) in items">
           <template v-if="item.subitems">
             <button :key="index" role="menuitem" aria-haspopup="menu" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-default w-full" :class="{ 'bg-white/5': mouseoverItemIndex == index }" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>

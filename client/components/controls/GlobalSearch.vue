@@ -9,7 +9,7 @@
         <span v-else class="material-symbols" style="font-size: 1.2rem">close</span>
       </button>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full max-w-64 sm:max-w-80 sm:w-80 bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black/5 overflow-auto focus:outline-hidden sm:text-sm globalSearchMenu" @mousedown.stop.prevent>
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
           <p>{{ $strings.MessageThinking }}</p>
@@ -35,6 +35,15 @@
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/item/${item.libraryItem.id}`">
                 <cards-item-search-card :library-item="item.libraryItem" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="episodeResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">{{ $strings.LabelEpisodes }}</p>
+          <template v-for="item in episodeResults">
+            <li :key="item.libraryItem.recentEpisode.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
+              <nuxt-link :to="`/item/${item.libraryItem.id}`">
+                <cards-episode-search-card :episode="item.libraryItem.recentEpisode" :library-item="item.libraryItem" />
               </nuxt-link>
             </li>
           </template>
@@ -100,6 +109,7 @@ export default {
       isFetching: false,
       search: null,
       podcastResults: [],
+      episodeResults: [],
       bookResults: [],
       authorResults: [],
       seriesResults: [],
@@ -115,7 +125,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.genreResults.length + this.podcastResults.length + this.narratorResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.genreResults.length + this.podcastResults.length + this.narratorResults.length + this.episodeResults.length
     }
   },
   methods: {
@@ -132,6 +142,7 @@ export default {
       this.search = null
       this.lastSearch = null
       this.podcastResults = []
+      this.episodeResults = []
       this.bookResults = []
       this.authorResults = []
       this.seriesResults = []
@@ -175,6 +186,7 @@ export default {
       if (!this.isFetching) return
 
       this.podcastResults = searchResults.podcast || []
+      this.episodeResults = searchResults.episodes || []
       this.bookResults = searchResults.book || []
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []

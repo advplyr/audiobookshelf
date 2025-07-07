@@ -6,7 +6,7 @@
       </div>
     </template>
 
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full py-4">
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <div class="flex px-8 items-center py-2">
@@ -32,11 +32,11 @@
               </p>
             </ui-tooltip>
           </div>
-          <div class="mt-4 pt-4 text-white text-opacity-80 border-t border-white border-opacity-5">
+          <div class="mt-4 pt-4 text-white/80 border-t border-white/5">
             <div class="flex items-center px-4">
               <ui-btn type="button" @click="show = false">{{ $strings.ButtonCancel }}</ui-btn>
-              <div class="flex-grow" />
-              <ui-btn color="success" @click="doBatchQuickMatch">{{ $strings.ButtonSubmit }}</ui-btn>
+              <div class="grow" />
+              <ui-btn color="bg-success" @click="doBatchQuickMatch">{{ $strings.ButtonSubmit }}</ui-btn>
             </div>
           </div>
         </div>

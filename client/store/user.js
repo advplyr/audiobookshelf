@@ -5,6 +5,7 @@ export const state = () => ({
     orderDesc: false,
     filterBy: 'all',
     playbackRate: 1,
+    playbackRateIncrementDecrement: 0.1,
     bookshelfCoverSize: 120,
     collapseSeries: false,
     collapseBookSeries: false,
@@ -56,6 +57,9 @@ export const getters = {
   },
   getUserCanAccessAllLibraries: (state) => {
     return !!state.user?.permissions?.accessAllLibraries
+  },
+  getUserCanAccessExplicitContent: (state) => {
+    return !!state.user?.permissions?.accessExplicitContent
   },
   getLibrariesAccessible: (state, getters) => {
     if (!state.user) return []

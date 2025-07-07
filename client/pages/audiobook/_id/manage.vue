@@ -2,7 +2,14 @@
   <div id="page-wrapper" class="bg-bg page p-8 overflow-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="flex items-center justify-center mb-6">
       <div class="w-full max-w-2xl">
-        <p class="text-2xl mb-2">{{ $strings.HeaderAudiobookTools }}</p>
+        <div class="flex items-center mb-4">
+          <nuxt-link :to="`/item/${libraryItem.id}`" class="hover:underline">
+            <h1 class="text-lg lg:text-xl">{{ mediaMetadata.title }}</h1>
+          </nuxt-link>
+          <button class="w-7 h-7 flex items-center justify-center mx-4 hover:scale-110 duration-100 transform text-gray-200 hover:text-white" @click="editItem">
+            <span class="material-symbols text-base">edit</span>
+          </button>
+        </div>
       </div>
       <div class="w-full max-w-2xl">
         <div class="flex justify-end">
@@ -13,43 +20,43 @@
 
     <div class="flex justify-center mb-2">
       <div class="w-full max-w-2xl">
-        <p class="text-xl">{{ $strings.HeaderMetadataToEmbed }}</p>
+        <p class="text-lg">{{ $strings.HeaderMetadataToEmbed }}</p>
       </div>
       <div class="w-full max-w-2xl"></div>
     </div>
 
-    <div class="flex justify-center flex-wrap">
-      <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
+    <div class="flex justify-center flex-wrap lg:flex-nowrap gap-4">
+      <div class="w-full max-w-2xl border border-white/10 bg-bg">
         <div class="flex py-2 px-4">
-          <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
-          <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
+          <div class="w-28 min-w-28 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
+          <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
           <template v-for="(value, key, index) in metadataObject">
-            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
-              <div class="w-1/3 font-semibold">{{ key }}</div>
-              <div class="w-2/3">
+            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary/25' : ''">
+              <div class="w-28 min-w-28 font-semibold">{{ key }}</div>
+              <div class="grow">
                 {{ value }}
               </div>
             </div>
           </template>
         </div>
       </div>
-      <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelEnd }}</div>
+      <div class="w-full max-w-2xl border border-white/10 bg-bg">
+        <div class="flex py-2 px-4 bg-primary/25">
+          <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
+          <div class="w-16 min-w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
+          <div class="w-16 min-w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelEnd }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
           <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">{{ $strings.MessageNoChapters }}</p>
           <template v-for="(chapter, index) in metadataChapters">
-            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary bg-opacity-25' : ''">
-              <div class="flex-grow font-semibold">{{ chapter.title }}</div>
-              <div class="w-24">
+            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary/25' : ''">
+              <div class="grow font-semibold">{{ chapter.title }}</div>
+              <div class="w-16 min-w-16">
                 {{ $secondsToTimestamp(chapter.start) }}
               </div>
-              <div class="w-24">
+              <div class="w-16 min-w-16">
                 {{ $secondsToTimestamp(chapter.end) }}
               </div>
             </div>
@@ -58,7 +65,7 @@
       </div>
     </div>
 
-    <div class="w-full h-px bg-white bg-opacity-10 my-8" />
+    <div class="w-full h-px bg-white/10 my-8" />
 
     <div class="w-full max-w-4xl mx-auto">
       <!-- queued alert -->
@@ -69,38 +76,32 @@
       <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
         <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" :label="$strings.LabelBackupAudioFiles" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
 
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="bg-primary" :loading="processing" :progress="progress" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageEmbedFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
       <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
-        <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-symbols text-xl">{{ showEncodeOptions || usingCustomEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">{{ $strings.LabelUseAdvancedOptions }}</span>
-        </button>
+        <div class="grow" />
 
-        <div class="flex-grow" />
-
-        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" :progress="progress" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished && processing" color="bg-error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="bg-primary" :loading="processing" :progress="progress" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
 
-      <!-- advanced encoding options -->
-      <div v-if="isM4BTool" class="overflow-hidden">
-        <transition name="slide">
-          <div v-if="showEncodeOptions || usingCustomEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
-            <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
-              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
-              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="$strings.LabelAudioCodec" class="m-2 max-w-40" @input="codecChanged" />
-            </div>
-            <p class="text-sm text-warning">{{ $strings.LabelEncodingWarningAdvancedSettings }}</p>
-          </div>
-        </transition>
+      <!-- show encoding options for running task -->
+      <div v-if="encodeTaskHasEncodingOptions" class="mb-4 pb-4 border-b border-white/10">
+        <div class="flex flex-wrap -mx-2">
+          <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" readonly :label="$strings.LabelAudioBitrate" class="m-2 max-w-40" @input="bitrateChanged" />
+          <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" readonly :label="$strings.LabelAudioChannels" class="m-2 max-w-40" @input="channelsChanged" />
+          <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" readonly :label="$strings.LabelAudioCodec" class="m-2 max-w-40" @input="codecChanged" />
+        </div>
+      </div>
+      <div v-else-if="isM4BTool" class="mb-4">
+        <widgets-encoder-options-card ref="encoderOptionsCard" :audio-tracks="audioFiles" :disabled="processing || isTaskFinished" />
       </div>
 
       <div class="mb-4">
@@ -142,23 +143,33 @@
 
     <div class="w-full max-w-4xl mx-auto">
       <p class="mb-2 font-semibold">{{ $strings.HeaderAudioTracks }}</p>
-      <div class="w-full mx-auto border border-white border-opacity-10 bg-bg">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
+      <div class="w-full mx-auto border border-white/10 bg-bg">
+        <div class="flex py-2 px-4 bg-primary/25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="w-20 text-xs font-semibold uppercase text-gray-200 hidden lg:block">{{ $strings.LabelChannels }}</div>
+          <div class="w-16 text-xs font-semibold uppercase text-gray-200 hidden md:block">{{ $strings.LabelCodec }}</div>
+          <div class="w-16 text-xs font-semibold uppercase text-gray-200 hidden md:block">{{ $strings.LabelBitrate }}</div>
           <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
           <div class="w-24"></div>
         </div>
         <template v-for="file in audioFiles">
-          <div :key="file.index" class="flex py-2 px-4 text-sm" :class="file.index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
-            <div class="w-10">{{ file.index }}</div>
-            <div class="flex-grow">
+          <div :key="file.index" class="flex py-2 px-4 text-xs sm:text-sm" :class="file.index % 2 === 0 ? 'bg-primary/25' : ''">
+            <div class="w-10 min-w-10">{{ file.index }}</div>
+            <div class="grow">
               {{ file.metadata.filename }}
             </div>
-            <div class="w-16 font-mono text-gray-200">
+            <div class="w-20 min-w-20 text-gray-200 hidden lg:block">{{ file.channels || 'unknown' }} ({{ file.channelLayout || 'unknown' }})</div>
+            <div class="w-16 min-w-16 text-gray-200 hidden md:block">
+              {{ file.codec || 'unknown' }}
+            </div>
+            <div class="w-16 min-w-16 text-gray-200 hidden md:block">
+              {{ $bytesPretty(file.bitRate || 0, 0) }}
+            </div>
+            <div class="w-16 min-w-16 text-gray-200">
               {{ $bytesPretty(file.metadata.size) }}
             </div>
-            <div class="w-24">
+            <div class="w-24 min-w-24">
               <div class="flex justify-center">
                 <span v-if="audioFilesFinished[file.ino]" class="material-symbols text-xl text-success leading-none">check_circle</span>
                 <div v-else-if="audioFilesEncoding[file.ino]">
@@ -195,8 +206,13 @@ export default {
       return redirect('/?error=invalid media type')
     }
     if (!libraryItem.media.audioFiles.length) {
-      cnosole.error('No audio files')
+      console.error('No audio files')
       return redirect('/?error=no audio files')
+    }
+
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
     }
 
     return {
@@ -209,7 +225,6 @@ export default {
       metadataObject: null,
       selectedTool: 'embed',
       isCancelingEncode: false,
-      showEncodeOptions: false,
       shouldBackupAudioFiles: true,
       encodingOptions: {
         bitrate: '128k',
@@ -258,9 +273,6 @@ export default {
     audioFiles() {
       return (this.media.audioFiles || []).filter((af) => !af.exclude)
     },
-    isSingleM4b() {
-      return this.audioFiles.length === 1 && this.audioFiles[0].metadata.ext.toLowerCase() === '.m4b'
-    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
@@ -268,14 +280,10 @@ export default {
       return this.media.chapters || []
     },
     availableTools() {
-      if (this.isSingleM4b) {
-        return [{ value: 'embed', text: this.$strings.LabelToolsEmbedMetadata }]
-      } else {
-        return [
-          { value: 'embed', text: this.$strings.LabelToolsEmbedMetadata },
-          { value: 'm4b', text: this.$strings.LabelToolsM4bEncoder }
-        ]
-      }
+      return [
+        { value: 'embed', text: this.$strings.LabelToolsEmbedMetadata },
+        { value: 'm4b', text: this.$strings.LabelToolsM4bEncoder }
+      ]
     },
     taskFailed() {
       return this.isTaskFinished && this.task.isFailed
@@ -309,8 +317,8 @@ export default {
     isMetadataEmbedQueued() {
       return this.queuedEmbedLIds.some((lid) => lid === this.libraryItemId)
     },
-    usingCustomEncodeOptions() {
-      return this.isM4BTool && this.encodeTask && this.encodeTask.data.encodeOptions && Object.keys(this.encodeTask.data.encodeOptions).length > 0
+    encodeTaskHasEncodingOptions() {
+      return this.isM4BTool && !!this.encodeTask?.data.encodeOptions && Object.keys(this.encodeTask.data.encodeOptions).length > 0
     }
   },
   methods: {
@@ -346,19 +354,15 @@ export default {
       if (this.$refs.channelsInput) this.$refs.channelsInput.blur()
       if (this.$refs.codecInput) this.$refs.codecInput.blur()
 
-      let queryStr = ''
-      if (this.showEncodeOptions) {
-        const options = []
-        if (this.encodingOptions.bitrate) options.push(`bitrate=${this.encodingOptions.bitrate}`)
-        if (this.encodingOptions.channels) options.push(`channels=${this.encodingOptions.channels}`)
-        if (this.encodingOptions.codec) options.push(`codec=${this.encodingOptions.codec}`)
-        if (options.length) {
-          queryStr = `?${options.join('&')}`
-        }
-      }
+      const encodeOptions = this.$refs.encoderOptionsCard.getEncodingOptions()
+
+      this.encodingOptions = encodeOptions
+
+      const queryParams = new URLSearchParams(encodeOptions)
+
       this.processing = true
       this.$axios
-        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b${queryStr}`)
+        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b?${queryParams.toString()}`)
         .then(() => {
           console.log('Ab m4b merge started')
         })
@@ -411,14 +415,10 @@ export default {
       const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
       this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
 
-      if (this.usingCustomEncodeOptions) {
+      if (this.encodeTaskHasEncodingOptions) {
         if (this.encodeTask.data.encodeOptions.bitrate) this.encodingOptions.bitrate = this.encodeTask.data.encodeOptions.bitrate
         if (this.encodeTask.data.encodeOptions.channels) this.encodingOptions.channels = this.encodeTask.data.encodeOptions.channels
         if (this.encodeTask.data.encodeOptions.codec) this.encodingOptions.codec = this.encodeTask.data.encodeOptions.codec
-      } else {
-        this.encodingOptions.bitrate = localStorage.getItem('embedMetadataBitrate') || '128k'
-        this.encodingOptions.channels = localStorage.getItem('embedMetadataChannels') || '2'
-        this.encodingOptions.codec = localStorage.getItem('embedMetadataCodec') || 'aac'
       }
     },
     fetchMetadataEmbedObject() {
@@ -433,10 +433,24 @@ export default {
     },
     taskUpdated(task) {
       this.processing = !task.isFinished
+    },
+    editItem() {
+      this.$store.commit('showEditModal', this.libraryItem)
+    },
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItem.id) {
+        this.libraryItem = libraryItem
+        this.fetchMetadataEmbedObject()
+      }
     }
   },
   mounted() {
     this.init()
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
   }
 }
 </script>

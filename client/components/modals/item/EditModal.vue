@@ -16,10 +16,10 @@
     </div>
 
     <div v-show="canGoPrev" class="absolute -left-24 top-0 bottom-0 h-full pointer-events-none flex items-center px-6">
-      <button class="material-symbols text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" :aria-label="$strings.ButtonNext" @click.stop.prevent="goPrevBook" @mousedown.prevent>arrow_back_ios</button>
+      <button class="material-symbols text-5xl text-white/50 hover:text-white/90 cursor-pointer pointer-events-auto" :aria-label="$strings.ButtonNext" @click.stop.prevent="goPrevBook" @mousedown.prevent>arrow_back_ios</button>
     </div>
     <div v-show="canGoNext" class="absolute -right-24 top-0 bottom-0 h-full pointer-events-none flex items-center px-6">
-      <button class="material-symbols text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" :aria-label="$strings.ButtonPrevious" @click.stop.prevent="goNextBook" @mousedown.prevent>arrow_forward_ios</button>
+      <button class="material-symbols text-5xl text-white/50 hover:text-white/90 cursor-pointer pointer-events-auto" :aria-label="$strings.ButtonPrevious" @click.stop.prevent="goNextBook" @mousedown.prevent>arrow_forward_ios</button>
     </div>
   </modals-modal>
 </template>
@@ -196,6 +196,9 @@ export default {
   methods: {
     async goPrevBook() {
       if (this.currentBookshelfIndex - 1 < 0) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
       this.processing = true
       var prevBook = await this.$axios.$get(`/api/items/${prevBookId}?expanded=1`).catch((error) => {
@@ -215,6 +218,9 @@ export default {
     },
     async goNextBook() {
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
+      // Remove focus from active input
+      document.activeElement?.blur?.()
+
       this.processing = true
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
       var nextBook = await this.$axios.$get(`/api/items/${nextBookId}?expanded=1`).catch((error) => {

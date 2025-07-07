@@ -3,7 +3,6 @@ import LazyBookCard from '@/components/cards/LazyBookCard'
 import LazySeriesCard from '@/components/cards/LazySeriesCard'
 import LazyCollectionCard from '@/components/cards/LazyCollectionCard'
 import LazyPlaylistCard from '@/components/cards/LazyPlaylistCard'
-import LazyAlbumCard from '@/components/cards/LazyAlbumCard'
 import AuthorCard from '@/components/cards/AuthorCard'
 
 export default {
@@ -20,7 +19,6 @@ export default {
       if (this.entityName === 'series') return Vue.extend(LazySeriesCard)
       if (this.entityName === 'collections') return Vue.extend(LazyCollectionCard)
       if (this.entityName === 'playlists') return Vue.extend(LazyPlaylistCard)
-      if (this.entityName === 'albums') return Vue.extend(LazyAlbumCard)
       if (this.entityName === 'authors') return Vue.extend(AuthorCard)
       return Vue.extend(LazyBookCard)
     },
@@ -28,7 +26,6 @@ export default {
       if (this.entityName === 'series') return 'cards-lazy-series-card'
       if (this.entityName === 'collections') return 'cards-lazy-collection-card'
       if (this.entityName === 'playlists') return 'cards-lazy-playlist-card'
-      if (this.entityName === 'albums') return 'cards-lazy-album-card'
       if (this.entityName === 'authors') return 'cards-author-card'
       return 'cards-lazy-book-card'
     },
@@ -133,7 +130,7 @@ export default {
 
       instance.$mount()
       instance.$el.style.transform = this.entityTransform((index % this.entitiesPerShelf) + 1)
-      instance.$el.classList.add('absolute', 'top-0', 'left-0')
+      instance.$el.classList.add('absolute', 'top-0', 'left-0', 'z-10')
       shelfEl.appendChild(instance.$el)
 
       if (this.entities[index]) {

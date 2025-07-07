@@ -40,7 +40,7 @@ export default {
       }
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     releasesToShow() {
       return this.versionData?.releasesToShow || []
@@ -62,6 +62,8 @@ since we don't have access to the actual elements in this component
 
 2. v-deep allows these to take effect on the content passed in to the v-html in the div above
 */
+@reference "tailwindcss";
+
 .custom-text ::v-deep > h2 {
   @apply text-lg font-bold;
 }

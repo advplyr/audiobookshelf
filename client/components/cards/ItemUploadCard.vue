@@ -1,11 +1,11 @@
 <template>
-  <div class="relative w-full py-4 px-6 border border-white border-opacity-10 shadow-lg rounded-md my-6">
-    <div class="absolute -top-3 -left-3 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full">
-      <p class="text-base text-white text-opacity-80 font-mono">#{{ item.index }}</p>
+  <div class="relative w-full py-4 px-6 border border-white/10 shadow-lg rounded-md my-6">
+    <div class="absolute -top-3 -left-3 w-8 h-8 bg-bg border border-white/10 flex items-center justify-center rounded-full">
+      <p class="text-base text-white/80 font-mono">#{{ item.index }}</p>
     </div>
 
-    <div v-if="!processing && !uploadFailed && !uploadSuccess" class="absolute -top-3 -right-3 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-error cursor-pointer" @click="$emit('remove')">
-      <span class="text-base text-white text-opacity-80 font-mono material-symbols">close</span>
+    <div v-if="!processing && !uploadFailed && !uploadSuccess" class="absolute -top-3 -right-3 w-8 h-8 bg-bg border border-white/10 flex items-center justify-center rounded-full hover:bg-error cursor-pointer" @click="$emit('remove')">
+      <span class="text-base text-white/80 font-mono material-symbols">close</span>
     </div>
 
     <template v-if="!uploadSuccess && !uploadFailed">
@@ -20,10 +20,10 @@
         <div class="w-1/2 px-2">
           <div v-if="!isPodcast" class="flex items-end">
             <ui-text-input-with-label v-model.trim="itemData.author" :disabled="processing" :label="$strings.LabelAuthor" />
-            <ui-tooltip :text="$strings.LabelUploaderItemFetchMetadataHelp">
-              <div class="ml-2 mb-1 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
-                <span class="text-base text-white text-opacity-80 font-mono material-symbols">sync</span>
-              </div>
+            <ui-tooltip direction="top" :text="$strings.LabelUploaderItemFetchMetadataHelp">
+              <button type="button" class="ml-2 mb-1 w-8 h-8 bg-bg border border-white/10 flex items-center justify-center rounded-full hover:bg-primary cursor-pointer" @click="fetchMetadata">
+                <span class="text-base text-white/80 font-mono material-symbols">sync</span>
+              </button>
             </ui-tooltip>
           </div>
           <div v-else class="w-full">
@@ -61,7 +61,7 @@
       <p class="text-base">"{{ itemData.title }}" {{ $strings.MessageUploaderItemFailed }}</p>
     </widgets-alert>
 
-    <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
+    <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center z-20">
       <ui-loading-indicator :text="nonInteractionLabel" />
     </div>
   </div>

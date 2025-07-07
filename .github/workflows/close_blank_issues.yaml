@@ -1,0 +1,42 @@
+name: Close Issues not using a template
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions:
+  issues: write
+
+jobs:
+  close_issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check issue headings
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueBody = context.payload.issue.body || "";
+
+            // Match Markdown headings (e.g., # Heading, ## Heading)
+            const headingRegex = /^(#{1,6})\s.+/gm;
+            const headings = [...issueBody.matchAll(headingRegex)];
+
+            if (headings.length < 3) {
+              // Post a comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                body: "Thank you for opening an issue! To help us review your request efficiently, please use one of the provided issue templates. If you're seeking information or have a general question, consider opening a Discussion or joining the conversation on our Discord. Thanks!"
+              });
+
+              // Close the issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                state: "closed"
+              });
+            }

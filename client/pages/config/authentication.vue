@@ -33,7 +33,7 @@
         <transition name="slide">
           <div v-if="enableOpenIDAuth" class="flex flex-wrap pt-4">
             <div class="w-full flex items-center mb-2">
-              <div class="flex-grow">
+              <div class="grow">
                 <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" />
               </div>
               <div class="w-36 mx-1 mt-[1.375rem]">
@@ -122,8 +122,9 @@
           </div>
         </transition>
       </div>
-      <div class="w-full flex items-center justify-end p-4">
-        <ui-btn color="success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
+      <div class="w-full flex items-center justify-between p-4">
+        <p v-if="enableOpenIDAuth" class="text-sm text-warning">{{ $strings.MessageAuthenticationOIDCChangesRestart }}</p>
+        <ui-btn color="bg-success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
       </div>
     </app-settings-content>
   </div>

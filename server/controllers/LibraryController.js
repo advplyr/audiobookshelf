@@ -23,6 +23,7 @@ const RssFeedManager = require('../managers/RssFeedManager')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
+const zipHelpers = require('../utils/zipHelpers')
 
 /**
  * @typedef RequestUserObject
@@ -184,6 +185,15 @@ class LibraryController {
               return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
             }
             newLibraryPayload.settings[key] = req.body.settings[key]
+          } else if (key === 'markAsFinishedPercentComplete' || key === 'markAsFinishedTimeRemaining') {
+            if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+            } else if (key === 'markAsFinishedPercentComplete' && req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 100)) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 100`)
+            } else if (key === 'markAsFinishedTimeRemaining' && req.body.settings[key] !== null && Number(req.body.settings[key]) < 0) {
+              return res.status(400).send(`Invalid request. Setting "${key}" must be greater than or equal to 0`)
+            }
+            newLibraryPayload.settings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
           } else {
             if (typeof req.body.settings[key] !== typeof newLibraryPayload.settings[key]) {
               return res.status(400).send(`Invalid request. Setting "${key}" must be of type ${typeof newLibraryPayload.settings[key]}`)
@@ -254,21 +264,34 @@ class LibraryController {
    * GET: /api/libraries
    * Get all libraries
    *
+   * ?include=stats to load library stats - used in android auto to filter out libraries with no audio
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   async findAll(req, res) {
-    const libraries = await Database.libraryModel.getAllWithFolders()
+    let libraries = await Database.libraryModel.getAllWithFolders()
 
     const librariesAccessible = req.user.permissions?.librariesAccessible || []
     if (librariesAccessible.length) {
-      return res.json({
-        libraries: libraries.filter((lib) => librariesAccessible.includes(lib.id)).map((lib) => lib.toOldJSON())
-      })
+      libraries = libraries.filter((lib) => librariesAccessible.includes(lib.id))
+    }
+
+    libraries = libraries.map((lib) => lib.toOldJSON())
+
+    const includeArray = (req.query.include || '').split(',')
+    if (includeArray.includes('stats')) {
+      for (const library of libraries) {
+        if (library.mediaType === 'book') {
+          library.stats = await libraryItemsBookFilters.getBookLibraryStats(library.id)
+        } else if (library.mediaType === 'podcast') {
+          library.stats = await libraryItemsPodcastFilters.getPodcastLibraryStats(library.id)
+        }
+      }
     }
 
     res.json({
-      libraries: libraries.map((lib) => lib.toOldJSON())
+      libraries
     })
   }
 
@@ -316,6 +339,11 @@ class LibraryController {
    * @param {Response} res
    */
   async update(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to update library`)
+      return res.sendStatus(403)
+    }
+
     // Validation
     const updatePayload = {}
     const keysToCheck = ['name', 'provider', 'mediaType', 'icon']
@@ -396,7 +424,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else if (key === 'markAsFinishedTimeRemaining') {
@@ -409,7 +437,7 @@ class LibraryController {
           }
           if (req.body.settings[key] !== updatedSettings[key]) {
             hasUpdates = true
-            updatedSettings[key] = Number(req.body.settings[key])
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
         } else {
@@ -581,6 +609,11 @@ class LibraryController {
    * @param {Response} res
    */
   async delete(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to delete library`)
+      return res.sendStatus(403)
+    }
+
     // Remove library watcher
     Watcher.removeLibrary(req.library)
 
@@ -701,6 +734,11 @@ class LibraryController {
    * @param {Response} res
    */
   async removeLibraryItemsWithIssues(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to delete library items missing or invalid`)
+      return res.sendStatus(403)
+    }
+
     const libraryItemsWithIssues = await Database.libraryItemModel.findAll({
       where: {
         libraryId: req.library.id,
@@ -1207,10 +1245,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter(
-        'items_updated',
-        itemsUpdated.map((li) => li.toOldJSONExpanded())
-      )
+      SocketAuthority.libraryItemsEmitter('items_updated', itemsUpdated)
     }
 
     res.json({
@@ -1251,10 +1286,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      SocketAuthority.emitter(
-        'items_updated',
-        itemsUpdated.map((li) => li.toOldJSONExpanded())
-      )
+      SocketAuthority.libraryItemsEmitter('items_updated', itemsUpdated)
     }
 
     res.json({
@@ -1437,6 +1469,52 @@ class LibraryController {
         }
       })
     })
+  }
+
+  /**
+   * GET: /api/library/:id/download
+   * Downloads multiple library items
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async downloadMultiple(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn(`User "${req.user.username}" attempted to download without permission`)
+      return res.sendStatus(403)
+    }
+
+    if (!req.query.ids || typeof req.query.ids !== 'string') {
+      res.status(400).send('Invalid request. ids must be a string')
+      return
+    }
+
+    const itemIds = req.query.ids.split(',')
+
+    const libraryItems = await Database.libraryItemModel.findAll({
+      attributes: ['id', 'libraryId', 'path', 'isFile'],
+      where: {
+        id: itemIds
+      }
+    })
+
+    Logger.info(`[LibraryController] User "${req.user.username}" requested download for items "${itemIds}"`)
+
+    const filename = `LibraryItems-${Date.now()}.zip`
+    const pathObjects = libraryItems.map((li) => ({ path: li.path, isFile: li.isFile }))
+
+    if (!pathObjects.length) {
+      Logger.warn(`[LibraryController] No library items found for ids "${itemIds}"`)
+      return res.status(404).send('Library items not found')
+    }
+
+    try {
+      await zipHelpers.zipDirectoriesPipe(pathObjects, filename, res)
+      Logger.info(`[LibraryController] Downloaded ${pathObjects.length} items "${filename}"`)
+    } catch (error) {
+      Logger.error(`[LibraryController] Download failed for items "${filename}" at ${pathObjects.map((po) => po.path).join(', ')}`, error)
+      zipHelpers.handleDownloadError(error, res)
+    }
   }
 
   /**

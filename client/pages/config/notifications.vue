@@ -25,11 +25,11 @@
         </div>
       </form>
 
-      <div class="w-full h-px bg-white bg-opacity-10 my-6" />
+      <div class="w-full h-px bg-white/10 my-6" />
 
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold">{{ $strings.HeaderNotifications }}</h2>
-        <ui-btn small color="success" class="flex items-center" @click="clickCreate">{{ $strings.ButtonCreate }} <span class="material-symbols text-lg pl-2">add</span></ui-btn>
+        <ui-btn small color="bg-success" class="flex items-center" @click="clickCreate">{{ $strings.ButtonCreate }} <span class="material-symbols text-lg pl-2">add</span></ui-btn>
       </div>
 
       <div v-if="!notifications.length" class="flex justify-center text-center">

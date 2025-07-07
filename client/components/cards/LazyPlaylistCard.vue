@@ -1,19 +1,19 @@
 <template>
-  <div ref="card" :id="`playlist-card-${index}`" role="button" :style="{ width: cardWidth + 'px', fontSize: sizeMultiplier + 'rem' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`playlist-card-${index}`" role="button" :style="{ width: cardWidth + 'px', fontSize: sizeMultiplier + 'rem' }" class="absolute top-0 left-0 rounded-xs z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="relative" :style="{ height: coverHeight + 'px' }">
       <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
-      <div class="w-full h-full bg-primary relative rounded overflow-hidden">
+      <div class="w-full h-full bg-primary relative rounded-sm overflow-hidden">
         <covers-playlist-cover ref="cover" :items="items" :width="cardWidth" :height="coverHeight" />
       </div>
-      <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
+      <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black/40 pointer-events-none">
         <div class="absolute pointer-events-auto" :style="{ top: 0.5 + 'em', right: 0.5 + 'em' }" @click.stop.prevent="clickEdit">
-          <span class="material-symbols text-white text-opacity-75 hover:text-opacity-100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
+          <span class="material-symbols text-white/75 hover:text-white/100" :style="{ fontSize: 1.25 + 'em' }">edit</span>
         </div>
       </div>
     </div>
 
     <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 -bottom-6e left-0 right-0 mx-auto h-6e rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0em ${0.5}em` }">
+      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-xs border" :style="{ padding: `0em ${0.5}em` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'em' }">{{ title }}</p>
       </div>
     </div>

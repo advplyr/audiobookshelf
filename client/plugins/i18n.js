@@ -5,6 +5,7 @@ import { supplant } from './utils'
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
+  ar: { label: 'عربي', dateFnsLocale: 'ar' },
   bg: { label: 'Български', dateFnsLocale: 'bg' },
   bn: { label: 'বাংলা', dateFnsLocale: 'bn' },
   ca: { label: 'Català', dateFnsLocale: 'ca' },
@@ -107,6 +108,19 @@ Vue.prototype.$formatNumber = (num) => {
   return Intl.NumberFormat(Vue.prototype.$languageCodes.current).format(num)
 }
 
+/**
+ * Get the days of the week for the current language
+ * Starts with Sunday
+ * @returns {string[]}
+ */
+Vue.prototype.$getDaysOfWeek = () => {
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    days.push(new Date(2025, 0, 5 + i).toLocaleString(Vue.prototype.$languageCodes.current, { weekday: 'long' }))
+  }
+  return days
+}
+
 const translations = {
   [defaultCode]: enUsStrings
 }
@@ -148,6 +162,7 @@ async function loadi18n(code) {
   Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
   this?.$eventBus?.$emit('change-lang', code)
+
   return true
 }
 

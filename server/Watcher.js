@@ -5,7 +5,7 @@ const Logger = require('./Logger')
 const Task = require('./objects/Task')
 const TaskManager = require('./managers/TaskManager')
 
-const { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs } = require('./utils/fileUtils')
+const { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs, shouldIgnoreFile } = require('./utils/fileUtils')
 
 /**
  * @typedef PendingFileUpdate
@@ -286,15 +286,10 @@ class FolderWatcher extends EventEmitter {
 
     const relPath = path.replace(folderPath, '')
 
-    if (Path.extname(relPath).toLowerCase() === '.part') {
-      Logger.debug(`[Watcher] Ignoring .part file "${relPath}"`)
-      return false
-    }
-
-    // Ignore files/folders starting with "."
-    const hasDotPath = relPath.split('/').find((p) => p.startsWith('.'))
-    if (hasDotPath) {
-      Logger.debug(`[Watcher] Ignoring dot path "${relPath}" | Piece "${hasDotPath}"`)
+    // Check for ignored extensions or directories, such as dotfiles and hidden directories
+    const shouldIgnore = shouldIgnoreFile(relPath)
+    if (shouldIgnore) {
+      Logger.debug(`[Watcher] Ignoring ${shouldIgnore} - "${relPath}"`)
       return false
     }
 

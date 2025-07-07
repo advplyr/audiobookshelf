@@ -35,11 +35,18 @@ module.exports.nameToLastFirst = (firstLast) => {
   return `${nameObj.last_name}, ${nameObj.first_name}`
 }
 
-// Handle any name string
+/**
+ * Parses a name string into an array of names
+ *
+ * @param {string} nameString - The name string to parse
+ * @returns {{ names: string[] }} Array of names
+ */
 module.exports.parse = (nameString) => {
   if (!nameString) return null
 
-  var splitNames = []
+  let splitNames = []
+  const isCommaSeparated = nameString.includes(',')
+
   // Example &LF: Friedman, Milton & Friedman, Rose
   if (nameString.includes('&')) {
     nameString.split('&').forEach((asa) => (splitNames = splitNames.concat(asa.split(','))))
@@ -59,17 +66,18 @@ module.exports.parse = (nameString) => {
     }
   }
 
-  var names = []
+  let names = []
 
   // 1 name FIRST LAST
   if (splitNames.length === 1) {
     names.push(parseName(nameString))
   } else {
-    var firstChunkIsALastName = checkIsALastName(splitNames[0])
-    var isEvenNum = splitNames.length % 2 === 0
+    // Determines whether this is formatted as last, first or first last (only if using comma separator)
+    // Example: "Smith; James Jones" -> ["Smith", "James Jones"]
+    let firstChunkIsALastName = !isCommaSeparated ? false : checkIsALastName(splitNames[0])
+    let isEvenNum = splitNames.length % 2 === 0
 
     if (!isEvenNum && firstChunkIsALastName) {
-      // console.error('Multi-name LAST,FIRST entry has a straggler (could be roman numerals or a suffix), ignore it')
       splitNames = splitNames.slice(0, splitNames.length - 1)
     }
 

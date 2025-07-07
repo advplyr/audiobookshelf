@@ -5,33 +5,32 @@
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedGeneral }}</p>
 
         <div class="w-full relative">
-          <ui-text-input :value="feedUrl" readonly />
-          <span class="material-symbols absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(feedUrl)">content_copy</span>
+          <ui-text-input :value="feedUrl" readonly show-copy />
         </div>
 
         <div v-if="feed.meta" class="mt-5">
           <div class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedPreventIndexing }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedPreventIndexing }}</span>
             </div>
             <div>{{ feed.meta.preventIndexing ? 'Yes' : 'No' }}</div>
           </div>
           <div v-if="feed.meta.ownerName" class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>
             </div>
             <div>{{ feed.meta.ownerName }}</div>
           </div>
           <div v-if="feed.meta.ownerEmail" class="flex py-0.5">
             <div class="w-48">
-              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
+              <span class="text-white/60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
             </div>
             <div>{{ feed.meta.ownerEmail }}</div>
           </div>
         </div>
         <!--  -->
         <div class="episodesTable mt-2">
-          <div class="bg-primary bg-opacity-40 h-12 header">
+          <div class="bg-primary/40 h-12 header">
             {{ $strings.LabelEpisodeTitle }}
           </div>
           <div class="scroller">
@@ -74,13 +73,7 @@ export default {
     feedUrl() {
       return this.feed ? `${window.origin}${this.$config.routerBasePath}${this.feed.feedUrl}` : ''
     }
-  },
-  methods: {
-    copyToClipboard(str) {
-      this.$copyToClipboard(str, this)
-    }
-  },
-  mounted() {}
+  }
 }
 </script>
 

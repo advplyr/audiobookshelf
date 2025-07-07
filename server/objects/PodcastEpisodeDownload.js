@@ -20,6 +20,8 @@ class PodcastEpisodeDownload {
 
     this.appendRandomId = false
 
+    this.targetFilename = null
+
     this.startedAt = null
     this.createdAt = null
     this.finishedAt = null
@@ -43,7 +45,8 @@ class PodcastEpisodeDownload {
       season: this.rssPodcastEpisode?.season ?? null,
       episode: this.rssPodcastEpisode?.episode ?? null,
       episodeType: this.rssPodcastEpisode?.episodeType ?? 'full',
-      publishedAt: this.rssPodcastEpisode?.publishedAt ?? null
+      publishedAt: this.rssPodcastEpisode?.publishedAt ?? null,
+      guid: this.rssPodcastEpisode?.guid ?? null
     }
   }
 
@@ -73,11 +76,6 @@ class PodcastEpisodeDownload {
   get episodeTitle() {
     return this.rssPodcastEpisode.title
   }
-  get targetFilename() {
-    const appendage = this.appendRandomId ? ` (${uuidv4()})` : ''
-    const filename = `${this.rssPodcastEpisode.title}${appendage}.${this.fileExtension}`
-    return sanitizeFilename(filename)
-  }
   get targetPath() {
     return filePathToPOSIX(Path.join(this.libraryItem.path, this.targetFilename))
   }
@@ -90,6 +88,23 @@ class PodcastEpisodeDownload {
   get pubYear() {
     if (!this.rssPodcastEpisode.publishedAt) return null
     return new Date(this.rssPodcastEpisode.publishedAt).getFullYear()
+  }
+
+  /**
+   * @param {string} title
+   */
+  getSanitizedFilename(title) {
+    const appendage = this.appendRandomId ? ` (${this.id})` : ''
+    const filename = `${title.trim()}${appendage}.${this.fileExtension}`
+    return sanitizeFilename(filename)
+  }
+
+  /**
+   * @param {boolean} appendRandomId
+   */
+  setAppendRandomId(appendRandomId) {
+    this.appendRandomId = appendRandomId
+    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode.title || '')
   }
 
   /**
@@ -110,6 +125,8 @@ class PodcastEpisodeDownload {
     } else {
       this.url = encodeURI(url)
     }
+
+    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode.title || '')
 
     this.libraryItem = libraryItem
     this.isAutoDownload = isAutoDownload

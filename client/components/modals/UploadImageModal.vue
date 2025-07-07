@@ -5,9 +5,9 @@
         <div class="w-40 pr-2 pt-4" style="min-width: 160px">
           <ui-file-input ref="fileInput" @change="fileUploadSelected">Upload Cover</ui-file-input>
         </div>
-        <form @submit.prevent="submitForm" class="flex flex-grow">
+        <form @submit.prevent="submitForm" class="flex grow">
           <ui-text-input-with-label v-model="imageUrl" label="Cover Image URL" />
-          <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-3 w-24">Update</ui-btn>
+          <ui-btn color="bg-success" type="submit" :padding-x="4" class="mt-5 ml-3 w-24">Update</ui-btn>
         </form>
       </div>
       <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
@@ -18,7 +18,7 @@
         </div>
         <div class="absolute bottom-0 right-0 flex py-4 px-5">
           <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">Clear</ui-btn>
-          <ui-btn :loading="processingUpload" color="success" @click="submitCoverUpload">Upload</ui-btn>
+          <ui-btn :loading="processingUpload" color="bg-success" @click="submitCoverUpload">Upload</ui-btn>
         </div>
       </div>
     </div>

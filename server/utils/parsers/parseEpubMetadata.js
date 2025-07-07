@@ -56,7 +56,9 @@ async function extractCoverImage(epubPath, epubImageFilepath, outputCoverPath) {
       return false
     })
 
-  await zip.close()
+  await zip.close().catch((error) => {
+    Logger.error(`[parseEpubMetadata] Failed to close zip`, error)
+  })
 
   return success
 }
@@ -105,7 +107,8 @@ async function parse(ebookFile) {
 
   // Attempt to find filepath to cover image:
   // Metadata may include <meta name="cover" content="id"/> where content is the id of the cover image in the manifest
-  //  Otherwise the first image in the manifest is used as the cover image
+  //  Otherwise find image in the manifest with cover-image property set
+  //  As a fallback the first image in the manifest is used as the cover image
   let packageMetadata = packageJson.package?.metadata
   if (Array.isArray(packageMetadata)) {
     packageMetadata = packageMetadata[0]
@@ -115,6 +118,9 @@ async function parse(ebookFile) {
   let manifestFirstImage = null
   if (metaCoverId) {
     manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find((item) => item.$?.id === metaCoverId)
+  }
+  if (!manifestFirstImage) {
+    manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find((item) => item.$?.['properties']?.split(' ')?.includes('cover-image'))
   }
   if (!manifestFirstImage) {
     manifestFirstImage = packageJson.package?.manifest?.[0]?.item?.find((item) => item.$?.['media-type']?.startsWith('image/'))

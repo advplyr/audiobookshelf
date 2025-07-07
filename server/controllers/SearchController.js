@@ -108,12 +108,12 @@ class SearchController {
   async findChapters(req, res) {
     const asin = req.query.asin
     if (!isValidASIN(asin.toUpperCase())) {
-      return res.json({ error: 'Invalid ASIN' })
+      return res.json({ error: 'Invalid ASIN', stringKey: 'MessageInvalidAsin' })
     }
     const region = (req.query.region || 'us').toLowerCase()
     const chapterData = await BookFinder.findChapters(asin, region)
     if (!chapterData) {
-      return res.json({ error: 'Chapters not found' })
+      return res.json({ error: 'Chapters not found', stringKey: 'MessageChaptersNotFound' })
     }
     res.json(chapterData)
   }

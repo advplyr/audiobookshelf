@@ -18,14 +18,15 @@ jobs:
     name: build and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: setup nade
-        uses: actions/setup-node@v3
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: install pkg (using yao-pkg fork for targetting node20)
+      - name: install pkg (using yao-pkg fork for targeting node20)
         run: npm install -g @yao-pkg/pkg
 
       - name: get client dependencies

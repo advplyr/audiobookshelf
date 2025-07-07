@@ -2,7 +2,7 @@
   <div class="text-center mt-4 relative">
     <div class="flex py-4">
       <ui-file-input ref="fileInput" class="mr-2" accept=".audiobookshelf" @change="backupUploaded">{{ $strings.ButtonUploadBackup }}</ui-file-input>
-      <div class="flex-grow" />
+      <div class="grow" />
       <ui-btn :loading="isBackingUp" @click="clickCreateBackup">{{ $strings.ButtonCreateBackup }}</ui-btn>
     </div>
     <div class="relative">
@@ -13,7 +13,7 @@
           <th class="hidden sm:table-cell w-20 md:w-28">{{ $strings.LabelSize }}</th>
           <th class="w-36"></th>
         </tr>
-        <tr v-for="backup in backups" :key="backup.id" :class="!backup.serverVersion ? 'bg-error bg-opacity-10' : ''">
+        <tr v-for="backup in backups" :key="backup.id" :class="!backup.serverVersion ? 'bg-error/10' : ''">
           <td>
             <p class="truncate text-xs sm:text-sm md:text-base">/{{ backup.path.replace(/\\/g, '/') }}</p>
           </td>
@@ -21,14 +21,14 @@
           <td class="hidden sm:table-cell font-mono md:text-sm text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
             <div class="w-full flex flex-row items-center justify-center">
-              <ui-btn v-if="backup.serverVersion && backup.key" small color="primary" @click="applyBackup(backup)">{{ $strings.ButtonRestore }}</ui-btn>
+              <ui-btn v-if="backup.serverVersion && backup.key" small color="bg-primary" @click="applyBackup(backup)">{{ $strings.ButtonRestore }}</ui-btn>
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
                 <span class="material-symbols text-2xl text-error">error_outline</span>
               </ui-tooltip>
 
-              <button aria-label="Download Backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
+              <button aria-label="Download backup" class="inline-flex material-symbols text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
 
-              <button aria-label="Delete Backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click="deleteBackupClick(backup)">delete</button>
+              <button aria-label="Delete backup" class="inline-flex material-symbols text-xl mx-1 text-white/70 hover:text-error" @click.stop="deleteBackupClick(backup)">delete</button>
             </div>
           </td>
         </tr>
@@ -36,7 +36,7 @@
           <td colspan="4" class="text-lg">{{ $strings.MessageNoBackups }}</td>
         </tr>
       </table>
-      <div v-show="processing" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-25 flex items-center justify-center">
+      <div v-show="processing" class="absolute top-0 left-0 w-full h-full bg-black/25 flex items-center justify-center">
         <ui-loading-indicator />
       </div>
     </div>
@@ -48,9 +48,9 @@
 
         <p class="text-lg text-center my-8">{{ $strings.MessageRestoreBackupConfirm }} {{ $formatDatetime(selectedBackup.createdAt, dateFormat, timeFormat) }}?</p>
         <div class="flex px-1 items-center">
-          <ui-btn color="primary" @click="showConfirmApply = false">{{ $strings.ButtonNevermind }}</ui-btn>
-          <div class="flex-grow" />
-          <ui-btn color="success" @click="confirm">{{ $strings.ButtonRestore }}</ui-btn>
+          <ui-btn color="bg-primary" @click="showConfirmApply = false">{{ $strings.ButtonNevermind }}</ui-btn>
+          <div class="grow" />
+          <ui-btn color="bg-success" @click="confirm">{{ $strings.ButtonRestore }}</ui-btn>
         </div>
       </div>
     </prompt-dialog>
@@ -78,10 +78,10 @@ export default {
       return this.$store.getters['user/getToken']
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {
@@ -107,21 +107,32 @@ export default {
         })
     },
     deleteBackupClick(backup) {
-      if (confirm(this.$getString('MessageConfirmDeleteBackup', [this.$formatDatetime(backup.createdAt, this.dateFormat, this.timeFormat)]))) {
-        this.processing = true
-        this.$axios
-          .$delete(`/api/backups/${backup.id}`)
-          .then((data) => {
-            this.setBackups(data.backups || [])
-            this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
-            this.processing = false
-          })
-          .catch((error) => {
-            console.error(error)
-            this.$toast.error(this.$strings.ToastBackupDeleteFailed)
-            this.processing = false
-          })
+      const payload = {
+        message: this.$getString('MessageConfirmDeleteBackup', [this.$formatDatetime(backup.createdAt, this.dateFormat, this.timeFormat)]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteBackup(backup)
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteBackup(backup) {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/backups/${backup.id}`)
+        .then((data) => {
+          this.setBackups(data.backups || [])
+          this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
+        })
+        .catch((error) => {
+          console.error(error)
+          this.$toast.error(this.$strings.ToastBackupDeleteFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     applyBackup(backup) {
       this.selectedBackup = backup

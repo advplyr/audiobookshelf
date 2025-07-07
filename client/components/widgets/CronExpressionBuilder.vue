@@ -1,10 +1,10 @@
 <template>
   <div class="w-full py-2">
     <div class="flex -mb-px">
-      <div class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer" :class="!showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = false">
+      <div class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer" :class="!showAdvancedView ? 'text-white bg-bg hover:bg-bg/60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary/70 hover:bg-primary/60'" @click="showAdvancedView = false">
         <p class="text-sm">{{ $strings.HeaderSchedule }}</p>
       </div>
-      <div class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer" :class="showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = true">
+      <div class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer" :class="showAdvancedView ? 'text-white bg-bg hover:bg-bg/60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary/70 hover:bg-primary/60'" @click="showAdvancedView = true">
         <p class="text-sm">{{ $strings.HeaderAdvanced }}</p>
       </div>
     </div>
@@ -20,7 +20,7 @@
           <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" :label="$strings.LabelMinute" class="max-w-20" />
         </div>
 
-        <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-2 md:p-4 text-center mt-2">
+        <div v-if="description" class="w-full bg-primary/75 rounded-xl p-2 md:p-4 text-center mt-2">
           <p class="text-base md:text-lg text-gray-200" v-html="description" />
         </div>
       </template>
@@ -85,7 +85,7 @@ export default {
     nextRun() {
       if (!this.cronExpression) return ''
       const parsed = this.$getNextScheduledDate(this.cronExpression)
-      return this.$formatJsDatetime(parsed, this.$store.state.serverSettings.dateFormat, this.$store.state.serverSettings.timeFormat) || ''
+      return this.$formatJsDatetime(parsed, this.$store.getters['getServerSetting']('dateFormat'), this.$store.getters['getServerSetting']('timeFormat')) || ''
     },
     description() {
       if ((this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) && this.selectedInterval !== 'daily') return ''

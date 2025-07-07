@@ -71,16 +71,16 @@
         </div>
       </form>
 
-      <div v-show="loading" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-25 flex items-center justify-center">
+      <div v-show="loading" class="absolute top-0 left-0 w-full h-full bg-black/25 flex items-center justify-center">
         <ui-loading-indicator />
       </div>
     </app-settings-content>
 
     <app-settings-content :header-text="$strings.HeaderEreaderDevices" :description="$strings.MessageEreaderDevices">
       <template #header-items>
-        <div class="flex-grow" />
+        <div class="grow" />
 
-        <ui-btn color="primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
+        <ui-btn color="bg-primary" small @click="addNewDeviceClick">{{ $strings.ButtonAddDevice }}</ui-btn>
       </template>
 
       <table v-if="existingEReaderDevices.length" class="tracksTable mt-4">

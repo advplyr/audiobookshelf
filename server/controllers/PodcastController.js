@@ -9,6 +9,7 @@ const fs = require('../libs/fsExtra')
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
 const { validateUrl } = require('../utils/index')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
@@ -107,7 +108,9 @@ class PodcastController {
           libraryFiles: [],
           extraData: {},
           libraryId: library.id,
-          libraryFolderId: folder.id
+          libraryFolderId: folder.id,
+          title: podcast.title,
+          titleIgnorePrefix: podcast.titleIgnorePrefix
         },
         { transaction }
       )
@@ -159,7 +162,7 @@ class PodcastController {
       }
     }
 
-    SocketAuthority.emitter('item_added', newLibraryItem.toOldJSONExpanded())
+    SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
 
     res.json(newLibraryItem.toOldJSONExpanded())
 
@@ -377,7 +380,7 @@ class PodcastController {
     const overrideDetails = req.query.override === '1'
     const episodesUpdated = await Scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
-      SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+      SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     }
 
     res.json({
@@ -402,6 +405,15 @@ class PodcastController {
     const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
     for (const key in req.body) {
       if (supportedStringKeys.includes(key) && typeof req.body[key] === 'string') {
+        // Sanitize description HTML
+        if (key === 'description' && req.body[key]) {
+          const sanitizedDescription = htmlSanitizer.sanitize(req.body[key])
+          if (sanitizedDescription !== req.body[key]) {
+            Logger.debug(`[PodcastController] Sanitized description from "${req.body[key]}" to "${sanitizedDescription}"`)
+            req.body[key] = sanitizedDescription
+          }
+        }
+
         updatePayload[key] = req.body[key]
       } else if (key === 'chapters' && Array.isArray(req.body[key]) && req.body[key].every((ch) => typeof ch === 'object' && ch.title && ch.start)) {
         updatePayload[key] = req.body[key]
@@ -416,7 +428,7 @@ class PodcastController {
         Logger.info(`[PodcastController] Updated episode "${episode.title}" keys`, episode.changed())
         await episode.save()
 
-        SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+        SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
       } else {
         Logger.info(`[PodcastController] No changes to episode "${episode.title}"`)
       }
@@ -461,6 +473,9 @@ class PodcastController {
       return res.sendStatus(404)
     }
 
+    // Remove it from the podcastEpisodes array
+    req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.id !== episodeId)
+
     if (hardDelete) {
       const audioFile = episode.audioFile
       // TODO: this will trigger the watcher. should maybe handle this gracefully
@@ -495,7 +510,11 @@ class PodcastController {
     req.libraryItem.changed('libraryFiles', true)
     await req.libraryItem.save()
 
-    SocketAuthority.emitter('item_updated', req.libraryItem.toOldJSONExpanded())
+    // update number of episodes
+    req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
+    await req.libraryItem.media.save()
+
+    SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.json(req.libraryItem.toOldJSON())
   }
 

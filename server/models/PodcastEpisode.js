@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
-
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 /**
  * @typedef ChapterObject
  * @property {number} id
@@ -80,9 +80,13 @@ class PodcastEpisode extends Model {
     if (rssPodcastEpisode.guid) {
       podcastEpisode.extraData.guid = rssPodcastEpisode.guid
     }
+
     if (audioFile.chapters?.length) {
       podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
+    } else if (rssPodcastEpisode.chapters?.length) {
+      podcastEpisode.chapters = rssPodcastEpisode.chapters.map((ch) => ({ ...ch }))
     }
+
     return this.create(podcastEpisode)
   }
 
@@ -122,6 +126,10 @@ class PodcastEpisode extends Model {
           {
             name: 'podcastEpisode_createdAt_podcastId',
             fields: ['createdAt', 'podcastId']
+          },
+          {
+            name: 'podcast_episodes_published_at',
+            fields: ['publishedAt']
           }
         ]
       }
@@ -132,6 +140,14 @@ class PodcastEpisode extends Model {
       onDelete: 'CASCADE'
     })
     PodcastEpisode.belongsTo(podcast)
+
+    PodcastEpisode.addHook('afterDestroy', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterDestroy')
+    })
+
+    PodcastEpisode.addHook('afterCreate', async (instance) => {
+      libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterCreate')
+    })
   }
 
   get size() {
@@ -169,7 +185,7 @@ class PodcastEpisode extends Model {
     const track = structuredClone(this.audioFile)
     track.startOffset = 0
     track.title = this.audioFile.metadata.filename
-    track.contentUrl = `${global.RouterBasePath}/api/items/${libraryItemId}/file/${track.ino}`
+    track.contentUrl = `/api/items/${libraryItemId}/file/${track.ino}`
     return track
   }
 

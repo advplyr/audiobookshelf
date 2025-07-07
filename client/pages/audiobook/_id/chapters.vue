@@ -1,34 +1,34 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex items-center py-4 px-2 md:px-0 max-w-7xl mx-auto">
+    <div class="flex items-center py-4 px-4 max-w-7xl mx-auto">
       <nuxt-link :to="`/item/${libraryItem.id}`" class="hover:underline">
         <h1 class="text-lg lg:text-xl">{{ title }}</h1>
       </nuxt-link>
       <button class="w-7 h-7 flex items-center justify-center mx-4 hover:scale-110 duration-100 transform text-gray-200 hover:text-white" @click="editItem">
         <span class="material-symbols text-base">edit</span>
       </button>
-      <div class="flex-grow hidden md:block" />
+      <div class="grow hidden md:block" />
       <p class="text-base hidden md:block">{{ $strings.LabelDuration }}:</p>
       <p class="text-base font-mono ml-4 hidden md:block">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
-    <div class="flex flex-wrap-reverse justify-center py-4 px-2">
+    <div class="flex flex-wrap-reverse lg:flex-nowrap justify-center py-4 px-4">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
           <div class="w-12 hidden lg:block" />
           <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
-          <div class="flex-grow" />
+          <div class="grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" :label="$strings.LabelShowSeconds" class="mx-2" />
           <div class="w-32 hidden lg:block" />
         </div>
         <div class="flex items-center mb-3 py-1 -mx-1">
           <div class="w-12 hidden lg:block" />
-          <ui-btn v-if="chapters.length" color="primary" small class="mx-1" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
-          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" class="mx-1" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
-          <ui-btn color="primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
-          <div class="flex-grow" />
+          <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1 whitespace-nowrap" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
+          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg-bg' : 'bg-primary'" class="mx-1 whitespace-nowrap" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
+          <ui-btn color="bg-primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
+          <div class="grow" />
           <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
-          <ui-btn v-if="hasChanges" color="success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
+          <ui-btn v-if="hasChanges" color="bg-success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
           <div class="w-32 hidden lg:block" />
         </div>
 
@@ -36,12 +36,12 @@
           <transition name="slide">
             <div v-if="showShiftTimes" class="flex mb-4">
               <div class="w-12 hidden lg:block" />
-              <div class="flex-grow">
+              <div class="grow">
                 <div class="flex items-center">
                   <p class="text-sm mb-1 font-semibold pr-2">{{ $strings.LabelTimeToShift }}</p>
                   <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
-                  <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
-                  <div class="flex-grow" />
+                  <ui-btn color="bg-primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
+                  <div class="grow" />
                   <span class="material-symbols text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">expand_less</span>
                 </div>
                 <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
@@ -54,7 +54,7 @@
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="w-8 min-w-8 md:w-12 md:min-w-12"></div>
           <div class="w-24 min-w-24 md:w-32 md:min-w-32 px-2">{{ $strings.LabelStart }}</div>
-          <div class="flex-grow px-2">{{ $strings.LabelTitle }}</div>
+          <div class="grow px-2">{{ $strings.LabelTitle }}</div>
           <div class="w-32"></div>
         </div>
         <template v-for="chapter in newChapters">
@@ -64,8 +64,8 @@
               <ui-text-input v-if="showSecondInputs" v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
               <ui-time-picker v-else class="text-xs" v-model="chapter.start" :show-three-digit-hour="mediaDuration >= 360000" @change="checkChapters" />
             </div>
-            <div class="flex-grow px-1">
-              <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs" />
+            <div class="grow px-1">
+              <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs min-w-52" />
             </div>
             <div class="w-32 min-w-32 px-2 py-1">
               <div class="flex items-center">
@@ -103,20 +103,20 @@
       <div class="w-full max-w-xl py-4 px-2">
         <div class="flex items-center mb-4 py-1">
           <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
-          <div class="flex-grow" />
+          <div class="grow" />
           <ui-btn small @click="setChaptersFromTracks">{{ $strings.ButtonSetChaptersFromTracks }}</ui-btn>
           <ui-tooltip :text="$strings.MessageSetChaptersFromTracksDescription" direction="top" class="flex items-center mx-1 cursor-default">
             <span class="material-symbols text-xl text-gray-200">info</span>
           </ui-tooltip>
         </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
-          <div class="flex-grow">{{ $strings.LabelFilename }}</div>
+          <div class="grow">{{ $strings.LabelFilename }}</div>
           <div class="w-20">{{ $strings.LabelDuration }}</div>
           <div class="w-20 hidden md:block text-center">{{ $strings.HeaderChapters }}</div>
         </div>
         <template v-for="track in audioTracks">
-          <div :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success bg-opacity-10' : ''">
-            <div class="flex-grow max-w-[calc(100%-80px)] pr-2">
+          <div :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success/10' : ''">
+            <div class="grow max-w-[calc(100%-80px)] pr-2">
               <p class="text-xs truncate max-w-sm">{{ track.metadata.filename }}</p>
             </div>
             <div class="w-20" style="min-width: 80px">
@@ -130,7 +130,7 @@
       </div>
     </div>
 
-    <div v-if="saving" class="w-full h-full absolute top-0 left-0 bottom-0 right-0 z-30 bg-black bg-opacity-25 flex items-center justify-center">
+    <div v-if="saving" class="w-full h-full absolute top-0 left-0 bottom-0 right-0 z-30 bg-black/25 flex items-center justify-center">
       <ui-loading-indicator />
     </div>
 
@@ -141,10 +141,22 @@
         </div>
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
-        <div v-if="!chapterData" class="flex p-20">
-          <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" />
-          <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 mx-1" />
-          <ui-btn small color="primary" class="mt-5" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+        <div v-if="!chapterData" class="flex flex-col items-center justify-center p-20">
+          <div class="relative">
+            <div class="flex items-end space-x-2">
+              <ui-text-input-with-label v-model.trim="asinInput" label="ASIN" class="flex-grow" />
+              <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-20 max-w-20" />
+              <ui-btn color="bg-primary" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
+            </div>
+            <div class="mt-4">
+              <ui-checkbox v-model="removeBranding" :label="$strings.LabelRemoveAudibleBranding" small checkbox-bg="bg" label-class="pl-2 text-base text-sm" @click="toggleRemoveBranding" />
+            </div>
+            <div class="absolute left-0 mt-1.5 text-error text-s h-5">
+              <p v-if="asinError">{{ asinError }}</p>
+              <p v-if="asinError">{{ $strings.MessageAsinCheck }}</p>
+            </div>
+            <div class="invisible mt-1 text-xs"></div>
+          </div>
         </div>
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
@@ -164,35 +176,35 @@
 
           <div class="flex py-0.5 text-xs font-semibold uppercase text-gray-300 mb-1">
             <div class="w-24 px-2">{{ $strings.LabelStart }}</div>
-            <div class="flex-grow px-2">{{ $strings.LabelTitle }}</div>
+            <div class="grow px-2">{{ $strings.LabelTitle }}</div>
           </div>
           <div class="w-full max-h-80 overflow-y-auto my-2">
-            <div v-for="(chapter, index) in chapterData.chapters" :key="index" class="flex py-0.5 text-xs" :class="chapter.startOffsetSec > mediaDuration ? 'bg-error bg-opacity-20' : chapter.startOffsetSec + chapter.lengthMs / 1000 > mediaDuration ? 'bg-warning bg-opacity-20' : index % 2 === 0 ? 'bg-primary bg-opacity-30' : ''">
+            <div v-for="(chapter, index) in chapterData.chapters" :key="index" class="flex py-0.5 text-xs" :class="chapter.startOffsetSec > mediaDuration ? 'bg-error/20' : chapter.startOffsetSec + chapter.lengthMs / 1000 > mediaDuration ? 'bg-warning/20' : index % 2 === 0 ? 'bg-primary/30' : ''">
               <div class="w-24 min-w-24 px-2">
                 <p class="font-mono">{{ $secondsToTimestamp(chapter.startOffsetSec) }}</p>
               </div>
-              <div class="flex-grow px-2">
+              <div class="grow px-2">
                 <p class="truncate max-w-sm">{{ chapter.title }}</p>
               </div>
             </div>
           </div>
           <div v-if="chapterData.runtimeLengthSec > mediaDurationRounded" class="w-full pt-2">
             <div class="flex items-center">
-              <div class="w-2 h-2 bg-warning bg-opacity-50" />
+              <div class="w-2 h-2 bg-warning/50" />
               <p class="pl-2">{{ $strings.MessageChapterEndIsAfter }}</p>
             </div>
             <div class="flex items-center">
-              <div class="w-2 h-2 bg-error bg-opacity-50" />
+              <div class="w-2 h-2 bg-error/50" />
               <p class="pl-2">{{ $strings.MessageChapterStartIsAfter }}</p>
             </div>
           </div>
           <div class="flex items-center pt-2">
-            <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
+            <ui-btn small color="bg-primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
             <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
               <span class="material-symbols text-xl text-gray-200">info</span>
             </ui-tooltip>
-            <div class="flex-grow" />
-            <ui-btn small color="success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
+            <div class="grow" />
+            <ui-btn small color="bg-success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
           </div>
         </div>
       </div>
@@ -221,6 +233,11 @@ export default {
       return redirect('/')
     }
 
+    // Fetch and set library if this items library does not match the current
+    if (store.state.libraries.currentLibraryId !== libraryItem.libraryId || !store.state.libraries.filterData) {
+      await store.dispatch('libraries/fetch', libraryItem.libraryId)
+    }
+
     var previousRoute = from ? from.fullPath : null
     if (from && from.path === '/login') previousRoute = null
     return {
@@ -244,6 +261,8 @@ export default {
       findingChapters: false,
       showFindChaptersModal: false,
       chapterData: null,
+      asinError: null,
+      removeBranding: false,
       showSecondInputs: false,
       audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
       hasChanges: false
@@ -305,6 +324,9 @@ export default {
 
       this.checkChapters()
     },
+    toggleRemoveBranding() {
+      this.removeBranding = !this.removeBranding
+    },
     shiftChapterTimes() {
       if (!this.shiftAmount || isNaN(this.shiftAmount) || this.newChapters.length <= 1) {
         return
@@ -314,12 +336,12 @@ export default {
 
       const lastChapter = this.newChapters[this.newChapters.length - 1]
       if (lastChapter.start + amount > this.mediaDurationRounded) {
-        this.$toast.error('Invalid shift amount. Last chapter start time would extend beyond the duration of this audiobook.')
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountLast)
         return
       }
 
-      if (this.newChapters[0].end + amount <= 0) {
-        this.$toast.error('Invalid shift amount. First chapter would have zero or negative length.')
+      if (this.newChapters[1].start + amount <= 0) {
+        this.$toast.error(this.$strings.ToastChaptersInvalidShiftAmountStart)
         return
       }
 
@@ -414,11 +436,8 @@ export default {
 
       const audioEl = this.audioEl || document.createElement('audio')
       var src = audioTrack.contentUrl + `?token=${this.userToken}`
-      if (this.$isDev) {
-        src = `${process.env.serverUrl}${src}`
-      }
 
-      audioEl.src = src
+      audioEl.src = `${process.env.serverUrl}${src}`
       audioEl.id = 'chapter-audio'
       document.body.appendChild(audioEl)
 
@@ -544,17 +563,17 @@ export default {
 
       this.findingChapters = true
       this.chapterData = null
+      this.asinError = null // used to show warning about audible vs amazon ASIN
       this.$axios
         .$get(`/api/search/chapters?asin=${this.asinInput}&region=${this.regionInput}`)
         .then((data) => {
           this.findingChapters = false
 
           if (data.error) {
-            this.$toast.error(data.error)
-            this.showFindChaptersModal = false
+            this.asinError = this.$getString(data.stringKey)
           } else {
             console.log('Chapter data', data)
-            this.chapterData = data
+            this.chapterData = this.removeBranding ? this.removeBrandingFromData(data) : data
           }
         })
         .catch((error) => {
@@ -563,6 +582,37 @@ export default {
           this.$toast.error(this.$strings.ToastFailedToLoadData)
           this.showFindChaptersModal = false
         })
+    },
+    removeBrandingFromData(data) {
+      if (!data) return data
+      try {
+        const introDuration = data.brandIntroDurationMs
+        const outroDuration = data.brandOutroDurationMs
+
+        for (let i = 0; i < data.chapters.length; i++) {
+          const chapter = data.chapters[i]
+          if (chapter.startOffsetMs < introDuration) {
+            // This should never happen, as the intro is not longer than the first chapter
+            // If this happens set to the next second
+            // Will be 0 for the first chapter anayways
+            chapter.startOffsetMs = i * 1000
+            chapter.startOffsetSec = i
+          } else {
+            chapter.startOffsetMs -= introDuration
+            chapter.startOffsetSec = Math.floor(chapter.startOffsetMs / 1000)
+          }
+        }
+
+        const lastChapter = data.chapters[data.chapters.length - 1]
+        // If there is an outro that's in the outro duration, remove it
+        if (lastChapter && lastChapter.lengthMs <= outroDuration) {
+          data.chapters.pop()
+        }
+
+        return data
+      } catch {
+        return data
+      }
     },
     resetChapters() {
       const payload = {

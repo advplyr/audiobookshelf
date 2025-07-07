@@ -10,7 +10,7 @@
         </tr>
         <tr v-for="narrator in narrators" :key="narrator.id">
           <td>
-            <p v-if="selectedNarrator?.id !== narrator.id" class="text-sm md:text-base text-gray-100">{{ narrator.name }}</p>
+            <nuxt-link v-if="selectedNarrator?.id !== narrator.id" :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${narrator.id}`" class="text-sm md:text-base text-gray-100 hover:underline">{{ narrator.name }}</nuxt-link>
             <form v-else @submit.prevent="saveClick">
               <ui-text-input v-model="newNarratorName" />
             </form>
@@ -25,7 +25,7 @@
                 <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" @click="removeClick(narrator)" />
               </template>
               <template v-else>
-                <ui-btn color="success" small class="mr-2" @click.stop="saveClick">{{ $strings.ButtonSave }}</ui-btn>
+                <ui-btn color="bg-success" small class="mr-2" @click.stop="saveClick">{{ $strings.ButtonSave }}</ui-btn>
                 <ui-btn small @click.stop="cancelEditClick">{{ $strings.ButtonCancel }}</ui-btn>
               </template>
             </div>

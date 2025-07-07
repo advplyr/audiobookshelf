@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-1 sm:p-4 mb-4">
+  <div class="bg-bg rounded-md shadow-lg border border-white/5 p-1 sm:p-4 mb-4">
     <!-- hack to get icon fonts loaded on init -->
     <div class="h-0 w-0 overflow-hidden opacity-0">
       <span class="material-symbols">close</span>
@@ -8,7 +8,7 @@
 
     <div class="flex items-center">
       <h1 class="hidden md:block text-xl font-semibold">{{ $getString('HeaderYearReview', [yearInReviewYear]) }}</h1>
-      <div class="hidden md:block flex-grow" />
+      <div class="hidden md:block grow" />
       <ui-btn class="w-full md:w-auto" @click.stop="clickShowYearInReview">{{ showYearInReview ? $strings.LabelYearReviewHide : $strings.LabelYearReviewShow }}</ui-btn>
     </div>
 
@@ -30,15 +30,15 @@
         <!-- share button -->
         <ui-btn v-if="showShareButton" small :disabled="processingYearInReview" class="inline-flex items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReview">{{ $strings.ButtonShare }} </ui-btn>
 
-        <div class="flex-grow" />
+        <div class="grow" />
         <h2 class="hidden sm:block text-lg font-semibold">{{ $getString('LabelPersonalYearReview', [yearInReviewVariant + 1]) }}</h2>
         <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewVariant + 1 }}</p>
-        <div class="flex-grow" />
+        <div class="grow" />
 
         <!-- refresh button -->
         <ui-btn small :disabled="processingYearInReview" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReview">
           <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
-          <span class="material-symbols sm:!hidden text-lg py-px">refresh</span>
+          <span class="material-symbols sm:hidden! text-lg py-px">refresh</span>
         </ui-btn>
         <!-- next button -->
         <ui-btn small :disabled="yearInReviewVariant >= 2 || processingYearInReview" :aria-label="$strings.ButtonNext" class="inline-flex items-center font-semibold" @click="yearInReviewVariant++">
@@ -66,15 +66,15 @@
           <!-- share button -->
           <ui-btn v-if="showShareButton" small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold ml-1 sm:ml-2" @click="shareYearInReviewServer">{{ $strings.ButtonShare }} </ui-btn>
 
-          <div class="flex-grow" />
+          <div class="grow" />
           <h2 class="hidden sm:block text-lg font-semibold">{{ $getString('LabelServerYearReview', [yearInReviewServerVariant + 1]) }}</h2>
           <p class="block sm:hidden text-lg font-semibold">{{ yearInReviewServerVariant + 1 }}</p>
-          <div class="flex-grow" />
+          <div class="grow" />
 
           <!-- refresh button -->
           <ui-btn small :disabled="processingYearInReviewServer" class="inline-flex items-center font-semibold mr-1 sm:mr-2" @click="refreshYearInReviewServer">
             <span class="hidden sm:inline-block">{{ $strings.ButtonRefresh }}</span>
-            <span class="material-symbols sm:!hidden text-lg py-px">refresh</span>
+            <span class="material-symbols sm:hidden! text-lg py-px">refresh</span>
           </ui-btn>
           <!-- next button -->
           <ui-btn small :disabled="yearInReviewServerVariant >= 2 || processingYearInReviewServer" :aria-label="$strings.ButtonNext" class="inline-flex items-center font-semibold" @click="yearInReviewServerVariant++">
@@ -164,14 +164,15 @@ export default {
   beforeMount() {
     this.yearInReviewYear = new Date().getFullYear()
 
-    // When not December show previous year
-    if (new Date().getMonth() < 11) {
+    this.availableYears = this.getAvailableYears()
+    const availableYearValues = this.availableYears.map((y) => y.value)
+
+    // When not December show previous year if data is available
+    if (new Date().getMonth() < 11 && availableYearValues.includes(this.yearInReviewYear - 1)) {
       this.yearInReviewYear--
     }
   },
   mounted() {
-    this.availableYears = this.getAvailableYears()
-
     if (typeof navigator.share !== 'undefined' && navigator.share) {
       this.showShareButton = true
     } else {
