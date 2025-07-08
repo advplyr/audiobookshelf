@@ -151,22 +151,17 @@ export const actions = {
 export const mutations = {
   setUser(state, user) {
     state.user = user
-    if (user) {
-      // Use accessToken from user if included in response (for login)
-      if (user.accessToken) localStorage.setItem('token', user.accessToken)
-      else if (localStorage.getItem('token')) {
-        user.accessToken = localStorage.getItem('token')
-      } else {
-        console.error('No access token found for user', user)
-      }
-    } else {
-      localStorage.removeItem('token')
-    }
   },
   setUserToken(state, token) {
-    if (!state.user) return
-    state.user.accessToken = token
-    localStorage.setItem('token', token)
+    if (!token) {
+      localStorage.removeItem('token')
+      if (state.user) {
+        state.user.accessToken = null
+      }
+    } else if (state.user) {
+      state.user.accessToken = token
+      localStorage.setItem('token', token)
+    }
   },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return

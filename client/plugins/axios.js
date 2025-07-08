@@ -45,6 +45,7 @@ export default function ({ $axios, store, $root, app }) {
       if (originalRequest.url === '/auth/refresh' || originalRequest.url === '/login') {
         // Refresh failed or login failed, redirect to login
         store.commit('user/setUser', null)
+        store.commit('user/setUserToken', null)
         app.router.push('/login')
         return Promise.reject(error)
       }
@@ -81,6 +82,7 @@ export default function ({ $axios, store, $root, app }) {
 
         // Update the token in store and localStorage
         store.commit('user/setUser', response.user)
+        store.commit('user/setUserToken', newAccessToken)
 
         // Emit event used to re-authenticate socket in default.vue since $root is not available here
         if (app.$eventBus) {
@@ -106,6 +108,7 @@ export default function ({ $axios, store, $root, app }) {
 
         // Clear user data and redirect to login
         store.commit('user/setUser', null)
+        store.commit('user/setUserToken', null)
         app.router.push('/login')
 
         return Promise.reject(refreshError)
