@@ -108,6 +108,11 @@ server {
    ssl_certificate      /path/to/certificate;
    ssl_certificate_key  /path/to/key;
 
+   # Prevent 413 Request Entity Too Large error
+   # by increasing the maximum allowed size of the client request body
+   # For example, set it to 10 GiB
+   client_max_body_size                10240M;
+
    location / {
       proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto  $scheme;
@@ -119,11 +124,6 @@ server {
 
       proxy_pass                          http://<URL_to_forward_to>;
       proxy_redirect                      http:// https://;
-
-      # Prevent 413 Request Entity Too Large error
-      # by increasing the maximum allowed size of the client request body
-      # For example, set it to 10 GiB
-      client_max_body_size                10240M;
    }
 }
 ```
