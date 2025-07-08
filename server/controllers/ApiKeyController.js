@@ -42,6 +42,8 @@ class ApiKeyController {
   /**
    * POST: /api/api-keys
    *
+   * @this {import('../routers/ApiRouter')}
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
@@ -69,7 +71,7 @@ class ApiKeyController {
     }
 
     const keyId = uuidv4() // Generate key id ahead of time to use in JWT
-    const apiKey = await Database.apiKeyModel.generateApiKey(keyId, req.body.name, req.body.expiresIn)
+    const apiKey = await Database.apiKeyModel.generateApiKey(this.auth.tokenManager.TokenSecret, keyId, req.body.name, req.body.expiresIn)
 
     if (!apiKey) {
       Logger.error(`[ApiKeyController] create: Error generating API key`)

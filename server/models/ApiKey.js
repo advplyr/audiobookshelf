@@ -157,12 +157,13 @@ class ApiKey extends Model {
 
   /**
    * Generate a new api key
+   * @param {string} tokenSecret
    * @param {string} keyId
    * @param {string} name
    * @param {number} [expiresIn] - Seconds until the api key expires or undefined for no expiration
    * @returns {Promise<string>}
    */
-  static async generateApiKey(keyId, name, expiresIn) {
+  static async generateApiKey(tokenSecret, keyId, name, expiresIn) {
     const options = {}
     if (expiresIn && !isNaN(expiresIn) && expiresIn > 0) {
       options.expiresIn = expiresIn
@@ -175,7 +176,7 @@ class ApiKey extends Model {
           name,
           type: 'api'
         },
-        global.ServerSettings.tokenSecret,
+        tokenSecret,
         options,
         (err, token) => {
           if (err) {

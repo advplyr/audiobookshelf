@@ -156,13 +156,10 @@ class Server {
     }
 
     await Database.init(false)
+    // Create or set JWT secret in token manager
+    await this.auth.tokenManager.initTokenSecret()
 
     await Logger.logManager.init()
-
-    // Create token secret if does not exist (Added v2.1.0)
-    if (!Database.serverSettings.tokenSecret) {
-      await this.auth.initTokenSecret()
-    }
 
     await this.cleanUserData() // Remove invalid user item progress
     await CacheManager.ensureCachePaths()
@@ -264,7 +261,7 @@ class Server {
     // enable express-session
     app.use(
       expressSession({
-        secret: global.ServerSettings.tokenSecret,
+        secret: this.auth.tokenManager.TokenSecret,
         resave: false,
         saveUninitialized: false,
         cookie: {

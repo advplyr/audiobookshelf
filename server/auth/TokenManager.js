@@ -7,8 +7,13 @@ const requestIp = require('../libs/requestIp')
 const jwt = require('../libs/jsonwebtoken')
 
 class TokenManager {
+  /** @type {string} JWT secret key */
+  static TokenSecret = null
+
   constructor() {
+    /** @type {number} Refresh token expiry in seconds */
     this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 7 * 24 * 60 * 60 // 7 days
+    /** @type {number} Access token expiry in seconds */
     this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 12 * 60 * 60 // 12 hours
 
     if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
@@ -19,28 +24,28 @@ class TokenManager {
     }
   }
 
+  get TokenSecret() {
+    return TokenManager.TokenSecret
+  }
+
   /**
-   * Generate a token which is used to encrypt/protect the jwts.
+   * Token secret is used to sign and verify JWTs
+   * Set by ENV variable "JWT_SECRET_KEY" or generated and stored on server settings if not set
    */
   async initTokenSecret() {
-    if (process.env.TOKEN_SECRET) {
-      // User can supply their own token secret
-      Database.serverSettings.tokenSecret = process.env.TOKEN_SECRET
+    if (process.env.JWT_SECRET_KEY) {
+      // Use user supplied token secret
+      Logger.info('[TokenManager] JWT secret key set from ENV variable')
+      TokenManager.TokenSecret = process.env.JWT_SECRET_KEY
+    } else if (!Database.serverSettings.tokenSecret) {
+      // Generate new token secret and store it on server settings
+      Logger.info('[TokenManager] JWT secret key not found, generating one')
+      TokenManager.TokenSecret = require('crypto').randomBytes(256).toString('base64')
+      Database.serverSettings.tokenSecret = TokenManager.TokenSecret
+      await Database.updateServerSettings()
     } else {
-      Database.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
-    }
-    await Database.updateServerSettings()
-
-    // TODO: Old method of non-expiring tokens
-    // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    const users = await Database.userModel.findAll({
-      attributes: ['id', 'username', 'token']
-    })
-    if (users.length) {
-      for (const user of users) {
-        user.token = this.generateAccessToken(user)
-        await user.save({ hooks: false })
-      }
+      // Use existing token secret from server settings
+      TokenManager.TokenSecret = Database.serverSettings.tokenSecret
     }
   }
 
@@ -70,7 +75,7 @@ class TokenManager {
    */
   static validateAccessToken(token) {
     try {
-      return jwt.verify(token, global.ServerSettings.tokenSecret)
+      return jwt.verify(token, TokenManager.TokenSecret)
     } catch (err) {
       return null
     }
@@ -85,7 +90,7 @@ class TokenManager {
    * @returns {string}
    */
   generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, username: user.username }, global.ServerSettings.tokenSecret)
+    return jwt.sign({ userId: user.id, username: user.username }, TokenManager.TokenSecret)
   }
 
   /**
@@ -104,7 +109,7 @@ class TokenManager {
       expiresIn: this.AccessTokenExpiry
     }
     try {
-      return jwt.sign(payload, global.ServerSettings.tokenSecret, options)
+      return jwt.sign(payload, TokenManager.TokenSecret, options)
     } catch (error) {
       Logger.error(`[TokenManager] Error generating access token for user ${user.id}: ${error}`)
       return null
@@ -127,7 +132,7 @@ class TokenManager {
       expiresIn: this.RefreshTokenExpiry
     }
     try {
-      return jwt.sign(payload, global.ServerSettings.tokenSecret, options)
+      return jwt.sign(payload, TokenManager.TokenSecret, options)
     } catch (error) {
       Logger.error(`[TokenManager] Error generating refresh token for user ${user.id}: ${error}`)
       return null
@@ -261,7 +266,7 @@ class TokenManager {
   async handleRefreshToken(refreshToken, req, res) {
     try {
       // Verify the refresh token
-      const decoded = jwt.verify(refreshToken, global.ServerSettings.tokenSecret)
+      const decoded = jwt.verify(refreshToken, TokenManager.TokenSecret)
 
       if (decoded.type !== 'refresh') {
         Logger.error(`[TokenManager] Failed to refresh token. Invalid token type: ${decoded.type}`)

@@ -64,13 +64,6 @@ class Auth {
   }
 
   /**
-   * Generate a token which is used to encrpt/protect the jwts.
-   */
-  async initTokenSecret() {
-    return this.tokenManager.initTokenSecret()
-  }
-
-  /**
    * Function to generate a jwt token for a given user
    * TODO: Old method with no expiration
    * @deprecated
@@ -132,7 +125,7 @@ class Auth {
       new JwtStrategy(
         {
           jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), ExtractJwt.fromUrlQueryParameter('token')]),
-          secretOrKey: Database.serverSettings.tokenSecret,
+          secretOrKey: TokenManager.TokenSecret,
           // Handle expiration manaully in order to disable api keys that are expired
           ignoreExpiration: true
         },
