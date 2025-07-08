@@ -431,7 +431,7 @@ class Server {
     Logger.info(`[Server] Initializing new server`)
     const newRoot = req.body.newRoot
     const rootUsername = newRoot.username || 'root'
-    const rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
+    const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
     await Database.createRootUser(rootUsername, rootPash, this.auth)
 

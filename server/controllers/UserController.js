@@ -127,7 +127,7 @@ class UserController {
     }
 
     const userId = uuidv4()
-    const pash = await this.auth.hashPass(req.body.password)
+    const pash = await this.auth.localAuthStrategy.hashPassword(req.body.password)
     const token = this.auth.generateAccessToken({ id: userId, username: req.body.username })
     const userType = req.body.type || 'user'
 
@@ -252,7 +252,7 @@ class UserController {
 
     // Updating password
     if (updatePayload.password) {
-      user.pash = await this.auth.hashPass(updatePayload.password)
+      user.pash = await this.auth.localAuthStrategy.hashPassword(updatePayload.password)
       hasUpdates = true
     }
 
