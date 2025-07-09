@@ -183,7 +183,7 @@ class MediaProgress extends Model {
    * @param {import('./User').ProgressUpdatePayload} progressPayload
    * @returns {Promise<MediaProgress>}
    */
-  applyProgressUpdate(progressPayload) {
+  async applyProgressUpdate(progressPayload) {
     if (!this.extraData) this.extraData = {}
     if (progressPayload.isFinished !== undefined) {
       if (progressPayload.isFinished && !this.isFinished) {
@@ -243,14 +243,23 @@ class MediaProgress extends Model {
       this.finishedAt = null
     }
 
+    await this.save()
+
     // For local sync
     if (progressPayload.lastUpdate) {
-      this.updatedAt = progressPayload.lastUpdate
-      Logger.info(`[MediaProgress] Manually setting updatedAt to ${this.updatedAt} (media item ${this.mediaItemId})`)
-      this.changed('updatedAt', true)
+      if (isNaN(new Date(progressPayload.lastUpdate))) {
+        Logger.warn(`[MediaProgress] Invalid date provided for lastUpdate: ${progressPayload.lastUpdate} (media item ${this.mediaItemId})`)
+      } else {
+        const escapedDate = this.sequelize.escape(new Date(progressPayload.lastUpdate))
+        Logger.info(`[MediaProgress] Manually setting updatedAt to ${escapedDate} (media item ${this.mediaItemId})`)
+
+        await this.sequelize.query(`UPDATE "mediaProgresses" SET "updatedAt" = ${escapedDate} WHERE "id" = '${this.id}'`)
+
+        await this.reload()
+      }
     }
 
-    return this.save({ silent: !!progressPayload.lastUpdate })
+    return this
   }
 }
 

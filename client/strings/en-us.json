@@ -758,6 +758,7 @@
   "MessageConfirmRemoveAuthor": "Are you sure you want to remove author \"{0}\"?",
   "MessageConfirmRemoveCollection": "Are you sure you want to remove collection \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Are you sure you want to remove episode \"{0}\"?",
+  "MessageConfirmRemoveEpisodeNote": "Note: This does not delete the audio file unless toggling \"Hard delete file\"",
   "MessageConfirmRemoveEpisodes": "Are you sure you want to remove {0} episodes?",
   "MessageConfirmRemoveListeningSessions": "Are you sure you want to remove {0} listening sessions?",
   "MessageConfirmRemoveMetadataFiles": "Are you sure you want to remove all metadata.{0} files in your library item folders?",

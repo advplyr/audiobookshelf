@@ -10,7 +10,7 @@
         </tr>
         <tr v-for="narrator in narrators" :key="narrator.id">
           <td>
-            <p v-if="selectedNarrator?.id !== narrator.id" class="text-sm md:text-base text-gray-100">{{ narrator.name }}</p>
+            <nuxt-link v-if="selectedNarrator?.id !== narrator.id" :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${narrator.id}`" class="text-sm md:text-base text-gray-100 hover:underline">{{ narrator.name }}</nuxt-link>
             <form v-else @submit.prevent="saveClick">
               <ui-text-input v-model="newNarratorName" />
             </form>

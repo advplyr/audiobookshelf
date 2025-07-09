@@ -85,7 +85,7 @@ export default {
     nextRun() {
       if (!this.cronExpression) return ''
       const parsed = this.$getNextScheduledDate(this.cronExpression)
-      return this.$formatJsDatetime(parsed, this.$store.state.serverSettings.dateFormat, this.$store.state.serverSettings.timeFormat) || ''
+      return this.$formatJsDatetime(parsed, this.$store.getters['getServerSetting']('dateFormat'), this.$store.getters['getServerSetting']('timeFormat')) || ''
     },
     description() {
       if ((this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) && this.selectedInterval !== 'daily') return ''
