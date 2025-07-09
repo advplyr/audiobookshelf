@@ -206,6 +206,11 @@ class LibraryItemScanner {
   async scanPotentialNewLibraryItem(libraryItemPath, library, folder, isSingleMediaItem) {
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, isSingleMediaItem)
 
+    if (!libraryItemScanData.libraryFiles.length) {
+      Logger.info(`[LibraryItemScanner] Library item at path "${libraryItemPath}" has no files - ignoring`)
+      return null
+    }
+
     const scanLogger = new ScanLogger()
     scanLogger.verbose = true
     scanLogger.setData('libraryItem', libraryItemScanData.relPath)
