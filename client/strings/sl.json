@@ -757,6 +757,7 @@
   "MessageConfirmRemoveAuthor": "Ali ste prepričani, da želite odstraniti avtorja \"{0}\"?",
   "MessageConfirmRemoveCollection": "Ali ste prepričani, da želite odstraniti zbirko \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Ali ste prepričani, da želite odstraniti epizodo \"{0}\"?",
+  "MessageConfirmRemoveEpisodeNote": "Opomba: S tem se zvočna datoteka ne izbriše, razen če vklopite možnost \"Trdo brisanje datoteke\".",
   "MessageConfirmRemoveEpisodes": "Ali ste prepričani, da želite odstraniti {0} epizod?",
   "MessageConfirmRemoveListeningSessions": "Ali ste prepričani, da želite odstraniti {0} sej poslušanja?",
   "MessageConfirmRemoveMetadataFiles": "Ali ste prepričani, da želite odstraniti vse metapodatke.{0} v mapah elementov knjižnice?",
