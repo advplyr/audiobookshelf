@@ -311,7 +311,7 @@ export default {
 
             if (data.user.id === this.user.id && data.user.accessToken !== this.user.accessToken) {
               console.log('Current user access token was updated')
-              this.$store.commit('user/setUserToken', data.user.accessToken)
+              this.$store.commit('user/setAccessToken', data.user.accessToken)
             }
 
             this.$toast.success(this.$strings.ToastAccountUpdateSuccess)

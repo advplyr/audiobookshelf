@@ -189,7 +189,7 @@ export default {
 
       this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
       this.$store.commit('user/setUser', user)
-      this.$store.commit('user/setUserToken', user.accessToken)
+      this.$store.commit('user/setAccessToken', user.accessToken)
 
       this.$store.dispatch('user/loadUserSettings')
     },

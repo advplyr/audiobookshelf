@@ -23,7 +23,7 @@ class RateLimiterFactory {
       windowMs = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW)
     }
 
-    let max = 20 // 20 attempts default
+    let max = 40 // 40 attempts default
     if (parseInt(process.env.RATE_LIMIT_AUTH_MAX) > 0) {
       max = parseInt(process.env.RATE_LIMIT_AUTH_MAX)
     }

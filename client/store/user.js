@@ -1,5 +1,6 @@
 export const state = () => ({
   user: null,
+  accessToken: null,
   settings: {
     orderBy: 'media.metadata.title',
     orderDesc: false,
@@ -25,7 +26,7 @@ export const getters = {
   getIsRoot: (state) => state.user && state.user.type === 'root',
   getIsAdminOrUp: (state) => state.user && (state.user.type === 'admin' || state.user.type === 'root'),
   getToken: (state) => {
-    return state.user?.accessToken || null
+    return state.accessToken || null
   },
   getUserMediaProgress:
     (state) =>
@@ -145,6 +146,27 @@ export const actions = {
     } catch (error) {
       console.error('Failed to load userSettings from local storage', error)
     }
+  },
+  refreshToken({ state, commit }) {
+    return this.$axios
+      .$post('/auth/refresh')
+      .then(async (response) => {
+        const newAccessToken = response.user.accessToken
+        commit('setUser', response.user)
+        commit('setAccessToken', newAccessToken)
+        // Emit event used to re-authenticate socket in default.vue since $root is not available here
+        if (this.$eventBus) {
+          this.$eventBus.$emit('token_refreshed', newAccessToken)
+        }
+        return newAccessToken
+      })
+      .catch((error) => {
+        console.error('Failed to refresh token', error)
+        commit('setUser', null)
+        commit('setAccessToken', null)
+        // Calling function handles redirect to login
+        throw error
+      })
   }
 }
 
@@ -152,14 +174,12 @@ export const mutations = {
   setUser(state, user) {
     state.user = user
   },
-  setUserToken(state, token) {
+  setAccessToken(state, token) {
     if (!token) {
       localStorage.removeItem('token')
-      if (state.user) {
-        state.user.accessToken = null
-      }
-    } else if (state.user) {
-      state.user.accessToken = token
+      state.accessToken = null
+    } else {
+      state.accessToken = token
       localStorage.setItem('token', token)
     }
   },

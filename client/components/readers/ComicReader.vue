@@ -104,9 +104,6 @@ export default {
     }
   },
   computed: {
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     libraryItemId() {
       return this.libraryItem?.id
     },
@@ -234,10 +231,7 @@ export default {
     async extract() {
       this.loading = true
       var buff = await this.$axios.$get(this.ebookUrl, {
-        responseType: 'blob',
-        headers: {
-          Authorization: `Bearer ${this.userToken}`
-        }
+        responseType: 'blob'
       })
       const archive = await Archive.open(buff)
       const originalFilesObject = await archive.getFilesObject()

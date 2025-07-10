@@ -45,7 +45,7 @@ export default function ({ $axios, store, $root, app }) {
       if (originalRequest.url === '/auth/refresh' || originalRequest.url === '/login') {
         // Refresh failed or login failed, redirect to login
         store.commit('user/setUser', null)
-        store.commit('user/setUserToken', null)
+        store.commit('user/setAccessToken', null)
         app.router.push('/login')
         return Promise.reject(error)
       }
@@ -72,21 +72,11 @@ export default function ({ $axios, store, $root, app }) {
 
       try {
         // Attempt to refresh the token
-        const response = await $axios.$post('/auth/refresh')
-        const newAccessToken = response.user.accessToken
-
+        // Updates store if successful, otherwise clears store and throw error
+        const newAccessToken = await store.dispatch('user/refreshToken')
         if (!newAccessToken) {
           console.error('No new access token received')
           return Promise.reject(error)
-        }
-
-        // Update the token in store and localStorage
-        store.commit('user/setUser', response.user)
-        store.commit('user/setUserToken', newAccessToken)
-
-        // Emit event used to re-authenticate socket in default.vue since $root is not available here
-        if (app.$eventBus) {
-          app.$eventBus.$emit('token_refreshed', newAccessToken)
         }
 
         // Update the original request with new token
@@ -106,9 +96,7 @@ export default function ({ $axios, store, $root, app }) {
         // Process queued requests with error
         processQueue(refreshError, null)
 
-        // Clear user data and redirect to login
-        store.commit('user/setUser', null)
-        store.commit('user/setUserToken', null)
+        // Redirect to login
         app.router.push('/login')
 
         return Promise.reject(refreshError)
