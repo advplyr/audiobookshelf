@@ -69,5 +69,8 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
+# Construct cache and metadata directories
+RUN mkdir -p ${CONFIG_PATH} ${METADATA_PATH} && chmod 777 ${CONFIG_PATH} ${METADATA_PATH}
+
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
