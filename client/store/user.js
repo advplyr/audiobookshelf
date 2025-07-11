@@ -58,6 +58,9 @@ export const getters = {
   getUserCanAccessAllLibraries: (state) => {
     return !!state.user?.permissions?.accessAllLibraries
   },
+  getUserCanAccessExplicitContent: (state) => {
+    return !!state.user?.permissions?.accessExplicitContent
+  },
   getLibrariesAccessible: (state, getters) => {
     if (!state.user) return []
     if (getters.getUserCanAccessAllLibraries) return []

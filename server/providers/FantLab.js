@@ -52,9 +52,7 @@ class FantLab {
         return []
       })
 
-    return Promise.all(items.map(async (item) => await this.getWork(item, timeout))).then((resArray) => {
-      return resArray.filter((res) => res)
-    })
+    return Promise.all(items.map(async (item) => await this.getWork(item, timeout))).then((resArray) => resArray.filter(Boolean))
   }
 
   /**
@@ -82,6 +80,10 @@ class FantLab {
         Logger.error(`[FantLab] work info request for url "${url}" error`, error)
         return null
       })
+
+    if (!bookData) {
+      return null
+    }
 
     return this.cleanBookData(bookData, timeout)
   }

@@ -1,12 +1,13 @@
 {
   "name": "audiobookshelf",
-  "version": "2.24.0",
+  "version": "2.25.1",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch server index.js -- --dev",
     "start": "node index.js",
+    "start-dev": "node index.js --prod-with-dev-env",
     "client": "cd client && npm ci && npm run generate",
     "prod": "npm run client && npm ci && node index.js",
     "build-win": "npm run client && pkg -t node20-win-x64 -o ./dist/win/audiobookshelf -C GZip .",

@@ -25,6 +25,7 @@ const Fuse = require('../libs/fusejs')
  * @property {string} episode
  * @property {string} author
  * @property {string} duration
+ * @property {number|null} durationSeconds - Parsed from duration string if duration is valid
  * @property {string} explicit
  * @property {number} publishedAt - Unix timestamp
  * @property {{ url: string, type?: string, length?: string }} enclosure
@@ -217,8 +218,9 @@ function extractEpisodeData(item) {
   })
 
   // Extract psc:chapters if duration is set
-  let episodeDuration = !isNaN(episode.duration) ? timestampToSeconds(episode.duration) : null
-  if (item['psc:chapters']?.[0]?.['psc:chapter']?.length && episodeDuration) {
+  episode.durationSeconds = episode.duration ? timestampToSeconds(episode.duration) : null
+
+  if (item['psc:chapters']?.[0]?.['psc:chapter']?.length && episode.durationSeconds) {
     // Example chapter:
     // {"id":0,"start":0,"end":43.004286,"title":"chapter 1"}
 
@@ -244,7 +246,7 @@ function extractEpisodeData(item) {
     } else {
       episode.chapters = cleanedChapters.map((chapter, index) => {
         const nextChapter = cleanedChapters[index + 1]
-        const end = nextChapter ? nextChapter.start : episodeDuration
+        const end = nextChapter ? nextChapter.start : episode.durationSeconds
         return {
           id: chapter.id,
           title: chapter.title,
@@ -273,6 +275,7 @@ function cleanEpisodeData(data) {
     episode: data.episode || '',
     author: data.author || '',
     duration: data.duration || '',
+    durationSeconds: data.durationSeconds || null,
     explicit: data.explicit || '',
     publishedAt,
     enclosure: data.enclosure,
