@@ -305,7 +305,7 @@ class Auth {
     // Local strategy login route (takes username and password)
     router.post('/login', this.authRateLimiter, passport.authenticate('local'), async (req, res) => {
       // Check if mobile app wants refresh token in response
-      const returnTokens = req.query.return_tokens === 'true' || req.headers['x-return-tokens'] === 'true'
+      const returnTokens = req.headers['x-return-tokens'] === 'true'
 
       const userResponse = await this.handleLoginSuccess(req, res, returnTokens)
       res.json(userResponse)
