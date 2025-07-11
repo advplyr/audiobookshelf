@@ -714,7 +714,7 @@
   "MessageBackupsLocationNoEditNote": "注意: 备份位置是通过环境变量设置的, 不能在此处更改.",
   "MessageBackupsLocationPathEmpty": "备份位置路径不能为空",
   "MessageBatchEditPopulateMapDetailsAllHelp": "使用所有项目的数据填充已启用的字段. 具有多个值的字段将被合并",
-  "MessageBatchEditPopulateMapDetailsItemHelp": "使用此项目的数据填充已启用的地图详细信息字段",
+  "MessageBatchEditPopulateMapDetailsItemHelp": "将此条目的数据填入已启用的字段",
   "MessageBatchQuickMatchDescription": "快速匹配将尝试为所选项目添加缺少的封面和元数据. 启用以下选项以允许快速匹配覆盖现有封面和或元数据.",
   "MessageBookshelfNoCollections": "你尚未进行任何收藏",
   "MessageBookshelfNoCollectionsHelp": "收藏是公开的. 所有有权访问图书馆的用户都可以看到它们.",
