@@ -1,19 +1,33 @@
 const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 const sinon = require('sinon')
+const chai = require('chai')
+const { mockReq, mockRes } = require('sinon-express-mock')
 
 const Database = require('../../../server/Database')
 const ApiRouter = require('../../../server/routers/ApiRouter')
 const LibraryItemController = require('../../../server/controllers/LibraryItemController')
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Logger = require('../../../server/Logger')
+const ServerSettings = require('../../../server/objects/settings/ServerSettings')
+const Book = require('../../../server/models/Book')
+const User = require('../../../server/models/User')
+const RssFeedManager = require('../../../server/managers/RssFeedManager')
+const CacheManager = require('../../../server/managers/CacheManager')
+const fs = require('../../../server/libs/fsExtra')
+const SocketAuthority = require('../../../server/SocketAuthority')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */
   let apiRouter
+  let sandbox
 
   beforeEach(async () => {
-    global.ServerSettings = {}
+    sandbox = sinon.createSandbox()
+    sandbox.stub(Logger, 'info')
+    sandbox.stub(Logger, 'error')
+    global.MetadataPath = '/tmp/audiobookshelf-test'
+    global.ServerSettings = new ServerSettings()
     Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
     await Database.buildModels()
@@ -21,12 +35,15 @@ describe('LibraryItemController', () => {
     apiRouter = new ApiRouter({
       apiCacheManager: new ApiCacheManager()
     })
-
-    sinon.stub(Logger, 'info')
+    sandbox.stub(RssFeedManager, 'closeFeedForEntityId').resolves()
+    sandbox.stub(RssFeedManager, 'closeFeedsForEntityIds').resolves()
+    sandbox.stub(CacheManager, 'purgeCoverCache').resolves()
+    sandbox.stub(fs, 'remove').resolves()
+    sandbox.stub(SocketAuthority, 'emitter')
   })
 
   afterEach(async () => {
-    sinon.restore()
+    sandbox.restore()
 
     // Clear all tables
     await Database.sequelize.sync({ force: true })
@@ -161,6 +178,7 @@ describe('LibraryItemController', () => {
       // Update library item 1 remove all authors and series
       const fakeReq = {
         query: {},
+        user: { id: 'test-user-id' },
         body: {
           metadata: {
             authors: [],
@@ -195,6 +213,193 @@ describe('LibraryItemController', () => {
       // Series 2 should not be removed because it still has Book 2
       const series2Exists = await Database.seriesModel.checkExistsById(series2Id)
       expect(series2Exists).to.be.true
+    })
+  })
+
+  describe('_getExpandedItemWithRatings', () => {
+    let user, libraryItem
+
+    beforeEach(() => {
+      user = new User({ id: 'user1' })
+      libraryItem = {
+        isBook: true,
+        media: { id: 'book1' },
+        toOldJSONExpanded: () => ({ media: {} })
+      }
+      sandbox.stub(Database, 'userBookRatingModel').value({ findOne: () => {}, findAll: () => [] })
+      sandbox.stub(Database, 'userBookExplicitRatingModel').value({ findOne: () => {}, findAll: () => [] })
+    })
+
+    it('should not add any rating if all rating settings are disabled', async () => {
+      global.ServerSettings.enableRating = false
+      global.ServerSettings.enableExplicitRating = false
+      const result = await LibraryItemController._getExpandedItemWithRatings(libraryItem, user)
+      expect(result.media.myRating).to.be.undefined
+      expect(result.media.communityRating).to.be.undefined
+      expect(result.media.myExplicitRating).to.be.undefined
+      expect(result.media.communityExplicitRating).to.be.undefined
+    })
+
+    it('should add personal rating if enabled', async () => {
+      global.ServerSettings.enableRating = true
+      sandbox.stub(Database.userBookRatingModel, 'findOne').resolves({ rating: 4 })
+      const result = await LibraryItemController._getExpandedItemWithRatings(libraryItem, user)
+      expect(result.media.myRating).to.equal(4)
+    })
+
+    it('should add community rating if enabled', async () => {
+      global.ServerSettings.enableRating = true
+      global.ServerSettings.enableCommunityRating = true
+      sandbox.stub(Database.userBookRatingModel, 'findAll').resolves([{ rating: 3 }, { rating: 5 }])
+      const result = await LibraryItemController._getExpandedItemWithRatings(libraryItem, user)
+      expect(result.media.communityRating.average).to.equal(4)
+      expect(result.media.communityRating.count).to.equal(2)
+    })
+
+    it('should add personal explicit rating if enabled', async () => {
+      global.ServerSettings.enableExplicitRating = true
+      sandbox.stub(Database.userBookExplicitRatingModel, 'findOne').resolves({ rating: 2 })
+      const result = await LibraryItemController._getExpandedItemWithRatings(libraryItem, user)
+      expect(result.media.myExplicitRating).to.equal(2)
+    })
+
+    it('should add community explicit rating if enabled', async () => {
+      global.ServerSettings.enableExplicitRating = true
+      global.ServerSettings.enableCommunityRating = true
+      sandbox.stub(Database.userBookExplicitRatingModel, 'findAll').resolves([{ rating: 1 }, { rating: 5 }])
+      const result = await LibraryItemController._getExpandedItemWithRatings(libraryItem, user)
+      expect(result.media.communityExplicitRating.average).to.equal(3)
+      expect(result.media.communityExplicitRating.count).to.equal(2)
+    })
+  })
+
+  describe('updateMedia', () => {
+    let user, libraryItem, book, bookSaveStub
+
+    beforeEach(async () => {
+      user = await Database.userModel.create({ username: 'test', password: 'password' })
+      const newLibrary = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+      const newLibraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: newLibrary.id })
+      book = await Database.bookModel.create({ title: 'Test Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      libraryItem = await Database.libraryItemModel.create({ libraryFiles: [], mediaId: book.id, mediaType: 'book', libraryId: newLibrary.id, libraryFolderId: newLibraryFolder.id })
+      libraryItem.media = book
+      libraryItem.saveMetadataFile = sinon.stub()
+      bookSaveStub = sandbox.stub(Book.prototype, 'save').resolves()
+    })
+
+    it('should update rating from metadata', async () => {
+      const req = mockReq({
+        user,
+        libraryItem,
+        body: { metadata: { rating: 4.5 } }
+      })
+      const res = mockRes()
+
+      await LibraryItemController.updateMedia.bind(apiRouter)(req, res)
+
+      expect(book.providerRating).to.equal(4.5)
+      expect(bookSaveStub.called).to.be.true
+      expect(res.json.calledOnce).to.be.true
+    })
+
+    it('should update rating from provider_data', async () => {
+      const req = mockReq({
+        user,
+        libraryItem,
+        body: {
+          provider_data: {
+            rating: 4.2,
+            provider: 'test-provider',
+            providerId: 'test-id'
+          }
+        }
+      })
+      const res = mockRes()
+
+      await LibraryItemController.updateMedia.bind(apiRouter)(req, res)
+
+      expect(book.providerRating).to.equal(4.2)
+      expect(book.provider).to.equal('test-provider')
+      expect(book.providerId).to.equal('test-id')
+      expect(bookSaveStub.called).to.be.true
+      expect(res.json.calledOnce).to.be.true
+    })
+  })
+
+  describe('rate', () => {
+    let user, libraryItem, book
+
+    beforeEach(async () => {
+      user = await Database.userModel.create({ username: 'test', password: 'password', id: 'user-1' })
+      const newLibrary = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+      const newLibraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: newLibrary.id })
+      book = await Database.bookModel.create({ id: 'book-1', title: 'Test Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      libraryItem = await Database.libraryItemModel.create({ libraryFiles: [], mediaId: book.id, mediaType: 'book', libraryId: newLibrary.id, libraryFolderId: newLibraryFolder.id })
+      libraryItem.media = book
+    })
+
+    it('should return 403 if rating is disabled', async () => {
+      global.ServerSettings.enableRating = false
+      const req = mockReq()
+      const res = mockRes()
+      await LibraryItemController.rate.bind(apiRouter)(req, res)
+      expect(res.status.args[0][0]).to.equal(403)
+    })
+
+    it('should return 400 for invalid rating', async () => {
+      global.ServerSettings.enableRating = true
+      const req = mockReq({ user, libraryItem, body: { rating: 6 } })
+      const res = mockRes()
+      await LibraryItemController.rate(req, res)
+      expect(res.status.args[0][0]).to.equal(400)
+    })
+
+    it('should save a valid rating and return 200', async () => {
+      global.ServerSettings.enableRating = true
+      const req = mockReq({ user, libraryItem, body: { rating: 4 } })
+      const res = mockRes()
+      await LibraryItemController.rate(req, res)
+      expect(res.status.args[0][0]).to.equal(200)
+      const userRating = await Database.userBookRatingModel.findOne({ where: { userId: user.id, bookId: book.id } })
+      expect(userRating.rating).to.equal(4)
+    })
+  })
+
+  describe('rateExplicit', () => {
+    let user, libraryItem, book
+    beforeEach(async () => {
+      user = await Database.userModel.create({ username: 'test', password: 'password', id: 'user-1' })
+      const newLibrary = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+      const newLibraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: newLibrary.id })
+      book = await Database.bookModel.create({ id: 'book-1', title: 'Test Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      libraryItem = await Database.libraryItemModel.create({ libraryFiles: [], mediaId: book.id, mediaType: 'book', libraryId: newLibrary.id, libraryFolderId: newLibraryFolder.id })
+      libraryItem.media = book
+    })
+
+    it('should return 403 if explicit rating is disabled', async () => {
+      global.ServerSettings.enableExplicitRating = false
+      const req = mockReq()
+      const res = mockRes()
+      await LibraryItemController.rateExplicit.bind(apiRouter)(req, res)
+      expect(res.status.args[0][0]).to.equal(403)
+    })
+
+    it('should return 400 for invalid explicit rating', async () => {
+      global.ServerSettings.enableExplicitRating = true
+      const req = mockReq({ user, libraryItem, body: { rating: -1 } })
+      const res = mockRes()
+      await LibraryItemController.rateExplicit(req, res)
+      expect(res.status.args[0][0]).to.equal(400)
+    })
+
+    it('should save a valid explicit rating and return 200', async () => {
+      global.ServerSettings.enableExplicitRating = true
+      const req = mockReq({ user, libraryItem, body: { rating: 5 } })
+      const res = mockRes()
+      await LibraryItemController.rateExplicit(req, res)
+      expect(res.status.args[0][0]).to.equal(200)
+      const userRating = await Database.userBookExplicitRatingModel.findOne({ where: { userId: user.id, bookId: book.id } })
+      expect(userRating.rating).to.equal(5)
     })
   })
 })
