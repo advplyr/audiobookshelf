@@ -40,7 +40,7 @@ export default {
       }
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     releasesToShow() {
       return this.versionData?.releasesToShow || []
