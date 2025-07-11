@@ -1,5 +1,4 @@
 const { Request, Response, NextFunction } = require('express')
-const { rateLimit } = require('express-rate-limit')
 const passport = require('passport')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
@@ -466,14 +465,7 @@ class Auth {
 
       // Invalidate the session in database using refresh token
       if (refreshToken) {
-        try {
-          Logger.info(`[Auth] logout: Invalidating session for refresh token: ${refreshToken}`)
-          await Database.sessionModel.destroy({
-            where: { refreshToken }
-          })
-        } catch (error) {
-          Logger.error(`[Auth] Error destroying session: ${error.message}`)
-        }
+        await this.tokenManager.invalidateRefreshToken(refreshToken)
       } else {
         Logger.info(`[Auth] logout: No refresh token on request`)
       }

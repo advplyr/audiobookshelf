@@ -379,6 +379,28 @@ class TokenManager {
     await Database.sessionModel.destroy({ where: { userId: user.id } })
     return null
   }
+
+  /**
+   * Invalidate a refresh token - used for logout
+   *
+   * @param {string} refreshToken
+   * @returns {Promise<boolean>}
+   */
+  async invalidateRefreshToken(refreshToken) {
+    if (!refreshToken) {
+      Logger.error(`[TokenManager] No refresh token provided to invalidate`)
+      return false
+    }
+
+    try {
+      const numDeleted = await Database.sessionModel.destroy({ where: { refreshToken: refreshToken } })
+      Logger.info(`[TokenManager] Refresh token ${refreshToken} invalidated, ${numDeleted} sessions deleted`)
+      return true
+    } catch (error) {
+      Logger.error(`[TokenManager] Error invalidating refresh token: ${error.message}`)
+      return false
+    }
+  }
 }
 
 module.exports = TokenManager
