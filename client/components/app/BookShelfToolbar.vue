@@ -16,6 +16,9 @@
       <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="grow h-full flex justify-center items-center" :class="isPodcastLatestPage ? 'bg-primary/80' : 'bg-primary/40'">
         <p class="text-sm">{{ $strings.ButtonLatest }}</p>
       </nuxt-link>
+      <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/calendar`" class="grow h-full flex justify-center items-center" :class="isCalendarPage ? 'bg-primary/80' : 'bg-primary/40'">
+        <p class="text-sm">{{ $strings.ButtonCalendar }}</p>
+      </nuxt-link>
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="grow h-full flex justify-center items-center" :class="isSeriesPage ? 'bg-primary/80' : 'bg-primary/40'">
         <p v-if="isSeriesPage" class="text-sm">{{ $strings.ButtonSeries }}</p>
         <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +68,7 @@
         <ui-context-menu-dropdown v-if="!isBatchSelecting && seriesContextMenuItems.length" :items="seriesContextMenuItems" class="mx-px" @action="seriesContextMenuAction" />
       </template>
       <!-- library & collections page -->
-      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome && !isAuthorsPage">
+      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && page !== 'calendar' && !isHome && !isAuthorsPage">
         <p class="hidden md:block">{{ $formatNumber(numShowing) }} {{ entityName }}</p>
 
         <div class="grow hidden sm:inline-block" />
@@ -247,6 +250,9 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
+    isCalendarPage() {
+      return this.page === 'calendar'
+    },
     isLibraryPage() {
       return this.page === ''
     },
@@ -267,6 +273,9 @@ export default {
     },
     isPodcastLatestPage() {
       return this.$route.name === 'library-library-podcast-latest'
+    },
+    isCalendarPage() {
+      return this.$route.name === 'library-library-calendar'
     },
     isPodcastDownloadQueuePage() {
       return this.$route.name === 'library-library-podcast-download-queue'

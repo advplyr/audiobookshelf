@@ -71,6 +71,18 @@ export const state = () => ({
       value: 'HH:mm'
     }
   ],
+  firstDayOfWeekOptions: [
+    {
+      text: 'Sunday',
+      value: 0,
+      labelKey: 'LabelCalendarFirstDayOfWeekSunday'
+    },
+    {
+      text: 'Monday',
+      value: 1,
+      labelKey: 'LabelCalendarFirstDayOfWeekMonday'
+    }
+  ],
   podcastTypes: [
     { text: 'Episodic', value: 'episodic', descriptionKey: 'LabelEpisodic' },
     { text: 'Serial', value: 'serial', descriptionKey: 'LabelSerial' }
