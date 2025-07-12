@@ -40,11 +40,11 @@
 
           <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
 
-          <div v-if="showNewAuthSystemAdminMessage" class="mb-4">
+          <div v-if="showNewAuthSystemMessage" class="mb-4">
             <widgets-alert type="warning">
               <div>
-                <p>Authentication has been improved for security. All users will be required to re-login.</p>
-                <a href="https://github.com/advplyr/audiobookshelf/discussions/4460" target="_blank" class="underline">More info</a>
+                <p>{{ $strings.MessageAuthenticationSecurityMessage }}</p>
+                <a v-if="showNewAuthSystemAdminMessage" href="https://github.com/advplyr/audiobookshelf/discussions/4460" target="_blank" class="underline">{{ $strings.LabelMoreInfo }}</a>
               </div>
             </widgets-alert>
           </div>
@@ -95,6 +95,8 @@ export default {
       login_local: true,
       login_openid: false,
       authFormData: null,
+      // New JWT auth system re-login flags
+      showNewAuthSystemMessage: false,
       showNewAuthSystemAdminMessage: false
     }
   },
@@ -195,6 +197,7 @@ export default {
     },
     async submitForm() {
       this.error = null
+      this.showNewAuthSystemMessage = false
       this.showNewAuthSystemAdminMessage = false
       this.processing = true
 
@@ -231,14 +234,10 @@ export default {
         .then((res) => {
           // Force re-login if user is using an old token with no expiration
           if (res.user.isOldToken) {
-            if (res.user.type === 'admin' || res.user.type === 'root') {
-              this.username = res.user.username
-              // Show message to admin users about new auth system
-              this.showNewAuthSystemAdminMessage = true
-            } else {
-              // Regular users just shown login
-              this.username = res.user.username
-            }
+            this.username = res.user.username
+            this.showNewAuthSystemMessage = true
+            // Admin user sees link to github discussion
+            this.showNewAuthSystemAdminMessage = res.user.type === 'admin' || res.user.type === 'root'
             return false
           }
           this.setUser(res)
