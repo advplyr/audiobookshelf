@@ -1,5 +1,6 @@
 const { rateLimit, RateLimitRequestHandler } = require('express-rate-limit')
 const Logger = require('../Logger')
+const requestIp = require('../libs/requestIp')
 
 /**
  * Factory for creating authentication rate limiters
@@ -28,7 +29,7 @@ class RateLimiterFactory {
       max = parseInt(process.env.RATE_LIMIT_AUTH_MAX)
     }
 
-    let message = 'Too many requests, please try again later.'
+    let message = 'Too many authentication requests'
     if (process.env.RATE_LIMIT_AUTH_MESSAGE) {
       message = process.env.RATE_LIMIT_AUTH_MESSAGE
     }
@@ -36,18 +37,22 @@ class RateLimiterFactory {
     this.authRateLimiter = rateLimit({
       windowMs,
       max,
-      message,
       standardHeaders: true,
       legacyHeaders: false,
+      keyGenerator: (req) => {
+        // Override keyGenerator to handle proxy IPs
+        return requestIp.getClientIp(req) || req.ip
+      },
       handler: (req, res) => {
         const userAgent = req.get('User-Agent') || 'Unknown'
         const endpoint = req.path
         const method = req.method
+        const ip = requestIp.getClientIp(req) || req.ip
 
-        Logger.warn(`[RateLimiter] Rate limit exceeded - IP: ${req.ip}, Endpoint: ${method} ${endpoint}, User-Agent: ${userAgent}`)
+        Logger.warn(`[RateLimiter] Rate limit exceeded - IP: ${ip}, Endpoint: ${method} ${endpoint}, User-Agent: ${userAgent}`)
 
         res.status(429).json({
-          error: 'Too many authentication attempts, please try again later.'
+          error: message
         })
       }
     })
