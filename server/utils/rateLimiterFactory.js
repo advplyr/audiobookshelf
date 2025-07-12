@@ -6,6 +6,9 @@ const requestIp = require('../libs/requestIp')
  * Factory for creating authentication rate limiters
  */
 class RateLimiterFactory {
+  static DEFAULT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
+  static DEFAULT_MAX = 40 // 40 attempts
+
   constructor() {
     this.authRateLimiter = null
   }
@@ -19,14 +22,27 @@ class RateLimiterFactory {
       return this.authRateLimiter
     }
 
-    let windowMs = 10 * 60 * 1000 // 10 minutes default
-    if (parseInt(process.env.RATE_LIMIT_AUTH_WINDOW) > 0) {
-      windowMs = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW)
+    // Disable by setting max to 0
+    if (process.env.RATE_LIMIT_AUTH_MAX === '0') {
+      this.authRateLimiter = (req, res, next) => next()
+      Logger.info(`[RateLimiterFactory] Authentication rate limiting disabled by ENV variable`)
+      return this.authRateLimiter
     }
 
-    let max = 40 // 40 attempts default
+    let windowMs = RateLimiterFactory.DEFAULT_WINDOW_MS
+    if (parseInt(process.env.RATE_LIMIT_AUTH_WINDOW) > 0) {
+      windowMs = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW)
+      if (windowMs !== RateLimiterFactory.DEFAULT_WINDOW_MS) {
+        Logger.info(`[RateLimiterFactory] Authentication rate limiting window set to ${windowMs}ms by ENV variable`)
+      }
+    }
+
+    let max = RateLimiterFactory.DEFAULT_MAX
     if (parseInt(process.env.RATE_LIMIT_AUTH_MAX) > 0) {
       max = parseInt(process.env.RATE_LIMIT_AUTH_MAX)
+      if (max !== RateLimiterFactory.DEFAULT_MAX) {
+        Logger.info(`[RateLimiterFactory] Authentication rate limiting max set to ${max} by ENV variable`)
+      }
     }
 
     let message = 'Too many authentication requests'
