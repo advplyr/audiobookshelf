@@ -606,6 +606,11 @@ class LibraryScanner {
       } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
         continue
+      } else if (!(await fs.pathExists(fullPath))) {
+        Logger.info(`[LibraryScanner] File update group "${itemDir}" does not exist - ignoring`)
+
+        itemGroupingResults[itemDir] = ScanResult.NOTHING
+        continue
       }
 
       // Check if a library item is a subdirectory of this dir

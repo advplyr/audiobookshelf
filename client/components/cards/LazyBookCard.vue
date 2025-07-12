@@ -198,7 +198,7 @@ export default {
       return this.store.getters['user/getSizeMultiplier']
     },
     dateFormat() {
-      return this.store.state.serverSettings.dateFormat
+      return this.store.getters['getServerSetting']('dateFormat')
     },
     _libraryItem() {
       return this.libraryItem || {}

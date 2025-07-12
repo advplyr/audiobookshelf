@@ -193,7 +193,7 @@ export default {
       return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']

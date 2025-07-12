@@ -71,7 +71,7 @@ export default {
       return this.height * this.sizeMultiplier
     },
     dateFormat() {
-      return this.store.state.serverSettings.dateFormat
+      return this.store.getters['getServerSetting']('dateFormat')
     },
     labelFontSize() {
       if (this.width < 160) return 0.75

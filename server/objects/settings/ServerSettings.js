@@ -7,6 +7,7 @@ const User = require('../../models/User')
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
+    /** @type {string} JWT secret key ONLY used when JWT_SECRET_KEY is not set in ENV */
     this.tokenSecret = null
 
     // Scanner

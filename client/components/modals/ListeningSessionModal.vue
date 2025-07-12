@@ -159,10 +159,10 @@ export default {
       return 'Unknown'
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     },
     isOpenSession() {
       return !!this._session.open

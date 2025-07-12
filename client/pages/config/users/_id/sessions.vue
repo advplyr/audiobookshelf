@@ -98,10 +98,10 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {
