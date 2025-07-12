@@ -26,9 +26,6 @@ export default {
     return {}
   },
   computed: {
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     libraryItemId() {
       return this.libraryItem?.id
     },
@@ -96,11 +93,8 @@ export default {
     },
     async initMobi() {
       // Fetch mobi file as blob
-      var buff = await this.$axios.$get(this.ebookUrl, {
-        responseType: 'blob',
-        headers: {
-          Authorization: `Bearer ${this.userToken}`
-        }
+      const buff = await this.$axios.$get(this.ebookUrl, {
+        responseType: 'blob'
       })
       var reader = new FileReader()
       reader.onload = async (event) => {

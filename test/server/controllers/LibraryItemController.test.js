@@ -6,6 +6,7 @@ const Database = require('../../../server/Database')
 const ApiRouter = require('../../../server/routers/ApiRouter')
 const LibraryItemController = require('../../../server/controllers/LibraryItemController')
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
+const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
 
 describe('LibraryItemController', () => {
@@ -19,6 +20,7 @@ describe('LibraryItemController', () => {
     await Database.buildModels()
 
     apiRouter = new ApiRouter({
+      auth: new Auth(),
       apiCacheManager: new ApiCacheManager()
     })
 
