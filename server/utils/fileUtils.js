@@ -109,7 +109,7 @@ function getIno(path) {
     .stat(path, { bigint: true })
     .then((data) => String(data.ino))
     .catch((err) => {
-      Logger.error('[Utils] Failed to get ino for path', path, err)
+      Logger.warn(`[Utils] Failed to get ino for path "${path}"`, err)
       return null
     })
 }
