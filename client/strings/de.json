@@ -359,7 +359,7 @@
   "LabelExpiresAt": "Läuft ab am",
   "LabelExpiresInSeconds": "Ablauf in (seconds) Sekunden",
   "LabelExpiresNever": "Niemals",
-  "LabelExplicit": "Explizit (Altersbeschränkung)",
+  "LabelExplicit": "Explizit",
   "LabelExplicitChecked": "Explicit (Altersbeschränkung) (angehakt)",
   "LabelExplicitUnchecked": "Not Explicit (Altersbeschränkung) (nicht angehakt)",
   "LabelExportOPML": "OPML exportieren",
