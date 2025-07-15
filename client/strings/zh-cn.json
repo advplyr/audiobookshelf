@@ -871,7 +871,7 @@
   "MessageRestoreBackupConfirm": "你确定要恢复创建的这个备份",
   "MessageRestoreBackupWarning": "恢复备份将覆盖位于 /config 的整个数据库并覆盖 /metadata/items & /metadata/authors 中的图像.<br /><br />备份不会修改媒体库文件夹中的任何文件. 如果你已启用服务器设置将封面和元数据存储在库文件夹中，则不会备份或覆盖这些内容.<br /><br />将自动刷新使用服务器的所有客户端.",
   "MessageScheduleLibraryScanNote": "对于大多数用户, 建议禁用此功能并保持文件夹监视程序设置启用. 文件夹监视程序将自动检测库文件夹中的更改. 文件夹监视程序不适用于每个文件系统 (如 NFS), 因此可以使用计划库扫描.",
-  "MessageScheduleRunEveryWeekdayAtTime": "每隔 {0} 在 {1} 运行一次",
+  "MessageScheduleRunEveryWeekdayAtTime": "每 {0} 的 {1} 执行",
   "MessageSearchResultsFor": "搜索结果",
   "MessageSelected": "{0} 已选择",
   "MessageSeriesSequenceCannotContainSpaces": "系列序列不能包含空格",
