@@ -333,6 +333,7 @@
   "LabelEncodingChaptersNotEmbedded": "W audiobookach wielościeżkowych rozdziały nie są osadzone.",
   "LabelEncodingClearItemCache": "Pamiętaj o okresowym czyszczeniu pamięci podręcznej elementów.",
   "LabelEncodingFinishedM4B": "Ukończony plik M4B zostanie umieszczony w folderze audiobooka pod adresem:",
+  "LabelEncodingInfoEmbedded": "Metadane zostaną osadzone w ścieżkach audio w folderze z audiobookiem.",
   "LabelEnd": "Zakończ",
   "LabelEndOfChapter": "Koniec rozdziału",
   "LabelEpisode": "Odcinek",
