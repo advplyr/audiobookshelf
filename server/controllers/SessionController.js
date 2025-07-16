@@ -57,26 +57,24 @@ class SessionController {
     }
 
     let where = null
-    const include = [
-      {
-        model: Database.models.device
-      }
-    ]
 
     if (userId) {
       where = {
         userId
       }
-    } else {
-      include.push({
-        model: Database.userModel,
-        attributes: ['id', 'username']
-      })
     }
 
     const { rows, count } = await Database.playbackSessionModel.findAndCountAll({
       where,
-      include,
+      include: [
+        {
+          model: Database.deviceModel
+        },
+        {
+          model: Database.userModel,
+          attributes: ['id', 'username']
+        }
+      ],
       order: [[orderKey, orderDesc]],
       limit: itemsPerPage,
       offset: itemsPerPage * page
