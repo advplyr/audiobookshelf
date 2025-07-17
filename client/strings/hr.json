@@ -723,6 +723,7 @@
   "MessageAddToPlayerQueue": "Dodaj u redoslijed izvođenja",
   "MessageAppriseDescription": "Da biste se koristili ovom značajkom, treba vam instanca <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API-ja</a> ili API koji može rukovati istom vrstom zahtjeva.<br />The Adresa Apprise API-ja treba biti puna URL putanja za slanje obavijesti, npr. ako vam se API instanca poslužuje na adresi <code>http://192.168.1.1:8337</code> trebate upisati <code>http://192.168.1.1:8337/notify</code>.",
   "MessageAsinCheck": "Upišite ASIN iz odgovarajuće Audibleove regije, ne s Amazonov.",
+  "MessageAuthenticationLegacyTokenWarning": "Starije API tokene ćemo ukloniti. Umjesto njih, koristite se <a href=\"/config/api-keys\">API ključevima</a> .",
   "MessageAuthenticationOIDCChangesRestart": "Ponovno pokrenite poslužitelj da biste primijenili OIDC promjene.",
   "MessageAuthenticationSecurityMessage": "Provjera autentičnosti poboljšana je radi sigurnosti. Svi se korisnici moraju ponovno prijaviti.",
   "MessageBackupsDescription": "Sigurnosne kopije sadrže korisnike, korisnikov napredak medija, pojedinosti knjižničke građe, postavke poslužitelja i slike koje se spremaju u <code>/metadata/items</code> & <code>/metadata/authors</code>. Sigurnosne kopije ne sadrže niti jednu datoteku iz mapa knjižnice.",
