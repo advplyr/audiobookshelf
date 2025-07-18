@@ -32,11 +32,13 @@
                 </div>
               </h1>
 
+              <p v-if="bookTitle" class="text-gray-200 text-3xl md:text-4xl leading-snug">{{ bookTitle }}</p>
+
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
 
-              <template v-for="(_series, index) in seriesList">
-                <nuxt-link :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7">{{ _series.text }}</nuxt-link
-                ><span :key="index" v-if="index < seriesList.length - 1">, </span>
+              <template v-for="(_series, index) in seriesList" :key="_series.id">
+                <nuxt-link :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7">{{ _series.text }}</nuxt-link
+                ><span v-if="index < seriesList.length - 1">, </span>
               </template>
 
               <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
@@ -44,6 +46,37 @@
                 {{ $getString('LabelByAuthor', ['']) }}<nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
+
+              <!-- RATING SECTION -->
+              <div v-if="serverSettings.enableRating && !isPodcast" class="flex items-center space-x-4 mt-2">
+                <div class="flex items-center">
+                  <ui-rating-input :value="myRating" :label="$strings.LabelYourRating" @input="updateRating" />
+                </div>
+                <div v-if="serverSettings.enableCommunityRating && communityRating.count > 0" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <span class="material-symbols text-lg -ml-0.5">groups</span>
+                  <span class="font-semibold text-white">{{ communityRating.average.toFixed(1) }}/5</span>
+                  <span class="text-xs text-white/50">({{ communityRating.count }})</span>
+                </div>
+                <div v-if="providerRating > 0 && provider === 'audible'" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <img src="/audible.svg" alt="Audible Logo" class="h-5 w-auto" />
+                  <span class="font-semibold text-white">{{ providerRating.toFixed(1) }}/5</span>
+                </div>
+                <div v-else-if="providerRating > 0" class="flex items-center">
+                  <ui-rating-input :value="providerRating" :label="provider" :read-only="true" />
+                </div>
+              </div>
+
+              <!-- EXPLICIT RATING SECTION -->
+              <div v-if="serverSettings.enableExplicitRating && isExplicit && !isPodcast" class="flex items-center space-x-4 mt-3">
+                <div class="flex items-center">
+                  <ui-rating-input :value="myExplicitRating" :label="$strings.LabelExplicitRating" icon="flame" @input="updateExplicitRating" />
+                </div>
+                <div v-if="serverSettings.enableCommunityRating && communityExplicitRating.count > 0" class="flex items-center bg-zinc-800 rounded-lg py-1.5 px-2 space-x-1.5 opacity-80">
+                  <ui-flame-icon class="h-5 w-5 -ml-0.5" />
+                  <span class="font-semibold text-white">{{ communityExplicitRating.average.toFixed(1) }}/5</span>
+                  <span class="text-xs text-white/50">({{ communityExplicitRating.count }})</span>
+                </div>
+              </div>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -147,14 +180,19 @@
 </template>
 
 <script>
+import UiRatingInput from '~/components/ui/RatingInput.vue'
+
 export default {
+  components: {
+    UiRatingInput
+  },
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
 
     // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share,progress`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -162,11 +200,11 @@ export default {
       console.error('No item...', params.id)
       return redirect('/')
     }
+    store.commit('libraries/UPDATE_LIBRARY_ITEM', item)
     if (store.state.libraries.currentLibraryId !== item.libraryId || !store.state.libraries.filterData) {
       await store.dispatch('libraries/fetch', item.libraryId)
     }
     return {
-      libraryItem: item,
       rssFeed: item.rssFeed || null,
       mediaItemShare: item.mediaItemShare || null
     }
@@ -182,12 +220,18 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
     }
   },
   computed: {
+    libraryItem() {
+      return this.$store.state.libraries.libraryItemsCache[this.$route.params.id] || {}
+    },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
     },
     downloadUrl() {
       return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
@@ -308,6 +352,24 @@ export default {
     },
     description() {
       return this.mediaMetadata.description || ''
+    },
+    myRating() {
+      return this.media.myRating
+    },
+    communityRating() {
+      return this.media.communityRating || { average: 0, count: 0 }
+    },
+    myExplicitRating() {
+      return this.media.myExplicitRating
+    },
+    communityExplicitRating() {
+      return this.media.communityExplicitRating || { average: 0, count: 0 }
+    },
+    providerRating() {
+      return this.media.providerRating || 0
+    },
+    provider() {
+      return this.media.provider || null
     },
     userMediaProgress() {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
@@ -432,6 +494,50 @@ export default {
 
       return items
     }
+  },
+  mounted() {
+    this.$root.$on('progress-updated', this.progressUpdated)
+    this.$root.$on('libraryitem-updated', this.libraryItemUpdated)
+    this.$root.$on('rss-updated', this.rssUpdated)
+    this.checkDescriptionClamped()
+
+    this.$root.socket.on('playback_session_started', this.playbackSessionStarted)
+    this.$root.socket.on('playback_session_stopped', this.playbackSessionStopped)
+    this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
+    this.$root.socket.on('episode_download_progress', this.episodeDownloadProgress)
+    this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+
+    this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
+    this.episodesDownloading = this.libraryItem.episodesDownloading || []
+
+    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+    this.$root.socket.on('item_updated', this.libraryItemUpdated)
+    this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.on('share_open', this.shareOpen)
+    this.$root.socket.on('share_closed', this.shareClosed)
+    this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
+  },
+  beforeDestroy() {
+    this.$root.$off('progress-updated', this.progressUpdated)
+    this.$root.$off('libraryitem-updated', this.libraryItemUpdated)
+    this.$root.$off('rss-updated', this.rssUpdated)
+    this.$root.socket.off('playback_session_started', this.playbackSessionStarted)
+    this.$root.socket.off('playback_session_stopped', this.playbackSessionStopped)
+    this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
+    this.$root.socket.off('episode_download_progress', this.episodeDownloadProgress)
+    this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
+    this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.streamer?.off()
+
+    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+    this.$root.socket.off('item_updated', this.libraryItemUpdated)
+    this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
+    this.$root.socket.off('share_open', this.shareOpen)
+    this.$root.socket.off('share_closed', this.shareClosed)
+    this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
   },
   methods: {
     selectBookmark(bookmark) {
@@ -594,9 +700,7 @@ export default {
     },
     libraryItemUpdated(libraryItem) {
       if (libraryItem.id === this.libraryItemId) {
-        console.log('Item was updated', libraryItem)
-        this.libraryItem = libraryItem
-        this.$nextTick(this.checkDescriptionClamped)
+        this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', libraryItem)
       }
     },
     clearProgressClick() {
@@ -777,36 +881,57 @@ export default {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShareModal', this.mediaItemShare)
       }
+    },
+    async updateRating(rating) {
+      try {
+        const res = await this.$axios.$post(`/api/items/${this.libraryItemId}/rate`, { rating })
+        if (res.libraryItem) {
+          this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', res.libraryItem)
+        }
+      } catch (err) {
+        console.error(err)
+        this.$toast.error(this.$strings.ToastFailedToUpdate)
+      }
+    },
+    async updateExplicitRating(rating) {
+      try {
+        const res = await this.$axios.$post(`/api/items/${this.libraryItemId}/rate-explicit`, { rating })
+        if (res.libraryItem) {
+          this.$store.commit('libraries/UPDATE_LIBRARY_ITEM', res.libraryItem)
+        }
+      } catch (err) {
+        console.error(err)
+        this.$toast.error(this.$strings.ToastFailedToUpdate)
+      }
+    },
+    progressUpdated(data) {
+      if (data.libraryItemId === this.libraryItemId) {
+        this.$store.dispatch('user/updateMediaProgress', data.mediaProgress)
+        this.$nextTick(this.checkDescriptionClamped)
+      }
+    },
+    rssUpdated(data) {
+      if (data.libraryItemId === this.libraryItemId) {
+        console.log('RSS feed updated', data)
+        this.rssFeed = data
+      }
+    },
+    playbackSessionStarted(data) {
+      if (data.entityId === this.libraryItemId) {
+        this.$store.commit('setStreamLibraryItem', data)
+      }
+    },
+    playbackSessionStopped(data) {
+      if (data.entityId === this.libraryItemId) {
+        this.$store.commit('setStreamLibraryItem', null)
+      }
+    },
+    episodeDownloadProgress(data) {
+      if (data.libraryItemId === this.libraryItemId) {
+        console.log('Episode download progress', data)
+        // Handle episode download progress update
+      }
     }
-  },
-  mounted() {
-    this.checkDescriptionClamped()
-
-    this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
-    this.episodesDownloading = this.libraryItem.episodesDownloading || []
-
-    this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
-    this.$root.socket.on('item_updated', this.libraryItemUpdated)
-    this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
-    this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
-    this.$root.socket.on('share_open', this.shareOpen)
-    this.$root.socket.on('share_closed', this.shareClosed)
-    this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
-    this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
-    this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
-    this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
-  },
-  beforeDestroy() {
-    this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
-    this.$root.socket.off('item_updated', this.libraryItemUpdated)
-    this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
-    this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
-    this.$root.socket.off('share_open', this.shareOpen)
-    this.$root.socket.off('share_closed', this.shareClosed)
-    this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
-    this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
-    this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
-    this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   }
 }
 </script>
