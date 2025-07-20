@@ -439,7 +439,16 @@ class UserController {
     const page = toNumber(req.query.page, 0)
 
     const start = page * itemsPerPage
-    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+    // Map user to sessions to match the format of the sessions endpoint
+    const sessions = listeningSessions.slice(start, start + itemsPerPage).map((session) => {
+      return {
+        ...session,
+        user: {
+          id: req.reqUser.id,
+          username: req.reqUser.username
+        }
+      }
+    })
 
     const payload = {
       total: listeningSessions.length,

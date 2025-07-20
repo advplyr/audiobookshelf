@@ -191,7 +191,10 @@ export default {
 
       this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
       this.$store.commit('user/setUser', user)
-      this.$store.commit('user/setAccessToken', user.accessToken)
+      // Access token only returned from login, not authorize
+      if (user.accessToken) {
+        this.$store.commit('user/setAccessToken', user.accessToken)
+      }
 
       this.$store.dispatch('user/loadUserSettings')
     },
@@ -225,6 +228,8 @@ export default {
 
       this.processing = true
 
+      this.$store.commit('user/setAccessToken', token)
+
       return this.$axios
         .$post('/api/authorize', null, {
           headers: {
@@ -240,6 +245,7 @@ export default {
             this.showNewAuthSystemAdminMessage = res.user.type === 'admin' || res.user.type === 'root'
             return false
           }
+
           this.setUser(res)
           return true
         })

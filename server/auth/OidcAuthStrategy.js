@@ -121,7 +121,7 @@ class OidcAuthStrategy {
         throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
       }
 
-      let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo, this)
+      let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo)
 
       if (!user?.isActive) {
         throw new Error('User not active or not found')

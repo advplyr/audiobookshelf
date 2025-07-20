@@ -1,9 +1,11 @@
 const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
+const { LRUCache } = require('lru-cache')
+
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
-const { LRUCache } = require('lru-cache')
+const TokenManager = require('../auth/TokenManager')
 
 class UserCache {
   constructor() {
@@ -213,10 +215,9 @@ class User extends Model {
    * or creates a new user if configured to do so.
    *
    * @param {Object} userinfo
-   * @param {import('../Auth')} auth
    * @returns {Promise<User>}
    */
-  static async findOrCreateUserFromOpenIdUserInfo(userinfo, auth) {
+  static async findOrCreateUserFromOpenIdUserInfo(userinfo) {
     let user = await this.getUserByOpenIDSub(userinfo.sub)
 
     // Matched by sub
@@ -290,7 +291,7 @@ class User extends Model {
     // If no existing user was matched, auto-register if configured
     if (global.ServerSettings.authOpenIDAutoRegister) {
       Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-      user = await this.createUserFromOpenIdUserInfo(userinfo, auth)
+      user = await this.createUserFromOpenIdUserInfo(userinfo)
       return user
     }
 
@@ -301,16 +302,15 @@ class User extends Model {
   /**
    * Create user from openid userinfo
    * @param {Object} userinfo
-   * @param {import('../Auth')} auth
    * @returns {Promise<User>}
    */
-  static async createUserFromOpenIdUserInfo(userinfo, auth) {
+  static async createUserFromOpenIdUserInfo(userinfo) {
     const userId = uuidv4()
     // TODO: Ensure username is unique?
     const username = userinfo.preferred_username || userinfo.name || userinfo.sub
     const email = userinfo.email && userinfo.email_verified ? userinfo.email : null
 
-    const token = auth.generateAccessToken({ id: userId, username })
+    const token = TokenManager.generateAccessToken({ id: userId, username })
 
     const newUser = {
       id: userId,

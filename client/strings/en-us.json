@@ -723,6 +723,7 @@
   "MessageAddToPlayerQueue": "Add to player queue",
   "MessageAppriseDescription": "To use this feature you will need to have an instance of <a href=\"https://github.com/caronc/apprise-api\" target=\"_blank\">Apprise API</a> running or an api that will handle those same requests. <br />The Apprise API Url should be the full URL path to send the notification, e.g., if your API instance is served at <code>http://192.168.1.1:8337</code> then you would put <code>http://192.168.1.1:8337/notify</code>.",
   "MessageAsinCheck": "Ensure you are using the ASIN from the correct Audible region, not Amazon.",
+  "MessageAuthenticationLegacyTokenWarning": "Legacy API tokens will be removed in the future. Use <a href=\"/config/api-keys\">API Keys</a> instead.",
   "MessageAuthenticationOIDCChangesRestart": "Restart your server after saving to apply OIDC changes.",
   "MessageAuthenticationSecurityMessage": "Authentication has been improved for security. All users are required to re-login.",
   "MessageBackupsDescription": "Backups include users, user progress, library item details, server settings, and images stored in <code>/metadata/items</code> & <code>/metadata/authors</code>. Backups <strong>do not</strong> include any files stored in your library folders.",

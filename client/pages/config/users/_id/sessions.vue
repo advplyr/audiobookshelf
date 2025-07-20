@@ -40,7 +40,7 @@
                 <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
               </td>
               <td class="text-center">
-                <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
+                <p class="text-xs font-mono">{{ $elapsedPrettyLocalized(session.timeListening) }}</p>
               </td>
               <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
                 <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>

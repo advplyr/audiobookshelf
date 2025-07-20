@@ -82,6 +82,18 @@ class TokenManager {
   }
 
   /**
+   * Generate a JWT token for a given user
+   * TODO: Old method with no expiration
+   * @deprecated
+   *
+   * @param {{ id:string, username:string }} user
+   * @returns {string}
+   */
+  static generateAccessToken(user) {
+    return jwt.sign({ userId: user.id, username: user.username }, TokenManager.TokenSecret)
+  }
+
+  /**
    * Function to generate a jwt token for a given user
    * TODO: Old method with no expiration
    * @deprecated
@@ -90,7 +102,7 @@ class TokenManager {
    * @returns {string}
    */
   generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, username: user.username }, TokenManager.TokenSecret)
+    return TokenManager.generateAccessToken(user)
   }
 
   /**
