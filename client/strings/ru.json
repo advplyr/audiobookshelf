@@ -357,7 +357,7 @@
   "LabelExpandSubSeries": "Развернуть подсерию",
   "LabelExpired": "Истекший",
   "LabelExpiresAt": "Истекает в",
-  "LabelExpiresInSeconds": "Истекает через (seconds)",
+  "LabelExpiresInSeconds": "Истекает через (секунд)",
   "LabelExpiresNever": "Никогда",
   "LabelExplicit": "18+",
   "LabelExplicitChecked": "18+ (отмечено)",
