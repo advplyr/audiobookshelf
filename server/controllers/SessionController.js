@@ -288,7 +288,12 @@ class SessionController {
       return res.sendStatus(404)
     }
 
-    const audioTrack = playbackSession.audioTracks.find((t) => t.index === audioTrackIndex)
+    let audioTrack = playbackSession.audioTracks.find((t) => toNumber(t.index, 1) === audioTrackIndex)
+
+    // Support clients passing 0 or 1 for podcast episode audio track index (handles old episodes pre-v2.21.0 having null index)
+    if (!audioTrack && playbackSession.mediaType === 'podcast' && audioTrackIndex === 0) {
+      audioTrack = playbackSession.audioTracks[0]
+    }
     if (!audioTrack) {
       Logger.error(`[SessionController] Unable to find audio track with index=${audioTrackIndex}`)
       return res.sendStatus(404)
