@@ -34,6 +34,14 @@ const levenshteinDistance = (str1, str2, caseSensitive = false) => {
 }
 module.exports.levenshteinDistance = levenshteinDistance
 
+const levenshteinSimilarity = (str1, str2, caseSensitive = false) => {
+  const distance = levenshteinDistance(str1, str2, caseSensitive)
+  const maxLength = Math.max(str1.length, str2.length)
+  if (maxLength === 0) return 1
+  return 1 - distance / maxLength
+}
+module.exports.levenshteinSimilarity = levenshteinSimilarity
+
 module.exports.isObject = (val) => {
   return val !== null && typeof val === 'object'
 }
