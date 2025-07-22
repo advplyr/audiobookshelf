@@ -280,7 +280,7 @@ class MeController {
     }
 
     const { password, newPassword } = req.body
-    if (!password || !newPassword || typeof password !== 'string' || typeof newPassword !== 'string') {
+    if ((typeof password !== 'string' && password !== null) || (typeof newPassword !== 'string' && newPassword !== null)) {
       return res.status(400).send('Missing or invalid password or new password')
     }
 
