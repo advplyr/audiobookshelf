@@ -438,6 +438,7 @@
   "LabelLogLevelWarn": "警告",
   "LabelLookForNewEpisodesAfterDate": "在此日期后查找新剧集",
   "LabelLowestPriority": "最低优先级",
+  "LabelMatchConfidence": "置信度",
   "LabelMatchExistingUsersBy": "匹配现有用户",
   "LabelMatchExistingUsersByDescription": "用于连接现有用户. 连接后, 用户将通过 SSO 提供商提供的唯一 id 进行匹配",
   "LabelMaxEpisodesToDownload": "可下载的最大集数. 输入 0 表示无限制.",

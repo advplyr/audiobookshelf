@@ -185,6 +185,7 @@ class PodcastEpisode extends Model {
     const track = structuredClone(this.audioFile)
     track.startOffset = 0
     track.title = this.audioFile.metadata.filename
+    track.index = 1 // Podcast episodes only have one track
     track.contentUrl = `/api/items/${libraryItemId}/file/${track.ino}`
     return track
   }
