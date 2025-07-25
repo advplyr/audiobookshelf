@@ -656,6 +656,7 @@
   "LabelTheme": "Theme",
   "LabelThemeDark": "Dark",
   "LabelThemeLight": "Light",
+  "LabelThemeSepia": "Sepia",
   "LabelTimeBase": "Time Base",
   "LabelTimeDurationXHours": "{0} hours",
   "LabelTimeDurationXMinutes": "{0} minutes",
