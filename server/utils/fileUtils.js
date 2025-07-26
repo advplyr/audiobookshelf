@@ -6,6 +6,7 @@ const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
+const globals = require('./globals')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -577,3 +578,90 @@ async function copyToExisting(srcPath, destPath) {
   })
 }
 module.exports.copyToExisting = copyToExisting
+
+module.exports.validatePathExists = async function validatePathExists(
+  libraryFolder,
+  directory,
+  filenames,
+  allowBookFiles,
+  allowAudioFiles,
+  skipLibraryFolder = false
+) {
+  let filepath = Path.join(skipLibraryFolder ? '' : libraryFolder.path, directory);
+  filepath = filePathToPOSIX(filepath);
+
+  // Ensure filepath is inside library folder (prevents directory traversal)
+  if (!filepath.startsWith(libraryFolder.path)) {
+    Logger.error(
+      `[FileSystemController] Filepath is not inside library folder: ${filepath}`
+    );
+    return null;
+  }
+
+  if (await fs.pathExists(filepath)) {
+    if (filenames && filenames.length > 0) {
+      // If any filename exists, not allowed to upload (exists: true)
+      for (const filename of filenames) {
+        const filePath = Path.join(filepath, filename);
+        if (await fs.pathExists(filePath)) {
+          return {
+            exists: true,
+          };
+        }
+      }
+    }
+    if (allowBookFiles || allowAudioFiles) {
+      let restrictedExtensions = [];
+      if (allowBookFiles && !allowAudioFiles) {
+        restrictedExtensions = globals.SupportedAudioTypes;
+      } else if (allowAudioFiles && !allowBookFiles) {
+        restrictedExtensions = globals.SupportedEbookTypes;
+      } else {
+        restrictedExtensions = []
+      }
+
+      if (restrictedExtensions.length > 0) {
+        const files = await fs.readdir(filepath);
+        const hasRestrictedFiles = files.some((file) => {
+          const ext = Path.extname(file).toLowerCase().replace(/^\./, "");
+          return restrictedExtensions.includes(ext);
+        });
+
+        if (hasRestrictedFiles) {
+          return { exists: true };
+        }
+      }
+    }
+  }
+
+  // Check if a library item exists in a subdirectory
+  // See: https://github.com/advplyr/audiobookshelf/issues/4146
+  // For filenames it does not matter if the file is in a subdirectory or not because the file is not allowed to be created
+  const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
+  if (cleanedDirectory.includes('/')) {
+    // Can only be 2 levels deep
+    const possiblePaths = []
+    const subdir = Path.dirname(directory)
+    possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
+    if (subdir.includes('/')) {
+      possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
+    }
+
+    const libraryItem = await Database.libraryItemModel.findOne({
+      where: {
+        path: possiblePaths
+      }
+    })
+
+    if (libraryItem) {
+      return {
+        exists: true,
+        libraryItemTitle: libraryItem.title
+      }
+    }
+  }
+
+  return {
+    exists: false
+  }
+}
