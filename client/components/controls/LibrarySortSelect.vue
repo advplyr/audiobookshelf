@@ -131,6 +131,10 @@ export default {
           value: 'mtimeMs'
         },
         {
+          text: this.$strings.LabelLibrarySortByProgress,
+          value: 'progress'
+        },
+        {
           text: this.$strings.LabelRandomly,
           value: 'random'
         }
