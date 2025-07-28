@@ -19,39 +19,41 @@
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderListeningSessions }}</h1>
         <div v-if="listeningSessions.length">
-          <table class="userSessionsTable">
-            <tr class="bg-primary/40">
-              <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
-              <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
-              <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
-              <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
-              <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
-              <th class="grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
-            </tr>
-            <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
-              <td class="py-1 max-w-48">
-                <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
-                <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
-              </td>
-              <td class="hidden md:table-cell">
-                <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
-              </td>
-              <td class="hidden sm:table-cell min-w-32 max-w-32">
-                <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
-              </td>
-              <td class="text-center">
-                <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
-              </td>
-              <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
-                <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
-              </td>
-              <td class="text-center hidden sm:table-cell">
-                <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
-                  <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
-                </ui-tooltip>
-              </td>
-            </tr>
-          </table>
+          <div class="overflow-x-auto">
+            <table class="userSessionsTable">
+              <tr class="bg-primary/40">
+                <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+                <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+                <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+                <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
+                <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+                <th class="grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
+              </tr>
+              <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
+                <td class="py-1 max-w-48">
+                  <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
+                  <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
+                </td>
+                <td class="hidden md:table-cell">
+                  <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
+                </td>
+                <td class="hidden sm:table-cell min-w-32 max-w-32">
+                  <p class="text-xs truncate" v-html="getDeviceInfoString(session.deviceInfo)" />
+                </td>
+                <td class="text-center">
+                  <p class="text-xs font-mono">{{ $elapsedPrettyLocalized(session.timeListening) }}</p>
+                </td>
+                <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
+                  <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
+                </td>
+                <td class="text-center hidden sm:table-cell">
+                  <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
+                    <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+                  </ui-tooltip>
+                </td>
+              </tr>
+            </table>
+          </div>
           <div class="flex items-center justify-end py-1">
             <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
             <p class="text-sm mx-1">{{ $getString('LabelPaginationPageXOfY', [currentPage + 1, numPages]) }}</p>
@@ -98,10 +100,10 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {

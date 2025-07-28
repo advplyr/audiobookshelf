@@ -57,26 +57,24 @@ class SessionController {
     }
 
     let where = null
-    const include = [
-      {
-        model: Database.models.device
-      }
-    ]
 
     if (userId) {
       where = {
         userId
       }
-    } else {
-      include.push({
-        model: Database.userModel,
-        attributes: ['id', 'username']
-      })
     }
 
     const { rows, count } = await Database.playbackSessionModel.findAndCountAll({
       where,
-      include,
+      include: [
+        {
+          model: Database.deviceModel
+        },
+        {
+          model: Database.userModel,
+          attributes: ['id', 'username']
+        }
+      ],
       order: [[orderKey, orderDesc]],
       limit: itemsPerPage,
       offset: itemsPerPage * page
@@ -290,7 +288,12 @@ class SessionController {
       return res.sendStatus(404)
     }
 
-    const audioTrack = playbackSession.audioTracks.find((t) => t.index === audioTrackIndex)
+    let audioTrack = playbackSession.audioTracks.find((t) => toNumber(t.index, 1) === audioTrackIndex)
+
+    // Support clients passing 0 or 1 for podcast episode audio track index (handles old episodes pre-v2.21.0 having null index)
+    if (!audioTrack && playbackSession.mediaType === 'podcast' && audioTrackIndex === 0) {
+      audioTrack = playbackSession.audioTracks[0]
+    }
     if (!audioTrack) {
       Logger.error(`[SessionController] Unable to find audio track with index=${audioTrackIndex}`)
       return res.sendStatus(404)

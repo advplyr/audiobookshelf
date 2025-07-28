@@ -59,6 +59,8 @@ module.exports = {
       replacements.filterValue = value
     } else if (group === 'languages') {
       mediaWhere['language'] = value
+    } else if (group === 'explicit') {
+      mediaWhere['explicit'] = true
     }
 
     return {
@@ -149,11 +151,12 @@ module.exports = {
       libraryId
     }
     const libraryItemIncludes = []
-    if (includeRSSFeed) {
+    if (filterGroup === 'feed-open' || includeRSSFeed) {
+      const rssFeedRequired = filterGroup === 'feed-open'
       libraryItemIncludes.push({
         model: Database.feedModel,
-        required: filterGroup === 'feed-open',
-        separate: true
+        required: rssFeedRequired,
+        separate: !rssFeedRequired
       })
     }
     if (filterGroup === 'issues') {

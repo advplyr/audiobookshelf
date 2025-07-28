@@ -186,6 +186,8 @@ module.exports = {
       mediaWhere['$series.id$'] = null
     } else if (group === 'abridged') {
       mediaWhere['abridged'] = true
+    } else if (group === 'explicit') {
+      mediaWhere['explicit'] = true
     } else if (['genres', 'tags', 'narrators'].includes(group)) {
       mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
         [Sequelize.Op.gte]: 1
@@ -251,6 +253,15 @@ module.exports = {
    */
   getOrder(sortBy, sortDesc, collapseseries) {
     const dir = sortDesc ? 'DESC' : 'ASC'
+
+    const getTitleOrder = () => {
+      if (global.ServerSettings.sortingIgnorePrefix) {
+        return [Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]
+      } else {
+        return [Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]
+      }
+    }
+
     if (sortBy === 'addedAt') {
       return [[Sequelize.literal('libraryItem.createdAt'), dir]]
     } else if (sortBy === 'size') {
@@ -264,19 +275,16 @@ module.exports = {
     } else if (sortBy === 'media.metadata.publishedYear') {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
-      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir]]
+      // Sort by author name last first, secondary sort by title
+      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder()]
     } else if (sortBy === 'media.metadata.authorName') {
-      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir]]
+      // Sort by author name first last, secondary sort by title
+      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir], getTitleOrder()]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
       }
-
-      if (global.ServerSettings.sortingIgnorePrefix) {
-        return [[Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]]
-      } else {
-        return [[Sequelize.literal('`libraryItem`.`title` COLLATE NOCASE'), dir]]
-      }
+      return [getTitleOrder()]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]

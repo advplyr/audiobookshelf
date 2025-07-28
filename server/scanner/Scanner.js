@@ -370,7 +370,7 @@ class Scanner {
 
     let numEpisodesUpdated = 0
     for (const episode of episodesToQuickMatch) {
-      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title)
+      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title, 0.1)
       if (episodeMatches?.length) {
         const wasUpdated = await this.updateEpisodeWithMatch(episode, episodeMatches[0].episode, options)
         if (wasUpdated) numEpisodesUpdated++

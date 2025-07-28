@@ -40,6 +40,7 @@ describe('LazySeriesCard', () => {
     },
     $store: {
       getters: {
+        getServerSetting: () => 'MM/dd/yyyy',
         'user/getUserCanUpdate': true,
         'user/getUserMediaProgress': (id) => null,
         'user/getSizeMultiplier': 1,

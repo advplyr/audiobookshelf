@@ -13,9 +13,17 @@
           <div class="grow" />
           <p class="text-sm md:text-base">{{ book.publishedYear }}</p>
         </div>
-        <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">{{ $getString('LabelByAuthor', [book.author]) }}</p>
-        <p v-if="book.narrator" class="text-gray-400 text-xs">{{ $strings.LabelNarrators }}: {{ book.narrator }}</p>
-        <p v-if="book.duration" class="text-gray-400 text-xs">{{ $strings.LabelDuration }}: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
+
+        <div class="flex items-center">
+          <div>
+            <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">{{ $getString('LabelByAuthor', [book.author]) }}</p>
+            <p v-if="book.narrator" class="text-gray-400 text-xs">{{ $strings.LabelNarrators }}: {{ book.narrator }}</p>
+            <p v-if="book.duration" class="text-gray-400 text-xs">{{ $strings.LabelDuration }}: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
+          </div>
+          <div class="grow" />
+          <div v-if="book.matchConfidence" class="rounded-full px-2 py-1 text-xs whitespace-nowrap text-white" :class="book.matchConfidence > 0.95 ? 'bg-success/80' : 'bg-info/80'">{{ $strings.LabelMatchConfidence }}: {{ (book.matchConfidence * 100).toFixed(0) }}%</div>
+        </div>
+
         <div v-if="book.series?.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white/10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">

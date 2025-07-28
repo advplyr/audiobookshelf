@@ -203,7 +203,15 @@ class AbMergeManager {
     // Move library item tracks to cache
     for (const [index, trackPath] of task.data.originalTrackPaths.entries()) {
       const trackFilename = Path.basename(trackPath)
-      const moveToPath = Path.join(task.data.itemCachePath, trackFilename)
+      let moveToPath = Path.join(task.data.itemCachePath, trackFilename)
+
+      // If the track is the same as the temp file, we need to rename it to avoid overwriting it
+      if (task.data.tempFilepath === moveToPath) {
+        const trackExtname = Path.extname(task.data.tempFilepath)
+        const newTrackFilename = Path.basename(task.data.tempFilepath, trackExtname) + '.backup' + trackExtname
+        moveToPath = Path.join(task.data.itemCachePath, newTrackFilename)
+      }
+
       Logger.debug(`[AbMergeManager] Backing up original track "${trackPath}" to ${moveToPath}`)
       if (index === 0) {
         // copy the first track to the cache directory

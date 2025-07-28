@@ -273,12 +273,24 @@ class MeController {
    * @param {RequestWithUser} req
    * @param {Response} res
    */
-  updatePassword(req, res) {
+  async updatePassword(req, res) {
     if (req.user.isGuest) {
       Logger.error(`[MeController] Guest user "${req.user.username}" attempted to change password`)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
-    this.auth.userChangePassword(req, res)
+
+    const { password, newPassword } = req.body
+    if ((typeof password !== 'string' && password !== null) || (typeof newPassword !== 'string' && newPassword !== null)) {
+      return res.status(400).send('Missing or invalid password or new password')
+    }
+
+    const result = await this.auth.localAuthStrategy.changePassword(req.user, password, newPassword)
+
+    if (result.error) {
+      return res.status(400).send(result.error)
+    }
+
+    res.sendStatus(200)
   }
 
   /**
@@ -438,7 +450,7 @@ class MeController {
     if (updated) {
       await Database.updateSetting(Database.emailSettings)
       SocketAuthority.clientEmitter(req.user.id, 'ereader-devices-updated', {
-        ereaderDevices: Database.emailSettings.ereaderDevices
+        ereaderDevices: Database.emailSettings.getEReaderDevices(req.user)
       })
     }
     res.json({

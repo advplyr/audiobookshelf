@@ -2,6 +2,7 @@ const { DataTypes, Model } = require('sequelize')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
 const Logger = require('../Logger')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 /**
  * @typedef PodcastExpandedProperties
@@ -220,6 +221,15 @@ class Podcast extends Model {
           newKey = 'itunesPageURL'
         }
         if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && payload.metadata[key] !== this[newKey]) {
+          // Sanitize description HTML
+          if (key === 'description' && payload.metadata[key]) {
+            const sanitizedDescription = htmlSanitizer.sanitize(payload.metadata[key])
+            if (sanitizedDescription !== payload.metadata[key]) {
+              Logger.debug(`[Podcast] "${this.title}" Sanitized description from "${payload.metadata[key]}" to "${sanitizedDescription}"`)
+              payload.metadata[key] = sanitizedDescription
+            }
+          }
+
           this[newKey] = payload.metadata[key] || null
 
           if (key === 'title') {

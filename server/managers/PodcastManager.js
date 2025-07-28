@@ -30,7 +30,7 @@ class PodcastManager {
     this.currentDownload = null
 
     this.failedCheckMap = {}
-    this.MaxFailedEpisodeChecks = 24
+    this.MaxFailedEpisodeChecks = global.MaxFailedEpisodeChecks
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
@@ -345,12 +345,14 @@ class PodcastManager {
       // Allow up to MaxFailedEpisodeChecks failed attempts before disabling auto download
       if (!this.failedCheckMap[libraryItem.id]) this.failedCheckMap[libraryItem.id] = 0
       this.failedCheckMap[libraryItem.id]++
-      if (this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
+      if (this.MaxFailedEpisodeChecks !== 0 && this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
         Logger.error(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}" - disabling auto download`)
+        void NotificationManager.onRSSFeedDisabled(libraryItem.media.feedURL, this.failedCheckMap[libraryItem.id], libraryItem.media.title)
         libraryItem.media.autoDownloadEpisodes = false
         delete this.failedCheckMap[libraryItem.id]
       } else {
         Logger.warn(`[PodcastManager] runEpisodeCheck ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.title}"`)
+        void NotificationManager.onRSSFeedFailed(libraryItem.media.feedURL, this.failedCheckMap[libraryItem.id], libraryItem.media.title)
       }
     } else if (newEpisodes.length) {
       delete this.failedCheckMap[libraryItem.id]
@@ -384,7 +386,17 @@ class PodcastManager {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id})`)
       return null
     }
-    const feed = await getPodcastFeed(podcastLibraryItem.media.feedURL)
+    const feed = await Promise.race([
+      getPodcastFeed(podcastLibraryItem.media.feedURL),
+      new Promise((_, reject) =>
+        // The added second is to make sure that axios can fail first and only falls back later
+        setTimeout(() => reject(new Error('Timeout. getPodcastFeed seemed to timeout but not triggering the timeout.')), global.PodcastDownloadTimeout + 1000)
+      )
+    ]).catch((error) => {
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes failed to fetch feed for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id}):`, error)
+      return null
+    })
+
     if (!feed?.episodes) {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id})`, feed)
       return null

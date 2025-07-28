@@ -193,7 +193,7 @@ export default {
       return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
@@ -819,6 +819,17 @@ export default {
   -webkit-line-clamp: 4;
   max-height: calc(6 * 1lh);
 }
+
+/* Safari-specific fix for the description clamping */
+@supports (-webkit-touch-callout: none) {
+  #item-description {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    max-height: calc(6 * 1lh);
+  }
+}
+
 #item-description.show-full {
   -webkit-line-clamp: unset;
   max-height: 999rem;
