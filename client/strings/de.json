@@ -438,7 +438,7 @@
   "LabelLogLevelWarn": "Warnungen",
   "LabelLookForNewEpisodesAfterDate": "Suche nach neuen Episoden nach diesem Datum",
   "LabelLowestPriority": "Niedrigste Priorität",
-  "LabelMatchConfidence": "Sicherheit",
+  "LabelMatchConfidence": "Vertrauenswert",
   "LabelMatchExistingUsersBy": "Zuordnen existierender Benutzer mit",
   "LabelMatchExistingUsersByDescription": "Wird zum Verbinden vorhandener Benutzer verwendet. Sobald die Verbindung hergestellt ist, wird den Benutzern eine eindeutige ID vom SSO-Anbieter zugeordnet",
   "LabelMaxEpisodesToDownload": "Max. Anzahl an Episoden zum Herunterladen, 0 für unbegrenzte Episoden.",
