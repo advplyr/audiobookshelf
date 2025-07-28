@@ -92,7 +92,7 @@ export const actions = {
       if (state.settings.orderBy == 'media.duration') {
         settingsUpdate.orderBy = 'media.numTracks'
       }
-      if (state.settings.orderBy == 'media.metadata.publishedYear') {
+      if (state.settings.orderBy == 'media.metadata.publishedYear' || state.settings.orderBy == 'progress') {
         settingsUpdate.orderBy = 'media.metadata.title'
       }
       const invalidFilters = ['series', 'authors', 'narrators', 'publishers', 'publishedDecades', 'languages', 'progress', 'issues', 'ebooks', 'abridged']
