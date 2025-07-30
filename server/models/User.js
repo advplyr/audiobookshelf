@@ -1,9 +1,11 @@
 const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
+const { LRUCache } = require('lru-cache')
+
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
-const { LRUCache } = require('lru-cache')
+const TokenManager = require('../auth/TokenManager')
 
 class UserCache {
   constructor() {
@@ -190,7 +192,7 @@ class User extends Model {
   static async createRootUser(username, pash, auth) {
     const userId = uuidv4()
 
-    const token = await auth.generateAccessToken({ id: userId, username })
+    const token = auth.generateAccessToken({ id: userId, username })
 
     const newUser = {
       id: userId,
@@ -209,18 +211,106 @@ class User extends Model {
   }
 
   /**
-   * Create user from openid userinfo
+   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
+   * or creates a new user if configured to do so.
+   *
    * @param {Object} userinfo
-   * @param {import('../Auth')} auth
    * @returns {Promise<User>}
    */
-  static async createUserFromOpenIdUserInfo(userinfo, auth) {
+  static async findOrCreateUserFromOpenIdUserInfo(userinfo) {
+    let user = await this.getUserByOpenIDSub(userinfo.sub)
+
+    // Matched by sub
+    if (user) {
+      Logger.debug(`[User] openid: User found by sub`)
+      return user
+    }
+
+    // Match existing user by email
+    if (global.ServerSettings.authOpenIDMatchExistingBy === 'email') {
+      if (userinfo.email) {
+        // Only disallow when email_verified explicitly set to false (allow both if not set or true)
+        if (userinfo.email_verified === false) {
+          Logger.warn(`[User] openid: User not found and email "${userinfo.email}" is not verified`)
+          return null
+        } else {
+          Logger.info(`[User] openid: User not found, checking existing with email "${userinfo.email}"`)
+          user = await this.getUserByEmail(userinfo.email)
+
+          if (user?.authOpenIDSub) {
+            Logger.warn(`[User] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
+            return null // User is linked to a different OpenID subject; do not proceed.
+          }
+        }
+      } else {
+        Logger.warn(`[User] openid: User not found and no email in userinfo`)
+        // We deny login, because if the admin whishes to match email, it makes sense to require it
+        return null
+      }
+    }
+    // Match existing user by username
+    else if (global.ServerSettings.authOpenIDMatchExistingBy === 'username') {
+      let username
+
+      if (userinfo.preferred_username) {
+        Logger.info(`[User] openid: User not found, checking existing with userinfo.preferred_username "${userinfo.preferred_username}"`)
+        username = userinfo.preferred_username
+      } else if (userinfo.username) {
+        Logger.info(`[User] openid: User not found, checking existing with userinfo.username "${userinfo.username}"`)
+        username = userinfo.username
+      } else {
+        Logger.warn(`[User] openid: User not found and neither preferred_username nor username in userinfo`)
+        return null
+      }
+
+      user = await this.getUserByUsername(username)
+
+      if (user?.authOpenIDSub) {
+        Logger.warn(`[User] openid: User found with username "${username}" but is already matched with sub "${user.authOpenIDSub}"`)
+        return null // User is linked to a different OpenID subject; do not proceed.
+      }
+    }
+
+    // Found existing user via email or username
+    if (user) {
+      if (!user.isActive) {
+        Logger.warn(`[User] openid: User found but is not active`)
+        return null
+      }
+
+      // Update user with OpenID sub
+      if (!user.extraData) user.extraData = {}
+      user.extraData.authOpenIDSub = userinfo.sub
+      user.changed('extraData', true)
+      await user.save()
+
+      Logger.debug(`[User] openid: User found by email/username`)
+      return user
+    }
+
+    // If no existing user was matched, auto-register if configured
+    if (global.ServerSettings.authOpenIDAutoRegister) {
+      Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+      user = await this.createUserFromOpenIdUserInfo(userinfo)
+      return user
+    }
+
+    Logger.warn(`[User] openid: User not found and auto-register is disabled`)
+    return null
+  }
+
+  /**
+   * Create user from openid userinfo
+   * @param {Object} userinfo
+   * @returns {Promise<User>}
+   */
+  static async createUserFromOpenIdUserInfo(userinfo) {
     const userId = uuidv4()
     // TODO: Ensure username is unique?
     const username = userinfo.preferred_username || userinfo.name || userinfo.sub
     const email = userinfo.email && userinfo.email_verified ? userinfo.email : null
 
-    const token = await auth.generateAccessToken({ id: userId, username })
+    const token = TokenManager.generateAccessToken({ id: userId, username })
 
     const newUser = {
       id: userId,
@@ -520,7 +610,11 @@ class User extends Model {
       username: this.username,
       email: this.email,
       type: this.type,
+      // TODO: Old non-expiring token
       token: this.type === 'root' && hideRootToken ? '' : this.token,
+      // TODO: Temporary flag not saved in db that is set in Auth.js jwtAuthCheck
+      // Necessary to detect apps using old tokens that no longer match the old token stored on the user
+      isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],

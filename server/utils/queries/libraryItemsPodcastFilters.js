@@ -59,6 +59,8 @@ module.exports = {
       replacements.filterValue = value
     } else if (group === 'languages') {
       mediaWhere['language'] = value
+    } else if (group === 'explicit') {
+      mediaWhere['explicit'] = true
     }
 
     return {

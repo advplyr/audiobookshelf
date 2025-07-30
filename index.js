@@ -4,7 +4,9 @@ const optionDefinitions = [
   { name: 'port', alias: 'p', type: String },
   { name: 'host', alias: 'h', type: String },
   { name: 'source', alias: 's', type: String },
-  { name: 'dev', alias: 'd', type: Boolean }
+  { name: 'dev', alias: 'd', type: Boolean },
+  // Run in production mode and use dev.js config
+  { name: 'prod-with-dev-env', alias: 'r', type: Boolean }
 ]
 
 const commandLineArgs = require('./server/libs/commandLineArgs')
@@ -17,7 +19,7 @@ const server = require('./server/Server')
 global.appRoot = __dirname
 
 const isDev = process.env.NODE_ENV !== 'production'
-if (isDev) {
+if (isDev || options['prod-with-dev-env']) {
   const devEnv = require('./dev').config
   if (devEnv.Port) process.env.PORT = devEnv.Port
   if (devEnv.ConfigPath) process.env.CONFIG_PATH = devEnv.ConfigPath
@@ -28,6 +30,7 @@ if (isDev) {
   if (devEnv.SkipBinariesCheck) process.env.SKIP_BINARIES_CHECK = '1'
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
+  if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
 }

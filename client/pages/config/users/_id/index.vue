@@ -13,8 +13,10 @@
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
-      <div v-if="userToken" class="flex text-xs mt-4">
-        <ui-text-input-with-label :label="$strings.LabelApiToken" :value="userToken" readonly show-copy />
+      <div v-if="legacyToken" class="text-xs space-y-2 mt-4">
+        <ui-text-input-with-label label="Legacy API Token" :value="legacyToken" readonly show-copy />
+
+        <p class="text-warning" v-html="$strings.MessageAuthenticationLegacyTokenWarning" />
       </div>
       <div class="w-full h-px bg-white/10 my-2" />
       <div class="py-2">
@@ -100,8 +102,11 @@ export default {
     }
   },
   computed: {
-    userToken() {
+    legacyToken() {
       return this.user.token
+    },
+    userToken() {
+      return this.user.accessToken
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -129,10 +134,10 @@ export default {
       return this.listeningSessions.sessions[0]
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {

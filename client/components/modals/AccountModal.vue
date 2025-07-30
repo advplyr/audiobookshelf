@@ -309,9 +309,9 @@ export default {
           } else {
             console.log('Account updated', data.user)
 
-            if (data.user.id === this.user.id && data.user.token !== this.user.token) {
-              console.log('Current user token was updated')
-              this.$store.commit('user/setUserToken', data.user.token)
+            if (data.user.id === this.user.id && data.user.accessToken !== this.user.accessToken) {
+              console.log('Current user access token was updated')
+              this.$store.commit('user/setAccessToken', data.user.accessToken)
             }
 
             this.$toast.success(this.$strings.ToastAccountUpdateSuccess)
@@ -350,9 +350,6 @@ export default {
           var errMsg = error.response ? error.response.data || '' : ''
           this.$toast.error(errMsg || 'Failed to create account')
         })
-    },
-    toggleActive() {
-      this.newUser.isActive = !this.newUser.isActive
     },
     userTypeUpdated(type) {
       this.newUser.permissions = {

@@ -144,7 +144,7 @@ export default {
     expirationDateString() {
       if (!this.expireDurationSeconds) return this.$strings.LabelPermanent
       const dateMs = Date.now() + this.expireDurationSeconds * 1000
-      return this.$formatDatetime(dateMs, this.$store.state.serverSettings.dateFormat, this.$store.state.serverSettings.timeFormat)
+      return this.$formatDatetime(dateMs, this.$store.getters['getServerSetting']('dateFormat'), this.$store.getters['getServerSetting']('timeFormat'))
     }
   },
   methods: {

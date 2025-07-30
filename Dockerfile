@@ -57,7 +57,7 @@ WORKDIR /app
 # Copy compiled frontend and server from build stages
 COPY --from=build-client /client/dist /app/client/dist
 COPY --from=build-server /server /app
-COPY --from=build-server /usr/local/lib/nusqlite3 /usr/local/lib/nusqlite3
+COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 
 EXPOSE 80
 

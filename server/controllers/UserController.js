@@ -127,8 +127,8 @@ class UserController {
     }
 
     const userId = uuidv4()
-    const pash = await this.auth.hashPass(req.body.password)
-    const token = await this.auth.generateAccessToken({ id: userId, username: req.body.username })
+    const pash = await this.auth.localAuthStrategy.hashPassword(req.body.password)
+    const token = this.auth.generateAccessToken({ id: userId, username: req.body.username })
     const userType = req.body.type || 'user'
 
     // librariesAccessible and itemTagsSelected can be on req.body or req.body.permissions
@@ -237,6 +237,7 @@ class UserController {
 
     let hasUpdates = false
     let shouldUpdateToken = false
+    let shouldInvalidateJwtSessions = false
     // When changing username create a new API token
     if (updatePayload.username && updatePayload.username !== user.username) {
       const usernameExists = await Database.userModel.checkUserExistsWithUsername(updatePayload.username)
@@ -245,12 +246,13 @@ class UserController {
       }
       user.username = updatePayload.username
       shouldUpdateToken = true
+      shouldInvalidateJwtSessions = true
       hasUpdates = true
     }
 
     // Updating password
     if (updatePayload.password) {
-      user.pash = await this.auth.hashPass(updatePayload.password)
+      user.pash = await this.auth.localAuthStrategy.hashPassword(updatePayload.password)
       hasUpdates = true
     }
 
@@ -325,9 +327,24 @@ class UserController {
 
     if (hasUpdates) {
       if (shouldUpdateToken) {
-        user.token = await this.auth.generateAccessToken(user)
+        user.token = this.auth.generateAccessToken(user)
         Logger.info(`[UserController] User ${user.username} has generated a new api token`)
       }
+
+      // Handle JWT session invalidation for username changes
+      if (shouldInvalidateJwtSessions) {
+        const newAccessToken = await this.auth.invalidateJwtSessionsForUser(user, req, res)
+        if (newAccessToken) {
+          user.accessToken = newAccessToken
+          // Refresh tokens are only returned for mobile clients
+          // Mobile apps currently do not use this API endpoint so always set to null
+          user.refreshToken = null
+          Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username} and rotated tokens for current session`)
+        } else {
+          Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username}`)
+        }
+      }
+
       await user.save()
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toOldJSONForBrowser())
     }
@@ -422,7 +439,16 @@ class UserController {
     const page = toNumber(req.query.page, 0)
 
     const start = page * itemsPerPage
-    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+    // Map user to sessions to match the format of the sessions endpoint
+    const sessions = listeningSessions.slice(start, start + itemsPerPage).map((session) => {
+      return {
+        ...session,
+        user: {
+          id: req.reqUser.id,
+          username: req.reqUser.username
+        }
+      }
+    })
 
     const payload = {
       total: listeningSessions.length,

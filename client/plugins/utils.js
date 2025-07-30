@@ -37,6 +37,48 @@ Vue.prototype.$elapsedPretty = (seconds, useFullNames = false, useMilliseconds =
   return `${hours} ${useFullNames ? `hour${hours === 1 ? '' : 's'}` : 'hr'} ${minutes} ${useFullNames ? `minute${minutes === 1 ? '' : 's'}` : 'min'}`
 }
 
+Vue.prototype.$elapsedPrettyLocalized = (seconds, useFullNames = false, useMilliseconds = false) => {
+  if (isNaN(seconds) || seconds === null) return ''
+
+  try {
+    const df = new Intl.DurationFormat(Vue.prototype.$languageCodes.current, {
+      style: useFullNames ? 'long' : 'short'
+    })
+
+    const duration = {}
+
+    if (seconds < 60) {
+      if (useMilliseconds && seconds < 1) {
+        duration.milliseconds = Math.floor(seconds * 1000)
+      } else {
+        duration.seconds = Math.floor(seconds)
+      }
+    } else if (seconds < 3600) {
+      // 1 hour
+      duration.minutes = Math.floor(seconds / 60)
+    } else if (seconds < 86400) {
+      // 1 day
+      duration.hours = Math.floor(seconds / 3600)
+      const minutes = Math.floor((seconds % 3600) / 60)
+      if (minutes > 0) {
+        duration.minutes = minutes
+      }
+    } else {
+      duration.days = Math.floor(seconds / 86400)
+      const hours = Math.floor((seconds % 86400) / 3600)
+      if (hours > 0) {
+        duration.hours = hours
+      }
+    }
+
+    return df.format(duration)
+  } catch (error) {
+    // Handle not supported
+    console.warn('Intl.DurationFormat not supported, not localizing duration')
+    return Vue.prototype.$elapsedPretty(seconds, useFullNames, useMilliseconds)
+  }
+}
+
 Vue.prototype.$secondsToTimestamp = (seconds, includeMs = false, alwaysIncludeHours = false) => {
   if (!seconds) {
     return alwaysIncludeHours ? '00:00:00' : '0:00'

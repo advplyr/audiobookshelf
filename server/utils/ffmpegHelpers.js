@@ -103,18 +103,39 @@ module.exports.resizeImage = resizeImage
  */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
-    const response = await axios({
-      url: podcastEpisodeDownload.url,
-      method: 'GET',
-      responseType: 'stream',
-      headers: {
-        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
-      },
-      timeout: global.PodcastDownloadTimeout
-    }).catch((error) => {
-      Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
-      return null
-    })
+    // Some podcasts fail due to user agent strings
+    // See: https://github.com/advplyr/audiobookshelf/issues/3246 (requires iTMS user agent)
+    // See: https://github.com/advplyr/audiobookshelf/issues/4401 (requires no iTMS user agent)
+    const userAgents = ['audiobookshelf (+https://audiobookshelf.org; like iTMS)', 'audiobookshelf (+https://audiobookshelf.org)']
+
+    let response = null
+    let lastError = null
+
+    for (const userAgent of userAgents) {
+      try {
+        response = await axios({
+          url: podcastEpisodeDownload.url,
+          method: 'GET',
+          responseType: 'stream',
+          headers: {
+            'User-Agent': userAgent
+          },
+          timeout: global.PodcastDownloadTimeout
+        })
+
+        Logger.debug(`[ffmpegHelpers] Successfully connected with User-Agent: ${userAgent}`)
+        break
+      } catch (error) {
+        lastError = error
+        Logger.warn(`[ffmpegHelpers] Failed to download podcast episode with User-Agent "${userAgent}" for url "${podcastEpisodeDownload.url}"`, error.message)
+
+        // If this is the last attempt, log the full error
+        if (userAgent === userAgents[userAgents.length - 1]) {
+          Logger.error(`[ffmpegHelpers] All User-Agent attempts failed for url "${podcastEpisodeDownload.url}"`, lastError)
+        }
+      }
+    }
+
     if (!response) {
       return resolve({
         success: false

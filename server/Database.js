@@ -42,6 +42,16 @@ class Database {
     return this.models.user
   }
 
+  /** @type {typeof import('./models/Session')} */
+  get sessionModel() {
+    return this.models.session
+  }
+
+  /** @type {typeof import('./models/ApiKey')} */
+  get apiKeyModel() {
+    return this.models.apiKey
+  }
+
   /** @type {typeof import('./models/Library')} */
   get libraryModel() {
     return this.models.library
@@ -311,6 +321,8 @@ class Database {
 
   buildModels(force = false) {
     require('./models/User').init(this.sequelize)
+    require('./models/Session').init(this.sequelize)
+    require('./models/ApiKey').init(this.sequelize)
     require('./models/Library').init(this.sequelize)
     require('./models/LibraryFolder').init(this.sequelize)
     require('./models/Book').init(this.sequelize)
@@ -656,6 +668,9 @@ class Database {
    * Series should have atleast one Book
    * Book and Podcast must have an associated LibraryItem (and vice versa)
    * Remove playback sessions that are 3 seconds or less
+   * Remove duplicate mediaProgresses
+   * Remove expired auth sessions
+   * Deactivate expired api keys
    */
   async cleanDatabase() {
     // Remove invalid Podcast records
@@ -764,6 +779,60 @@ class Database {
     })
     if (badSessionsRemoved > 0) {
       Logger.warn(`Removed ${badSessionsRemoved} sessions that were 3 seconds or less`)
+    }
+
+    // Remove mediaProgresses with duplicate mediaItemId (remove the oldest updatedAt or if updatedAt is the same, remove arbitrary one)
+    const [duplicateMediaProgresses] = await this.sequelize.query(`SELECT mp1.id, mp1.mediaItemId
+FROM mediaProgresses mp1
+WHERE EXISTS (
+    SELECT 1
+    FROM mediaProgresses mp2
+    WHERE mp2.mediaItemId = mp1.mediaItemId
+    AND mp2.userId = mp1.userId
+    AND (
+        mp2.updatedAt > mp1.updatedAt
+        OR (mp2.updatedAt = mp1.updatedAt AND mp2.id < mp1.id)
+    )
+)`)
+    for (const duplicateMediaProgress of duplicateMediaProgresses) {
+      Logger.warn(`Found duplicate mediaProgress for mediaItem "${duplicateMediaProgress.mediaItemId}" - removing it`)
+      await this.mediaProgressModel.destroy({
+        where: { id: duplicateMediaProgress.id }
+      })
+    }
+
+    // Remove expired Session records
+    await this.cleanupExpiredSessions()
+
+    // Deactivate expired api keys
+    await this.deactivateExpiredApiKeys()
+  }
+
+  /**
+   * Deactivate expired api keys
+   */
+  async deactivateExpiredApiKeys() {
+    try {
+      const affectedCount = await this.apiKeyModel.deactivateExpiredApiKeys()
+      if (affectedCount > 0) {
+        Logger.info(`[Database] Deactivated ${affectedCount} expired api keys`)
+      }
+    } catch (error) {
+      Logger.error(`[Database] Error deactivating expired api keys: ${error.message}`)
+    }
+  }
+
+  /**
+   * Clean up expired sessions from the database
+   */
+  async cleanupExpiredSessions() {
+    try {
+      const deletedCount = await this.sessionModel.cleanupExpiredSessions()
+      if (deletedCount > 0) {
+        Logger.info(`[Database] Cleaned up ${deletedCount} expired sessions`)
+      }
+    } catch (error) {
+      Logger.error(`[Database] Error cleaning up expired sessions: ${error.message}`)
     }
   }
 

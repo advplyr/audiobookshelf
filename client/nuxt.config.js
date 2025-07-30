@@ -73,7 +73,8 @@ module.exports = {
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    baseURL: routerBasePath
+    baseURL: routerBasePath,
+    progress: false
   },
 
   // nuxt/pwa https://pwa.nuxtjs.org

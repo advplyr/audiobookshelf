@@ -79,10 +79,10 @@ export default {
       return !this.bookmarks.find((bm) => Math.abs(this.currentTime - bm.time) < 1)
     },
     dateFormat() {
-      return this.$store.state.serverSettings.dateFormat
+      return this.$store.getters['getServerSetting']('dateFormat')
     },
     timeFormat() {
-      return this.$store.state.serverSettings.timeFormat
+      return this.$store.getters['getServerSetting']('timeFormat')
     }
   },
   methods: {
