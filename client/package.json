@@ -12,7 +12,8 @@
     "generate": "nuxt generate",
     "test": "npm run compile-tailwind && cypress run --component --browser chrome",
     "test-visually": "npm run compile-tailwind && cypress open --component --browser chrome",
-    "compile-tailwind": "npx @tailwindcss/cli -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css"
+    "compile-tailwind": "npx @tailwindcss/cli -i ./assets/tailwind.css -o ./cypress/support/tailwind.compiled.css",
+    "postinstall": "patch-package"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@nuxtjs/pwa": "^3.3.5",
     "@tailwindcss/cli": "^4.0.14",
+    "patch-package": "^8.0.0",
     "postcss": "^8.3.6",
     "tailwindcss": "^4.0.13"
   },
