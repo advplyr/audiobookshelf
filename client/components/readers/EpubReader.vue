@@ -57,9 +57,6 @@ export default {
     }
   },
   computed: {
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     /** @returns {string} */
     libraryItemId() {
       return this.libraryItem?.id
@@ -97,27 +94,37 @@ export default {
     },
     ebookUrl() {
       if (this.fileId) {
-        return `${this.$config.routerBasePath}/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
-      return `${this.$config.routerBasePath}/api/items/${this.libraryItemId}/ebook`
+      return `/api/items/${this.libraryItemId}/ebook`
     },
     themeRules() {
-      const isDark = this.ereaderSettings.theme === 'dark'
-      const fontColor = isDark ? '#fff' : '#000'
-      const backgroundColor = isDark ? 'rgb(35 35 35)' : 'rgb(255, 255, 255)'
+      const theme = this.ereaderSettings.theme
+      const isDark = theme === 'dark'
+      const isSepia = theme === 'sepia'
+
+      const fontColor = isDark
+        ? '#fff'
+        : isSepia
+        ? '#5b4636'
+        : '#000'
+
+      const backgroundColor = isDark
+        ? 'rgb(35 35 35)'
+        : isSepia
+        ? 'rgb(244, 236, 216)'
+        : 'rgb(255, 255, 255)'
 
       const lineSpacing = this.ereaderSettings.lineSpacing / 100
-
-      const fontScale = this.ereaderSettings.fontScale / 100
-
-      const textStroke = this.ereaderSettings.textStroke / 100
+      const fontScale   = this.ereaderSettings.fontScale   / 100
+      const textStroke  = this.ereaderSettings.textStroke  / 100
 
       return {
         '*': {
           color: `${fontColor}!important`,
           'background-color': `${backgroundColor}!important`,
-          'line-height': lineSpacing * fontScale + 'rem!important',
-          '-webkit-text-stroke': textStroke + 'px ' + fontColor + '!important'
+          'line-height': `${lineSpacing * fontScale}rem!important`,
+          '-webkit-text-stroke': `${textStroke}px ${fontColor}!important`
         },
         a: {
           color: `${fontColor}!important`
@@ -309,14 +316,24 @@ export default {
       /** @type {EpubReader} */
       const reader = this
 
+      // Use axios to make request because we have token refresh logic in interceptor
+      const customRequest = async (url) => {
+        try {
+          return this.$axios.$get(url, {
+            responseType: 'arraybuffer'
+          })
+        } catch (error) {
+          console.error('EpubReader.initEpub customRequest failed:', error)
+          throw error
+        }
+      }
+
       /** @type {ePub.Book} */
       reader.book = new ePub(reader.ebookUrl, {
         width: this.readerWidth,
         height: this.readerHeight - 50,
         openAs: 'epub',
-        requestHeaders: {
-          Authorization: `Bearer ${this.userToken}`
-        }
+        requestMethod: customRequest
       })
 
       /** @type {ePub.Rendition} */
@@ -337,29 +354,33 @@ export default {
         this.applyTheme()
       })
 
-      reader.book.ready.then(() => {
-        // set up event listeners
-        reader.rendition.on('relocated', reader.relocated)
-        reader.rendition.on('keydown', reader.keyUp)
+      reader.book.ready
+        .then(() => {
+          // set up event listeners
+          reader.rendition.on('relocated', reader.relocated)
+          reader.rendition.on('keydown', reader.keyUp)
 
-        reader.rendition.on('touchstart', (event) => {
-          this.$emit('touchstart', event)
-        })
-        reader.rendition.on('touchend', (event) => {
-          this.$emit('touchend', event)
-        })
-
-        // load ebook cfi locations
-        const savedLocations = this.loadLocations()
-        if (savedLocations) {
-          reader.book.locations.load(savedLocations)
-        } else {
-          reader.book.locations.generate().then(() => {
-            this.checkSaveLocations(reader.book.locations.save())
+          reader.rendition.on('touchstart', (event) => {
+            this.$emit('touchstart', event)
           })
-        }
-        this.getChapters()
-      })
+          reader.rendition.on('touchend', (event) => {
+            this.$emit('touchend', event)
+          })
+
+          // load ebook cfi locations
+          const savedLocations = this.loadLocations()
+          if (savedLocations) {
+            reader.book.locations.load(savedLocations)
+          } else {
+            reader.book.locations.generate().then(() => {
+              this.checkSaveLocations(reader.book.locations.save())
+            })
+          }
+          this.getChapters()
+        })
+        .catch((error) => {
+          console.error('EpubReader.initEpub failed:', error)
+        })
     },
     getChapters() {
       // Load the list of chapters in the book. See https://github.com/futurepress/epub.js/issues/759

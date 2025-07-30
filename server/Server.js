@@ -156,13 +156,10 @@ class Server {
     }
 
     await Database.init(false)
+    // Create or set JWT secret in token manager
+    await this.auth.tokenManager.initTokenSecret()
 
     await Logger.logManager.init()
-
-    // Create token secret if does not exist (Added v2.1.0)
-    if (!Database.serverSettings.tokenSecret) {
-      await this.auth.initTokenSecret()
-    }
 
     await this.cleanUserData() // Remove invalid user item progress
     await CacheManager.ensureCachePaths()
@@ -243,7 +240,7 @@ class Server {
        * Running in development allows cors to allow testing the mobile apps in the browser
        * or env variable ALLOW_CORS = '1'
        */
-      if (Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
+      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost']
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
@@ -264,7 +261,7 @@ class Server {
     // enable express-session
     app.use(
       expressSession({
-        secret: global.ServerSettings.tokenSecret,
+        secret: this.auth.tokenManager.TokenSecret,
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -309,7 +306,9 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-    router.use(express.json({ limit: '10mb' }))
+
+    // Skip JSON parsing for internal-api routes
+    router.use(/^(?!\/internal-api).*/, express.json({ limit: '10mb' }))
 
     router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
     router.use('/hls', this.hlsRouter.router)
@@ -404,6 +403,7 @@ class Server {
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
       router.get('*', (req, res) => handle(req, res))
+      router.post('/internal-api/*', (req, res) => handle(req, res))
     }
 
     const unixSocketPrefix = 'unix/'
@@ -428,7 +428,7 @@ class Server {
     Logger.info(`[Server] Initializing new server`)
     const newRoot = req.body.newRoot
     const rootUsername = newRoot.username || 'root'
-    const rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
+    const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
     await Database.createRootUser(rootUsername, rootPash, this.auth)
 

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" id="reader" :data-theme="ereaderTheme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black" :class="{ 'reader-player-open': !!streamLibraryItem }">
+  <div v-if="show" id="reader" :data-theme="ereaderTheme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black data-[theme=sepia]:bg-[rgb(244,236,216)] data-[theme=sepia]:text-[#5b4636]" :class="{ 'reader-player-open': !!streamLibraryItem }">
     <div class="absolute top-4 left-4 z-20 flex items-center">
       <button v-if="isEpub" @click="toggleToC" type="button" aria-label="Table of contents menu" class="inline-flex opacity-80 hover:opacity-100">
         <span class="material-symbols text-2xl">menu</span>
@@ -27,7 +27,12 @@
 
     <!-- TOC side nav -->
     <div v-if="tocOpen" class="w-full h-full overflow-y-scroll absolute inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
-    <div v-if="isEpub" class="w-96 h-full max-h-full absolute top-0 left-0 shadow-xl transition-transform z-30 group-data-[theme=dark]:bg-primary group-data-[theme=dark]:text-white group-data-[theme=light]:bg-white group-data-[theme=light]:text-black" :class="tocOpen ? 'translate-x-0' : '-translate-x-96'" @click.stop.prevent>
+    <div
+      v-if="isEpub"
+      class="w-96 h-full max-h-full absolute top-0 left-0 shadow-xl transition-transform z-30 group-data-[theme=dark]:bg-primary group-data-[theme=dark]:text-white group-data-[theme=light]:bg-white group-data-[theme=light]:text-black group-data-[theme=sepia]:bg-[rgb(244,236,216)] group-data-[theme=sepia]:text-[#5b4636]"
+      :class="tocOpen ? 'translate-x-0' : '-translate-x-96'"
+      @click.stop.prevent
+    >
       <div class="flex flex-col p-4 h-full">
         <div class="flex items-center mb-2">
           <button @click.stop.prevent="toggleToC" type="button" aria-label="Close table of contents" class="inline-flex opacity-80 hover:opacity-100">
@@ -37,7 +42,7 @@
           <p class="text-lg font-semibold ml-2">{{ $strings.HeaderTableOfContents }}</p>
         </div>
         <form @submit.prevent="searchBook" @click.stop.prevent>
-          <ui-text-input clearable ref="input" @clear="searchBook" v-model="searchQuery" :placeholder="$strings.PlaceholderSearch" class="h-8 w-full text-sm flex mb-2" />
+          <ui-text-input clearable ref="input" @clear="searchBook" v-model="searchQuery" :placeholder="$strings.PlaceholderSearch" custom-input-class="text-inherit !bg-inherit" class="h-8 w-full text-sm flex mb-2" />
         </form>
 
         <div class="overflow-y-auto">
@@ -182,6 +187,10 @@ export default {
             value: 'dark'
           },
           {
+            text: this.$strings.LabelThemeSepia,
+            value: 'sepia'
+          },
+          {
             text: this.$strings.LabelThemeLight,
             value: 'light'
           }
@@ -265,9 +274,6 @@ export default {
     },
     isComic() {
       return this.ebookFormat == 'cbz' || this.ebookFormat == 'cbr'
-    },
-    userToken() {
-      return this.$store.getters['user/getToken']
     },
     keepProgress() {
       return this.$store.state.ereaderKeepProgress

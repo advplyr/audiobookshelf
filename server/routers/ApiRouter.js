@@ -34,6 +34,7 @@ const CustomMetadataProviderController = require('../controllers/CustomMetadataP
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
+const ApiKeyController = require('../controllers/ApiKeyController')
 
 class ApiRouter {
   constructor(Server) {
@@ -181,7 +182,7 @@ class ApiRouter {
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
-    this.router.patch('/me/password', MeController.updatePassword.bind(this))
+    this.router.patch('/me/password', this.auth.authRateLimiter, MeController.updatePassword.bind(this))
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
@@ -324,6 +325,14 @@ class ApiRouter {
     //
     this.router.get('/stats/year/:year', StatsController.middleware.bind(this), StatsController.getAdminStatsForYear.bind(this))
     this.router.get('/stats/server', StatsController.middleware.bind(this), StatsController.getServerStats.bind(this))
+
+    //
+    // API Key Routes
+    //
+    this.router.get('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.getAll.bind(this))
+    this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
+    this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
+    this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
 
     //
     // Misc Routes

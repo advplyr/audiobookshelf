@@ -7,7 +7,7 @@ const FantLab = require('../providers/FantLab')
 const AudiobookCovers = require('../providers/AudiobookCovers')
 const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
-const { levenshteinDistance, escapeRegExp } = require('../utils/index')
+const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class BookFinder {
@@ -385,7 +385,11 @@ class BookFinder {
 
     if (!title) return books
 
-    books = await this.runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance)
+    const isTitleAsin = isValidASIN(title.toUpperCase())
+
+    let actualTitleQuery = title
+    let actualAuthorQuery = author
+    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
 
     if (!books.length && maxFuzzySearches > 0) {
       // Normalize title and author
@@ -408,19 +412,26 @@ class BookFinder {
         for (const titlePart of titleParts) titleCandidates.add(titlePart)
         titleCandidates = titleCandidates.getCandidates()
         for (const titleCandidate of titleCandidates) {
-          if (titleCandidate == title && authorCandidate == author) continue // We already tried this
+          if (titleCandidate == actualTitleQuery && authorCandidate == actualAuthorQuery) continue // We already tried this
           if (++numFuzzySearches > maxFuzzySearches) break loop_author
-          books = await this.runSearch(titleCandidate, authorCandidate, provider, asin, maxTitleDistance, maxAuthorDistance)
+          actualTitleQuery = titleCandidate
+          actualAuthorQuery = authorCandidate
+          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
           if (books.length) break loop_author
         }
       }
     }
 
     if (books.length) {
-      const resultsHaveDuration = provider.startsWith('audible')
-      if (resultsHaveDuration && libraryItem?.media?.duration) {
-        const libraryItemDurationMinutes = libraryItem.media.duration / 60
-        // If provider results have duration, sort by ascendinge duration difference from libraryItem
+      const isAudibleProvider = provider.startsWith('audible')
+      const libraryItemDurationMinutes = libraryItem?.media?.duration ? libraryItem.media.duration / 60 : null
+
+      books.forEach((book) => {
+        if (typeof book !== 'object' || !isAudibleProvider) return
+        book.matchConfidence = this.calculateMatchConfidence(book, libraryItemDurationMinutes, actualTitleQuery, actualAuthorQuery, isTitleAsin)
+      })
+
+      if (isAudibleProvider && libraryItemDurationMinutes) {
         books.sort((a, b) => {
           const aDuration = a.duration || Number.POSITIVE_INFINITY
           const bDuration = b.duration || Number.POSITIVE_INFINITY
@@ -431,6 +442,120 @@ class BookFinder {
       }
     }
     return books
+  }
+
+  /**
+   * Calculate match confidence score for a book
+   * @param {Object} book - The book object to calculate confidence for
+   * @param {number|null} libraryItemDurationMinutes - Duration of library item in minutes
+   * @param {string} actualTitleQuery - Actual title query
+   * @param {string} actualAuthorQuery - Actual author query
+   * @param {boolean} isTitleAsin - Whether the title is an ASIN
+   * @returns {number|null} - Match confidence score or null if not applicable
+   */
+  calculateMatchConfidence(book, libraryItemDurationMinutes, actualTitleQuery, actualAuthorQuery, isTitleAsin) {
+    // ASIN results are always a match
+    if (isTitleAsin) return 1.0
+
+    let durationScore
+    if (libraryItemDurationMinutes && typeof book.duration === 'number') {
+      const durationDiff = Math.abs(book.duration - libraryItemDurationMinutes)
+      // Duration scores:
+      // diff | score
+      // 0    | 1.0
+      // 1    | 1.0
+      // 2    | 0.9
+      // 3    | 0.8
+      // 4    | 0.7
+      // 5    | 0.6
+      // 6    | 0.48
+      // 7    | 0.36
+      // 8    | 0.24
+      // 9    | 0.12
+      // 10   | 0.0
+      if (durationDiff <= 1) {
+        // Covers durationDiff = 0 for score 1.0
+        durationScore = 1.0
+      } else if (durationDiff <= 5) {
+        // (1, 5] - Score from 1.0 down to 0.6
+        // Linearly interpolates between (1, 1.0) and (5, 0.6)
+        // Equation: y = 1.0 - 0.08 * x
+        durationScore = 1.1 - 0.1 * durationDiff
+      } else if (durationDiff <= 10) {
+        // (5, 10] - Score from 0.6 down to 0.0
+        // Linearly interpolates between (5, 0.6) and (10, 0.0)
+        // Equation: y = 1.2 - 0.12 * x
+        durationScore = 1.2 - 0.12 * durationDiff
+      } else {
+        // durationDiff > 10 - Score is 0.0
+        durationScore = 0.0
+      }
+      Logger.debug(`[BookFinder] Duration diff: ${durationDiff}, durationScore: ${durationScore}`)
+    } else {
+      // Default score if library item duration or book duration is not available
+      durationScore = 0.1
+    }
+
+    const calculateTitleScore = (titleQuery, book, keepSubtitle = false) => {
+      const cleanTitle = cleanTitleForCompares(book.title || '', keepSubtitle)
+      const cleanSubtitle = keepSubtitle && book.subtitle ? `: ${book.subtitle}` : ''
+      const normBookTitle = `${cleanTitle}${cleanSubtitle}`
+      const normTitleQuery = cleanTitleForCompares(titleQuery, keepSubtitle)
+      const titleSimilarity = levenshteinSimilarity(normTitleQuery, normBookTitle)
+      Logger.debug(`[BookFinder] keepSubtitle: ${keepSubtitle}, normBookTitle: ${normBookTitle}, normTitleQuery: ${normTitleQuery}, titleSimilarity: ${titleSimilarity}`)
+      return titleSimilarity
+    }
+    const titleQueryHasSubtitle = hasSubtitle(actualTitleQuery)
+    const titleScore = calculateTitleScore(actualTitleQuery, book, titleQueryHasSubtitle)
+
+    let authorScore
+    const normAuthorQuery = cleanAuthorForCompares(actualAuthorQuery)
+    const normBookAuthor = cleanAuthorForCompares(book.author || '')
+    if (!normAuthorQuery) {
+      // Original query had no author
+      authorScore = 1.0 // Neutral score
+    } else {
+      // Original query HAS an author (cleanedQueryAuthorForScore is not empty)
+      if (normBookAuthor) {
+        const bookAuthorParts = normBookAuthor.split(',').map((name) => name.trim().toLowerCase())
+        // Filter out empty parts that might result from ", ," or trailing/leading commas
+        const validBookAuthorParts = bookAuthorParts.filter((p) => p.length > 0)
+
+        if (validBookAuthorParts.length === 0) {
+          // Book author string was present but effectively empty (e.g. ",,")
+          // Since cleanedQueryAuthorForScore is non-empty here, this is a mismatch.
+          authorScore = 0.0
+        } else {
+          let maxPartScore = levenshteinSimilarity(normAuthorQuery, normBookAuthor)
+          Logger.debug(`[BookFinder] normAuthorQuery: ${normAuthorQuery}, normBookAuthor: ${normBookAuthor}, similarity: ${maxPartScore}`)
+          if (validBookAuthorParts.length > 1 || normBookAuthor.includes(',')) {
+            validBookAuthorParts.forEach((part) => {
+              // part is guaranteed to be non-empty here
+              // cleanedQueryAuthorForScore is also guaranteed non-empty here.
+              // levenshteinDistance lowercases by default, but part is already lowercased.
+              const similarity = levenshteinSimilarity(normAuthorQuery, part)
+              Logger.debug(`[BookFinder] normAuthorQuery: ${normAuthorQuery}, bookAuthorPart: ${part}, similarity: ${similarity}`)
+              const currentPartScore = similarity
+              maxPartScore = Math.max(maxPartScore, currentPartScore)
+            })
+          }
+          authorScore = maxPartScore
+        }
+      } else {
+        // Book has NO author (or not a string, or empty string)
+        // Query has an author (cleanedQueryAuthorForScore is non-empty), book does not.
+        authorScore = 0.0
+      }
+    }
+
+    const W_DURATION = 0.7
+    const W_TITLE = 0.2
+    const W_AUTHOR = 0.1
+
+    Logger.debug(`[BookFinder] Duration score: ${durationScore}, Title score: ${titleScore}, Author score: ${authorScore}`)
+    const confidence = W_DURATION * durationScore + W_TITLE * titleScore + W_AUTHOR * authorScore
+    Logger.debug(`[BookFinder] Confidence: ${confidence}`)
+    return Math.max(0, Math.min(1, confidence))
   }
 
   /**
@@ -464,6 +589,7 @@ class BookFinder {
     } else {
       books = await this.getGoogleBooksResults(title, author)
     }
+
     books.forEach((book) => {
       if (book.description) {
         book.description = htmlSanitizer.sanitize(book.description)
@@ -505,6 +631,9 @@ class BookFinder {
 }
 module.exports = new BookFinder()
 
+function hasSubtitle(title) {
+  return title.includes(':') || title.includes(' - ')
+}
 function stripSubtitle(title) {
   if (title.includes(':')) {
     return title.split(':')[0].trim()
@@ -523,12 +652,12 @@ function replaceAccentedChars(str) {
   }
 }
 
-function cleanTitleForCompares(title) {
+function cleanTitleForCompares(title, keepSubtitle = false) {
   if (!title) return ''
   title = stripRedundantSpaces(title)
 
   // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
-  let stripped = stripSubtitle(title)
+  let stripped = keepSubtitle ? title : stripSubtitle(title)
 
   // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
   let cleaned = stripped.replace(/ *\([^)]*\) */g, '')

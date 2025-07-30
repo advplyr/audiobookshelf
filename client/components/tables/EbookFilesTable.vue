@@ -49,9 +49,6 @@ export default {
     libraryItemId() {
       return this.libraryItem.id
     },
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },

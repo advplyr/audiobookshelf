@@ -55,7 +55,8 @@ export default {
       loadedRatio: 0,
       page: 1,
       numPages: 0,
-      pdfDocInitParams: null
+      pdfDocInitParams: null,
+      isRefreshing: false
     }
   },
   computed: {
@@ -152,7 +153,34 @@ export default {
       this.page++
       this.updateProgress()
     },
-    error(err) {
+    async refreshToken() {
+      if (this.isRefreshing) return
+      this.isRefreshing = true
+      const newAccessToken = await this.$store.dispatch('user/refreshToken').catch((error) => {
+        console.error('Failed to refresh token', error)
+        return null
+      })
+      if (!newAccessToken) {
+        // Redirect to login on failed refresh
+        this.$router.push('/login')
+        return
+      }
+
+      // Force Vue to re-render the PDF component by creating a new object
+      this.pdfDocInitParams = {
+        url: this.ebookUrl,
+        httpHeaders: {
+          Authorization: `Bearer ${newAccessToken}`
+        }
+      }
+      this.isRefreshing = false
+    },
+    async error(err) {
+      if (err && err.status === 401) {
+        console.log('Received 401 error, refreshing token')
+        await this.refreshToken()
+        return
+      }
       console.error(err)
     },
     resize() {

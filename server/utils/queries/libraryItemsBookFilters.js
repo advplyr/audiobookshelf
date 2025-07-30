@@ -399,9 +399,6 @@ module.exports = {
     if (filterGroup !== 'series' && sortBy === 'sequence') {
       sortBy = 'media.metadata.title'
     }
-    if (filterGroup !== 'progress' && sortBy === 'progress') {
-      sortBy = 'media.metadata.title'
-    }
     const includeRSSFeed = include.includes('rssfeed')
     const includeMediaItemShare = !!user?.isAdminOrUp && include.includes('share')
 
@@ -530,6 +527,18 @@ module.exports = {
       libraryItemWhere['createdAt'] = {
         [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       }
+    }
+
+    // When sorting by progress but not filtering by progress, include media progresses
+    if (filterGroup !== 'progress' && sortBy === 'progress') {
+      bookIncludes.push({
+        model: Database.mediaProgressModel,
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
+        where: {
+          userId: user.id
+        },
+        required: false
+      })
     }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
