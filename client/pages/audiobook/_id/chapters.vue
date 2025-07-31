@@ -609,6 +609,11 @@ export default {
           data.chapters.pop()
         }
 
+        // Remove Branding durations from Runtime totals
+        data.runtimeLengthMs -= introDuration + outroDuration
+        data.runtimeLengthSec = Math.floor(data.runtimeLengthMs / 1000)
+        console.log('Brandless Chapter data', data)
+
         return data
       } catch {
         return data
