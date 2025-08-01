@@ -1,0 +1,37 @@
+diff --git a/node_modules/epubjs/lib/managers/continuous/index.js b/node_modules/epubjs/lib/managers/continuous/index.js
+index 4912876..a27dec2 100644
+--- a/node_modules/epubjs/lib/managers/continuous/index.js
++++ b/node_modules/epubjs/lib/managers/continuous/index.js
+@@ -91,14 +91,12 @@ class ContinuousViewManager extends _default2.default {
+     } else {
+       distX = Math.floor(offset.left / this.layout.delta) * this.layout.delta;
+       offsetX = distX + this.settings.offsetDelta;
+-    }
+-
+-    if (distX > 0 || distY > 0) {
+-      this.scrollBy(distX, distY, true);
+-    }
+-  }
++		}
+ 
+-  afterResized(view) {
++		if (distX > 0 || distY > 0) {
++			this.scrollTo(distX, distY, true);
++		}
++	}  afterResized(view) {
+     this.emit(_constants.EVENTS.MANAGERS.RESIZE, view.section);
+   } // Remove Previous Listeners if present
+ 
+diff --git a/node_modules/epubjs/src/managers/continuous/index.js b/node_modules/epubjs/src/managers/continuous/index.js
+index d61f8f7..0743938 100644
+--- a/node_modules/epubjs/src/managers/continuous/index.js
++++ b/node_modules/epubjs/src/managers/continuous/index.js
+@@ -90,7 +90,7 @@ class ContinuousViewManager extends DefaultViewManager {
+ 		}
+ 
+ 		if (distX > 0 || distY > 0) {
+-			this.scrollBy(distX, distY, true);
++			this.scrollTo(distX, distY, true);
+ 		}
+ 	}
+ 
