@@ -572,7 +572,7 @@ export default {
           if (data.error) {
             this.asinError = this.$getString(data.stringKey)
           } else {
-            console.log('Chapter data', data)
+            console.log('Chapter data', { ...data })
             this.chapterData = this.removeBranding ? this.removeBrandingFromData(data) : data
           }
         })
