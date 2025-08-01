@@ -169,6 +169,7 @@ export default {
       if (updateResult) {
         if (updateResult.updated) {
           this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
+          this.$eventBus.$emit(`${this.libraryItemId}_updated`, updateResult.libraryItem)
           return true
         } else {
           this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
