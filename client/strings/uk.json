@@ -805,6 +805,8 @@
   "MessageFeedURLWillBe": "URL-адреса каналу буде {0}",
   "MessageFetching": "Отримання...",
   "MessageForceReScanDescription": "Просканує всі файли заново, як при першому скануванні. ID3-мітки, OPF-файли та текстові файли будуть проскановані як нові.",
+  "MessageHeatmapListeningTimeTooltip": "<strong>{0} прослуховування</strong> на {1}",
+  "MessageHeatmapNoListeningSessions": "Немає сеансів прослуховування на {0}",
   "MessageImportantNotice": "Важливе повідомлення!",
   "MessageInsertChapterBelow": "Введіть главу нижче",
   "MessageInvalidAsin": "Невірний ASIN",
