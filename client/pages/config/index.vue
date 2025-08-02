@@ -141,6 +141,10 @@
           </div>
 
           <div class="py-2">
+            <ui-dropdown :label="$strings.LabelCalendarFirstDayOfWeek" v-model="newServerSettings.calendarFirstDayOfWeek" :items="firstDayOfWeekOptions" small class="max-w-52" @input="(val) => updateSettingsKey('calendarFirstDayOfWeek', val)" />
+          </div>
+
+          <div class="py-2">
             <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
 
@@ -271,6 +275,12 @@ export default {
     timeExample() {
       const date = new Date(2014, 2, 25, 17, 30, 0)
       return this.$formatJsTime(date, this.newServerSettings.timeFormat)
+    },
+    firstDayOfWeekOptions() {
+      return this.$store.state.globals.firstDayOfWeekOptions.map((option) => ({
+        text: this.$strings[option.labelKey] || option.text,
+        value: option.value
+      }))
     }
   },
   methods: {
@@ -353,6 +363,10 @@ export default {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
       this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
+
+      if (this.newServerSettings.calendarFirstDayOfWeek === undefined) {
+        this.newServerSettings.calendarFirstDayOfWeek = 0
+      }
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
