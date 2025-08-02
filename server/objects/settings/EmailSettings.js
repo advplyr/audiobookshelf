@@ -21,6 +21,7 @@ class EmailSettings {
     this.pass = null
     this.testAddress = null
     this.fromAddress = null
+    this.tlsServerName = null
 
     /** @type {EreaderDeviceObject[]} */
     this.ereaderDevices = []
@@ -39,6 +40,7 @@ class EmailSettings {
     this.pass = settings.pass
     this.testAddress = settings.testAddress
     this.fromAddress = settings.fromAddress
+    this.tlsServerName = settings.tlsServerName || process.env.SMTP_TLS_SERVERNAME || null
     this.ereaderDevices = settings.ereaderDevices?.map((d) => ({ ...d })) || []
 
     // rejectUnauthorized added after v2.10.1 - defaults to true
@@ -58,6 +60,7 @@ class EmailSettings {
       pass: this.pass,
       testAddress: this.testAddress,
       fromAddress: this.fromAddress,
+      tlsServerName: this.tlsServerName,
       ereaderDevices: this.ereaderDevices.map((d) => ({ ...d }))
     }
   }
@@ -128,9 +131,14 @@ class EmailSettings {
       }
     }
     // Allow self-signed certs (https://nodemailer.com/smtp/#3-allow-self-signed-certificates)
-    if (!this.rejectUnauthorized) {
-      payload.tls = {
-        rejectUnauthorized: false
+    // And allows hostname validation for IP addresses (https://nodemailer.com/smtp/#general-options)
+    if (!this.rejectUnauthorized || this.tlsServerName) {
+      payload.tls = payload.tls || {}
+      if (!this.rejectUnauthorized) {
+        payload.tls.rejectUnauthorized = false
+      }
+      if (this.tlsServerName) {
+        payload.tls.servername = this.tlsServerName
       }
     }
 
