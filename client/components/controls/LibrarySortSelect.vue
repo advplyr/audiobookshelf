@@ -7,7 +7,7 @@
       </span>
     </button>
 
-    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 ring-1 ring-black/5 overflow-auto focus:outline-hidden text-sm" role="menu">
+    <ul v-show="showMenu" class="librarySortMenu absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 ring-1 ring-black/5 overflow-auto focus:outline-hidden text-sm" role="menu">
       <template v-for="item in selectItems">
         <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="menuitem" @click="clickedOption(item.value)">
           <div class="flex items-center">
@@ -131,6 +131,10 @@ export default {
           value: 'mtimeMs'
         },
         {
+          text: this.$strings.LabelLibrarySortByProgress,
+          value: 'progress'
+        },
+        {
           text: this.$strings.LabelRandomly,
           value: 'random'
         }
@@ -191,3 +195,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.librarySortMenu {
+  max-height: calc(100vh - 125px);
+}
+</style>

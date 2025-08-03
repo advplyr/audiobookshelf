@@ -450,7 +450,7 @@ class MeController {
     if (updated) {
       await Database.updateSetting(Database.emailSettings)
       SocketAuthority.clientEmitter(req.user.id, 'ereader-devices-updated', {
-        ereaderDevices: Database.emailSettings.ereaderDevices
+        ereaderDevices: Database.emailSettings.getEReaderDevices(req.user)
       })
     }
     res.json({

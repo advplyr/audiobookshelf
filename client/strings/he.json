@@ -1,5 +1,6 @@
 {
   "ButtonAdd": "הוסף",
+  "ButtonAddApiKey": "הוסף מפתח ממשק תכנות (API)",
   "ButtonAddChapters": "הוסף פרקים",
   "ButtonAddDevice": "הוסף התקן",
   "ButtonAddLibrary": "הוסף ספרייה",
@@ -20,6 +21,7 @@
   "ButtonChooseAFolder": "בחר תיקייה",
   "ButtonChooseFiles": "בחר קבצים",
   "ButtonClearFilter": "נקה סינון",
+  "ButtonClose": "סגור",
   "ButtonCloseFeed": "סגור ערוץ",
   "ButtonCloseSession": "סגור סשן פתוח",
   "ButtonCollections": "אוספים",

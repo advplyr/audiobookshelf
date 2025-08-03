@@ -101,7 +101,8 @@
         <!-- Podcast Episode # -->
         <div cy-id="podcastEpisodeNumber" v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black/90 box-shadow-md z-10" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `${0.1}em ${0.25}em` }">
           <p :style="{ fontSize: 0.8 + 'em' }">
-            Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
+            Episode
+            <span v-if="recentEpisodeNumber">#{{ recentEpisodeNumber }}</span>
           </p>
         </div>
 
@@ -199,6 +200,9 @@ export default {
     },
     dateFormat() {
       return this.store.getters['getServerSetting']('dateFormat')
+    },
+    timeFormat() {
+      return this.store.getters['getServerSetting']('timeFormat')
     },
     _libraryItem() {
       return this.libraryItem || {}
@@ -345,6 +349,10 @@ export default {
         if (this.mediaMetadata.publishedYear) return this.$getString('LabelPublishedDate', [this.mediaMetadata.publishedYear])
         return '\u00A0'
       }
+      if (this.orderBy === 'progress') {
+        if (!this.userProgressLastUpdated) return '\u00A0'
+        return this.$getString('LabelLastProgressDate', [this.$formatDatetime(this.userProgressLastUpdated, this.dateFormat, this.timeFormat)])
+      }
       return null
     },
     episodeProgress() {
@@ -376,6 +384,10 @@ export default {
     userProgressPercent() {
       let progressPercent = this.itemIsFinished ? 1 : this.booksInSeries ? this.seriesProgressPercent : this.useEBookProgress ? this.userProgress?.ebookProgress || 0 : this.userProgress?.progress || 0
       return Math.max(Math.min(1, progressPercent), 0)
+    },
+    userProgressLastUpdated() {
+      if (!this.userProgress) return null
+      return this.userProgress.lastUpdate
     },
     itemIsFinished() {
       if (this.booksInSeries) return this.seriesIsFinished
