@@ -145,7 +145,7 @@
           </div>
 
           <div class="py-2">
-            <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" label="Allowed Cors" class="max-w-52" @input="updateCorsOrigins" />
+            <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" :label="$strings.LabelCorsAllowed" class="max-w-52" @input="updateCorsOrigins" />
           </div>
 
           <!-- old experimental features -->
@@ -338,7 +338,7 @@ export default {
       })
 
       if (containsInvalid) {
-        this.$toast.error('Invalid CORS origin')
+        this.$toast.error(this.$strings.ToastInvalidUrls)
         this.newServerSettings.allowedOrigins = val.map((origin) => origin.trim().toLowerCase())
         return
       }
