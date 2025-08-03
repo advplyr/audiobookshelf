@@ -293,7 +293,7 @@
   "LabelContinueListening": "Continue Listening",
   "LabelContinueReading": "Continue Reading",
   "LabelContinueSeries": "Continue Series",
-  "LabelCorsAllowed": "Allowed CORS",
+  "LabelCorsAllowed": "Allowed CORS Origins",
   "LabelCover": "Cover",
   "LabelCoverImageURL": "Cover Image URL",
   "LabelCoverProvider": "Cover Provider",
