@@ -144,6 +144,10 @@
             <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
 
+          <div class="py-2">
+            <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" label="Allowed Cors" class="max-w-52" @input="updateCorsOrigins" />
+          </div>
+
           <!-- old experimental features -->
           <!-- <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
@@ -323,6 +327,26 @@ export default {
     updateServerLanguage(val) {
       this.updateSettingsKey('language', val)
     },
+    updateCorsOrigins(val) {
+      const containsInvalid = val.some((origin) => {
+        try {
+          new URL(origin)
+          return false
+        } catch {
+          return true
+        }
+      })
+
+      if (containsInvalid) {
+        this.$toast.error('Invalid CORS origin')
+        this.newServerSettings.allowedOrigins = val.map((origin) => origin.trim().toLowerCase())
+        return
+      }
+
+      this.newServerSettings.allowedOrigins = val.map((origin) => origin.trim().toLowerCase())
+
+      this.updateSettingsKey('allowedOrigins', this.newServerSettings.allowedOrigins)
+    },
     updateSettingsKey(key, val) {
       if (key === 'scannerDisableWatcher') {
         this.newServerSettings.scannerDisableWatcher = val
@@ -352,6 +376,7 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
+      this.newServerSettings.allowedOrigins = [...(this.newServerSettings.allowedOrigins || [])]
       this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL

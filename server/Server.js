@@ -240,8 +240,8 @@ class Server {
        * Running in development allows cors to allow testing the mobile apps in the browser
        * or env variable ALLOW_CORS = '1'
        */
-      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
-        const allowedOrigins = ['capacitor://localhost', 'http://localhost']
+      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) || global.ServerSettings.allowedOrigins?.length) {
+        const allowedOrigins = ['capacitor://localhost', 'http://localhost', ...(global.ServerSettings.allowedOrigins ? global.ServerSettings.allowedOrigins : [])]
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
