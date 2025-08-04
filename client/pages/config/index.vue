@@ -131,35 +131,26 @@
           </div>
 
           <div class="grow py-2">
-            <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
+            <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-72" @input="(val) => updateSettingsKey('dateFormat', val)" />
             <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
           </div>
 
           <div class="grow py-2">
-            <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-52" @input="(val) => updateSettingsKey('timeFormat', val)" />
+            <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-72" @input="(val) => updateSettingsKey('timeFormat', val)" />
             <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
           </div>
 
           <div class="py-2">
-            <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
+            <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-72" @input="updateServerLanguage" />
           </div>
 
-          <!-- old experimental features -->
-          <!-- <div class="pt-4">
-            <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
+          <div class="pt-4">
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsSecurity }}</h2>
           </div>
 
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-experimental-features" v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="$strings.LabelSettingsExperimentalFeaturesHelp">
-              <p class="pl-4">
-                <span id="settings-experimental-features">{{ $strings.LabelSettingsExperimentalFeatures }}</span>
-                <a :aria-label="$strings.LabelSettingsExperimentalFeaturesHelp" href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
-                  <span class="material-symbols icon-text">info</span>
-                </a>
-              </p>
-            </ui-tooltip>
-          </div> -->
+          <div class="py-2">
+            <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" :label="$strings.LabelCorsAllowed" class="max-w-72" @input="updateCorsOrigins" />
+          </div>
         </div>
       </div>
     </app-settings-content>
@@ -323,6 +314,27 @@ export default {
     updateServerLanguage(val) {
       this.updateSettingsKey('language', val)
     },
+    updateCorsOrigins(val) {
+      const validOrigins = []
+      const invalidOrigins = []
+
+      val.forEach((origin) => {
+        const trimmedOrigin = origin.trim().toLowerCase()
+        try {
+          new URL(trimmedOrigin)
+          validOrigins.push(trimmedOrigin)
+        } catch {
+          invalidOrigins.push(trimmedOrigin)
+        }
+      })
+
+      if (invalidOrigins.length > 0) {
+        this.$toast.error(this.$strings.ToastInvalidUrls)
+      }
+
+      this.newServerSettings.allowedOrigins = validOrigins
+      this.updateSettingsKey('allowedOrigins', validOrigins)
+    },
     updateSettingsKey(key, val) {
       if (key === 'scannerDisableWatcher') {
         this.newServerSettings.scannerDisableWatcher = val
@@ -352,6 +364,7 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
+      this.newServerSettings.allowedOrigins = [...(this.newServerSettings.allowedOrigins || [])]
       this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
