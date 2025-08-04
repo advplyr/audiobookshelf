@@ -328,24 +328,25 @@ export default {
       this.updateSettingsKey('language', val)
     },
     updateCorsOrigins(val) {
-      const containsInvalid = val.some((origin) => {
+      const validOrigins = []
+      const invalidOrigins = []
+
+      val.forEach((origin) => {
+        const trimmedOrigin = origin.trim().toLowerCase()
         try {
-          new URL(origin)
-          return false
+          new URL(trimmedOrigin)
+          validOrigins.push(trimmedOrigin)
         } catch {
-          return true
+          invalidOrigins.push(trimmedOrigin)
         }
       })
 
-      if (containsInvalid) {
+      if (invalidOrigins.length > 0) {
         this.$toast.error(this.$strings.ToastInvalidUrls)
-        this.newServerSettings.allowedOrigins = val.map((origin) => origin.trim().toLowerCase())
-        return
       }
 
-      this.newServerSettings.allowedOrigins = val.map((origin) => origin.trim().toLowerCase())
-
-      this.updateSettingsKey('allowedOrigins', this.newServerSettings.allowedOrigins)
+      this.newServerSettings.allowedOrigins = validOrigins
+      this.updateSettingsKey('allowedOrigins', validOrigins)
     },
     updateSettingsKey(key, val) {
       if (key === 'scannerDisableWatcher') {
