@@ -151,23 +151,6 @@
           <div class="py-2">
             <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" :label="$strings.LabelCorsAllowed" class="max-w-72" @input="updateCorsOrigins" />
           </div>
-
-          <!-- old experimental features -->
-          <!-- <div class="pt-4">
-            <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
-          </div>
-
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-experimental-features" v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="$strings.LabelSettingsExperimentalFeaturesHelp">
-              <p class="pl-4">
-                <span id="settings-experimental-features">{{ $strings.LabelSettingsExperimentalFeatures }}</span>
-                <a :aria-label="$strings.LabelSettingsExperimentalFeaturesHelp" href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
-                  <span class="material-symbols icon-text">info</span>
-                </a>
-              </p>
-            </ui-tooltip>
-          </div> -->
         </div>
       </div>
     </app-settings-content>
