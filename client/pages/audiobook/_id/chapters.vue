@@ -207,8 +207,8 @@
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
             <p>
-              {{ $strings.LabelDurationFound }} <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span
-              ><br />
+              {{ $strings.LabelDurationFound }} <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span>
+              <br />
               <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapterData.chapters.length }}</span> {{ $strings.LabelChaptersFound }}
             </p>
             <p>
@@ -244,12 +244,13 @@
               <p class="pl-2">{{ $strings.MessageChapterStartIsAfter }}</p>
             </div>
           </div>
-          <div class="flex items-center pt-2">
-            <ui-btn small color="bg-primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
-            <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
-              <span class="material-symbols text-xl text-gray-200">info</span>
-            </ui-tooltip>
-            <div class="grow" />
+          <div class="flex items-center pt-2 justify-between">
+            <div class="flex items-center gap-2">
+              <ui-btn small color="bg-primary" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
+              <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
+                <span class="material-symbols text-xl text-gray-200">info</span>
+              </ui-tooltip>
+            </div>
             <ui-btn small color="bg-success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
           </div>
         </div>
@@ -262,9 +263,8 @@
         </div>
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative p-6">
-        <div class="flex flex-col space-y-4">
-          <p class="text-lg font-semibold">{{ $strings.HeaderBulkChapterModal }}</p>
-          <p class="text-gray-300">{{ $strings.MessageBulkChapterPattern }}</p>
+        <div class="flex flex-col space-y-8">
+          <p class="text-gray-300 text-lg">{{ $strings.MessageBulkChapterPattern }}</p>
 
           <div v-if="detectedPattern" class="text-sm text-gray-400 bg-gray-800 p-2 rounded">
             <strong>{{ $strings.LabelDetectedPattern }}</strong> "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber, detectedPattern) }}{{ detectedPattern.after }}"
@@ -272,13 +272,15 @@
             <strong>{{ $strings.LabelNextChapters }}</strong>
             "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 1, detectedPattern) }}{{ detectedPattern.after }}", "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 2, detectedPattern) }}{{ detectedPattern.after }}", etc.
           </div>
-          <div class="flex items-center space-x-2">
-            <label class="text-sm font-medium">{{ $strings.LabelNumberOfChapters }}</label>
-            <ui-text-input v-model="bulkChapterCount" type="number" min="1" max="50" class="w-20" @keyup.enter="addBulkChapters" />
+          <div class="flex px-1 items-center">
+            <label class="text-lg font-medium">{{ $strings.LabelNumberOfChapters }}</label>
+            <div class="grow" />
+            <ui-text-input v-model="bulkChapterCount" type="number" min="1" max="50" class="w-14" :style="{ height: `2em` }" @keyup.enter="addBulkChapters" />
           </div>
-          <div class="flex items-center space-x-2 pt-4">
-            <ui-btn color="bg-success" @click="addBulkChapters">{{ $strings.ButtonAddChapters }}</ui-btn>
+          <div class="flex px-1 items-center">
             <ui-btn @click="showBulkChapterModal = false">{{ $strings.ButtonCancel }}</ui-btn>
+            <div class="grow" />
+            <ui-btn color="bg-success" @click="addBulkChapters">{{ $strings.ButtonAddChapters }}</ui-btn>
           </div>
         </div>
       </div>
@@ -414,7 +416,7 @@ export default {
         currentStartTime += track.duration
       }
       this.newChapters = chapters
-
+      this.lockedChapters = new Set()
       this.checkChapters()
     },
     toggleRemoveBranding() {
@@ -707,7 +709,7 @@ export default {
     },
     applyChapterNamesOnly() {
       this.newChapters.forEach((chapter, index) => {
-        if (this.chapterData.chapters[index]) {
+        if (this.chapterData.chapters[index] && !this.lockedChapters.has(chapter.id)) {
           chapter.title = this.chapterData.chapters[index].title
         }
       })
@@ -719,7 +721,7 @@ export default {
     },
     applyChapterData() {
       let index = 0
-      this.newChapters = this.chapterData.chapters
+      const audibleChapters = this.chapterData.chapters
         .filter((chap) => chap.startOffsetSec < this.mediaDuration)
         .map((chap) => {
           return {
@@ -729,6 +731,21 @@ export default {
             title: chap.title
           }
         })
+
+      const merged = []
+      let audibleIdx = 0
+      for (let i = 0; i < Math.max(this.newChapters.length, audibleChapters.length); i++) {
+        const isLocked = this.lockedChapters.has(i)
+        if (isLocked && this.newChapters[i]) {
+          merged.push({ ...this.newChapters[i], id: i })
+        } else if (audibleChapters[audibleIdx]) {
+          merged.push({ ...audibleChapters[audibleIdx], id: i })
+          audibleIdx++
+        } else if (this.newChapters[i]) {
+          merged.push({ ...this.newChapters[i], id: i })
+        }
+      }
+      this.newChapters = merged
       this.showFindChaptersModal = false
       this.chapterData = null
 
@@ -827,6 +844,7 @@ export default {
           }
         ]
       }
+      this.lockedChapters = new Set()
       this.checkChapters()
     },
     removeAllChaptersClick() {
