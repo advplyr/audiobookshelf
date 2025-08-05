@@ -572,7 +572,7 @@ export default {
           if (data.error) {
             this.asinError = this.$getString(data.stringKey)
           } else {
-            console.log('Chapter data', data)
+            console.log('Chapter data', { ...data })
             this.chapterData = this.removeBranding ? this.removeBrandingFromData(data) : data
           }
         })
@@ -608,6 +608,11 @@ export default {
         if (lastChapter && lastChapter.lengthMs <= outroDuration) {
           data.chapters.pop()
         }
+
+        // Remove Branding durations from Runtime totals
+        data.runtimeLengthMs -= introDuration + outroDuration
+        data.runtimeLengthSec = Math.floor(data.runtimeLengthMs / 1000)
+        console.log('Brandless Chapter data', data)
 
         return data
       } catch {
