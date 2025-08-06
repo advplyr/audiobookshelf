@@ -15,8 +15,8 @@
       </template>
     </div>
 
-    <!-- Divider if both sections have covers -->
-    <div v-if="primaryCovers.length && secondaryCovers.length" class="w-full border-b border-white/10 my-4"></div>
+    <!-- Divider only shows when there are covers in both sections -->
+    <div v-if="hasBothCoverTypes" class="w-full border-b border-white/10 my-4"></div>
 
     <!-- Secondary Covers Section (opposite aspect ratio) -->
     <div v-if="secondaryCovers.length" class="flex items-center flex-wrap justify-center">
@@ -57,9 +57,10 @@ export default {
   computed: {
     // Sort covers by dimension and size
     sortedCovers() {
+      // sort by height, then sub-sort by width
       return [...this.covers].sort((a, b) => {
-        // Sort by area (width * height)
-        return a.width * a.height - b.width * b.height
+        // Sort by height first, then by width
+        return a.height - b.height || a.width - b.width
       })
     },
     // Get square covers (width === height)
@@ -77,6 +78,10 @@ export default {
     // Determine secondary covers (opposite of primary)
     secondaryCovers() {
       return this.bookCoverAspectRatio === 1 ? this.rectangleCovers : this.squareCovers
+    },
+    // Check if we have both types of covers to show the divider
+    hasBothCoverTypes() {
+      return this.primaryCovers.length > 0 && this.secondaryCovers.length > 0
     }
   }
 }
