@@ -70,63 +70,9 @@
     </form>
 
     <!-- Cover Search Results -->
-    <div v-if="hasSearched" class="flex flex-col items-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
-      <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
-
-      <!-- Conditional Rendering Based on bookCoverAspectRatio -->
-      <template v-if="bookCoverAspectRatio === 1">
-        <!-- Square Covers First -->
-        <template v-if="squareCovers.length">
-          <div class="flex items-center flex-wrap justify-center">
-            <template v-for="cover in squareCovers">
-              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
-                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-              </div>
-            </template>
-          </div>
-        </template>
-
-        <!-- Divider if there are rectangle covers -->
-        <div v-if="rectangleCovers.length" class="w-full border-b border-white/10 my-4"></div>
-
-        <!-- Rectangle Covers -->
-        <template v-if="rectangleCovers.length">
-          <div class="flex items-center flex-wrap justify-center">
-            <template v-for="cover in rectangleCovers">
-              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
-                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-              </div>
-            </template>
-          </div>
-        </template>
-      </template>
-
-      <template v-else>
-        <!-- Rectangle Covers First -->
-        <template v-if="rectangleCovers.length">
-          <div class="flex items-center flex-wrap justify-center">
-            <template v-for="cover in rectangleCovers">
-              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
-                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-              </div>
-            </template>
-          </div>
-        </template>
-
-        <!-- Divider if there are square covers -->
-        <div v-if="squareCovers.length" class="w-full border-b border-white/10 my-4"></div>
-
-        <!-- Square Covers -->
-        <template v-if="squareCovers.length">
-          <div class="flex items-center flex-wrap justify-center">
-            <template v-for="cover in squareCovers">
-              <div :key="cover.src" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.src === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover.src)">
-                <covers-preview-cover :src="cover.src" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-              </div>
-            </template>
-          </div>
-        </template>
-      </template>
+    <div v-if="hasSearched" class="mt-2">
+      <p v-if="!coversFound.length" class="text-center">{{ $strings.MessageNoCoversFound }}</p>
+      <covers-sorted-covers v-else :covers="sortedCovers" :book-cover-aspect-ratio="bookCoverAspectRatio" :selected-cover="coverPath" @select-cover="updateCover" />
     </div>
 
     <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
@@ -391,26 +337,32 @@ export default {
         })
     },
     async resolveImages() {
+      console.log(this.coversFound)
       const resolvedImages = await Promise.all(
         this.coversFound.map((cover) => {
           return new Promise((resolve) => {
             const img = new Image()
             img.src = cover
             img.onload = () => {
-              resolve({ src: cover, width: img.width, height: img.height })
+              resolve({
+                url: cover,
+                width: img.width,
+                height: img.height
+              })
+            }
+            img.onerror = () => {
+              // Resolve with default dimensions if image fails to load
+              resolve({
+                url: cover,
+                width: 400,
+                height: 600
+              })
             }
           })
         })
       )
-      // Sort images: squares first, then rectangles by area
-      this.sortedCovers = resolvedImages.sort((a, b) => {
-        // Prioritize square images (-1 for square, 1 for non-square)
-        const squareComparison = (b.width === b.height) - (a.width === a.height)
-        if (squareComparison !== 0) return squareComparison
-
-        // Sub-sort by width (ascending order)
-        return a.width - b.width
-      })
+      this.sortedCovers = resolvedImages
+      console.log('Resolved covers:', this.sortedCovers)
       return this.sortedCovers
     }
   }
