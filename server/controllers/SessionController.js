@@ -302,6 +302,16 @@ class SessionController {
     const user = await Database.userModel.getUserById(playbackSession.userId)
     Logger.debug(`[SessionController] Serving audio track ${audioTrack.index} for session "${req.params.id}" belonging to user "${user.username}"`)
 
+    // Handle HLS streams - they have contentUrl and mimeType set but no metadata
+    if (!audioTrack.metadata && audioTrack.contentUrl) {
+      Logger.debug(`[SessionController] Redirecting to HLS stream: ${audioTrack.contentUrl}`)
+      if (audioTrack.mimeType) {
+        res.setHeader('Content-Type', audioTrack.mimeType)
+      }
+      return res.redirect(audioTrack.contentUrl)
+    }
+
+    // Handle regular audio files
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + audioTrack.metadata.path)
       Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
