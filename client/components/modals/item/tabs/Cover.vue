@@ -337,7 +337,6 @@ export default {
         })
     },
     async resolveImages() {
-      console.log(this.coversFound)
       const resolvedImages = await Promise.all(
         this.coversFound.map((cover) => {
           return new Promise((resolve) => {
@@ -362,7 +361,6 @@ export default {
         })
       )
       this.sortedCovers = resolvedImages
-      console.log('Resolved covers:', this.sortedCovers)
       return this.sortedCovers
     }
   }
