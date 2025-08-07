@@ -4,6 +4,7 @@ const Logger = require('../Logger')
 const Database = require('../Database')
 const { toNumber, isUUID } = require('../utils/index')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
+const { PlayMethod } = require('../utils/constants')
 
 const ShareManager = require('../managers/ShareManager')
 
@@ -297,6 +298,18 @@ class SessionController {
     if (!audioTrack) {
       Logger.error(`[SessionController] Unable to find audio track with index=${audioTrackIndex}`)
       return res.sendStatus(404)
+    }
+
+    // Redirect transcode requests to the HLS router
+    // Handles bug introduced in android v0.10.0-beta where transcode requests are made to this endpoint
+    if (playbackSession.playMethod === PlayMethod.TRANSCODE && audioTrack.contentUrl) {
+      Logger.debug(`[SessionController] Redirecting transcode request to "${audioTrack.contentUrl}"`)
+      return res.redirect(audioTrack.contentUrl)
+    }
+
+    if (!audioTrack.metadata?.path) {
+      Logger.error(`[SessionController] Invalid audio track "${audioTrack.index}" for session "${req.params.id}"`)
+      return res.sendStatus(500)
     }
 
     const user = await Database.userModel.getUserById(playbackSession.userId)
