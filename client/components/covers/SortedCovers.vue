@@ -5,7 +5,7 @@
 <template>
   <div class="flex flex-col items-center sm:max-h-80 sm:overflow-y-scroll max-w-full">
     <!-- Primary Covers Section (based on preferred aspect ratio) -->
-    <div v-if="primaryCovers.length" class="flex items-center flex-wrap justify-center">
+    <div cy-id="primaryCoversSectionContainer" v-if="primaryCovers.length" class="flex items-center flex-wrap justify-center">
       <template v-for="cover in primaryCovers">
         <div :key="cover.url" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.url === selectedCover ? 'border-yellow-300' : ''" @click="$emit('select-cover', cover.url)">
           <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
@@ -16,10 +16,10 @@
     </div>
 
     <!-- Divider only shows when there are covers in both sections -->
-    <div v-if="hasBothCoverTypes" class="w-full border-b border-white/10 my-4"></div>
+    <div cy-id="sortedCoversDivider" v-if="hasBothCoverTypes" class="w-full border-b border-white/10 my-4"></div>
 
     <!-- Secondary Covers Section (opposite aspect ratio) -->
-    <div v-if="secondaryCovers.length" class="flex items-center flex-wrap justify-center">
+    <div cy-id="secondaryCoversSectionContainer" v-if="secondaryCovers.length" class="flex items-center flex-wrap justify-center">
       <template v-for="cover in secondaryCovers">
         <div :key="cover.url" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.url === selectedCover ? 'border-yellow-300' : ''" @click="$emit('select-cover', cover.url)">
           <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
