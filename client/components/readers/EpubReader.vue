@@ -1,13 +1,15 @@
 <template>
   <div id="epub-reader" class="h-full w-full">
     <div class="h-full flex items-center justify-center">
-      <button type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
+      <button v-if="ereaderSettings.flow === 'paginated'" type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
         <span v-if="hasPrev" class="material-symbols text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
       </button>
-      <div id="frame" class="w-full" style="height: 80%">
-        <div id="viewer"></div>
+
+      <div id="frame" class="w-full" :class="isScrolled() ? 'absolute bottom-0 h-[90%]' : 'h-[80%]'">
+        <div id="viewer" class="flex justify-center" :class="{ 'h-full': isScrolled() }"></div>
       </div>
-      <button type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
+
+      <button v-if="ereaderSettings.flow === 'paginated'" type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
         <span v-if="hasNext" class="material-symbols text-6xl" @mousedown.prevent @click="next">chevron_right</span>
       </button>
     </div>
@@ -47,7 +49,9 @@ export default {
         fontScale: 100,
         lineSpacing: 115,
         spread: 'auto',
-        textStroke: 0
+        textStroke: 0,
+        flow: 'paginated',
+        widthPercentage: 100
       }
     }
   },
@@ -85,12 +89,12 @@ export default {
       return `ebookLocations-${this.libraryItemId}`
     },
     readerWidth() {
-      if (this.windowWidth < 640) return this.windowWidth
-      return this.windowWidth - 200
+      let width = Math.floor((this.windowWidth * this.ereaderSettings.widthPercentage) / 100)
+
+      return this.windowWidth < 640 || this.isScrolled() ? width : width - 200
     },
     readerHeight() {
-      if (this.windowHeight < 400 || !this.playerOpen) return this.windowHeight
-      return this.windowHeight - 164
+      return this.windowHeight < 400 || !this.playerOpen ? this.windowHeight : this.windowHeight - 164
     },
     ebookUrl() {
       if (this.fileId) {
@@ -103,21 +107,13 @@ export default {
       const isDark = theme === 'dark'
       const isSepia = theme === 'sepia'
 
-      const fontColor = isDark
-        ? '#fff'
-        : isSepia
-        ? '#5b4636'
-        : '#000'
+      const fontColor = isDark ? '#fff' : isSepia ? '#5b4636' : '#000'
 
-      const backgroundColor = isDark
-        ? 'rgb(35 35 35)'
-        : isSepia
-        ? 'rgb(244, 236, 216)'
-        : 'rgb(255, 255, 255)'
+      const backgroundColor = isDark ? 'rgb(35 35 35)' : isSepia ? 'rgb(244, 236, 216)' : 'rgb(255, 255, 255)'
 
       const lineSpacing = this.ereaderSettings.lineSpacing / 100
-      const fontScale   = this.ereaderSettings.fontScale   / 100
-      const textStroke  = this.ereaderSettings.textStroke  / 100
+      const fontScale = this.ereaderSettings.fontScale / 100
+      const textStroke = this.ereaderSettings.textStroke / 100
 
       return {
         '*': {
@@ -144,6 +140,11 @@ export default {
       this.rendition.themes.fontSize(`${fontScale}%`)
       this.rendition.themes.font(settings.font)
       this.rendition.spread(settings.spread || 'auto')
+      this.rendition.flow(settings.flow || 'paginated')
+      this.resize()
+    },
+    isScrolled() {
+      return this.ereaderSettings.flow === 'scrolled-continuous'
     },
     prev() {
       if (!this.rendition?.manager) return
@@ -312,6 +313,31 @@ export default {
         })
       }
     },
+    /**
+     * Adds a bottom spacer div to the last page's iframe content to allow extra scroll space.
+     * @param {object} view - The view object containing the iframe.
+     * @param {object} section - The current section object with an index.
+     */
+    addBottomSpacerToLastPage(view, section) {
+      const isLastPage = section.index === this.book?.spine?.spineItems?.length - 1
+      const doc = view?.iframe?.contentDocument || view?.iframe?.contentWindow?.document
+
+      if (!isLastPage || !doc) return
+
+      const existingSpacer = doc.getElementById('bottom-spacer')
+
+      if (!this.isScrolled()) {
+        existingSpacer?.remove()
+        return
+      }
+
+      if (existingSpacer) return
+
+      const newSpacer = doc.createElement('div')
+      newSpacer.id = 'bottom-spacer'
+      newSpacer.style.height = Math.floor(window.innerHeight / 2) + 'px'
+      doc.body.appendChild(newSpacer)
+    },
     initEpub() {
       /** @type {EpubReader} */
       const reader = this
@@ -338,20 +364,17 @@ export default {
 
       /** @type {ePub.Rendition} */
       reader.rendition = reader.book.renderTo('viewer', {
-        width: this.readerWidth,
-        height: this.readerHeight * 0.8,
         allowScriptedContent: this.allowScriptedContent,
-        spread: 'auto',
         snap: true,
-        manager: 'continuous',
-        flow: 'paginated'
+        manager: 'continuous'
       })
 
       // load saved progress
       reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
 
-      reader.rendition.on('rendered', () => {
+      reader.rendition.on('rendered', (section, view) => {
         this.applyTheme()
+        this.addBottomSpacerToLastPage(view, section)
       })
 
       reader.book.ready
@@ -453,7 +476,8 @@ export default {
     resize() {
       this.windowWidth = window.innerWidth
       this.windowHeight = window.innerHeight
-      this.rendition?.resize(this.readerWidth, this.readerHeight * 0.8)
+
+      this.rendition.resize(this.readerWidth, this.readerHeight * (this.isScrolled() ? 0.9 : 0.8))
     },
     applyTheme() {
       if (!this.rendition) return
@@ -474,3 +498,10 @@ export default {
   }
 }
 </script>
+<style>
+.epub-container {
+  /* Fixes unexpected scroll jump issue with epubjs continuous scroll: see https://github.com/futurepress/epub.js/issues/1303 */
+  overflow-anchor: none !important;
+  scrollbar-width: none;
+}
+</style>

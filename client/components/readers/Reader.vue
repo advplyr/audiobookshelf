@@ -109,11 +109,23 @@
           </div>
           <ui-range-input v-model="ereaderSettings.textStroke" :min="0" :max="300" :step="5" @input="settingsUpdated" />
         </div>
+        <div class="flex items-center mb-4">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelPageWidth }}:</p>
+          </div>
+          <ui-range-input v-model="ereaderSettings.widthPercentage" :min="10" :max="100" :step="5" @input="settingsUpdated" />
+        </div>
+        <div class="flex items-center mb-4">
+          <div class="w-40">
+            <p class="text-lg">{{ $strings.LabelPageFlow }}:</p>
+          </div>
+          <ui-toggle-btns v-model="ereaderSettings.flow" :items="flowItems" @input="settingsUpdated" />
+        </div>
         <div class="flex items-center">
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelLayout }}:</p>
           </div>
-          <ui-toggle-btns v-model="ereaderSettings.spread" :items="spreadItems" @input="settingsUpdated" />
+          <ui-toggle-btns :disabled="ereaderSettings.flow === 'scrolled-continuous'" v-model="ereaderSettings.spread" :items="spreadItems" @input="settingsUpdated" />
         </div>
       </div>
     </modals-modal>
@@ -143,7 +155,9 @@ export default {
         lineSpacing: 115,
         fontBoldness: 100,
         spread: 'auto',
-        textStroke: 0
+        textStroke: 0,
+        flow: 'paginated',
+        widthPercentage: 100
       }
     }
   },
@@ -176,6 +190,18 @@ export default {
         {
           text: this.$strings.LabelLayoutSplitPage,
           value: 'auto'
+        }
+      ]
+    },
+    flowItems() {
+      return [
+        {
+          text: this.$strings.LabelFlowPaginated,
+          value: 'paginated'
+        },
+        {
+          text: this.$strings.LabelFlowScrolled,
+          value: 'scrolled-continuous'
         }
       ]
     },
