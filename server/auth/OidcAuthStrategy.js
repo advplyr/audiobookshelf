@@ -110,6 +110,8 @@ class OidcAuthStrategy {
    * @param {Function} done - Passport callback
    */
   async verifyCallback(tokenset, userinfo, done) {
+    let isNewUser = false
+    let user = null
     try {
       Logger.debug(`[OidcAuth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
 
@@ -121,9 +123,24 @@ class OidcAuthStrategy {
         throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
       }
 
-      let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo)
+      user = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
 
-      if (!user?.isActive) {
+      if (user?.error) {
+        throw new Error('Invalid userinfo or already linked')
+      }
+
+      if (!user) {
+        // If no existing user was matched, auto-register if configured
+        if (global.ServerSettings.authOpenIDAutoRegister) {
+          Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+          user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo)
+          isNewUser = true
+        } else {
+          Logger.warn(`[User] openid: User not found and auto-register is disabled`)
+        }
+      }
+
+      if (!user.isActive) {
         throw new Error('User not active or not found')
       }
 
@@ -136,6 +153,10 @@ class OidcAuthStrategy {
       return done(null, user)
     } catch (error) {
       Logger.error(`[OidcAuth] openid callback error: ${error?.message}\n${error?.stack}`)
+      // Remove new user if an error occurs
+      if (isNewUser && user) {
+        await user.destroy()
+      }
       return done(null, null, 'Unauthorized')
     }
   }
