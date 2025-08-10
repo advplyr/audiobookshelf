@@ -3,6 +3,7 @@
     <div class="flex flex-col sm:flex-row mb-4">
       <div class="relative self-center md:self-start">
         <covers-preview-cover :src="coverUrl" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-linear-to-b from-black-600 to-transparent" />
@@ -13,7 +14,6 @@
           </div>
         </div>
       </div>
-
       <div class="grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
@@ -48,7 +48,6 @@
         </div>
       </div>
     </div>
-
     <form @submit.prevent="submitSearchForm">
       <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
         <div class="w-48 grow p-1">
@@ -63,10 +62,8 @@
         <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
-
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
       <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
-
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -308,7 +305,6 @@ export default {
           return []
         })
       this.coversFound = results
-
       this.isProcessing = false
       this.hasSearched = true
     },
