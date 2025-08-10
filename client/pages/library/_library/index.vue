@@ -6,6 +6,9 @@
 </template>
 
 <script>
+import Shepherd from 'shepherd.js'
+import 'shepherd.js/dist/css/shepherd.css'
+
 export default {
   async asyncData({ store, params, redirect }) {
     const libraryId = params.library

@@ -2,7 +2,7 @@
   <div class="w-full h-16 bg-primary relative">
     <div id="appbar" role="toolbar" aria-label="Appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
       <div class="flex h-full items-center">
-        <nuxt-link to="/">
+        <nuxt-link to="/" id="appbar-home-icon">
           <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
         </nuxt-link>
 
@@ -10,9 +10,9 @@
           <h1 class="text-xl mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
         </nuxt-link>
 
-        <ui-libraries-dropdown class="mr-2" />
+        <ui-libraries-dropdown class="mr-2" id="appbar-library-icon" />
 
-        <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
+        <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" id="appbar-search-bar" ref="searchBar" />
         <div class="grow" />
 
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
@@ -24,25 +24,33 @@
 
         <widgets-notification-widget class="hidden md:block" />
 
-        <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
+        <nuxt-link v-if="currentLibrary" to="/config/stats" id="appbar-stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom" class="flex items-center">
             <span class="material-symbols text-2xl" aria-label="User Stats" role="button">&#xe01d;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" id="appbar-upload-button" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.ButtonUpload" direction="bottom" class="flex items-center">
             <span class="material-symbols text-2xl" aria-label="Upload Media" role="button">&#xf09b;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link v-if="userIsAdminOrUp" to="/config" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="userIsAdminOrUp" to="/config" id="appbar-settings-icon" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
             <span class="material-symbols text-2xl" aria-label="System Settings" role="button">&#xe8b8;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
+        <!-- Tour Tooltip icon -->
+        <ui-tooltip text="Start Tour" direction="bottom">
+          <button @click="startTour" class="hover:text-gray-200 w-8 h-8 flex items-center justify-center mx-1">
+            <span class="material-symbols text-2xl">info</span>
+          </button>
+        </ui-tooltip>
+        <!-- Tour Tooltip icon -->
+
+        <nuxt-link to="/account" id="appbar-account-link" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
           <span class="items-center hidden md:flex">
             <span class="block truncate">{{ username }}</span>
           </span>
@@ -83,7 +91,13 @@
   </div>
 </template>
 
+
+
 <script>
+//import Shepherd from 'shepherd.js'
+import Shepherd from 'shepherd.js'
+import 'shepherd.js/dist/css/shepherd.css'
+
 export default {
   data() {
     return {
@@ -375,6 +389,107 @@ export default {
     },
     batchAutoMatchClick() {
       this.$store.commit('globals/setShowBatchQuickMatchModal', true)
+    },
+    startTour() {
+      const tour = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+          scrollTo: true,
+          cancelIcon: { enabled: true },
+          classes: 'shadow-md bg-primary text-white',
+          highlightClass: 'bg-secondary'
+        }
+      })
+
+      tour.addStep({
+        id: 'home-button',
+        text: 'Click here to return to the homepage.',
+        attachTo: {
+          element: '#appbar-home-icon',
+          on: 'bottom'
+        },
+        buttons: [{ text: 'Next', action: tour.next }]
+      })
+
+      tour.addStep({
+        id: 'library_icon',
+        text: 'Click to select the library',
+        attachTo: {
+          element: '#appbar-library-icon',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Next', action: tour.next }
+        ]
+      })
+
+      tour.addStep({
+        id: 'search-bar',
+        text: 'Use this search bar to find any book.',
+        attachTo: {
+          element: '#appbar-search-bar',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Next', action: tour.next }
+        ]
+      })
+
+      tour.addStep({
+        id: 'stats-icon',
+        text: 'View your stats here.',
+        attachTo: {
+          element: '#appbar-stats',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Next', action: tour.next }
+        ]
+      })
+
+      tour.addStep({
+        id: 'upload-button',
+        text: 'Click here to upload a new audiobook.',
+        attachTo: {
+          element: '#appbar-upload-button',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Next', action: tour.next }
+        ]
+      })
+
+      tour.addStep({
+        id: 'settings-icon',
+        text: 'Access your app settings here.',
+        attachTo: {
+          element: '#appbar-settings-icon',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Next', action: tour.next }
+        ]
+      })
+
+      tour.addStep({
+        id: 'account-link',
+        text: 'Click here to access your account settings.',
+        attachTo: {
+          element: '#appbar-account-link',
+          on: 'bottom'
+        },
+        buttons: [
+          { text: 'Back', action: tour.back },
+          { text: 'Done', action: tour.complete }
+        ]
+      })
+
+      tour.start()
     }
   },
   mounted() {
