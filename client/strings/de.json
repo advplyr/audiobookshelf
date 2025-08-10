@@ -294,6 +294,7 @@
   "LabelContinueListening": "Weiterhören",
   "LabelContinueReading": "Weiterlesen",
   "LabelContinueSeries": "Serien fortsetzen",
+  "LabelCorsAllowed": "Erlaubte CORS Quellen",
   "LabelCover": "Titelbild",
   "LabelCoverImageURL": "URL des Titelbildes",
   "LabelCoverProvider": "Titelbildanbieter",
