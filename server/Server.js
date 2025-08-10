@@ -229,6 +229,10 @@ class Server {
         res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
       }
 
+      // Security: Prevent referrer leakage to protect against token exposure
+      // Using 'no-referrer' to completely prevent token leakage in referer headers
+      res.setHeader('Referrer-Policy', 'no-referrer')
+
       /**
        * @temporary
        * This is necessary for the ebook & cover API endpoint in the mobile apps

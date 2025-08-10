@@ -483,6 +483,49 @@ class OidcAuthStrategy {
       res.status(500).send('Internal Server Error')
     }
   }
+
+  /**
+   * Validates if a callback URL is safe for redirect (same-origin only)
+   * @param {string} callbackUrl - The callback URL to validate
+   * @param {Request} req - Express request object to get current host
+   * @returns {boolean} - True if the URL is safe (same-origin), false otherwise
+   */
+  isValidWebCallbackUrl(callbackUrl, req) {
+    if (!callbackUrl) return false
+
+    try {
+      // Handle relative URLs - these are always safe if they start with router base path
+      if (callbackUrl.startsWith('/')) {
+        // Only allow relative paths that start with the router base path
+        if (callbackUrl.startsWith(global.RouterBasePath + '/')) {
+          return true
+        }
+        Logger.warn(`[OidcAuth] Rejected callback URL outside router base path: ${callbackUrl}`)
+        return false
+      }
+
+      // For absolute URLs, ensure they point to the same origin
+      const callbackUrlObj = new URL(callbackUrl)
+      const currentProtocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const currentHost = req.get('host')
+
+      // Check if protocol and host match exactly
+      if (callbackUrlObj.protocol === currentProtocol + ':' && callbackUrlObj.host === currentHost) {
+        // Additional check: ensure path starts with router base path
+        if (callbackUrlObj.pathname.startsWith(global.RouterBasePath + '/')) {
+          return true
+        }
+        Logger.warn(`[OidcAuth] Rejected same-origin callback URL outside router base path: ${callbackUrl}`)
+        return false
+      }
+
+      Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callbackUrl} (expected ${currentProtocol}://${currentHost})`)
+      return false
+    } catch (error) {
+      Logger.error(`[OidcAuth] Invalid callback URL format: ${callbackUrl}`, error)
+      return false
+    }
+  }
 }
 
 module.exports = OidcAuthStrategy
