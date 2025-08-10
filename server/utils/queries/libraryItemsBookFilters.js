@@ -290,6 +290,18 @@ module.exports = {
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
+    } else if (sortBy === 'startedDate') {
+      // Sort started books first (not null), then unstarted (nulls last), then by createdAt desc
+      return [
+        [Sequelize.literal('(CASE WHEN mediaProgresses.createdAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
+        ['mediaProgresses', 'createdAt', dir]
+      ]
+    } else if (sortBy === 'finishedDate') {
+      // Sort finished books first (not null), then unfinished (nulls last), then by finishedAt desc
+      return [
+        [Sequelize.literal('(CASE WHEN mediaProgresses.finishedAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
+        ['mediaProgresses', 'finishedAt', dir]
+      ]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
     }
@@ -519,7 +531,7 @@ module.exports = {
       }
       bookIncludes.push({
         model: Database.mediaProgressModel,
-        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
         where: mediaProgressWhere,
         required: false
       })
@@ -530,10 +542,10 @@ module.exports = {
     }
 
     // When sorting by progress but not filtering by progress, include media progresses
-    if (filterGroup !== 'progress' && sortBy === 'progress') {
+    if (filterGroup !== 'progress' && ['startedDate', 'finishedDate', 'progress'].includes(sortBy)) {
       bookIncludes.push({
         model: Database.mediaProgressModel,
-        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
         where: {
           userId: user.id
         },
