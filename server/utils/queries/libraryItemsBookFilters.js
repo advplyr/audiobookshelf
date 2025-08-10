@@ -293,10 +293,13 @@ module.exports = {
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
     } else if (sortBy === 'startedDate') {
-      return [[Sequelize.literal('mediaProgresses.createdAt'), dir]]
+      // Sort started books first (not null), then unstarted (nulls last), then by createdAt desc
+      return [
+        [Sequelize.literal('(CASE WHEN mediaProgresses.createdAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
+        ['mediaProgresses', 'createdAt', dir]
+      ]
     } else if (sortBy === 'finishedDate') {
       // Sort finished books first (not null), then unfinished (nulls last), then by finishedAt desc
-      // This works for both ASC and DESC, but DESC is typical for "recently finished"
       return [
         [Sequelize.literal('(CASE WHEN mediaProgresses.finishedAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
         ['mediaProgresses', 'finishedAt', dir]
