@@ -807,7 +807,7 @@
   "MessageFeedURLWillBe": "Feed-URL wird {0} sein",
   "MessageFetching": "Wird abgerufen …",
   "MessageForceReScanDescription": "Durchsucht alle Dateien erneut, wie bei einem frischen Scan. ID3-Tags von Audiodateien, OPF-Dateien und Textdateien werden neu durchsucht.",
-  "MessageHeatmapListeningTimeTooltip": "<strong>{0} am {1} gehört</strong>",
+  "MessageHeatmapListeningTimeTooltip": "<strong>{0} </strong> auf {1} gehört",
   "MessageHeatmapNoListeningSessions": "Keine Hörsitzungen am {0}",
   "MessageImportantNotice": "Wichtiger Hinweis!",
   "MessageInsertChapterBelow": "Kapitel unten einfügen",
