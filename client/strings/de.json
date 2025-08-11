@@ -1036,7 +1036,7 @@
   "ToastInvalidImageUrl": "Ungültiger Bild URL",
   "ToastInvalidMaxEpisodesToDownload": "Ungültige Max. Anzahl an Episoden zum Herunterladen",
   "ToastInvalidUrl": "Ungültiger URL",
-  "ToastInvalidUrls": "Eine oder mehrere URLs sind in einem falschen Format",
+  "ToastInvalidUrls": "Eine oder mehrere URLs sind ungültig",
   "ToastItemCoverUpdateSuccess": "Titelbild aktualisiert",
   "ToastItemDeletedFailed": "Fehler beim löschen des Artikels",
   "ToastItemDeletedSuccess": "Artikel gelöscht",
