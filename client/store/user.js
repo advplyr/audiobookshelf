@@ -152,7 +152,6 @@ export const actions = {
       .$post('/auth/refresh')
       .then(async (response) => {
         const newAccessToken = response.user.accessToken
-        commit('setUser', response.user)
         commit('setAccessToken', newAccessToken)
         // Emit event used to re-authenticate socket in default.vue since $root is not available here
         if (this.$eventBus) {
