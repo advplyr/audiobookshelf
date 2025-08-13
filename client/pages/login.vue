@@ -189,7 +189,7 @@ export default {
         require('@/plugins/chromecast.js').default(this)
       }
 
-      this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
+      this.$store.commit('libraries/setCurrentLibrary', { id: userDefaultLibraryId })
       this.$store.commit('user/setUser', user)
       // Access token only returned from login, not authorize
       if (user.accessToken) {
