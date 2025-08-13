@@ -229,6 +229,10 @@ class Server {
         res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
       }
 
+      // Security: Prevent referrer leakage to protect against token exposure
+      // Using 'no-referrer' to completely prevent token leakage in referer headers
+      res.setHeader('Referrer-Policy', 'no-referrer')
+
       /**
        * @temporary
        * This is necessary for the ebook & cover API endpoint in the mobile apps
@@ -240,8 +244,8 @@ class Server {
        * Running in development allows cors to allow testing the mobile apps in the browser
        * or env variable ALLOW_CORS = '1'
        */
-      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/)) {
-        const allowedOrigins = ['capacitor://localhost', 'http://localhost']
+      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) || global.ServerSettings.allowedOrigins?.length) {
+        const allowedOrigins = ['capacitor://localhost', 'http://localhost', ...(global.ServerSettings.allowedOrigins ? global.ServerSettings.allowedOrigins : [])]
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')

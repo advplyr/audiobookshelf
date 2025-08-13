@@ -213,6 +213,7 @@ class Auth {
    * @param {Request} req
    * @param {Response} res
    * @param {string} authMethod - The authentication method, default is 'local'.
+   * @returns {Object|null} - Returns error object if validation fails, null if successful
    */
   paramsToCookies(req, res, authMethod = 'local') {
     const TWO_MINUTES = 120000 // 2 minutes in milliseconds
@@ -227,13 +228,23 @@ class Auth {
 
       // Validate and store the callback URL
       if (!callback) {
-        return res.status(400).send({ message: 'No callback parameter' })
+        res.status(400).send({ message: 'No callback parameter' })
+        return { error: 'No callback parameter' }
       }
+
+      // Security: Validate callback URL is same-origin only
+      if (!this.oidcAuthStrategy.isValidWebCallbackUrl(callback, req)) {
+        Logger.warn(`[Auth] Rejected invalid callback URL: ${callback}`)
+        res.status(400).send({ message: 'Invalid callback URL - must be same-origin' })
+        return { error: 'Invalid callback URL - must be same-origin' }
+      }
+
       res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
     }
 
     // Store the authentication method for long
     res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
+    return null
   }
 
   /**
@@ -254,7 +265,6 @@ class Auth {
       res.json(userResponse)
     } else {
       // UI request -> check if we have a callback url
-      // TODO: do we want to somehow limit the values for auth_cb?
       if (req.cookies.auth_cb) {
         let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
         // UI request -> redirect to auth_cb url and send the jwt token as parameter
@@ -350,7 +360,11 @@ class Auth {
         return res.status(authorizationUrlResponse.status).send(authorizationUrlResponse.error)
       }
 
-      this.paramsToCookies(req, res, authorizationUrlResponse.isMobileFlow ? 'openid-mobile' : 'openid')
+      // Check if paramsToCookies sent a response (e.g., due to invalid callback URL)
+      const cookieResult = this.paramsToCookies(req, res, authorizationUrlResponse.isMobileFlow ? 'openid-mobile' : 'openid')
+      if (cookieResult && cookieResult.error) {
+        return // Response already sent by paramsToCookies
+      }
 
       res.redirect(authorizationUrlResponse.authorizationUrl)
     })

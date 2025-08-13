@@ -110,6 +110,8 @@ class OidcAuthStrategy {
    * @param {Function} done - Passport callback
    */
   async verifyCallback(tokenset, userinfo, done) {
+    let isNewUser = false
+    let user = null
     try {
       Logger.debug(`[OidcAuth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
 
@@ -121,9 +123,24 @@ class OidcAuthStrategy {
         throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
       }
 
-      let user = await Database.userModel.findOrCreateUserFromOpenIdUserInfo(userinfo)
+      user = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
 
-      if (!user?.isActive) {
+      if (user?.error) {
+        throw new Error('Invalid userinfo or already linked')
+      }
+
+      if (!user) {
+        // If no existing user was matched, auto-register if configured
+        if (global.ServerSettings.authOpenIDAutoRegister) {
+          Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
+          user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo)
+          isNewUser = true
+        } else {
+          Logger.warn(`[User] openid: User not found and auto-register is disabled`)
+        }
+      }
+
+      if (!user.isActive) {
         throw new Error('User not active or not found')
       }
 
@@ -136,6 +153,10 @@ class OidcAuthStrategy {
       return done(null, user)
     } catch (error) {
       Logger.error(`[OidcAuth] openid callback error: ${error?.message}\n${error?.stack}`)
+      // Remove new user if an error occurs
+      if (isNewUser && user) {
+        await user.destroy()
+      }
       return done(null, null, 'Unauthorized')
     }
   }
@@ -481,6 +502,49 @@ class OidcAuthStrategy {
     } catch (error) {
       Logger.error(`[OidcAuth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
       res.status(500).send('Internal Server Error')
+    }
+  }
+
+  /**
+   * Validates if a callback URL is safe for redirect (same-origin only)
+   * @param {string} callbackUrl - The callback URL to validate
+   * @param {Request} req - Express request object to get current host
+   * @returns {boolean} - True if the URL is safe (same-origin), false otherwise
+   */
+  isValidWebCallbackUrl(callbackUrl, req) {
+    if (!callbackUrl) return false
+
+    try {
+      // Handle relative URLs - these are always safe if they start with router base path
+      if (callbackUrl.startsWith('/')) {
+        // Only allow relative paths that start with the router base path
+        if (callbackUrl.startsWith(global.RouterBasePath + '/')) {
+          return true
+        }
+        Logger.warn(`[OidcAuth] Rejected callback URL outside router base path: ${callbackUrl}`)
+        return false
+      }
+
+      // For absolute URLs, ensure they point to the same origin
+      const callbackUrlObj = new URL(callbackUrl)
+      const currentProtocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const currentHost = req.get('host')
+
+      // Check if protocol and host match exactly
+      if (callbackUrlObj.protocol === currentProtocol + ':' && callbackUrlObj.host === currentHost) {
+        // Additional check: ensure path starts with router base path
+        if (callbackUrlObj.pathname.startsWith(global.RouterBasePath + '/')) {
+          return true
+        }
+        Logger.warn(`[OidcAuth] Rejected same-origin callback URL outside router base path: ${callbackUrl}`)
+        return false
+      }
+
+      Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callbackUrl} (expected ${currentProtocol}://${currentHost})`)
+      return false
+    } catch (error) {
+      Logger.error(`[OidcAuth] Invalid callback URL format: ${callbackUrl}`, error)
+      return false
     }
   }
 }

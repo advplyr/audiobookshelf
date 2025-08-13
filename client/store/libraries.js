@@ -133,7 +133,7 @@ export const actions = {
         commit('setNumUserPlaylists', numUserPlaylists)
         commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
 
-        commit('setCurrentLibrary', libraryId)
+        commit('setCurrentLibrary', { id: libraryId })
         return data
       })
       .catch((error) => {
@@ -182,8 +182,8 @@ export const mutations = {
   setLibraryIssues(state, val) {
     state.issues = val
   },
-  setCurrentLibrary(state, val) {
-    state.currentLibraryId = val
+  setCurrentLibrary(state, { id }) {
+    state.currentLibraryId = id
   },
   set(state, libraries) {
     state.libraries = libraries
