@@ -271,7 +271,7 @@
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative p-6">
         <div class="flex flex-col space-y-8">
-          <p class="text-gray-300 text-lg">{{ $strings.MessageBulkChapterPattern }}</p>
+          <p class="text-base">{{ $strings.MessageBulkChapterPattern }}</p>
 
           <div v-if="detectedPattern" class="text-sm text-gray-400 bg-gray-800 p-2 rounded">
             <strong>{{ $strings.LabelDetectedPattern }}</strong> "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber, detectedPattern) }}{{ detectedPattern.after }}"
@@ -280,14 +280,14 @@
             "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 1, detectedPattern) }}{{ detectedPattern.after }}", "{{ detectedPattern.before }}{{ formatNumberWithPadding(detectedPattern.startingNumber + 2, detectedPattern) }}{{ detectedPattern.after }}", etc.
           </div>
           <div class="flex px-1 items-center">
-            <label class="text-lg font-medium">{{ $strings.LabelNumberOfChapters }}</label>
+            <label class="text-base font-medium">{{ $strings.LabelNumberOfChapters }}</label>
             <div class="grow" />
             <ui-text-input v-model="bulkChapterCount" type="number" min="1" max="50" class="w-14" :style="{ height: `2em` }" @keyup.enter="addBulkChapters" />
           </div>
           <div class="flex px-1 items-center">
-            <ui-btn @click="showBulkChapterModal = false">{{ $strings.ButtonCancel }}</ui-btn>
+            <ui-btn small @click="showBulkChapterModal = false">{{ $strings.ButtonCancel }}</ui-btn>
             <div class="grow" />
-            <ui-btn color="bg-success" @click="addBulkChapters">{{ $strings.ButtonAddChapters }}</ui-btn>
+            <ui-btn small color="bg-success" @click="addBulkChapters">{{ $strings.ButtonAddChapters }}</ui-btn>
           </div>
         </div>
       </div>

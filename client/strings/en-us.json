@@ -1007,7 +1007,7 @@
   "ToastBookmarkCreateFailed": "Failed to create bookmark",
   "ToastBookmarkCreateSuccess": "Bookmark added",
   "ToastBookmarkRemoveSuccess": "Bookmark removed",
-  "ToastBulkChapterInvalidCount": "Please enter a valid number between 1 and 150",
+  "ToastBulkChapterInvalidCount": "Enter a number between 1 and 150",
   "ToastCachePurgeFailed": "Failed to purge cache",
   "ToastCachePurgeSuccess": "Cache purged successfully",
   "ToastChapterInvalidShiftAmount": "Invalid shift amount. First chapter would have zero or negative length.",
