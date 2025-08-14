@@ -1002,7 +1002,6 @@
   "ToastBulkChapterInvalidCount": "Veuillez entrer un nombre valide entre 1 et 150",
   "ToastCachePurgeFailed": "Échec de la purge du cache",
   "ToastCachePurgeSuccess": "Cache purgé avec succès",
-  "ToastChapterInvalidShiftAmount": "Montant de décalage invalide. Le premier chapitre aurait une durée nulle ou négative.",
   "ToastChaptersAllLocked": "Tous les chapitres sont verrouillés. Déverrouillez certains chapitres pour décaler leurs temps.",
   "ToastChaptersHaveErrors": "Les chapitres contiennent des erreurs",
   "ToastChaptersInvalidShiftAmountLast": "Durée de décalage non valide. L’heure de début du dernier chapitre pourrait dépasser la durée de ce livre audio.",

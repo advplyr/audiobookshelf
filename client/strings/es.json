@@ -981,7 +981,6 @@
   "ToastBulkChapterInvalidCount": "Por favor ingrese un número válido entre 1 y 150",
   "ToastCachePurgeFailed": "No se pudo purgar la antememoria",
   "ToastCachePurgeSuccess": "Se purgó la antememoria correctamente",
-  "ToastChapterInvalidShiftAmount": "Cantidad de desplazamiento inválida. El primer capítulo tendría duración cero o negativa.",
   "ToastChaptersAllLocked": "Todos los capítulos están bloqueados. Desbloquee algunos capítulos para cambiar sus tiempos.",
   "ToastChaptersHaveErrors": "Los capítulos tienen errores",
   "ToastChaptersInvalidShiftAmountLast": "Cantidad de desplazamiento no válida. La hora de inicio del último capítulo se extendería más allá de la duración de este audiolibro.",

@@ -1010,7 +1010,6 @@
   "ToastBulkChapterInvalidCount": "Enter a number between 1 and 150",
   "ToastCachePurgeFailed": "Failed to purge cache",
   "ToastCachePurgeSuccess": "Cache purged successfully",
-  "ToastChapterInvalidShiftAmount": "Invalid shift amount. First chapter would have zero or negative length.",
   "ToastChapterLocked": "Chapter is locked.",
   "ToastChapterStartTimeAdjusted": "Chapter start time adjusted by {0} seconds",
   "ToastChaptersAllLocked": "All chapters are locked. Unlock some chapters to shift their times.",

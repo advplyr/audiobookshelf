@@ -444,11 +444,6 @@ export default {
         return
       }
 
-      if (unlockedChapters[0].id === 0 && unlockedChapters[0].end + amount <= 0) {
-        this.$toast.error(this.$strings.ToastChapterInvalidShiftAmount)
-        return
-      }
-
       for (let i = 0; i < this.newChapters.length; i++) {
         const chap = this.newChapters[i]
 
