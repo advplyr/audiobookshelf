@@ -141,8 +141,8 @@
             <ui-text-input v-model="bulkChapterInput" :placeholder="$strings.PlaceholderBulkChapterInput" class="text-xs grow min-w-52" @keyup.enter="handleBulkChapterAdd" />
           </div>
           <div class="w-39 min-w-39 px-1 py-1">
-            <ui-tooltip :text="$strings.TooltipAddChapters" direction="bottom">
-              <button class="w-5 h-5 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150 flex-shrink-0" :class="{ 'opacity-50 cursor-not-allowed': !bulkChapterInput.trim() }" :disabled="!bulkChapterInput.trim()" @click="handleBulkChapterAdd">
+            <ui-tooltip :text="$strings.TooltipAddChapters" direction="bottom" class="inline-block align-middle">
+              <button class="w-5 h-5 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150 flex-shrink-0" :aria-label="$strings.TooltipAddChapters" :class="{ 'opacity-50 cursor-not-allowed': !bulkChapterInput.trim() }" :disabled="!bulkChapterInput.trim()" @click="handleBulkChapterAdd">
                 <span class="material-symbols text-lg">add</span>
               </button>
             </ui-tooltip>
