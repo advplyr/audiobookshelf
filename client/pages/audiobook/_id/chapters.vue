@@ -180,6 +180,7 @@
       <ui-loading-indicator />
     </div>
 
+    <!-- audible chapter lookup modal -->
     <modals-modal v-model="showFindChaptersModal" name="edit-book" :width="500" :processing="findingChapters">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
@@ -205,12 +206,16 @@
           </div>
         </div>
         <div v-else class="w-full p-4">
-          <div class="flex justify-between mb-4">
+          <div class="flex mb-4">
+            <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white flex-shrink-0" :aria-label="$strings.ButtonBack" @click="resetChapterLookupData">
+              <span class="material-symbols text-lg">arrow_back</span>
+            </button>
             <p>
               {{ $strings.LabelDurationFound }} <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span>
               <br />
               <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapterData.chapters.length }}</span> {{ $strings.LabelChaptersFound }}
             </p>
+            <div class="grow" />
             <p>
               {{ $strings.LabelYourAudiobookDuration }}: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span
               ><br />
@@ -256,6 +261,8 @@
         </div>
       </div>
     </modals-modal>
+
+    <!-- create bulk chapters modal -->
     <modals-modal v-model="showBulkChapterModal" name="bulk-chapters" :width="400">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
@@ -659,6 +666,9 @@ export default {
       this.isPlayingChapter = false
       this.isLoadingChapter = false
       this.stopElapsedTimeTracking()
+    },
+    resetChapterLookupData() {
+      this.chapterData = null
     },
     saveChapters() {
       this.checkChapters()
