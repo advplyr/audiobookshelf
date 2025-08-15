@@ -169,10 +169,10 @@ class LogManager {
   /**
    * Most recent 5000 daily logs
    *
-   * @returns {string}
+   * @returns {LogObject[]}
    */
   getMostRecentCurrentDailyLogs() {
-    return this.currentDailyLog?.logs.slice(-5000) || ''
+    return this.currentDailyLog?.logs.slice(-5000) || []
   }
 }
 module.exports = LogManager

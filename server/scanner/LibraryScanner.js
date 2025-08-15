@@ -297,7 +297,7 @@ class LibraryScanner {
    * Get scan data for library folder
    * @param {import('../models/Library')} library
    * @param {import('../models/LibraryFolder')} folder
-   * @returns {LibraryItemScanData[]}
+   * @returns {Promise<LibraryItemScanData[]>}
    */
   async scanFolder(library, folder) {
     const folderPath = fileUtils.filePathToPOSIX(folder.path)
@@ -350,6 +350,7 @@ class LibraryScanner {
           libraryId: folder.libraryId,
           mediaType: library.mediaType,
           ino: libraryItemFolderStats.ino,
+          deviceId: libraryItemFolderStats.dev,
           mtimeMs: libraryItemFolderStats.mtimeMs || 0,
           ctimeMs: libraryItemFolderStats.ctimeMs || 0,
           birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
@@ -642,12 +643,25 @@ class LibraryScanner {
 }
 module.exports = new LibraryScanner()
 
+/**
+ * @param {import("../models/LibraryItem") | LibraryItemScanData} libraryItem1
+ * @param {import("../models/LibraryItem") | LibraryItemScanData} libraryItem2
+ */
 function ItemToFileInoMatch(libraryItem1, libraryItem2) {
-  return libraryItem1.isFile && libraryItem2.libraryFiles.some((lf) => lf.ino === libraryItem1.ino)
+  return (
+    libraryItem1.isFile &&
+    libraryItem2.libraryFiles.some((lf) => {
+      return lf.ino === libraryItem1.ino && lf.deviceId === libraryItem1.deviceId
+    })
+  )
 }
 
+/**
+ * @param {LibraryItemScanData} libraryItem1
+ * @param {import("../models/LibraryItem")} libraryItem2
+ */
 function ItemToItemInoMatch(libraryItem1, libraryItem2) {
-  return libraryItem1.ino === libraryItem2.ino
+  return libraryItem1.ino === libraryItem2.ino && libraryItem1.deviceId === libraryItem2.deviceId
 }
 
 function hasAudioFiles(fileUpdateGroup, itemDir) {
@@ -658,54 +672,85 @@ function isSingleMediaFile(fileUpdateGroup, itemDir) {
   return itemDir === fileUpdateGroup[itemDir]
 }
 
+/**
+ * @param {UUIDV4} libraryId
+ * @param {string} fullPath
+ * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded | null>} library item that matches
+ */
 async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
   const ino = await fileUtils.getIno(fullPath)
+  const deviceId = await fileUtils.getDeviceId(fullPath)
   if (!ino) return null
   const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
     libraryId: libraryId,
-    ino: ino
+    ino: ino,
+    deviceId: deviceId
   })
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with matching inode "${ino}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }
 
+/**
+ * @param {UUIDV4} libraryId
+ * @param {string} fullPath
+ * @param {boolean} isSingleMedia
+ * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded | null>} library item that matches
+ */
 async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingleMedia) {
   if (!isSingleMedia) return null
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
+  const deviceId = await fileUtils.getDeviceId(fullPath)
   if (!ino) return null
   const existingLibraryItem = await Database.libraryItemModel.findOneExpanded(
     [
       {
         libraryId: libraryId
       },
-      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode AND json_each.value->>"$.deviceId" = :deviceId)'), {
         [sequelize.Op.gt]: 0
       })
     ],
     {
-      inode: ino
+      inode: ino,
+      deviceId: deviceId
     }
   )
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with a library file matching inode "${ino}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }
 
+/**
+ * @param {UUIDV4} libraryId
+ * @param {string} fullPath
+ * @param {boolean} isSingleMedia
+ * @param {string[]} itemFiles
+ * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded | null>} library item that matches
+ */
 async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles) {
   if (isSingleMedia) return null
-  // check if it was moved from the root folder by comparing the ino to the ino of the scanned files
+  // check if it was moved from the root folder by comparing the ino and deviceId to the ino and deviceId of the scanned files
   let itemFileInos = []
   for (const itemFile of itemFiles) {
     const ino = await fileUtils.getIno(Path.posix.join(fullPath, itemFile))
-    if (ino) itemFileInos.push(ino)
+    const deviceId = await fileUtils.getDeviceId(Path.posix.join(fullPath, itemFile))
+    if (ino && deviceId) itemFileInos.push({ ino: ino, deviceId: deviceId })
   }
   if (!itemFileInos.length) return null
-  const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
-    libraryId: libraryId,
-    ino: {
-      [sequelize.Op.in]: itemFileInos
+  /** @type {import('../models/LibraryItem').LibraryItemExpanded | null} */
+  let existingLibraryItem = null
+  for (let item in itemFileInos) {
+    existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
+      libraryId: libraryId,
+      ino: {
+        [sequelize.Op.in]: itemFileInos
+      }
+    })
+    if (existingLibraryItem) {
+      break
     }
-  })
+  }
+
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }

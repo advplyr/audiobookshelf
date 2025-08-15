@@ -113,7 +113,7 @@ class Task {
   /**
    * Set task as finished
    *
-   * @param {TaskString} [newDescriptionString] update description
+   * @param {TaskString | null} [newDescriptionString] update description
    * @param {boolean} [clearDescription] clear description
    */
   setFinished(newDescriptionString = null, clearDescription = false) {

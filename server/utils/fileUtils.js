@@ -47,6 +47,10 @@ function getFileStat(path) {
   }
 }
 
+/**
+ * @param {string} path
+ * @returns {Promise<object | null>}
+ */
 async function getFileTimestampsWithIno(path) {
   try {
     var stat = await fs.stat(path, { bigint: true })
@@ -55,11 +59,12 @@ async function getFileTimestampsWithIno(path) {
       mtimeMs: Number(stat.mtimeMs),
       ctimeMs: Number(stat.ctimeMs),
       birthtimeMs: Number(stat.birthtimeMs),
-      ino: String(stat.ino)
+      ino: String(stat.ino),
+      deviceId: String(stat.dev)
     }
   } catch (err) {
     Logger.error(`[fileUtils] Failed to getFileTimestampsWithIno for path "${path}"`, err)
-    return false
+    return null
   }
 }
 module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
@@ -92,7 +97,7 @@ module.exports.getFileMTimeMs = async (path) => {
 /**
  *
  * @param {string} filepath
- * @returns {boolean}
+ * @returns {Promise<boolean>} isFile
  */
 async function checkPathIsFile(filepath) {
   try {
@@ -104,6 +109,10 @@ async function checkPathIsFile(filepath) {
 }
 module.exports.checkPathIsFile = checkPathIsFile
 
+/**
+ * @param {string} path
+ * @returns {string | null} inode
+ */
 function getIno(path) {
   return fs
     .stat(path, { bigint: true })
@@ -116,9 +125,24 @@ function getIno(path) {
 module.exports.getIno = getIno
 
 /**
+ * @param {string} path
+ * @returns {Promise<string | null>} deviceId
+ */
+async function getDeviceId(path) {
+  try {
+    var data = await fs.stat(path)
+    return String(data.dev)
+  } catch (error) {
+    Logger.error(`[Utils] Failed to get device Id for path "${path}": ${error}`)
+    return null
+  }
+}
+module.exports.getDeviceId = getDeviceId
+
+/**
  * Read contents of file
  * @param {string} path
- * @returns {string}
+ * @returns {Promise<string>} file contents
  */
 async function readTextFile(path) {
   try {
@@ -135,7 +159,7 @@ module.exports.readTextFile = readTextFile
  * Check if file or directory should be ignored. Returns a string of the reason to ignore, or null if not ignored
  *
  * @param {string} path
- * @returns {string}
+ * @returns {string | null} reason to ignore
  */
 module.exports.shouldIgnoreFile = (path) => {
   // Check if directory or file name starts with "."
@@ -178,8 +202,8 @@ module.exports.shouldIgnoreFile = (path) => {
 /**
  * Get array of files inside dir
  * @param {string} path
- * @param {string} [relPathToReplace]
- * @returns {FilePathItem[]}
+ * @param {string | null} [relPathToReplace]
+ * @returns {Promise<FilePathItem[]>}
  */
 module.exports.recurseFiles = async (path, relPathToReplace = null) => {
   path = filePathToPOSIX(path)
@@ -292,7 +316,7 @@ module.exports.getFilePathItemFromFileUpdate = (fileUpdate) => {
  *
  * @param {string} url
  * @param {string} filepath path to download the file to
- * @param {Function} [contentTypeFilter] validate content type before writing
+ * @param {Function | null} [contentTypeFilter] validate content type before writing
  * @returns {Promise}
  */
 module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {

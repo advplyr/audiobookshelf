@@ -3,6 +3,7 @@ const FileMetadata = require('../metadata/FileMetadata')
 class EBookFile {
   constructor(file) {
     this.ino = null
+    this.deviceId = null
     this.metadata = null
     this.ebookFormat = null
     this.addedAt = null
@@ -15,6 +16,7 @@ class EBookFile {
 
   construct(file) {
     this.ino = file.ino
+    this.deviceId = file.dev
     this.metadata = new FileMetadata(file.metadata)
     this.ebookFormat = file.ebookFormat || this.metadata.format
     this.addedAt = file.addedAt
@@ -24,6 +26,7 @@ class EBookFile {
   toJSON() {
     return {
       ino: this.ino,
+      deviceId: this.deviceId,
       metadata: this.metadata.toJSON(),
       ebookFormat: this.ebookFormat,
       addedAt: this.addedAt,
@@ -37,6 +40,7 @@ class EBookFile {
 
   setData(libraryFile) {
     this.ino = libraryFile.ino
+    this.deviceId = libraryFile.deviceId
     this.metadata = libraryFile.metadata.clone()
     this.ebookFormat = libraryFile.metadata.format
     this.addedAt = Date.now()

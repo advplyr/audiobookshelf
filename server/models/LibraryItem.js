@@ -11,6 +11,7 @@ const Podcast = require('./Podcast')
 /**
  * @typedef LibraryFileObject
  * @property {string} ino
+ * @property {string} deviceId
  * @property {boolean} isSupplementary
  * @property {number} addedAt
  * @property {number} updatedAt
@@ -32,6 +33,8 @@ class LibraryItem extends Model {
     this.id
     /** @type {string} */
     this.ino
+    /** @type {string} */
+    this.deviceId
     /** @type {string} */
     this.path
     /** @type {string} */
@@ -237,7 +240,7 @@ class LibraryItem extends Model {
    * @param {import('sequelize').WhereOptions} where
    * @param {import('sequelize').BindOrReplacements} [replacements]
    * @param {import('sequelize').IncludeOptions} [include]
-   * @returns {Promise<LibraryItemExpanded>}
+   * @returns {Promise<LibraryItemExpanded | null>}
    */
   static async findOneExpanded(where, replacements = null, include = null) {
     const libraryItem = await this.findOne({
@@ -289,7 +292,7 @@ class LibraryItem extends Model {
    * @param {import('./Library')} library
    * @param {import('./User')} user
    * @param {object} options
-   * @returns {{ libraryItems:Object[], count:number }}
+   * @returns {Promise<{ libraryItems:Object[], count:number }>}
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
@@ -670,6 +673,7 @@ class LibraryItem extends Model {
           primaryKey: true
         },
         ino: DataTypes.STRING,
+        deviceId: DataTypes.STRING,
         path: DataTypes.STRING,
         relPath: DataTypes.STRING,
         mediaId: DataTypes.UUID,

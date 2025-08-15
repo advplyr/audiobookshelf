@@ -139,25 +139,14 @@ class LibraryItemScanner {
       const newLibraryFile = new LibraryFile()
       // fileItem.path is the relative path
       await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
+      // TODO: BUGBUG - this is pushing the object, not a JSON string of the object like elsewhere
       libraryFiles.push(newLibraryFile)
     }
 
-    const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
-    return new LibraryItemScanData({
-      libraryFolderId: folder.id,
-      libraryId: library.id,
-      mediaType: library.mediaType,
-      ino: libraryItemStats.ino,
-      mtimeMs: libraryItemStats.mtimeMs || 0,
-      ctimeMs: libraryItemStats.ctimeMs || 0,
-      birthtimeMs: libraryItemStats.birthtimeMs || 0,
-      path: libraryItemData.path,
-      relPath: libraryItemData.relPath,
-      isFile: isSingleMediaItem,
-      mediaMetadata: libraryItemData.mediaMetadata || null,
-      libraryFiles
-    })
+    return await buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles)
   }
+
+  async setDataFromPath(path) {}
 
   /**
    *
@@ -219,3 +208,22 @@ class LibraryItemScanner {
   }
 }
 module.exports = new LibraryItemScanner()
+
+async function buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles) {
+  const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
+  return new LibraryItemScanData({
+    libraryFolderId: folder.id,
+    libraryId: library.id,
+    mediaType: library.mediaType,
+    ino: libraryItemStats.ino,
+    deviceId: libraryItemStats.dev,
+    mtimeMs: libraryItemStats.mtimeMs || 0,
+    ctimeMs: libraryItemStats.ctimeMs || 0,
+    birthtimeMs: libraryItemStats.birthtimeMs || 0,
+    path: libraryItemData.path,
+    relPath: libraryItemData.relPath,
+    isFile: isSingleMediaItem,
+    mediaMetadata: libraryItemData.mediaMetadata || null,
+    libraryFiles
+  })
+}
