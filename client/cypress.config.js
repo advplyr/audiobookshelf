@@ -1,11 +1,11 @@
-const { defineConfig } = require("cypress")
+const { defineConfig } = require('cypress')
 
 module.exports = defineConfig({
   component: {
     devServer: {
-      framework: "nuxt",
-      bundler: "webpack"
+      framework: 'nuxt',
+      bundler: 'vite'
     },
-    specPattern: "cypress/tests/**/*.cy.js"
+    specPattern: 'cypress/tests/**/*.cy.js'
   }
 })
