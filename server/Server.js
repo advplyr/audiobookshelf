@@ -11,6 +11,7 @@ const axios = require('axios')
 const { version } = require('../package.json')
 
 // Utils
+const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
 const Logger = require('./Logger')
@@ -419,8 +420,13 @@ class Server {
       })
     } else {
       this.server.listen(this.Port, this.Host, () => {
-        if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
-        else Logger.info(`Listening on port :${this.Port}`)
+        if (this.Host) {
+          let host = this.Host
+          if (is.ipv6(host)) {
+            host = '[' + host + ']'
+          }
+          Logger.info(`Listening on http://${host}:${this.Port}`)
+        } else Logger.info(`Listening on port :${this.Port}`)
       })
     }
 
