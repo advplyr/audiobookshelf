@@ -115,7 +115,6 @@ export default {
           id: 'tools',
           title: this.$strings.HeaderTools,
           component: 'modals-item-tabs-tools',
-          mediaType: 'book',
           admin: true
         },
         {

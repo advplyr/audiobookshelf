@@ -427,6 +427,38 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
 module.exports.getFFMetadataObject = getFFMetadataObject
 
 /**
+ * Build ffmetadata key-value pairs for a single podcast episode based on the library item and episode.
+ *
+ * @param {import('../models/LibraryItem')} libraryItem
+ * @param {import('../models/PodcastEpisode')} podcastEpisode
+ * @returns {Object}
+ */
+function getPodcastEpisodeFFMetadataObject(libraryItem, podcastEpisode) {
+  const podcast = libraryItem.media
+  const ffmetadata = {
+    title: podcastEpisode.title || podcast.title,
+    artist: podcast.author || podcast.title,
+    album_artist: podcast.author || podcast.title,
+    album: podcast.title,
+    genre: Array.isArray(podcast.genres) && podcast.genres.length ? podcast.genres.join('; ') : undefined,
+    date: podcast.releasedate,
+    comment: podcastEpisode.description,
+    description: podcastEpisode.description,
+    language: podcast.language,
+    'itunes-id': podcast.itunesId,
+    track: podcastEpisode.episode || undefined,
+    disc: podcastEpisode.season || undefined,
+  }
+
+  Object.keys(ffmetadata).forEach((key) => {
+    if (ffmetadata[key] === undefined || ffmetadata[key] === null || ffmetadata[key] === '') delete ffmetadata[key]
+  })
+  return ffmetadata
+}
+
+module.exports.getPodcastEpisodeFFMetadataObject = getPodcastEpisodeFFMetadataObject
+
+/**
  * Merges audio files into a single output file using FFmpeg.
  *
  * @param {import('../models/Book').AudioFileObject} audioTracks - The audio tracks to merge.
