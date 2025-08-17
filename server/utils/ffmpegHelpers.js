@@ -152,29 +152,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     const podcastEpisode = podcastEpisodeDownload.rssPodcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
-    const taggings = {
-      album: podcast.title,
-      'album-sort': podcast.title,
-      artist: podcast.author,
-      'artist-sort': podcast.author,
-      comment: podcastEpisode.description,
-      subtitle: podcastEpisode.subtitle,
-      disc: podcastEpisode.season,
-      genre: podcast.genres.length ? podcast.genres.join(';') : null,
-      language: podcast.language,
-      MVNM: podcast.title,
-      MVIN: podcastEpisode.episode,
-      track: podcastEpisode.episode,
-      'series-part': podcastEpisode.episode,
-      title: podcastEpisode.title,
-      'title-sort': podcastEpisode.title,
-      year: podcastEpisodeDownload.pubYear,
-      date: podcastEpisode.pubDate,
-      releasedate: podcastEpisode.pubDate,
-      'itunes-id': podcast.itunesId,
-      'podcast-type': podcast.podcastType,
-      'episode-type': podcastEpisode.episodeType
-    }
+    const taggings = getPodcastEpisodeFFMetadataObject(podcast, podcastEpisode, podcastEpisodeDownload)
 
     for (const tag in taggings) {
       if (taggings[tag]) {
@@ -433,27 +411,62 @@ module.exports.getFFMetadataObject = getFFMetadataObject
  * @param {import('../models/PodcastEpisode')} podcastEpisode
  * @returns {Object}
  */
-function getPodcastEpisodeFFMetadataObject(libraryItem, podcastEpisode) {
-  const podcast = libraryItem.media
-  const ffmetadata = {
-    title: podcastEpisode.title || podcast.title,
-    artist: podcast.author || podcast.title,
-    album_artist: podcast.author || podcast.title,
-    album: podcast.title,
-    genre: Array.isArray(podcast.genres) && podcast.genres.length ? podcast.genres.join('; ') : undefined,
-    date: podcast.releasedate,
-    comment: podcastEpisode.description,
-    description: podcastEpisode.description,
-    language: podcast.language,
-    'itunes-id': podcast.itunesId,
-    track: podcastEpisode.episode || undefined,
-    disc: podcastEpisode.season || undefined,
+function getPodcastEpisodeFFMetadataObject(podcast, podcastEpisode, podcastEpisodeDownload = {}) {
+  function formatToISO8601(date) {
+    if (!date) return null
+
+    let d
+    if (date instanceof Date) {
+      d = date
+    } else {
+      d = new Date(date)
+    }
+
+    if (isNaN(d.getTime())) return null
+    return d.toISOString()
   }
 
-  Object.keys(ffmetadata).forEach((key) => {
-    if (ffmetadata[key] === undefined || ffmetadata[key] === null || ffmetadata[key] === '') delete ffmetadata[key]
+  const pubDateISO = formatToISO8601(podcastEpisode.pubDate)
+  let pubYearISO = null
+  if (podcastEpisodeDownload?.pubYear) {
+    pubYearISO = podcastEpisodeDownload.pubYear
+  } else if (podcastEpisode.pubDate) {
+    const pubDateObj = new Date(podcastEpisode.pubDate)
+    if (pubDateObj && !isNaN(pubDateObj.getTime())) {
+      pubYearISO = pubDateObj.getUTCFullYear().toString()
+    }
+  }
+
+  const taggings = {
+    album: podcast.title,
+    'album-sort': podcast.title,
+    artist: podcast.author,
+    'artist-sort': podcast.author,
+    comment: podcastEpisode.description,
+    subtitle: podcastEpisode.subtitle,
+    disc: podcastEpisode.season,
+    genre: Array.isArray(podcast.genres) && podcast.genres.length ? podcast.genres.join(';') : null,
+    language: podcast.language,
+    MVNM: podcast.title,
+    MVIN: podcastEpisode.episode,
+    track: podcastEpisode.episode,
+    'series-part': podcastEpisode.episode,
+    title: podcastEpisode.title,
+    'title-sort': podcastEpisode.title,
+    year: pubYearISO,
+    date: pubDateISO,
+    releasedate: pubDateISO,
+    'itunes-id': podcast.itunesId,
+    'podcast-type': podcast.podcastType,
+    'episode-type': podcastEpisode.episodeType
+  }
+
+  Object.keys(taggings).forEach((key) => {
+    if (taggings[key] === undefined || taggings[key] === null || taggings[key] === '') {
+      delete taggings[key]
+    }
   })
-  return ffmetadata
+  return taggings
 }
 
 module.exports.getPodcastEpisodeFFMetadataObject = getPodcastEpisodeFFMetadataObject
