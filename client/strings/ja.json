@@ -88,6 +88,8 @@
   "HeaderLatestEpisodes": "最新のエピソード",
   "HeaderLibraries": "ライブラリー",
   "HeaderPlayerSettings": "プレーヤーの設定",
+  "HeaderSettingsGeneral": "一般",
+  "HeaderSettingsScanner": "スキャナー",
   "LabelBooks": "ほん",
   "LabelContinueListening": "続きから聞く",
   "LabelLanguage": "言語",
@@ -97,5 +99,17 @@
   "LabelNewPassword": "新しいのパスワード",
   "LabelPassword": "パスワード",
   "LabelPlaylists": "プレイリスト",
-  "LabelPodcast": "ポッドキャスト"
+  "LabelPodcast": "ポッドキャスト",
+  "LabelSettingsFindCovers": "表紙を探す",
+  "LabelSettingsFindCoversHelp": "もしオーディオブックに表紙が埋め込まれていない、もしくは表紙画像がフォルダー内に見つからなければ、スキャナーは表紙を探そうとします。<br>注記: これによってスキャン時間が長くなります",
+  "LabelSettingsParseSubtitles": "サブタイトルを抽出する",
+  "LabelSettingsParseSubtitlesHelp": "オーディオブックのフォルダー名からサブタイトルを抽出します。<br>サブタイトルは \"-\" で区切ってください<br>例: \"本のタイトル - ここにサブタイトル\" という名前だと \"ここにサブタイトル\" というサブタイトルになります",
+  "LabelSettingsPreferMatchedMetadata": "一致したメタデータを優先する",
+  "LabelSettingsPreferMatchedMetadataHelp": "クイックマッチを使用する時、一致したデータは書籍の詳細を上書きします。デフォルトでは、埋まっていない項目のみ入力されます。",
+  "LabelSettingsSortingIgnorePrefixes": "並び替えでプレフィックスを無視する",
+  "LabelSettingsSortingIgnorePrefixesHelp": "例: プレフィックス \"the\" の付いた本のタイトル \"The Book Title\" は \"Book Title, The\" として並び替えられます",
+  "LabelSettingsStoreCoversWithItem": "表紙を項目と一緒に保存する",
+  "LabelSettingsStoreCoversWithItemHelp": "デフォルトでは表紙は /metadata/items に保存されますが、この設定をオンにするとライブラリーの項目のフォルダーに保存されます。\"cover\" という名前のファイル一つのみが保持されます",
+  "LabelSettingsStoreMetadataWithItem": "メタデータを項目と一緒に保存する",
+  "LabelSettingsStoreMetadataWithItemHelp": "デフォルトではメタデータは/metadata/itemsに保存されますが、この設定をオンにするとライブラリーの項目のフォルダーに保存されます"
 }
