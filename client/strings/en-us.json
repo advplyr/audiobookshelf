@@ -1096,6 +1096,7 @@
   "ToastPlaylistUpdateSuccess": "Playlist updated",
   "ToastPodcastCreateFailed": "Failed to create podcast",
   "ToastPodcastCreateSuccess": "Podcast created successfully",
+  "ToastPodcastEpisodeUpdated": "Episode updated",
   "ToastPodcastGetFeedFailed": "Failed to get podcast feed",
   "ToastPodcastNoEpisodesInFeed": "No episodes found in RSS feed",
   "ToastPodcastNoRssFeed": "Podcast does not have an RSS feed",
