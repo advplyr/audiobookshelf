@@ -1,6 +1,6 @@
 const fs = require('../../libs/fsExtra')
 
-function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType, token) {
+function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType) {
   var ext = hlsSegmentType === 'fmp4' ? 'm4s' : 'ts'
 
   var lines = [
@@ -18,18 +18,18 @@ function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType, to
   var lastSegment = duration - (numSegments * segmentLength)
   for (let i = 0; i < numSegments; i++) {
     lines.push(`#EXTINF:6,`)
-    lines.push(`${segmentName}-${i}.${ext}?token=${token}`)
+    lines.push(`${segmentName}-${i}.${ext}`)
   }
   if (lastSegment > 0) {
     lines.push(`#EXTINF:${lastSegment},`)
-    lines.push(`${segmentName}-${numSegments}.${ext}?token=${token}`)
+    lines.push(`${segmentName}-${numSegments}.${ext}`)
   }
   lines.push('#EXT-X-ENDLIST')
   return lines.join('\n')
 }
 
-function generatePlaylist(outputPath, segmentName, duration, segmentLength, hlsSegmentType, token) {
-  var playlistStr = getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType, token)
+function generatePlaylist(outputPath, segmentName, duration, segmentLength, hlsSegmentType) {
+  var playlistStr = getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType)
   return fs.writeFile(outputPath, playlistStr)
 }
 module.exports = generatePlaylist
