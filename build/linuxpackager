@@ -1,6 +1,80 @@
 #!/bin/bash
 set -e
 set -o pipefail
+set -u
+
+# Default values
+BINARY_ONLY=false
+BUILD_ARCH_LINUX=false
+ARCH=""
+PKG_NO_BYTECODE=""
+
+# Loop through arguments
+for arg in "$@"; do
+  # Check for flags
+  if [ "$arg" == "--binary-only" ]; then
+    BINARY_ONLY=true
+  elif [ "$arg" == "--arch-linux" ]; then
+    BUILD_ARCH_LINUX=true
+  else
+    # If the argument is not a flag, assume it's the ARCH
+    ARCH="$arg"
+  fi
+done
+
+# Autodetect host arch if not provided
+if [ -z "$ARCH" ]; then
+  UNAME_ARCH=$(uname -m)
+  case "$UNAME_ARCH" in
+    x86_64) ARCH="amd64" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+    *)
+      echo "Unsupported host architecture: $UNAME_ARCH"
+      exit 1
+      ;;
+  esac
+  echo "No ARCH provided, using host architecture: $ARCH"
+fi
+
+# Map ARCH to pkg target + npm arch
+case "$ARCH" in
+  amd64)
+    PKG_TARGET="node20-linux-x64"
+    NPM_ARCH="x64"
+    ;;
+  arm64)
+    PKG_TARGET="node20-linux-arm64"
+    NPM_ARCH="arm64"
+    ;;
+  *)
+    echo "Unsupported architecture: $ARCH"
+    echo "Use amd64 or arm64"
+    exit 1
+    ;;
+esac
+
+# Ensure npm sees the right arch
+export npm_config_arch=$NPM_ARCH
+export npm_config_target_arch=$NPM_ARCH
+# Check for QEMU ARM64 support
+QEMU_ARM64_AVAILABLE=false
+
+if command -v qemu-aarch64-static >/dev/null 2>&1; then
+    # Check if binfmt_misc is registered
+    if [ -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ]; then
+        QEMU_ARM64_AVAILABLE=true
+    fi
+fi
+
+if [ "$(uname -m)" != "aarch64" ]; then
+  if [ "$ARCH" = "arm64" ]; then
+      if [ "$QEMU_ARM64_AVAILABLE" = false ]; then
+          echo "⚠ Warning: QEMU for ARM64 not found or not registered."
+          echo "  ARM64 binary build may fail. Falling back to --no-bytecode."
+          PKG_NO_BYTECODE="--no-bytecode --public-packages '*' --public"
+      fi
+  fi
+fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
@@ -9,14 +83,14 @@ cd "$SCRIPT_DIR/.."
 # Get package version without double quotes
 VERSION="$( eval echo $( jq '.version' package.json) )"
 DESCRIPTION="$( eval echo $( jq '.description' package.json) )"
-OUTPUT_FILE="audiobookshelf_${VERSION}_amd64.deb"
+OUTPUT_FILE="audiobookshelf_${VERSION}_${ARCH}.deb"
 
 echo ">>> Building Client"
 echo "--------------------"
 
 cd client
 rm -rf node_modules
-npm ci --unsafe-perm=true --allow-root
+npm ci --unsafe-perm=true --allow-root --arch=${NPM_ARCH}
 npm run generate
 cd ..
 
@@ -24,34 +98,118 @@ echo ">>> Building Server"
 echo "--------------------"
 
 rm -rf node_modules
-npm ci --unsafe-perm=true --allow-root
+npm ci --unsafe-perm=true --allow-root --arch=${NPM_ARCH}
 
 echo ">>> Packaging"
 echo "--------------------"
 
-# Create debian control file
-
 mkdir -p dist
-rm -rf dist/debian
-cp -R build/debian dist/debian
-chmod -R 775 dist/debian
 
+# Package only binary if requested
+if [ "$BINARY_ONLY" = true ]; then
+  echo "Building binary only for architecture: $ARCH"
+  npx @yao-pkg/pkg ${PKG_NO_BYTECODE} -t ${PKG_TARGET} -o dist/audiobookshelf_${VERSION}_${ARCH} .
+  echo "Finished! Binary: dist/audiobookshelf_${VERSION}_${ARCH}"
+  exit 0
+fi
+
+if [ "$BUILD_ARCH_LINUX" = true ]; then
+    echo ">>> Building for Arch Linux"
+    echo "----------------------------"
+
+    # Create the directory to store the Arch Linux package
+    rm -rf dist/arch
+    cp -R build/arch dist/arch
+    
+    
+    # Build the binary with yao-pkg and place it in the specified directory
+    npx @yao-pkg/pkg ${PKG_NO_BYTECODE} -t ${PKG_TARGET} -o dist/arch/audiobookshelf_${VERSION} .
+    
+    # Update the PKGBUILD file with the new version
+    sed -i "s/pkgver=.*/pkgver=${VERSION}/" dist/arch/PKGBUILD
+
+    # Calculate sha256sum for the built binary and strip the file name
+    for file in dist/arch/*; do
+        if [ -f "$file" ] && [[ "$file" != *PKGBUILD ]]; then
+            # Add the sha256sum for each file
+            sha256=$(sha256sum "$file" | awk '{print $1}')
+            sha256sums+=("$sha256")
+            
+            # Add file to source
+            source+=("$(basename "$file")")
+        fi
+    done
+    # Prepare sha256sums string for PKGBUILD
+    sha256_str=""
+    for s in "${sha256sums[@]}"; do
+        sha256_str+="'$s' "
+    done
+    sha256_str="${sha256_str% }"
+
+    # Update sha256sums in the PKGBUILD file
+    sed -i "s|sha256sums=(.*)|sha256sums=($sha256_str)|" dist/arch/PKGBUILD
+    
+    # Update the source field in the PKGBUILD with the correct files, excluding PKGBUILD
+    source_str=""
+    for s in "${source[@]}"; do
+        source_str+="'$s' "
+    done
+    source_str="${source_str% }"
+
+    # Update the PKGBUILD with the correct source field
+    sed -i "s|source=(.*)|source=($source_str)|" dist/arch/PKGBUILD
+    
+    # Modify the PKGBUILD to match the architecture being built
+    if [ "$ARCH" = "amd64" ]; then
+        # Set the arch to x86_64 for AMD64 build
+        sed -i "s/arch=(.*)/arch=('x86_64')/" dist/arch/PKGBUILD
+    elif [ "$ARCH" = "arm64" ]; then
+        # Set the arch to aarch64 for ARM64 build
+        sed -i "s/arch=(.*)/arch=('aarch64')/" dist/arch/PKGBUILD
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
+    
+    echo ">>> Building Arch Linux package"
+    # Ensure necessary tools are installed
+    if ! command -v makepkg >/dev/null 2>&1; then
+      echo "makepkg is required to build Arch Linux packages. Install it with: sudo pacman -S base-devel"
+      exit 1
+    fi
+
+    # Run makepkg to build the package
+    cd dist/arch
+    
+    PKGDEST=../ makepkg -sf --noconfirm --ignorearch
+
+    echo "Finished! Arch Linux package built."
+    exit 0
+else
+    # Otherwise build .deb
+    rm -rf dist/debian
+    cp -R build/debian dist/debian
+    chmod -R 775 dist/debian
+    
+# Create debian control file
 controlfile="Package: audiobookshelf
 Version: $VERSION
 Section: base
 Priority: optional
-Architecture: amd64
+Architecture: ${ARCH}
 Depends:
 Maintainer: advplyr
 Description: $DESCRIPTION"
-
-echo "$controlfile" > dist/debian/DEBIAN/control;
-
-# Package debian
-pkg -t node20-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
-
-fakeroot dpkg-deb -Zxz --build dist/debian
-
-mv dist/debian.deb "dist/$OUTPUT_FILE"
-
-echo "Finished! Filename: $OUTPUT_FILE"
+    
+    echo "$controlfile" > dist/debian/DEBIAN/control;
+    
+    # Package debian
+    mkdir -p dist/debian/usr/share/audiobookshelf
+    npx @yao-pkg/pkg ${PKG_NO_BYTECODE} -t ${PKG_TARGET} -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
+    
+    fakeroot dpkg-deb -Zxz --build dist/debian
+    
+    mv dist/debian.deb "dist/$OUTPUT_FILE"
+    
+    echo "Finished! Filename: dist/${OUTPUT_FILE}.deb"
+fi
