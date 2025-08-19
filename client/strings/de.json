@@ -953,7 +953,7 @@
   "NotificationOnRSSFeedDisabledDescription": "Wird ausgeführt wenn automatische Downloads von Episoden wegen zu vielen fehlgeschlagenen Versuchen deaktiviert sind",
   "NotificationOnRSSFeedFailedDescription": "Wird ausgelöst, wenn die RSS-Feed-Anforderung für einen automatischen Episoden-Download fehlschlägt",
   "NotificationOnTestDescription": "Wird ausgeführt wenn das Benachrichtigungssystem getestet wird",
-  "PlaceholderBulkChapterInput": "Geben den Titel des Kapitels ein oder verwende eine Nummerierung (z. B. \"Episode 1\", \"Kapitel 10\", \"1.\")",
+  "PlaceholderBulkChapterInput": "Kapitelbezeichnung eingeben oder Nummerierung verwenden (z.B. 'Episode 1', 'Kapitel 10', '1.')",
   "PlaceholderNewCollection": "Neuer Sammlungsname",
   "PlaceholderNewFolderPath": "Neuer Ordnerpfad",
   "PlaceholderNewPlaylist": "Neuer Wiedergabelistenname",
