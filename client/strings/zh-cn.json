@@ -1096,6 +1096,7 @@
   "ToastPlaylistUpdateSuccess": "播放列表已更新",
   "ToastPodcastCreateFailed": "创建播客失败",
   "ToastPodcastCreateSuccess": "已成功创建播客",
+  "ToastPodcastEpisodeUpdated": "剧集已更新",
   "ToastPodcastGetFeedFailed": "无法获取播客信息",
   "ToastPodcastNoEpisodesInFeed": "RSS 订阅中未找到任何剧集",
   "ToastPodcastNoRssFeed": "播客没有 RSS 源",
