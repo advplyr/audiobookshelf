@@ -1096,6 +1096,7 @@
   "ToastPlaylistUpdateSuccess": "Список відтворення оновлено",
   "ToastPodcastCreateFailed": "Не вдалося створити подкаст",
   "ToastPodcastCreateSuccess": "Подкаст успішно створено",
+  "ToastPodcastEpisodeUpdated": "Епізод оновлено",
   "ToastPodcastGetFeedFailed": "Не вдалося отримати фід подкасту",
   "ToastPodcastNoEpisodesInFeed": "У RSS-каналі не знайдено епізодів",
   "ToastPodcastNoRssFeed": "Подкаст не має RSS-каналу",
