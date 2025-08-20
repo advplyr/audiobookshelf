@@ -420,13 +420,8 @@ class Server {
       })
     } else {
       this.server.listen(this.Port, this.Host, () => {
-        if (this.Host) {
-          let host = this.Host
-          if (is.ipv6(host)) {
-            host = '[' + host + ']'
-          }
-          Logger.info(`Listening on http://${host}:${this.Port}`)
-        } else Logger.info(`Listening on port :${this.Port}`)
+        if (this.Host) Logger.info(`Listening on http://${is.ipv6(this.Host) ? `[${this.Host}]` : this.Host}:${this.Port}`)
+        else Logger.info(`Listening on port :${this.Port}`)
       })
     }
 
