@@ -4,6 +4,9 @@ const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
 class LibraryFile {
+  /**
+   * @param {{ ino: any; deviceId: any; metadata?: { filename: any; ext: any; path: any; relPath: any; size: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; } | { filename: string; ext: string; path: string; relPath: string; size: number; mtimeMs: number; ctimeMs: number; birthtimeMs: number; } | null; isSupplementary?: any; addedAt?: any; updatedAt?: any; fileType?: string; libraryFolderId?: any; libraryId?: any; mediaType?: any; mtimeMs?: any; ctimeMs?: any; birthtimeMs?: any; path?: any; relPath?: any; isFile?: any; mediaMetadata?: any; libraryFiles?: any; } | undefined} [file]
+   */
   constructor(file) {
     this.ino = null
     this.deviceId = null

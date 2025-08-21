@@ -71,10 +71,13 @@ class AudioFile {
     }
   }
 
+  /**
+   * @param {{ index: any; ino: any; deviceId: any; metadata: any; addedAt: any; updatedAt: any; manuallyVerified: any; exclude: any; error: null; trackNumFromMeta: any; discNumFromMeta: any; trackNumFromFilename: any; cdNumFromFilename: undefined; discNumFromFilename: any; format: any; duration: any; bitRate: any; language: any; codec: null; timeBase: any; channels: any; channelLayout: any; chapters: any[]; embeddedCoverArt: null; metaTags: any; }} data
+   */
   construct(data) {
     this.index = data.index
     this.ino = data.ino
-    this.deviceId = data.dev
+    this.deviceId = data.deviceId
     this.metadata = new FileMetadata(data.metadata || {})
     this.addedAt = data.addedAt
     this.updatedAt = data.updatedAt

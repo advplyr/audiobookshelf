@@ -23,7 +23,7 @@ class LibraryItemScanner {
    * Scan single library item
    *
    * @param {string} libraryItemId
-   * @param {{relPath:string, path:string}} [updateLibraryItemDetails] used by watcher when item folder was renamed
+   * @param {{relPath:string, path:string, isFile: boolean}} [updateLibraryItemDetails] used by watcher when item folder was renamed
    * @returns {number} ScanResult
    */
   async scanLibraryItem(libraryItemId, updateLibraryItemDetails = null) {
@@ -190,7 +190,7 @@ class LibraryItemScanner {
    * @param {import('../models/Library')} library
    * @param {import('../models/LibraryFolder')} folder
    * @param {boolean} isSingleMediaItem
-   * @returns {Promise<LibraryItem>} ScanResult
+   * @returns {Promise<LibraryItem | null>} ScanResult
    */
   async scanPotentialNewLibraryItem(libraryItemPath, library, folder, isSingleMediaItem) {
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, isSingleMediaItem)
@@ -209,6 +209,13 @@ class LibraryItemScanner {
 }
 module.exports = new LibraryItemScanner()
 
+/**
+ * @param {{ path?: any; relPath?: any; mediaMetadata?: any; }} libraryItemData
+ * @param {import("../models/LibraryFolder")} folder
+ * @param {import("../models/Library")} library
+ * @param {boolean} isSingleMediaItem
+ * @param {LibraryFile[]} libraryFiles
+ */
 async function buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles) {
   const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
   return new LibraryItemScanData({

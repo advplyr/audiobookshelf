@@ -5,11 +5,11 @@ const globals = require('../utils/globals')
 
 class LibraryItemScanData {
   /**
-   * @typedef LibraryFileModifiedObject
+   * @typedef {Object} LibraryFileModifiedObject
    * @property {LibraryItem.LibraryFileObject} old
    * @property {LibraryItem.LibraryFileObject} new
+   * @param {{ libraryFolderId: any; libraryId: any; mediaType: any; ino: any; deviceId: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; path: any; relPath: any; isFile: any; mediaMetadata: any; libraryFiles: any; }} data
    */
-
   constructor(data) {
     /** @type {string} */
     this.libraryFolderId = data.libraryFolderId
@@ -20,7 +20,7 @@ class LibraryItemScanData {
     /** @type {string} */
     this.ino = data.ino
     /** @type {string} */
-    this.deviceId = data.dev
+    this.deviceId = data.deviceId
     /** @type {number} */
     this.mtimeMs = data.mtimeMs
     /** @type {number} */
@@ -179,8 +179,8 @@ class LibraryItemScanData {
   /**
    *
    * @param {LibraryItem} existingLibraryItem
-   * @param {import('./LibraryScan')} libraryScan
-   * @returns {boolean} true if changes found
+   * @param {import('./LibraryScan') | import('./ScanLogger')} libraryScan
+   * @returns {Promise<boolean>} true if changes found
    */
   async checkLibraryItemData(existingLibraryItem, libraryScan) {
     const keysToCompare = ['libraryFolderId', 'ino', 'deviceId', 'path', 'relPath', 'isFile']
