@@ -332,7 +332,7 @@ class LibraryItemScanData {
       return true
     }
     // Fallback to check inode value
-    return this.audioLibraryFilesRemoved.some((af) => af.ino === existingAudioFile.ino)
+    return this.audioLibraryFilesRemoved.some((af) => af.ino === existingAudioFile.ino && af.deviceId === existingAudioFile.deviceId)
   }
 
   /**

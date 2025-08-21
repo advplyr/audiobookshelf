@@ -45,6 +45,7 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
  * @typedef AudioFileObject
  * @property {number} index
  * @property {string} ino
+ * @property {string} deviceId
  * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
  * @property {number} addedAt
  * @property {number} updatedAt

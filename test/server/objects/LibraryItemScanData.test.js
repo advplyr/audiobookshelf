@@ -38,6 +38,52 @@ describe('compareUpdateLibraryFileWithDeviceId', () => {
   })
 })
 
+describe('checkAudioFileRemoved', function () {
+  this.timeout(0)
+  it('doesNotDetectFileRemovedWhenInodeIsSameButDeviceIdDiffers', () => {
+    const lisd = new LibraryItemScanData(buildFileProperties('/library/book/file.mp3', '1', '1000'))
+    lisd.libraryFilesRemoved.push(buildLibraryFileObject('/library/book/file.mp3', '1', '1000'))
+    const af_obj = buildAudioFileObject('/library/someotherbook/chapter1.mp3', '1', '200')
+
+    const fileRemoved = lisd.checkAudioFileRemoved(af_obj)
+
+    expect(fileRemoved).to.be.false
+  })
+
+  it('detectsFileRemovedWhenNameDoesNotMatchButInodeAndDeviceIdMatch', () => {
+    const lisd = new LibraryItemScanData(buildFileProperties('/library/book/file.mp3', '1', '1000'))
+    lisd.libraryFilesRemoved.push(buildLibraryFileObject('/library/book/file.mp3', '1', '1000'))
+    const af_obj = buildAudioFileObject('/library/someotherbook/chapter1.mp3', '1', '1000')
+
+    expect(lisd.path).to.not.equal(af_obj.metadata.path)
+    const fileRemoved = lisd.checkAudioFileRemoved(af_obj)
+
+    expect(fileRemoved).to.be.true
+  })
+})
+
+// checkEbookFileRemoved
+
+// libraryItemObject()
+/*
+new LibraryItemScanData({
+    libraryFolderId: folder.id,
+    libraryId: library.id,
+    mediaType: library.mediaType,
+    ino: libraryItemStats.ino,
+    deviceId: libraryItemStats.dev,
+    mtimeMs: libraryItemStats.mtimeMs || 0,
+    ctimeMs: libraryItemStats.ctimeMs || 0,
+    birthtimeMs: libraryItemStats.birthtimeMs || 0,
+    path: libraryItemData.path,
+    relPath: libraryItemData.relPath,
+    isFile: isSingleMediaItem,
+    mediaMetadata: libraryItemData.mediaMetadata || null,
+    libraryFiles
+  })
+
+*/
+
 /**
  * @returns {import('../../../server/models/LibraryItem').LibraryFileObject}
  * @param {string} [path]
@@ -63,24 +109,40 @@ function buildLibraryFileObject(path, ino, deviceId) {
     }
   }
 }
-// checkEbookFileRemoved
-// checkAudioFileRemoved
-// libraryItemObject()
-/*
-new LibraryItemScanData({
-    libraryFolderId: folder.id,
-    libraryId: library.id,
-    mediaType: library.mediaType,
-    ino: libraryItemStats.ino,
-    deviceId: libraryItemStats.dev,
-    mtimeMs: libraryItemStats.mtimeMs || 0,
-    ctimeMs: libraryItemStats.ctimeMs || 0,
-    birthtimeMs: libraryItemStats.birthtimeMs || 0,
-    path: libraryItemData.path,
-    relPath: libraryItemData.relPath,
-    isFile: isSingleMediaItem,
-    mediaMetadata: libraryItemData.mediaMetadata || null,
-    libraryFiles
-  })
 
-*/
+/** @returns {import('../../../server/models/Book').AudioFileObject} */
+function buildAudioFileObject(path = '/library/somebook/file.mp3', ino = '1', deviceId = '1000') {
+  return {
+    index: 0,
+    ino: ino,
+    deviceId: deviceId,
+    metadata: {
+      filename: Path.basename(path),
+      ext: Path.extname(path),
+      path: path,
+      relPath: path,
+      size: 0,
+      mtimeMs: 0,
+      ctimeMs: 0,
+      birthtimeMs: 0
+    },
+    addedAt: 0,
+    updatedAt: 0,
+    trackNumFromMeta: 0,
+    discNumFromMeta: 0,
+    trackNumFromFilename: 0,
+    discNumFromFilename: 0,
+    manuallyVerified: false,
+    format: '',
+    duration: 0,
+    bitRate: 0,
+    language: '',
+    codec: '',
+    timeBase: '',
+    channels: 0,
+    channelLayout: '',
+    chapters: [],
+    metaTags: undefined,
+    mimeType: ''
+  }
+}
