@@ -243,7 +243,7 @@ class LibraryItemScanData {
       } else {
         libraryFilesAdded = libraryFilesAdded.filter((lf) => lf !== matchingLibraryFile)
         let existingLibraryFileBefore = structuredClone(existingLibraryFile)
-        if (this.compareUpdateLibraryFile(existingLibraryItem.path, existingLibraryFile, matchingLibraryFile, libraryScan)) {
+        if (LibraryItemScanData.compareUpdateLibraryFile(existingLibraryItem.path, existingLibraryFile, matchingLibraryFile, libraryScan)) {
           this.libraryFilesModified.push({ old: existingLibraryFileBefore, new: existingLibraryFile })
           this.hasChanges = true
         }
@@ -289,10 +289,10 @@ class LibraryItemScanData {
    * @param {string} libraryItemPath
    * @param {LibraryItem.LibraryFileObject} existingLibraryFile
    * @param {import('../objects/files/LibraryFile')} scannedLibraryFile
-   * @param {import('./LibraryScan')} libraryScan
+   * @param {import('./LibraryScan') | import('./ScanLogger')} libraryScan
    * @returns {boolean} false if no changes
    */
-  compareUpdateLibraryFile(libraryItemPath, existingLibraryFile, scannedLibraryFile, libraryScan) {
+  static compareUpdateLibraryFile(libraryItemPath, existingLibraryFile, scannedLibraryFile, libraryScan) {
     let hasChanges = false
 
     if (existingLibraryFile.ino !== scannedLibraryFile.ino && existingLibraryFile.deviceId !== scannedLibraryFile.deviceId) {

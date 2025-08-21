@@ -4,14 +4,13 @@ const sinon = require('sinon')
 
 const Path = require('path')
 const Database = require('../../../server/Database')
-const { loadTestDatabase, stubFileUtils, getMockFileInfo } = require('../MockDatabase')
+const { loadTestDatabase, stubFileUtils, getMockFileInfo, buildFileProperties } = require('../MockDatabase')
 
 // TODO: all of these classes duplicate each other.
 const LibraryFile = require('../../../server/objects/files/LibraryFile')
 const EBookFile = require('../../../server/objects/files/EBookFile')
 const AudioFile = require('../../../server/objects/files/AudioFile')
 const LibraryItemScanData = require('../../../server/scanner/LibraryItemScanData')
-const FileMetadata = require('../../../server/objects/metadata/FileMetadata')
 
 const fileProperties = buildFileProperties()
 const lf = new LibraryFile(fileProperties)
@@ -76,25 +75,6 @@ describe('ObjectSetsDeviceIdWhenSerialized', () => {
     })
   })
 })
-
-/** @returns {{ libraryFolderId: any; libraryId: any; mediaType: any; ino: any; deviceId: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; path: any; relPath: any; isFile: any; mediaMetadata: any; libraryFiles: any; }} */
-function buildFileProperties() {
-  const path = '/tmp/foo.epub'
-  const metadata = new FileMetadata()
-  metadata.filename = Path.basename(path)
-  metadata.path = path
-  metadata.relPath = path
-  metadata.ext = Path.extname(path)
-
-  return {
-    ino: '12345',
-    deviceId: '9876',
-    metadata: metadata,
-    isSupplementary: false,
-    addedAt: Date.now(),
-    updatedAt: Date.now()
-  }
-}
 
 function buildLibraryItemProperties(fileProperties) {
   return {

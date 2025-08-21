@@ -2,6 +2,8 @@ const Database = require('../../server/Database')
 const { Sequelize } = require('sequelize')
 const LibraryFile = require('../../server/objects/files/LibraryFile')
 const fileUtils = require('../../server/utils/fileUtils')
+const FileMetadata = require('../../server/objects/metadata/FileMetadata')
+const Path = require('path')
 const sinon = require('sinon')
 
 async function loadTestDatabase(mockFileInfo) {
@@ -120,3 +122,22 @@ function stubFileUtils() {
   })
 }
 exports.stubFileUtils = stubFileUtils
+
+/** @returns {{ libraryFolderId: any; libraryId: any; mediaType: any; ino: any; deviceId: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; path: any; relPath: any; isFile: any; mediaMetadata: any; libraryFiles: any; }} */
+function buildFileProperties(path = '/tmp/foo.epub', ino = '12345', deviceId = '9876') {
+  const metadata = new FileMetadata()
+  metadata.filename = Path.basename(path)
+  metadata.path = path
+  metadata.relPath = path
+  metadata.ext = Path.extname(path)
+
+  return {
+    ino: ino,
+    deviceId: deviceId,
+    metadata: metadata,
+    isSupplementary: false,
+    addedAt: Date.now(),
+    updatedAt: Date.now()
+  }
+}
+exports.buildFileProperties = buildFileProperties
