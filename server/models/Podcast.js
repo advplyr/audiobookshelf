@@ -82,6 +82,13 @@ class Podcast extends Model {
     const genres = Array.isArray(payload.metadata.genres) && payload.metadata.genres.every((g) => typeof g === 'string' && g.length) ? payload.metadata.genres : []
     const tags = Array.isArray(payload.tags) && payload.tags.every((t) => typeof t === 'string' && t.length) ? payload.tags : []
 
+    const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
+    stringKeys.forEach((key) => {
+      if (typeof payload.metadata[key] === 'number') {
+        payload.metadata[key] = String(payload.metadata[key])
+      }
+    })
+
     return this.create(
       {
         title,
@@ -205,6 +212,11 @@ class Podcast extends Model {
     if (payload.metadata) {
       const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
       stringKeys.forEach((key) => {
+        // Convert numbers to strings
+        if (typeof payload.metadata[key] === 'number') {
+          payload.metadata[key] = String(payload.metadata[key])
+        }
+
         let newKey = key
         if (key === 'type') {
           newKey = 'podcastType'
