@@ -344,23 +344,7 @@ class LibraryScanner {
         continue
       }
 
-      items.push(
-        new LibraryItemScanData({
-          libraryFolderId: folder.id,
-          libraryId: folder.libraryId,
-          mediaType: library.mediaType,
-          ino: libraryItemFolderStats.ino,
-          deviceId: libraryItemFolderStats.dev,
-          mtimeMs: libraryItemFolderStats.mtimeMs || 0,
-          ctimeMs: libraryItemFolderStats.ctimeMs || 0,
-          birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-          path: libraryItemData.path,
-          relPath: libraryItemData.relPath,
-          isFile,
-          mediaMetadata: libraryItemData.mediaMetadata || null,
-          libraryFiles: fileObjs
-        })
-      )
+      items.push(createLibraryItemScanData(folder, library, libraryItemFolderStats, libraryItemData, isFile, fileObjs))
     }
     return items
   }
@@ -753,4 +737,31 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
 
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
+}
+
+/**
+ * @param {{ id: any; libraryId: any; }} folder
+ * @param {{ mediaType: any; }} library
+ * @param {{ ino: any; dev: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; }} libraryItemFolderStats
+ * @param {{ path: any; relPath: any; mediaMetadata: any; }} libraryItemData
+ * @param {any} isFile
+ * @param {any} fileObjs
+ * @returns {LibraryItemScanData} new object
+ */
+function createLibraryItemScanData(folder, library, libraryItemFolderStats, libraryItemData, isFile, fileObjs) {
+  return new LibraryItemScanData({
+    libraryFolderId: folder.id,
+    libraryId: folder.libraryId,
+    mediaType: library.mediaType,
+    ino: libraryItemFolderStats.ino,
+    deviceId: libraryItemFolderStats.dev,
+    mtimeMs: libraryItemFolderStats.mtimeMs || 0,
+    ctimeMs: libraryItemFolderStats.ctimeMs || 0,
+    birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
+    path: libraryItemData.path,
+    relPath: libraryItemData.relPath,
+    isFile,
+    mediaMetadata: libraryItemData.mediaMetadata || null,
+    libraryFiles: fileObjs
+  })
 }

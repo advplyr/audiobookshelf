@@ -124,7 +124,7 @@ function stubFileUtils() {
 exports.stubFileUtils = stubFileUtils
 
 /** @returns {{ libraryFolderId: any; libraryId: any; mediaType: any; ino: any; deviceId: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; path: any; relPath: any; isFile: any; mediaMetadata: any; libraryFiles: any; }} */
-function buildFileProperties(path = '/tmp/foo.epub', ino = '12345', deviceId = '9876') {
+function buildFileProperties(path = '/tmp/foo.epub', ino = '12345', deviceId = '9876', libraryFiles = []) {
   const metadata = new FileMetadata()
   metadata.filename = Path.basename(path)
   metadata.path = path
@@ -137,7 +137,35 @@ function buildFileProperties(path = '/tmp/foo.epub', ino = '12345', deviceId = '
     metadata: metadata,
     isSupplementary: false,
     addedAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    libraryFiles: [...libraryFiles.map((lf) => lf.toJSON())]
   }
 }
 exports.buildFileProperties = buildFileProperties
+
+/**
+ * @returns {import('../../server/models/LibraryItem').LibraryFileObject}
+ * @param {string} [path]
+ * @param {string} [ino]
+ * @param {string} [deviceId]
+ */
+function buildLibraryFileProperties(path, ino, deviceId) {
+  return {
+    ino: ino,
+    deviceId: deviceId,
+    isSupplementary: false,
+    addedAt: 0,
+    updatedAt: 0,
+    metadata: {
+      filename: Path.basename(path),
+      ext: Path.extname(path),
+      path: path,
+      relPath: path,
+      size: 0,
+      mtimeMs: 0,
+      ctimeMs: 0,
+      birthtimeMs: 0
+    }
+  }
+}
+exports.buildLibraryFileProperties = buildLibraryFileProperties

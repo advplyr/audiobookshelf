@@ -2,6 +2,9 @@ const packageJson = require('../../package.json')
 const { LogLevel } = require('../utils/constants')
 const LibraryItem = require('../models/LibraryItem')
 const globals = require('../utils/globals')
+const LibraryFile = require('../objects/files/LibraryFile')
+const LibraryScan = require('./LibraryScan')
+const ScanLogger = require('./ScanLogger')
 
 class LibraryItemScanData {
   /**
@@ -226,13 +229,7 @@ class LibraryItemScanData {
 
     for (const existingLibraryFile of existingLibraryItem.libraryFiles) {
       // Find matching library file using path first and fallback to using inode value
-      let matchingLibraryFile = this.libraryFiles.find((lf) => lf.metadata.path === existingLibraryFile.metadata.path)
-      if (!matchingLibraryFile) {
-        matchingLibraryFile = this.libraryFiles.find((lf) => lf.ino === existingLibraryFile.ino)
-        if (matchingLibraryFile) {
-          libraryScan.addLog(LogLevel.INFO, `Library file with path "${existingLibraryFile.metadata.path}" not found, but found file with matching inode value "${existingLibraryFile.ino}" at path "${matchingLibraryFile.metadata.path}"`)
-        }
-      }
+      let matchingLibraryFile = this.findMatchingLibraryFileByPathOrInodeAndDeviceId(existingLibraryFile, libraryScan)
 
       if (!matchingLibraryFile) {
         // Library file removed
@@ -278,10 +275,9 @@ class LibraryItemScanData {
         existingLibraryItem.changed('libraryFiles', true)
       }
       await existingLibraryItem.save()
-      return true
     }
 
-    return false
+    return this.hasChanges
   }
 
   /**
@@ -321,6 +317,23 @@ class LibraryItemScanData {
   }
 
   /**
+   * @returns {LibraryFile | undefined} if [existingLibraryFile] matches an existing libraryFile
+   * @param {LibraryItem.LibraryFileObject} [existingLibraryFile]
+   * @param {LibraryScan | ScanLogger} [libraryScan]
+   */
+  findMatchingLibraryFileByPathOrInodeAndDeviceId(existingLibraryFile, libraryScan) {
+    if (!existingLibraryFile) return
+    let matchingLibraryFile = this.libraryFiles.find((lf) => lf.metadata.path === existingLibraryFile.metadata.path)
+    if (!matchingLibraryFile) {
+      matchingLibraryFile = this.libraryFiles.find((lf) => lf.ino === existingLibraryFile.ino && lf.deviceId === existingLibraryFile.deviceId)
+      if (matchingLibraryFile) {
+        libraryScan && libraryScan.addLog(LogLevel.INFO, `Library file with path "${existingLibraryFile.metadata.path}" not found, but found file with matching inode value "${existingLibraryFile.ino}" at path "${matchingLibraryFile.metadata.path}"`)
+      }
+    }
+    return matchingLibraryFile
+  }
+
+  /**
    * Check if existing audio file on Book was removed
    * @param {import('../models/Book').AudioFileObject} existingAudioFile
    * @returns {boolean} true if audio file was removed
@@ -341,13 +354,13 @@ class LibraryItemScanData {
    * @returns {boolean} true if ebook file was removed
    */
   checkEbookFileRemoved(ebookFile) {
-    if (!this.ebookLibraryFiles.length) return true
+    if (!this.ebookLibraryFilesRemoved.length) return false
 
-    if (this.ebookLibraryFiles.some((lf) => lf.metadata.path === ebookFile.metadata.path)) {
-      return false
+    if (this.ebookLibraryFilesRemoved.some((lf) => lf.metadata.path === ebookFile.metadata.path)) {
+      return true
     }
 
-    return !this.ebookLibraryFiles.some((lf) => lf.ino === ebookFile.ino)
+    return this.ebookLibraryFilesRemoved.some((lf) => lf.ino === ebookFile.ino && lf.deviceId === ebookFile.deviceId)
   }
 
   /**

@@ -8,7 +8,9 @@ const LibraryItem = require('../../../server/models/LibraryItem')
 const FileMetadata = require('../../../server/objects/metadata/FileMetadata')
 const Path = require('path')
 const Database = require('../../../server/Database')
-const { stubFileUtils, loadTestDatabase, getMockFileInfo, getRenamedMockFileInfo, buildBookLibraryItemParams } = require('../MockDatabase')
+const { stubFileUtils, loadTestDatabase, getMockFileInfo, getRenamedMockFileInfo, buildBookLibraryItemParams, buildFileProperties, buildLibraryFileProperties } = require('../MockDatabase')
+const libraryScannerInstance = require('../../../server/scanner/LibraryScanner')
+const LibraryScan = require('../../../server/scanner/LibraryScan')
 
 describe('LibraryScanner', () => {
   let LibraryScanner, testLibrary
@@ -210,7 +212,60 @@ describe('LibraryScanner', () => {
     expect(ItemToItemInoMatch(item1, item2)).to.be.false
   })
 
-  it('ItemToItemInoMatch-RenamedFileShouldMatch', () => {
+  it('ItemToItemInoMatch-RenamedFileShouldMatch', async () => {
     let ItemToItemInoMatch = LibraryScanner.__get__('ItemToItemInoMatch')
+
+    let mockFileInfo = getMockFileInfo()
+    testLibrary = await loadTestDatabase(mockFileInfo)
+
+    // this compares the inode from the first library item to the second library item's library file inode
+    const original = await Database.libraryItemModel.findOneExpanded({
+      libraryId: testLibrary.id,
+      path: '/test/file.pdf'
+    })
+
+    const renamedMockFileInfo = getRenamedMockFileInfo().get('/test/file-renamed.pdf')
+    const renamedFile = new LibraryFile()
+    var fileMetadata = new FileMetadata()
+    fileMetadata.setData(renamedMockFileInfo)
+    fileMetadata.filename = Path.basename(renamedMockFileInfo.path)
+    fileMetadata.path = fileUtils.filePathToPOSIX(renamedMockFileInfo.path)
+    fileMetadata.relPath = fileUtils.filePathToPOSIX(renamedMockFileInfo.path)
+    fileMetadata.ext = Path.extname(renamedMockFileInfo.path)
+    renamedFile.ino = renamedMockFileInfo.ino
+    renamedFile.deviceId = renamedMockFileInfo.dev
+    renamedFile.metadata = fileMetadata
+    renamedFile.addedAt = Date.now()
+    renamedFile.updatedAt = Date.now()
+    renamedFile.metadata = fileMetadata
+
+    const renamedItem = new LibraryItem(buildBookLibraryItemParams(renamedFile, null, testLibrary.id, null))
+
+    expect(ItemToItemInoMatch(original, renamedItem)).to.be.true
+  })
+
+  describe('createLibraryItemScanData', () => {
+    it('createLibraryItemScanDataSetsDeviceId', async () => {
+      /**
+       * @param {{ id: any; libraryId: any; }} folder
+       * @param {{ mediaType: any; }} library
+       * @param {{ ino: any; dev: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; }} libraryItemFolderStats
+       * @param {{ path: any; relPath: any; mediaMetadata: any; }} libraryItemData
+       * @param {any} isFile
+       * @param {any} fileObjs
+       * @returns {LibraryItemScanData} new object
+       */
+      const createLibraryItemScanData = LibraryScanner.__get__('createLibraryItemScanData')
+
+      const liFolderStats = { path: '/library/book/file.epub', isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '1000' }
+      const lf_properties = buildLibraryFileProperties('/library/book/file.epub', '1', '1000')
+      const libraryFile = new LibraryFile(lf_properties)
+
+      const lisd = createLibraryItemScanData({ id: 'foo', libraryId: 'bar' }, { mediaType: 'ebook' }, liFolderStats, lf_properties, true, [libraryFile.toJSON()])
+
+      expect(lisd).to.not.be.null
+      expect(lisd.ino).to.equal(liFolderStats.ino)
+      expect(lisd.deviceId).to.equal(liFolderStats.dev)
+    })
   })
 })

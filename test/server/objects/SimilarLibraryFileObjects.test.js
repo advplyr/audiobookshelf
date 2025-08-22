@@ -17,61 +17,63 @@ const lf = new LibraryFile(fileProperties)
 const ebf = new EBookFile(fileProperties)
 const af = new AudioFile(fileProperties)
 
-describe('ObjectSetsDeviceIdWhenConstructed', function () {
-  this.timeout(0)
-  beforeEach(async () => {
-    stubFileUtils()
-    await loadTestDatabase()
-  })
+describe('SimilarLibraryFileObjects', () => {
+  describe('ObjectSetsDeviceIdWhenConstructed', function () {
+    this.timeout(0)
+    beforeEach(async () => {
+      stubFileUtils()
+      await loadTestDatabase()
+    })
 
-  afterEach(() => {
-    sinon.restore()
-  })
+    afterEach(() => {
+      sinon.restore()
+    })
 
-  const lisd = new LibraryItemScanData(fileProperties)
+    const lisd = new LibraryItemScanData(fileProperties)
 
-  const objects = [lf, ebf, af, lisd]
+    const objects = [lf, ebf, af, lisd]
 
-  objects.forEach((obj) => {
-    it(`${obj.constructor.name}SetsDeviceIdWhenConstructed`, () => {
-      expect(obj.ino).to.equal(fileProperties.ino)
-      expect(obj.deviceId).to.equal(fileProperties.deviceId)
+    objects.forEach((obj) => {
+      it(`${obj.constructor.name}SetsDeviceIdWhenConstructed`, () => {
+        expect(obj.ino).to.equal(fileProperties.ino)
+        expect(obj.deviceId).to.equal(fileProperties.deviceId)
+      })
+    })
+
+    it('LibraryItemSetsDeviceIdWhenConstructed', async () => {
+      const mockFileInfo = getMockFileInfo().get('/test/file.pdf')
+
+      /** @type {import('../../../server/models/LibraryItem') | null} */
+      const li = await Database.libraryItemModel.findOneExpanded({
+        path: '/test/file.pdf'
+      })
+
+      expect(li?.ino).to.equal(mockFileInfo?.ino)
+      expect(li?.deviceId).to.equal(mockFileInfo?.dev)
+    })
+
+    it('LibraryFileJSONHasDeviceId', async () => {
+      const mockFileInfo = getMockFileInfo().get('/test/file.pdf')
+
+      /** @type {import('../../../server/models/LibraryItem') | null} */
+      const li = await Database.libraryItemModel.findOneExpanded({
+        path: '/test/file.pdf'
+      })
+
+      const lf_json = li?.libraryFiles[0]
+      expect(lf_json).to.not.be.null
+      expect(lf_json?.deviceId).to.equal(mockFileInfo?.dev)
     })
   })
 
-  it('LibraryItemSetsDeviceIdWhenConstructed', async () => {
-    const mockFileInfo = getMockFileInfo().get('/test/file.pdf')
-
-    /** @type {import('../../../server/models/LibraryItem') | null} */
-    const li = await Database.libraryItemModel.findOneExpanded({
-      path: '/test/file.pdf'
-    })
-
-    expect(li?.ino).to.equal(mockFileInfo?.ino)
-    expect(li?.deviceId).to.equal(mockFileInfo?.dev)
-  })
-
-  it('LibraryFileJSONHasDeviceId', async () => {
-    const mockFileInfo = getMockFileInfo().get('/test/file.pdf')
-
-    /** @type {import('../../../server/models/LibraryItem') | null} */
-    const li = await Database.libraryItemModel.findOneExpanded({
-      path: '/test/file.pdf'
-    })
-
-    const lf_json = li?.libraryFiles[0]
-    expect(lf_json).to.not.be.null
-    expect(lf_json?.deviceId).to.equal(mockFileInfo?.dev)
-  })
-})
-
-describe('ObjectSetsDeviceIdWhenSerialized', () => {
-  const objects = [lf, ebf, af]
-  objects.forEach((obj) => {
-    it(`${obj.constructor.name}SetsDeviceIdWhenSerialized`, () => {
-      const obj_json = obj.toJSON()
-      expect(obj_json.ino).to.equal(fileProperties.ino)
-      expect(obj_json.deviceId).to.equal(fileProperties.deviceId)
+  describe('ObjectSetsDeviceIdWhenSerialized', () => {
+    const objects = [lf, ebf, af]
+    objects.forEach((obj) => {
+      it(`${obj.constructor.name}SetsDeviceIdWhenSerialized`, () => {
+        const obj_json = obj.toJSON()
+        expect(obj_json.ino).to.equal(fileProperties.ino)
+        expect(obj_json.deviceId).to.equal(fileProperties.deviceId)
+      })
     })
   })
 })
