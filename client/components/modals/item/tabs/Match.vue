@@ -400,7 +400,9 @@ export default {
         this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
-      this.persistProvider()
+      if (!this.isPodcast) {
+        this.persistProvider()
+      }
       this.runSearch()
     },
     async runSearch() {
