@@ -623,6 +623,7 @@ class PodcastManager {
             itunesId: '',
             itunesArtistId: '',
             language: '',
+            podcastFilenameFormat: '',
             numEpisodes: feed.numEpisodes
           }
         }
