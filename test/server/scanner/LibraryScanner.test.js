@@ -61,7 +61,6 @@ describe('LibraryScanner', () => {
   it('findLibraryItemByItemToItemInoMatch', async function () {
     this.timeout(0)
     // findLibraryItemByItemToItemInoMatch(libraryId, fullPath)
-    // findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles)
     let findLibraryItemByItemToItemInoMatch = LibraryScanner.__get__('findLibraryItemByItemToItemInoMatch')
 
     let fullPath = '/test/file.pdf'
@@ -71,12 +70,70 @@ describe('LibraryScanner', () => {
 
     const fileInfo = mockFileInfo.get(fullPath)
 
-    /** @type {Promise<import('../../../server/models/LibraryItem') | null>} */
+    /** @returns {Promise<import('../../../server/models/LibraryItem') | null>} */
     const result = await findLibraryItemByItemToItemInoMatch(testLibrary.id, fullPath)
     expect(result).to.not.be.null
     expect(result.libraryFiles[0].metadata.path).to.equal(fullPath)
     expect(result.libraryFiles[0].deviceId).to.equal(fileInfo.dev)
   })
+
+  it('findLibraryItemByFileToItemInoMatch-matchesRenamedFileByInoAndDeviceId', async function () {
+    this.timeout(0)
+    let mockFileInfo = getMockBookFileInfo()
+    sinon.restore()
+    stubFileUtils(mockFileInfo)
+    testLibrary = await loadTestDatabase(mockFileInfo)
+
+    // findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles)
+    let findLibraryItemByItemToItemInoMatch = LibraryScanner.__get__('findLibraryItemByFileToItemInoMatch')
+
+    let bookFolderPath = '/test/bookfolder'
+
+    /**
+     * @param {UUIDV4} libraryId
+     * @param {string} fullPath
+     * @param {boolean} isSingleMedia
+     * @param {string[]} itemFiles
+     * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded | null>} library item that matches
+     */
+    const existingItem = await findLibraryItemByItemToItemInoMatch(testLibrary.id, bookFolderPath, false, ['file.epub', 'file-renamed.epub', 'file.opf'])
+
+    expect(existingItem).to.not.be.null
+    expect(existingItem.ino).to.equal('1')
+    expect(existingItem.deviceId).to.equal('100')
+  })
+
+  it('findLibraryItemByFileToItemInoMatch-DoesNotMatchByInoAndDifferentDeviceId', async function () {
+    this.timeout(0)
+    testLibrary = await loadTestDatabase()
+
+    // findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles)
+    let findLibraryItemByItemToItemInoMatch = LibraryScanner.__get__('findLibraryItemByFileToItemInoMatch')
+
+    let bookFolderPath = '/test/bookfolder'
+
+    /**
+     * @param {UUIDV4} libraryId
+     * @param {string} fullPath
+     * @param {boolean} isSingleMedia
+     * @param {string[]} itemFiles
+     * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded | null>} library item that matches
+     */
+    const existingItem = await findLibraryItemByItemToItemInoMatch(testLibrary.id, bookFolderPath, false, ['file.epub', 'different-file.epub', 'file.opf'])
+
+    expect(existingItem).to.be.null
+  })
+
+  /** @returns {Map<string, import('fs').Stats>} */
+  function getMockBookFileInfo() {
+    // @ts-ignore
+    return new Map([
+      ['/test/bookfolder/file-renamed.epub', { path: '/test/bookfolder/file-renamed.epub', isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '100' }],
+      ['/test/bookfolder/file.epub', { path: '/test/bookfolder/file.epub', isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '100' }],
+      ['/test/bookfolder/different-file.epub', { path: '/test/bookfolder/different-file.epub', isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '200' }],
+      ['/test/bookfolder/file.opf', { path: '/test/bookfolder/file.opf', isDirectory: () => false, size: 42, mtimeMs: Date.now(), ino: '2', dev: '100' }]
+    ])
+  }
 
   // ItemToFileInoMatch
   it('ItemToFileInoMatch-ItemMatchesSelf', async function () {

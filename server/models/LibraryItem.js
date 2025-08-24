@@ -699,6 +699,9 @@ class LibraryItem extends Model {
         modelName: 'libraryItem',
         indexes: [
           {
+            fields: ['ino', 'deviceId']
+          },
+          {
             fields: ['createdAt']
           },
           {

@@ -243,6 +243,8 @@ module.exports.recurseFiles = async (path, relPathToReplace = null) => {
 
       item.fullname = filePathToPOSIX(item.fullname)
       item.path = filePathToPOSIX(item.path)
+      // BUGBUG: This is broken with symlinked directory /tmp -> /private/tmp. when library is in /tmp/testLibrary, it tries to replace /tmp/testLibrary with '' but in a canonical path (non-symlinked)
+      // TODO: find the commit that added relPathToReplace and figure out what it's trying to do and make it do that properly
       const relpath = item.fullname.replace(relPathToReplace, '')
       let reldirname = Path.dirname(relpath)
       if (reldirname === '.') reldirname = ''

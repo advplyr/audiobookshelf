@@ -86,12 +86,12 @@ function buildBookLibraryItemParams(libraryFile, bookId, libraryId, libraryFolde
 }
 exports.buildBookLibraryItemParams = buildBookLibraryItemParams
 
-function stubFileUtils() {
+function stubFileUtils(mockFileInfo = getMockFileInfo()) {
   let getInoStub, getDeviceIdStub, getFileTimestampsWithInoStub
   getInoStub = sinon.stub(fileUtils, 'getIno')
   getInoStub.callsFake((path) => {
     const normalizedPath = fileUtils.filePathToPOSIX(path).replace(/\/$/, '')
-    const stats = getMockFileInfo().get(normalizedPath)
+    const stats = mockFileInfo.get(normalizedPath)
     if (stats) {
       return stats.ino
     } else {
@@ -102,7 +102,7 @@ function stubFileUtils() {
   getDeviceIdStub = sinon.stub(fileUtils, 'getDeviceId')
   getDeviceIdStub.callsFake(async (path) => {
     const normalizedPath = fileUtils.filePathToPOSIX(path).replace(/\/$/, '')
-    const stats = getMockFileInfo().get(normalizedPath)
+    const stats = mockFileInfo.get(normalizedPath)
     if (stats) {
       return stats.dev
     } else {
@@ -113,7 +113,7 @@ function stubFileUtils() {
   getFileTimestampsWithInoStub = sinon.stub(fileUtils, 'getFileTimestampsWithIno')
   getFileTimestampsWithInoStub.callsFake(async (path) => {
     const normalizedPath = fileUtils.filePathToPOSIX(path).replace(/\/$/, '')
-    const stats = getMockFileInfo().get(normalizedPath)
+    const stats = mockFileInfo.get(normalizedPath)
     if (stats) {
       return stats
     } else {

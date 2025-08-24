@@ -724,12 +724,25 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
   /** @type {import('../models/LibraryItem').LibraryItemExpanded | null} */
   let existingLibraryItem = null
   for (let item in itemFileInos) {
+    // TODO: BUGBUG - this query is broken. It's passing a whole object instead of just the ino. Change the query.
+
     existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
       libraryId: libraryId,
-      ino: {
-        [sequelize.Op.in]: itemFileInos
-      }
+      [sequelize.Op.or]: itemFileInos
     })
+
+    /*   existingLibraryItem = await Database.libraryItemModel.findOneExpanded([
+      {
+        libraryId: libraryId,
+        [sequelize.Op.and]: {
+          ino: itemFileInos.map((f) => f.ino),
+          deviceId: itemFileInos.map((f) => f.deviceId)
+        }
+      }
+      /*      ino: {
+        [sequelize.Op.in]: itemFileInos
+      } */
+    // ]) */
     if (existingLibraryItem) {
       break
     }
