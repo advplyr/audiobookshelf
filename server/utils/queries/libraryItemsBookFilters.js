@@ -290,9 +290,9 @@ module.exports = {
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
-    } else if (sortBy === 'startedDate') {
+    } else if (sortBy === 'progress.createdAt') {
       return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
-    } else if (sortBy === 'finishedDate') {
+    } else if (sortBy === 'progress.finishedAt') {
       return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
@@ -534,7 +534,7 @@ module.exports = {
     }
 
     // When sorting by progress but not filtering by progress, include media progresses
-    if (filterGroup !== 'progress' && ['startedDate', 'finishedDate', 'progress'].includes(sortBy)) {
+    if (filterGroup !== 'progress' && ['progress.createdAt', 'progress.finishedAt', 'progress'].includes(sortBy)) {
       bookIncludes.push({
         model: Database.mediaProgressModel,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
