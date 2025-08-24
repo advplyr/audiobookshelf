@@ -289,19 +289,11 @@ module.exports = {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
-      return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
+      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'startedDate') {
-      // Sort started books first (not null), then unstarted (nulls last), then by createdAt desc
-      return [
-        [Sequelize.literal('(CASE WHEN mediaProgresses.createdAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
-        ['mediaProgresses', 'createdAt', dir]
-      ]
+      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'finishedDate') {
-      // Sort finished books first (not null), then unfinished (nulls last), then by finishedAt desc
-      return [
-        [Sequelize.literal('(CASE WHEN mediaProgresses.finishedAt IS NULL THEN 1 ELSE 0 END)'), 'ASC'],
-        ['mediaProgresses', 'finishedAt', dir]
-      ]
+      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
     }
