@@ -403,7 +403,6 @@ export default {
     },
     userProgressFinishedDate() {
       if (!this.userProgress) return null
-      console.log(this.userProgress)
       return this.userProgress.finishedAt
     },
     itemIsFinished() {
