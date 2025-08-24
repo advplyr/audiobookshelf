@@ -135,11 +135,11 @@ export default {
           value: 'progress'
         },
         {
-          text: this.$strings.LabelLibrarySortByStartDate,
+          text: this.$strings.LabelLibrarySortByProgressStarted,
           value: 'startedDate'
         },
         {
-          text: this.$strings.LabelLibrarySortByFinishDate,
+          text: this.$strings.LabelLibrarySortByProgressFinished,
           value: 'finishedDate'
         },
         {

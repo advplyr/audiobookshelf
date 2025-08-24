@@ -355,11 +355,11 @@ export default {
       }
       if (this.orderBy === 'startedDate') {
         if (!this.userProgressStartedDate) return '\u00A0'
-        return this.$getString('LabelFileStartedDate', [this.$formatDatetime(this.userProgressStartedDate, this.dateFormat, this.timeFormat)])
+        return this.$getString('LabelStartedDate', [this.$formatDatetime(this.userProgressStartedDate, this.dateFormat, this.timeFormat)])
       }
       if (this.orderBy === 'finishedDate') {
         if (!this.userProgressFinishedDate) return '\u00A0'
-        return this.$getString('LabelFileFinishedDate', [this.$formatDatetime(this.userProgressFinishedDate, this.dateFormat, this.timeFormat)])
+        return this.$getString('LabelFinishedDate', [this.$formatDatetime(this.userProgressFinishedDate, this.dateFormat, this.timeFormat)])
       }
       return null
     },
