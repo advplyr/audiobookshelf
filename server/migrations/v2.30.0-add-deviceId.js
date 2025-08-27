@@ -1,6 +1,6 @@
 const util = require('util')
 const { Sequelize, DataTypes } = require('sequelize')
-const fileUtils = require('../../server/utils/fileUtils')
+const fileUtils = require('../utils/fileUtils')
 const LibraryItem = require('../models/LibraryItem')
 
 /**
@@ -12,7 +12,7 @@ const LibraryItem = require('../models/LibraryItem')
  * @property {MigrationContext} context - an object containing the migration context.
  */
 
-const migrationVersion = '2.29.0'
+const migrationVersion = '2.30.0'
 const migrationName = `${migrationVersion}-add-deviceId`
 const loggerPrefix = `[${migrationVersion} migration]`
 

@@ -5,7 +5,7 @@ const { expect } = chai
 const { DataTypes, Sequelize } = require('sequelize')
 const Logger = require('../../../server/Logger')
 
-const { up, down, migrationName } = require('../../../server/migrations/v2.29.0-add-deviceId')
+const { up, down, migrationName } = require('../../../server/migrations/v2.30.0-add-deviceId')
 const { stubFileUtils, getMockFileInfo } = require('../MockDatabase')
 
 const normalizeWhitespaceAndBackticks = (str) => str.replace(/\s+/g, ' ').trim().replace(/`/g, '')
