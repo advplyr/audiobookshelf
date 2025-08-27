@@ -1,5 +1,7 @@
 const util = require('util')
 const { Sequelize, DataTypes } = require('sequelize')
+const fileUtils = require('../../server/utils/fileUtils')
+const LibraryItem = require('../models/LibraryItem')
 
 /**
  * @typedef MigrationContext
@@ -15,7 +17,7 @@ const migrationName = `${migrationVersion}-add-deviceId`
 const loggerPrefix = `[${migrationVersion} migration]`
 
 // Migration constants
-const libraryItems = 'libraryItems'
+const libraryItemsTableName = 'libraryItems'
 const columns = [{ name: 'deviceId', spec: { type: DataTypes.STRING, allowNull: true } }]
 const columnNames = columns.map((column) => column.name).join(', ')
 
@@ -37,7 +39,7 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Populate authorNames columns with the author names for each libraryItem
   // TODO
-  // await helper.populateColumnsFromSource()
+  await helper.populateColumnsFromSource()
 
   // Create indexes on the authorNames columns
   await helper.addIndexes()
@@ -91,11 +93,11 @@ class MigrationHelper {
   }
 
   async addColumns() {
-    this.logger.info(`${loggerPrefix} adding ${columnNames} columns to ${libraryItems} table`)
+    this.logger.info(`${loggerPrefix} adding ${columnNames} columns to ${libraryItemsTableName} table`)
     for (const column of columns) {
-      await this.addColumn(libraryItems, column.name, column.spec)
+      await this.addColumn(libraryItemsTableName, column.name, column.spec)
     }
-    this.logger.info(`${loggerPrefix} added ${columnNames} columns to ${libraryItems} table`)
+    this.logger.info(`${loggerPrefix} added ${columnNames} columns to ${libraryItemsTableName} table`)
   }
 
   async removeColumn(table, column) {
@@ -110,28 +112,39 @@ class MigrationHelper {
   }
 
   async removeColumns() {
-    this.logger.info(`${loggerPrefix} removing ${columnNames} columns from ${libraryItems} table`)
+    this.logger.info(`${loggerPrefix} removing ${columnNames} columns from ${libraryItemsTableName} table`)
     for (const column of columns) {
-      await this.removeColumn(libraryItems, column.name)
+      await this.removeColumn(libraryItemsTableName, column.name)
     }
-    this.logger.info(`${loggerPrefix} removed ${columnNames} columns from ${libraryItems} table`)
+    this.logger.info(`${loggerPrefix} removed ${columnNames} columns from ${libraryItemsTableName} table`)
   }
-  /* TODO - populate from existing files on filesystem
+  // populate from existing files on filesystem
   async populateColumnsFromSource() {
-    this.logger.info(`${loggerPrefix} populating ${columnNames} columns in ${libraryItems} table`)
-    const authorNamesSubQuery = `
-      SELECT ${columnSourcesExpression}
-      FROM ${authorsJoin}
-      WHERE ${bookAuthors}.bookId = ${libraryItems}.mediaId
-    `
-    await this.queryInterface.sequelize.query(`
-      UPDATE ${libraryItems}
-        SET (${columnNames}) = (${authorNamesSubQuery})
-      WHERE mediaType = 'book';
-    `)
+    this.logger.info(`${loggerPrefix} populating ${columnNames} columns in ${libraryItemsTableName} table`)
+
+    // list all libraryItems
+    /** @type {[[LibraryItem], any]} */
+    const [libraryItems, metadata] = await this.queryInterface.sequelize.query('SELECT * FROM libraryItems')
+    // load file stats for all libraryItems
+    libraryItems.forEach(async (item) => {
+      const deviceId = await fileUtils.getDeviceId(item.path)
+      // set deviceId for each libraryItem
+      await this.queryInterface.sequelize.query(
+        `UPDATE :libraryItemsTableName
+        SET (deviceId) = (:deviceId)
+        WHERE id = :id`,
+        {
+          replacements: {
+            libraryItemsTableName: libraryItemsTableName,
+            deviceId: deviceId,
+            id: item.id
+          }
+        }
+      )
+    })
+
     this.logger.info(`${loggerPrefix} populated ${columnNames} columns in ${libraryItems} table`)
   }
-    */
 
   async addIndex(tableName, columns) {
     const columnString = columns.map((column) => util.inspect(column)).join(', ')
@@ -151,7 +164,7 @@ class MigrationHelper {
 
   async addIndexes() {
     for (const column of columns) {
-      await this.addIndex(libraryItems, ['libraryId', 'mediaType', { name: column.name, collate: 'NOCASE' }])
+      await this.addIndex(libraryItemsTableName, ['libraryId', 'mediaType', { name: column.name, collate: 'NOCASE' }])
     }
   }
 
@@ -163,7 +176,7 @@ class MigrationHelper {
 
   async removeIndexes() {
     for (const column of columns) {
-      await this.removeIndex(libraryItems, ['libraryId', 'mediaType', column.name])
+      await this.removeIndex(libraryItemsTableName, ['libraryId', 'mediaType', column.name])
     }
   }
 }
