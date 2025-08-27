@@ -114,7 +114,7 @@ export default {
         .$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, updatePayload)
         .then(() => {
           this.isProcessing = false
-          this.$toast.success('Podcast episode updated')
+          this.$toast.success(this.$strings.ToastPodcastEpisodeUpdated)
           this.$emit('selectTab', 'details')
         })
         .catch((error) => {

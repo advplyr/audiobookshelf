@@ -353,6 +353,14 @@ export default {
         if (!this.userProgressLastUpdated) return '\u00A0'
         return this.$getString('LabelLastProgressDate', [this.$formatDatetime(this.userProgressLastUpdated, this.dateFormat, this.timeFormat)])
       }
+      if (this.orderBy === 'progress.createdAt') {
+        if (!this.userProgressStartedDate) return '\u00A0'
+        return this.$getString('LabelStartedDate', [this.$formatDatetime(this.userProgressStartedDate, this.dateFormat, this.timeFormat)])
+      }
+      if (this.orderBy === 'progress.finishedAt') {
+        if (!this.userProgressFinishedDate) return '\u00A0'
+        return this.$getString('LabelFinishedDate', [this.$formatDatetime(this.userProgressFinishedDate, this.dateFormat, this.timeFormat)])
+      }
       return null
     },
     episodeProgress() {
@@ -388,6 +396,14 @@ export default {
     userProgressLastUpdated() {
       if (!this.userProgress) return null
       return this.userProgress.lastUpdate
+    },
+    userProgressStartedDate() {
+      if (!this.userProgress) return null
+      return this.userProgress.startedAt
+    },
+    userProgressFinishedDate() {
+      if (!this.userProgress) return null
+      return this.userProgress.finishedAt
     },
     itemIsFinished() {
       if (this.booksInSeries) return this.seriesIsFinished

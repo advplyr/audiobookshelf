@@ -135,6 +135,14 @@ export default {
           value: 'progress'
         },
         {
+          text: this.$strings.LabelLibrarySortByProgressStarted,
+          value: 'progress.createdAt'
+        },
+        {
+          text: this.$strings.LabelLibrarySortByProgressFinished,
+          value: 'progress.finishedAt'
+        },
+        {
           text: this.$strings.LabelRandomly,
           value: 'random'
         }

@@ -146,7 +146,7 @@ class Stream extends EventEmitter {
 
   async generatePlaylist() {
     await fs.ensureDir(this.streamPath)
-    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType, this.userToken)
+    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType)
     return this.clientPlaylistUri
   }
 
