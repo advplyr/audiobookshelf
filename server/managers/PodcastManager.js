@@ -121,28 +121,17 @@ class PodcastManager {
       await fs.mkdir(this.currentDownload.libraryItem.path)
     }
 
-    let success = false
-    if (this.currentDownload.isMp3) {
-      // Download episode and tag it
-      const ffmpegDownloadResponse = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
-        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-      })
-      success = !!ffmpegDownloadResponse?.success
+    // Download episode and tag it
+    const ffmpegDownloadResponse = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+      Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+    })
+    let success = !!ffmpegDownloadResponse?.success
 
-      // If failed due to ffmpeg error, retry without tagging
-      // e.g. RSS feed may have incorrect file extension and file type
-      // See https://github.com/advplyr/audiobookshelf/issues/3837
-      if (!success && ffmpegDownloadResponse?.isFfmpegError) {
-        Logger.info(`[PodcastManager] Retrying episode download without tagging`)
-        // Download episode only
-        success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
-          .then(() => true)
-          .catch((error) => {
-            Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-            return false
-          })
-      }
-    } else {
+    // If failed due to ffmpeg error, retry without tagging
+    // e.g. RSS feed may have incorrect file extension and file type
+    // See https://github.com/advplyr/audiobookshelf/issues/3837
+    if (!success && ffmpegDownloadResponse?.isFfmpegError) {
+      Logger.info(`[PodcastManager] Retrying episode download without tagging`)
       // Download episode only
       success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
         .then(() => true)

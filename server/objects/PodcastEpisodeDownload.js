@@ -63,16 +63,6 @@ class PodcastEpisodeDownload {
     const enclosureType = this.rssPodcastEpisode.enclosure.type
     return typeof enclosureType === 'string' ? enclosureType : null
   }
-  /**
-   * RSS feed may have an episode with file extension of mp3 but the specified enclosure type is not mpeg.
-   * @see https://github.com/advplyr/audiobookshelf/issues/3711
-   *
-   * @returns {boolean}
-   */
-  get isMp3() {
-    if (this.enclosureType && !this.enclosureType.includes('mpeg')) return false
-    return this.fileExtension === 'mp3'
-  }
   get episodeTitle() {
     return this.rssPodcastEpisode.title
   }

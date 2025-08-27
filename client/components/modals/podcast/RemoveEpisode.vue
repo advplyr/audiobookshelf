@@ -94,7 +94,6 @@ export default {
       }
 
       this.processing = false
-      this.$toast.success(`${this.episodes.length} episode${this.episodes.length > 1 ? 's' : ''} removed`)
       this.show = false
       this.$emit('clearSelected')
     }

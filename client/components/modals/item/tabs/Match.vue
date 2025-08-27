@@ -77,8 +77,8 @@
           <ui-checkbox v-model="selectedMatchUsage.author" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" :label="$strings.LabelAuthor" />
-            <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white/60">
-              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('author', mediaMetadata.authorName)">{{ mediaMetadata.authorName }}</a>
+            <p v-if="mediaMetadata.authorName || (isPodcast && mediaMetadata.author)" class="text-xs ml-1 text-white/60">
+              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('author', isPodcast ? mediaMetadata.author : mediaMetadata.authorName)">{{ isPodcast ? mediaMetadata.author : mediaMetadata.authorName }}</a>
             </p>
           </div>
         </div>
@@ -400,7 +400,9 @@ export default {
         this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
-      this.persistProvider()
+      if (!this.isPodcast) {
+        this.persistProvider()
+      }
       this.runSearch()
     },
     async runSearch() {

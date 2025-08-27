@@ -118,6 +118,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
           method: 'GET',
           responseType: 'stream',
           headers: {
+            'Accept': '*/*',
             'User-Agent': userAgent
           },
           timeout: global.PodcastDownloadTimeout

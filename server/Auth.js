@@ -243,6 +243,7 @@ class Auth {
     }
 
     // Store the authentication method for long
+    Logger.debug(`[Auth] paramsToCookies: setting auth_method cookie to ${authMethod}`)
     res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
     return null
   }
@@ -258,6 +259,7 @@ class Auth {
     // Handle token generation and get userResponse object
     // For API based auth (e.g. mobile), we will return the refresh token in the response
     const isApiBased = this.isAuthMethodAPIBased(req.cookies.auth_method)
+    Logger.debug(`[Auth] handleLoginSuccessBasedOnCookie: isApiBased: ${isApiBased}, auth_method: ${req.cookies.auth_method}`)
     const userResponse = await this.handleLoginSuccess(req, res, isApiBased)
 
     if (isApiBased) {
@@ -297,6 +299,8 @@ class Auth {
 
     userResponse.user.refreshToken = returnTokens ? refreshToken : null
     userResponse.user.accessToken = accessToken
+
+    Logger.debug(`[Auth] handleLoginSuccess: returnTokens: ${returnTokens}, isRefreshTokenInResponse: ${!!userResponse.user.refreshToken}`)
 
     if (!returnTokens) {
       this.tokenManager.setRefreshTokenCookie(req, res, refreshToken)
