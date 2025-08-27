@@ -200,7 +200,7 @@ describe('AuthorCandidates', () => {
     describe('no adds', () => {
       ;[
         ['adds aggressively cleaned cleanAuthor', 'fyodor dostoevsky, translated by jackie chan', ['fyodor dostoevsky']],
-        ['adds cleanAuthor if aggresively cleaned cleanAuthor is empty', ', jackie chan', [', jackie chan']]
+        ['adds cleanAuthor if aggressively cleaned cleanAuthor is empty', ', jackie chan', [', jackie chan']]
       ].forEach(([name, cleanAuthor, expected]) =>
         it(name, async () => {
           authorCandidates = new bookFinder.constructor.AuthorCandidates(cleanAuthor, audnexus)

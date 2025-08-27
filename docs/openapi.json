@@ -3973,7 +3973,7 @@
           },
           "maxNewEpisodesToDownload": {
             "type": "integer",
-            "description": "The maximum number of new episodes to download when automatically downloading epsiodes."
+            "description": "The maximum number of new episodes to download when automatically downloading episodes."
           },
           "lastCoverSearch": {
             "type": "integer",

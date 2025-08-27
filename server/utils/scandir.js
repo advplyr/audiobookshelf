@@ -43,7 +43,7 @@ module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
  * @param {import('./fileUtils').FilePathItem[]} fileItems
  * @param {boolean} audiobooksOnly
  * @param {boolean} [includeNonMediaFiles=false] - Used by the watcher to re-scan when covers/metadata files are added/removed
- * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
+ * @returns {Record<string,string[]>} map of files grouped into potential library item dirs
  */
 function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly, includeNonMediaFiles = false) {
   // Step 1: Filter out non-book-media files in root dir (with depth of 0)

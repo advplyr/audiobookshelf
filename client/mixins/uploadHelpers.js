@@ -70,7 +70,7 @@ export default {
       }
     },
     fileTreeToItems(filetree, mediaType) {
-      // Has directores - Is Multi Book Drop
+      // Has directories - Is Multi Book Drop
       if (filetree.some((f) => f.isDirectory)) {
         var ignoredFilesInRoot = filetree.filter((f) => !f.isDirectory)
         if (ignoredFilesInRoot.length) filetree = filetree.filter((f) => f.isDirectory)

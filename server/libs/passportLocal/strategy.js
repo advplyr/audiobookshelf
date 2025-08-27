@@ -26,7 +26,7 @@ function lookup(obj, field) {
  * Applications must supply a `verify` callback which accepts `username` and
  * `password` credentials, and then calls the `done` callback supplying a
  * `user`, which should be set to `false` if the credentials are not valid.
- * If an exception occured, `err` should be set.
+ * If an exception occurred, `err` should be set.
  *
  * Optionally, `options` can be used to change the fields in which the
  * credentials are found.
