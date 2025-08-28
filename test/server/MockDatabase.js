@@ -10,7 +10,8 @@ async function loadTestDatabase(mockFileInfo) {
   let libraryItem1Id, libraryItem2Id
 
   let fileInfo = mockFileInfo || getMockFileInfo()
-  let bookLibraryFiles = fileInfo.keys().reduce((acc, key) => {
+  // mapping the keys() iterable to an explicit array so reduce() should work consistently.
+  let bookLibraryFiles = [...fileInfo.keys()].reduce((acc, key) => {
     let bookfile = new LibraryFile()
     bookfile.setDataFromPath(key, key)
     acc.push(bookfile)
