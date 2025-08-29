@@ -37,5 +37,10 @@
   "HeaderEpisodes": "Episoade",
   "HeaderEreaderSettings": "Setări eReader",
   "HeaderLatestEpisodes": "Episoade recente",
-  "HeaderLibraries": "Biblioteci"
+  "HeaderLibraries": "Biblioteci",
+  "HeaderOpenRSSFeed": "Deschide flux RSS",
+  "HeaderPlaylist": "Listă de redare",
+  "HeaderPlaylistItems": "Conținut listă",
+  "HeaderRSSFeedGeneral": "Date RSS",
+  "HeaderSettings": "Setări"
 }
