@@ -132,7 +132,9 @@ export default {
       return this.$store.state.user.user
     },
     openidAuthUri() {
-      return `${process.env.serverUrl}/auth/openid?callback=${location.href.split('?').shift()}`
+      const baseUrl = `${window.location.origin}/auth/openid`
+      const callback = encodeURIComponent(window.location.href.split('?').shift())
+      return `${baseUrl}?callback=${callback}`
     },
     openIDButtonText() {
       return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
