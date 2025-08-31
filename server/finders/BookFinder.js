@@ -595,6 +595,15 @@ class BookFinder {
         book.description = htmlSanitizer.sanitize(book.description)
         book.descriptionPlain = htmlSanitizer.stripAllTags(book.description)
       }
+      if (book.tags) {
+        // Some return comma-separated strings, some return arrays
+        const tagsArray = Array.isArray(book.tags) ? book.tags : String(book.tags).split(',')
+        book.tags = [...new Set(tagsArray.map((t) => t.trim()).filter(Boolean))]
+      }
+      if (book.genres) {
+        const genresArray = Array.isArray(book.genres) ? book.genres : String(book.genres).split(',')
+        book.genres = [...new Set(genresArray.map((g) => g.trim()).filter(Boolean))]
+      }
     })
     return books
   }
