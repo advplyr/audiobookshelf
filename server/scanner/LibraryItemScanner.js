@@ -146,8 +146,6 @@ class LibraryItemScanner {
     return await buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles)
   }
 
-  async setDataFromPath(path) {}
-
   /**
    *
    * @param {import('../models/LibraryItem')} existingLibraryItem
