@@ -8,7 +8,7 @@
           <div v-for="(item, idx) in selected" :key="item + '-' + idx" role="listitem" class="rounded-full px-2 py-1 mx-0.5 my-0.5 text-xs bg-bg flex flex-nowrap break-all items-center relative">
             <div v-if="!disabled" class="w-full h-full rounded-full absolute top-0 left-0 px-1 bg-bg/75 flex items-center justify-end opacity-0 hover:opacity-100" :class="{ 'opacity-100': inputFocused }">
               <button v-if="showEdit" type="button" :aria-label="$strings.ButtonEdit" class="material-symbols text-white hover:text-warning cursor-pointer" style="font-size: 1.1rem" @click.stop="editItem(item)">edit</button>
-              <button type="button" :aria-label="$strings.ButtonRemove" class="material-symbols text-white hover:text-error focus:text-error cursor-pointer" style="font-size: 1.1rem" @click.stop="removeItem(item, idx)" @keydown.enter.stop.prevent="removeItem(item)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">close</button>
+              <button type="button" :aria-label="$strings.ButtonRemove" class="material-symbols text-white hover:text-error focus:text-error cursor-pointer" style="font-size: 1.1rem" @click.stop="removeItem(item, idx)" @keydown.enter.stop.prevent="removeItem(item, idx)" @focus="setInputFocused(true)" @blur="setInputFocused(false)" tabindex="0">close</button>
             </div>
             {{ item }}
           </div>
