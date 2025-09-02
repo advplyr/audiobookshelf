@@ -132,9 +132,7 @@ export default {
       return this.$store.state.user.user
     },
     openidAuthUri() {
-      const baseUrl = `${window.location.origin}/auth/openid`
-      const callback = encodeURIComponent(window.location.href.split('?').shift())
-      return `${baseUrl}?callback=${callback}`
+      return `${this.$config.routerBasePath}/auth/openid?callback=${window.location.href.split('?').shift()}`
     },
     openIDButtonText() {
       return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
