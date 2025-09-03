@@ -5,6 +5,7 @@ const fs = require('../libs/fsExtra')
 const { toNumber } = require('../utils/index')
 const fileUtils = require('../utils/fileUtils')
 const Database = require('../Database')
+const { validatePathExists } = require('../utils/fileUtils')
 
 /**
  * @typedef RequestUserObject
@@ -88,11 +89,30 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    const { directory, folderPath } = req.body
+    // filenames - If filenames is provided, the check only returns true if the actual files exist, not just the directory
+    // allowBookFiles - If true, allows containing other book related files (e.g. .pdf, .epub, etc.)
+    // allowAudioFiles - If true, allows containing other audio related files (e.g. .mp3, .m4b, etc.)
+    const { directory, folderPath, filenames, allowBookFiles, allowAudioFiles } = req.body
+
     if (!directory?.length || typeof directory !== 'string' || !folderPath?.length || typeof folderPath !== 'string') {
       Logger.error(`[FileSystemController] Invalid request body: ${JSON.stringify(req.body)}`)
       return res.status(400).json({
         error: 'Invalid request body'
+      })
+    }
+
+    // Validate filenames: must be undefined or an array of non-empty strings
+    if (filenames !== undefined && (!Array.isArray(filenames) || filenames.some((f) => typeof f !== 'string' || f.trim().length === 0))) {
+      Logger.error(`[FileSystemController] Invalid filenames in request body: ${JSON.stringify(req.body)}`)
+      return res.status(400).json({
+        error: 'Invalid filenames'
+      })
+    }
+
+    if ((allowBookFiles && typeof allowBookFiles !== 'boolean') || (allowAudioFiles && typeof allowAudioFiles !== 'boolean') || (allowBookFiles && allowAudioFiles)) {
+      Logger.error(`[FileSystemController] Invalid allowBookFiles or allowAudioFiles in request body: ${JSON.stringify(req.body)}`)
+      return res.status(400).json({
+        error: 'Invalid allowBookFiles or allowAudioFiles'
       })
     }
 
@@ -113,50 +133,14 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    let filepath = Path.join(libraryFolder.path, directory)
-    filepath = fileUtils.filePathToPOSIX(filepath)
+    const result = await validatePathExists(libraryFolder, directory, filenames, allowBookFiles, allowAudioFiles)
 
-    // Ensure filepath is inside library folder (prevents directory traversal)
-    if (!filepath.startsWith(libraryFolder.path)) {
-      Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
-      return res.sendStatus(400)
-    }
+    if (!result) return res.status(400).end()
 
-    if (await fs.pathExists(filepath)) {
-      return res.json({
-        exists: true
-      })
-    }
+    console.log(`[FileSystemController] Path exists check for "${directory}" in library "${libraryFolder.libraryId}" with filenames "${Array.isArray(filenames) ? filenames.join(', ') : 'N/A'}", allowBookFiles: ${allowBookFiles}, allowAudioFiles: ${allowAudioFiles} - Result: ${result.exists}`)
 
-    // Check if a library item exists in a subdirectory
-    // See: https://github.com/advplyr/audiobookshelf/issues/4146
-    const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
-    if (cleanedDirectory.includes('/')) {
-      // Can only be 2 levels deep
-      const possiblePaths = []
-      const subdir = Path.dirname(directory)
-      possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
-      if (subdir.includes('/')) {
-        possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
-      }
-
-      const libraryItem = await Database.libraryItemModel.findOne({
-        where: {
-          path: possiblePaths
-        }
-      })
-
-      if (libraryItem) {
-        return res.json({
-          exists: true,
-          libraryItemTitle: libraryItem.title
-        })
-      }
-    }
-
-    return res.json({
-      exists: false
-    })
+    return res.json(result)
   }
 }
+
 module.exports = new FileSystemController()
