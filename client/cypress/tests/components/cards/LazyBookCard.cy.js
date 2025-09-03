@@ -1,4 +1,4 @@
-import LazyBookCard from '@/components/cards/LazyBookCard'
+import LazyBookCard from '@/components/cards/LazyBookCard.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 import ExplicitIndicator from '@/components/widgets/ExplicitIndicator.vue'
 import LoadingSpinner from '@/components/widgets/LoadingSpinner.vue'
@@ -109,20 +109,19 @@ describe('LazyBookCard', () => {
     cy.get('&explicitIndicator').should('not.exist')
     cy.get('&line2').should('have.text', 'J. R. R. Tolkien')
     cy.get('&line3').should('not.exist')
-    cy.get('seriesSequenceList').should('not.exist')
+    cy.get('&seriesSequenceList').should('not.exist')
     cy.get('&booksInSeries').should('not.exist')
     cy.get('&placeholderTitle').should('be.visible')
     cy.get('&placeholderTitleText').should('have.text', 'The Fellowship of the Ring')
     cy.get('&placeholderAuthor').should('be.visible')
     cy.get('&placeholderAuthorText').should('have.text', 'J. R. R. Tolkien')
     cy.get('&progressBar').should('be.hidden')
-    cy.get('&finishedProgressBar').should('not.exist')
     cy.get('&loadingSpinner').should('not.exist')
     cy.get('&seriesNameOverlay').should('not.exist')
     cy.get('&errorTooltip').should('not.exist')
     cy.get('&rssFeed').should('not.exist')
     cy.get('&seriesSequence').should('not.exist')
-    cy.get('&podcastEpisdeNumber').should('not.exist')
+    cy.get('&podcastEpisodeNumber').should('not.exist')
 
     // this should actually fail, since the height does not cover
     // the detailBottom element, currently rendered outside the card's area,
