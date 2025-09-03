@@ -21,6 +21,7 @@ RUN apk add --no-cache --update \
   curl \
   make \
   python3 \
+  py3-setuptools \
   g++ \
   unzip
 
