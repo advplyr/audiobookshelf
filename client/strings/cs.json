@@ -1133,7 +1133,7 @@
   "ToastSessionDeleteFailed": "Nepodařilo se smazat relaci",
   "ToastSessionDeleteSuccess": "Relace smazána",
   "ToastSleepTimerDone": "Uspání knížky ... zZzzZz",
-  "ToastSlugMustChange": "Slug (URL) obsahuje chybné znaky",
+  "ToastSlugMustChange": "Slug obsahuje chybné znaky",
   "ToastSlugRequired": "Slug (URL) je vyžadována",
   "ToastSocketConnected": "Socket připojen",
   "ToastSocketDisconnected": "Socket odpojen",
