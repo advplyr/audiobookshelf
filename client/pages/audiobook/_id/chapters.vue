@@ -12,24 +12,24 @@
       <p class="text-base font-mono ml-4 hidden md:block">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
-    <div class="flex flex-wrap-reverse lg:flex-nowrap justify-center py-4 px-4">
+    <div class="flex flex-wrap-reverse min-[1120px]:flex-nowrap justify-center py-4 px-4">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
-          <div class="w-12 hidden lg:block" />
+          <div class="w-12 hidden min-w-[1120px]:block" />
           <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
           <div class="grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" :label="$strings.LabelShowSeconds" class="mx-2" />
-          <div class="w-32 hidden lg:block" />
+          <div class="w-32 hidden min-[1120px]:block" />
         </div>
         <div class="flex items-center mb-3 py-1 -mx-1">
-          <div class="w-12 hidden lg:block" />
+          <div class="w-12 hidden min-[1120px]:block" />
           <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1 whitespace-nowrap" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
           <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg-bg' : 'bg-primary'" class="mx-1 whitespace-nowrap" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
           <ui-btn color="bg-primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
           <div class="grow" />
           <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
           <ui-btn v-if="hasChanges" color="bg-success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
-          <div class="w-32 hidden lg:block" />
+          <div class="w-32 hidden min-[1120px]:block" />
         </div>
 
         <div class="overflow-hidden">
@@ -150,7 +150,7 @@
         </div>
       </div>
 
-      <div class="w-full max-w-xl py-4 px-2">
+      <div class="w-full max-w-3xl min-[1120px]:max-w-xl py-4 px-2">
         <div class="flex items-center mb-4 py-1">
           <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
           <div class="grow" />
@@ -160,13 +160,13 @@
           </ui-tooltip>
         </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
-          <div class="grow">{{ $strings.LabelFilename }}</div>
+          <div class="grow min-[1120px]:max-w-64 xl:max-w-sm">{{ $strings.LabelFilename }}</div>
           <div class="w-20">{{ $strings.LabelDuration }}</div>
           <div class="w-20 hidden md:block text-center">{{ $strings.HeaderChapters }}</div>
         </div>
         <div v-for="track in audioTracks" :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success/10' : ''">
-          <div class="grow max-w-[calc(100%-80px)] pr-2">
-            <p class="text-xs truncate max-w-sm">{{ track.metadata.filename }}</p>
+          <div class="pr-2 grow min-[1120px]:max-w-64 xl:max-w-sm">
+            <p class="text-xs truncate">{{ track.metadata.filename }}</p>
           </div>
           <div class="w-20" style="min-width: 80px">
             <p class="text-xs font-mono text-gray-200">{{ $secondsToTimestamp(Math.round(track.duration), false, true) }}</p>
