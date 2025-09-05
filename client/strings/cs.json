@@ -451,7 +451,7 @@
   "LabelMatchExistingUsersBy": "Přiřadit stávající uživatele podle",
   "LabelMatchExistingUsersByDescription": "Slouží k propojení stávajících uživatelů. Po propojení budou uživatelé přiřazeni k jedinečnému ID od poskytovatele SSO",
   "LabelMaxEpisodesToDownload": "Maximální # epizod pro stažení. Použijte 0 pro bez omezení.",
-  "LabelMaxEpisodesToDownloadPerCheck": "Maximální počet nových epizod ke stažení při jedné kontrole",
+  "LabelMaxEpisodesToDownloadPerCheck": "Maximální # nových epizod ke stažení při jedné kontrole",
   "LabelMaxEpisodesToKeep": "Maximální počet epizod k zachování",
   "LabelMaxEpisodesToKeepHelp": "Hodnotou 0 není nastaven žádný maximální limit. Po automatickém stažení nové epizody se odstraní nejstarší epizoda, pokud máte více než X epizod. Při každém novém stažení se odstraní pouze 1 epizoda.",
   "LabelMediaPlayer": "Přehrávač médií",
