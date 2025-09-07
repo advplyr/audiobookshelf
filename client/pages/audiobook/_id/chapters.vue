@@ -697,11 +697,7 @@ export default {
           this.saving = false
           if (data.updated) {
             this.$toast.success(this.$strings.ToastChaptersUpdated)
-            if (this.previousRoute) {
-              this.$router.push(this.previousRoute)
-            } else {
-              this.$router.push(`/item/${this.libraryItem.id}`)
-            }
+            this.reloadLibraryItem()
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
@@ -874,11 +870,7 @@ export default {
         .then((data) => {
           if (data.updated) {
             this.$toast.success(this.$strings.ToastChaptersRemoved)
-            if (this.previousRoute) {
-              this.$router.push(this.previousRoute)
-            } else {
-              this.$router.push(`/item/${this.libraryItem.id}`)
-            }
+            this.reloadLibraryItem()
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
@@ -983,6 +975,18 @@ export default {
         }
         this.libraryItem = libraryItem
       }
+    },
+    reloadLibraryItem() {
+      this.$axios
+        .$get(`/api/items/${this.libraryItem.id}?expanded=1`)
+        .then((data) => {
+          this.libraryItem = data
+          this.initChapters()
+        })
+        .catch((error) => {
+          console.error('Failed to reload library item', error)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
+        })
     }
   },
   mounted() {
