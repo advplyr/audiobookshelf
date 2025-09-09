@@ -71,6 +71,7 @@
   "ButtonQueueAddItem": "次に再生する",
   "ButtonQueueRemoveItem": "次に再生から削除",
   "ButtonQuickEmbed": "クイック埋め込み",
+  "ButtonQuickEmbedMetadata": "メタデータの埋め込み",
   "ButtonReScan": "再スキャン",
   "ButtonRead": "読む",
   "ButtonReadLess": "閉じる",
