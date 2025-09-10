@@ -1,0 +1,79 @@
+{
+  "collections": [
+    {
+      "id": "reading_journey",
+      "name": "Reading Journey",
+      "badgeIds": ["new_reader","bookworm","avid","page_turner","marathoner","centurion","legend"]
+    },
+    {
+      "id": "getting_started",
+      "name": "Getting Started",
+      "badgeIds": ["library_creator","library_editor","book_uploader","book_downloader","series_starter","collection_maker","tune_weaver"]
+    },
+    {
+      "id": "adventurers_path",
+      "name": "Adventurer’s Path",
+      "badgeIds": ["searcher","refined_explorer","author_finder","narrator_finder","pathfinder"]
+    },
+    {
+      "id": "daily_devotion",
+      "name": "Daily Devotion",
+      "badgeIds": ["first_login","double_dip","streak_3","streak_7","streak_30"]
+    },
+    {
+      "id": "search_master",
+      "name": "Search Master",
+      "badgeIds": ["first_search","curious","seeker","explorer","hunter","master_queries"]
+    },
+    {
+      "id": "reading_streak",
+      "name": "Reading Streak",
+      "badgeIds": ["one_day_finish","back_to_back","focused_five","weekly_reader","monthly_reader"]
+    }
+  ],
+  "badges": {
+    "new_reader":       { "id":"new_reader","name":"Turned the First Page","collectionId":"reading_journey","type":"threshold","threshold":1,"blurb":"Finished your first item" },
+    "bookworm":         { "id":"bookworm","name":"Lost in Stories","collectionId":"reading_journey","type":"threshold","threshold":5,"blurb":"Finished 5 items" },
+    "avid":             { "id":"avid","name":"Can’t Put It Down","collectionId":"reading_journey","type":"threshold","threshold":10,"blurb":"Finished 10 items" },
+    "page_turner":      { "id":"page_turner","name":"Flipping Through Worlds","collectionId":"reading_journey","type":"threshold","threshold":25,"blurb":"Finished 25 items" },
+    "marathoner":       { "id":"marathoner","name":"Endurance Listener","collectionId":"reading_journey","type":"threshold","threshold":50,"blurb":"Finished 50 items" },
+    "centurion":        { "id":"centurion","name":"100 Tales Conquered","collectionId":"reading_journey","type":"threshold","threshold":100,"blurb":"Finished 100 items" },
+    "legend":           { "id":"legend","name":"Legend of the Library","collectionId":"reading_journey","type":"threshold","threshold":250,"blurb":"Finished 250 items" },
+
+    "library_creator":  { "id":"library_creator","name":"Builder of Shelves","collectionId":"getting_started","type":"first","blurb":"Created your first library" },
+    "library_editor":   { "id":"library_editor","name":"Shelf Organizer","collectionId":"getting_started","type":"first","blurb":"Edited a library" },
+    "book_uploader":    { "id":"book_uploader","name":"First Contribution","collectionId":"getting_started","type":"first","blurb":"Uploaded your first book" },
+    "book_downloader":  { "id":"book_downloader","name":"Pocket Librarian","collectionId":"getting_started","type":"first","blurb":"Downloaded a book" },
+
+   
+    "series_starter":   { "id":"series_starter","name":"Saga Initiator","collectionId":"getting_started","type":"first","blurb":"Deleted your first uploaded file" },
+
+    "collection_maker": { "id":"collection_maker","name":"Curator in Training","collectionId":"getting_started","type":"first","blurb":"Created your first collection/playlist" },
+    "tune_weaver":      { "id":"tune_weaver","name":"Tune Weaver","collectionId":"getting_started","type":"first","blurb":"Created your first playlist" },
+
+    "searcher":         { "id":"searcher","name":"Seeker of Stories","collectionId":"adventurers_path","type":"first","blurb":"Performed your first search" },
+    "refined_explorer": { "id":"refined_explorer","name":"Refined Explorer","collectionId":"adventurers_path","type":"first","blurb":"Visited the upload page" },
+    "author_finder":    { "id":"author_finder","name":"Author Discoverer","collectionId":"adventurers_path","type":"first","blurb":"Visited author view" },
+    "narrator_finder":  { "id":"narrator_finder","name":"Voice Hunter","collectionId":"adventurers_path","type":"first","blurb":"Visited narrator view" },
+    "pathfinder":       { "id":"pathfinder","name":"Pathfinder","collectionId":"adventurers_path","type":"first","blurb":"Visited settings" },
+
+    "first_login":      { "id":"first_login","name":"First Login","collectionId":"daily_devotion","type":"first","blurb":"Logged in for the first time" },
+    "double_dip":       { "id":"double_dip","name":"Double Dip","collectionId":"daily_devotion","type":"first","blurb":"Logged in twice in the same day" },
+    "streak_3":         { "id":"streak_3","name":"3-Day Streak","collectionId":"daily_devotion","type":"threshold","threshold":3,"blurb":"Logged in 3 days in a row" },
+    "streak_7":         { "id":"streak_7","name":"Weekly Streak","collectionId":"daily_devotion","type":"threshold","threshold":7,"blurb":"Logged in 7 days in a row" },
+    "streak_30":        { "id":"streak_30","name":"Monthly Streak","collectionId":"daily_devotion","type":"threshold","threshold":30,"blurb":"Logged in 30 days in a row" },
+
+    "first_search":     { "id":"first_search","name":"First Search","collectionId":"search_master","type":"threshold","threshold":1,"blurb":"Searched for 1 item" },
+    "curious":          { "id":"curious","name":"Curious","collectionId":"search_master","type":"threshold","threshold":3,"blurb":"Searched for 3 items" },
+    "seeker":           { "id":"seeker","name":"Seeker","collectionId":"search_master","type":"threshold","threshold":5,"blurb":"Searched for 5 items" },
+    "explorer":         { "id":"explorer","name":"Explorer","collectionId":"search_master","type":"threshold","threshold":10,"blurb":"Searched for 10 items" },
+    "hunter":           { "id":"hunter","name":"Hunter","collectionId":"search_master","type":"threshold","threshold":50,"blurb":"Searched for 50 items" },
+    "master_queries":   { "id":"master_queries","name":"Master of Queries","collectionId":"search_master","type":"threshold","threshold":100,"blurb":"Searched for 100 items" },
+
+    "one_day_finish":   { "id":"one_day_finish","name":"Day One Reader","collectionId":"reading_streak","type":"first","blurb":"Read an uploaded book today" },
+    "back_to_back":     { "id":"back_to_back","name":"Back-to-Back","collectionId":"reading_streak","type":"threshold","threshold":2,"blurb":"Read uploaded books 2 days in a row" },
+    "focused_five":     { "id":"focused_five","name":"Focused Five","collectionId":"reading_streak","type":"threshold","threshold":5,"blurb":"Read uploaded books 5 days in a row" },
+    "weekly_reader":    { "id":"weekly_reader","name":"Weekly Reader","collectionId":"reading_streak","type":"threshold","threshold":7,"blurb":"Read uploaded books 7 days in a row" },
+    "monthly_reader":   { "id":"monthly_reader","name":"Monthly Reader","collectionId":"reading_streak","type":"threshold","threshold":30,"blurb":"Read uploaded books 30 days in a row" }
+  }
+}

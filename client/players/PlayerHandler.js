@@ -1,6 +1,7 @@
 import LocalAudioPlayer from './LocalAudioPlayer'
 import CastPlayer from './CastPlayer'
 import AudioTrack from './AudioTrack'
+import AchievementService from '@/services/AchievementService'
 
 export default class PlayerHandler {
   constructor(ctx) {
@@ -136,6 +137,13 @@ export default class PlayerHandler {
     this.sendProgressSync(currentTime)
 
     this.ctx.mediaFinished(this.libraryItemId, this.episodeId)
+
+    // ✅ Notify Achievements that this library item has been finished.
+    //    This is used to count UNIQUE finished items (for Reading Journey).
+    try {
+      // fire-and-forget; no await so UI stays snappy
+      AchievementService.complete({ event: 'itemFinished', meta: { itemId: this.libraryItemId } })
+    } catch (_) {}
   }
 
   playerStateChange(state) {

@@ -1,3 +1,4 @@
+// server/Server.js
 const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
@@ -23,6 +24,7 @@ const SocketAuthority = require('./SocketAuthority')
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 const PublicRouter = require('./routers/PublicRouter')
+const createAchievementsRouter = require('./routers/achievements') // ✅ single import
 
 const LogManager = require('./managers/LogManager')
 const EmailManager = require('./managers/EmailManager')
@@ -39,10 +41,43 @@ const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
-//Import the main Passport and Express-Session library
+// Passport / session
 const passport = require('passport')
 const expressSession = require('express-session')
 const MemoryStore = require('./libs/memorystore')
+
+// 👉 Achievements
+const AchievementManager = require('./managers/AchievementManager')
+
+// Small helper for “once per day” user login ping
+const DAY_MS = 24 * 60 * 60 * 1000
+const todayKey = () => Math.floor(Date.now() / DAY_MS)
+function loginAchievementPing (req, _res, next) {
+  try {
+    const user = req.user
+    const userId = user && (user.id || user.userId)
+    if (!userId) return next()
+
+    // Use the session to avoid re-emitting within the same day
+    if (req.session) {
+      const tkey = todayKey()
+      const markerKey = '_absLoginPingDay'
+      if (req.session[markerKey] !== tkey) {
+        req.session[markerKey] = tkey
+        AchievementManager.applyEvent(String(userId), 'userLoggedIn').catch(() => {})
+      }
+    } else {
+      // No session available; still try once (per request)
+      if (!req._absLoginPingSent) {
+        req._absLoginPingSent = true
+        AchievementManager.applyEvent(String(userId), 'userLoggedIn').catch(() => {})
+      }
+    }
+  } catch (_) {
+    // never block
+  }
+  next()
+}
 
 class Server {
   constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -57,7 +92,6 @@ class Server {
     global.AllowCors = process.env.ALLOW_CORS === '1'
 
     if (process.env.EXP_PROXY_SUPPORT === '1') {
-      // https://github.com/advplyr/audiobookshelf/pull/3754
       Logger.info(`[Server] Experimental Proxy Support Enabled, SSRF Request Filter was Disabled`)
       global.DisableSsrfRequestFilter = () => true
 
@@ -71,7 +105,6 @@ class Server {
               url: error.response.headers.location
             })
           }
-
           return Promise.reject(error)
         }
       )
@@ -88,12 +121,8 @@ class Server {
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
-    if (!fs.pathExistsSync(global.ConfigPath)) {
-      fs.mkdirSync(global.ConfigPath)
-    }
-    if (!fs.pathExistsSync(global.MetadataPath)) {
-      fs.mkdirSync(global.MetadataPath)
-    }
+    if (!fs.pathExistsSync(global.ConfigPath)) fs.mkdirSync(global.ConfigPath)
+    if (!fs.pathExistsSync(global.MetadataPath)) fs.mkdirSync(global.MetadataPath)
 
     this.auth = new Auth()
 
@@ -118,15 +147,7 @@ class Server {
     this.server = null
   }
 
-  /**
-   * Middleware to check if the current request is authenticated
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @param {import('express').NextFunction} next
-   */
   authMiddleware(req, res, next) {
-    // ask passportjs if the current request is authenticated
     this.auth.isAuthenticated(req, res, next)
   }
 
@@ -134,10 +155,6 @@ class Server {
     LibraryScanner.setCancelLibraryScan(libraryId)
   }
 
-  /**
-   * Initialize database, backups, logs, rss feeds, cron jobs & watcher
-   * Cleanup stale/invalid data
-   */
   async init() {
     Logger.info('[Server] Init v' + version)
     Logger.info('[Server] Node.js Version:', process.version)
@@ -146,22 +163,14 @@ class Server {
 
     await this.playbackSessionManager.removeOrphanStreams()
 
-    /**
-     * Docker container ffmpeg/ffprobe binaries are included in the image.
-     * Docker is currently using ffmpeg/ffprobe v6.1 instead of v5.1 so skipping the check
-     * TODO: Support binary check for all sources
-     */
     if (global.Source !== 'docker') {
       await this.binaryManager.init()
     }
 
     await Database.init(false)
-    // Create or set JWT secret in token manager
     await this.auth.tokenManager.initTokenSecret()
-
     await Logger.logManager.init()
-
-    await this.cleanUserData() // Remove invalid user item progress
+    await this.cleanUserData()
     await CacheManager.ensureCachePaths()
 
     await ShareManager.init()
@@ -183,9 +192,6 @@ class Server {
     }
   }
 
-  /**
-   * Listen for SIGINT and uncaught exceptions
-   */
   initProcessEventListeners() {
     let sigintAlreadyReceived = false
     process.on('SIGINT', async () => {
@@ -200,15 +206,9 @@ class Server {
       process.exit(0)
     })
 
-    /**
-     * @see https://nodejs.org/api/process.html#event-uncaughtexceptionmonitor
-     */
     process.on('uncaughtExceptionMonitor', async (error, origin) => {
       await Logger.fatal(`[Server] Uncaught exception origin: ${origin}, error:`, util.format('%O', error))
     })
-    /**
-     * @see https://nodejs.org/api/process.html#event-unhandledrejection
-     */
     process.on('unhandledRejection', async (reason, promise) => {
       await Logger.fatal('[Server] Unhandled rejection:', reason, '\npromise:', util.format('%O', promise))
       process.exit(1)
@@ -225,75 +225,56 @@ class Server {
 
     app.use((req, res, next) => {
       if (!global.ServerSettings.allowIframe) {
-        // Prevent clickjacking by disallowing iframes
         res.setHeader('Content-Security-Policy', "frame-ancestors 'self'")
       }
-
-      // Security: Prevent referrer leakage to protect against token exposure
-      // Using 'no-referrer' to completely prevent token leakage in referer headers
       res.setHeader('Referrer-Policy', 'no-referrer')
 
-      /**
-       * @temporary
-       * This is necessary for the ebook & cover API endpoint in the mobile apps
-       * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
-       * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
-       * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
-       * @see https://ionicframework.com/docs/troubleshooting/cors
-       *
-       * Running in development allows cors to allow testing the mobile apps in the browser
-       * or env variable ALLOW_CORS = '1'
-       */
-      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) || global.ServerSettings.allowedOrigins?.length) {
+      if (
+        global.AllowCors ||
+        Logger.isDev ||
+        req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) ||
+        global.ServerSettings.allowedOrigins?.length
+      ) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost', ...(global.ServerSettings.allowedOrigins ? global.ServerSettings.allowedOrigins : [])]
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
           res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
           res.header('Access-Control-Allow-Headers', '*')
           res.header('Access-Control-Allow-Credentials', true)
-          if (req.method === 'OPTIONS') {
-            return res.sendStatus(200)
-          }
+          if (req.method === 'OPTIONS') return res.sendStatus(200)
         }
       }
-
       next()
     })
 
-    // parse cookies in requests
+    // cookie + session + passport
     app.use(cookieParser())
-    // enable express-session
     app.use(
       expressSession({
         secret: this.auth.tokenManager.TokenSecret,
         resave: false,
         saveUninitialized: false,
-        cookie: {
-          // also send the cookie if were are not on https (not every use has https)
-          secure: false
-        },
+        cookie: { secure: false },
         store: new MemoryStore(86400000, 86400000, 1000)
       })
     )
-    // init passport.js
     app.use(passport.initialize())
-    // register passport in express-session
     app.use(this.auth.ifAuthNeeded(passport.session()))
-    // config passport.js
     await this.auth.initPassportJs()
+
+    // 🔔 Global login ping: session users (first authed request of the day)
+    app.use(loginAchievementPing)
 
     const router = express.Router()
 
-    // if RouterBasePath is set, modify all requests to include the base path
+    // Base path handling
     app.use((req, res, next) => {
       const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
       const host = req.get('host')
       const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
       const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
       req.originalHostPrefix = `${protocol}://${host}${prefix}`
-      if (!urlStartsWithRouterBasePath) {
-        req.url = `${global.RouterBasePath}${req.url}`
-      }
+      if (!urlStartsWithRouterBasePath) req.url = `${global.RouterBasePath}${req.url}`
       next()
     })
     app.use(global.RouterBasePath, router)
@@ -310,18 +291,26 @@ class Server {
       })
     )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
-
-    // Skip JSON parsing for internal-api routes
     router.use(/^(?!\/internal-api).*/, express.json({ limit: '10mb' }))
 
-    router.use('/api', this.auth.ifAuthNeeded(this.authMiddleware.bind(this)), this.apiRouter.router)
+    // ✅ Achievements API first (unchanged)
+    router.use('/api/achievements', createAchievementsRouter({ auth: this.auth }))
+
+    // Existing routers
+    // For /api we must place login ping AFTER auth so JWT users also unlock
+    router.use(
+      '/api',
+      this.auth.ifAuthNeeded(this.authMiddleware.bind(this)),
+      loginAchievementPing, // 🔔 ensure JWT logins get recorded
+      this.apiRouter.router
+    )
     router.use('/hls', this.hlsRouter.router)
     router.use('/public', this.publicRouter.router)
 
-    // Static folder
+    // Static
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    // RSS Feed temp route
+    // RSS
     router.get('/feed/:slug', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
       RssFeedManager.getFeed(req, res)
@@ -345,8 +334,6 @@ class Server {
       this.initializeServer(req, res)
     })
     router.get('/status', (req, res) => {
-      // status check for client to see if server has been initialized
-      // server has been initialized if a root user exists
       const payload = {
         app: 'audiobookshelf',
         serverVersion: version,
@@ -369,11 +356,10 @@ class Server {
 
     const ReactClientPath = process.env.REACT_CLIENT_PATH
     if (!ReactClientPath) {
-      // Static path to generated nuxt
       const distPath = Path.join(global.appRoot, '/client/dist')
       router.use(express.static(distPath))
 
-      // Client dynamic routes
+      // SPA fallbacks (add badges)
       const dynamicRoutes = [
         '/item/:id',
         '/author/:id',
@@ -395,11 +381,12 @@ class Server {
         '/config/item-metadata-utils/:id',
         '/collection/:id',
         '/playlist/:id',
-        '/share/:slug'
+        '/share/:slug',
+        '/my-badges',
+        '/my-badges/:collectionId'
       ]
       dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
     } else {
-      // This is for using the experimental Next.js client
       Logger.info(`Using React client at ${ReactClientPath}`)
       const nextPath = Path.join(ReactClientPath, 'node_modules/next')
       const next = require(nextPath)
@@ -424,7 +411,6 @@ class Server {
       })
     }
 
-    // Start listening for socket connections
     SocketAuthority.initialize(this)
   }
 
@@ -435,15 +421,10 @@ class Server {
     const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
     await Database.createRootUser(rootUsername, rootPash, this.auth)
-
     res.sendStatus(200)
   }
 
-  /**
-   * Remove user media progress for items that no longer exist & remove seriesHideFrom that no longer exist
-   */
   async cleanUserData() {
-    // Get all media progress without an associated media item
     const mediaProgressToRemove = await Database.mediaProgressModel.findAll({
       where: {
         '$podcastEpisode.id$': null,
@@ -451,36 +432,27 @@ class Server {
       },
       attributes: ['id'],
       include: [
-        {
-          model: Database.bookModel,
-          attributes: ['id']
-        },
-        {
-          model: Database.podcastEpisodeModel,
-          attributes: ['id']
-        }
+        { model: Database.bookModel, attributes: ['id'] },
+        { model: Database.podcastEpisodeModel, attributes: ['id'] }
       ]
     })
     if (mediaProgressToRemove.length) {
-      // Remove media progress
       const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
-        where: {
-          id: {
-            [Sequelize.Op.in]: mediaProgressToRemove.map((mp) => mp.id)
-          }
-        }
+        where: { id: { [Sequelize.Op.in]: mediaProgressToRemove.map((mp) => mp.id) } }
       })
       if (mediaProgressRemoved) {
         Logger.info(`[Server] Removed ${mediaProgressRemoved} media progress for media items that no longer exist in db`)
       }
     }
 
-    // Remove series from hide from continue listening that no longer exist
     try {
-      const users = await Database.sequelize.query(`SELECT u.id, u.username, u.extraData, json_group_array(value) AS seriesIdsToRemove FROM users u, json_each(u.extraData->"seriesHideFromContinueListening") LEFT JOIN series se ON se.id = value WHERE se.id IS NULL GROUP BY u.id;`, {
-        model: Database.userModel,
-        type: Sequelize.QueryTypes.SELECT
-      })
+      const users = await Database.sequelize.query(
+        `SELECT u.id, u.username, u.extraData, json_group_array(value) AS seriesIdsToRemove
+         FROM users u, json_each(u.extraData->"seriesHideFromContinueListening")
+         LEFT JOIN series se ON se.id = value
+         WHERE se.id IS NULL GROUP BY u.id;`,
+        { model: Database.userModel, type: Sequelize.QueryTypes.SELECT }
+      )
       for (const user of users) {
         const extraData = JSON.parse(user.extraData)
         const existingSeriesIds = extraData.seriesHideFromContinueListening
@@ -497,18 +469,19 @@ class Server {
     }
   }
 
-  /**
-   * Gracefully stop server
-   * Stops watcher and socket server
-   */
   async stop() {
     Logger.info('=== Stopping Server ===')
     Watcher.close()
     Logger.info('[Server] Watcher Closed')
     await SocketAuthority.close()
     Logger.info('[Server] Closing HTTP Server')
-    await new Promise((resolve) => this.server.close(resolve))
-    Logger.info('[Server] HTTP Server Closed')
+    if (this.server) {
+      await new Promise((resolve) => this.server.close(resolve))
+      Logger.info('[Server] HTTP Server Closed')
+    } else {
+      Logger.info('[Server] HTTP Server not running')
+    }
   }
 }
+
 module.exports = Server

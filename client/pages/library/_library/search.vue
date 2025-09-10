@@ -74,9 +74,22 @@ export default {
           this.$refs.bookshelf.setShelvesFromSearch()
         }
       })
+      // 🔔 count this search toward Search Master
+      try {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('abs:search-performed'))
+        }
+      } catch (_) {}
     }
   },
-  mounted() {},
+  mounted() {
+    // count the initial load as a search as well
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('abs:search-performed'))
+      }
+    } catch (_) {}
+  },
   beforeDestroy() {}
 }
 </script>
