@@ -619,6 +619,7 @@ class LibraryController {
       filterBy: req.query.filter,
       mediaType: req.library.mediaType,
       minified: req.query.minified === '1',
+      expanded: req.query.expanded === '1',
       collapseseries: req.query.collapseseries === '1',
       include: include.join(',')
     }
