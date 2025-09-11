@@ -53,7 +53,7 @@ components:
           description: The maximum number of episodes to keep.
         maxNewEpisodesToDownload:
           type: integer
-          description: The maximum number of new episodes to download when automatically downloading epsiodes.
+          description: The maximum number of new episodes to download when automatically downloading episodes.
         lastCoverSearch:
           type: integer
           description: The timestamp of the last cover search.

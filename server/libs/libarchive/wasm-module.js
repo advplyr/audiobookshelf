@@ -159,7 +159,7 @@ class WasmModule {
       // const char * get_version()
       getVersion: this.cwrap('get_version', 'string', []),
       // void * archive_open( const void * buffer, size_t buffer_size)
-      // retuns archive pointer
+      // returns archive pointer
       openArchive: this.cwrap('archive_open', 'number', ['number', 'number', 'string']),
       // void * get_entry(void * archive)
       // return archive entry pointer
@@ -178,7 +178,7 @@ class WasmModule {
       /*
       #define AE_IFMT		((__LA_MODE_T)0170000)
       #define AE_IFREG	((__LA_MODE_T)0100000) // Regular file
-      #define AE_IFLNK	((__LA_MODE_T)0120000) // Sybolic link
+      #define AE_IFLNK	((__LA_MODE_T)0120000) // Symbolic link
       #define AE_IFSOCK	((__LA_MODE_T)0140000) // Socket
       #define AE_IFCHR	((__LA_MODE_T)0020000) // Character device
       #define AE_IFBLK	((__LA_MODE_T)0060000) // Block device

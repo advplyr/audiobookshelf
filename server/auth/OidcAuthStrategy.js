@@ -405,7 +405,7 @@ class OidcAuthStrategy {
       //  the post_logout_redirect_uri parameter at all and for other providers
       //  we would also need again to implement (and even before get to know somehow for 3rd party apps)
       //  the correct app link like audiobookshelf://login (and maybe also provide a redirect like mobile-redirect).
-      //   Instead because its null (and this way the parameter will be omitted completly), the client/app can simply append something like
+      //   Instead because its null (and this way the parameter will be omitted completely), the client/app can simply append something like
       //  &post_logout_redirect_uri=audiobookshelf://login to the received logout url by itself which is the simplest solution
       //   (The URL needs to be whitelisted in the config of the SSO/ID provider)
 
