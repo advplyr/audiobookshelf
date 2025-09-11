@@ -132,7 +132,7 @@ export default {
       return this.$store.state.user.user
     },
     openidAuthUri() {
-      return `${process.env.serverUrl}/auth/openid?callback=${location.href.split('?').shift()}`
+      return `${this.$config.routerBasePath}/auth/openid?callback=${window.location.href.split('?').shift()}`
     },
     openIDButtonText() {
       return this.authFormData?.authOpenIDButtonText || 'Login with OpenId'
