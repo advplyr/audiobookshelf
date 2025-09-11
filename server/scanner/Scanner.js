@@ -193,7 +193,7 @@ class Scanner {
    */
   async quickMatchBookBuildUpdatePayload(apiRouterCtx, libraryItem, matchData, options) {
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn']
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn', 'rating']
     const updatePayload = {}
 
     for (const key in matchData) {
@@ -234,6 +234,12 @@ class Scanner {
           updatePayload[key] = matchData[key]
         }
       }
+    }
+
+    if (matchData.rating && (!libraryItem.media.providerRating || options.overrideDetails)) {
+      updatePayload.providerRating = matchData.rating
+      updatePayload.provider = 'audible'
+      updatePayload.providerId = matchData.asin
     }
 
     // Add or set author if not set
