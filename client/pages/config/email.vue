@@ -46,6 +46,26 @@
           </div>
         </div>
 
+        <div class="flex items-center mb-2 py-1">
+          <div class="w-full px-1">
+            <div class="flex items-center">
+              <ui-toggle-switch labeledBy="email-settings-advanced-tls" v-model="showAdvancedTlsSettings" :disabled="savingSettings" />
+              <ui-tooltip :text="$strings.LabelEmailSettingsTlsServerNameHelp">
+                <div class="pl-4 flex items-center">
+                  <span id="email-settings-advanced-tls">{{ $strings.LabelEmailSettingsAdvancedTls }}</span>
+                  <span class="material-symbols text-lg pl-1">info</span>
+                </div>
+              </ui-tooltip>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="showAdvancedTlsSettings" class="flex items-center -mx-1 mb-2">
+          <div class="w-full px-1">
+            <ui-text-input-with-label ref="tlsServerNameInput" v-model="newSettings.tlsServerName" :disabled="savingSettings" :label="$strings.LabelEmailSettingsTlsServerName" />
+          </div>
+        </div>
+
         <div class="flex items-center -mx-1 mb-2">
           <div class="w-full md:w-1/2 px-1">
             <ui-text-input-with-label ref="userInput" v-model="newSettings.user" :disabled="savingSettings" :label="$strings.LabelUsername" />
@@ -140,8 +160,10 @@ export default {
         user: null,
         pass: null,
         testAddress: null,
-        fromAddress: null
+        fromAddress: null,
+        tlsServerName: null
       },
+      showAdvancedTlsSettings: false,
       newEReaderDevice: {
         name: '',
         email: ''
@@ -161,6 +183,13 @@ export default {
     },
     existingEReaderDevices() {
       return this.settings?.ereaderDevices || []
+    }
+  },
+  watch: {
+    showAdvancedTlsSettings(newVal) {
+      if (!newVal) {
+        this.newSettings.tlsServerName = null
+      }
     }
   },
   methods: {
@@ -278,7 +307,8 @@ export default {
         user: this.newSettings.user,
         pass: this.newSettings.pass,
         testAddress: this.newSettings.testAddress,
-        fromAddress: this.newSettings.fromAddress
+        fromAddress: this.newSettings.fromAddress,
+        tlsServerName: this.newSettings.tlsServerName
       }
       this.savingSettings = true
       this.$axios
@@ -313,6 +343,7 @@ export default {
           this.newSettings = {
             ...this.settings
           }
+          this.showAdvancedTlsSettings = !!this.settings.tlsServerName
         })
         .catch((error) => {
           console.error('Failed to get email settings', error)
