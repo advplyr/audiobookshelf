@@ -378,6 +378,7 @@
   "LabelFilterByUser": "Nach Benutzern filtern",
   "LabelFindEpisodes": "Episoden suchen",
   "LabelFinished": "Beendet",
+  "LabelFinishedDate": "Beendet {0}",
   "LabelFolder": "Ordner",
   "LabelFolders": "Verzeichnisse",
   "LabelFontBold": "Fett",
