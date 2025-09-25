@@ -2,7 +2,7 @@ ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
 ### STAGE 0: Build client ###
-FROM node:20-alpine AS build-client
+FROM --platform=$BUILDPLATFORM node:20-alpine AS build-client
 
 WORKDIR /client
 COPY /client /client
@@ -21,6 +21,7 @@ RUN apk add --no-cache --update \
   curl \
   make \
   python3 \
+  py3-setuptools \
   g++ \
   unzip
 
@@ -33,6 +34,8 @@ RUN case "$TARGETPLATFORM" in \
   curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-x64.zip" ;; \
   "linux/arm64") \
   curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-arm64.zip" ;; \
+  "linux/arm/v7") \
+  curl -L -o /tmp/library.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-musl-armv7l.zip" ;; \
   *) echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
   esac && \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
