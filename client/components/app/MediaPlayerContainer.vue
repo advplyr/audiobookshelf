@@ -183,29 +183,75 @@ export default {
   methods: {
     mediaFinished(libraryItemId, episodeId) {
       // Play next item in queue
-      if (!this.playerQueueItems.length || !this.$store.state.playerQueueAutoPlay) {
-        // TODO: Set media finished flag so play button will play next queue item
-        return
-      }
-      var currentQueueIndex = this.playerQueueItems.findIndex((i) => {
-        if (episodeId) return i.libraryItemId === libraryItemId && i.episodeId === episodeId
-        return i.libraryItemId === libraryItemId
-      })
-      if (currentQueueIndex < 0) {
-        console.error('Media finished not found in queue - using first in queue', this.playerQueueItems)
-        currentQueueIndex = -1
-      }
-      if (currentQueueIndex === this.playerQueueItems.length - 1) {
-        console.log('Finished last item in queue')
-        return
-      }
-      const nextItemInQueue = this.playerQueueItems[currentQueueIndex + 1]
-      if (nextItemInQueue) {
-        this.playLibraryItem({
-          libraryItemId: nextItemInQueue.libraryItemId,
-          episodeId: nextItemInQueue.episodeId || null,
-          queueItems: this.playerQueueItems
+      if (this.playerQueueItems.length && this.$store.state.playerQueueAutoPlay) {
+        var currentQueueIndex = this.playerQueueItems.findIndex((i) => {
+          if (episodeId) return i.libraryItemId === libraryItemId && i.episodeId === episodeId
+          return i.libraryItemId === libraryItemId
         })
+        if (currentQueueIndex < 0) {
+          console.error('Media finished not found in queue - using first in queue', this.playerQueueItems)
+          currentQueueIndex = -1
+        }
+        if (currentQueueIndex < this.playerQueueItems.length - 1) {
+          const nextItemInQueue = this.playerQueueItems[currentQueueIndex + 1]
+          if (nextItemInQueue) {
+            this.playLibraryItem({
+              libraryItemId: nextItemInQueue.libraryItemId,
+              episodeId: nextItemInQueue.episodeId || null,
+              queueItems: this.playerQueueItems
+            })
+            return
+          }
+        }
+      }
+
+      // If no queue or queue is finished, try to play next book in series
+      if (this.$store.state.playerQueueAutoPlay && !episodeId && this.streamLibraryItem && this.streamLibraryItem.mediaType === 'book') {
+        this.checkAndPlayNextInSeries(libraryItemId)
+      }
+    },
+
+    async checkAndPlayNextInSeries(libraryItemId) {
+      const libraryItem = this.streamLibraryItem
+      if (!libraryItem || !libraryItem.media.metadata.series || !libraryItem.media.metadata.series.length) {
+        console.log('No series found for library item')
+        return
+      }
+
+      // Try to find next book in each series this book belongs to
+      for (const series of libraryItem.media.metadata.series) {
+        try {
+          const nextBook = await this.$axios.$get(`/api/series/${series.id}/next-book/${libraryItemId}`)
+          if (nextBook) {
+            console.log(`Playing next book in series "${series.name}":`, nextBook.media.metadata.title)
+
+            const queueItem = {
+              libraryItemId: nextBook.id,
+              libraryId: nextBook.libraryId,
+              episodeId: null,
+              title: nextBook.media.metadata.title || 'Unknown Title',
+              subtitle: (nextBook.media.metadata.authors || []).map((au) => au.name || 'Unknown Author').join(', '),
+              caption: series.name + (series.sequence ? ` #${series.sequence}` : ''),
+              duration: nextBook.media.duration || null,
+              coverPath: nextBook.media.coverPath || null
+            }
+
+            this.playLibraryItem({
+              libraryItemId: nextBook.id,
+              episodeId: null,
+              queueItems: [queueItem]
+            })
+            return
+          }
+        } catch (error) {
+          if (error.response?.status === 404) {
+            console.log(`No next book found in series "${series.name}"`)
+            continue
+          } else {
+            console.error('Error getting next book in series:', error)
+            continue
+          }
+        }
       }
     },
     setPlaying(isPlaying) {

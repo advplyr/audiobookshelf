@@ -87,6 +87,30 @@ class SeriesController {
   }
 
   /**
+   * GET: /api/series/:id/next-book/:libraryItemId
+   * Get the next book in a series after the given library item
+   *
+   * @param {SeriesControllerRequest} req
+   * @param {Response} res
+   */
+  async getNextBook(req, res) {
+    const currentLibraryItemId = req.params.libraryItemId
+    const libraryItems = req.libraryItemsInSeries
+
+    const currentBookIndex = libraryItems.findIndex((li) => li.id === currentLibraryItemId)
+    if (currentBookIndex === -1) {
+      return res.status(404).send('Current book not found in series')
+    }
+
+    if (currentBookIndex >= libraryItems.length - 1) {
+      return res.status(404).send('No next book in series')
+    }
+
+    const nextBook = libraryItems[currentBookIndex + 1]
+    res.json(nextBook.toOldJSONExpanded())
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
