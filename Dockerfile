@@ -50,7 +50,8 @@ ARG NUSQLITE3_PATH
 RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
-  tini
+  tini \
+  gosu
 
 WORKDIR /app
 
@@ -58,6 +59,10 @@ WORKDIR /app
 COPY --from=build-client /client/dist /app/client/dist
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
+
+# Copy Entry script and add execute permissions.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
 
@@ -69,5 +74,7 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
-ENTRYPOINT ["tini", "--"]
+# Call entrypoint script instead of just tini.
+ENTRYPOINT ["tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+# This becomes the argument ($@) for the entrypoint script
 CMD ["node", "index.js"]
