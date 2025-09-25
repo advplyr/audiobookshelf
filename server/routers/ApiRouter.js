@@ -222,6 +222,7 @@ class ApiRouter {
     //
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
+    this.router.get('/series/:id/next-book/:libraryItemId', SeriesController.middleware.bind(this), SeriesController.getNextBook.bind(this))
 
     //
     // Playback Session Routes
