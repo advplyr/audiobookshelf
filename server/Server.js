@@ -160,6 +160,9 @@ class Server {
     // Create or set JWT secret in token manager
     await this.auth.tokenManager.initTokenSecret()
 
+    // Auto-create root user if environment variables are set and no root user exists
+    await this.autoCreateRootUser()
+
     await Logger.logManager.init()
 
     await this.cleanUserData() // Remove invalid user item progress
@@ -426,6 +429,30 @@ class Server {
 
     // Start listening for socket connections
     SocketAuthority.initialize(this)
+  }
+
+  async autoCreateRootUser() {
+    if (!Database.hasRootUser && process.env.INIT_USER_NAME) {
+      const initUsername = process.env.INIT_USER_NAME
+      const initPassword = process.env.INIT_USER_PASSWORD || ''
+
+      Logger.info(`[Server] Auto-creating root user "${initUsername}" from environment variables`)
+
+      try {
+        const hashedPassword = initPassword ? await this.auth.localAuthStrategy.hashPassword(initPassword) : ''
+
+        if (!hashedPassword && initPassword) {
+          Logger.warn(`[Server] Failed to hash password for auto-created root user`)
+        } else if (!initPassword) {
+          Logger.warn(`[Server] Creating root user with no password`)
+        }
+
+        await Database.createRootUser(initUsername, hashedPassword, this.auth)
+        Logger.info(`[Server] Successfully auto-created root user "${initUsername}"`)
+      } catch (error) {
+        Logger.error(`[Server] Failed to auto-create root user:`, error)
+      }
+    }
   }
 
   async initializeServer(req, res) {
