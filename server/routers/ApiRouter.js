@@ -351,6 +351,7 @@ class ApiRouter {
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
     this.router.get('/auth-settings', MiscController.getAuthSettings.bind(this))
     this.router.patch('/auth-settings', MiscController.updateAuthSettings.bind(this))
+    this.router.get('/test-proxy-header', MiscController.testProxyHeader.bind(this))
     this.router.post('/watcher/update', MiscController.updateWatchedPath.bind(this))
     this.router.get('/logger-data', MiscController.getLoggerData.bind(this))
   }

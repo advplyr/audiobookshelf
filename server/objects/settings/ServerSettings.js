@@ -158,6 +158,14 @@ class ServerSettings {
       this.authActiveAuthMethods = ['local']
     }
 
+    // Environment variable to enable proxy authentication (only during initialization)
+    if (process.env.AUTH_PROXY_ENABLED === 'true' || process.env.AUTH_PROXY_ENABLED === '1') {
+      if (!this.authActiveAuthMethods.includes('proxy')) {
+        Logger.info(`[ServerSettings] Enabling proxy authentication from environment variable AUTH_PROXY_ENABLED`)
+        this.authActiveAuthMethods.push('proxy')
+      }
+    }
+
     // remove uninitialized methods
     // OpenID
     if (this.authActiveAuthMethods.includes('openid') && !this.isOpenIDAuthSettingsValid) {

@@ -31,6 +31,9 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
+  if (devEnv.AuthProxyEnabled) process.env.AUTH_PROXY_ENABLED = '1'
+  if (devEnv.AuthProxyHeaderName) process.env.AUTH_PROXY_HEADER_NAME = devEnv.AuthProxyHeaderName
+  if (devEnv.AuthProxyLogoutURL) process.env.AUTH_PROXY_LOGOUT_URL = devEnv.AuthProxyLogoutURL
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
 }

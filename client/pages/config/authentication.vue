@@ -136,7 +136,16 @@
 
         <transition name="slide">
           <div v-if="enableProxyAuth" class="flex flex-wrap pt-4">
-            <ui-text-input-with-label ref="proxyHeaderName" v-model="newAuthSettings.authProxyHeaderName" :disabled="savingSettings" :label="$strings.LabelProxyHeaderName" :placeholder="'X-Remote-User'" class="mb-2" />
+            <div class="w-full flex items-center mb-2">
+              <div class="grow">
+                <ui-text-input-with-label ref="proxyHeaderName" v-model="newAuthSettings.authProxyHeaderName" :disabled="savingSettings" :label="$strings.LabelProxyHeaderName" :placeholder="'X-Remote-User'" />
+              </div>
+              <div class="w-20 mx-1 mt-[1.375rem]">
+                <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" :disabled="!newAuthSettings.authProxyHeaderName?.trim() || testingProxyHeader" :loading="testingProxyHeader" @click="testProxyHeader">
+                  Test
+                </ui-btn>
+              </div>
+            </div>
             <p class="text-sm text-gray-300 mb-4">
               {{ $strings.LabelProxyHeaderNameDescription }}
             </p>
@@ -183,6 +192,7 @@ export default {
       enableProxyAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      testingProxyHeader: false,
       openIdSigningAlgorithmsSupportedByIssuer: [],
       newAuthSettings: {}
     }
@@ -277,6 +287,34 @@ export default {
           const errorMsg = error.response?.data || 'Unknown error'
           this.$toast.error(errorMsg)
         })
+    },
+    async testProxyHeader() {
+      if (!this.newAuthSettings.authProxyHeaderName?.trim()) {
+        this.$toast.error('Header name is required')
+        return
+      }
+
+      this.testingProxyHeader = true
+
+      try {
+        const response = await this.$axios.$get('/api/test-proxy-header', {
+          params: {
+            headerName: this.newAuthSettings.authProxyHeaderName
+          }
+        })
+
+        if (response.headerFound) {
+          this.$toast.success(`Header "${this.newAuthSettings.authProxyHeaderName}" found with value: "${response.headerValue}"`)
+        } else {
+          this.$toast.warning(`Header "${this.newAuthSettings.authProxyHeaderName}" not found in request`)
+        }
+      } catch (error) {
+        console.error('Failed to test proxy header', error)
+        const errorMsg = error.response?.data?.message || 'Failed to test proxy header'
+        this.$toast.error(errorMsg)
+      } finally {
+        this.testingProxyHeader = false
+      }
     },
     validateOpenID() {
       let isValid = true
