@@ -31,6 +31,8 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
+  if (devEnv.InitUserName) process.env.INIT_USER_NAME = devEnv.InitUserName
+  if (devEnv.InitUserPassword) process.env.INIT_USER_PASSWORD = devEnv.InitUserPassword
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
 }
