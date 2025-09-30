@@ -4,10 +4,10 @@
       <span class="material-symbols text-2xl sm:text-3xl">{{ volumeIcon }}</span>
     </button>
     <transition name="menux">
-      <div v-show="isOpen" class="volumeMenu h-28 absolute bottom-2 w-6 py-2 bg-bg shadow-xs rounded-lg" style="top: -116px">
-        <div ref="volumeTrack" class="w-1 h-full bg-gray-500 mx-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
-          <div class="bg-gray-100 w-full absolute left-0 bottom-0 pointer-events-none rounded-full" :style="{ height: volume * trackHeight + 'px' }" />
-          <div class="w-2.5 h-2.5 bg-white shadow-xs rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ bottom: cursorBottom + 'px', left: '-3px' }" />
+      <div v-show="isOpen" class="volumeMenu absolute bg-bg shadow-xs rounded-lg" :class="isHorizontal ? 'horizontal-menu' : 'vertical-menu'" :style="menuStyle">
+        <div ref="volumeTrack" class="bg-gray-500 relative cursor-pointer rounded-full" :class="isHorizontal ? 'horizontal-track' : 'vertical-track'" @mousedown="mousedownTrack" @click="clickVolumeTrack">
+          <div class="bg-gray-100 absolute pointer-events-none rounded-full" :class="isHorizontal ? 'horizontal-fill' : 'vertical-fill'" :style="fillStyle" />
+          <div class="w-2.5 h-2.5 bg-white shadow-xs rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="cursorStyle" />
         </div>
       </div>
     </transition>
@@ -25,13 +25,22 @@ export default {
       isDragging: false,
       isHovering: false,
       posY: 0,
+      posX: 0,
       lastValue: 0.5,
       isMute: false,
-      trackHeight: 112 - 20,
+      verticalTrackHeight: 112 - 20,
+      horizontalTrackWidth: 112 - 20,
       openTimeout: null
     }
   },
   computed: {
+    isHorizontal() {
+      // Check if eReader is shown to determine orientation
+      return this.$store && this.$store.state && this.$store.state.showEReader
+    },
+    trackSize() {
+      return this.isHorizontal ? this.horizontalTrackWidth : this.verticalTrackHeight
+    },
     volume: {
       get() {
         return this.value
@@ -40,14 +49,58 @@ export default {
         try {
           localStorage.setItem('volume', val)
         } catch (error) {
-          console.error('Failed to store volume', err)
+          console.error('Failed to store volume', error)
         }
         this.$emit('input', val)
       }
     },
-    cursorBottom() {
-      var bottom = this.trackHeight * this.volume
-      return bottom - 3
+    menuStyle() {
+      if (this.isHorizontal) {
+        return {
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          marginBottom: '8px',
+          zIndex: 100
+        }
+      } else {
+        return {
+          top: '-116px',
+          zIndex: 100
+        }
+      }
+    },
+    fillStyle() {
+      if (this.isHorizontal) {
+        return {
+          width: this.volume * this.trackSize + 'px',
+          height: '100%',
+          left: '0',
+          top: '0'
+        }
+      } else {
+        return {
+          height: this.volume * this.trackSize + 'px',
+          width: '100%',
+          left: '0',
+          bottom: '0'
+        }
+      }
+    },
+    cursorStyle() {
+      if (this.isHorizontal) {
+        const left = this.volume * this.trackSize - 3
+        return {
+          left: left + 'px',
+          top: '-3px'
+        }
+      } else {
+        const bottom = this.volume * this.trackSize - 3
+        return {
+          bottom: bottom + 'px',
+          left: '-3px'
+        }
+      }
     },
     volumeIcon() {
       if (this.volume <= 0) return 'volume_mute'
@@ -89,12 +142,21 @@ export default {
       }, 600)
     },
     mousemove(e) {
-      var diff = this.posY - e.y
-      this.posY = e.y
-      var volShift = diff / this.trackHeight
-      var newVol = this.volume + volShift
-      newVol = Math.min(Math.max(0, newVol), 1)
-      this.volume = newVol
+      if (this.isHorizontal) {
+        // Horizontal movement
+        const diff = e.x - this.posX
+        this.posX = e.x
+        const volShift = diff / this.trackSize
+        const newVol = Math.min(Math.max(0, this.volume + volShift), 1)
+        this.volume = newVol
+      } else {
+        // Vertical movement (original logic)
+        const diff = this.posY - e.y
+        this.posY = e.y
+        const volShift = diff / this.trackSize
+        const newVol = Math.min(Math.max(0, this.volume + volShift), 1)
+        this.volume = newVol
+      }
       e.preventDefault()
     },
     mouseup(e) {
@@ -106,10 +168,17 @@ export default {
     },
     mousedownTrack(e) {
       this.isDragging = true
-      this.posY = e.y
-      var vol = 1 - e.offsetY / this.trackHeight
-      vol = Math.min(Math.max(vol, 0), 1)
-      this.volume = vol
+
+      if (this.isHorizontal) {
+        this.posX = e.x
+        const vol = e.offsetX / this.trackSize
+        this.volume = Math.min(Math.max(vol, 0), 1)
+      } else {
+        this.posY = e.y
+        const vol = 1 - e.offsetY / this.trackSize
+        this.volume = Math.min(Math.max(vol, 0), 1)
+      }
+
       document.body.addEventListener('mousemove', this.mousemove)
       document.body.addEventListener('mouseup', this.mouseup)
       e.preventDefault()
@@ -130,9 +199,13 @@ export default {
       this.clickVolumeIcon()
     },
     clickVolumeTrack(e) {
-      var vol = 1 - e.offsetY / this.trackHeight
-      vol = Math.min(Math.max(vol, 0), 1)
-      this.volume = vol
+      if (this.isHorizontal) {
+        const vol = e.offsetX / this.trackSize
+        this.volume = Math.min(Math.max(vol, 0), 1)
+      } else {
+        const vol = 1 - e.offsetY / this.trackSize
+        this.volume = Math.min(Math.max(vol, 0), 1)
+      }
     }
   },
   mounted() {
@@ -151,3 +224,52 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.vertical-menu {
+  height: 112px;
+  width: 24px;
+  padding: 8px 0;
+}
+
+.horizontal-menu {
+  width: 112px;
+  height: 24px;
+  padding: 0 8px;
+}
+
+.vertical-track {
+  width: 4px;
+  height: 100%;
+  margin: 0 10px;
+}
+
+.horizontal-track {
+  height: 4px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.vertical-fill {
+  width: 100%;
+}
+
+.horizontal-fill {
+  height: 100%;
+}
+
+/* Smooth transitions for orientation changes */
+.volumeMenu {
+  transition: all 0.3s ease;
+}
+
+.menux-enter-active,
+.menux-leave-active {
+  transition: opacity 0.2s;
+}
+
+.menux-enter,
+.menux-leave-to {
+  opacity: 0;
+}
+</style>

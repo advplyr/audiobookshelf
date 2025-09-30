@@ -126,7 +126,7 @@ export default {
     disconnect() {
       console.log('[SOCKET] Disconnected')
       this.isSocketConnected = false
-      this.updateSocketConnectionToast(this.$strings.ToastSocketDisconnected, 'error', null)
+      // this.updateSocketConnectionToast(this.$strings.ToastSocketDisconnected, 'error', null)
     },
     reconnect() {
       console.log('[SOCKET] reconnected')
@@ -377,6 +377,9 @@ export default {
       if (!provider?.id) return
       this.$store.commit('scanners/removeCustomMetadataProvider', provider)
     },
+    initializeTheme() {
+      this.$store.dispatch('theme/initializeTheme')
+    },
     initializeSocket() {
       if (this.$root.socket) {
         // Can happen in dev due to hot reload
@@ -605,6 +608,7 @@ export default {
   mounted() {
     this.updateBodyClass()
     this.resize()
+    this.initializeTheme()
     this.$eventBus.$on('change-lang', this.changeLanguage)
     this.$eventBus.$on('token_refreshed', this.tokenRefreshed)
     window.addEventListener('resize', this.resize)

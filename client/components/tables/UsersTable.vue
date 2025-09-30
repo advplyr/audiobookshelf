@@ -183,38 +183,44 @@ export default {
 #accounts {
   table-layout: fixed;
   border-collapse: collapse;
-  border: 1px solid #474747;
+  border: 1px solid var(--color-border);
   width: 100%;
+  background-color: var(--color-primary);
 }
 
 #accounts td,
 #accounts th {
-  /* border: 1px solid #2e2e2e; */
   padding: 8px 8px;
   text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text);
 }
 
 #accounts td.py-0 {
   padding: 0px 8px;
 }
 
+/* Row striping */
 #accounts tr:nth-child(even) {
-  background-color: #373838;
+  background-color: var(--color-fg);
 }
-
 #accounts tr:nth-child(odd) {
-  background-color: #2f2f2f;
+  background-color: var(--color-primary);
 }
 
+/* Hover state */
 #accounts tr:hover {
-  background-color: #444;
+  background-color: var(--color-hover);
 }
 
+/* Table header */
 #accounts th {
   font-size: 0.8rem;
   font-weight: 600;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: #272727;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border-bottom: 2px solid var(--color-border);
 }
 </style>

@@ -241,25 +241,37 @@ export default {
   border-collapse: collapse;
   width: 100%;
   max-width: 100%;
-  border: 1px solid #474747;
+  border: 1px solid var(--color-border);
 }
+
+/* Header row */
 .userSessionsTable tr:first-child {
-  background-color: #272727;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
+
+/* Body rows */
 .userSessionsTable tr:not(:first-child) {
-  background-color: #373838;
+  background-color: var(--color-primary);
+  color: var(--color-text);
 }
+
+/* Alternating striping */
 .userSessionsTable tr:not(:first-child):nth-child(odd) {
-  background-color: #2f2f2f;
+  background-color: var(--color-fg);
 }
+
+/* Hover state */
 .userSessionsTable tr:hover:not(:first-child) {
-  background-color: #474747;
+  background-color: var(--color-hover);
 }
-.userSessionsTable td {
-  padding: 4px 8px;
-}
+
+/* Table cells */
+.userSessionsTable td,
 .userSessionsTable th {
   padding: 4px 8px;
   font-size: 0.75rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-light);
 }
 </style>

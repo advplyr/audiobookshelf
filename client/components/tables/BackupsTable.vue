@@ -208,11 +208,12 @@ export default {
   table-layout: fixed;
   border-collapse: collapse;
   width: 100%;
+  color: var(--table-text-color);
 }
 
 #backups td,
 #backups th {
-  border: 1px solid #2e2e2e;
+  border: 1px solid var(--table-border);
   padding: 8px 8px;
   text-align: left;
 }
@@ -222,11 +223,15 @@ export default {
 }
 
 #backups tr:nth-child(even):not(.bg-error) {
-  background-color: #3a3a3a;
+  background-color: var(--table-row-alt-bg);
+}
+
+#backups tr:nth-child(odd):not(.bg-error):not(.staticrow) {
+  background-color: var(--table-row-bg);
 }
 
 #backups tr:not(.staticrow):not(.bg-error):hover {
-  background-color: #444;
+  background-color: var(--table-row-hover-bg);
 }
 
 #backups th {
@@ -234,6 +239,7 @@ export default {
   font-weight: 600;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: #333;
+  background-color: var(--table-header-bg);
+  color: var(--table-text-color);
 }
 </style>

@@ -168,25 +168,44 @@ export default {
 .userAudiobooksTable {
   border-collapse: collapse;
   width: 100%;
-  border: 1px solid #474747;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-primary);
 }
-.userAudiobooksTable tr:nth-child(even) {
-  background-color: #2e2e2e;
+
+/* Header row */
+.userAudiobooksTable tr:first-child {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-weight: 600;
 }
+
+/* Body rows */
 .userAudiobooksTable tr:not(:first-child) {
-  background-color: #373838;
+  background-color: var(--color-primary);
+  color: var(--color-text);
 }
+
+/* Alternating rows */
+.userAudiobooksTable tr:nth-child(even):not(:first-child) {
+  background-color: var(--color-fg);
+}
+
+/* Hover */
 .userAudiobooksTable tr:hover:not(:first-child) {
-  background-color: #474747;
+  background-color: var(--color-hover);
 }
+
+/* Finished rows (green hint, readable in both modes) */
 .userAudiobooksTable tr.isFinished {
-  background-color: rgba(76, 175, 80, 0.1);
+  background-color: rgba(76, 175, 80, 0.12);
 }
-.userAudiobooksTable td {
-  padding: 4px 8px;
-}
+
+/* Table cells */
+.userAudiobooksTable td,
 .userAudiobooksTable th {
   padding: 4px 8px;
   font-size: 0.75rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-light);
 }
 </style>

@@ -515,26 +515,35 @@ export default {
   border-collapse: collapse;
   width: 100%;
   max-width: 100%;
-  border: 1px solid #474747;
+  border: 1px solid var(--table-border);
 }
+
+/* Header */
 .userSessionsTable tr:first-child {
-  background-color: #272727;
+  background-color: var(--table-header-bg);
 }
+
+/* Normal rows */
 .userSessionsTable tr:not(:first-child):not(.selected) {
-  background-color: #373838;
+  background-color: var(--table-row-bg);
 }
+
+/* Alternate rows */
 .userSessionsTable tr:not(:first-child):nth-child(odd):not(.selected):not(:hover) {
-  background-color: #2f2f2f;
+  background-color: var(--table-row-alt-bg);
 }
+
+/* Hover */
 .userSessionsTable tr:hover:not(:first-child) {
-  background-color: #474747;
+  background-color: var(--table-row-hover-bg);
 }
+
+/* Selected */
 .userSessionsTable tr.selected {
-  background-color: #474747;
+  background-color: var(--table-row-hover-bg);
 }
-.userSessionsTable td {
-  padding: 4px 8px;
-}
+
+.userSessionsTable td,
 .userSessionsTable th {
   padding: 4px 8px;
   font-size: 0.75rem;

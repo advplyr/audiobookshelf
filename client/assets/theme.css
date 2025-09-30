@@ -1,0 +1,345 @@
+:root,
+:root.dark {
+  /* Main backgrounds - from your existing design */
+  --color-bg: #373838; /* From tailwind.css --color-bg */
+  --color-primary: #232323; /* From tailwind.css --color-primary */
+  --color-fg: #2e2e2e; /* From your existing even rows */
+
+  /* Gradient backgrounds - from your bookshelf design */
+  --gradient-bookshelf: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
+
+  /* Text colors */
+  --color-text: #ffffff;
+  --color-text-muted: #bbbbbb; /* From --color-black-50 */
+  --color-text-dim: #666666; /* From --color-black-100 */
+
+  /* Border colors - from your existing table styles */
+  --color-border: #474747; /* From tracksTable border */
+  --color-border-light: #555555; /* From --color-black-200 */
+
+  /* Interactive colors */
+  --color-hover: #474747; /* From tracksTable hover */
+  --color-accent: #1ad691; /* From tailwind.css --color-accent */
+  --color-success: #4caf50; /* From tailwind.css --color-success */
+  --color-darkgreen: rgb(34, 127, 35); /* From tailwind.css --color-darkgreen */
+
+  /* Status colors */
+  --color-warning: #fb8c00; /* From tailwind.css --color-warning */
+  --color-error: #ff5252; /* From tailwind.css --color-error */
+  --color-info: #2196f3; /* From tailwind.css --color-info */
+
+  /* Scrollbar colors - from your existing design */
+  --scrollbar-thumb: #855620;
+  --scrollbar-thumb-hover: #704922;
+
+  /* Shadow colors */
+  --color-shadow-light: rgba(17, 17, 17, 0.4); /* #111111aa */
+  --color-shadow-medium: rgba(17, 17, 17, 0.6); /* #111111ee */
+  --color-shadow-heavy: rgba(17, 17, 17, 0.8);
+
+  /* Bookshelf specific - keep your existing design */
+  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
+  --bookshelf-divider-bg: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%);
+
+  /* Special effects */
+  --shimmer-bg: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);
+  --gold-border: rgba(255, 244, 182, 0.6);
+  --gold-text: #fce3a6;
+
+  --table-border: #474747;
+  --table-header-bg: #272727;
+  --table-row-bg: #373838;
+  --table-row-alt-bg: #2f2f2f;
+  --table-row-hover-bg: #474747;
+  --table-text-color: #e0e0e0;
+}
+
+/* Light theme */
+:root.light {
+  /* Main backgrounds - lighter equivalents */
+  --color-bg: #f8f9fa;
+  --color-primary: #ffffff;
+  --color-fg: #f1f3f4;
+
+  /* Gradient backgrounds - light version */
+  --gradient-bookshelf: linear-gradient(to right bottom, #f8f9fa, #f1f3f4, #e9ecef, #dee2e6, #ced4da, #adb5bd, #868e96, #6c757d, #495057, #343a40, #212529, #000000);
+
+  /* Text colors */
+  --color-text: #212529;
+  --color-text-muted: #495057;
+  --color-text-dim: #868e96;
+
+  /* Border colors */
+  --color-border: #dee2e6;
+  --color-border-light: #e9ecef;
+
+  /* Interactive colors */
+  --color-hover: #e9ecef;
+  --color-accent: #20c997; /* Slightly adjusted for light mode */
+  --color-success: #198754;
+  --color-darkgreen: rgb(25, 135, 84);
+
+  /* Status colors - adjusted for light mode */
+  --color-warning: #fd7e14;
+  --color-error: #dc3545;
+  --color-info: #0d6efd;
+
+  /* Scrollbar colors */
+  --scrollbar-thumb: #adb5bd;
+  --scrollbar-thumb-hover: #868e96;
+
+  /* Shadow colors */
+  --color-shadow-light: rgba(0, 0, 0, 0.1);
+  --color-shadow-medium: rgba(0, 0, 0, 0.2);
+  --color-shadow-heavy: rgba(0, 0, 0, 0.3);
+
+  /* Bookshelf specific - lighter wood texture */
+  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
+  --bookshelf-divider-bg: linear-gradient(180deg, rgba(200, 170, 140, 1) 0%, rgba(180, 150, 120, 1) 17%, rgba(180, 150, 120, 1) 88%, rgba(160, 130, 100, 1) 100%);
+
+  /* Special effects */
+  --shimmer-bg: linear-gradient(315deg, #f8f9fa 0%, #e9ecef 74%);
+  --gold-border: rgba(133, 86, 32, 0.6);
+  --gold-text: #855620;
+
+
+  --table-border: #ccc;
+  --table-header-bg: #f0f0f0;
+  --table-row-bg: #ffffff;
+  --table-row-alt-bg: #f9f9f9;
+  --table-row-hover-bg: #e6e6e6;
+  --table-text-color: #333;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease;
+}
+
+body {
+  color: var(--color-text);
+}
+.userSessionsTable {
+  color: var(--table-text-color);
+}
+/* Update common classes to use CSS variables */
+.bg-bg {
+  background-color: var(--color-bg) !important;
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-fg {
+  background-color: var(--color-fg) !important;
+}
+
+.text-white,
+.text-themed {
+  color: var(--color-text) !important;
+}
+
+.text-gray-100 {
+  color: var(--color-text-muted) !important;
+}
+
+.text-gray-200 {
+  color: var(--color-text-muted) !important;
+}
+.text-gray-300 {
+  color: var(--color-text-muted) !important;
+}
+
+.text-gray-400 {
+  color: var(--color-text-dim) !important;
+}
+
+.border-gray-500 {
+  border-color: var(--color-border) !important;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 2px var(--color-shadow) !important;
+}
+
+/* Ensure SVG icons also use theme colors */
+svg {
+  color: var(--color-text);
+  fill: currentColor;
+}
+
+/* Material symbols and icons */
+.material-symbols,
+.material-icons {
+  color: var(--color-text) !important;
+}
+
+.tooltip-content,
+.ui-tooltip-content {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* For Popper.js or similar tooltip libraries */
+.popper,
+.tippy-box {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.tippy-arrow {
+  color: var(--color-primary) !important;
+}
+
+/* Ensure text is readable */
+.ui-tooltip *,
+.tooltip * {
+  color: var(--color-text) !important;
+}
+
+/* More specific overrides for common tooltip libraries */
+[data-tippy-root] {
+  --tippy-color: var(--color-text) !important;
+  --tippy-bg: var(--color-primary) !important;
+}
+
+/* Vue/Nuxt specific tooltip classes */
+.v-tooltip-content {
+  background: var(--color-primary) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* Override any hardcoded dark/light theme classes */
+.tooltip-dark,
+.tooltip-light {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Force override for stubborn tooltips */
+[class*="tooltip"],
+[class*="popover"] {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* READERS */
+/* PDF Reader dark mode */
+.pdf-reader-container {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* Ensure proper contrast for controls */
+.pdf-reader-container .material-symbols {
+  color: var(--color-text);
+}
+
+/* Make sure the viewer area has proper background */
+.pdf-reader-container .pdf-viewer {
+  background-color: var(--color-primary);
+}
+
+/* Modal specific overrides */
+.modal-content {
+  background-color: var(--color-fg) !important;
+  color: var(--color-text) !important;
+}
+
+/* Input fields - general styling that works for both themes */
+input,
+textarea,
+select {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Input focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--color-accent), 0.2);
+}
+
+/* Button styling - general that works for both themes */
+.ui-btn,
+button {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Button hover states */
+.ui-btn:hover,
+button:hover {
+  background-color: var(--color-hover);
+}
+
+/* Tab styling */
+.tab {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+  transition: background-color 0.3s ease;
+}
+
+/* Tab hover states */
+.tab:hover {
+  background-color: var(--color-hover);
+}
+
+/* Tab active states */
+.tab.active,
+.tab[aria-selected="true"] {
+  background-color: var(--color-fg);
+  border-color: var(--color-accent);
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+select option {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+/* Form validation states */
+input.error,
+textarea.error {
+  border-color: var(--color-error);
+}
+
+input.success,
+textarea.success {
+  border-color: var(--color-success);
+}
+
+/* Placeholder text */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-dim);
+}
+
+/* Disabled states */
+input:disabled,
+textarea:disabled,
+select:disabled,
+button:disabled,
+.ui-btn:disabled {
+  background-color: var(--color-fg);
+  color: var(--color-text-dim);
+  border-color: var(--color-border);
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -1,15 +1,15 @@
 <template>
   <div ref="wrapper" class="relative ml-4 sm:ml-8" v-click-outside="clickOutside">
     <div class="flex items-center justify-center text-gray-300 cursor-pointer h-full" @mousedown.prevent @mouseup.prevent @click="setShowMenu(true)">
-      <span class="text-gray-200 text-sm sm:text-base">{{ playbackRateDisplay }}<span class="text-base">x</span></span>
+      <span class="text-themed text-sm sm:text-base">{{ playbackRateDisplay }}<span class="text-base">x</span></span>
     </div>
-    <div v-show="showMenu" class="absolute -top-[5.5rem] z-20 bg-bg border-black-200 border shadow-xl rounded-lg" :style="{ left: menuLeft + 'px' }">
-      <div class="absolute -bottom-1.5 right-0 w-full flex justify-center" :style="{ left: arrowLeft + 'px' }">
-        <div class="arrow-down" />
+    <div v-show="showMenu" class="absolute z-20 bg-bg border-black-200 border shadow-xl rounded-lg" :style="{ left: menuLeft + 'px', top: menuTop + 'px' }">
+      <div class="absolute w-full flex justify-center" :style="{ left: arrowLeft + 'px', [arrowPosition]: '-6px' }">
+        <div :class="arrowPosition === 'top' ? 'arrow-up' : 'arrow-down'" />
       </div>
-      <div class="flex items-center h-9 relative overflow-hidden rounded-lg" style="width: 220px">
+      <div class="flex items-center relative overflow-hidden rounded-lg" :style="{ width: '220px', height: menuHeight + 'px' }">
         <template v-for="rate in rates">
-          <div :key="rate" class="h-full border-black-300 w-11 cursor-pointer border rounded-xs" :class="value === rate ? 'bg-black-100' : 'hover:bg-black/10'" style="min-width: 44px; max-width: 44px" @click="set(rate)">
+          <div :key="rate" class="border-black-300 w-11 cursor-pointer border rounded-xs" :class="value === rate ? 'bg-black-100' : 'hover:bg-black/10'" :style="{ minWidth: '44px', maxWidth: '44px', height: menuHeight + 'px' }" @click="set(rate)">
             <div class="w-full h-full flex justify-center items-center">
               <p class="text-xs text-center">{{ rate }}<span class="text-sm">x</span></p>
             </div>
@@ -46,7 +46,9 @@ export default {
       MIN_SPEED: 0.5,
       MAX_SPEED: 10,
       menuLeft: -96,
-      arrowLeft: 0
+      arrowLeft: 0,
+      menuTop: -88, // Default top position
+      arrowPosition: 'bottom' // 'top' or 'bottom'
     }
   },
   computed: {
@@ -73,6 +75,19 @@ export default {
       const numDecimals = String(this.playbackRate).split('.')[1]?.length || 0
       if (numDecimals <= 1) return this.playbackRate.toFixed(1)
       return this.playbackRate.toFixed(2)
+    },
+    showEReader() {
+      return this.$store.state.showEReader
+    },
+    menuHeight() {
+      return this.showEReader ? 18 : 36 // Half height when eReader is shown
+    }
+  },
+  watch: {
+    showEReader() {
+      if (this.showMenu) {
+        this.updateMenuPositions()
+      }
     }
   },
   methods: {
@@ -97,13 +112,24 @@ export default {
       if (!this.$refs.wrapper) return
       const boundingBox = this.$refs.wrapper.getBoundingClientRect()
 
+      // Calculate horizontal position
       if (boundingBox.left + 110 > window.innerWidth - 10) {
         this.menuLeft = window.innerWidth - 230 - boundingBox.left
-
         this.arrowLeft = Math.abs(this.menuLeft) - 96
       } else {
         this.menuLeft = -96
         this.arrowLeft = 0
+      }
+
+      // Calculate vertical position based on eReader state
+      if (this.showEReader) {
+        // When eReader is shown, position menu with margin bottom zero (at the bottom of the trigger)
+        this.menuTop = 0
+        this.arrowPosition = 'top'
+      } else {
+        // Default position (above the trigger)
+        this.menuTop = -88
+        this.arrowPosition = 'bottom'
       }
     },
     setShowMenu(val) {
@@ -121,3 +147,21 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.arrow-down {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--color-bg);
+}
+
+.arrow-up {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid var(--color-bg);
+}
+</style>

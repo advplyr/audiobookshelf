@@ -21,7 +21,13 @@
         <div v-if="isChromecastInitialized" class="w-6 min-w-6 h-6 ml-2 mr-1 sm:mx-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
         </div>
-
+        <ui-tooltip :text="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'" direction="bottom" class="flex items-center">
+          <button @click="toggleTheme" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1" :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+            <span class="material-symbols text-2xl">
+              {{ isDarkMode ? '&#xe518;' : '&#xe51c;' }}
+            </span>
+          </button>
+        </ui-tooltip>
         <widgets-notification-widget class="hidden md:block" />
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
@@ -157,6 +163,9 @@ export default {
     },
     isHttps() {
       return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
+    },
+    isDarkMode() {
+      return this.$store.getters['theme/isDarkMode']
     },
     contextMenuItems() {
       if (!this.userIsAdminOrUp) return []
@@ -375,6 +384,9 @@ export default {
     },
     batchAutoMatchClick() {
       this.$store.commit('globals/setShowBatchQuickMatchModal', true)
+    },
+    toggleTheme() {
+      this.$store.dispatch('theme/toggleTheme')
     }
   },
   mounted() {

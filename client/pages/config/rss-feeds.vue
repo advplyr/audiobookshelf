@@ -57,7 +57,7 @@
             </td>
             <!--  -->
             <td class="text-center">
-              <ui-icon-btn icon="delete" class="mx-0.5 text-white/70" borderless :size="7" iconFontSize="1.25rem" outlined @click.stop="deleteFeedClick(feed)" />
+              <ui-icon-btn icon="delete" class="mx-0.5 text-white" borderless :size="7" iconFontSize="1.25rem" outlined @click.stop="deleteFeedClick(feed)" />
             </td>
           </tr>
         </table>
@@ -163,31 +163,38 @@ export default {
   border-collapse: collapse;
   width: 100%;
   max-width: 100%;
-  border: 1px solid #474747;
+  border: 1px solid var(--table-border);
 }
 
+/* Header row */
 .rssFeedsTable tr:first-child {
-  background-color: #272727;
+  background-color: var(--table-header-bg);
 }
 
+/* Normal rows */
 .rssFeedsTable tr:not(:first-child) {
-  background-color: #373838;
+  background-color: var(--table-row-bg);
 }
 
+/* Zebra striping */
 .rssFeedsTable tr:not(:first-child):nth-child(odd) {
-  background-color: #2f2f2f;
+  background-color: var(--table-row-alt-bg);
 }
 
+/* Hover state */
 .rssFeedsTable tr:hover:not(:first-child) {
-  background-color: #474747;
+  background-color: var(--table-row-hover-bg);
 }
 
+/* Cells */
 .rssFeedsTable td {
   padding: 4px 8px;
+  color: var(--table-text);
 }
 
 .rssFeedsTable th {
   padding: 4px 8px;
   font-size: 0.75rem;
+  color: var(--table-text-header);
 }
 </style>

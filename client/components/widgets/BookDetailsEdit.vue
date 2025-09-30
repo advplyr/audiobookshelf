@@ -278,7 +278,17 @@ export default {
       this.details.narrators = [...(this.mediaMetadata.narrators || [])]
       this.details.genres = [...(this.mediaMetadata.genres || [])]
       this.details.series = (this.mediaMetadata.series || []).map((se) => ({ ...se }))
-      this.details.publishedYear = this.mediaMetadata.publishedYear
+      // Handle publishedYear - extract just the year if it's a full date string
+      let publishedYear = this.mediaMetadata.publishedYear
+      if (publishedYear) {
+        // Check if it's a date string (contains '-')
+        if (publishedYear.includes('-')) {
+          publishedYear = publishedYear.split('-')[0]
+        }
+        // Check if it's a valid number
+        publishedYear = isNaN(Number(publishedYear)) ? null : Number(publishedYear)
+      }
+      this.details.publishedYear = publishedYear
       this.details.publisher = this.mediaMetadata.publisher || null
       this.details.language = this.mediaMetadata.language || null
       this.details.isbn = this.mediaMetadata.isbn || null

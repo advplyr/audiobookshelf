@@ -9,7 +9,7 @@
           <!-- Author name & num books overlay -->
           <div cy-id="textInline" v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1e bg-black/60 px-2e">
             <p class="text-center font-semibold truncate" :style="{ fontSize: 0.75 + 'em' }">{{ name }}</p>
-            <p class="text-center text-gray-200" :style="{ fontSize: 0.65 + 'em' }">{{ numBooks }} {{ $strings.LabelBooks }}</p>
+            <p class="text-center text-gray-200" :style="{ fontSize: 0.65 + 'em' }">{{ numBooks }} {{ numBooks === 1 ? $strings.LabelBook : $strings.LabelBooks }}</p>
           </div>
 
           <!-- Search icon btn -->
