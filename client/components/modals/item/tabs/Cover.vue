@@ -1,9 +1,9 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-col sm:flex-row mb-4">
-      <div class="relative self-center md:self-start">
+      <!-- Current book cover -->
+      <div cy-id="currentBookCover" class="relative self-center md:self-start">
         <covers-preview-cover :src="coverUrl" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-linear-to-b from-black-600 to-transparent" />
@@ -14,9 +14,12 @@
           </div>
         </div>
       </div>
-      <div class="grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
-        <div class="flex items-center">
-          <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
+
+      <!-- Contains Upload new cover and local covers -->
+      <div cy-id="uploadCoverAndLocalImages" class="grow sm:pl-2 md:pl-6 sm:pr-2 mt-6 md:mt-0">
+        <!-- Upload new cover -->
+        <div cy-id="uploadCoverForm" class="flex items-center">
+          <div cy-id="uploadCoverBtn" v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
             <ui-file-input ref="fileInput" @change="fileUploadSelected">
               <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
               <span class="material-symbols text-2xl inline-block md:hidden!">upload</span>
@@ -29,16 +32,17 @@
           </form>
         </div>
 
-        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white/10">
-          <div class="flex items-center justify-center py-2">
+        <!-- Locaal covers -->
+        <div cy-id="localImagesContainer" v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white/10">
+          <div cy-id="localImagesCountString" class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
             <div class="grow" />
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
-          <div v-if="showLocalCovers" class="flex items-center justify-center flex-wrap pb-2">
+          <div cy-id="showLocalCovers" v-if="showLocalCovers" class="flex items-center justify-center flex-wrap pb-2">
             <template v-for="localCoverFile in localCovers">
-              <div :key="localCoverFile.ino" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="localCoverFile.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(localCoverFile)">
+              <div cy-id="selectedLocalCover" :key="localCoverFile.ino" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="localCoverFile.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(localCoverFile)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
                   <covers-preview-cover :src="localCoverFile.localPath" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </div>
@@ -48,38 +52,39 @@
         </div>
       </div>
     </div>
+
+    <!-- Search Cover Form -->
     <form @submit.prevent="submitSearchForm">
-      <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
-        <div class="w-48 grow p-1">
+      <div cy-id="bookCoverSearchForm" class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
+        <div cy-id="providerDropDown" class="w-48 grow p-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
-        <div class="w-72 grow p-1">
+        <div cy-id="searchTitleTextInput" class="w-72 grow p-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
-        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
+        <div cy-id="searchAuthorTextInput" v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn cy-id="bookCoverSearchBtn" class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
-    <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
-      <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
-      <template v-for="cover in coversFound">
-        <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
-          <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-        </div>
-      </template>
+
+    <!-- Cover Search Results -->
+    <div cy-id="coverSearchResultsContainer" v-if="hasSearched" class="mt-2">
+      <p v-if="!coversFound.length" class="text-center">{{ $strings.MessageNoCoversFound }}</p>
+      <covers-sorted-covers v-else :covers="sortedCovers" :book-cover-aspect-ratio="bookCoverAspectRatio" :selected-cover="coverPath" @select-cover="updateCover" />
     </div>
 
-    <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
+    <!-- Local Image Upload Preview -->
+    <div cy-id="uploadPreviewImage" v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
       <p class="text-lg">{{ $strings.HeaderPreviewCover }}</p>
       <span class="absolute top-4 right-4 material-symbols text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
-      <div class="flex justify-center py-4">
+      <div cy-id="uploadPreviewImagePreview" class="flex justify-center py-4">
         <covers-preview-cover :src="previewUpload" :width="240" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </div>
-      <div class="absolute bottom-0 right-0 flex py-4 px-5">
-        <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">{{ $strings.ButtonReset }}</ui-btn>
-        <ui-btn :loading="processingUpload" color="bg-success" @click="submitCoverUpload">{{ $strings.ButtonUpload }}</ui-btn>
+      <div cy-id="uploadPreviewBtns" class="absolute bottom-0 right-0 flex py-4 px-5">
+        <ui-btn cy-id="uploadPreviewResetBtn" :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">{{ $strings.ButtonReset }}</ui-btn>
+        <ui-btn cy-id="uploadPreviewUploadBtn" :loading="processingUpload" color="bg-success" @click="submitCoverUpload">{{ $strings.ButtonUpload }}</ui-btn>
       </div>
     </div>
   </div>
@@ -92,7 +97,9 @@ export default {
     libraryItem: {
       type: Object,
       default: () => {}
-    }
+    },
+    coversFound: { type: Array, default: () => [] },
+    coverPath: { type: String, default: '' }
   },
   data() {
     return {
@@ -105,7 +112,8 @@ export default {
       showLocalCovers: false,
       previewUpload: null,
       selectedFile: null,
-      provider: 'google'
+      provider: 'google',
+      sortedCovers: []
     }
   },
   watch: {
@@ -186,6 +194,12 @@ export default {
           _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
+    },
+    squareCovers() {
+      return this.sortedCovers.filter((cover) => cover.width === cover.height)
+    },
+    rectangleCovers() {
+      return this.sortedCovers.filter((cover) => cover.width !== cover.height)
     }
   },
   methods: {
@@ -304,7 +318,10 @@ export default {
           console.error('Failed', error)
           return []
         })
+
       this.coversFound = results
+      const images = await this.resolveImages()
+
       this.isProcessing = false
       this.hasSearched = true
     },
@@ -319,6 +336,33 @@ export default {
         .finally(() => {
           this.isProcessing = false
         })
+    },
+    async resolveImages() {
+      const resolvedImages = await Promise.all(
+        this.coversFound.map((cover) => {
+          return new Promise((resolve) => {
+            const img = new Image()
+            img.src = cover
+            img.onload = () => {
+              resolve({
+                url: cover,
+                width: img.width,
+                height: img.height
+              })
+            }
+            img.onerror = () => {
+              // Resolve with default dimensions if image fails to load
+              resolve({
+                url: cover,
+                width: 400,
+                height: 600
+              })
+            }
+          })
+        })
+      )
+      this.sortedCovers = resolvedImages
+      return this.sortedCovers
     }
   }
 }
