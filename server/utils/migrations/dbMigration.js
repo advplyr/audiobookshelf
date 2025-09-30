@@ -427,7 +427,7 @@ function migrateAuthors(oldAuthors, oldLibraryItems) {
  */
 function migrateSeries(oldSerieses, oldLibraryItems) {
   const _newRecords = []
-  // Originaly series were shared between libraries if they had the same name
+  // Originally series were shared between libraries if they had the same name
   // Series will be separate between libraries
   for (const oldSeries of oldSerieses) {
     // Get an array of NEW library ids that have this series

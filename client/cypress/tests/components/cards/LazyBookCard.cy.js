@@ -238,7 +238,7 @@ describe('LazyBookCard', () => {
       }
     })
 
-    it('shows the collpased series', () => {
+    it('shows the collapsed series', () => {
       cy.mount(LazyBookCard, mountOptions)
 
       cy.get('&titleImageNotReady').should('be.hidden')

@@ -342,7 +342,7 @@ The `Name` needs to match the `Parameters` above `audiobookshelf`.
 
 ##### Health checking:
 
-Health checking is enabled by default. `Http check method` of `OPTIONS` is not supported on Audiobookshelf. If Health check fails, data will not be forwared. Need to do one of following:
+Health checking is enabled by default. `Http check method` of `OPTIONS` is not supported on Audiobookshelf. If Health check fails, data will not be forwarded. Need to do one of following:
 
 - To disable: Change `Health check method` to `none`.
 - To make Health checking function: Change `Http check method` to `HEAD` or `GET`.
