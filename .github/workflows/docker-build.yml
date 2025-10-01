@@ -1,6 +1,8 @@
 ---
 name: Build and Push Docker Image
-
+permissions:
+     contents: read
+     packages: write
 on:
   # Allows you to run workflow manually from Actions tab
   workflow_dispatch:
@@ -72,8 +74,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image
         uses: docker/build-push-action@v6
