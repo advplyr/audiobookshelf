@@ -54,8 +54,8 @@ RUN apk add --no-cache --update \
   ffmpeg \
   tini \
   shadow \
-  && addgroup -g ${PGID} audiobookshelf \
-  && adduser -u ${PUID} -G audiobookshelf -D audiobookshelf \
+  && groupmod -g ${PGID} -n audiobookshelf node\
+  && usermod -u ${PUID} -l audiobookshelf -m node \
   && apk del shadow
 
 WORKDIR /app
