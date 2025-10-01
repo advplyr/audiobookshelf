@@ -40,6 +40,9 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=edge,branch=master
             type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
