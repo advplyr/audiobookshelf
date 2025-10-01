@@ -25,7 +25,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* /server/
 COPY /server /server/server
 
 RUN case "$TARGETPLATFORM" in \
@@ -50,7 +50,14 @@ ARG NUSQLITE3_PATH
 RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
-  tini
+  tini \
+  shadow \
+  && groupmod -g ${PGID} -n audiobookshelf node\
+  && usermod -u ${PUID} -l audiobookshelf -d /home/audiobookshelf -m node \
+  && apk del shadow \
+  && mkdir -p /config /metadata \
+  && chown -R audiobookshelf:audiobookshelf /config /metadata \
+  && chmod a=rwx /config /metadata
 
 WORKDIR /app
 
