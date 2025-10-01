@@ -6,11 +6,6 @@ permissions:
 on:
   # Allows you to run workflow manually from Actions tab
   workflow_dispatch:
-    inputs:
-      tags:
-        description: 'Docker Tag'
-        required: true
-        default: 'latest'
   push:
     branches:
       - main
@@ -39,7 +34,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name:${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf,enable=${{ github.ref == 'refs/heads/main' && secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_TOKEN != '' }}
+            name:${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf,enable=${{ github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
             name:ghcr.io/${{ github.repository }},enable=true
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -80,7 +75,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v6
         with:
-          tags: ${{ github.event.inputs.tags || steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           context: .
           platforms: linux/amd64,linux/arm64
