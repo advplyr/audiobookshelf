@@ -55,7 +55,7 @@ RUN apk add --no-cache --update \
   tini \
   shadow \
   && groupmod -g ${PGID} -n audiobookshelf node\
-  && usermod -u ${PUID} -l audiobookshelf -m node \
+  && usermod -u ${PUID} -l audiobookshelf -d audiobookshelf -m node \
   && apk del shadow
 
 WORKDIR /app
