@@ -115,8 +115,6 @@
         </transition>
       </div>
 
-      <button @click="resetFirstVisit" class="fixed bottom-16 right-4 bg-red-500 text-white px-3 py-1 rounded shadow-md hover:bg-red-600 z-50">Reset Tour</button>
-
       <!-- cus -->
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-bg/60'">
