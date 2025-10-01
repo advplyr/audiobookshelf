@@ -45,8 +45,8 @@ FROM node:20-alpine
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
-ARG PUID=5000
-ARG PGID=5000
+ARG PUID=1000
+ARG PGID=1000
 
 # Install only runtime dependencies
 RUN apk add --no-cache --update \
