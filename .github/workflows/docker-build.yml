@@ -10,7 +10,10 @@ on:
         required: true
         default: 'latest'
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - dev/*
     tags:
       - 'v*.*.*'
     # Only build when files in these directories have been changed
@@ -22,7 +25,7 @@ on:
 
 jobs:
   build:
-    if: ${{ !contains(github.event.head_commit.message, 'skip ci') && github.repository == 'advplyr/audiobookshelf' }}
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -33,8 +36,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: advplyr/audiobookshelf,ghcr.io/${{ github.repository_owner }}/audiobookshelf
+          images: |
+            name:${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf,enable=${{ github.ref == 'refs/heads/main' && secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_TOKEN != '' }}
+            name:ghcr.io/${{ github.repository }},enable=true
           tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=edge,branch=master
             type=semver,pattern={{version}}
 
@@ -54,6 +60,10 @@ jobs:
 
       - name: Login to Dockerhub
         uses: docker/login-action@v3
+        env: # secrets for Docker hub username and token should be in the registry settings if not docker hub push will be skipped.
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || '' }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN || '' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
