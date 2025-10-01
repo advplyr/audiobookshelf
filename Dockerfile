@@ -25,7 +25,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* /server/
 COPY /server /server/server
 
 RUN case "$TARGETPLATFORM" in \
@@ -45,12 +45,18 @@ FROM node:20-alpine
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
+ARG PUID=1000
+ARG PGID=1000
 
 # Install only runtime dependencies
 RUN apk add --no-cache --update \
   tzdata \
   ffmpeg \
-  tini
+  tini \
+  shadow \
+  && addgroup -g ${PGID} audiobookshelf \
+  && adduser -u ${PUID} -G audiobookshelf -D audiobookshelf \
+  && apk del --purge shadow
 
 WORKDIR /app
 
@@ -69,5 +75,6 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
+USER audiobookshelf
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
