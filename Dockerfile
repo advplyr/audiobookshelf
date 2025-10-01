@@ -63,7 +63,7 @@ RUN apk add --no-cache --update \
   && apk del shadow \
   && mkdir -p /config /metadata \
   && chown -R audiobookshelf:audiobookshelf /config /metadata \
-  && chmod a=rws /config /metadata
+  && chmod a=rwx /config /metadata
 
 WORKDIR /app
 
