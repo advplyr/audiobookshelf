@@ -56,7 +56,7 @@ RUN apk add --no-cache --update \
   shadow \
   && addgroup -g ${PGID} audiobookshelf \
   && adduser -u ${PUID} -G audiobookshelf -D audiobookshelf \
-  && apk del --purge shadow
+  && apk del shadow
 
 WORKDIR /app
 
