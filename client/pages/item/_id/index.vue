@@ -4,8 +4,9 @@
       <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
           <div class="relative group" style="height: fit-content">
-            <covers-book-cover class="relative group-hover:brightness-75 transition cursor-pointer" expand-on-click :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-
+            <div id="covers-book-cover">
+              <covers-book-cover class="relative group-hover:brightness-75 transition cursor-pointer" expand-on-click :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+            </div>
             <!-- Item Progress Bar -->
             <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 shadow-xs z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
@@ -24,7 +25,7 @@
         <div class="grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
-              <h1 class="text-2xl md:text-3xl font-semibold">
+              <h1 class="text-2xl md:text-3xl font-semibold" id="book-title">
                 <div class="flex items-center">
                   {{ title }}
                   <widgets-explicit-indicator v-if="isExplicit" />
@@ -32,7 +33,7 @@
                 </div>
               </h1>
 
-              <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
+              <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl" id="book-sub-title">{{ bookSubtitle }}</p>
 
               <template v-for="(_series, index) in seriesList">
                 <nuxt-link :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7">{{ _series.text }}</nuxt-link
@@ -43,7 +44,7 @@
               <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden text-ellipsis">
                 {{ $getString('LabelByAuthor', ['']) }}<nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
               </p>
-              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
+              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl" id="item-author">by Unknown</p>
 
               <content-library-item-details :library-item="libraryItem" />
             </div>
@@ -123,7 +124,7 @@
           </div>
 
           <div class="my-4 w-full">
-            <div ref="description" id="item-description" dir="auto" role="paragraph" class="default-style less-spacing text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }" v-html="description" />
+            <div ref="description" dir="auto" role="paragraph" class="default-style less-spacing text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }" v-html="description" />
 
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">{{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" /></button>
           </div>
@@ -147,6 +148,8 @@
 </template>
 
 <script>
+import { startTour } from '~/plugins/tour'
+
 export default {
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
@@ -795,6 +798,22 @@ export default {
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    // Existing mounted code...
+    this.checkDescriptionClamped()
+
+    this.$eventBus.$on('start-library-tour', () => {
+      if (this.libraryItem && this.libraryItem.id) {
+        this.$nextTick(() => startTour('libraryItem'))
+      } else {
+        // Wait until libraryItem is loaded
+        const unwatch = this.$watch('libraryItem', (newVal) => {
+          if (newVal && newVal.id) {
+            this.$nextTick(() => startTour('libraryItem'))
+            unwatch()
+          }
+        })
+      }
+    })
   },
   beforeDestroy() {
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
@@ -807,6 +826,7 @@ export default {
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
     this.$root.socket.off('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
+    this.$eventBus.$off('start-library-tour')
   }
 }
 </script>

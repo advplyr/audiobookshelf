@@ -66,3 +66,20 @@
   margin-block-start: 0;
 }
 
+.shepherd-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  margin-top: 5px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.shepherd-progress-bar span {
+  display: block;
+  height: 100%;
+  background: #4cafef;
+  /* Change to match theme */
+  width: 0%;
+  transition: width 0.3s ease;
+}

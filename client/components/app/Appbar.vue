@@ -42,14 +42,6 @@
           </ui-tooltip>
         </nuxt-link>
 
-        <!-- Tour Tooltip icon -->
-        <ui-tooltip text="Start Tour" direction="bottom">
-          <button @click="startTour" class="hover:text-gray-200 w-8 h-8 flex items-center justify-center mx-1">
-            <span class="material-symbols text-2xl">info</span>
-          </button>
-        </ui-tooltip>
-        <!-- Tour Tooltip icon -->
-
         <nuxt-link to="/account" id="appbar-account-link" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
           <span class="items-center hidden md:flex">
             <span class="block truncate">{{ username }}</span>
@@ -390,106 +382,8 @@ export default {
     batchAutoMatchClick() {
       this.$store.commit('globals/setShowBatchQuickMatchModal', true)
     },
-    startTour() {
-      const tour = new Shepherd.Tour({
-        useModalOverlay: true,
-        defaultStepOptions: {
-          scrollTo: true,
-          cancelIcon: { enabled: true },
-          classes: 'shadow-md bg-primary text-white',
-          highlightClass: 'bg-secondary'
-        }
-      })
-
-      tour.addStep({
-        id: 'home-button',
-        text: 'Click here to return to the homepage.',
-        attachTo: {
-          element: '#appbar-home-icon',
-          on: 'bottom'
-        },
-        buttons: [{ text: 'Next', action: tour.next }]
-      })
-
-      tour.addStep({
-        id: 'library_icon',
-        text: 'Click to select the library',
-        attachTo: {
-          element: '#appbar-library-icon',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Next', action: tour.next }
-        ]
-      })
-
-      tour.addStep({
-        id: 'search-bar',
-        text: 'Use this search bar to find any book.',
-        attachTo: {
-          element: '#appbar-search-bar',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Next', action: tour.next }
-        ]
-      })
-
-      tour.addStep({
-        id: 'stats-icon',
-        text: 'View your stats here.',
-        attachTo: {
-          element: '#appbar-stats',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Next', action: tour.next }
-        ]
-      })
-
-      tour.addStep({
-        id: 'upload-button',
-        text: 'Click here to upload a new audiobook.',
-        attachTo: {
-          element: '#appbar-upload-button',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Next', action: tour.next }
-        ]
-      })
-
-      tour.addStep({
-        id: 'settings-icon',
-        text: 'Access your app settings here.',
-        attachTo: {
-          element: '#appbar-settings-icon',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Next', action: tour.next }
-        ]
-      })
-
-      tour.addStep({
-        id: 'account-link',
-        text: 'Click here to access your account settings.',
-        attachTo: {
-          element: '#appbar-account-link',
-          on: 'bottom'
-        },
-        buttons: [
-          { text: 'Back', action: tour.back },
-          { text: 'Done', action: tour.complete }
-        ]
-      })
-
-      tour.start()
+    startTour(tourId) {
+      startTour(tourId)
     }
   },
   mounted() {
@@ -503,6 +397,59 @@ export default {
 
 <style>
 #appbar {
-  box-shadow: 0px 5px 5px #11111155;
+  box-shadow: 0px 5px 5px #bab4b4b6;
+}
+.shepherd-content {
+  padding: 10px;
+  background: #f36f3a;
+}
+.shepherd-header {
+  background: #fbeedc;
+}
+.shepherd-cancel-icon {
+  background: #4a2b1d;
+  font-size: 30px;
+  height: 30px;
+  width: 30px;
+  line-height: 0;
+  border-radius: 10px;
+}
+.shepherd-extra-wrapper {
+  background: #fbeedc;
+  margin: 0 !important;
+  padding: 10px;
+}
+.shepherd-text {
+  color: #4a2b1d;
+  background: #fbeedc;
+}
+.shepherd-footer {
+  justify-content: center;
+  background: #fbeedc;
+}
+.shepherd-button {
+  background: #f36f3a;
+  border-radius: 10px;
+  color: #ffffff;
+}
+.shepherd-button:not(:disabled):hover {
+  background: #e4572e;
+}
+.shepherd-progress-bar {
+  width: 100%;
+  height: 5px;
+  background: #f36f3a;
+  margin-top: 5px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.shepherd-progress-bar span {
+  display: block;
+  height: 100%;
+  background: #0ad93d;
+  /* Change to match theme */
+  width: 0%;
+  transition: width 0.3s ease;
 }
 </style>

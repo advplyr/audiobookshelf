@@ -130,6 +130,18 @@
             </ui-tooltip>
           </div>
 
+          <!-- Tour Guide -->
+          <div class="flex items-center py-2">
+            <ui-toggle-switch labeledBy="settings-enable-tour-guide" v-model="newServerSettings.enableTourGuide" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableTourGuide', val)" />
+            <ui-tooltip :text="'Enable or disable the in-app tour guide feature'">
+              <p class="pl-4">
+                <span id="settings-enable-tour-guide">Enable Tour Guide</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+          <!-- Tour Guide -->
+
           <div class="grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-72" @input="(val) => updateSettingsKey('dateFormat', val)" />
             <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
@@ -369,6 +381,11 @@ export default {
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
+
+      // Initialize Tour Guide toggle
+      if (this.newServerSettings.enableTourGuide === undefined) {
+        this.newServerSettings.enableTourGuide = false
+      }
     },
     purgeCache() {
       this.showConfirmPurgeCache = true

@@ -83,6 +83,9 @@ class ServerSettings {
     this.authOpenIDAdvancedPermsClaim = ''
     this.authOpenIDSubfolderForRedirectURLs = undefined
 
+    //Tour Guide - be initialized with default false
+    this.enableTourGuide = settings.enableTourGuide !== undefined ? !!settings.enableTourGuide : true
+
     if (settings) {
       this.construct(settings)
     }
@@ -146,6 +149,9 @@ class ServerSettings {
     this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
     this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
+
+    //Tour Guide - update when saving
+    this.enableTourGuide = !!settings.enableTourGuide
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -255,7 +261,8 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
-      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
+      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
+      enableTourGuide: this.enableTourGuide // return to frontend via API
     }
   }
 

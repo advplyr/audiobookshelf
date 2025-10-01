@@ -4,7 +4,7 @@
     <div v-if="isShowingBookshelfToolbar" class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
 
     <div id="siderail-buttons-container" role="navigation" aria-label="Library Navigation" :class="{ 'player-open': streamLibraryItem }" class="w-full overflow-y-auto overflow-x-hidden">
-      <nuxt-link :to="`/library/${currentLibraryId}`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link :to="`/library/${currentLibraryId}`" id="sidebar-home" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary/80' : 'bg-bg/60'">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
@@ -22,7 +22,7 @@
         <div v-show="isPodcastLatestPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="showLibrary ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" id="sidebar-library" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="showLibrary ? 'bg-primary/80' : 'bg-bg/60'">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
@@ -32,7 +32,7 @@
         <div v-show="showLibrary" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isSeriesPage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="isBookLibrary" id="sidebar-series" :to="`/library/${currentLibraryId}/bookshelf/series`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isSeriesPage ? 'bg-primary/80' : 'bg-bg/60'">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
         </svg>
@@ -42,7 +42,7 @@
         <div v-show="isSeriesPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="isBookLibrary" id="sidebar-collection" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="material-symbols text-2xl">&#xe431;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
@@ -50,7 +50,7 @@
         <div v-show="paramId === 'collections'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="showPlaylists" id="sidebar-playlist" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="material-symbols text-2.5xl">&#xe03d;</span>
 
         <p class="pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
@@ -58,7 +58,7 @@
         <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="isBookLibrary" id="sidebar-authors" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary/80' : 'bg-bg/60'">
         <svg class="w-6 h-6" viewBox="0 0 24 24">
           <path
             fill="currentColor"
@@ -71,7 +71,7 @@
         <div v-show="isAuthorsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/narrators`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isNarratorsPage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="isBookLibrary" id="sidebar-narrators" :to="`/library/${currentLibraryId}/narrators`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isNarratorsPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="material-symbols text-2xl">&#xe91f;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.LabelNarrators }}</p>
@@ -79,13 +79,45 @@
         <div v-show="isNarratorsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/stats`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isStatsPage ? 'bg-primary/80' : 'bg-bg/60'">
+      <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" id="sidebar-stats" :to="`/library/${currentLibraryId}/stats`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isStatsPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="material-symbols text-2xl">&#xf190;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonStats }}</p>
 
         <div v-show="isStatsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
+
+      <!-- cus -->
+      <!-- Floating Action Button -->
+      <div v-if="enableTourGuide">
+        <button v-if="!showChild" @click="showChild = true" class="fixed bottom-32 right-4 w-12 h-12 rounded-full bg-tourGuide text-white flex items-center justify-center shadow-lg hover:bg-primary-dark z-50" title="Tour Guide">
+          <span class="material-symbols">tour</span>
+        </button>
+
+        <!-- Popup with Child Links -->
+        <transition name="fade">
+          <div v-if="showChild" class="fixed bottom-36 right-4 flex flex-col bg-bg/95 border border-primary rounded-xl shadow-lg z-50 w-40">
+            <!-- Home Tour -->
+            <div class="child-link flex items-center gap-2 px-4 py-2 border-b border-primary/40 cursor-pointer" :class="{ active: activeChild === 'home' }" @click="startAppBarTour">
+              <span class="material-symbols">home</span>
+              <p>Home Tour</p>
+            </div>
+
+            <!-- Library Tour -->
+            <div class="child-link flex items-center gap-2 px-4 py-2 border-b border-primary/40 cursor-pointer" :class="{ active: activeChild === 'library' }" @click="startLibraryTour">
+              <span class="material-symbols">menu_book</span>
+              <p>Library Tour</p>
+            </div>
+
+            <!-- Close -->
+            <button @click="showChild = false" class="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-b-xl">Close</button>
+          </div>
+        </transition>
+      </div>
+
+      <button @click="resetFirstVisit" class="fixed bottom-16 right-4 bg-red-500 text-white px-3 py-1 rounded shadow-md hover:bg-red-600 z-50">Reset Tour</button>
+
+      <!-- cus -->
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="abs-icons icon-podcast text-xl"></span>
@@ -125,11 +157,19 @@
   </div>
 </template>
 
+
+
 <script>
+import { startTour } from '~/plugins/tour'
+
 export default {
   data() {
     return {
-      showChangelogModal: false
+      showChangelogModal: false,
+      showChild: false,
+      activeParent: null,
+      activeChild: null,
+      isFirstVisit: false
     }
   },
   computed: {
@@ -221,14 +261,76 @@ export default {
     },
     showPlaylists() {
       return this.$store.state.libraries.numUserPlaylists > 0
+    },
+    enableTourGuide() {
+      return this.$store.state.serverSettings?.enableTourGuide
+    },
+    activeParent() {
+      // Parent is active if menu is open OR it's first visit
+      return this.activeChild || this.showChild || this.isFirstVisit ? 'tour' : null
     }
   },
   methods: {
     clickChangelog() {
       this.showChangelogModal = true
+    },
+    toggleChild() {
+      this.showChild = !this.showChild
+      this.activeParent = this.showChild ? 'tour' : null
+      this.activeChild = null
+      this.isFirstVisit = false
+    },
+    startAppBarTour() {
+      this.activeChild = 'home'
+      startTour('appBar', {
+        onComplete: () => {
+          this.showChild = false
+          this.activeParent = 'tour'
+        }
+      })
+    },
+    startLibraryTour() {
+      this.activeChild = 'library'
+
+      // Use Vue 2 / Nuxt 2 $nextTick
+      this.$nextTick(() => {
+        startTour('libraryItem', {
+          onComplete: () => {
+            this.showChild = false
+            this.activeParent = 'tour'
+          }
+        })
+      })
+    },
+    resetFirstVisit() {
+      localStorage.removeItem('tourGuideVisited')
+      this.isFirstVisit = true
+      this.showChild = false
+      this.activeParent = 'tour'
     }
   },
-  mounted() {}
+  mounted() {
+    // Listen to the event from the button in template
+    this.$eventBus.$on('start-library-tour', () => {
+      this.startLibraryTour()
+    })
+
+    // Existing first visit logic
+    const hasVisited = localStorage.getItem('tourGuideVisited')
+    if (!hasVisited) {
+      this.showChild = true
+      this.activeParent = 'tour'
+      this.isFirstVisit = true
+
+      this.startAppBarTour()
+
+      localStorage.setItem('tourGuideVisited', 'true')
+    }
+  },
+  beforeUnmount() {
+    // Clean up the event listener
+    this.$eventBus.$off('start-library-tour')
+  }
 }
 </script>
 
@@ -238,5 +340,50 @@ export default {
 }
 #siderail-buttons-container.player-open {
   max-height: calc(100vh - 64px - 48px - 160px);
+}
+.child-link {
+  font-size: 12px;
+}
+.child-link:hover {
+  background-color: #92622a;
+}
+.child-link.active {
+  background-color: #92622a;
+}
+.bg-tourGuide {
+  background-color: #92622a;
+}
+.bg-tourGuide .text-tg {
+  font-size: 10px;
+}
+.parent-link.first-time {
+  animation: pulse-highlight 1.5s ease-in-out 3;
+}
+
+/* Pulse keyframes */
+@keyframes pulse-highlight {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 10px 5px rgba(255, 165, 0, 0.7);
+  }
+}
+
+/* Transition for tour guide open/close */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  height: 0;
+}
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  height: auto;
 }
 </style>
