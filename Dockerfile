@@ -56,7 +56,10 @@ RUN apk add --no-cache --update \
   shadow \
   && groupmod -g ${PGID} -n audiobookshelf node\
   && usermod -u ${PUID} -l audiobookshelf -d /home/audiobookshelf -m node \
-  && apk del shadow
+  && apk del shadow \
+  && mkdir -p /config /metadata \
+  && chown -R audiobookshelf:audiobookshelf /config /metadata \
+  && chmod u=rwx,go=rw /config /metadata
 
 WORKDIR /app
 
