@@ -59,11 +59,13 @@
         <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn v-if="!searchInProgress" class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn v-else class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="button" color="bg-error" @click.prevent="cancelCurrentSearch">{{ $strings.ButtonCancel }}</ui-btn>
       </div>
     </form>
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
-      <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
+      <p v-if="searchInProgress && !coversFound.length" class="text-gray-300">{{ $strings.MessageLoading }}</p>
+      <p v-else-if="!searchInProgress && !coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -105,7 +107,10 @@ export default {
       showLocalCovers: false,
       previewUpload: null,
       selectedFile: null,
-      provider: 'google'
+      provider: 'google',
+      currentSearchRequestId: null,
+      searchInProgress: false,
+      socketListenersActive: false
     }
   },
   watch: {
@@ -186,6 +191,9 @@ export default {
           _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
+    },
+    socket() {
+      return this.$root.socket
     }
   },
   methods: {
@@ -291,22 +299,123 @@ export default {
         console.error('PersistProvider', error)
       }
     },
+    generateRequestId() {
+      return `cover-search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    },
+    addSocketListeners() {
+      if (!this.socket || this.socketListenersActive) return
+
+      this.socket.on('cover_search_result', this.handleSearchResult)
+      this.socket.on('cover_search_complete', this.handleSearchComplete)
+      this.socket.on('cover_search_error', this.handleSearchError)
+      this.socket.on('cover_search_provider_error', this.handleProviderError)
+      this.socket.on('cover_search_cancelled', this.handleSearchCancelled)
+      this.socket.on('disconnect', this.handleSocketDisconnect)
+      this.socketListenersActive = true
+    },
+    removeSocketListeners() {
+      if (!this.socket || !this.socketListenersActive) return
+
+      this.socket.off('cover_search_result', this.handleSearchResult)
+      this.socket.off('cover_search_complete', this.handleSearchComplete)
+      this.socket.off('cover_search_error', this.handleSearchError)
+      this.socket.off('cover_search_provider_error', this.handleProviderError)
+      this.socket.off('cover_search_cancelled', this.handleSearchCancelled)
+      this.socket.off('disconnect', this.handleSocketDisconnect)
+      this.socketListenersActive = false
+    },
+    handleSearchResult(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.log(`[Cover Search] Received ${data.total} covers from ${data.provider}`)
+
+      // Add new covers to the list (avoiding duplicates)
+      const newCovers = data.covers.filter((cover) => !this.coversFound.includes(cover))
+      this.coversFound.push(...newCovers)
+    },
+    handleSearchComplete(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.log('[Cover Search] Search completed')
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleSearchError(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.error('[Cover Search] Search error:', data.error)
+      this.$toast.error(`Search failed: ${data.error}`)
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleProviderError(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.warn(`[Cover Search] Provider ${data.provider} failed:`, data.error)
+      // Don't show toast for individual provider failures, just log them
+    },
+    handleSearchCancelled(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.log('[Cover Search] Search cancelled')
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleSocketDisconnect() {
+      console.log('[Cover Search] Socket disconnected')
+      // If we were in the middle of a search, cancel it (server can't send results anymore)
+      if (this.searchInProgress && this.currentSearchRequestId) {
+        console.log('[Cover Search] Cancelling search due to socket disconnection')
+        this.searchInProgress = false
+        this.currentSearchRequestId = null
+        this.$toast.warning('Search was interrupted by connection loss')
+      }
+    },
+    cancelCurrentSearch() {
+      if (!this.currentSearchRequestId || !this.socket) return
+
+      console.log('[Cover Search] Cancelling search:', this.currentSearchRequestId)
+      this.socket.emit('cancel_cover_search', this.currentSearchRequestId)
+      this.currentSearchRequestId = null
+      this.searchInProgress = false
+    },
     async submitSearchForm() {
+      // Cancel any existing search
+      if (this.searchInProgress) {
+        this.cancelCurrentSearch()
+      }
+
       // Store provider in local storage
       this.persistProvider()
 
-      this.isProcessing = true
-      const searchQuery = this.getSearchQuery()
-      const results = await this.$axios
-        .$get(`/api/search/covers?${searchQuery}`)
-        .then((res) => res.results)
-        .catch((error) => {
-          console.error('Failed', error)
-          return []
-        })
-      this.coversFound = results
-      this.isProcessing = false
+      if (!this.socket) {
+        console.error('[Cover Search] Socket not available')
+        this.$toast.error('Connection not available. Please refresh the page.')
+        return
+      }
+
+      // Setup socket listeners if not already done
+      this.addSocketListeners()
+
+      // Clear previous results
+      this.coversFound = []
       this.hasSearched = true
+      this.searchInProgress = true
+
+      // Generate unique request ID
+      const requestId = this.generateRequestId()
+      this.currentSearchRequestId = requestId
+
+      console.log('[Cover Search] Starting search:', requestId)
+
+      // Emit search request via WebSocket
+      this.socket.emit('search_covers', {
+        requestId,
+        title: this.searchTitle,
+        author: this.searchAuthor || '',
+        provider: this.provider,
+        podcast: this.isPodcast
+      })
     },
     setCover(coverFile) {
       this.isProcessing = true
@@ -320,6 +429,18 @@ export default {
           this.isProcessing = false
         })
     }
+  },
+  mounted() {
+    // Setup socket listeners when component is mounted
+    this.addSocketListeners()
+  },
+  beforeDestroy() {
+    // Cancel any ongoing search when component is destroyed
+    if (this.searchInProgress) {
+      this.cancelCurrentSearch()
+    }
+    // Remove socket listeners
+    this.removeSocketListeners()
   }
 }
 </script>

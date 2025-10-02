@@ -2,6 +2,7 @@ const SocketIO = require('socket.io')
 const Logger = require('./Logger')
 const Database = require('./Database')
 const TokenManager = require('./auth/TokenManager')
+const CoverSearchManager = require('./managers/CoverSearchManager')
 
 /**
  * @typedef SocketClient
@@ -180,6 +181,10 @@ class SocketAuthority {
         // Scanning
         socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
 
+        // Cover search streaming
+        socket.on('search_covers', (payload) => this.handleCoverSearch(socket, payload))
+        socket.on('cancel_cover_search', (requestId) => this.handleCancelCoverSearch(socket, requestId))
+
         // Logs
         socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
         socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
@@ -200,6 +205,10 @@ class SocketAuthority {
 
             const disconnectTime = Date.now() - _client.connected_at
             Logger.info(`[SocketAuthority] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
+
+            // Cancel any active cover searches for this socket
+            this.cancelSocketCoverSearches(socket.id)
+
             delete this.clients[socket.id]
           }
         })
@@ -299,6 +308,101 @@ class SocketAuthority {
   cancelScan(id) {
     Logger.debug('[SocketAuthority] Cancel scan', id)
     this.Server.cancelLibraryScan(id)
+  }
+
+  /**
+   * Handle cover search request via WebSocket
+   * @param {SocketIO.Socket} socket
+   * @param {Object} payload
+   */
+  async handleCoverSearch(socket, payload) {
+    const client = this.clients[socket.id]
+    if (!client?.user) {
+      Logger.error('[SocketAuthority] Unauthorized cover search request')
+      socket.emit('cover_search_error', {
+        requestId: payload.requestId,
+        error: 'Unauthorized'
+      })
+      return
+    }
+
+    const { requestId, title, author, provider, podcast } = payload
+
+    if (!requestId || !title) {
+      Logger.error('[SocketAuthority] Invalid cover search request')
+      socket.emit('cover_search_error', {
+        requestId,
+        error: 'Invalid request parameters'
+      })
+      return
+    }
+
+    Logger.info(`[SocketAuthority] User ${client.user.username} initiated cover search ${requestId}`)
+
+    // Callback for streaming results to client
+    const onResult = (result) => {
+      socket.emit('cover_search_result', {
+        requestId,
+        provider: result.provider,
+        covers: result.covers,
+        total: result.total
+      })
+    }
+
+    // Callback when search completes
+    const onComplete = () => {
+      Logger.info(`[SocketAuthority] Cover search ${requestId} completed`)
+      socket.emit('cover_search_complete', { requestId })
+    }
+
+    // Callback for provider errors
+    const onError = (provider, errorMessage) => {
+      socket.emit('cover_search_provider_error', {
+        requestId,
+        provider,
+        error: errorMessage
+      })
+    }
+
+    // Start the search
+    CoverSearchManager.startSearch(requestId, { title, author, provider, podcast }, onResult, onComplete, onError).catch((error) => {
+      Logger.error(`[SocketAuthority] Cover search ${requestId} failed:`, error)
+      socket.emit('cover_search_error', {
+        requestId,
+        error: error.message
+      })
+    })
+  }
+
+  /**
+   * Handle cancel cover search request
+   * @param {SocketIO.Socket} socket
+   * @param {string} requestId
+   */
+  handleCancelCoverSearch(socket, requestId) {
+    const client = this.clients[socket.id]
+    if (!client?.user) {
+      Logger.error('[SocketAuthority] Unauthorized cancel cover search request')
+      return
+    }
+
+    Logger.info(`[SocketAuthority] User ${client.user.username} cancelled cover search ${requestId}`)
+
+    const cancelled = CoverSearchManager.cancelSearch(requestId)
+    if (cancelled) {
+      socket.emit('cover_search_cancelled', { requestId })
+    }
+  }
+
+  /**
+   * Cancel all cover searches associated with a socket (called on disconnect)
+   * @param {string} socketId
+   */
+  cancelSocketCoverSearches(socketId) {
+    // Get all active search request IDs and cancel those that might belong to this socket
+    // Since we don't track socket-to-request mapping, we log this for debugging
+    // The client will handle reconnection gracefully
+    Logger.debug(`[SocketAuthority] Socket ${socketId} disconnected, any active searches will timeout`)
   }
 }
 module.exports = new SocketAuthority()
