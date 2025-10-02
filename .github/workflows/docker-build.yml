@@ -34,8 +34,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            name:${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf,enable=${{ github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-            name:ghcr.io/${{ github.repository }},enable=true
+            name=${{ secrets.DOCKERHUB_USERNAME }}/audiobookshelf,enable=${{ github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+            name=ghcr.io/${{ github.repository }},enable=true
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=edge,branch=master
