@@ -63,12 +63,7 @@ export const state = () => ({
       value: 'itunes'
     }
   ],
-  coverOnlyProviders: [
-    {
-      text: 'AudiobookCovers.com',
-      value: 'audiobookcovers'
-    }
-  ]
+  coverOnlyProviders: []
 })
 
 export const getters = {
