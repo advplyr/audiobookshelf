@@ -339,8 +339,6 @@ export default {
     handleSearchResult(data) {
       if (data.requestId !== this.currentSearchRequestId) return
 
-      console.log(`[Cover Search] Received ${data.total} covers from ${data.provider}`)
-
       // Add new covers to the list (avoiding duplicates)
       const newCovers = data.covers.filter((cover) => !this.coversFound.includes(cover))
       this.coversFound.push(...newCovers)
@@ -348,7 +346,6 @@ export default {
     handleSearchComplete(data) {
       if (data.requestId !== this.currentSearchRequestId) return
 
-      console.log('[Cover Search] Search completed')
       this.searchInProgress = false
       this.currentSearchRequestId = null
     },
@@ -356,7 +353,7 @@ export default {
       if (data.requestId !== this.currentSearchRequestId) return
 
       console.error('[Cover Search] Search error:', data.error)
-      this.$toast.error(`Search failed: ${data.error}`)
+      this.$toast.error(this.$strings.ToastCoverSearchFailed)
       this.searchInProgress = false
       this.currentSearchRequestId = null
     },
@@ -364,34 +361,38 @@ export default {
       if (data.requestId !== this.currentSearchRequestId) return
 
       console.warn(`[Cover Search] Provider ${data.provider} failed:`, data.error)
-      // Don't show toast for individual provider failures, just log them
     },
     handleSearchCancelled(data) {
       if (data.requestId !== this.currentSearchRequestId) return
 
-      console.log('[Cover Search] Search cancelled')
       this.searchInProgress = false
       this.currentSearchRequestId = null
     },
     handleSocketDisconnect() {
-      console.log('[Cover Search] Socket disconnected')
       // If we were in the middle of a search, cancel it (server can't send results anymore)
       if (this.searchInProgress && this.currentSearchRequestId) {
-        console.log('[Cover Search] Cancelling search due to socket disconnection')
         this.searchInProgress = false
         this.currentSearchRequestId = null
-        this.$toast.warning('Search was interrupted by connection loss')
       }
     },
     cancelCurrentSearch() {
-      if (!this.currentSearchRequestId || !this.socket) return
+      if (!this.currentSearchRequestId || !this.socket?.connected) {
+        console.error('[Cover Search] Socket not connected')
+        this.$toast.error(this.$strings.ToastConnectionNotAvailable)
+        return
+      }
 
-      console.log('[Cover Search] Cancelling search:', this.currentSearchRequestId)
       this.socket.emit('cancel_cover_search', this.currentSearchRequestId)
       this.currentSearchRequestId = null
       this.searchInProgress = false
     },
     async submitSearchForm() {
+      if (!this.socket?.connected) {
+        console.error('[Cover Search] Socket not connected')
+        this.$toast.error(this.$strings.ToastConnectionNotAvailable)
+        return
+      }
+
       // Cancel any existing search
       if (this.searchInProgress) {
         this.cancelCurrentSearch()
@@ -399,12 +400,6 @@ export default {
 
       // Store provider in local storage
       this.persistProvider()
-
-      if (!this.socket) {
-        console.error('[Cover Search] Socket not available')
-        this.$toast.error('Connection not available. Please refresh the page.')
-        return
-      }
 
       // Setup socket listeners if not already done
       this.addSocketListeners()
@@ -417,8 +412,6 @@ export default {
       // Generate unique request ID
       const requestId = this.generateRequestId()
       this.currentSearchRequestId = requestId
-
-      console.log('[Cover Search] Starting search:', requestId)
 
       // Emit search request via WebSocket
       this.socket.emit('search_covers', {
