@@ -134,7 +134,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return [{ text: 'All', value: 'all' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
+      return [{ text: 'Best', value: 'best' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders, { text: 'All', value: 'all' }]
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -243,7 +243,19 @@ export default {
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
+      else {
+        // Migrate from 'all' to 'best' (only once)
+        const migrationKey = 'book-cover-provider-migrated'
+        const currentProvider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
+
+        if (!localStorage.getItem(migrationKey) && currentProvider === 'all') {
+          localStorage.setItem('book-cover-provider', 'best')
+          localStorage.setItem(migrationKey, 'true')
+          this.provider = 'best'
+        } else {
+          this.provider = currentProvider
+        }
+      }
     },
     removeCover() {
       if (!this.coverPath) {

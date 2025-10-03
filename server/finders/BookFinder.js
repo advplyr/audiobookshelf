@@ -608,6 +608,14 @@ class BookFinder {
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)
       }
+    } else if (provider === 'best') {
+      // Best providers: google, fantlab, and audible.com
+      const bestProviders = ['google', 'fantlab', 'audible']
+      for (const providerString of bestProviders) {
+        const providerResults = await this.search(null, providerString, title, author, options)
+        Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
+        searchResults.push(...providerResults)
+      }
     } else {
       searchResults = await this.search(null, provider, title, author, options)
     }
