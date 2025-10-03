@@ -51,21 +51,21 @@
     <form @submit.prevent="submitSearchForm">
       <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
         <div class="w-48 grow p-1">
-          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
+          <ui-dropdown v-model="provider" :items="providers" :disabled="searchInProgress" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 grow p-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
+          <ui-text-input-with-label v-model="searchTitle" :disabled="searchInProgress" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
         <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
-          <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
+          <ui-text-input-with-label v-model="searchAuthor" :disabled="searchInProgress" :label="$strings.LabelAuthor" />
         </div>
         <ui-btn v-if="!searchInProgress" class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
         <ui-btn v-else class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="button" color="bg-error" @click.prevent="cancelCurrentSearch">{{ $strings.ButtonCancel }}</ui-btn>
       </div>
     </form>
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
-      <p v-if="searchInProgress && !coversFound.length" class="text-gray-300">{{ $strings.MessageLoading }}</p>
-      <p v-else-if="!searchInProgress && !coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
+      <p v-if="searchInProgress && !coversFound.length" class="text-gray-300 py-4">{{ $strings.MessageLoading }}</p>
+      <p v-else-if="!searchInProgress && !coversFound.length" class="text-gray-300 py-4">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
