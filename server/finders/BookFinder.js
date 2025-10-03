@@ -23,7 +23,7 @@ class BookFinder {
     this.audiobookCovers = new AudiobookCovers()
     this.customProviderAdapter = new CustomProviderAdapter()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
     this.verbose = false
   }
