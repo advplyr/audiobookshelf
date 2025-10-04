@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "Öğe(ler) koleksiyona eklenemedi",
   "ToastCollectionRemoveSuccess": "Koleksiyon kaldırıldı",
   "ToastCollectionUpdateSuccess": "Koleksiyon güncellendi",
+  "ToastConnectionNotAvailable": "Bağlantı kurulamıyor. Lütfen daha sonra tekrar deneyin",
+  "ToastCoverSearchFailed": "Kapak arama başarısız",
   "ToastCoverUpdateFailed": "Kapak güncellemesi başarısız oldu",
   "ToastDateTimeInvalidOrIncomplete": "Tarih ve saat geçersiz veya eksik",
   "ToastDeleteFileFailed": "Dosya silinemedi",
