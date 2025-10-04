@@ -256,6 +256,10 @@ class AudioFileScanner {
         key: 'genres'
       },
       {
+        tag: 'tagGenre1',
+        key: 'tags'
+      },
+      {
         tag: 'tagSeries',
         altTag: 'tagGrouping',
         key: 'series'
@@ -293,6 +297,8 @@ class AudioFileScanner {
           bookMetadata.authors = parseNameString.parse(value)?.names || []
         } else if (mapping.key === 'genres') {
           bookMetadata.genres = this.parseGenresString(value)
+        } else if (mapping.key === 'tags') {
+          bookMetadata.tags = this.parseGenresString(value)
         } else if (mapping.key === 'series') {
           // If series was embedded in the grouping tag, then parse it with semicolon separator and sequence in the same string
           // e.g. "Test Series; Series Name #1; Other Series #2"
