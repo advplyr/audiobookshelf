@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "项目添加到收藏夹失败",
   "ToastCollectionRemoveSuccess": "收藏夹已删除",
   "ToastCollectionUpdateSuccess": "收藏夹已更新",
+  "ToastConnectionNotAvailable": "连接不可用. 请稍后重试",
+  "ToastCoverSearchFailed": "封面搜索失败",
   "ToastCoverUpdateFailed": "封面更新失败",
   "ToastDateTimeInvalidOrIncomplete": "日期和时间无效或不完整",
   "ToastDeleteFileFailed": "删除文件失败",
