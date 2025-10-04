@@ -276,14 +276,21 @@ class AuthorController {
     // 1. File upload (express-fileupload)
     if (req.files && req.files.image) {
       const uploadedFile = req.files.image
-      const uploadsDir = Path.join(global.MetadataPath, 'uploads')
+      const uploadsDir = Path.join(global.MetadataPath, 'authors')
       
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true })
       }
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-      const fileName = 'image-' + uniqueSuffix + Path.extname(uploadedFile.name)
+      
+      // Use author ID as filename instead of random suffix
+      const fileName = `${req.author.id}${Path.extname(uploadedFile.name)}`
       const filePath = Path.join(uploadsDir, fileName)
+      
+      // Remove existing file if it exists
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+      
       await uploadedFile.mv(filePath)
       imagePath = filePath
     }

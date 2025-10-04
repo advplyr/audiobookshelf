@@ -20,7 +20,7 @@
             <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" @input="onUrlInput" />
             <label class="ml-2 sm:ml-3 w-24 h-9 flex items-center justify-center bg-gray-700 text-white rounded cursor-pointer hover:bg-gray-600">
               <input type="file" accept="image/*" class="hidden" @change="onFileChange" />
-              Local
+              {{ $strings.ButtonUpload || 'Local' }}
             </label>
             <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl && !selectedFile" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
             <ui-btn v-if="selectedFile || previewUrl" type="button" color="bg-error" class="ml-2 sm:ml-3 w-24 h-9" small @click="clearSelection">{{ $strings.ButtonCancel }}</ui-btn>
