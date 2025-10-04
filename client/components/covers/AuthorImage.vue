@@ -1,6 +1,7 @@
 <template>
-  <div ref="wrapper" :class="`rounded-${rounded}`" class="w-full h-full bg-primary overflow-hidden">
-    <svg v-if="!imagePath" width="140%" height="140%" style="margin-left: -20%; margin-top: -20%; opacity: 0.6" viewBox="0 0 177 266" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <div ref="wrapper" :class="`rounded-${rounded}`" class="w-full h-full bg-primary overflow-hidden flex items-center justify-center">
+    <img v-if="imgSrc" :src="imgSrc" :alt="altText" class="w-full h-full object-cover" @load="imageLoaded" />
+    <svg v-else width="140%" height="140%" style="margin-left: -20%; margin-top: -20%; opacity: 0.6" viewBox="0 0 177 266" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path fill="white" d="M40.7156 165.47C10.2694 150.865 -31.5407 148.629 -38.0532 155.529L63.3191 204.159L76.9443 190.899C66.828 181.394 54.006 171.846 40.7156 165.47Z" stroke="white" stroke-width="4" transform="translate(-2 -1)" />
       <path d="M-38.0532 155.529C-31.5407 148.629 10.2694 150.865 40.7156 165.47C54.006 171.846 66.828 181.394 76.9443 190.899L95.0391 173.37C80.6681 159.403 64.7526 149.155 51.5747 142.834C21.3549 128.337 -46.2471 114.563 -60.6897 144.67L-71.5489 167.307L44.5864 223.019L63.3191 204.159L-38.0532 155.529Z" fill="white" />
       <path
@@ -13,10 +14,6 @@
       />
       <path d="M151.336 159.01L159.048 166.762L82.7048 242.703L74.973 242.683L74.9934 234.951L151.336 159.01Z" fill="white" stroke="white" stroke-width="10px" />
     </svg>
-    <div v-else class="w-full h-full relative">
-      <div v-if="showCoverBg" class="cover-bg absolute" :style="{ backgroundImage: `url(${imgSrc})` }" />
-      <img ref="img" :src="imgSrc" @load="imageLoaded" class="absolute top-0 left-0 h-full w-full" :class="coverContain ? 'object-contain' : 'object-cover'" />
-    </div>
   </div>
 </template>
 
@@ -25,51 +22,71 @@ export default {
   props: {
     author: {
       type: Object,
-      default: () => {}
+      default: () => ({})
     },
     rounded: {
       type: String,
       default: 'lg'
+    },
+    uploadedFile: {
+      type: [File, null],
+      default: null
+    },
+    uploadedUrl: {
+      type: String,
+      default: ''
+    },
+    altText: {
+      type: String,
+      default: 'author image'
     }
   },
   data() {
     return {
-      showCoverBg: false,
-      coverContain: true
+      objectUrl: null
     }
   },
   computed: {
-    _author() {
-      return this.author || {}
-    },
-    authorId() {
-      return this._author.id
-    },
     imagePath() {
-      return this._author.imagePath
+      return this.author && this.author.imagePath
     },
     updatedAt() {
-      return this._author.updatedAt
+      return this.author && this.author.updatedAt
     },
     imgSrc() {
-      if (!this.imagePath) return null
-      return `${this.$config.routerBasePath}/api/authors/${this.authorId}/image?ts=${this.updatedAt}`
+      // Prefer local file, then uploaded URL, then server image
+      if (this.objectUrl) return this.objectUrl
+      if (this.uploadedUrl) return this.uploadedUrl
+      if (this.imagePath) {
+        return `${this.$config.routerBasePath}/api/authors/${this.author.id}/image?ts=${this.updatedAt}`
+      }
+      return null
     }
   },
-  methods: {
-    imageLoaded() {
-      if (this.$refs.img) {
-        var { naturalWidth, naturalHeight } = this.$refs.img
-        var imgAr = naturalHeight / naturalWidth
-        if (imgAr < 0.5 || imgAr > 2) {
-          this.showCoverBg = true
-        } else {
-          this.showCoverBg = false
-          this.coverContain = false
+  watch: {
+    uploadedFile: {
+      immediate: true,
+      handler(file) {
+        if (this.objectUrl) {
+          URL.revokeObjectURL(this.objectUrl)
+          this.objectUrl = null
+        }
+        if (file && file instanceof File) {
+          this.objectUrl = URL.createObjectURL(file)
         }
       }
     }
   },
-  mounted() {}
+  methods: {
+    imageLoaded() {
+      // Keep original functionality
+    }
+  },
+  beforeDestroy() {
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl)
+      this.objectUrl = null
+    }
+  }
 }
 </script>
