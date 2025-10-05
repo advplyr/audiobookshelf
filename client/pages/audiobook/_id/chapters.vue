@@ -595,6 +595,12 @@ export default {
       this.hasChanges = hasChanges
     },
     playChapter(chapter) {
+      // Pause any existing audiobook playback to prevent multiple streams
+      if (this.$store.state.streamLibraryItem) {
+        this.$eventBus.$emit('pause-item')
+      }
+
+      console.log('$store.state.streamLibraryItem', this.$store.state)
       console.log('Play Chapter', chapter.id)
       if (this.selectedChapterId === chapter.id) {
         console.log('Chapter already playing', this.isLoadingChapter, this.isPlayingChapter)
@@ -641,15 +647,8 @@ export default {
       })
       audioEl.addEventListener('ended', () => {
         console.log('Audio ended')
-        const nextTrack = this.tracks.find((t) => t.index === this.currentTrackIndex + 1)
-        if (nextTrack) {
-          console.log('Playing next track', nextTrack.index)
-          this.currentTrackIndex = nextTrack.index
-          this.playTrackAtTime(nextTrack, 0)
-        } else {
-          console.log('No next track')
-          this.destroyAudioEl()
-        }
+        // stop at end of chapter
+        this.destroyAudioEl()
       })
       this.audioEl = audioEl
     },
@@ -995,11 +994,13 @@ export default {
     this.initChapters()
 
     this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+    this.$eventBus.$on('pause-chapter', this.destroyAudioEl)
   },
   beforeDestroy() {
     this.destroyAudioEl()
 
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
+    this.$eventBus.$off('pause-chapter', this.destroyAudioEl)
   }
 }
 </script>
