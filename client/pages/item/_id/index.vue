@@ -21,6 +21,7 @@
             </div>
           </div>
         </div>
+
         <div class="grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
@@ -41,7 +42,8 @@
 
               <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">{{ $getString('LabelByAuthor', [podcastAuthor]) }}</p>
               <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden text-ellipsis">
-                {{ $getString('LabelByAuthor', ['']) }}<nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+                {{ $getString('LabelByAuthor', ['']) }}
+                <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline"> {{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span> </nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
@@ -54,7 +56,6 @@
           <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info/40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
               <p class="text-sm py-1">{{ $getString('MessageEpisodesQueuedForDownload', [episodeDownloadsQueued.length]) }}</p>
-
               <span v-if="userIsAdminOrUp" class="material-symbols hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
             </div>
           </div>
@@ -70,9 +71,11 @@
           <!-- Progress -->
           <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p v-if="progressPercent < 1" class="leading-6">{{ $strings.LabelYourProgress }}: {{ Math.round(progressPercent * 100) }}%</p>
-            <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
-            <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
-            <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
+            <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ fmtDate(userProgressFinishedAt) }}</p>
+            <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">
+              {{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}
+            </p>
+            <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ fmtDate(userProgressStartedAt) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
               <span class="material-symbols text-sm">&#xe5cd;</span>
@@ -94,6 +97,12 @@
             <ui-btn v-if="showReadButton" color="bg-info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-symbols text-2xl -ml-2 pr-2 text-white" aria-hidden="true">auto_stories</span>
               {{ $strings.ButtonRead }}
+            </ui-btn>
+
+            <!-- Recommend button -->
+            <ui-btn v-if="isBook" color="bg-info" :padding-x="3" small class="flex items-center h-9 mr-2" @click="openRecommendModal">
+              <span class="material-symbols text-xl -ml-1 pr-1 text-white">sell</span>
+              Recommend
             </ui-btn>
 
             <ui-tooltip v-if="showQueueBtn" :text="isQueued ? $strings.ButtonQueueRemoveItem : $strings.ButtonQueueAddItem" direction="top">
@@ -124,25 +133,70 @@
 
           <div class="my-4 w-full">
             <div ref="description" id="item-description" dir="auto" role="paragraph" class="default-style less-spacing text-base text-gray-100 whitespace-pre-line mb-1" :class="{ 'show-full': showFullDescription }" v-html="description" />
-
-            <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">{{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" /></button>
+            <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">
+              {{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }}
+              <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" />
+            </button>
           </div>
 
+          <!-- (Removed Community Recommendations list) -->
+
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
-
           <tables-tracks-table v-if="tracks.length" :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
-
           <tables-podcast-lazy-episodes-table ref="episodesTable" v-if="isPodcast" :library-item="libraryItem" />
-
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
-
           <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>
 
+    <!-- Existing modals -->
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" :download-queue="episodeDownloadsQueued" :episodes-downloading="episodesDownloading" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :playback-rate="1" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
+
+    <!-- Recommend modal -->
+    <div v-if="showRecModal" class="fixed inset-0 z-50">
+      <div class="absolute inset-0 bg-black/60" @click="closeRecommendModal" />
+      <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-bg border border-gray-700 rounded-xl p-4">
+        <h3 class="text-lg font-semibold mb-3">Recommend this book</h3>
+
+        <div class="mb-3">
+          <label class="block text-sm mb-1">Tag <span class="text-error">*</span></label>
+          <select v-model="recForm.tagId" class="w-full bg-fg border border-gray-600 rounded px-3 py-2">
+            <option disabled value="">Select a tag…</option>
+            <option v-for="t in recTags" :value="t.id" :key="t.id">{{ t.label }}</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm mb-1">Recipient User ID (optional)</label>
+          <input v-model.trim="recForm.recipientUserId" type="text" placeholder="User ID (UUID) or leave blank" class="w-full bg-fg border border-gray-600 rounded px-3 py-2" />
+          <p class="text-xs text-gray-400 mt-1">If left empty, this will be a public recommendation.</p>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm mb-1">Note (optional)</label>
+          <textarea v-model.trim="recForm.note" rows="3" maxlength="1000" class="w-full bg-fg border border-gray-600 rounded px-3 py-2" />
+          <p class="text-xs text-gray-400 mt-1">{{ recForm.note.length }}/1000</p>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-sm mb-1">Visibility</label>
+          <div class="flex items-center space-x-4 text-sm">
+            <label class="inline-flex items-center"> <input type="radio" value="public" v-model="recForm.visibility" class="mr-2" /> Public </label>
+            <label class="inline-flex items-center"> <input type="radio" value="recipient-only" v-model="recForm.visibility" class="mr-2" /> Recipient only </label>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+          <ui-btn :disabled="postingRec" color="bg-fg" small class="h-9" @click="closeRecommendModal">Cancel</ui-btn>
+          <ui-btn :disabled="postingRec || !recForm.tagId" color="bg-success" small class="h-9" @click="submitRecommendation">
+            <span v-if="postingRec" class="material-symbols mr-1">hourglass_empty</span>
+            Submit
+          </ui-btn>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -153,8 +207,7 @@ export default {
       return redirect(`/login?redirect=${route.path}`)
     }
 
-    // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share`).catch((error) => {
+    const item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=downloads,rssfeed,share`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -182,7 +235,18 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+
+      // Recommend modal state
+      showRecModal: false,
+      postingRec: false,
+      recTags: [],
+      recForm: {
+        tagId: '',
+        recipientUserId: '',
+        note: '',
+        visibility: 'public'
+      }
     }
   },
   computed: {
@@ -287,10 +351,7 @@ export default {
       return this.series.map((se) => {
         let text = se.name
         if (se.sequence) text += ` #${se.sequence}`
-        return {
-          ...se,
-          text
-        }
+        return { ...se, text }
       })
     },
     duration() {
@@ -353,9 +414,7 @@ export default {
       return this.$store.getters['user/getUserCanDownload']
     },
     showRssFeedBtn() {
-      if (!this.rssFeed && !this.podcastEpisodes.length && !this.tracks.length) return false // Cannot open RSS feed with no episodes/tracks
-
-      // If rss feed is open then show feed url to users otherwise just show to admins
+      if (!this.rssFeed && !this.podcastEpisodes.length && !this.tracks.length) return false
       return this.userIsAdminOrUp || this.rssFeed
     },
     showQueueBtn() {
@@ -367,86 +426,86 @@ export default {
     },
     contextMenuItems() {
       const items = []
-
-      if (this.showCollectionsButton) {
-        items.push({
-          text: this.$strings.LabelCollections,
-          action: 'collections'
-        })
-      }
-
-      if (!this.isPodcast && this.tracks.length) {
-        items.push({
-          text: this.$strings.LabelYourPlaylists,
-          action: 'playlists'
-        })
-      }
-
-      if (this.bookmarks.length) {
-        items.push({
-          text: this.$strings.LabelYourBookmarks,
-          action: 'bookmarks'
-        })
-      }
-
-      if (this.showRssFeedBtn) {
-        items.push({
-          text: this.$strings.LabelOpenRSSFeed,
-          action: 'rss-feeds'
-        })
-      }
-
-      if (this.userCanDownload) {
-        items.push({
-          text: this.$strings.LabelDownload,
-          action: 'download'
-        })
-      }
-
+      if (this.showCollectionsButton) items.push({ text: this.$strings.LabelCollections, action: 'collections' })
+      if (!this.isPodcast && this.tracks.length) items.push({ text: this.$strings.LabelYourPlaylists, action: 'playlists' })
+      if (this.bookmarks.length) items.push({ text: this.$strings.LabelYourBookmarks, action: 'bookmarks' })
+      if (this.showRssFeedBtn) items.push({ text: this.$strings.LabelOpenRSSFeed, action: 'rss-feeds' })
+      if (this.userCanDownload) items.push({ text: this.$strings.LabelDownload, action: 'download' })
       if (this.ebookFile && this.$store.state.libraries.ereaderDevices?.length) {
         items.push({
           text: this.$strings.LabelSendEbookToDevice,
-          subitems: this.$store.state.libraries.ereaderDevices.map((d) => {
-            return {
-              text: d.name,
-              action: 'sendToDevice',
-              data: d.name
-            }
-          })
+          subitems: this.$store.state.libraries.ereaderDevices.map((d) => ({ text: d.name, action: 'sendToDevice', data: d.name }))
         })
       }
-
-      if (this.userIsAdminOrUp && !this.isPodcast && this.tracks.length) {
-        items.push({
-          text: this.$strings.LabelShare,
-          action: 'share'
-        })
-      }
-
-      if (this.userCanDelete) {
-        items.push({
-          text: this.$strings.ButtonDelete,
-          action: 'delete'
-        })
-      }
-
+      if (this.userIsAdminOrUp && !this.isPodcast && this.tracks.length) items.push({ text: this.$strings.LabelShare, action: 'share' })
+      if (this.userCanDelete) items.push({ text: this.$strings.ButtonDelete, action: 'delete' })
       return items
     }
   },
   methods: {
+    // ---- Safe date formatter ----
+    fmtDate(value) {
+      if (!value) return ''
+      if (typeof value === 'number') {
+        const ms = value < 1e12 ? value * 1000 : value
+        return this.$formatDate(ms, this.dateFormat)
+      }
+      const ts = Date.parse(value)
+      if (!Number.isNaN(ts)) return this.$formatDate(ts, this.dateFormat)
+      return ''
+    },
+
+    // --- Recommendations helpers ---
+    async openRecommendModal() {
+      this.showRecModal = true
+      if (!this.recTags.length) {
+        try {
+          this.recTags = await this.$axios.$get('/api/recommendations/tags')
+        } catch (e) {
+          console.error('Fetch tags failed', e)
+          this.$toast?.error?.('Failed to load tags')
+        }
+      }
+    },
+    closeRecommendModal() {
+      if (this.postingRec) return
+      this.showRecModal = false
+      this.recForm = { tagId: '', recipientUserId: '', note: '', visibility: 'public' }
+    },
+    async submitRecommendation() {
+      if (!this.recForm.tagId) return
+      this.postingRec = true
+      try {
+        const payload = {
+          bookId: this.libraryItemId,
+          tagId: this.recForm.tagId,
+          note: this.recForm.note || undefined,
+          visibility: this.recForm.visibility,
+          recipientUserId: this.recForm.recipientUserId || undefined
+        }
+        await this.$axios.$post('/api/recommendations', payload)
+        this.$toast?.success?.('Recommendation saved')
+        this.closeRecommendModal()
+      } catch (e) {
+        const msg = e?.response?.data?.message || 'Failed to save recommendation'
+        this.$toast?.error?.(msg)
+        console.error('Create recommendation failed', e)
+      } finally {
+        this.postingRec = false
+      }
+    },
+
+    // --- existing methods below ---
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
         this.$eventBus.$emit('playback-seek', bookmark.time)
       } else if (this.streamLibraryItem) {
         this.showBookmarksModal = false
-        console.log('Already streaming library item so ask about it')
         const payload = {
           message: `Start playback for "${this.title}" at ${this.$secondsToTimestamp(bookmark.time)}?`,
           callback: (confirmed) => {
-            if (confirmed) {
-              this.playItem(bookmark.time)
-            }
+            if (confirmed) this.playItem(bookmark.time)
           },
           type: 'yesNo'
         }
@@ -475,7 +534,7 @@ export default {
         return this.$toast.error(this.$strings.ToastNoRSSFeed)
       }
       this.fetchingRSSFeed = true
-      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
+      const payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
@@ -483,7 +542,6 @@ export default {
       this.fetchingRSSFeed = false
       if (!payload) return
 
-      console.log('Podcast feed', payload)
       const podcastfeed = payload.podcast
       if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
         this.$toast.info(this.$strings.ToastPodcastNoEpisodesInFeed)
@@ -504,10 +562,8 @@ export default {
       if (!this.userIsFinished && this.progressPercent > 0 && !confirmed) {
         const payload = {
           message: this.$getString('MessageConfirmMarkItemFinished', [this.title]),
-          callback: (confirmed) => {
-            if (confirmed) {
-              this.toggleFinished(true)
-            }
+          callback: (c) => {
+            if (c) this.toggleFinished(true)
           },
           type: 'yesNo'
         }
@@ -515,9 +571,7 @@ export default {
         return
       }
 
-      var updatePayload = {
-        isFinished: !this.userIsFinished
-      }
+      const updatePayload = { isFinished: !this.userIsFinished }
       this.isProcessingReadUpdate = true
       this.$axios
         .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
@@ -534,15 +588,12 @@ export default {
       let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        // Uses the sorting and filtering from the episode table component
         const episodesInListeningOrder = this.$refs.episodesTable?.episodesList || []
 
-        // Find the first unplayed episode from the table
         let episodeIndex = episodesInListeningOrder.findIndex((ep) => {
           const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
-        // If all episodes are played, use the first episode
         if (episodeIndex < 0) episodeIndex = 0
 
         episodeId = episodesInListeningOrder[episodeIndex].id
@@ -557,14 +608,14 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
+              caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.fmtDate(episode.publishedAt)]) : this.$strings.LabelUnknownPublishDate,
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
           }
         }
       } else {
-        const queueItem = {
+        queueItems.push({
           libraryItemId: this.libraryItemId,
           libraryId: this.libraryId,
           episodeId: null,
@@ -573,8 +624,7 @@ export default {
           caption: '',
           duration: this.duration || null,
           coverPath: this.media.coverPath || null
-        }
-        queueItems.push(queueItem)
+        })
       }
 
       this.$eventBus.$emit('play-item', {
@@ -594,20 +644,16 @@ export default {
     },
     libraryItemUpdated(libraryItem) {
       if (libraryItem.id === this.libraryItemId) {
-        console.log('Item was updated', libraryItem)
         this.libraryItem = libraryItem
         this.$nextTick(this.checkDescriptionClamped)
       }
     },
     clearProgressClick() {
       if (!this.userMediaProgress) return
-
       const payload = {
         message: this.$strings.MessageConfirmResetProgress,
         callback: (confirmed) => {
-          if (confirmed) {
-            this.clearProgress()
-          }
+          if (confirmed) this.clearProgress()
         },
         type: 'yesNo'
       }
@@ -680,11 +726,8 @@ export default {
     },
     queueBtnClick() {
       if (this.isQueued) {
-        // Remove from queue
         this.$store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId })
       } else {
-        // Add to queue
-
         const queueItem = {
           libraryItemId: this.libraryItemId,
           libraryId: this.libraryId,
@@ -711,7 +754,6 @@ export default {
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
             localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
-
             this.$axios
               .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
@@ -733,10 +775,7 @@ export default {
         message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFile.ebookFormat, this.title, deviceName]),
         callback: (confirmed) => {
           if (confirmed) {
-            const payload = {
-              libraryItemId: this.libraryItemId,
-              deviceName
-            }
+            const payload = { libraryItemId: this.libraryItemId, deviceName }
             this.processing = true
             this.$axios
               .$post(`/api/emails/send-ebook-to-device`, payload)
