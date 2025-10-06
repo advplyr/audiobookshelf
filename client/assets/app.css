@@ -250,39 +250,3 @@ Bookshelf Label
 .abs-btn:disabled::before {
   background-color: rgba(0, 0, 0, 0.2);
 }
-
-
-
-option {
-  background-color: #111827;   /* dropdown entries */
-  color: #e5e7eb;
-}
-
-/* Let browsers render dark native widgets when supported */
-@supports (color-scheme: dark) {
-  select, option, input, textarea {
-    color-scheme: dark;
-  }
-}
-
-/* Placeholder contrast */
-::placeholder { color: #9ca3af; }
-::-webkit-input-placeholder { color: #9ca3af; }
-::-moz-placeholder { color: #9ca3af; opacity: 1; }
-:-ms-input-placeholder { color: #9ca3af; }
-
-
-/* Custom listbox (our AbsSelect / RecommendModal) should always float above */
-[role='listbox'] {
-  z-index: 10000 !important;
-}
-
-/* Keep selects readable inside modals or dark sections even if other CSS leaks in */
-.modal select,
-.modal option,
-.fixed select,
-.fixed option {
-  background-color: #111827 !important;
-  color: #e5e7eb !important;
-  border-color: #374151 !important;
-}
