@@ -42,31 +42,15 @@
           </ui-tooltip>
         </nuxt-link>
 
-        <!-- Recommendations-->
-        <nuxt-link to="/me/recommendations/inbox" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
-          <ui-tooltip text="Recommendations Inbox" direction="bottom" class="flex items-center">
-            <span class="material-symbols text-2xl" aria-label="Recommendations Inbox" role="button">inbox</span>
-          </ui-tooltip>
-        </nuxt-link>
-
-        <nuxt-link to="/me/recommendations/sent" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
-          <ui-tooltip text="Recommendations Sent" direction="bottom" class="flex items-center">
-            <span class="material-symbols text-2xl" aria-label="Recommendations Sent" role="button">send</span>
-          </ui-tooltip>
-        </nuxt-link>
-        <!-- /Recommendations -->
-
         <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
           <span class="items-center hidden md:flex">
             <span class="block truncate">{{ username }}</span>
           </span>
-
           <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
             <span class="material-symbols text-xl text-gray-100">&#xe7fd;</span>
           </span>
         </nuxt-link>
       </div>
-
       <div v-show="numMediaItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-lg md:text-2xl px-4">{{ $getString('MessageItemsSelected', [numMediaItemsSelected]) }}</h1>
         <div class="grow" />
@@ -74,20 +58,17 @@
           <span class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
           {{ $strings.ButtonPlay }}
         </ui-btn>
-
         <ui-tooltip v-if="isBookLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
         <ui-tooltip v-if="userCanUpdate && isBookLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
-
         <template v-if="userCanUpdate">
           <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
             <ui-icon-btn :disabled="processingBatch" icon="edit" bg-color="bg-warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
         </template>
-
         <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="delete" bg-color="bg-error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
@@ -179,22 +160,26 @@ export default {
     },
     contextMenuItems() {
       if (!this.userIsAdminOrUp) return []
+
       const options = [
         {
           text: this.$strings.ButtonQuickMatch,
           action: 'quick-match'
         }
       ]
+
       if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
         options.push({
           text: this.$strings.ButtonQuickEmbedMetadata,
           action: 'quick-embed'
         })
       }
+
       options.push({
         text: this.$strings.ButtonReScan,
         action: 'rescan'
       })
+
       // The limit of 50 is introduced because of the URL length. Each id has 36 chars, so 36 * 40 = 1440
       // + 40 , separators = 1480 chars + base path 280 chars = 1760 chars. This keeps the URL under 2000 chars even with longer domains
       if (this.selectedMediaItems.length <= 40) {
@@ -203,6 +188,7 @@ export default {
           action: 'download'
         })
       }
+
       return options
     }
   },
@@ -273,6 +259,7 @@ export default {
     },
     async playSelectedItems() {
       this.$store.commit('setProcessingBatch', true)
+
       const libraryItemIds = this.selectedMediaItems.map((i) => i.id)
       const libraryItems = await this.$axios
         .$post(`/api/items/batch/get`, { libraryItemIds })
@@ -321,7 +308,6 @@ export default {
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
       const newIsFinished = !this.selectedIsFinished
-
       const updateProgressPayloads = this.selectedMediaItems.map((item) => {
         return {
           libraryItemId: item.id,
@@ -353,7 +339,9 @@ export default {
         callback: (confirmed, hardDelete) => {
           if (confirmed) {
             localStorage.setItem('softDeleteDefault', hardDelete ? 0 : 1)
+
             this.$store.commit('setProcessingBatch', true)
+
             this.$axios
               .$post(`/api/items/batch/delete?hard=${hardDelete ? 1 : 0}`, {
                 libraryItemIds: this.selectedMediaItems.map((i) => i.id)
