@@ -273,7 +273,6 @@ class AuthorController {
 
     let imagePath = null
 
-    // 1. File upload (express-fileupload)
     if (req.files && req.files.image) {
       const uploadedFile = req.files.image
       const uploadsDir = Path.join(global.MetadataPath, 'authors')
@@ -282,7 +281,6 @@ class AuthorController {
         fs.mkdirSync(uploadsDir, { recursive: true })
       }
       
-      // Use author ID as filename instead of random suffix
       const fileName = `${req.author.id}${Path.extname(uploadedFile.name)}`
       const filePath = Path.join(uploadsDir, fileName)
       
@@ -294,7 +292,6 @@ class AuthorController {
       await uploadedFile.mv(filePath)
       imagePath = filePath
     }
-    // 2. URL upload
     else if (req.body.url && (req.body.url.startsWith('http://') || req.body.url.startsWith('https://'))) {
       const result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url)
       if (result?.error) {
