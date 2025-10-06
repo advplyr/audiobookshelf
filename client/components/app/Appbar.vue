@@ -36,6 +36,18 @@
           </ui-tooltip>
         </nuxt-link>
 
+        <nuxt-link to="/me/recommendations/inbox" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
+          <ui-tooltip text="Recommendations Inbox" direction="bottom" class="flex items-center">
+            <span class="material-symbols text-2xl" aria-label="Recommendations Inbox" role="button">inbox</span>
+          </ui-tooltip>
+        </nuxt-link>
+
+        <nuxt-link to="/me/recommendations/sent" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
+          <ui-tooltip text="Recommendations Sent" direction="bottom" class="flex items-center">
+            <span class="material-symbols text-2xl" aria-label="Recommendations Sent" role="button">send</span>
+          </ui-tooltip>
+        </nuxt-link>
+
         <nuxt-link v-if="userIsAdminOrUp" to="/config" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
             <span class="material-symbols text-2xl" aria-label="System Settings" role="button">&#xe8b8;</span>

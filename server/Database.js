@@ -162,6 +162,13 @@ class Database {
     return this.models.device
   }
 
+  get recommendationTagModel() {
+    return this.models.recommendationTag
+  }
+  get bookRecommendationModel() {
+    return this.models.bookRecommendation
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -345,6 +352,13 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/RecommendationTag').init(this.sequelize)
+    require('./models/BookRecommendation').init(this.sequelize)
+    // One association pass BEFORE sync
+    const models = this.sequelize.models
+    Object.values(models).forEach((m) => {
+      if (typeof m?.associate === 'function') m.associate(models)
+    })
 
     return this.sequelize.sync({ force, alter: false })
   }

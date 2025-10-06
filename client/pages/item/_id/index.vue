@@ -120,6 +120,8 @@
                 </button>
               </template>
             </ui-context-menu-dropdown>
+
+            <recommend-button v-if="isBook && libraryItem?.id" :book-id="libraryItem.id" class="ml-2" />
           </div>
 
           <div class="my-4 w-full">
@@ -137,6 +139,8 @@
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
 
           <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
+
+          <book-recommendations v-if="libraryItem?.id" :book-id="libraryItem.id" />
         </div>
       </div>
     </div>
@@ -147,7 +151,9 @@
 </template>
 
 <script>
+import RecommendButton from '@/components/recommendations/RecommendButton.vue'
 export default {
+  components: { RecommendButton },
   async asyncData({ store, params, app, redirect, route }) {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)

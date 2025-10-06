@@ -38,6 +38,8 @@ const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
+const buildRecommendationsRouter = require('./routers/recommendations')
+const RecommendationManager = require('./managers/RecommendationManager')
 
 //Import the main Passport and Express-Session library
 const passport = require('passport')
@@ -55,6 +57,8 @@ class Server {
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
+    global.ServerSettings = global.ServerSettings || {}
+    global.ServerSettings.recommendationsEnabled = String(process.env.RECOMMENDATIONS_ENABLED) === 'true'
 
     if (process.env.EXP_PROXY_SUPPORT === '1') {
       // https://github.com/advplyr/audiobookshelf/pull/3754
@@ -320,6 +324,15 @@ class Server {
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
+
+    router.use(
+      '/api/recommendations',
+      this.auth.ifAuthNeeded(this.authMiddleware.bind(this)),
+      buildRecommendationsRouter({
+        manager: RecommendationManager,
+        featureFlag: () => String(process.env.RECOMMENDATIONS_ENABLED) === 'true'
+      })
+    )
 
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {
