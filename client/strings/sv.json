@@ -1008,6 +1008,8 @@
   "ToastCollectionItemsAddFailed": "Misslyckades med att addera böcker till samlingen",
   "ToastCollectionRemoveSuccess": "Samlingen har raderats",
   "ToastCollectionUpdateSuccess": "Samlingen har uppdaterats",
+  "ToastConnectionNotAvailable": "Uppkopplingen är inte tillgänglig. Var vänlig försök senare.",
+  "ToastCoverSearchFailed": "Sökningen efter omslag misslyckades",
   "ToastCoverUpdateFailed": "Uppdatering av omslag misslyckades",
   "ToastDateTimeInvalidOrIncomplete": "Datum och klockslag är felaktigt eller ej komplett",
   "ToastDeleteFileFailed": "Misslyckades att radera filen",
