@@ -1,5 +1,3 @@
-const Path = require('path')
-module.exports = {}
 const optionDefinitions = [
   { name: 'config', alias: 'c', type: String },
   { name: 'metadata', alias: 'm', type: String },
@@ -14,6 +12,7 @@ const optionDefinitions = [
 const commandLineArgs = require('./server/libs/commandLineArgs')
 const options = commandLineArgs(optionDefinitions)
 
+const Path = require('path')
 process.env.NODE_ENV = options.dev ? 'development' : process.env.NODE_ENV || 'production'
 
 const server = require('./server/Server')
@@ -32,8 +31,6 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
-  if (devEnv.RouterBasePath !== undefined) process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath
-  if (devEnv.RecommendationsEnabled) process.env.RECOMMENDATIONS_ENABLED = 'true'
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
 }
