@@ -19,6 +19,13 @@
 /unicode*
 /libnusqlite3*
 
+# Binary files that shouldn't be in repository
+*.pdf
+*.epub
+*.mobi
+*.azw
+*.azw3
+
 sw.*
 .DS_STORE
 .idea/*
