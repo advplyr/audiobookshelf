@@ -27,17 +27,11 @@
             <option value="recipient-only">recipient-only</option>
           </select>
 
-          <div v-if="form.visibility === 'recipient-only'">
-            <label class="block text-sm mb-1">Recipient (username)</label>
-            <input v-model.trim="form.recipient" class="w-full mb-3 rounded border px-2 py-1 bg-[#111827] text-gray-100 border-gray-600" placeholder="Type the recipient’s username" autocomplete="off" />
-            <p class="text-xs text-gray-400 -mt-2 mb-2">Enter the user’s <strong>username</strong>. We’ll resolve it on the server.</p>
-          </div>
-
           <label class="block text-sm mb-1">Note <span class="opacity-60">(optional)</span></label>
           <textarea v-model="form.note" rows="3" maxlength="1000" class="w-full rounded border border-gray-600 bg-transparent px-2 py-1" placeholder="Why should someone read/listen to this?"></textarea>
 
           <div class="mt-4 flex items-center gap-2">
-            <button :disabled="submitting || !form.tagId || (form.visibility === 'recipient-only' && !form.recipient)" class="rounded px-3 py-1 text-sm bg-primary text-white border border-primary hover:bg-primary/90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40" @click="submit">
+            <button :disabled="submitting || !form.tagId" class="rounded px-3 py-1 text-sm bg-primary text-white border border-primary hover:bg-primary/90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40" @click="submit">
               {{ submitting ? 'Posting…' : 'Post recommendation' }}
             </button>
             <span v-if="error" class="text-sm text-error">{{ error }}</span>
@@ -62,7 +56,7 @@ export default {
     submitting: false,
     ok: false,
     error: '',
-    form: { tagId: '', visibility: 'public', recipient: '', note: '' }
+    form: { tagId: '', visibility: 'public', note: '' }
   }),
   mounted() {
     const flag = this.$store.getters['getServerSetting']?.('recommendationsEnabled')
@@ -110,10 +104,6 @@ export default {
     },
     async submit() {
       if (!this.form.tagId) return
-      if (this.form.visibility === 'recipient-only' && !this.form.recipient) {
-        this.error = 'Recipient is required'
-        return
-      }
       this.submitting = true
       this.error = ''
       this.ok = false
@@ -122,8 +112,7 @@ export default {
           bookId: this.bookId,
           tagId: this.form.tagId,
           note: this.form.note || '',
-          visibility: this.form.visibility,
-          recipientUsername: this.form.visibility === 'recipient-only' ? this.form.recipient : null
+          visibility: this.form.visibility
         }
         const created = await this.$axios.$post('/api/recommendations', payload)
         this.$emit('recommended', created)

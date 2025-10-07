@@ -86,30 +86,19 @@ const RecommendationManager = {
     return null
   },
 
-  async resolveRecipient({ recipientUserId, recipientUsername }) {
-    const User = Database.userModel
-    if (recipientUserId) {
-      const u = await User.findByPk(recipientUserId)
-      return u || null
-    }
-    if (recipientUsername) {
-      const u = await User.findOne({ where: { username: String(recipientUsername) } })
-      return u || null
-    }
-    return null
+  async resolveRecipient(recipientUserId) {
+    if (!recipientUserId) return null
+    const user = await Database.userModel.findByPk(recipientUserId)
+    return user || null
   },
 
-  async createRecommendation({ userId, bookId, tagId, tagSlug, recipientUserId, recipientUsername, note, visibility }) {
+  async createRecommendation({ userId, bookId, tagId, tagSlug, recipientUserId, note, visibility }) {
     const tag = await this.resolveTag({ tagId, tagSlug })
     if (!tag) return { error: { status: 400, message: 'Invalid tag' } }
 
-    if (visibility === 'recipient-only' && !recipientUserId && !recipientUsername) {
-      return { error: { status: 400, message: 'Recipient is required for recipient-only visibility' } }
-    }
-    const recip = await this.resolveRecipient({ recipientUserId, recipientUsername })
-    if (visibility === 'recipient-only' && !recip) {
-      return { error: { status: 400, message: 'Recipient not found' } }
-    }
+    const recip = await this.resolveRecipient(recipientUserId)
+    if (recipientUserId && !recip) return { error: { status: 400, message: 'Recipient not found' } }
+
     const created = await Database.bookRecommendationModel.create({
       bookId: String(bookId),
       tagId: tag.id,
