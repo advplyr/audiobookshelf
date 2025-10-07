@@ -14,7 +14,7 @@ module.exports = (injectedManager) => {
       const userId = req.user?.id
       if (!userId) return res.status(401).send('Unauthorized')
 
-      const { bookId, tagId, tagSlug, recipientUserId, note, visibility } = req.body || {}
+      const { bookId, tagId, tagSlug, recipientUserId, recipientUsername, note, visibility } = req.body || {}
       if (!bookId) return res.status(400).json({ message: 'bookId is required' })
       if (!tagId && !tagSlug) return res.status(400).json({ message: 'tagId or tagSlug is required' })
 
@@ -24,6 +24,7 @@ module.exports = (injectedManager) => {
         tagId,
         tagSlug,
         recipientUserId,
+        recipientUsername,
         note,
         visibility
       })
