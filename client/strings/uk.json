@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "Не вдалося додати елемент(и) до колекції",
   "ToastCollectionRemoveSuccess": "Добірку видалено",
   "ToastCollectionUpdateSuccess": "Добірку оновлено",
+  "ToastConnectionNotAvailable": "З’єднання недоступне. Спробуйте пізніше",
+  "ToastCoverSearchFailed": "Пошук обкладинки не вдався",
   "ToastCoverUpdateFailed": "Не вдалося оновити обкладинку",
   "ToastDateTimeInvalidOrIncomplete": "Дата й час недійсні або неповні",
   "ToastDeleteFileFailed": "Не вдалося видалити файл",

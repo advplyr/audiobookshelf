@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "Neuspješno dodavanje stavki u zbirku",
   "ToastCollectionRemoveSuccess": "Zbirka izbrisana",
   "ToastCollectionUpdateSuccess": "Zbirka ažurirana",
+  "ToastConnectionNotAvailable": "Veza nije dostupna. Pokušaj ponovo kasnije",
+  "ToastCoverSearchFailed": "Pretraga naslovnice neuspjela",
   "ToastCoverUpdateFailed": "Ažuriranje naslovnice nije uspjelo",
   "ToastDateTimeInvalidOrIncomplete": "Datum i vrijeme su neispravni ili nepotpuni",
   "ToastDeleteFileFailed": "Brisanje datoteke nije uspjelo",
