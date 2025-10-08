@@ -159,7 +159,7 @@ export const actions = {
       .$get(`/api/libraries`)
       .then((data) => {
         commit('set', data.libraries)
-        commit('setLastLoad')
+        commit('setLastLoad', new Date())
       })
       .catch((error) => {
         console.error('Failed', error)
@@ -176,8 +176,8 @@ export const mutations = {
   setFoldersLastUpdate(state) {
     state.folderLastUpdate = Date.now()
   },
-  setLastLoad(state) {
-    state.lastLoad = Date.now()
+  setLastLoad(state, date) {
+    state.lastLoad = date
   },
   setLibraryIssues(state, val) {
     state.issues = val

@@ -189,6 +189,7 @@ export default {
         require('@/plugins/chromecast.js').default(this)
       }
 
+      this.$store.commit('libraries/setLastLoad', 0) // Ensure libraries get loaded again when switching users
       this.$store.commit('libraries/setCurrentLibrary', { id: userDefaultLibraryId })
       this.$store.commit('user/setUser', user)
       // Access token only returned from login, not authorize
