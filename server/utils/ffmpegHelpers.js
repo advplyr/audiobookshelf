@@ -99,7 +99,7 @@ module.exports.resizeImage = resizeImage
 /**
  *
  * @param {import('../objects/PodcastEpisodeDownload')} podcastEpisodeDownload
- * @returns {Promise<{success: boolean, isFfmpegError?: boolean}>}
+ * @returns {Promise<{success: boolean, isRequestError?: boolean}>}
  */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
@@ -118,7 +118,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
           method: 'GET',
           responseType: 'stream',
           headers: {
-            'Accept': '*/*',
+            Accept: '*/*',
             'User-Agent': userAgent
           },
           timeout: global.PodcastDownloadTimeout
@@ -139,7 +139,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     if (!response) {
       return resolve({
-        success: false
+        success: false,
+        isRequestError: true
       })
     }
 
@@ -204,8 +205,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
         Logger.error(`Full stderr dump for episode url "${podcastEpisodeDownload.url}": ${stderrLines.join('\n')}`)
       }
       resolve({
-        success: false,
-        isFfmpegError: true
+        success: false
       })
     })
     ffmpeg.on('progress', (progress) => {

@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "Item(s) added to collection failed",
   "ToastCollectionRemoveSuccess": "Collection removed",
   "ToastCollectionUpdateSuccess": "Collection updated",
+  "ToastConnectionNotAvailable": "Connection not available. Please try again later",
+  "ToastCoverSearchFailed": "Cover search failed",
   "ToastCoverUpdateFailed": "Cover update failed",
   "ToastDateTimeInvalidOrIncomplete": "Date and time is invalid or incomplete",
   "ToastDeleteFileFailed": "Failed to delete file",

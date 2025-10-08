@@ -407,8 +407,7 @@ class Server {
       const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
-      router.get('*', (req, res) => handle(req, res))
-      router.post('/internal-api/*', (req, res) => handle(req, res))
+      router.all('*', (req, res) => handle(req, res))
     }
 
     const unixSocketPrefix = 'unix/'

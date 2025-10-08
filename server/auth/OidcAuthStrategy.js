@@ -527,7 +527,16 @@ class OidcAuthStrategy {
 
       // For absolute URLs, ensure they point to the same origin
       const callbackUrlObj = new URL(callbackUrl)
-      const currentProtocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      // NPM appends both http and https in x-forwarded-proto sometimes, so we need to check for both
+      const xfp = (req.get('x-forwarded-proto') || '').toLowerCase()
+      const currentProtocol =
+        req.secure ||
+        xfp
+          .split(',')
+          .map((s) => s.trim())
+          .includes('https')
+          ? 'https'
+          : 'http'
       const currentHost = req.get('host')
 
       // Check if protocol and host match exactly

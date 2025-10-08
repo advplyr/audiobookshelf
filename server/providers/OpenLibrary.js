@@ -1,7 +1,7 @@
 const axios = require('axios').default
 
 class OpenLibrary {
-  #responseTimeout = 30000
+  #responseTimeout = 10000
 
   constructor() {
     this.baseUrl = 'https://openlibrary.org'
@@ -23,7 +23,7 @@ class OpenLibrary {
         return res.data
       })
       .catch((error) => {
-        console.error('Failed', error)
+        console.error('Failed', error.message)
         return null
       })
   }
