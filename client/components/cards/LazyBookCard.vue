@@ -788,11 +788,11 @@ export default {
     },
     showEditModalFiles() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'files' })
+      this.$emit('edit', this.libraryItem, 'files')
     },
     showEditModalMatch() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
+      this.$emit('edit', this.libraryItem, 'match')
     },
     sendToDevice(deviceName) {
       // More menu func
