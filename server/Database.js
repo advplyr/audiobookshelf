@@ -162,6 +162,7 @@ class Database {
     return this.models.device
   }
 
+<<<<<<< HEAD
   get recommendationTagModel() {
     return this.models.recommendationTag
   }
@@ -169,6 +170,8 @@ class Database {
     return this.models.bookRecommendation
   }
 
+=======
+>>>>>>> parent of ae4bd94b (add database changes for recommandation sent and inbox)
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -352,6 +355,7 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+<<<<<<< HEAD
     require('./models/RecommendationTag').init(this.sequelize)
     require('./models/BookRecommendation').init(this.sequelize)
     // One association pass BEFORE sync
@@ -359,6 +363,8 @@ class Database {
     Object.values(models).forEach((m) => {
       if (typeof m?.associate === 'function') m.associate(models)
     })
+=======
+>>>>>>> parent of ae4bd94b (add database changes for recommandation sent and inbox)
 
     return this.sequelize.sync({ force, alter: false })
   }
