@@ -1,0 +1,584 @@
+:root,:root,
+
+:root.dark {:root.dark {
+
+  /* Main backgrounds - from your existing design */  /* Main backgrounds - from your existing design */
+
+  --color-bg: #373838; /* From tailwind.css --color-bg */  --color-bg: #373838; /* From tailwind.css --color-bg */
+
+  --color-primary: #232323; /* From tailwind.css --color-primary */  --color-primary: #232323; /* From tailwind.css --color-primary */
+
+  --color-fg: #2e2e2e; /* From your existing even rows */  --color-fg: #2e2e2e; /* From your existing even rows */
+
+
+
+  /* Gradient backgrounds - from your bookshelf design */  /* Gradient backgrounds - from your bookshelf design */
+
+  --gradient-bookshelf: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);  --gradient-bookshelf: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
+
+
+
+  /* Text colors */  /* Text colors */
+
+  --color-text: #ffffff;  --color-text: #ffffff;
+
+  --color-text-muted: #bbbbbb; /* From --color-black-50 */  --color-text-muted: #bbbbbb; /* From --color-black-50 */
+
+  --color-text-dim: #666666; /* From --color-black-100 */  --color-text-dim: #666666; /* From --color-black-100 */
+
+
+
+  /* Border colors - from your existing table styles */  /* Border colors - from your existing table styles */
+
+  --color-border: #474747; /* From tracksTable border */  --color-border: #474747; /* From tracksTable border */
+
+  --color-border-light: #555555; /* From --color-black-200 */  --color-border-light: #555555; /* From --color-black-200 */
+
+
+
+  /* Interactive colors */  /* Interactive colors */
+
+  --color-hover: #474747; /* From tracksTable hover */  --color-hover: #474747; /* From tracksTable hover */
+
+  --color-accent: #1ad691; /* From tailwind.css --color-accent */  --color-accent: #1ad691; /* From tailwind.css --color-accent */
+
+  --color-success: #4caf50; /* From tailwind.css --color-success */  --color-success: #4caf50; /* From tailwind.css --color-success */
+
+  --color-darkgreen: rgb(34, 127, 35); /* From tailwind.css --color-darkgreen */  --color-darkgreen: rgb(34, 127, 35); /* From tailwind.css --color-darkgreen */
+
+
+
+  /* Status colors */  /* Status colors */
+
+  --color-warning: #fb8c00; /* From tailwind.css --color-warning */  --color-warning: #fb8c00; /* From tailwind.css --color-warning */
+
+  --color-error: #ff5252; /* From tailwind.css --color-error */  --color-error: #ff5252; /* From tailwind.css --color-error */
+
+  --color-info: #2196f3; /* From tailwind.css --color-info */  --color-info: #2196f3; /* From tailwind.css --color-info */
+
+
+
+  /* Scrollbar colors - from your existing design */  /* Scrollbar colors - from your existing design */
+
+  --scrollbar-thumb: #855620;  --scrollbar-thumb: #855620;
+
+  --scrollbar-thumb-hover: #704922;  --scrollbar-thumb-hover: #704922;
+
+
+
+  /* Shadow colors */  /* Shadow colors */
+
+  --color-shadow-light: rgba(17, 17, 17, 0.4); /* #111111aa */  --color-shadow-light: rgba(17, 17, 17, 0.4); /* #111111aa */
+
+  --color-shadow-medium: rgba(17, 17, 17, 0.6); /* #111111ee */  --color-shadow-medium: rgba(17, 17, 17, 0.6); /* #111111ee */
+
+  --color-shadow-heavy: rgba(17, 17, 17, 0.8);  --color-shadow-heavy: rgba(17, 17, 17, 0.8);
+
+
+
+  /* Bookshelf specific - keep your existing design */  /* Bookshelf specific - keep your existing design */
+
+  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
+
+  --bookshelf-divider-bg: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%);  --bookshelf-divider-bg: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%);
+
+
+
+  /* Special effects */  /* Special effects */
+
+  --shimmer-bg: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);  --shimmer-bg: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);
+
+  --gold-border: rgba(255, 244, 182, 0.6);  --gold-border: rgba(255, 244, 182, 0.6);
+
+  --gold-text: #fce3a6;  --gold-text: #fce3a6;
+
+
+
+  --table-border: #474747;  --table-border: #474747;
+
+  --table-header-bg: #272727;  --table-header-bg: #272727;
+
+  --table-row-bg: #373838;  --table-row-bg: #373838;
+
+  --table-row-alt-bg: #2f2f2f;  --table-row-alt-bg: #2f2f2f;
+
+  --table-row-hover-bg: #474747;  --table-row-hover-bg: #474747;
+
+  --table-text-color: #e0e0e0;  --table-text-color: #e0e0e0;
+
+}}
+
+
+
+/* Light theme *//* Light theme */
+
+:root.light {:root.light {
+
+  /* Main backgrounds - lighter equivalents */  /* Main backgrounds - lighter equivalents */
+
+  --color-bg: #f8f9fa;  --color-bg: #f8f9fa;
+
+  --color-primary: #ffffff;  --color-primary: #ffffff;
+
+  --color-fg: #f1f3f4;  --color-fg: #f1f3f4;
+
+
+
+  /* Gradient backgrounds - light version */  /* Gradient backgrounds - light version */
+
+  --gradient-bookshelf: linear-gradient(to right bottom, #f8f9fa, #f1f3f4, #e9ecef, #dee2e6, #ced4da, #adb5bd, #868e96, #6c757d, #495057, #343a40, #212529, #000000);  --gradient-bookshelf: linear-gradient(to right bottom, #f8f9fa, #f1f3f4, #e9ecef, #dee2e6, #ced4da, #adb5bd, #868e96, #6c757d, #495057, #343a40, #212529, #000000);
+
+
+
+  /* Text colors */  /* Text colors */
+
+  --color-text: #212529;  --color-text: #212529;
+
+  --color-text-muted: #495057;  --color-text-muted: #495057;
+
+  --color-text-dim: #868e96;  --color-text-dim: #868e96;
+
+
+
+  /* Border colors */  /* Border colors */
+
+  --color-border: #dee2e6;  --color-border: #dee2e6;
+
+  --color-border-light: #e9ecef;  --color-border-light: #e9ecef;
+
+
+
+  /* Interactive colors */  /* Interactive colors */
+
+  --color-hover: #e9ecef;  --color-hover: #e9ecef;
+
+  --color-accent: #20c997; /* Slightly adjusted for light mode */  --color-accent: #20c997; /* Slightly adjusted for light mode */
+
+  --color-success: #198754;  --color-success: #198754;
+
+  --color-darkgreen: rgb(25, 135, 84);  --color-darkgreen: rgb(25, 135, 84);
+
+
+
+  /* Status colors - adjusted for light mode */  /* Status colors - adjusted for light mode */
+
+  --color-warning: #fd7e14;  --color-warning: #fd7e14;
+
+  --color-error: #dc3545;  --color-error: #dc3545;
+
+  --color-info: #0d6efd;  --color-info: #0d6efd;
+
+
+
+  /* Scrollbar colors */  /* Scrollbar colors */
+
+  --scrollbar-thumb: #adb5bd;  --scrollbar-thumb: #adb5bd;
+
+  --scrollbar-thumb-hover: #868e96;  --scrollbar-thumb-hover: #868e96;
+
+
+
+  /* Shadow colors */  /* Shadow colors */
+
+  --color-shadow-light: rgba(0, 0, 0, 0.1);  --color-shadow-light: rgba(0, 0, 0, 0.1);
+
+  --color-shadow-medium: rgba(0, 0, 0, 0.2);  --color-shadow-medium: rgba(0, 0, 0, 0.2);
+
+  --color-shadow-heavy: rgba(0, 0, 0, 0.3);  --color-shadow-heavy: rgba(0, 0, 0, 0.3);
+
+
+
+  /* Bookshelf specific - lighter wood texture */  /* Bookshelf specific - lighter wood texture */
+
+  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);  --bookshelf-texture-img: url(~static/textures/wood_default.jpg);
+
+  --bookshelf-divider-bg: linear-gradient(180deg, rgba(200, 170, 140, 1) 0%, rgba(180, 150, 120, 1) 17%, rgba(180, 150, 120, 1) 88%, rgba(160, 130, 100, 1) 100%);  --bookshelf-divider-bg: linear-gradient(180deg, rgba(200, 170, 140, 1) 0%, rgba(180, 150, 120, 1) 17%, rgba(180, 150, 120, 1) 88%, rgba(160, 130, 100, 1) 100%);
+
+
+
+  /* Special effects */  /* Special effects */
+
+  --shimmer-bg: linear-gradient(315deg, #f8f9fa 0%, #e9ecef 74%);  --shimmer-bg: linear-gradient(315deg, #f8f9fa 0%, #e9ecef 74%);
+
+  --gold-border: rgba(133, 86, 32, 0.6);  --gold-border: rgba(133, 86, 32, 0.6);
+
+  --gold-text: #855620;  --gold-text: #855620;
+
+
+
+  --table-border: #ccc;
+
+  --table-header-bg: #f0f0f0;  --table-border: #ccc;
+
+  --table-row-bg: #ffffff;  --table-header-bg: #f0f0f0;
+
+  --table-row-alt-bg: #f9f9f9;  --table-row-bg: #ffffff;
+
+  --table-row-hover-bg: #e6e6e6;  --table-row-alt-bg: #f9f9f9;
+
+  --table-text-color: #333;  --table-row-hover-bg: #e6e6e6;
+
+}  --table-text-color: #333;
+
+}
+
+/* Smooth transitions for theme changes */
+
+* {/* Smooth transitions for theme changes */
+
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease;* {
+
+}  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease;
+
+}
+
+body {
+
+  color: var(--color-text);body {
+
+}  color: var(--color-text);
+
+}
+
+/* Update common classes to use CSS variables */.userSessionsTable {
+
+.bg-bg {  color: var(--table-text-color);
+
+  background-color: var(--color-bg) !important;}
+
+}/* Update common classes to use CSS variables */
+
+.bg-bg {
+
+.bg-primary {  background-color: var(--color-bg) !important;
+
+  background-color: var(--color-primary) !important;}
+
+}
+
+.bg-primary {
+
+.bg-fg {  background-color: var(--color-primary) !important;
+
+  background-color: var(--color-fg) !important;}
+
+}
+
+.bg-fg {
+
+.bg-success {  background-color: var(--color-fg) !important;
+
+  background-color: var(--color-success) !important;}
+
+}
+
+.text-white,
+
+.text-white,.text-themed {
+
+.text-themed {  color: var(--color-text) !important;
+
+  color: var(--color-text) !important;}
+
+}
+
+.text-gray-100 {
+
+.text-gray-100 {  color: var(--color-text-muted) !important;
+
+  color: var(--color-text-muted) !important;}
+
+}
+
+.text-gray-200 {
+
+.text-gray-200 {  color: var(--color-text-muted) !important;
+
+  color: var(--color-text-muted) !important;}
+
+}.text-gray-300 {
+
+  color: var(--color-text-muted) !important;
+
+.text-gray-300 {}
+
+  color: var(--color-text-muted) !important;
+
+}.text-gray-400 {
+
+  color: var(--color-text-dim) !important;
+
+.text-gray-400 {}
+
+  color: var(--color-text-dim) !important;
+
+}.border-gray-500 {
+
+  border-color: var(--color-border) !important;
+
+.border-gray-500 {}
+
+  border-color: var(--color-border) !important;
+
+}.shadow-xs {
+
+  box-shadow: 0 1px 2px var(--color-shadow) !important;
+
+.hover\:bg-fg\/20:hover {}
+
+  background-color: var(--color-hover) !important;
+
+}/* Ensure SVG icons also use theme colors */
+
+svg {
+
+/* Material symbols and icons */  color: var(--color-text);
+
+.material-symbols,  fill: currentColor;
+
+.material-icons {}
+
+  color: var(--color-text) !important;
+
+}/* Material symbols and icons */
+
+.material-symbols,
+
+/* Input fields - general styling that works for both themes */.material-icons {
+
+input,  color: var(--color-text) !important;
+
+textarea,}
+
+select {
+
+  background-color: var(--color-primary);.tooltip-content,
+
+  color: var(--color-text);.ui-tooltip-content {
+
+  border-color: var(--color-border-light);  background-color: var(--color-primary) !important;
+
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;  color: var(--color-text) !important;
+
+}  border: 1px solid var(--color-border) !important;
+
+}
+
+/* Input focus states */
+
+input:focus,/* For Popper.js or similar tooltip libraries */
+
+textarea:focus,.popper,
+
+select:focus {.tippy-box {
+
+  border-color: var(--color-accent);  background-color: var(--color-primary) !important;
+
+  outline: none;  color: var(--color-text) !important;
+
+  box-shadow: 0 0 0 2px rgba(var(--color-accent), 0.2);  border: 1px solid var(--color-border) !important;
+
+}}
+
+
+
+/* Button styling - general that works for both themes */.tippy-arrow {
+
+.ui-btn,  color: var(--color-primary) !important;
+
+button {}
+
+  background-color: var(--color-primary);
+
+  color: var(--color-text);/* Ensure text is readable */
+
+  border-color: var(--color-border-light);.ui-tooltip *,
+
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;.tooltip * {
+
+}  color: var(--color-text) !important;
+
+}
+
+/* Button hover states */
+
+.ui-btn:hover,/* More specific overrides for common tooltip libraries */
+
+button:hover {[data-tippy-root] {
+
+  background-color: var(--color-hover);  --tippy-color: var(--color-text) !important;
+
+}  --tippy-bg: var(--color-primary) !important;
+
+}
+
+/* Dropdown menus */
+
+.dropdown-menu,/* Vue/Nuxt specific tooltip classes */
+
+select option {.v-tooltip-content {
+
+  background-color: var(--color-primary) !important;  background: var(--color-primary) !important;
+
+  color: var(--color-text) !important;  color: var(--color-text) !important;
+
+  border-color: var(--color-border);  border: 1px solid var(--color-border) !important;
+
+}}
+
+
+
+/* Force select styling across browsers *//* Override any hardcoded dark/light theme classes */
+
+select {.tooltip-dark,
+
+  background-color: var(--color-primary) !important;.tooltip-light {
+
+  color: var(--color-text) !important;  background-color: var(--color-primary) !important;
+
+  border-color: var(--color-border) !important;  color: var(--color-text) !important;
+
+}  border-color: var(--color-border) !important;
+
+}
+
+/* Webkit specific select option styling */
+
+select option {/* Force override for stubborn tooltips */
+
+  background-color: var(--color-primary) !important;[class*="tooltip"],
+
+  color: var(--color-text) !important;[class*="popover"] {
+
+}  background-color: var(--color-primary) !important;
+
+  color: var(--color-text) !important;
+
+/* Disabled states */  border-color: var(--color-border) !important;
+
+input:disabled,}
+
+textarea:disabled,
+
+select:disabled,/* READERS */
+
+button:disabled,/* PDF Reader dark mode */
+
+.ui-btn:disabled {.pdf-reader-container {
+
+  background-color: var(--color-fg);  background-color: var(--color-primary);
+
+  color: var(--color-text-dim);  color: var(--color-text);
+
+  border-color: var(--color-border);}
+
+  opacity: 0.6;
+
+  cursor: not-allowed;/* Ensure proper contrast for controls */
+
+}.pdf-reader-container .material-symbols {
+  color: var(--color-text);
+}
+
+/* Make sure the viewer area has proper background */
+.pdf-reader-container .pdf-viewer {
+  background-color: var(--color-primary);
+}
+
+/* Modal specific overrides */
+.modal-content {
+  background-color: var(--color-fg) !important;
+  color: var(--color-text) !important;
+}
+
+/* Input fields - general styling that works for both themes */
+input,
+textarea,
+select {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Input focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--color-accent), 0.2);
+}
+
+/* Button styling - general that works for both themes */
+.ui-btn,
+button {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Button hover states */
+.ui-btn:hover,
+button:hover {
+  background-color: var(--color-hover);
+}
+
+/* Tab styling */
+.tab {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+  transition: background-color 0.3s ease;
+}
+
+/* Tab hover states */
+.tab:hover {
+  background-color: var(--color-hover);
+}
+
+/* Tab active states */
+.tab.active,
+.tab[aria-selected="true"] {
+  background-color: var(--color-fg);
+  border-color: var(--color-accent);
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+select option {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+/* Form validation states */
+input.error,
+textarea.error {
+  border-color: var(--color-error);
+}
+
+input.success,
+textarea.success {
+  border-color: var(--color-success);
+}
+
+/* Placeholder text */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-dim);
+}
+
+/* Disabled states */
+input:disabled,
+textarea:disabled,
+select:disabled,
+button:disabled,
+.ui-btn:disabled {
+  background-color: var(--color-fg);
+  color: var(--color-text-dim);
+  border-color: var(--color-border);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
