@@ -38,7 +38,6 @@ const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
-const buildRecommendationsRouter = require('./routers/recommendations')
 const RecommendationManager = require('./managers/RecommendationManager')
 
 //Import the main Passport and Express-Session library
@@ -324,15 +323,6 @@ class Server {
 
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
-
-    router.use(
-      '/api/recommendations',
-      this.auth.ifAuthNeeded(this.authMiddleware.bind(this)),
-      buildRecommendationsRouter({
-        manager: RecommendationManager,
-        featureFlag: () => String(process.env.RECOMMENDATIONS_ENABLED) === 'true'
-      })
-    )
 
     // RSS Feed temp route
     router.get('/feed/:slug', (req, res) => {

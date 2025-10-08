@@ -35,6 +35,8 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const RecommendationManager = require('../managers/RecommendationManager')
+const buildRecommendationsController = require('../controllers/recommendationsController')
 
 class ApiRouter {
   constructor(Server) {
@@ -96,6 +98,31 @@ class ApiRouter {
     this.router.get('/libraries/:id/podcast-titles', LibraryController.middleware.bind(this), LibraryController.getPodcastTitles.bind(this))
     this.router.get('/libraries/:id/download', LibraryController.middleware.bind(this), LibraryController.downloadMultiple.bind(this))
 
+    //
+    // Recommendations Routes (feature-flagged)
+    //
+    const RecommendationsController = buildRecommendationsController(RecommendationManager)
+    const recommendationsEnabled = () => String(process.env.RECOMMENDATIONS_ENABLED) === 'true'
+    const recommendationsGate = (req, res, next) => {
+      if (!recommendationsEnabled()) return res.status(501).json({ message: 'Recommendations disabled' })
+      next()
+    }
+    const requireAuth = (req, res, next) => {
+      if (req.user && req.user.id) return next()
+      return res.status(401).send('Unauthorized')
+    }
+
+    // Apply the feature gate to all /recommendations paths
+    this.router.use('/recommendations', recommendationsGate)
+
+    // Endpoints
+    this.router.get('/recommendations/tags', RecommendationsController.listTags)
+    this.router.post('/recommendations', requireAuth, RecommendationsController.create)
+    this.router.get('/recommendations/book/:bookId', RecommendationsController.byBook)
+    this.router.get('/recommendations/inbox', requireAuth, RecommendationsController.inbox)
+    this.router.get('/recommendations/sent', requireAuth, RecommendationsController.sent)
+    this.router.put('/recommendations/:id', requireAuth, RecommendationsController.update)
+    this.router.delete('/recommendations/:id', requireAuth, RecommendationsController.destroy)
     //
     // Item Routes
     //
