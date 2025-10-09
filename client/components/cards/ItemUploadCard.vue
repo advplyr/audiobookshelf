@@ -143,19 +143,12 @@ export default {
       return Math.min(100, Math.round((this.uploadProgress.loaded / this.uploadProgress.total) * 100))
     },
     uploadProgressText() {
-      const loaded = this.formatBytes(this.uploadProgress.loaded)
-      const total = this.formatBytes(this.uploadProgress.total)
+      const loaded = this.$bytesPretty(this.uploadProgress.loaded)
+      const total = this.$bytesPretty(this.uploadProgress.total)
       return `${this.uploadProgressPercent}% (${loaded} / ${total})`
     }
   },
   methods: {
-    formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    },
     setUploadStatus(status) {
       this.isUploading = status === 'uploading'
       this.uploadFailed = status === 'failed'
