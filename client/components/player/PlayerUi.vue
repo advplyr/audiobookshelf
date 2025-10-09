@@ -4,40 +4,60 @@
       <div class="absolute -top-10 lg:top-0 right-0 lg:right-2 flex items-center h-full">
         <controls-playback-speed-control v-model="playbackRate" @input="setPlaybackRate" @change="playbackRateChanged" :playbackRateIncrementDecrement="playbackRateIncrementDecrement" class="mx-2 block" />
 
-        <ui-tooltip direction="bottom" :text="$strings.LabelVolume">
+        <ui-tooltip direction="bottom" :text="$strings?.LabelVolume || 'Volume'">
           <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden sm:block" />
         </ui-tooltip>
 
-        <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings.LabelSleepTimer">
-          <button :aria-label="$strings.LabelSleepTimer" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
+        <!-- ==== 渐降音量按钮 ==== -->
+        <ui-tooltip direction="top" :text="fadeActive ? fadeTooltipCancel : $strings?.LabelStartFadeVolume || 'Start volume fade'">
+          <button :aria-label="fadeActive ? 'Cancel fade' : 'Start fade'" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="toggleFadeDialog">
+            <template v-if="!fadeActive">
+              <span class="material-symbols text-2xl">timelapse</span>
+            </template>
+            <template v-else>
+              <div class="flex items-center">
+                <span class="material-symbols text-lg text-warning">volume_down</span>
+                <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">
+                  {{ fadeRemainingPretty }}
+                </p>
+              </div>
+            </template>
+          </button>
+        </ui-tooltip>
+        <!-- ==== /渐降音量按钮 ==== -->
+
+        <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings?.LabelSleepTimer || 'Sleep timer'">
+          <button :aria-label="$strings?.LabelSleepTimer || 'Sleep timer'" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
-              <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">{{ sleepTimerRemainingString }}</p>
+              <p class="text-sm sm:text-lg text-warning font-semibold text-center px-0.5 sm:pb-0.5 sm:min-w-8">
+                {{ sleepTimerRemainingString }}
+              </p>
             </div>
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
-          <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+        <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings?.LabelViewBookmarks || 'Bookmarks'">
+          <button :aria-label="$strings?.LabelViewBookmarks || 'Bookmarks'" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
             <span class="material-symbols text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="chapters.length" direction="top" :text="$strings.LabelViewChapters">
-          <button :aria-label="$strings.LabelViewChapters" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+        <ui-tooltip v-if="chapters.length" direction="top" :text="$strings?.LabelViewChapters || 'Chapters'">
+          <button :aria-label="$strings?.LabelViewChapters || 'Chapters'" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
             <span class="material-symbols text-2xl">format_list_bulleted</span>
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings.LabelViewQueue">
-          <button :aria-label="$strings.LabelViewQueue" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
+        <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings?.LabelViewQueue || 'Queue'">
+          <button :aria-label="$strings?.LabelViewQueue || 'Queue'" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
             <span class="material-symbols text-2.5xl sm:text-3xl">playlist_play</span>
           </button>
         </ui-tooltip>
 
-        <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
-          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
+        <ui-tooltip direction="top" :text="$strings?.LabelViewPlayerSettings || 'Player settings'">
+          <button :aria-label="$strings?.LabelViewPlayerSettings || 'Player settings'" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
             <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>
@@ -55,7 +75,8 @@
       </div>
       <div class="absolute left-1/2 transform -translate-x-1/2">
         <p class="text-xs sm:text-sm text-gray-300 pt-0.5 px-2 truncate">
-          {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }})</span>
+          {{ currentChapterName }}
+          <span v-if="useChapterTrack" class="text-xs text-gray-400"> &nbsp;({{ $getString('LabelPlayerChapterNumberMarker', [currentChapterIndex + 1, chapters.length]) }}) </span>
         </p>
       </div>
       <div class="grow flex items-center justify-end">
@@ -74,15 +95,9 @@ export default {
   props: {
     loading: Boolean,
     paused: Boolean,
-    chapters: {
-      type: Array,
-      default: () => []
-    },
+    chapters: { type: Array, default: () => [] },
     currentChapter: Object,
-    bookmarks: {
-      type: Array,
-      default: () => []
-    },
+    bookmarks: { type: Array, default: () => [] },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
     sleepTimerType: String,
@@ -100,7 +115,14 @@ export default {
       showChaptersModal: false,
       showPlayerSettingsModal: false,
       currentTime: 0,
-      duration: 0
+      duration: 0,
+
+      // 渐降音量状态
+      fadeActive: false,
+      fadeMsTotal: 0,
+      fadeMsLeft: 0,
+      fadeTimer: null,
+      fadeStartVolume: 1
     }
   },
   watch: {
@@ -114,38 +136,40 @@ export default {
   },
   computed: {
     sleepTimerRemainingString() {
-      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
-        return 'EoC'
-      } else {
-        var rounded = Math.round(this.sleepTimerRemaining)
-        if (rounded < 90) {
-          return `${rounded}s`
-        }
-        var minutesRounded = Math.round(rounded / 60)
-        if (minutesRounded <= 90) {
-          return `${minutesRounded}m`
-        }
-        var hoursRounded = Math.round(minutesRounded / 60)
-        return `${hoursRounded}h`
-      }
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) return 'EoC'
+      const rounded = Math.round(this.sleepTimerRemaining || 0)
+      if (rounded < 90) return `${rounded}s`
+      const m = Math.round(rounded / 60)
+      if (m <= 90) return `${m}m`
+      const h = Math.round(m / 60)
+      return `${h}h`
     },
+
+    fadeTooltipCancel() {
+      return (this.$strings && this.$strings.LabelCancelFadeVolume) || 'Cancel volume fade'
+    },
+    fadeRemainingPretty() {
+      const sec = Math.max(0, Math.ceil(this.fadeMsLeft / 1000))
+      if (sec < 90) return `${sec}s`
+      const m = Math.round(sec / 60)
+      if (m <= 90) return `${m}m`
+      const h = Math.round(m / 60)
+      return `${h}h`
+    },
+
     timeRemaining() {
       if (this.useChapterTrack && this.currentChapter) {
-        var currChapTime = this.currentTime - this.currentChapter.start
-        return (this.currentChapterDuration - currChapTime) / this.playbackRate
+        const curr = this.currentTime - this.currentChapter.start
+        return (this.currentChapterDuration - curr) / this.playbackRate
       }
       return (this.duration - this.currentTime) / this.playbackRate
     },
     timeRemainingPretty() {
-      if (this.timeRemaining < 0) {
-        return this.$secondsToTimestamp(this.timeRemaining * -1)
-      }
-      return '-' + this.$secondsToTimestamp(this.timeRemaining)
+      return this.timeRemaining < 0 ? this.$secondsToTimestamp(-this.timeRemaining) : '-' + this.$secondsToTimestamp(this.timeRemaining)
     },
     progressPercent() {
       const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
-      const time = this.useChapterTrack ? Math.max(this.currentTime - this.currentChapterStart) : this.currentTime
-
+      const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
       if (!duration) return 0
       return Math.round((100 * time) / duration)
     },
@@ -153,12 +177,10 @@ export default {
       return this.currentChapter?.title || ''
     },
     currentChapterDuration() {
-      if (!this.currentChapter) return 0
-      return this.currentChapter.end - this.currentChapter.start
+      return this.currentChapter ? this.currentChapter.end - this.currentChapter.start : 0
     },
     currentChapterStart() {
-      if (!this.currentChapter) return 0
-      return this.currentChapter.start
+      return this.currentChapter ? this.currentChapter.start : 0
     },
     isFullscreen() {
       return this.$store.state.playerIsFullscreen
@@ -175,14 +197,80 @@ export default {
       return this.$store.state.playerQueueItems || []
     },
     useChapterTrack() {
-      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
-      return this.chapters.length ? _useChapterTrack : false
+      const v = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      return this.chapters.length ? v : false
     },
     playbackRateIncrementDecrement() {
       return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
     }
   },
   methods: {
+    /* ===== 渐降音量：UI入口 ===== */
+    toggleFadeDialog() {
+      if (this.fadeActive) {
+        this.cancelFade()
+        return
+      }
+      const defVal = '15'
+      const msg = (this.$strings && this.$strings.PromptFadeMinutes) || 'Fade to silence in how many minutes?'
+      const v = window.prompt(msg, defVal)
+      if (v == null) return
+      const minutes = Number(v)
+      if (!isFinite(minutes) || minutes <= 0) {
+        this.$toast && this.$toast.error('Invalid minutes')
+        return
+      }
+      this.startFade(minutes * 60 * 1000)
+    },
+
+    /* ===== 渐降音量：核心逻辑 ===== */
+    startFade(msTotal) {
+      // 清理旧的
+      this.cancelFade(false)
+
+      this.fadeMsTotal = Math.max(1000, msTotal)
+      this.fadeMsLeft = this.fadeMsTotal
+      this.fadeStartVolume = Math.max(0, Math.min(1, this.volume))
+      this.fadeActive = true
+
+      // 先同步一次
+      this.applyFade(0)
+
+      const tickMs = 500
+      this.fadeTimer = setInterval(() => {
+        this.fadeMsLeft = Math.max(0, this.fadeMsLeft - tickMs)
+        const elapsed = this.fadeMsTotal - this.fadeMsLeft
+        this.applyFade(elapsed)
+
+        if (this.fadeMsLeft <= 0) {
+          this.setVolume(0)
+          this.cancelFade(false)
+        }
+      }, tickMs)
+    },
+
+    applyFade(elapsedMs) {
+      const t = Math.min(1, Math.max(0, elapsedMs / this.fadeMsTotal))
+      const vol = +(this.fadeStartVolume * (1 - t)).toFixed(4)
+      this.volume = vol
+      this.setVolume(vol)
+    },
+
+    cancelFade(toast = true) {
+      if (this.fadeTimer) {
+        clearInterval(this.fadeTimer)
+        this.fadeTimer = null
+      }
+      if (this.fadeActive && toast && this.$toast) {
+        const msg = (this.$strings && this.$strings.ToastFadeCancelled) || 'Volume fade cancelled'
+        this.$toast.info(msg)
+      }
+      this.fadeActive = false
+      this.fadeMsTotal = 0
+      this.fadeMsLeft = 0
+    },
+
+    // ===== 现有播放器逻辑 =====
     toggleFullscreen(isFullscreen) {
       this.$store.commit('setPlayerIsFullscreen', isFullscreen)
     },
@@ -203,6 +291,7 @@ export default {
     jumpForward() {
       this.$emit('jumpForward')
     },
+
     increaseVolume() {
       if (this.volume >= 1) return
       this.volume = Math.min(1, this.volume + 0.1)
@@ -221,6 +310,7 @@ export default {
         this.$refs.volumeControl.toggleMute()
       }
     },
+
     increasePlaybackRate() {
       if (this.playbackRate >= 10) return
       this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
@@ -247,12 +337,10 @@ export default {
     setUseChapterTrack() {
       this.useChapterTrack = !this.useChapterTrack
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
-
       this.$store.dispatch('user/updateUserSettings', { useChapterTrack: this.useChapterTrack })
       this.updateTimestamp()
     },
     checkUpdateChapterTrack() {
-      // Changing media in player may not have chapters
       if (!this.chapters.length && this.useChapterTrack) {
         this.useChapterTrack = false
         if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
@@ -265,21 +353,19 @@ export default {
       this.seek(0)
     },
     prevChapter() {
-      if (!this.currentChapter || this.currentChapterIndex === 0) {
-        return this.restart()
-      }
-      var timeInCurrentChapter = this.currentTime - this.currentChapter.start
-      if (timeInCurrentChapter <= 3 && this.chapters[this.currentChapterIndex - 1]) {
-        var prevChapter = this.chapters[this.currentChapterIndex - 1]
-        this.seek(prevChapter.start)
+      if (!this.currentChapter || this.currentChapterIndex === 0) return this.restart()
+      const t = this.currentTime - this.currentChapter.start
+      if (t <= 3 && this.chapters[this.currentChapterIndex - 1]) {
+        const prev = this.chapters[this.currentChapterIndex - 1]
+        this.seek(prev.start)
       } else {
         this.seek(this.currentChapter.start)
       }
     },
     goToNext() {
       if (this.hasNextChapter) {
-        const nextChapter = this.chapters[this.currentChapterIndex + 1]
-        this.seek(nextChapter.start)
+        const next = this.chapters[this.currentChapterIndex + 1]
+        this.seek(next.start)
       } else if (this.hasNextItemInQueue) {
         this.$emit('nextItemInQueue')
       }
@@ -288,26 +374,22 @@ export default {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)
     },
     setChunksReady(chunks, numSegments) {
-      var largestSeg = 0
+      let largestSeg = 0
       for (let i = 0; i < chunks.length; i++) {
-        var chunk = chunks[i]
-        if (typeof chunk === 'string') {
-          var chunkRange = chunk.split('-').map((c) => Number(c))
-          if (chunkRange.length < 2) continue
-          if (chunkRange[1] > largestSeg) largestSeg = chunkRange[1]
-        } else if (chunk > largestSeg) {
-          largestSeg = chunk
+        const c = chunks[i]
+        if (typeof c === 'string') {
+          const r = c.split('-').map((x) => Number(x))
+          if (r.length >= 2 && r[1] > largestSeg) largestSeg = r[1]
+        } else if (c > largestSeg) {
+          largestSeg = c
         }
       }
-      var percentageReady = largestSeg / numSegments
-      if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(percentageReady)
+      const p = largestSeg / numSegments
+      if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(p)
     },
     updateTimestamp() {
       const ts = this.$refs.currentTimestamp
-      if (!ts) {
-        console.error('No timestamp el')
-        return
-      }
+      if (!ts) return console.error('No timestamp el')
       const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
       ts.innerText = this.$secondsToTimestamp(time / this.playbackRate)
     },
@@ -323,7 +405,6 @@ export default {
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
-
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.setPlaybackRate(this.playbackRate)
     },
@@ -337,7 +418,6 @@ export default {
         this.toggleFullscreen(false)
         return
       }
-
       if (this.loading) return
       this.$emit('close')
     },
@@ -357,12 +437,12 @@ export default {
   mounted() {
     this.$eventBus.$on('player-hotkey', this.hotkey)
     this.$eventBus.$on('user-settings', this.settingsUpdated)
-
     this.init()
   },
   beforeDestroy() {
     this.$eventBus.$off('player-hotkey', this.hotkey)
     this.$eventBus.$off('user-settings', this.settingsUpdated)
+    this.cancelFade(false) // 清理定时器
   }
 }
 </script>
