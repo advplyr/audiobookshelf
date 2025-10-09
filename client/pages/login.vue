@@ -299,8 +299,8 @@ export default {
       }
 
       if (authMethods.includes('openid')) {
-        // Auto redirect unless query string ?autoLaunch=0
-        if (this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') {
+        // Auto redirect unless query string ?autoLaunch=0 OR when explicity requested through ?autoLaunch=1
+        if ((this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') || this.$route.query?.autoLaunch == '1') {
           window.location.href = this.openidAuthUri
         }
 
