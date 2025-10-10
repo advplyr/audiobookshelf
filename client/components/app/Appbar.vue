@@ -168,7 +168,7 @@ export default {
         }
       ]
 
-      if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
+      if (this.selectedMediaItemsArePlayable) {
         options.push({
           text: this.$strings.ButtonQuickEmbedMetadata,
           action: 'quick-embed'

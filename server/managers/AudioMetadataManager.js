@@ -40,6 +40,17 @@ class AudioMetadataMangaer {
    * @returns
    */
   getMetadataObjectForApi(libraryItem) {
+    if (libraryItem.isPodcast) {
+      return {
+        title: libraryItem.media.title,
+        artist: libraryItem.media.author,
+        album_artist: libraryItem.media.author,
+        album: libraryItem.media.title,
+        genre: libraryItem.media.genres?.join('; '),
+        description: libraryItem.media.description,
+        language: libraryItem.media.language
+      }
+    }
     return ffmpegHelpers.getFFMetadataObject(libraryItem, libraryItem.media.includedAudioFiles.length)
   }
 
@@ -65,17 +76,33 @@ class AudioMetadataMangaer {
     const forceEmbedChapters = !!options.forceEmbedChapters
     const backupFiles = !!options.backup
 
-    const audioFiles = libraryItem.media.includedAudioFiles
+    const audioFiles = libraryItem.isPodcast
+      ? libraryItem.media.podcastEpisodes
+          .filter((ep) => !!ep.audioFile && !!ep.audioFile.metadata?.path)
+          .map((ep) => ({
+            episode: ep,
+            index: 1,
+            ino: ep.audioFile?.ino,
+            filename: ep.audioFile?.metadata?.filename,
+            path: ep.audioFile?.metadata?.path,
+            duration: ep.duration,
+            mimeType: ep.audioFile?.mimeType
+          }))
+      : libraryItem.media.includedAudioFiles
+
+    if (!audioFiles.length) {
+      return
+    }
 
     const task = new Task()
 
     const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
 
     // Only writing chapters for single file audiobooks
-    const chapters = audioFiles.length == 1 || forceEmbedChapters ? libraryItem.media.chapters.map((c) => ({ ...c })) : null
+    const chapters = libraryItem.isPodcast ? null : audioFiles.length == 1 || forceEmbedChapters ? libraryItem.media.chapters.map((c) => ({ ...c })) : null
 
-    let mimeType = audioFiles[0].mimeType
-    if (audioFiles.some((a) => a.mimeType !== mimeType)) mimeType = null
+    let mimeType = libraryItem.isPodcast ? audioFiles[0]?.mimeType || null : audioFiles[0].mimeType
+    if (audioFiles.some((a) => (libraryItem.isPodcast ? a.mimeType : a.mimeType) !== mimeType)) mimeType = null
 
     // Create task
     const libraryItemDir = libraryItem.isFile ? Path.dirname(libraryItem.path) : libraryItem.path
@@ -83,16 +110,51 @@ class AudioMetadataMangaer {
       libraryItemId: libraryItem.id,
       libraryItemDir,
       userId,
-      audioFiles: audioFiles.map((af) => ({
-        index: af.index,
-        ino: af.ino,
-        filename: af.metadata.filename,
-        path: af.metadata.path,
-        cachePath: Path.join(itemCachePath, af.metadata.filename),
-        duration: af.duration
-      })),
+      audioFiles: libraryItem.isPodcast
+        ? audioFiles.map((af) => ({
+            index: 1,
+            ino: af.ino,
+            filename: af.filename,
+            path: af.path,
+            cachePath: Path.join(itemCachePath, af.filename || 'episode'),
+            duration: af.duration,
+            episodeId: af.episode?.id,
+            mimeType: af.mimeType
+          }))
+        : audioFiles.map((af) => ({
+            index: af.index,
+            ino: af.ino,
+            filename: af.metadata.filename,
+            path: af.metadata.path,
+            cachePath: Path.join(itemCachePath, af.metadata.filename),
+            duration: af.duration
+          })),
       coverPath: libraryItem.media.coverPath,
-      metadataObject: ffmpegHelpers.getFFMetadataObject(libraryItem, audioFiles.length),
+      metadataObject: libraryItem.isPodcast ? null : ffmpegHelpers.getFFMetadataObject(libraryItem, audioFiles.length),
+      podcast: libraryItem.isPodcast
+        ? {
+            title: libraryItem.media.title,
+            author: libraryItem.media.author,
+            genres: Array.isArray(libraryItem.media.genres) ? [...libraryItem.media.genres] : [],
+            language: libraryItem.media.language,
+            itunesId: libraryItem.media.itunesId,
+            podcastType: libraryItem.media.podcastType,
+            releaseDate: libraryItem.media.releaseDate
+          }
+        : null,
+      podcastEpisodes: libraryItem.isPodcast
+        ? libraryItem.media.podcastEpisodes.map((ep) => ({
+            id: ep.id,
+            title: ep.title,
+            description: ep.description,
+            subtitle: ep.subtitle,
+            season: ep.season,
+            episode: ep.episode,
+            episodeType: ep.episodeType,
+            pubDate: ep.pubDate,
+            chapters: Array.isArray(ep.chapters) ? ep.chapters.map((c) => ({ ...c })) : []
+          }))
+        : null,
       itemCachePath,
       chapters,
       mimeType,
@@ -100,18 +162,24 @@ class AudioMetadataMangaer {
         forceEmbedChapters,
         backupFiles
       },
-      duration: libraryItem.media.duration
+      duration: libraryItem.isPodcast ? audioFiles.reduce((acc, af) => acc + (af.duration || 0), 0) || 0 : libraryItem.media.duration
     }
 
     const taskTitleString = {
       text: 'Embedding Metadata',
       key: 'MessageTaskEmbeddingMetadata'
     }
-    const taskDescriptionString = {
-      text: `Embedding metadata in audiobook "${libraryItem.media.title}".`,
-      key: 'MessageTaskEmbeddingMetadataDescription',
-      subs: [libraryItem.media.title]
-    }
+    const taskDescriptionString = libraryItem.isPodcast
+      ? {
+          text: `Embedding metadata in podcast "${libraryItem.media.title}" episodes.`,
+          key: 'MessageTaskEmbeddingMetadataDescription',
+          subs: [libraryItem.media.title]
+        }
+      : {
+          text: `Embedding metadata in audiobook "${libraryItem.media.title}".`,
+          key: 'MessageTaskEmbeddingMetadataDescription',
+          subs: [libraryItem.media.title]
+        }
     task.setData('embed-metadata', taskTitleString, taskDescriptionString, false, taskData)
 
     if (this.tasksRunning.length >= this.MAX_CONCURRENT_TASKS) {
@@ -185,19 +253,23 @@ class AudioMetadataMangaer {
       }
     }
 
-    // Create ffmetadata file
-    const ffmetadataPath = Path.join(task.data.itemCachePath, 'ffmetadata.txt')
-    const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, ffmetadataPath)
-    if (!success) {
-      Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
-      const taskFailedString = {
-        text: 'Failed to write metadata file',
-        key: 'MessageTaskFailedToWriteMetadataFile'
+    let ffmetadataPath = Path.join(task.data.itemCachePath, 'ffmetadata.txt')
+    // Pre-write single ffmetadata file for non-podcast items
+    if (task.data.metadataObject) {
+      const success = await ffmpegHelpers.writeFFMetadataFile(task.data.metadataObject, task.data.chapters, ffmetadataPath)
+      if (!success) {
+        Logger.error(`[AudioMetadataManager] Failed to write ffmetadata file for audiobook "${task.data.libraryItemId}"`)
+        const taskFailedString = {
+          text: 'Failed to write metadata file',
+          key: 'MessageTaskFailedToWriteMetadataFile'
+        }
+        task.setFailed(taskFailedString)
+        this.handleTaskFinished(task)
+        return
       }
-      task.setFailed(taskFailedString)
-      this.handleTaskFinished(task)
-      return
     }
+
+    const createdFFMetadataFiles = []
 
     // Tag audio files
     let cummulativeProgress = 0
@@ -228,7 +300,23 @@ class AudioMetadataMangaer {
       }
 
       try {
-        await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.index, task.data.mimeType, (progress) => {
+        // For podcasts, write per-episode ffmetadata file and chapters
+        let perFileMetaPath = ffmetadataPath
+        if (!task.data.metadataObject) {
+          // Podcast flow: metadataObject is null; generate per-episode metadata
+          const episode = (task.data.podcastEpisodes || []).find((ep) => ep.id === af.episodeId)
+          const liStub = { media: task.data.podcast }
+          const perEpisodeMeta = ffmpegHelpers.getPodcastEpisodeFFMetadataObject(liStub, episode)
+          perFileMetaPath = Path.join(task.data.itemCachePath, `${af.filename || 'episode'}.ffmetadata.txt`)
+          const episodeChapters = Array.isArray(episode?.chapters) && episode.chapters.length ? episode.chapters.map((c) => ({ ...c })) : null
+          const wrote = await ffmpegHelpers.writeFFMetadataFile(perEpisodeMeta, episodeChapters, perFileMetaPath)
+          if (!wrote) {
+            throw new Error('Failed to write episode ffmetadata file')
+          }
+          createdFFMetadataFiles.push(perFileMetaPath)
+        }
+
+        await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, perFileMetaPath, af.index, af.mimeType || task.data.mimeType, (progress) => {
           SocketAuthority.adminEmitter('task_progress', { libraryItemId: task.data.libraryItemId, progress: cummulativeProgress + progress * audioFileRelativeDuration })
           SocketAuthority.adminEmitter('track_progress', { libraryItemId: task.data.libraryItemId, ino: af.ino, progress })
         })
@@ -259,7 +347,13 @@ class AudioMetadataMangaer {
       if (cacheDirCreated) {
         await fs.remove(task.data.itemCachePath)
       } else {
-        await fs.remove(ffmetadataPath)
+        if (createdFFMetadataFiles.length) {
+          for (const metaPath of createdFFMetadataFiles) {
+            await fs.remove(metaPath)
+          }
+        } else {
+          await fs.remove(ffmetadataPath)
+        }
       }
     }
 
