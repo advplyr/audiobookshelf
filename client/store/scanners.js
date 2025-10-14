@@ -55,6 +55,10 @@ export const state = () => ({
     {
       text: 'FantLab.ru',
       value: 'fantlab'
+    },
+    {
+      text: 'MusicBrainz',
+      value: 'musicbrainz'
     }
   ],
   podcastProviders: [

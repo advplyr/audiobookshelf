@@ -9,11 +9,13 @@ const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
 const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const MusicBrainz = require('../providers/MusicBrainz')
 
 class BookFinder {
   #providerResponseTimeout = 10000
 
   constructor() {
+    this.musicbrainz = new MusicBrainz()
     this.openLibrary = new OpenLibrary()
     this.googleBooks = new GoogleBooks()
     this.audible = new Audible()
@@ -23,11 +25,12 @@ class BookFinder {
     this.audiobookCovers = new AudiobookCovers()
     this.customProviderAdapter = new CustomProviderAdapter()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['google', 'itunes', 'musicbrainz', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
     this.verbose = false
   }
 
+  // todo Not sure what this is for, but MusicBrainz can also be used to perform ISBN lookups.
   async findByISBN(isbn) {
     var book = await this.openLibrary.isbnLookup(isbn)
     if (book.errorCode) {
@@ -190,6 +193,22 @@ class BookFinder {
     const region = provider.includes('.') ? provider.split('.').pop() : ''
     const books = await this.audible.search(title, author, asin, region, this.#providerResponseTimeout)
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
+    if (!books) return []
+    return books
+  }
+
+  /**
+   *
+   * @param {string} title
+   * @param {string} author
+   * @param {string} asin
+   * @param {string} isbn
+   * @returns {Promise<Object[]>}
+   */
+  async getMusicBrainzResults(title, author, asin, isbn) {
+    const books = await this.musicbrainz.search(title, author, asin, isbn)
+    // todo Sort by closest score and then duration?
+    if (this.verbose) Logger.debug(`MusicBrainz Book Search Results: ${books.length || 0}`)
     if (!books) return []
     return books
   }
@@ -389,7 +408,7 @@ class BookFinder {
 
     let actualTitleQuery = title
     let actualAuthorQuery = author
-    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, isbn, maxTitleDistance, maxAuthorDistance)
 
     if (!books.length && maxFuzzySearches > 0) {
       // Normalize title and author
@@ -416,7 +435,7 @@ class BookFinder {
           if (++numFuzzySearches > maxFuzzySearches) break loop_author
           actualTitleQuery = titleCandidate
           actualAuthorQuery = authorCandidate
-          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, isbn, maxTitleDistance, maxAuthorDistance)
           if (books.length) break loop_author
         }
       }
@@ -431,13 +450,17 @@ class BookFinder {
         book.matchConfidence = this.calculateMatchConfidence(book, libraryItemDurationMinutes, actualTitleQuery, actualAuthorQuery, isTitleAsin)
       })
 
-      if (isAudibleProvider && libraryItemDurationMinutes) {
+      if ((isAudibleProvider || provider === "musicbrainz") && libraryItemDurationMinutes) {
         books.sort((a, b) => {
-          const aDuration = a.duration || Number.POSITIVE_INFINITY
-          const bDuration = b.duration || Number.POSITIVE_INFINITY
-          const aDurationDiff = Math.abs(aDuration - libraryItemDurationMinutes)
-          const bDurationDiff = Math.abs(bDuration - libraryItemDurationMinutes)
-          return aDurationDiff - bDurationDiff
+          if (a.matchConfidence == b.matchConfidence) {
+            const aDuration = a.duration || Number.POSITIVE_INFINITY
+            const bDuration = b.duration || Number.POSITIVE_INFINITY
+            const aDurationDiff = Math.abs(aDuration - libraryItemDurationMinutes)
+            const bDurationDiff = Math.abs(bDuration - libraryItemDurationMinutes)
+            return aDurationDiff - bDurationDiff
+          } else {
+            return b.matchConfidence - a.matchConfidence
+          }
         })
       }
     }
@@ -564,12 +587,13 @@ class BookFinder {
    * @param {string} title
    * @param {string} author
    * @param {string} provider
-   * @param {string} asin only used for audible providers
+   * @param {string} asin only used for Audible and MusicBrainz providers
+   * @param {string} isbn
    * @param {number} maxTitleDistance only used for openlibrary provider
    * @param {number} maxAuthorDistance only used for openlibrary provider
    * @returns {Promise<Object[]>}
    */
-  async runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance) {
+  async runSearch(title, author, provider, asin, isbn, maxTitleDistance, maxAuthorDistance) {
     Logger.debug(`Book Search: title: "${title}", author: "${author || ''}", provider: ${provider}`)
 
     let books = []
@@ -586,6 +610,8 @@ class BookFinder {
       books = await this.getFantLabResults(title, author)
     } else if (provider === 'audiobookcovers') {
       books = await this.getAudiobookCoversResults(title)
+    } else if (provider === 'musicbrainz') {
+      books = await this.getMusicBrainzResults(title, author, asin, isbn)
     } else {
       books = await this.getGoogleBooksResults(title, author)
     }
