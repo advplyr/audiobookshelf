@@ -4,7 +4,7 @@ const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const Database = require('../Database')
-const { isValidASIN } = require('../utils')
+const { isValidASIN, getQueryParamAsString } = require('../utils')
 
 // Provider name mappings for display purposes
 const providerMap = {
@@ -139,9 +139,10 @@ class SearchController {
    * @param {Response} res
    */
   async findBooks(req, res) {
-    const provider = req.query.provider || 'google'
-    const title = req.query.title || ''
-    const author = req.query.author || ''
+    // Safely extract query parameters, rejecting arrays to prevent type confusion
+    const provider = getQueryParamAsString(req.query.provider, 'google')
+    const title = getQueryParamAsString(req.query.title, '')
+    const author = getQueryParamAsString(req.query.author, '')
 
     // Validate string parameters
     const validation = SearchController.validateStringParams({ provider, title, author }, 'findBooks')
@@ -164,9 +165,9 @@ class SearchController {
   async findCovers(req, res) {
     const query = req.query
     const podcast = query.podcast === '1' || query.podcast === 1
-    const title = query.title || ''
-    const author = query.author || ''
-    const provider = query.provider || 'google'
+    const title = getQueryParamAsString(query.title, '')
+    const author = getQueryParamAsString(query.author, '')
+    const provider = getQueryParamAsString(query.provider, 'google')
 
     // Validate required title
     const titleValidation = SearchController.validateRequiredString(title, 'title', 'findCovers')
@@ -190,8 +191,8 @@ class SearchController {
    * @param {Response} res
    */
   async findPodcasts(req, res) {
-    const term = req.query.term
-    const country = req.query.country || 'us'
+    const term = getQueryParamAsString(req.query.term)
+    const country = getQueryParamAsString(req.query.country, 'us')
 
     // Validate required term
     const termValidation = SearchController.validateRequiredString(term, 'term', 'findPodcasts')
@@ -212,7 +213,7 @@ class SearchController {
    * @param {Response} res
    */
   async findAuthor(req, res) {
-    const query = req.query.q
+    const query = getQueryParamAsString(req.query.q)
 
     // Validate query parameter
     const validation = SearchController.validateRequiredString(query, 'query', 'findAuthor')
@@ -229,8 +230,8 @@ class SearchController {
    * @param {Response} res
    */
   async findChapters(req, res) {
-    const asin = req.query.asin
-    const region = (req.query.region || 'us').toLowerCase()
+    const asin = getQueryParamAsString(req.query.asin)
+    const region = getQueryParamAsString(req.query.region, 'us').toLowerCase()
 
     // Validate ASIN parameter
     const asinValidation = SearchController.validateRequiredString(asin, 'asin', 'findChapters')

@@ -402,7 +402,8 @@ class BookFinder {
       let authorCandidates = new BookFinder.AuthorCandidates(cleanAuthor, this.audnexus)
 
       // Remove underscores and parentheses with their contents, and replace with a separator
-      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, ' - ')
+      // Use negated character classes to prevent ReDoS vulnerability
+      const cleanTitle = title.replace(/\[[^\]]*\]|\([^)]*\)|{[^}]*}|_/g, ' - ')
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
       for (const titlePart of titleParts) authorCandidates.add(titlePart)
@@ -668,7 +669,9 @@ function cleanTitleForCompares(title, keepSubtitle = false) {
   let stripped = keepSubtitle ? title : stripSubtitle(title)
 
   // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
-  let cleaned = stripped.replace(/ *\([^)]*\) */g, '')
+  // Use a safe two-pass approach to prevent ReDoS vulnerability
+  let cleaned = stripped.replace(/\([^)]*\)/g, '') // Remove parenthetical content
+  cleaned = cleaned.replace(/\s+/g, ' ').trim() // Clean up any resulting multiple spaces
 
   // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
   cleaned = cleaned.replace(/'/g, '')

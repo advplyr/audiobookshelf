@@ -277,3 +277,22 @@ module.exports.timestampToSeconds = (timestamp) => {
   }
   return null
 }
+
+/**
+ * Safely extracts a query parameter as a string, rejecting arrays to prevent type confusion
+ * Express query parameters can be arrays if the same parameter appears multiple times
+ * @example ?author=Smith => "Smith"
+ * @example ?author=Smith&author=Jones => null (array detected)
+ *
+ * @param {any} value - Query parameter value
+ * @param {string} defaultValue - Default value if undefined/null
+ * @returns {string|null} String value or null if invalid (array)
+ */
+module.exports.getQueryParamAsString = (value, defaultValue = '') => {
+  // Explicitly reject arrays to prevent type confusion
+  if (Array.isArray(value)) {
+    return null
+  }
+  // Return default for undefined/null, otherwise return the value
+  return value == null ? defaultValue : value
+}
