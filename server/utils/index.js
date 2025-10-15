@@ -286,13 +286,21 @@ module.exports.timestampToSeconds = (timestamp) => {
  *
  * @param {any} value - Query parameter value
  * @param {string} defaultValue - Default value if undefined/null
- * @returns {string|null} String value or null if invalid (array)
+ * @param {number} maxLength - Optional maximum length (defaults to 10000 to prevent ReDoS attacks)
+ * @returns {string|null} String value or null if invalid (array or too long)
  */
-module.exports.getQueryParamAsString = (value, defaultValue = '') => {
+module.exports.getQueryParamAsString = (value, defaultValue = '', maxLength = 1000) => {
   // Explicitly reject arrays to prevent type confusion
   if (Array.isArray(value)) {
     return null
   }
-  // Return default for undefined/null, otherwise return the value
-  return value == null ? defaultValue : value
+  // Return default for undefined/null
+  if (value == null) {
+    return defaultValue
+  }
+  // Reject excessively long strings to prevent ReDoS attacks
+  if (typeof value === 'string' && value.length > maxLength) {
+    return null
+  }
+  return value
 }
