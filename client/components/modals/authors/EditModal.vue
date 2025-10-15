@@ -16,9 +16,20 @@
           </div>
         </div>
         <div class="grow">
+<<<<<<< Updated upstream
           <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2">
             <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
             <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+=======
+          <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2 items-center">
+            <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" @input="onUrlInput" />
+            <label class="ml-2 sm:ml-3 w-24 h-9 flex items-center justify-center bg-gray-700 text-white rounded cursor-pointer hover:bg-gray-600">
+              <input type="file" accept="image/*" class="hidden" @change="onFileChange" />
+              {{ $strings.ButtonUpload }}
+            </label>
+            <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl && !selectedFile" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+            <ui-btn v-if="selectedFile || previewUrl" type="button" color="bg-error" class="ml-2 sm:ml-3 w-24 h-9" small @click="clearSelection">{{ $strings.ButtonCancel }}</ui-btn>
+>>>>>>> Stashed changes
           </form>
 
           <form v-if="author" @submit.prevent="submitForm">

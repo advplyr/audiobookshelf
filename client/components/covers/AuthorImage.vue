@@ -57,6 +57,7 @@ export default {
     }
   },
   methods: {
+<<<<<<< Updated upstream
     imageLoaded() {
       if (this.$refs.img) {
         var { naturalWidth, naturalHeight } = this.$refs.img
@@ -69,6 +70,9 @@ export default {
         }
       }
     }
+=======
+    imageLoaded() {}
+>>>>>>> Stashed changes
   },
   mounted() {}
 }
