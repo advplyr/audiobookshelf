@@ -29,6 +29,7 @@ const languageCodeMap = {
   ru: { label: 'Русский', dateFnsLocale: 'ru' },
   sl: { label: 'Slovenščina', dateFnsLocale: 'sl' },
   sv: { label: 'Svenska', dateFnsLocale: 'sv' },
+  tr: { label: 'Türkçe', dateFnsLocale: 'tr' },
   uk: { label: 'Українська', dateFnsLocale: 'uk' },
   'vi-vn': { label: 'Tiếng Việt', dateFnsLocale: 'vi' },
   'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },

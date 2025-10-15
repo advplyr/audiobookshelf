@@ -11,7 +11,7 @@ const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } 
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class BookFinder {
-  #providerResponseTimeout = 30000
+  #providerResponseTimeout = 10000
 
   constructor() {
     this.openLibrary = new OpenLibrary()
@@ -604,6 +604,14 @@ class BookFinder {
 
     if (provider === 'all') {
       for (const providerString of this.providers) {
+        const providerResults = await this.search(null, providerString, title, author, options)
+        Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
+        searchResults.push(...providerResults)
+      }
+    } else if (provider === 'best') {
+      // Best providers: google, fantlab, and audible.com
+      const bestProviders = ['google', 'fantlab', 'audible']
+      for (const providerString of bestProviders) {
         const providerResults = await this.search(null, providerString, title, author, options)
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)

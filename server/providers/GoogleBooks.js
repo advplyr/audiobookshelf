@@ -2,7 +2,7 @@ const axios = require('axios')
 const Logger = require('../Logger')
 
 class GoogleBooks {
-  #responseTimeout = 30000
+  #responseTimeout = 10000
 
   constructor() {}
 
@@ -67,7 +67,7 @@ class GoogleBooks {
         return res.data.items
       })
       .catch((error) => {
-        Logger.error('[GoogleBooks] Volume search error', error)
+        Logger.error('[GoogleBooks] Volume search error', error.message)
         return []
       })
     return items.map((item) => this.cleanResult(item))

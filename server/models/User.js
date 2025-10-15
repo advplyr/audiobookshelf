@@ -211,18 +211,18 @@ class User extends Model {
   }
 
   /**
-   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings,
-   * or creates a new user if configured to do so.
+   * Finds an existing user by OpenID subject identifier, or by email/username based on server settings
+   * Returns null if no user is found
    *
    * @param {Object} userinfo
-   * @returns {Promise<User>}
+   * @returns {Promise<User|{error: string}>}
    */
-  static async findOrCreateUserFromOpenIdUserInfo(userinfo) {
+  static async findUserFromOpenIdUserInfo(userinfo) {
     let user = await this.getUserByOpenIDSub(userinfo.sub)
 
     // Matched by sub
     if (user) {
-      Logger.debug(`[User] openid: User found by sub`)
+      Logger.debug(`[User] openid: User found by sub "${userinfo.sub}"`)
       return user
     }
 
@@ -232,20 +232,27 @@ class User extends Model {
         // Only disallow when email_verified explicitly set to false (allow both if not set or true)
         if (userinfo.email_verified === false) {
           Logger.warn(`[User] openid: User not found and email "${userinfo.email}" is not verified`)
-          return null
+          return {
+            error: 'Email not verified'
+          }
         } else {
           Logger.info(`[User] openid: User not found, checking existing with email "${userinfo.email}"`)
           user = await this.getUserByEmail(userinfo.email)
 
           if (user?.authOpenIDSub) {
             Logger.warn(`[User] openid: User found with email "${userinfo.email}" but is already matched with sub "${user.authOpenIDSub}"`)
-            return null // User is linked to a different OpenID subject; do not proceed.
+            // User is linked to a different OpenID subject; do not proceed.
+            return {
+              error: 'User already linked to a different OpenID subject'
+            }
           }
         }
       } else {
         Logger.warn(`[User] openid: User not found and no email in userinfo`)
         // We deny login, because if the admin whishes to match email, it makes sense to require it
-        return null
+        return {
+          error: 'No email in userinfo'
+        }
       }
     }
     // Match existing user by username
@@ -260,43 +267,40 @@ class User extends Model {
         username = userinfo.username
       } else {
         Logger.warn(`[User] openid: User not found and neither preferred_username nor username in userinfo`)
-        return null
+        return {
+          error: 'No username in userinfo'
+        }
       }
 
       user = await this.getUserByUsername(username)
 
       if (user?.authOpenIDSub) {
         Logger.warn(`[User] openid: User found with username "${username}" but is already matched with sub "${user.authOpenIDSub}"`)
-        return null // User is linked to a different OpenID subject; do not proceed.
+        // User is linked to a different OpenID subject; do not proceed.
+        return {
+          error: 'User already linked to a different OpenID subject'
+        }
       }
+    }
+
+    if (!user) {
+      return null
     }
 
     // Found existing user via email or username
-    if (user) {
-      if (!user.isActive) {
-        Logger.warn(`[User] openid: User found but is not active`)
-        return null
-      }
-
-      // Update user with OpenID sub
-      if (!user.extraData) user.extraData = {}
-      user.extraData.authOpenIDSub = userinfo.sub
-      user.changed('extraData', true)
-      await user.save()
-
-      Logger.debug(`[User] openid: User found by email/username`)
+    if (!user.isActive) {
+      Logger.warn(`[User] openid: User found but is not active`)
       return user
     }
 
-    // If no existing user was matched, auto-register if configured
-    if (global.ServerSettings.authOpenIDAutoRegister) {
-      Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
-      user = await this.createUserFromOpenIdUserInfo(userinfo)
-      return user
-    }
+    // Update user with OpenID sub
+    if (!user.extraData) user.extraData = {}
+    user.extraData.authOpenIDSub = userinfo.sub
+    user.changed('extraData', true)
+    await user.save()
 
-    Logger.warn(`[User] openid: User not found and auto-register is disabled`)
-    return null
+    Logger.debug(`[User] openid: User found by email/username`)
+    return user
   }
 
   /**

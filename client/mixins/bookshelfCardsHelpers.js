@@ -118,8 +118,8 @@ export default {
         propsData: props,
         parent: this,
         created() {
-          this.$on('edit', (entity) => {
-            if (_this.editEntity) _this.editEntity(entity)
+          this.$on('edit', (entity, tab) => {
+            if (_this.editEntity) _this.editEntity(entity, tab)
           })
           this.$on('select', ({ entity, shiftKey }) => {
             if (_this.selectEntity) _this.selectEntity(entity, shiftKey)

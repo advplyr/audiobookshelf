@@ -339,9 +339,9 @@ class SessionController {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)
 
-    if (playbackSession.userId !== req.user.id) {
-      Logger.error(`[SessionController] User "${req.user.username}" attempting to access session belonging to another user "${req.params.id}"`)
-      return res.sendStatus(404)
+    if (playbackSession.userId !== req.user.id && !req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] Non-admin user "${req.user.username}" attempting to access session belonging to another user "${req.params.id}"`)
+      return res.sendStatus(403)
     }
 
     req.playbackSession = playbackSession

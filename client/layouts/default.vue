@@ -199,7 +199,7 @@ export default {
           }
         } else {
           console.error('User has no more accessible libraries')
-          this.$store.commit('libraries/setCurrentLibrary', null)
+          this.$store.commit('libraries/setCurrentLibrary', { id: null })
         }
       }
     },

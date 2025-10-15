@@ -4,7 +4,7 @@ const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class CustomProviderAdapter {
-  #responseTimeout = 30000
+  #responseTimeout = 10000
 
   constructor() {}
 
@@ -61,7 +61,7 @@ class CustomProviderAdapter {
         return res.data.matches
       })
       .catch((error) => {
-        Logger.error('[CustomMetadataProvider] Search error', error)
+        Logger.error('[CustomMetadataProvider] Search error', error.message)
         return []
       })
 

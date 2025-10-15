@@ -133,7 +133,7 @@ export const actions = {
         commit('setNumUserPlaylists', numUserPlaylists)
         commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
 
-        commit('setCurrentLibrary', libraryId)
+        commit('setCurrentLibrary', { id: libraryId })
         return data
       })
       .catch((error) => {
@@ -159,7 +159,7 @@ export const actions = {
       .$get(`/api/libraries`)
       .then((data) => {
         commit('set', data.libraries)
-        commit('setLastLoad')
+        commit('setLastLoad', new Date())
       })
       .catch((error) => {
         console.error('Failed', error)
@@ -176,14 +176,14 @@ export const mutations = {
   setFoldersLastUpdate(state) {
     state.folderLastUpdate = Date.now()
   },
-  setLastLoad(state) {
-    state.lastLoad = Date.now()
+  setLastLoad(state, date) {
+    state.lastLoad = date
   },
   setLibraryIssues(state, val) {
     state.issues = val
   },
-  setCurrentLibrary(state, val) {
-    state.currentLibraryId = val
+  setCurrentLibrary(state, { id }) {
+    state.currentLibraryId = id
   },
   set(state, libraries) {
     state.libraries = libraries
