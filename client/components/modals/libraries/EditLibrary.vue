@@ -74,7 +74,7 @@ export default {
     },
     providers() {
       if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     }
   },
   methods: {

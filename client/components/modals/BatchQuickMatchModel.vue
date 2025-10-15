@@ -88,7 +88,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'

@@ -155,7 +155,7 @@ export default {
     },
     providers() {
       if (this.selectedLibraryIsPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     canFetchMetadata() {
       return !this.selectedLibraryIsPodcast && this.fetchMetadata.enabled

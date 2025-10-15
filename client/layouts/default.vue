@@ -371,11 +371,25 @@ export default {
     },
     customMetadataProviderAdded(provider) {
       if (!provider?.id) return
-      this.$store.commit('scanners/addCustomMetadataProvider', provider)
+      // Refetch the appropriate provider types
+      if (provider.mediaType === 'book') {
+        this.$store.dispatch('scanners/fetchBookProviders')
+        this.$store.dispatch('scanners/fetchBookCoverProviders')
+      } else if (provider.mediaType === 'podcast') {
+        this.$store.dispatch('scanners/fetchPodcastProviders')
+        this.$store.dispatch('scanners/fetchPodcastCoverProviders')
+      }
     },
     customMetadataProviderRemoved(provider) {
       if (!provider?.id) return
-      this.$store.commit('scanners/removeCustomMetadataProvider', provider)
+      // Refetch the appropriate provider types
+      if (provider.mediaType === 'book') {
+        this.$store.dispatch('scanners/fetchBookProviders')
+        this.$store.dispatch('scanners/fetchBookCoverProviders')
+      } else if (provider.mediaType === 'podcast') {
+        this.$store.dispatch('scanners/fetchPodcastProviders')
+        this.$store.dispatch('scanners/fetchPodcastCoverProviders')
+      }
     },
     initializeSocket() {
       if (this.$root.socket) {
@@ -611,6 +625,12 @@ export default {
     window.addEventListener('keydown', this.keyDown)
 
     this.$store.dispatch('libraries/load')
+
+    // Fetch metadata providers
+    this.$store.dispatch('scanners/fetchBookProviders')
+    this.$store.dispatch('scanners/fetchBookCoverProviders')
+    this.$store.dispatch('scanners/fetchPodcastProviders')
+    this.$store.dispatch('scanners/fetchPodcastCoverProviders')
 
     this.initLocalStorage()
 

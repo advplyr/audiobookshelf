@@ -319,7 +319,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN

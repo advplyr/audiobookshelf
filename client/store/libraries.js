@@ -131,8 +131,6 @@ export const actions = {
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setNumUserPlaylists', numUserPlaylists)
-        commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
-
         commit('setCurrentLibrary', { id: libraryId })
         return data
       })
