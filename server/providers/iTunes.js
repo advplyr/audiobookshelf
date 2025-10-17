@@ -28,7 +28,7 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
  */
 
 class iTunes {
-  #responseTimeout = 30000
+  #responseTimeout = 10000
 
   constructor() {}
 
@@ -63,7 +63,7 @@ class iTunes {
         return response.data.results || []
       })
       .catch((error) => {
-        Logger.error(`[iTunes] search request error`, error)
+        Logger.error(`[iTunes] search request error`, error.message)
         return []
       })
   }
