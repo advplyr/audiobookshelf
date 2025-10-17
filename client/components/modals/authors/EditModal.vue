@@ -9,27 +9,21 @@
       <div class="flex">
         <div class="w-40 p-2">
           <div class="w-full h-45 relative">
-            <covers-author-image :author="authorCopy" />
+            <covers-author-image :author="authorCopy" :uploaded-file="selectedFile" :uploaded-url="previewUrl" />
             <div v-if="userCanDelete && !processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
               <span class="absolute top-2 right-2 material-symbols text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
             </div>
           </div>
         </div>
         <div class="grow">
-<<<<<<< Updated upstream
-          <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2">
-            <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
-            <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
-=======
           <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2 items-center">
             <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" @input="onUrlInput" />
             <label class="ml-2 sm:ml-3 w-24 h-9 flex items-center justify-center bg-gray-700 text-white rounded cursor-pointer hover:bg-gray-600">
               <input type="file" accept="image/*" class="hidden" @change="onFileChange" />
-              {{ $strings.ButtonUpload }}
+              {{ $strings.ButtonUpload || 'Upload' }}
             </label>
             <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl && !selectedFile" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
-            <ui-btn v-if="selectedFile || previewUrl" type="button" color="bg-error" class="ml-2 sm:ml-3 w-24 h-9" small @click="clearSelection">{{ $strings.ButtonCancel }}</ui-btn>
->>>>>>> Stashed changes
+            <ui-btn v-if="selectedFile || previewUrl" type="button" color="bg-error" class="ml-2" @click="clearSelection">Cancel</ui-btn>
           </form>
 
           <form v-if="author" @submit.prevent="submitForm">
@@ -49,7 +43,6 @@
               <ui-btn v-if="userCanDelete" small color="bg-error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
               <div class="grow" />
               <ui-btn type="button" class="mx-2" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
-
               <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
             </div>
           </form>
@@ -69,6 +62,8 @@ export default {
         description: ''
       },
       imageUrl: '',
+      selectedFile: null,
+      previewUrl: '',
       processing: false
     }
   },
@@ -114,9 +109,35 @@ export default {
   methods: {
     init() {
       this.imageUrl = ''
+      this.selectedFile = null
+      this.previewUrl = ''
       this.authorCopy = {
         ...this.author
       }
+    },
+    onFileChange(e) {
+      const file = e.target.files[0]
+      if (file) {
+        this.selectedFile = file
+        if (this.previewUrl) {
+          URL.revokeObjectURL(this.previewUrl)
+        }
+        this.previewUrl = URL.createObjectURL(file)
+        this.imageUrl = ''
+      }
+    },
+    onUrlInput() {
+      if (this.selectedFile) {
+        this.clearSelection()
+      }
+    },
+    clearSelection() {
+      this.imageUrl = ''
+      if (this.previewUrl) {
+        URL.revokeObjectURL(this.previewUrl)
+        this.previewUrl = ''
+      }
+      this.selectedFile = null
     },
     removeClick() {
       const payload = {
@@ -179,7 +200,6 @@ export default {
         .$delete(`/api/authors/${this.authorId}/image`)
         .then((data) => {
           this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
-
           this.authorCopy.updatedAt = data.author.updatedAt
           this.authorCopy.imagePath = data.author.imagePath
         })
@@ -192,6 +212,28 @@ export default {
         })
     },
     submitUploadCover() {
+      if (this.selectedFile) {
+        this.processing = true
+        const formData = new FormData()
+        formData.append('image', this.selectedFile)
+        this.$axios
+          .$post(`/api/authors/${this.authorId}/image`, formData)
+          .then((data) => {
+            this.clearSelection()
+            this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+            this.authorCopy.updatedAt = data.author.updatedAt
+            this.authorCopy.imagePath = data.author.imagePath
+          })
+          .catch((error) => {
+            console.error('Failed', error)
+            this.$toast.error(error.response?.data || this.$strings.ToastRemoveFailed)
+          })
+          .finally(() => {
+            this.processing = false
+          })
+        return
+      }
+
       if (!this.imageUrl?.startsWith('http:') && !this.imageUrl?.startsWith('https:')) {
         this.$toast.error(this.$strings.ToastInvalidImageUrl)
         return
@@ -204,15 +246,14 @@ export default {
       this.$axios
         .$post(`/api/authors/${this.authorId}/image`, updatePayload)
         .then((data) => {
-          this.imageUrl = ''
+          this.clearSelection()
           this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
-
           this.authorCopy.updatedAt = data.author.updatedAt
           this.authorCopy.imagePath = data.author.imagePath
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error(error.response.data || this.$strings.ToastRemoveFailed)
+          this.$toast.error(error.response?.data || this.$strings.ToastRemoveFailed)
         })
         .finally(() => {
           this.processing = false
@@ -256,7 +297,10 @@ export default {
       this.processing = false
     }
   },
-  mounted() {},
-  beforeDestroy() {}
+  beforeDestroy() {
+    if (this.previewUrl) {
+      URL.revokeObjectURL(this.previewUrl)
+    }
+  }
 }
 </script>

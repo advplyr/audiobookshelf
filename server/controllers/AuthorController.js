@@ -2,6 +2,8 @@ const { Request, Response, NextFunction } = require('express')
 const sequelize = require('sequelize')
 const fs = require('../libs/fsExtra')
 const { createNewSortInstance } = require('../libs/fastSort')
+const axios = require('axios')
+const Path = require('path')
 
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
@@ -258,7 +260,7 @@ class AuthorController {
 
   /**
    * POST: /api/authors/:id/image
-   * Upload author image from web URL
+   * Upload author image from file (express-fileupload) or URL
    *
    * @param {AuthorControllerRequest} req
    * @param {Response} res
@@ -268,30 +270,45 @@ class AuthorController {
       Logger.warn(`User "${req.user.username}" attempted to upload an image without permission`)
       return res.sendStatus(403)
     }
-    if (!req.body.url) {
-      Logger.error(`[AuthorController] Invalid request payload. 'url' not in request body`)
-      return res.status(400).send(`Invalid request payload. 'url' not in request body`)
-    }
-    if (!req.body.url.startsWith?.('http:') && !req.body.url.startsWith?.('https:')) {
-      Logger.error(`[AuthorController] Invalid request payload. Invalid url "${req.body.url}"`)
-      return res.status(400).send(`Invalid request payload. Invalid url "${req.body.url}"`)
-    }
 
-    Logger.debug(`[AuthorController] Requesting download author image from url "${req.body.url}"`)
-    const result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url)
+    let imagePath = null
 
-    if (result?.error) {
-      return res.status(400).send(result.error)
-    } else if (!result?.path) {
-      return res.status(500).send('Unknown error occurred')
+    if (req.files && req.files.image) {
+      const uploadedFile = req.files.image
+      const uploadsDir = Path.join(global.MetadataPath, 'authors')
+
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true })
+      }
+
+      const fileName = `${req.author.id}${Path.extname(uploadedFile.name)}`
+      const filePath = Path.join(uploadsDir, fileName)
+
+      // Remove existing file if it exists
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+
+      await uploadedFile.mv(filePath)
+      imagePath = filePath
+    } else if (req.body.url && (req.body.url.startsWith('http://') || req.body.url.startsWith('https://'))) {
+      const result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url)
+      if (result?.error) {
+        return res.status(400).send(result.error)
+      } else if (!result?.path) {
+        return res.status(500).send('Unknown error occurred')
+      }
+      imagePath = result.path
+    } else {
+      Logger.error(`[AuthorController] Invalid request payload. No file or valid url`)
+      return res.status(400).send(`Invalid request payload. No file or valid url`)
     }
 
     if (req.author.imagePath) {
-      await CacheManager.purgeImageCache(req.author.id) // Purge cache
+      await CacheManager.purgeImageCache(req.author.id)
     }
 
-    req.author.imagePath = result.path
-    // imagePath may not have changed, but we still want to update the updatedAt field to bust image cache
+    req.author.imagePath = imagePath
     req.author.changed('imagePath', true)
     await req.author.save()
 
@@ -311,20 +328,40 @@ class AuthorController {
    */
   async deleteImage(req, res) {
     if (!req.author.imagePath) {
-      Logger.error(`[AuthorController] Author "${req.author.imagePath}" has no imagePath set`)
       return res.status(400).send('Author has no image path set')
     }
+
     Logger.info(`[AuthorController] Removing image for author "${req.author.name}" at "${req.author.imagePath}"`)
-    await CacheManager.purgeImageCache(req.author.id) // Purge cache
-    await CoverManager.removeFile(req.author.imagePath)
+
+    // Clear cache
+    try {
+      await CacheManager.purgeImageCache(req.author.id)
+    } catch (e) {
+      console.log('Cache purge error (ignored):', e.message)
+    }
+
+    // Only local files are deleted
+    if (!req.author.imagePath.startsWith('http')) {
+      await CoverManager.removeFile(req.author.imagePath)
+    }
+
     req.author.imagePath = null
+    // Mark changes and explicitly update updatedAt to ensure the client receives the new timestamp
+    req.author.updatedAt = new Date()
+    req.author.changed('imagePath', true)
     await req.author.save()
+
+    // Clear cache again
+    try {
+      await CacheManager.purgeImageCache(req.author.id)
+    } catch (e) {
+      console.log('Cache purge error (ignored):', e.message)
+    }
 
     const numBooks = await Database.bookAuthorModel.getCountForAuthor(req.author.id)
     SocketAuthority.emitter('author_updated', req.author.toOldJSONExpanded(numBooks))
-    res.json({
-      author: req.author.toOldJSON()
-    })
+
+    res.json({ author: req.author.toOldJSON() })
   }
 
   /**
@@ -388,37 +425,52 @@ class AuthorController {
    * @param {Response} res
    */
   async getImage(req, res) {
-    const {
-      query: { width, height, format, raw }
-    } = req
+    const { raw } = req.query
+    const author = await Database.authorModel.findByPk(req.params.id)
+    if (!author || !author.imagePath) return res.sendStatus(404)
 
-    const authorId = req.params.id
+    // Set no-cache headers to always get the latest image
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0'
+    })
+
+    // Proxy external image URLs
+    if (author.imagePath.startsWith('http')) {
+      try {
+        const response = await axios.get(author.imagePath, { responseType: 'stream' })
+        res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg')
+        response.data.pipe(res)
+      } catch (err) {
+        return res.sendStatus(404)
+      }
+      return
+    }
+
+    // Local file
+    let imagePath = author.imagePath
+    if (!Path.isAbsolute(imagePath)) {
+      imagePath = Path.resolve(process.cwd(), imagePath)
+    }
+    if (!(await fs.pathExists(imagePath))) {
+      return res.sendStatus(404)
+    }
 
     if (raw) {
-      const author = await Database.authorModel.findByPk(authorId)
-      if (!author) {
-        Logger.warn(`[AuthorController] Author "${authorId}" not found`)
-        return res.sendStatus(404)
-      }
-
-      if (!author.imagePath || !(await fs.pathExists(author.imagePath))) {
-        Logger.warn(`[AuthorController] Author "${author.name}" has invalid imagePath: ${author.imagePath}`)
-        return res.sendStatus(404)
-      }
-
-      return res.sendFile(author.imagePath)
+      return res.sendFile(imagePath)
     }
 
     const options = {
-      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
-      height: height ? parseInt(height) : null,
-      width: width ? parseInt(width) : null
+      format: 'jpeg',
+      width: req.query.width ? parseInt(req.query.width) : null,
+      height: req.query.height ? parseInt(req.query.height) : null
     }
-    return CacheManager.handleAuthorCache(res, authorId, options)
+    return CacheManager.handleAuthorCache(res, author.id, options)
   }
 
   /**
-   *
+   * Middleware for author routes
    * @param {RequestWithUser} req
    * @param {Response} res
    * @param {NextFunction} next
@@ -426,6 +478,7 @@ class AuthorController {
   async middleware(req, res, next) {
     const author = await Database.authorModel.findByPk(req.params.id)
     if (!author) return res.sendStatus(404)
+    req.author = author
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[AuthorController] User "${req.user.username}" attempted to delete without permission`)
@@ -435,7 +488,6 @@ class AuthorController {
       return res.sendStatus(403)
     }
 
-    req.author = author
     next()
   }
 }
