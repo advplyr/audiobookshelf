@@ -1,5 +1,9 @@
+# globally defining Arguments and Defaults
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
+# default Process user id and group id
+ARG PUID=1000
+ARG PGID=1000
 
 ### STAGE 0: Build client ###
 FROM node:20-alpine AS build-client
@@ -45,6 +49,8 @@ FROM node:20-alpine
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
+ARG PUID
+ARG PGID
 
 # Install only runtime dependencies
 RUN apk add --no-cache --update \
@@ -62,9 +68,9 @@ RUN apk add --no-cache --update \
 WORKDIR /app
 
 # Copy compiled frontend and server from build stages
-COPY --from=build-client /client/dist /app/client/dist
-COPY --from=build-server /server /app
-COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
+COPY --chmod=755 --from=build-client /client/dist /app/client/dist
+COPY --chmod=755 --from=build-server /server /app
+COPY --chmod=755 --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 
 EXPOSE 80
 
@@ -76,5 +82,6 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
+USER audiobookshelf
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
