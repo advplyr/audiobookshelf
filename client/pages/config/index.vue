@@ -417,6 +417,8 @@ export default {
   },
   mounted() {
     this.initServerSettings()
+    // Fetch providers if not already loaded (for cover provider dropdown)
+    this.$store.dispatch('scanners/fetchProviders')
   }
 }
 </script>

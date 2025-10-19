@@ -156,6 +156,8 @@ export default {
   },
   mounted() {
     this.init()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
   }
 }
 </script>

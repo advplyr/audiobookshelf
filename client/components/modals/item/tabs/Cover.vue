@@ -438,6 +438,8 @@ export default {
   mounted() {
     // Setup socket listeners when component is mounted
     this.addSocketListeners()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
   },
   beforeDestroy() {
     // Cancel any ongoing search when component is destroyed
