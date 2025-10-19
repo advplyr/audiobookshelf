@@ -283,12 +283,7 @@ class ApiRouter {
     this.router.get('/search/podcast', SearchController.findPodcasts.bind(this))
     this.router.get('/search/authors', SearchController.findAuthor.bind(this))
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
-    this.router.get('/search/providers/books', SearchController.getBookProviders.bind(this))
-    this.router.get('/search/providers/books/covers', SearchController.getBookCoverProviders.bind(this))
-    this.router.get('/search/providers/podcasts', SearchController.getPodcastProviders.bind(this))
-    this.router.get('/search/providers/podcasts/covers', SearchController.getPodcastCoverProviders.bind(this))
-    this.router.get('/search/providers/authors', SearchController.getAuthorProviders.bind(this))
-    this.router.get('/search/providers/chapters', SearchController.getChapterProviders.bind(this))
+    this.router.get('/search/providers', SearchController.getAllProviders.bind(this))
 
     //
     // Cache Routes (Admin and up)

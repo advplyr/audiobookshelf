@@ -251,107 +251,27 @@ class SearchController {
   }
 
   /**
-   * GET: /api/search/providers/podcasts/covers
-   * Get available podcast cover metadata providers
+   * GET: /api/search/providers
+   * Get all available metadata providers
    *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
-  async getPodcastCoverProviders(req, res) {
-    // Podcast covers only use iTunes
-    const customProviders = await Database.customMetadataProviderModel.findAll({
-      where: {
-        mediaType: 'podcast'
-      }
-    })
+  async getAllProviders(req, res) {
+    const customProviders = await Database.customMetadataProviderModel.findAll()
 
-    const providers = [SearchController.formatProvider('itunes'), ...SearchController.mapCustomProviders(customProviders)]
+    const customBookProviders = customProviders.filter((p) => p.mediaType === 'book')
+    const customPodcastProviders = customProviders.filter((p) => p.mediaType === 'podcast')
 
-    res.json({ providers })
-  }
-
-  /**
-   * GET: /api/search/providers/books/covers
-   * Get available book cover metadata providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getBookCoverProviders(req, res) {
-    // Book covers use all book providers
-    const customProviders = await Database.customMetadataProviderModel.findAll({
-      where: {
-        mediaType: 'book'
-      }
-    })
-
-    const providers = [SearchController.formatProvider('best'), ...BookFinder.providers.map((p) => SearchController.formatProvider(p)), ...SearchController.mapCustomProviders(customProviders), SearchController.formatProvider('all')]
-
-    res.json({ providers })
-  }
-
-  /**
-   * GET: /api/search/providers/books
-   * Get available book metadata providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getBookProviders(req, res) {
-    const customProviders = await Database.customMetadataProviderModel.findAll({
-      where: {
-        mediaType: 'book'
-      }
-    })
-
-    // Filter out cover-only providers
     const bookProviders = BookFinder.providers.filter((p) => p !== 'audiobookcovers')
 
-    const providers = [...bookProviders.map((p) => SearchController.formatProvider(p)), ...SearchController.mapCustomProviders(customProviders)]
+    // Build minimized payload with custom providers merged in
+    const providers = {
+      books: [...bookProviders.map((p) => SearchController.formatProvider(p)), ...SearchController.mapCustomProviders(customBookProviders)],
+      booksCovers: [SearchController.formatProvider('best'), ...BookFinder.providers.map((p) => SearchController.formatProvider(p)), ...SearchController.mapCustomProviders(customBookProviders), SearchController.formatProvider('all')],
+      podcasts: [SearchController.formatProvider('itunes'), ...SearchController.mapCustomProviders(customPodcastProviders)]
+    }
 
-    res.json({ providers })
-  }
-
-  /**
-   * GET: /api/search/providers/podcasts
-   * Get available podcast metadata providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getPodcastProviders(req, res) {
-    const customProviders = await Database.customMetadataProviderModel.findAll({
-      where: {
-        mediaType: 'podcast'
-      }
-    })
-
-    const providers = [SearchController.formatProvider('itunes'), ...SearchController.mapCustomProviders(customProviders)]
-
-    res.json({ providers })
-  }
-
-  /**
-   * GET: /api/search/providers/authors
-   * Get available author metadata providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getAuthorProviders(req, res) {
-    const providers = [SearchController.formatProvider('audnexus')]
-    res.json({ providers })
-  }
-
-  /**
-   * GET: /api/search/providers/chapters
-   * Get available chapter metadata providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getChapterProviders(req, res) {
-    const providers = [SearchController.formatProvider('audnexus')]
     res.json({ providers })
   }
 }
