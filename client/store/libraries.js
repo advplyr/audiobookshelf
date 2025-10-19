@@ -117,7 +117,6 @@ export const actions = {
         const library = data.library
         const filterData = data.filterdata
         const issues = data.issues || 0
-        const customMetadataProviders = data.customMetadataProviders || []
         const numUserPlaylists = data.numUserPlaylists
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
