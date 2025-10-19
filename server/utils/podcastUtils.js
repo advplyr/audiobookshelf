@@ -171,7 +171,7 @@ function extractEpisodeData(item) {
 
   // Full description with html
   if (item['content:encoded']) {
-    const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()
+    const rawDescription = (extractFirstArrayItemString(item, 'content:encoded') || '').trim()
     episode.description = htmlSanitizer.sanitize(rawDescription)
   }
 
