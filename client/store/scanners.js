@@ -2,7 +2,8 @@ export const state = () => ({
   bookProviders: [],
   podcastProviders: [],
   bookCoverProviders: [],
-  podcastCoverProviders: []
+  podcastCoverProviders: [],
+  providersLoaded: false
 })
 
 export const getters = {
@@ -11,63 +12,49 @@ export const getters = {
   },
   checkPodcastProviderExists: (state) => (providerValue) => {
     return state.podcastProviders.some((p) => p.value === providerValue)
-  }
+  },
+  areProvidersLoaded: (state) => state.providersLoaded
 }
 
 export const actions = {
-  async fetchBookProviders({ commit }) {
+  async fetchProviders({ commit, state }) {
+    // Only fetch if not already loaded
+    if (state.providersLoaded) {
+      return
+    }
+
     try {
-      const response = await this.$axios.$get('/api/search/providers/books')
+      const response = await this.$axios.$get('/api/search/providers')
       if (response?.providers) {
-        commit('setBookProviders', response.providers)
+        commit('setAllProviders', response.providers)
       }
     } catch (error) {
-      console.error('Failed to fetch book providers', error)
+      console.error('Failed to fetch providers', error)
     }
   },
-  async fetchPodcastProviders({ commit }) {
-    try {
-      const response = await this.$axios.$get('/api/search/providers/podcasts')
-      if (response?.providers) {
-        commit('setPodcastProviders', response.providers)
-      }
-    } catch (error) {
-      console.error('Failed to fetch podcast providers', error)
+  async refreshProviders({ commit, state }) {
+    // if providers are not loaded, do nothing - they will be fetched when required (
+    if (!state.providersLoaded) {
+      return
     }
-  },
-  async fetchBookCoverProviders({ commit }) {
+
     try {
-      const response = await this.$axios.$get('/api/search/providers/books/covers')
+      const response = await this.$axios.$get('/api/search/providers')
       if (response?.providers) {
-        commit('setBookCoverProviders', response.providers)
+        commit('setAllProviders', response.providers)
       }
     } catch (error) {
-      console.error('Failed to fetch book cover providers', error)
-    }
-  },
-  async fetchPodcastCoverProviders({ commit }) {
-    try {
-      const response = await this.$axios.$get('/api/search/providers/podcasts/covers')
-      if (response?.providers) {
-        commit('setPodcastCoverProviders', response.providers)
-      }
-    } catch (error) {
-      console.error('Failed to fetch podcast cover providers', error)
+      console.error('Failed to refresh providers', error)
     }
   }
 }
 
 export const mutations = {
-  setBookProviders(state, providers) {
-    state.bookProviders = providers
-  },
-  setPodcastProviders(state, providers) {
-    state.podcastProviders = providers
-  },
-  setBookCoverProviders(state, providers) {
-    state.bookCoverProviders = providers
-  },
-  setPodcastCoverProviders(state, providers) {
-    state.podcastCoverProviders = providers
+  setAllProviders(state, providers) {
+    state.bookProviders = providers.books || []
+    state.podcastProviders = providers.podcasts || []
+    state.bookCoverProviders = providers.booksCovers || []
+    state.podcastCoverProviders = providers.podcasts || [] // Use same as bookCovers since podcasts use iTunes only
+    state.providersLoaded = true
   }
 }
