@@ -1026,6 +1026,8 @@
   "ToastCollectionItemsAddFailed": "Das Hinzufügen von Element(en) zur Sammlung ist fehlgeschlagen",
   "ToastCollectionRemoveSuccess": "Sammlung entfernt",
   "ToastCollectionUpdateSuccess": "Sammlung aktualisiert",
+  "ToastConnectionNotAvailable": "Verbindung nicht möglich. Bitte später erneut versuchen",
+  "ToastCoverSearchFailed": "Cover-Suche fehlgeschlagen",
   "ToastCoverUpdateFailed": "Cover-Update fehlgeschlagen",
   "ToastDateTimeInvalidOrIncomplete": "Datum und Zeit sind ungültig oder unvollständig",
   "ToastDeleteFileFailed": "Die Datei konnte nicht gelöscht werden",
