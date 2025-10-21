@@ -98,9 +98,9 @@ class SearchController {
     } catch (error) {
       Logger.error(`[SearchController] findBooks: ${error.message}`)
       if (error instanceof ValidationError || error instanceof NotFoundError) {
-        return res.status(error.status).send(error.message)
+        return res.status(error.status).json({ error: error.message })
       }
-      return res.status(500).send('Internal server error')
+      return res.status(500).json({ error: 'Internal server error' })
     }
   }
 
@@ -125,9 +125,9 @@ class SearchController {
     } catch (error) {
       Logger.error(`[SearchController] findCovers: ${error.message}`)
       if (error instanceof ValidationError) {
-        return res.status(error.status).send(error.message)
+        return res.status(error.status).json({ error: error.message })
       }
-      return res.status(500).send('Internal server error')
+      return res.status(500).json({ error: 'Internal server error' })
     }
   }
 
@@ -149,9 +149,9 @@ class SearchController {
     } catch (error) {
       Logger.error(`[SearchController] findPodcasts: ${error.message}`)
       if (error instanceof ValidationError) {
-        return res.status(error.status).send(error.message)
+        return res.status(error.status).json({ error: error.message })
       }
-      return res.status(500).send('Internal server error')
+      return res.status(500).json({ error: 'Internal server error' })
     }
   }
 
@@ -171,9 +171,9 @@ class SearchController {
     } catch (error) {
       Logger.error(`[SearchController] findAuthor: ${error.message}`)
       if (error instanceof ValidationError) {
-        return res.status(error.status).send(error.message)
+        return res.status(error.status).json({ error: error.message })
       }
-      return res.status(500).send('Internal server error')
+      return res.status(500).json({ error: 'Internal server error' })
     }
   }
 
@@ -206,7 +206,7 @@ class SearchController {
           return res.json({ error: 'Invalid region', stringKey: 'MessageInvalidRegion' })
         }
       }
-      return res.status(500).send('Internal server error')
+      return res.status(500).json({ error: 'Internal server error' })
     }
   }
 
