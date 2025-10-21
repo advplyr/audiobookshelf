@@ -345,7 +345,7 @@ class BookFinder {
       }
       const results = [...new Set(await Promise.all(promises))]
       filteredCandidates = results.filter((author) => author)
-      // If no valid candidates were found, add back an aggresively cleaned author version
+      // If no valid candidates were found, add back an aggressively cleaned author version
       if (!filteredCandidates.length && this.cleanAuthor) filteredCandidates.push(this.agressivelyCleanAuthor)
       // Always add an empty author candidate
       filteredCandidates.push('')
@@ -403,7 +403,7 @@ class BookFinder {
 
       // Remove underscores and parentheses with their contents, and replace with a separator
       const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, ' - ')
-      // Split title into hypen-separated parts
+      // Split title into hyphen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
       for (const titlePart of titleParts) authorCandidates.add(titlePart)
       authorCandidates = await authorCandidates.getCandidates()
@@ -667,7 +667,7 @@ function cleanTitleForCompares(title, keepSubtitle = false) {
   // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
   let stripped = keepSubtitle ? title : stripSubtitle(title)
 
-  // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
+  // Remove text in parenthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
   let cleaned = stripped.replace(/ *\([^)]*\) */g, '')
 
   // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")

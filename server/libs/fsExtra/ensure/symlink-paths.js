@@ -23,7 +23,7 @@ const pathExists = require('../path-exists').pathExists
  * does it will use it. If it does not, it checks if there's a file that
  * exists that is relative to the current working directory, if does its used.
  * This preserves the expectations of the original fs.symlink spec and adds
- * the ability to pass in `relative to current working direcotry` paths.
+ * the ability to pass in `relative to current working directory` paths.
  */
 
 function symlinkPaths (srcpath, dstpath, callback) {

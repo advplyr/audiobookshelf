@@ -280,7 +280,7 @@ class ArgvArray extends Array {
  * @static
  */
 function expandCombinedShortArg(arg) {
-  /* remove initial hypen */
+  /* remove initial hyphen */
   arg = arg.slice(1);
   return arg.split('').map(letter => '-' + letter)
 }
@@ -875,7 +875,7 @@ class Definitions extends Array {
     if (someDontHaveFunctionType) {
       halt(
         'INVALID_DEFINITIONS',
-        'Invalid option definitions: the `type` property must be a setter fuction (default: `Boolean`)'
+        'Invalid option definitions: the `type` property must be a setter function (default: `Boolean`)'
       );
     }
 
@@ -1194,7 +1194,7 @@ class Option {
         this.state = state;
       }
     } else {
-      /* throw if already set on a singlar defaultOption */
+      /* throw if already set on a singular defaultOption */
       if (!def.isMultiple() && this.state === 'set') {
         const err = new Error(`Singular option already set [${this.definition.name}=${this.get()}]`);
         err.name = 'ALREADY_SET';

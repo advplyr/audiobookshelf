@@ -105,7 +105,7 @@ module.exports = (nameToParse, partToReturn, fixCase, stopOnError, useLongLists)
     );
   }
 
-  // Initilize lists of prefixs, suffixs, and titles to detect
+  // Initialize lists of prefixs, suffixs, and titles to detect
   // Note: These list entries must be all lowercase
   if (useLongLists) {
     suffixList = ['esq', 'esquire', 'jr', 'jnr', 'sr', 'snr', '2', 'ii', 'iii', 'iv',

@@ -67,7 +67,7 @@ function maybeCallback(cb) {
   return typeof cb === 'function' ? cb : rethrow();
 }
 
-// Regexp that finds the next partion of a (partial) path
+// Regexp that finds the next portion of a (partial) path
 // result is [base_with_slash, base], e.g. ['somedir/', 'somedir']
 if (isWindows) {
   var nextPartRe = /(.*?)(?:[\/\\]+|$)/g;
