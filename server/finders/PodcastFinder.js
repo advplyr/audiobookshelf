@@ -7,9 +7,9 @@ class PodcastFinder {
   }
 
   /**
-   * 
-   * @param {string} term 
-   * @param {{country:string}} options 
+   *
+   * @param {string} term
+   * @param {{country:string}} options
    * @returns {Promise<import('../providers/iTunes').iTunesPodcastSearchResult[]>}
    */
   async search(term, options = {}) {
@@ -20,12 +20,16 @@ class PodcastFinder {
     return results
   }
 
+  /**
+   * @param {string} term
+   * @returns {Promise<string[]>}
+   */
   async findCovers(term) {
     if (!term) return null
     Logger.debug(`[iTunes] Searching for podcast covers with term "${term}"`)
-    var results = await this.iTunesApi.searchPodcasts(term)
+    const results = await this.iTunesApi.searchPodcasts(term)
     if (!results) return []
-    return results.map(r => r.cover).filter(r => r)
+    return results.map((r) => r.cover).filter((r) => r)
   }
 }
 module.exports = new PodcastFinder()

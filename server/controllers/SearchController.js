@@ -42,7 +42,7 @@ class SearchController {
    * Fetches a library item by ID
    * @param {string} id - Library item ID
    * @param {string} methodName - Name of the calling method for logging
-   * @returns {Promise<LibraryItem>}
+   * @returns {Promise<import('../models/LibraryItem').LibraryItemExpanded>}
    */
   static async fetchLibraryItem(id) {
     const libraryItem = await Database.libraryItemModel.getExpandedById(id)
