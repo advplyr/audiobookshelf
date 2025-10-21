@@ -4,7 +4,7 @@ const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const Database = require('../Database')
-const { isValidASIN, getQueryParamAsString } = require('../utils')
+const { isValidASIN, getQueryParamAsString, ValidationError, NotFoundError } = require('../utils')
 
 // Provider name mappings for display purposes
 const providerMap = {
@@ -39,73 +39,17 @@ class SearchController {
   constructor() {}
 
   /**
-   * Validates that multiple parameters are strings
-   * @param {Object} params - Object with param names as keys and values to validate
-   * @param {string} methodName - Name of the calling method for logging
-   * @returns {{valid: boolean, error?: {status: number, message: string}}}
-   */
-  static validateStringParams(params, methodName) {
-    for (const [key, value] of Object.entries(params)) {
-      if (typeof value !== 'string') {
-        Logger.error(`[SearchController] ${methodName}: Invalid ${key} parameter`)
-        return {
-          valid: false,
-          error: {
-            status: 400,
-            message: 'Invalid request query params'
-          }
-        }
-      }
-    }
-    return { valid: true }
-  }
-
-  /**
-   * Validates that a required string parameter exists and is a string
-   * @param {any} value - Value to validate
-   * @param {string} paramName - Parameter name for logging
-   * @param {string} methodName - Name of the calling method for logging
-   * @returns {{valid: boolean, error?: {status: number, message: string}}}
-   */
-  static validateRequiredString(value, paramName, methodName) {
-    if (!value || typeof value !== 'string') {
-      Logger.error(`[SearchController] ${methodName}: Invalid or missing ${paramName}`)
-      return {
-        valid: false,
-        error: {
-          status: 400,
-          message: `Invalid or missing ${paramName}`
-        }
-      }
-    }
-    return { valid: true }
-  }
-
-  /**
-   * Validates and fetches a library item by ID
+   * Fetches a library item by ID
    * @param {string} id - Library item ID
    * @param {string} methodName - Name of the calling method for logging
-   * @returns {Promise<{valid: boolean, libraryItem?: any, error?: {status: number, message: string}}>}
+   * @returns {Promise<LibraryItem>}
    */
-  static async fetchAndValidateLibraryItem(id, methodName) {
-    const validation = SearchController.validateRequiredString(id, 'library item id', methodName)
-    if (!validation.valid) {
-      return validation
-    }
-
+  static async fetchLibraryItem(id) {
     const libraryItem = await Database.libraryItemModel.getExpandedById(id)
     if (!libraryItem) {
-      Logger.error(`[SearchController] ${methodName}: Library item not found with id "${id}"`)
-      return {
-        valid: false,
-        error: {
-          status: 404,
-          message: 'Library item not found'
-        }
-      }
+      throw new NotFoundError(`library item "${id}" not found`)
     }
-
-    return { valid: true, libraryItem }
+    return libraryItem
   }
 
   /**
@@ -139,21 +83,25 @@ class SearchController {
    * @param {Response} res
    */
   async findBooks(req, res) {
-    // Safely extract query parameters, rejecting arrays to prevent type confusion
-    const provider = getQueryParamAsString(req.query.provider, 'google')
-    const title = getQueryParamAsString(req.query.title, '')
-    const author = getQueryParamAsString(req.query.author, '')
+    try {
+      const query = req.query
+      const provider = getQueryParamAsString(query, 'provider', 'google')
+      const title = getQueryParamAsString(query, 'title', '')
+      const author = getQueryParamAsString(query, 'author', '')
+      const id = getQueryParamAsString(query, 'id', '', true)
 
-    // Validate string parameters
-    const validation = SearchController.validateStringParams({ provider, title, author }, 'findBooks')
-    if (!validation.valid) return res.status(validation.error.status).send(validation.error.message)
+      // Fetch library item
+      const libraryItem = await SearchController.fetchLibraryItem(id)
 
-    // Fetch and validate library item
-    const itemValidation = await SearchController.fetchAndValidateLibraryItem(req.query.id, 'findBooks')
-    if (!itemValidation.valid) return res.status(itemValidation.error.status).send(itemValidation.error.message)
-
-    const results = await BookFinder.search(itemValidation.libraryItem, provider, title, author)
-    res.json(results)
+      const results = await BookFinder.search(libraryItem, provider, title, author)
+      res.json(results)
+    } catch (error) {
+      Logger.error(`[SearchController] findBooks: ${error.message}`)
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        return res.status(error.status).send(error.message)
+      }
+      return res.status(500).send('Internal server error')
+    }
   }
 
   /**
@@ -163,24 +111,24 @@ class SearchController {
    * @param {Response} res
    */
   async findCovers(req, res) {
-    const query = req.query
-    const podcast = query.podcast === '1' || query.podcast === 1
-    const title = getQueryParamAsString(query.title, '')
-    const author = getQueryParamAsString(query.author, '')
-    const provider = getQueryParamAsString(query.provider, 'google')
+    try {
+      const query = req.query
+      const podcast = query.podcast === '1' || query.podcast === 1
+      const title = getQueryParamAsString(query, 'title', '', true)
+      const author = getQueryParamAsString(query, 'author', '')
+      const provider = getQueryParamAsString(query, 'provider', 'google')
 
-    // Validate required title
-    const titleValidation = SearchController.validateRequiredString(title, 'title', 'findCovers')
-    if (!titleValidation.valid) return res.status(titleValidation.error.status).send(titleValidation.error.message)
-
-    // Validate other string parameters
-    const validation = SearchController.validateStringParams({ author, provider }, 'findCovers')
-    if (!validation.valid) return res.status(validation.error.status).send(validation.error.message)
-
-    let results = null
-    if (podcast) results = await PodcastFinder.findCovers(title)
-    else results = await BookFinder.findCovers(provider, title, author)
-    res.json({ results })
+      let results = null
+      if (podcast) results = await PodcastFinder.findCovers(title)
+      else results = await BookFinder.findCovers(provider, title, author)
+      res.json({ results })
+    } catch (error) {
+      Logger.error(`[SearchController] findCovers: ${error.message}`)
+      if (error instanceof ValidationError) {
+        return res.status(error.status).send(error.message)
+      }
+      return res.status(500).send('Internal server error')
+    }
   }
 
   /**
@@ -191,36 +139,42 @@ class SearchController {
    * @param {Response} res
    */
   async findPodcasts(req, res) {
-    const term = getQueryParamAsString(req.query.term)
-    const country = getQueryParamAsString(req.query.country, 'us')
+    try {
+      const query = req.query
+      const term = getQueryParamAsString(query, 'term', '', true)
+      const country = getQueryParamAsString(query, 'country', 'us')
 
-    // Validate required term
-    const termValidation = SearchController.validateRequiredString(term, 'term', 'findPodcasts')
-    if (!termValidation.valid) return res.status(termValidation.error.status).send(termValidation.error.message)
-
-    // Validate country parameter
-    const validation = SearchController.validateStringParams({ country }, 'findPodcasts')
-    if (!validation.valid) return res.status(validation.error.status).send(validation.error.message)
-
-    const results = await PodcastFinder.search(term, { country })
-    res.json(results)
+      const results = await PodcastFinder.search(term, { country })
+      res.json(results)
+    } catch (error) {
+      Logger.error(`[SearchController] findPodcasts: ${error.message}`)
+      if (error instanceof ValidationError) {
+        return res.status(error.status).send(error.message)
+      }
+      return res.status(500).send('Internal server error')
+    }
   }
 
   /**
    * GET: /api/search/authors
+   * Note: This endpoint is not currently used in the web client.
    *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   async findAuthor(req, res) {
-    const query = getQueryParamAsString(req.query.q)
+    try {
+      const query = getQueryParamAsString(req.query, 'q', '', true)
 
-    // Validate query parameter
-    const validation = SearchController.validateRequiredString(query, 'query', 'findAuthor')
-    if (!validation.valid) return res.status(validation.error.status).send(validation.error.message)
-
-    const author = await AuthorFinder.findAuthorByName(query)
-    res.json(author)
+      const author = await AuthorFinder.findAuthorByName(query)
+      res.json(author)
+    } catch (error) {
+      Logger.error(`[SearchController] findAuthor: ${error.message}`)
+      if (error instanceof ValidationError) {
+        return res.status(error.status).send(error.message)
+      }
+      return res.status(500).send('Internal server error')
+    }
   }
 
   /**
@@ -230,24 +184,30 @@ class SearchController {
    * @param {Response} res
    */
   async findChapters(req, res) {
-    const asin = getQueryParamAsString(req.query.asin)
-    const region = getQueryParamAsString(req.query.region, 'us').toLowerCase()
+    try {
+      const query = req.query
+      const asin = getQueryParamAsString(query, 'asin', '', true)
+      const region = getQueryParamAsString(req.query.region, 'us').toLowerCase()
 
-    // Validate ASIN parameter
-    const asinValidation = SearchController.validateRequiredString(asin, 'asin', 'findChapters')
-    if (!asinValidation.valid) return res.json({ error: 'Invalid ASIN', stringKey: 'MessageInvalidAsin' })
+      if (!isValidASIN(asin.toUpperCase())) throw new ValidationError('asin', 'is invalid')
 
-    if (!isValidASIN(asin.toUpperCase())) return res.json({ error: 'Invalid ASIN', stringKey: 'MessageInvalidAsin' })
-
-    // Validate region parameter
-    const validation = SearchController.validateStringParams({ region }, 'findChapters')
-    if (!validation.valid) res.json({ error: 'Invalid region', stringKey: 'MessageInvalidRegion' })
-
-    const chapterData = await BookFinder.findChapters(asin, region)
-    if (!chapterData) {
-      return res.json({ error: 'Chapters not found', stringKey: 'MessageChaptersNotFound' })
+      const chapterData = await BookFinder.findChapters(asin, region)
+      if (!chapterData) {
+        return res.json({ error: 'Chapters not found', stringKey: 'MessageChaptersNotFound' })
+      }
+      res.json(chapterData)
+    } catch (error) {
+      Logger.error(`[SearchController] findChapters: ${error.message}`)
+      if (error instanceof ValidationError) {
+        if (error.paramName === 'asin') {
+          return res.json({ error: 'Invalid ASIN', stringKey: 'MessageInvalidAsin' })
+        }
+        if (error.paramName === 'region') {
+          return res.json({ error: 'Invalid region', stringKey: 'MessageInvalidRegion' })
+        }
+      }
+      return res.status(500).send('Internal server error')
     }
-    res.json(chapterData)
   }
 
   /**
