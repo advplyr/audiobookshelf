@@ -221,13 +221,11 @@ class LibraryController {
     const includeArray = (req.query.include || '').split(',')
     if (includeArray.includes('filterdata')) {
       const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
-      const customMetadataProviders = await Database.customMetadataProviderModel.getForClientByMediaType(req.library.mediaType)
 
       return res.json({
         filterdata,
         issues: filterdata.numIssues,
         numUserPlaylists: await Database.playlistModel.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
-        customMetadataProviders,
         library: req.library.toOldJSON()
       })
     }

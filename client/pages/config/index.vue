@@ -247,7 +247,8 @@ export default {
       return this.$store.state.serverSettings
     },
     providers() {
-      return this.$store.state.scanners.providers
+      // Use book cover providers for the cover provider dropdown
+      return this.$store.state.scanners.bookCoverProviders || []
     },
     dateFormats() {
       return this.$store.state.globals.dateFormats
@@ -416,6 +417,8 @@ export default {
   },
   mounted() {
     this.initServerSettings()
+    // Fetch providers if not already loaded (for cover provider dropdown)
+    this.$store.dispatch('scanners/fetchProviders')
   }
 }
 </script>

@@ -277,3 +277,57 @@ module.exports.timestampToSeconds = (timestamp) => {
   }
   return null
 }
+
+class ValidationError extends Error {
+  constructor(paramName, message, status = 400) {
+    super(`Query parameter "${paramName}" ${message}`)
+    this.name = 'ValidationError'
+    this.paramName = paramName
+    this.status = status
+  }
+}
+module.exports.ValidationError = ValidationError
+
+class NotFoundError extends Error {
+  constructor(message, status = 404) {
+    super(message)
+    this.name = 'NotFoundError'
+    this.status = status
+  }
+}
+module.exports.NotFoundError = NotFoundError
+
+/**
+ * Safely extracts a query parameter as a string, rejecting arrays to prevent type confusion
+ * Express query parameters can be arrays if the same parameter appears multiple times
+ * @example ?author=Smith => "Smith"
+ * @example ?author=Smith&author=Jones => throws error
+ *
+ * @param {Object} query - Query object
+ * @param {string} paramName - Parameter name
+ * @param {string} defaultValue - Default value if undefined/null
+ * @param {boolean} required - Whether the parameter is required
+ * @param {number} maxLength - Optional maximum length (defaults to 10000 to prevent ReDoS attacks)
+ * @returns {string} String value
+ * @throws {ValidationError} If value is an array
+ * @throws {ValidationError} If value is too long
+ * @throws {ValidationError} If value is required but not provided
+ */
+module.exports.getQueryParamAsString = (query, paramName, defaultValue = '', required = false, maxLength = 1000) => {
+  const value = query[paramName]
+  if (value === undefined || value === null) {
+    if (required) {
+      throw new ValidationError(paramName, 'is required')
+    }
+    return defaultValue
+  }
+  // Explicitly reject arrays to prevent type confusion
+  if (Array.isArray(value)) {
+    throw new ValidationError(paramName, 'is an array')
+  }
+  // Reject excessively long strings to prevent ReDoS attacks
+  if (typeof value === 'string' && value.length > maxLength) {
+    throw new ValidationError(paramName, 'is too long')
+  }
+  return String(value)
+}

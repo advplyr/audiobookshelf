@@ -224,6 +224,9 @@ class CoverSearchManager {
     if (!Array.isArray(results)) return covers
 
     results.forEach((result) => {
+      if (typeof result === 'string') {
+        covers.push(result)
+      }
       if (result.covers && Array.isArray(result.covers)) {
         covers.push(...result.covers)
       }
