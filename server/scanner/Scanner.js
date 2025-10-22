@@ -259,7 +259,7 @@ class Scanner {
             SocketAuthority.emitter('author_added', author.toOldJSON())
             // Update filter data
             Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
-
+          }
             await Database.bookAuthorModel
               .create({
                 authorId: author.id,
@@ -270,7 +270,6 @@ class Scanner {
                 libraryItem.media.authors.push(author)
                 hasAuthorUpdates = true
               })
-          }
         }
         const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => ma.toLowerCase() === a.name.toLowerCase()))
         if (authorsRemoved.length) {
