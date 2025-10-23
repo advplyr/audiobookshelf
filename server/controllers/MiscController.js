@@ -771,5 +771,32 @@ class MiscController {
       currentDailyLogs: Logger.logManager.getMostRecentCurrentDailyLogs()
     })
   }
+
+  /**
+   * GET: /api/test-proxy-header
+   * Test proxy header endpoint
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  testProxyHeader(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to test proxy header`)
+      return res.sendStatus(403)
+    }
+
+    const headerName = req.query.headerName
+    if (!headerName) {
+      return res.status(400).json({ message: 'Header name is required' })
+    }
+
+    const headerValue = req.headers[headerName.toLowerCase()]
+
+    res.json({
+      headerFound: !!headerValue,
+      headerValue: headerValue || null,
+      headerName: headerName
+    })
+  }
 }
 module.exports = new MiscController()
