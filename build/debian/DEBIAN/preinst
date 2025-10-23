@@ -22,7 +22,7 @@ add_user() {
   declare -r descr="${4:-No description}"
   declare -r shell="${5:-/bin/false}"
 
-  if ! getent passwd | grep -q "^$user:"; then
+  if ! getent passwd "$user" 2>&1 >/dev/null; then
     echo "Creating system user: $user in $group with $descr and shell $shell"
     useradd $uid_flags --gid $group --no-create-home --system --shell $shell -c "$descr" $user
   fi
@@ -39,7 +39,7 @@ add_group() {
     declare -r gid_flags="--gid $gid"
   fi
 
-  if ! getent group | grep -q "^$group:" ; then
+  if ! getent group "$group" 2>&1 >/dev/null; then
     echo "Creating system group: $group"
     groupadd $gid_flags --system $group
   fi
