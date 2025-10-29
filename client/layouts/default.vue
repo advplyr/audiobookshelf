@@ -96,7 +96,7 @@ export default {
             timeout: timeout,
             type: type,
             closeButton: false,
-            position: 'bottom-center',
+            position: 'top-center',
             onClose: () => {
               this.socketConnectionToastId = null
             },
@@ -105,7 +105,7 @@ export default {
         }
         this.$toast.update(this.socketConnectionToastId, toastUpdateOptions, false)
       } else {
-        this.socketConnectionToastId = this.$toast[type](content, { position: 'bottom-center', timeout: timeout, closeButton: false, closeOnClick: timeout !== null })
+        this.socketConnectionToastId = this.$toast[type](content, { position: 'top-center', timeout: timeout, closeButton: false, closeOnClick: timeout !== null })
       }
     },
     connect() {
