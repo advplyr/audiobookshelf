@@ -11,7 +11,7 @@ const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } 
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class BookFinder {
-  #providerResponseTimeout = 10000
+  #providerResponseTimeout = 120000
 
   constructor() {
     this.openLibrary = new OpenLibrary()
