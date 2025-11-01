@@ -7,7 +7,7 @@
       <Nuxt :key="currentLang" />
     </div>
 
-    <app-media-player-container ref="mediaPlayerContainer" :class="{ 'media-player': isShowingMediaPlayer }" />
+    <app-media-player-container ref="mediaPlayerContainer" />
 
     <modals-item-edit-modal />
     <modals-collections-add-create-modal />
@@ -49,6 +49,13 @@ export default {
 
       this.$store.commit('globals/resetSelectedMediaItems', [])
       this.updateBodyClass()
+    },
+    '$store.state.streamLibraryItem'(newVal) {
+      if (newVal) {
+        document.body.classList.add('media-player')
+      } else {
+        document.body.classList.remove('media-player')
+      }
     }
   },
   computed: {
@@ -70,14 +77,6 @@ export default {
     },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
-    },
-    isShowingMediaPlayer() {
-      if (this.$store.state.streamLibraryItem) {
-        document.body.classList.add('media-player')
-      } else {
-        document.body.classList.remove('media-player')
-      }
-      return this.$store.state.streamLibraryItem
     }
   },
   methods: {
@@ -657,14 +656,6 @@ export default {
 <style>
 .Vue-Toastification__toast-body.custom-class-1 {
   font-size: 14px;
-}
-
-.media-player .Vue-Toastification__toast.toast-mb-40 {
-  margin-bottom: calc(var(--spacing) * 40);
-}
-
-.media-player .Vue-Toastification__toast.toast-mb-48 {
-  margin-bottom: calc(var(--spacing) * 48);
 }
 
 #app-content {
