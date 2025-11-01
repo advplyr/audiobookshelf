@@ -7,7 +7,7 @@
       <Nuxt :key="currentLang" />
     </div>
 
-    <app-media-player-container ref="mediaPlayerContainer" />
+    <app-media-player-container ref="mediaPlayerContainer" :class="{ 'media-player': isShowingMediaPlayer }" />
 
     <modals-item-edit-modal />
     <modals-collections-add-create-modal />
@@ -70,6 +70,14 @@ export default {
     },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
+    },
+    isShowingMediaPlayer() {
+      if (this.$store.state.streamLibraryItem) {
+        document.body.classList.add('media-player')
+      } else {
+        document.body.classList.remove('media-player')
+      }
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {
@@ -93,10 +101,11 @@ export default {
         const toastUpdateOptions = {
           content: content,
           options: {
+            toastClassName: 'toast-mb-48 lg:toast-mb-40',
             timeout: timeout,
             type: type,
             closeButton: false,
-            position: 'top-center',
+            position: 'bottom-center',
             onClose: () => {
               this.socketConnectionToastId = null
             },
@@ -105,7 +114,13 @@ export default {
         }
         this.$toast.update(this.socketConnectionToastId, toastUpdateOptions, false)
       } else {
-        this.socketConnectionToastId = this.$toast[type](content, { position: 'top-center', timeout: timeout, closeButton: false, closeOnClick: timeout !== null })
+        this.socketConnectionToastId = this.$toast[type](content, {
+          toastClassName: 'toast-mb-48 lg:toast-mb-40',
+          position: 'bottom-center',
+          timeout: timeout,
+          closeButton: false,
+          closeOnClick: timeout !== null
+        })
       }
     },
     connect() {
@@ -642,6 +657,14 @@ export default {
 <style>
 .Vue-Toastification__toast-body.custom-class-1 {
   font-size: 14px;
+}
+
+.media-player .Vue-Toastification__toast.toast-mb-40 {
+  margin-bottom: calc(var(--spacing) * 40);
+}
+
+.media-player .Vue-Toastification__toast.toast-mb-48 {
+  margin-bottom: calc(var(--spacing) * 48);
 }
 
 #app-content {
