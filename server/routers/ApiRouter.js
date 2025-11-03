@@ -186,6 +186,8 @@ class ApiRouter {
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
+    this.router.get('/me/series/:id/hide', MeController.hideSeries.bind(this))
+    this.router.get('/me/series/:id/unhide', MeController.unhideSeries.bind(this))
     this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
     this.router.post('/me/ereader-devices', MeController.updateUserEReaderDevices.bind(this))
 

@@ -178,6 +178,7 @@ class UserController {
       permissions,
       bookmarks: [],
       extraData: {
+        hiddenSeries: [],
         seriesHideFromContinueListening: []
       }
     }
