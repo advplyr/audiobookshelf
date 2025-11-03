@@ -475,6 +475,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        rating: true,
         abridged: true,
         // Podcast specific
         itunesPageUrl: true,
@@ -585,16 +586,6 @@ export default {
       var updatePayload = {}
       updatePayload.metadata = {}
 
-      // Always include rating if it exists in the match
-      if (this.selectedMatch?.rating !== undefined && this.selectedMatch?.rating !== null) {
-        const ratingValue = Number(this.selectedMatch.rating)
-        if (!isNaN(ratingValue) && ratingValue > 0) {
-          updatePayload.metadata.rating = ratingValue
-        } else if (ratingValue === 0 || isNaN(ratingValue)) {
-          updatePayload.metadata.rating = undefined
-        }
-      }
-
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key] !== undefined && this.selectedMatch[key] !== null) {
           if (key === 'series') {
@@ -636,9 +627,11 @@ export default {
           } else if (key === 'itunesId') {
             updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
           } else if (key === 'rating') {
-            const ratingValue = typeof this.selectedMatch[key] === 'object' && this.selectedMatch[key].average ? this.selectedMatch[key].average : Number(this.selectedMatch[key])
+            const ratingValue = Number(this.selectedMatch[key])
             if (!isNaN(ratingValue) && ratingValue > 0) {
               updatePayload.metadata.rating = ratingValue
+            } else if (ratingValue === 0 || isNaN(ratingValue)) {
+              updatePayload.metadata.rating = undefined
             }
           } else {
             updatePayload.metadata[key] = this.selectedMatch[key]

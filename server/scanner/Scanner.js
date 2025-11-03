@@ -231,15 +231,17 @@ class Scanner {
             updatePayload[key] = tagsArray
           }
         } else if (key === 'rating') {
-          // Normalize rating: convert object with average to number, or number to number
+          // Normalize rating (handle object format {average: 4.5} from some providers)
           let ratingValue = matchData[key]
           if (ratingValue && typeof ratingValue === 'object' && ratingValue.average) {
-            ratingValue = Number(ratingValue.average) || null
+            ratingValue = Number(ratingValue.average)
           } else if (ratingValue !== undefined && ratingValue !== null) {
-            ratingValue = Number(ratingValue) || null
+            ratingValue = Number(ratingValue)
+          } else {
+            ratingValue = null
           }
-          if (ratingValue === 0) ratingValue = null
-          if ((!libraryItem.media.rating || options.overrideDetails) && ratingValue !== null && !isNaN(ratingValue) && ratingValue > 0) {
+          // 0 = no rating, only update if valid rating > 0
+          if (ratingValue !== null && !isNaN(ratingValue) && ratingValue > 0 && (!libraryItem.media.rating || options.overrideDetails)) {
             updatePayload[key] = ratingValue
           } else if (ratingValue === null && libraryItem.media.rating && options.overrideDetails) {
             updatePayload[key] = null
