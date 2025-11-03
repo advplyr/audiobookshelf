@@ -285,9 +285,6 @@ export default {
     authors() {
       return this.mediaMetadata.authors || []
     },
-    asin() {
-      return this.mediaMetadata?.asin || null
-    },
     rating() {
       return this.mediaMetadata?.rating || null
     },
