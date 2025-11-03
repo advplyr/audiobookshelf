@@ -131,6 +131,10 @@ export default {
         {
           text: this.isSeriesFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished,
           action: 'mark-series-finished'
+        },
+        {
+          text: !this.isSeriesHidden ? this.$strings.LabelHideSeries : this.$strings.LabelUnhideSeries,
+          action: 'hide-series'
         }
       ]
 
@@ -301,6 +305,10 @@ export default {
       if (!this.seriesId) return false
       return this.$store.getters['user/getIsSeriesRemovedFromContinueListening'](this.seriesId)
     },
+    isSeriesHidden() {
+      if (!this.seriesId) return false
+      return this.$store.getters['user/getIsSeriesHidden'](this.seriesId)
+    },
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
@@ -439,6 +447,12 @@ export default {
           return
         }
         this.markSeriesFinished()
+      } else if (action === 'hide-series') {
+        if (this.processingSeries) {
+          console.warn('Already processing series')
+          return
+        }
+        this.markSeriesHidden()
       } else if (this.handleSubtitlesAction(action)) {
         return
       } else if (this.handleCollapseSubSeriesAction(action)) {
@@ -552,6 +566,33 @@ export default {
               .then(() => {
                 this.$toast.success(this.$strings.ToastSeriesUpdateSuccess)
                 this.selectedSeries.progress.isFinished = newIsFinished
+              })
+              .catch((error) => {
+                this.$toast.error(this.$strings.ToastSeriesUpdateFailed)
+                console.error('Failed to batch update read/not read', error)
+              })
+              .finally(() => {
+                this.processingSeries = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    markSeriesHidden() {
+      const newIsHidden = !this.isSeriesHidden;
+
+      const payload = {
+        message: newIsHidden ? this.$strings.MessageConfirmHideSeries : this.$strings.MessageConfirmUnhideSeries,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.processingSeries = true
+            const endpoint = newIsHidden ? 'hide' : 'unhide'
+            this.$axios
+              .$get(`/api/me/series/${this.seriesId}/${endpoint}`)
+              .then(() => {
+                this.$toast.success(this.$strings.ToastSeriesUpdateSuccess)
               })
               .catch((error) => {
                 this.$toast.error(this.$strings.ToastSeriesUpdateFailed)
