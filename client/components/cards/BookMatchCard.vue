@@ -18,6 +18,10 @@
           <div>
             <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">{{ $getString('LabelByAuthor', [book.author]) }}</p>
             <p v-if="book.narrator" class="text-gray-400 text-xs">{{ $strings.LabelNarrators }}: {{ book.narrator }}</p>
+            <div v-if="bookRatingValue > 0" class="flex items-center text-xs text-gray-400 mt-0.5">
+              <span v-for="i in 5" :key="i" class="material-symbols text-xs mr-0.5" :class="bookRatingValue >= i - 0.5 ? 'text-warning fill' : 'text-gray-500'">{{ bookRatingValue >= i ? 'star' : bookRatingValue >= i - 0.5 ? 'star_half' : 'star_border' }}</span>
+              <span class="ml-1">{{ bookRatingValue.toFixed(1) }}</span>
+            </div>
             <p v-if="book.duration" class="text-gray-400 text-xs">{{ $strings.LabelDuration }}: {{ $elapsedPrettyExtended(bookDuration, false) }} {{ bookDurationComparison }}</p>
           </div>
           <div class="grow" />
@@ -88,7 +92,19 @@ export default {
         return this.$getString('LabelDurationComparisonShorter', [this.$elapsedPrettyExtended(differenceInMinutes * 60, false, false)])
       }
       return this.$strings.LabelDurationComparisonExactMatch
-    }
+    },
+    bookRatingValue() {
+      if (!this.book.rating) return 0
+      if (typeof this.book.rating === 'string') {
+        const num = Number(this.book.rating)
+        return isNaN(num) ? 0 : num
+      }
+      if (typeof this.book.rating === 'object' && this.book.rating.average) {
+        return Number(this.book.rating.average) || 0
+      }
+      const num = Number(this.book.rating)
+      return isNaN(num) ? 0 : num
+    },
   },
   methods: {
     selectMatch() {

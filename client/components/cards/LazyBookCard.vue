@@ -349,6 +349,13 @@ export default {
         if (this.mediaMetadata.publishedYear) return this.$getString('LabelPublishedDate', [this.mediaMetadata.publishedYear])
         return '\u00A0'
       }
+      if (this.orderBy === 'media.metadata.rating') {
+        if (this.mediaMetadata.rating) {
+          const ratingValue = typeof this.mediaMetadata.rating === 'object' && this.mediaMetadata.rating.average ? this.mediaMetadata.rating.average : Number(this.mediaMetadata.rating)
+          if (!isNaN(ratingValue) && ratingValue > 0) return `Rating: ${ratingValue.toFixed(1)}`
+        }
+        return '\u00A0'
+      }
       if (this.orderBy === 'progress') {
         if (!this.userProgressLastUpdated) return '\u00A0'
         return this.$getString('LabelLastProgressDate', [this.$formatDatetime(this.userProgressLastUpdated, this.dateFormat, this.timeFormat)])
