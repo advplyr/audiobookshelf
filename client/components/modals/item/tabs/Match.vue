@@ -179,7 +179,7 @@
           <div class="grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.rating" type="number" step="0.1" min="0" max="5" :disabled="!selectedMatchUsage.rating" label="Rating" />
             <p v-if="mediaMetadata.rating" class="text-xs ml-1 text-white/60">
-              {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('rating', typeof mediaMetadata.rating === 'object' && mediaMetadata.rating.average ? mediaMetadata.rating.average : Number(mediaMetadata.rating))">{{ typeof mediaMetadata.rating === 'object' && mediaMetadata.rating.average ? mediaMetadata.rating.average.toFixed(1) : Number(mediaMetadata.rating).toFixed(1) }}</a>
+              {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('rating', Number(mediaMetadata.rating))">{{ Number(mediaMetadata.rating).toFixed(1) }}</a>
             </p>
           </div>
         </div>
@@ -591,8 +591,7 @@ export default {
         if (!isNaN(ratingValue) && ratingValue > 0) {
           updatePayload.metadata.rating = ratingValue
         } else if (ratingValue === 0 || isNaN(ratingValue)) {
-          // Set to null to remove rating
-          updatePayload.metadata.rating = null
+          updatePayload.metadata.rating = undefined
         }
       }
 

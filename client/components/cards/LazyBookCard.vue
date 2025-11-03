@@ -350,9 +350,8 @@ export default {
         return '\u00A0'
       }
       if (this.orderBy === 'media.metadata.rating') {
-        if (this.mediaMetadata.rating) {
-          const ratingValue = typeof this.mediaMetadata.rating === 'object' && this.mediaMetadata.rating.average ? this.mediaMetadata.rating.average : Number(this.mediaMetadata.rating)
-          if (!isNaN(ratingValue) && ratingValue > 0) return `Rating: ${ratingValue.toFixed(1)}`
+        if (this.mediaMetadata.rating && !isNaN(this.mediaMetadata.rating) && this.mediaMetadata.rating > 0) {
+          return `Rating: ${Number(this.mediaMetadata.rating).toFixed(1)}`
         }
         return '\u00A0'
       }
