@@ -110,7 +110,7 @@ class CustomProviderAdapter {
         series: validateSeriesArray(series),
         language: toStringOrUndefined(language),
         duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined,
-        rating: rating !== undefined && rating !== null ? (!isNaN(Number(rating)) && Number(rating) > 0 ? Number(rating) : undefined) : undefined
+        rating: rating !== undefined && rating !== null && !isNaN(Number(rating)) && Number(rating) > 0 ? Number(rating) : undefined
       }
 
       // Remove undefined values
