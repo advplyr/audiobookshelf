@@ -4,7 +4,12 @@
       <p class="text-base md:text-xl font-semibold">{{ $strings.HeaderScheduleLibraryScans }}</p>
       <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" :label="$strings.LabelEnable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
     </div>
-    <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
+    <div v-if="enableAutoScan">
+      <widgets-cron-expression-builder ref="cronExpressionBuilder" v-model="cronExpression" @input="updatedCron" />
+      <div class="mt-4">
+        <ui-checkbox v-model="matchAfterScan" @input="updateMatchAfterScan" :label="$strings.LabelMatchAfterScan" medium checkbox-bg="bg" label-class="pl-2 text-base" />
+      </div>
+    </div>
     <div v-else>
       <p class="text-yellow-400 text-base">{{ $strings.MessageScheduleLibraryScanNote }}</p>
     </div>
@@ -23,7 +28,8 @@ export default {
   data() {
     return {
       cronExpression: null,
-      enableAutoScan: false
+      enableAutoScan: false,
+      matchAfterScan: false
     }
   },
   computed: {},
@@ -47,9 +53,17 @@ export default {
         }
       })
     },
+    updateMatchAfterScan(value) {
+      this.$emit('update', {
+        settings: {
+          matchAfterScan: value
+        }
+      })
+    },
     init() {
       this.cronExpression = this.library.settings.autoScanCronExpression
       this.enableAutoScan = !!this.cronExpression
+      this.matchAfterScan = this.library.settings.matchAfterScan
     }
   },
   mounted() {

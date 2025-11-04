@@ -354,6 +354,15 @@ class LibraryController {
             updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
+        } else if (key === 'matchAfterScan') {
+          if (typeof req.body.settings[key] !== 'boolean') {
+            return res.status(400).send('Invalid request. Setting "matchAfterScan" must be a boolean')
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            hasUpdates = true
+            updatedSettings[key] = req.body.settings[key]
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
         } else {
           if (typeof req.body.settings[key] !== typeof updatedSettings[key]) {
             Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be of type ${typeof updatedSettings[key]}`)

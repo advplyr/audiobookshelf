@@ -3,6 +3,8 @@ const cron = require('../libs/nodeCron')
 const Logger = require('../Logger')
 const Database = require('../Database')
 const LibraryScanner = require('../scanner/LibraryScanner')
+const Scanner = require('../scanner/Scanner')
+const { checkRemoveEmptySeries, checkRemoveAuthorsWithNoBooks } = require('../utils/cleanup')
 
 const ShareManager = require('./ShareManager')
 
@@ -74,7 +76,16 @@ class CronManager {
         Logger.error(`[CronManager] Library not found for scan cron ${_library.id}`)
       } else {
         Logger.debug(`[CronManager] Library scan cron executing for ${library.name}`)
-        LibraryScanner.scan(library)
+        await LibraryScanner.scan(library)
+
+        if (library.settings.matchAfterScan) {
+          Logger.debug(`[CronManager] Library scan cron matching books for ${library.name}`)
+          const apiRouterCtx = {
+            checkRemoveEmptySeries,
+            checkRemoveAuthorsWithNoBooks
+          }
+          Scanner.matchLibraryItems(apiRouterCtx, library)
+        }
       }
     })
     this.libraryScanCrons.push({
