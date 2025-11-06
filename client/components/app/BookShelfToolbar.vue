@@ -588,9 +588,11 @@ export default {
         callback: (confirmed) => {
           if (confirmed) {
             this.processingSeries = true
-            const endpoint = newIsHidden ? 'hide' : 'unhide'
+            const payload = {
+              makeHidden: newIsHidden
+            }
             this.$axios
-              .$get(`/api/me/series/${this.seriesId}/${endpoint}`)
+              .$post(`/api/me/series/${this.seriesId}/hide`, payload)
               .then(() => {
                 this.$toast.success(this.$strings.ToastSeriesUpdateSuccess)
               })
