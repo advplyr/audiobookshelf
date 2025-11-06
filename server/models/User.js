@@ -943,29 +943,21 @@ class User extends Model {
   /**
    *
    * @param {string} seriesId
+   * @param {boolean} makeHidden
    * @returns {Promise<boolean>}
    */
-  async hideSeries(seriesId) {
-    if (!this.extraData) this.extraData = {}
-    const hiddenSeries = this.extraData.hiddenSeries || []
-    if (hiddenSeries.includes(seriesId)) return false
-    hiddenSeries.push(seriesId)
-    this.extraData.hiddenSeries = hiddenSeries
-    this.changed('extraData', true)
-    await this.save()
-    return true
-  }
-
-  /**
-   *
-   * @param {string} seriesId
-   * @returns {Promise<boolean>}
-   */
-  async unhideSeries(seriesId) {
+  async hideSeries(seriesId, makeHidden) {
     if (!this.extraData) this.extraData = {}
     let hiddenSeries = this.extraData.hiddenSeries || []
-    if (!hiddenSeries.includes(seriesId)) return false
-    hiddenSeries = hiddenSeries.filter((sid) => sid !== seriesId)
+
+    if (makeHidden) {
+      if (hiddenSeries.includes(seriesId)) return false
+      hiddenSeries.push(seriesId)
+    } else {
+      if (!hiddenSeries.includes(seriesId)) return false
+      hiddenSeries = hiddenSeries.filter((sid) => sid !== seriesId)
+    }
+
     this.extraData.hiddenSeries = hiddenSeries
     this.changed('extraData', true)
     await this.save()
