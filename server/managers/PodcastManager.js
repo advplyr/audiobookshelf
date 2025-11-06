@@ -206,6 +206,29 @@ class PodcastManager {
 
     const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
 
+    if (podcastEpisode.imageURL) {
+      Logger.debug(`[PodcastManager] Downloading episode cover from RSS feed URL: ${podcastEpisode.imageURL}`)
+      const coverResult = await CoverManager.saveEpisodeCoverFromUrl(podcastEpisode.imageURL, podcastEpisode.id)
+      if (coverResult.cover) {
+        podcastEpisode.coverPath = coverResult.cover
+        await podcastEpisode.save()
+        Logger.info(`[PodcastManager] Successfully saved episode cover for "${podcastEpisode.title}"`)
+      } else if (coverResult.error) {
+        Logger.warn(`[PodcastManager] Failed to download episode cover: ${coverResult.error}`)
+      }
+    }
+
+    // Extract embedded cover art as fallback if no RSS cover (itunes:image)
+    if (!podcastEpisode.coverPath && audioFile.embeddedCoverArt) {
+      Logger.debug(`[PodcastManager] Extracting embedded cover art from episode audio file`)
+      const coverPath = await CoverManager.extractEpisodeCoverFromAudio(audioFile, podcastEpisode.id)
+      if (coverPath) {
+        podcastEpisode.coverPath = coverPath
+        await podcastEpisode.save()
+        Logger.info(`[PodcastManager] Successfully extracted embedded cover for "${podcastEpisode.title}"`)
+      }
+    }
+
     libraryItem.libraryFiles.push(libraryFile.toJSON())
     // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
     let libraryItemSize = 0

@@ -18,7 +18,11 @@ const { escapeRegExp } = require('./utils')
 class Auth {
   constructor() {
     const escapedRouterBasePath = escapeRegExp(global.RouterBasePath)
-    this.ignorePatterns = [new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`), new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`)]
+    this.ignorePatterns = [
+      new RegExp(`^(${escapedRouterBasePath}/api)?/items/[^/]+/cover$`),
+      new RegExp(`^(${escapedRouterBasePath}/api)?/authors/[^/]+/image$`),
+      new RegExp(`^(${escapedRouterBasePath}/api)?/podcasts/[^/]+/episode/[^/]+/cover$`)
+    ]
 
     /** @type {import('express-rate-limit').RateLimitRequestHandler} */
     this.authRateLimiter = RateLimiterFactory.getAuthRateLimiter()
