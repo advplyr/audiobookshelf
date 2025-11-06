@@ -382,7 +382,7 @@ class MeController {
   }
 
   /**
-   * GET: /api/me/series/:id/hide
+   * POST: /api/me/series/:id/hide
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -393,26 +393,9 @@ class MeController {
       return res.sendStatus(404)
     }
 
-    const hasUpdated = await req.user.hideSeries(req.params.id)
-    if (hasUpdated) {
-      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
-    }
-    res.json(req.user.toOldJSONForBrowser())
-  }
+    const { makeHidden } = req.body
 
-  /**
-   * GET: /api/me/series/:id/unhide
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async unhideSeries(req, res) {
-    if (!(await Database.seriesModel.checkExistsById(req.params.id))) {
-      Logger.error(`[MeController] unhideSeries: Series ${req.params.id} not found`)
-      return res.sendStatus(404)
-    }
-
-    const hasUpdated = await req.user.unhideSeries(req.params.id)
+    const hasUpdated = await req.user.hideSeries(req.params.id, makeHidden)
     if (hasUpdated) {
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     }
