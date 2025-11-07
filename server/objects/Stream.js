@@ -275,7 +275,7 @@ class Stream extends EventEmitter {
 
     const codecOptions = [`-loglevel ${logLevel}`, '-map 0:a']
 
-    if (this.codecsToForceAAC.slice(1, 3).includes(this.tracksCodec)) {
+    if (this.codecsToForceAAC.slice(1, 3).includes(this.tracksCodec) && this.tracks.length > 0 && this.tracks[0].bitRate && this.tracks[0].channels) {
       // In case for ac3/eac3 it needs to be passed the bitrate and channels to avoid ffmpeg errors
       codecOptions.push(`-c:a ${audioCodec}`, `-b:a ${this.tracks[0].bitRate}`, `-ac ${this.tracks[0].channels}`)
     } else {
