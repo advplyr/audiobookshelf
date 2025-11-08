@@ -60,6 +60,12 @@ class Scanner {
       }
       const matchData = results[0]
 
+      if (options.minConfidence && matchData.matchConfidence < options.minConfidence) {
+        return {
+          warning: `Match confidence ${matchData.matchConfidence} is below the minimum of ${options.minConfidence}`
+        }
+      }
+
       // Update cover if not set OR overrideCover flag
       if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
         Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
@@ -433,7 +439,7 @@ class Scanner {
    * @param {LibraryScan} libraryScan
    * @returns {Promise<boolean>} false if scan canceled
    */
-  async matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan) {
+  async matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan, options = {}) {
     for (let i = 0; i < libraryItems.length; i++) {
       const libraryItem = libraryItems[i]
 
@@ -448,7 +454,7 @@ class Scanner {
       }
 
       Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.title}" (${i + 1} of ${libraryItems.length})`)
-      const result = await this.quickMatchLibraryItem(apiRouterCtx, libraryItem, { provider: library.provider })
+      const result = await this.quickMatchLibraryItem(apiRouterCtx, libraryItem, { provider: library.provider, minConfidence: options.minConfidence })
       if (result.warning) {
         Logger.warn(`[Scanner] matchLibraryItems: Match warning ${result.warning} for library item "${libraryItem.media.title}"`)
       } else if (result.updated) {
@@ -470,7 +476,7 @@ class Scanner {
    * @param {import('../routers/ApiRouter')} apiRouterCtx
    * @param {import('../models/Library')} library
    */
-  async matchLibraryItems(apiRouterCtx, library) {
+  async matchLibraryItems(apiRouterCtx, library, options = {}) {
     if (library.mediaType === 'podcast') {
       Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
       return
@@ -509,7 +515,7 @@ class Scanner {
       offset += limit
       hasMoreChunks = libraryItems.length === limit
 
-      const shouldContinue = await this.matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan)
+      const shouldContinue = await this.matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan, options)
       if (!shouldContinue) {
         isCanceled = true
         break

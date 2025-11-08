@@ -449,6 +449,7 @@
   "LabelLowestPriority": "Lowest Priority",
   "LabelMatchConfidence": "Confidence",
   "LabelMatchAfterScan": "Run 'Match Books' after scan",
+  "LabelMatchMinConfidence": "Minimum match confidence (0-100)",
   "LabelMatchExistingUsersBy": "Match existing users by",
   "LabelMatchExistingUsersByDescription": "Used for connecting existing users. Once connected, users will be matched by a unique id from your SSO provider",
   "LabelMaxEpisodesToDownload": "Max # of episodes to download. Use 0 for unlimited.",

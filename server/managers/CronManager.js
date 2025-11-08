@@ -84,7 +84,9 @@ class CronManager {
             checkRemoveEmptySeries,
             checkRemoveAuthorsWithNoBooks
           }
-          Scanner.matchLibraryItems(apiRouterCtx, library)
+          Scanner.matchLibraryItems(apiRouterCtx, library, {
+            minConfidence: library.settings.matchMinConfidence
+          })
         }
       }
     })

@@ -9,6 +9,10 @@
       <div class="mt-4">
         <ui-checkbox v-model="matchAfterScan" @input="updateMatchAfterScan" :label="$strings.LabelMatchAfterScan" medium checkbox-bg="bg" label-class="pl-2 text-base" />
       </div>
+      <div class="mt-4" v-if="matchAfterScan">
+        <label class="px-1 text-sm font-semibold">{{ $strings.LabelMatchMinConfidence }}</label>
+        <ui-range-input v-model.number="matchMinConfidencePercentage" :min="0" :max="100" :step="1" />
+      </div>
     </div>
     <div v-else>
       <p class="text-yellow-400 text-base">{{ $strings.MessageScheduleLibraryScanNote }}</p>
@@ -29,10 +33,21 @@ export default {
     return {
       cronExpression: null,
       enableAutoScan: false,
-      matchAfterScan: false
+      matchAfterScan: false,
+      matchMinConfidence: 0
     }
   },
-  computed: {},
+  computed: {
+    matchMinConfidencePercentage: {
+      get() {
+        return this.matchMinConfidence * 100
+      },
+      set(val) {
+        this.matchMinConfidence = val / 100
+        this.updateMatchMinConfidence()
+      }
+    }
+  },
   methods: {
     checkBlurExpressionInput() {
       // returns true if advanced cron input is focused
@@ -60,10 +75,18 @@ export default {
         }
       })
     },
+    updateMatchMinConfidence() {
+      this.$emit('update', {
+        settings: {
+          matchMinConfidence: this.matchMinConfidence
+        }
+      })
+    },
     init() {
       this.cronExpression = this.library.settings.autoScanCronExpression
       this.enableAutoScan = !!this.cronExpression
       this.matchAfterScan = this.library.settings.matchAfterScan
+      this.matchMinConfidence = this.library.settings.matchMinConfidence || 0
     }
   },
   mounted() {

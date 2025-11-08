@@ -69,6 +69,7 @@ class Library extends Model {
         disableWatcher: false,
         autoScanCronExpression: null,
         matchAfterScan: false,
+        matchMinConfidence: 0,
         skipMatchingMediaWithAsin: false,
         skipMatchingMediaWithIsbn: false,
         audiobooksOnly: false,

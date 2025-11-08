@@ -126,6 +126,7 @@ export default {
           skipMatchingMediaWithIsbn: false,
           autoScanCronExpression: null,
           matchAfterScan: false,
+          matchMinConfidence: 0,
           hideSingleBookSeries: false,
           onlyShowLaterBooksInContinueSeries: false,
           metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata'],

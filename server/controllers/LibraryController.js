@@ -354,6 +354,19 @@ class LibraryController {
             updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
+        } else if (key === 'matchMinConfidence') {
+          if (req.body.settings[key] !== null && isNaN(req.body.settings[key])) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be a number`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be a number`)
+          } else if (req.body.settings[key] !== null && (Number(req.body.settings[key]) < 0 || Number(req.body.settings[key]) > 1)) {
+            Logger.error(`[LibraryController] Invalid request. Setting "${key}" must be between 0 and 1`)
+            return res.status(400).send(`Invalid request. Setting "${key}" must be between 0 and 1`)
+          }
+          if (req.body.settings[key] !== updatedSettings[key]) {
+            hasUpdates = true
+            updatedSettings[key] = req.body.settings[key] === null ? null : Number(req.body.settings[key])
+            Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
+          }
         } else if (key === 'matchAfterScan') {
           if (typeof req.body.settings[key] !== 'boolean') {
             return res.status(400).send('Invalid request. Setting "matchAfterScan" must be a boolean')
