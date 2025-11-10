@@ -68,6 +68,8 @@ class Library extends Model {
         coverAspectRatio: 1, // Square
         disableWatcher: false,
         autoScanCronExpression: null,
+        matchAfterScan: false,
+        matchMinConfidence: 0,
         skipMatchingMediaWithAsin: false,
         skipMatchingMediaWithIsbn: false,
         audiobooksOnly: false,
