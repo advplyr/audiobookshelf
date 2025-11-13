@@ -104,7 +104,6 @@ export default {
   },
   data() {
     return {
-      provider: null,
       useSquareBookCovers: false,
       enableWatcher: false,
       skipMatchingMediaWithAsin: false,
@@ -133,10 +132,6 @@ export default {
     },
     isPodcastLibrary() {
       return this.mediaType === 'podcast'
-    },
-    providers() {
-      if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
     },
     maskAsFinishedWhenItems() {
       return [

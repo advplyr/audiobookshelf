@@ -1,126 +1,60 @@
 export const state = () => ({
-  providers: [
-    {
-      text: 'Google Books',
-      value: 'google'
-    },
-    {
-      text: 'Open Library',
-      value: 'openlibrary'
-    },
-    {
-      text: 'iTunes',
-      value: 'itunes'
-    },
-    {
-      text: 'Audible.com',
-      value: 'audible'
-    },
-    {
-      text: 'Audible.ca',
-      value: 'audible.ca'
-    },
-    {
-      text: 'Audible.co.uk',
-      value: 'audible.uk'
-    },
-    {
-      text: 'Audible.com.au',
-      value: 'audible.au'
-    },
-    {
-      text: 'Audible.fr',
-      value: 'audible.fr'
-    },
-    {
-      text: 'Audible.de',
-      value: 'audible.de'
-    },
-    {
-      text: 'Audible.co.jp',
-      value: 'audible.jp'
-    },
-    {
-      text: 'Audible.it',
-      value: 'audible.it'
-    },
-    {
-      text: 'Audible.co.in',
-      value: 'audible.in'
-    },
-    {
-      text: 'Audible.es',
-      value: 'audible.es'
-    },
-    {
-      text: 'FantLab.ru',
-      value: 'fantlab'
-    }
-  ],
-  podcastProviders: [
-    {
-      text: 'iTunes',
-      value: 'itunes'
-    }
-  ],
-  coverOnlyProviders: [
-    {
-      text: 'AudiobookCovers.com',
-      value: 'audiobookcovers'
-    }
-  ]
+  bookProviders: [],
+  podcastProviders: [],
+  bookCoverProviders: [],
+  podcastCoverProviders: [],
+  providersLoaded: false
 })
 
 export const getters = {
-  checkBookProviderExists: state => (providerValue) => {
-    return state.providers.some(p => p.value === providerValue)
+  checkBookProviderExists: (state) => (providerValue) => {
+    return state.bookProviders.some((p) => p.value === providerValue)
   },
-  checkPodcastProviderExists: state => (providerValue) => {
-    return state.podcastProviders.some(p => p.value === providerValue)
+  checkPodcastProviderExists: (state) => (providerValue) => {
+    return state.podcastProviders.some((p) => p.value === providerValue)
+  },
+  areProvidersLoaded: (state) => state.providersLoaded
+}
+
+export const actions = {
+  async fetchProviders({ commit, state }) {
+    // Only fetch if not already loaded
+    if (state.providersLoaded) {
+      return
+    }
+
+    try {
+      const response = await this.$axios.$get('/api/search/providers')
+      if (response?.providers) {
+        commit('setAllProviders', response.providers)
+      }
+    } catch (error) {
+      console.error('Failed to fetch providers', error)
+    }
+  },
+  async refreshProviders({ commit, state }) {
+    // if providers are not loaded, do nothing - they will be fetched when required (
+    if (!state.providersLoaded) {
+      return
+    }
+
+    try {
+      const response = await this.$axios.$get('/api/search/providers')
+      if (response?.providers) {
+        commit('setAllProviders', response.providers)
+      }
+    } catch (error) {
+      console.error('Failed to refresh providers', error)
+    }
   }
 }
 
-export const actions = {}
-
 export const mutations = {
-  addCustomMetadataProvider(state, provider) {
-    if (provider.mediaType === 'book') {
-      if (state.providers.some(p => p.value === provider.slug)) return
-      state.providers.push({
-        text: provider.name,
-        value: provider.slug
-      })
-    } else {
-      if (state.podcastProviders.some(p => p.value === provider.slug)) return
-      state.podcastProviders.push({
-        text: provider.name,
-        value: provider.slug
-      })
-    }
-  },
-  removeCustomMetadataProvider(state, provider) {
-    if (provider.mediaType === 'book') {
-      state.providers = state.providers.filter(p => p.value !== provider.slug)
-    } else {
-      state.podcastProviders = state.podcastProviders.filter(p => p.value !== provider.slug)
-    }
-  },
-  setCustomMetadataProviders(state, providers) {
-    if (!providers?.length) return
-
-    const mediaType = providers[0].mediaType
-    if (mediaType === 'book') {
-      // clear previous values, and add new values to the end
-      state.providers = state.providers.filter((p) => !p.value.startsWith('custom-'))
-      state.providers = [
-        ...state.providers,
-        ...providers.map((p) => ({
-          text: p.name,
-          value: p.slug
-        }))
-      ]
-    } else {
-      // Podcast providers not supported yet
-    }
+  setAllProviders(state, providers) {
+    state.bookProviders = providers.books || []
+    state.podcastProviders = providers.podcasts || []
+    state.bookCoverProviders = providers.booksCovers || []
+    state.podcastCoverProviders = providers.podcasts || [] // Use same as bookCovers since podcasts use iTunes only
+    state.providersLoaded = true
   }
 }

@@ -74,7 +74,7 @@ export default {
     },
     providers() {
       if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     }
   },
   methods: {
@@ -156,6 +156,8 @@ export default {
   },
   mounted() {
     this.init()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
   }
 }
 </script>

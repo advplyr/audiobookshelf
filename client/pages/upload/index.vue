@@ -155,7 +155,7 @@ export default {
     },
     providers() {
       if (this.selectedLibraryIsPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     canFetchMetadata() {
       return !this.selectedLibraryIsPodcast && this.fetchMetadata.enabled
@@ -394,6 +394,8 @@ export default {
     this.setMetadataProvider()
 
     this.setDefaultFolder()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
     window.addEventListener('dragenter', this.dragenter)
     window.addEventListener('dragleave', this.dragleave)
     window.addEventListener('dragover', this.dragover)
