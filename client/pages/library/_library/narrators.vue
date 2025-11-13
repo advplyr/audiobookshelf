@@ -4,11 +4,11 @@
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <table class="tracksTable max-w-2xl mx-auto">
         <tr>
-          <th class="text-left">{{ $strings.LabelName }}</th>
-          <th class="text-center w-24">{{ $strings.LabelBooks }}</th>
+          <th class="text-left cursor-pointer" @click="sortNarratorsBy('name')">{{ $strings.LabelName }} {{ sortingArrow('name') }}</th>
+          <th class="text-center w-24 cursor-pointer"  @click="sortNarratorsBy('numBooks')">{{ $strings.LabelBooks }} {{ sortingArrow('numBooks') }}</th>
           <th v-if="userCanUpdate" class="w-40"></th>
         </tr>
-        <tr v-for="narrator in narrators" :key="narrator.id">
+        <tr v-for="narrator in sortedNarrators" :key="narrator.id">
           <td>
             <nuxt-link v-if="selectedNarrator?.id !== narrator.id" :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${narrator.id}`" class="text-sm md:text-base text-gray-100 hover:underline">{{ narrator.name }}</nuxt-link>
             <form v-else @submit.prevent="saveClick">
@@ -63,7 +63,9 @@ export default {
       loading: true,
       narrators: [],
       selectedNarrator: null,
-      newNarratorName: null
+      newNarratorName: null,
+      currentSortAttribute: '',
+      currentSortOrder: 'asc'
     }
   },
   computed: {
@@ -75,6 +77,14 @@ export default {
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
+    },
+    sortedNarrators() {
+      return this.narrators.sort((a,b) => {
+        let modifier = this.currentSortOrder == 'asc'? 1: -1;
+        if (a[this.currentSortAttribute] < b[this.currentSortAttribute]) return -1*modifier;
+        if (a[this.currentSortAttribute] > b[this.currentSortAttribute]) return modifier;
+        return 0;
+      })
     }
   },
   methods: {
@@ -151,6 +161,26 @@ export default {
           return []
         })
       this.loading = false
+    },
+    sortNarratorsBy(attribute) {
+      if (this.currentSortAttribute == attribute) {
+        if (this.currentSortOrder == 'asc') {
+          this.currentSortOrder = 'desc';
+        } else {
+          this.currentSortOrder = 'asc';
+        }
+      } else {
+        this.currentSortAttribute = attribute;
+        this.currentSortOrder = 'asc'
+      }
+
+    },
+    sortingArrow(attribute) {
+      if (this.currentSortAttribute == attribute) {
+        return this.currentSortOrder == 'asc'? '↓' : '↑';
+      } else {
+        return '';
+      }
     }
   },
   mounted() {
