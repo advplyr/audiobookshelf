@@ -186,10 +186,16 @@ export default {
     daysInARow() {
       var count = 0
       while (true) {
-        var _date = this.$addDaysToToday(count * -1)
+        var _date = this.$addDaysToToday((count * -1) - 1)
         var datestr = this.$formatJsDate(_date, 'yyyy-MM-dd')
 
         if (!this.listeningStatsDays[datestr] || this.listeningStatsDays[datestr] === 0) {
+          // don't require listening today to count towards days in a row, but do count it if already listened today
+          var today = this.$formatJsDate(new Date(), 'yyyy-MM-dd');
+          if (this.listeningStatsDays[today]) {
+            count++;
+          }
+
           return count
         }
         count++
