@@ -82,7 +82,7 @@ class ToolsController {
    * @param {Response} res
    */
   async embedAudioFileMetadata(req, res) {
-    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioTracks || !req.libraryItem.isBook) {
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioTracks) {
       Logger.error(`[ToolsController] Invalid library item`)
       return res.sendStatus(400)
     }
@@ -129,7 +129,7 @@ class ToolsController {
         return res.sendStatus(403)
       }
 
-      if (libraryItem.isMissing || !libraryItem.hasAudioTracks || !libraryItem.isBook) {
+      if (libraryItem.isMissing || !libraryItem.hasAudioTracks) {
         Logger.error(`[ToolsController] Batch embed invalid library item (${libraryItemId})`)
         return res.sendStatus(400)
       }
