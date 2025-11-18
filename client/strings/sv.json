@@ -915,7 +915,7 @@
   "MessageTaskFailedToWriteMetadataFile": "Misslyckades med att skapa filen med metadata",
   "MessageTaskMatchingBooksInLibrary": "Matchar böcker i biblioteket \"{0}\"",
   "MessageTaskNoFilesToScan": "Inga filer finns tillgängliga för skanning",
-  "MessageTaskOpmlImport": "OPML import",
+  "MessageTaskOpmlImport": "OPML-import",
   "MessageTaskOpmlImportDescription": "Skapar podcasts från {0} RSS-flöden",
   "MessageTaskOpmlImportFeed": "OPML importflöde",
   "MessageTaskOpmlImportFeedDescription": "Importerar RSS-flödet \"{0}\"",
