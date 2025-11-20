@@ -64,6 +64,10 @@ class ServerSettings {
     this.authLoginCustomMessage = null
     this.authActiveAuthMethods = ['local']
 
+    // Proxy authentication settings
+    this.authProxyHeaderName = null
+    this.authProxyLogoutURL = null
+
     // openid settings
     this.authOpenIDIssuerURL = null
     this.authOpenIDAuthorizationURL = null
@@ -147,8 +151,19 @@ class ServerSettings {
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
     this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
 
+    this.authProxyHeaderName = settings.authProxyHeaderName || null
+    this.authProxyLogoutURL = settings.authProxyLogoutURL || null
+
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
+    }
+
+    // Environment variable to enable proxy authentication (only during initialization)
+    if (process.env.AUTH_PROXY_ENABLED === 'true' || process.env.AUTH_PROXY_ENABLED === '1') {
+      if (!this.authActiveAuthMethods.includes('proxy')) {
+        Logger.info(`[ServerSettings] Enabling proxy authentication from environment variable AUTH_PROXY_ENABLED`)
+        this.authActiveAuthMethods.push('proxy')
+      }
     }
 
     // remove uninitialized methods
@@ -200,6 +215,16 @@ class ServerSettings {
       Logger.info(`[ServerSettings] Using allowIframe from environment variable`)
       this.allowIframe = true
     }
+
+    // Proxy authentication environment override
+    if (process.env.AUTH_PROXY_HEADER_NAME) {
+      Logger.info(`[ServerSettings] Using proxy header name from environment variable: ${process.env.AUTH_PROXY_HEADER_NAME}`)
+      this.authProxyHeaderName = process.env.AUTH_PROXY_HEADER_NAME
+    }
+    if (process.env.AUTH_PROXY_LOGOUT_URL) {
+      Logger.info(`[ServerSettings] Using proxy logout URL from environment variable: ${process.env.AUTH_PROXY_LOGOUT_URL}`)
+      this.authProxyLogoutURL = process.env.AUTH_PROXY_LOGOUT_URL
+    }
   }
 
   toJSON() {
@@ -239,6 +264,8 @@ class ServerSettings {
       buildNumber: this.buildNumber,
       authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
+      authProxyHeaderName: this.authProxyHeaderName,
+      authProxyLogoutURL: this.authProxyLogoutURL,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
@@ -271,7 +298,7 @@ class ServerSettings {
   }
 
   get supportedAuthMethods() {
-    return ['local', 'openid']
+    return ['local', 'openid', 'proxy']
   }
 
   /**
@@ -285,6 +312,8 @@ class ServerSettings {
     return {
       authLoginCustomMessage: this.authLoginCustomMessage,
       authActiveAuthMethods: this.authActiveAuthMethods,
+      authProxyHeaderName: this.authProxyHeaderName,
+      authProxyLogoutURL: this.authProxyLogoutURL,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
