@@ -274,6 +274,9 @@ module.exports = {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
+    } else if (sortBy === 'media.metadata.rating') {
+      const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
+      return [[Sequelize.literal(`\`book\`.\`rating\` ${nullDir}`)]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       // Sort by author name last first, secondary sort by title
       return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder()]

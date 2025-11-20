@@ -47,6 +47,9 @@
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
           <ui-text-input-with-label ref="asinInput" v-model="details.asin" label="ASIN" trim-whitespace @input="handleInputChange" />
         </div>
+        <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
+          <ui-text-input-with-label ref="ratingInput" v-model="details.rating" type="number" step="0.1" min="0" max="5" label="Rating" @input="handleInputChange" />
+        </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
@@ -93,6 +96,7 @@ export default {
         language: null,
         isbn: null,
         asin: null,
+        rating: null,
         genres: [],
         explicit: false,
         abridged: false
@@ -187,6 +191,7 @@ export default {
       if (this.$refs.descriptionInput) this.$refs.descriptionInput.blur()
       if (this.$refs.isbnInput) this.$refs.isbnInput.blur()
       if (this.$refs.asinInput) this.$refs.asinInput.blur()
+      if (this.$refs.ratingInput) this.$refs.ratingInput.blur()
       if (this.$refs.publisherInput) this.$refs.publisherInput.blur()
       if (this.$refs.languageInput) this.$refs.languageInput.blur()
 
@@ -242,6 +247,10 @@ export default {
       for (const key in this.details) {
         var newValue = this.details[key]
         var oldValue = this.mediaMetadata[key]
+        // Convert rating 0 to null
+        if (key === 'rating' && newValue === 0) {
+          newValue = null
+        }
         // Key cleared out or key first populated
         if ((!newValue && oldValue) || (newValue && !oldValue)) {
           metadata[key] = newValue
@@ -253,6 +262,11 @@ export default {
         } else if (key === 'authors' || key === 'series') {
           if (!this.objectArrayEqual(newValue, oldValue)) {
             metadata[key] = newValue.map((v) => ({ ...v }))
+          }
+        } else if (key === 'rating') {
+          // Always check rating changes, even if null
+          if (newValue != oldValue) {
+            metadata[key] = newValue
           }
         } else if (newValue && newValue != oldValue) {
           // Intentional !=
@@ -283,6 +297,12 @@ export default {
       this.details.language = this.mediaMetadata.language || null
       this.details.isbn = this.mediaMetadata.isbn || null
       this.details.asin = this.mediaMetadata.asin || null
+      if (this.mediaMetadata.rating) {
+        const ratingValue = typeof this.mediaMetadata.rating === 'object' && this.mediaMetadata.rating.average ? this.mediaMetadata.rating.average : Number(this.mediaMetadata.rating)
+        this.details.rating = !isNaN(ratingValue) && ratingValue > 0 ? ratingValue : null
+      } else {
+        this.details.rating = null
+      }
       this.details.explicit = !!this.mediaMetadata.explicit
       this.details.abridged = !!this.mediaMetadata.abridged
       this.newTags = [...(this.media.tags || [])]
