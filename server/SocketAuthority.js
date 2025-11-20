@@ -291,9 +291,11 @@ class SocketAuthority {
     client.user = user
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
-    // Update user lastSeen without firing sequelize bulk update hooks
-    user.lastSeen = Date.now()
-    await user.save({ hooks: false })
+    if (this.Server.lastSeenManager) {
+      this.Server.lastSeenManager.addActiveUser(user.id)
+      // To ensure actual lastSeen behaviour does not change, we just flush when connecting. This should not add much overhead as this is only for the authenticated socket.
+      this.Server.lastSeenManager.flushActiveUsers()
+    }
 
     const initialPayload = {
       userId: client.user.id,
