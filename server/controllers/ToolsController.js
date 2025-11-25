@@ -166,7 +166,9 @@ class ToolsController {
     }
 
     const libraryItems = await Database.libraryItemModel.findAll()
-    for (const libraryItem of libraryItems) await libraryItem.saveMetadataFile()
+    for (const libraryItem of libraryItems) {
+      await libraryItem.saveMetadataFile()
+    }
 
     res.sendStatus(200)
   }

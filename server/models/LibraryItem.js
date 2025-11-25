@@ -649,7 +649,7 @@ class LibraryItem extends Model {
           }
         }
 
-        Logger.debug(`[LibraryItem] Saved metadata for "${this.media.title}" file to "${metadataFilePath}"`)
+        Logger.debug(`[LibraryItem] Saved metadata for "${mediaExpanded.title}" file to "${metadataFilePath}"`)
 
         return metadataLibraryFile
       })
