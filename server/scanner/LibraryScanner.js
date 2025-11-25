@@ -718,6 +718,15 @@ async function findLibraryItemByItemToMetadata(fullPath, isSingleMedia) {
   const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
   // check if metadata id exists in the database
   const existingLibraryItem = await Database.libraryItemModel.getExpandedById(abMetadata.absId)
-  if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with metadata id matching one of "${abMetadata.absId}" at path "${existingLibraryItem.path}"`)
+
+  if (existingLibraryItem) {
+    Logger.debug(`[LibraryScanner] Found library item with metadata id matching one of "${abMetadata.absId}" at path "${existingLibraryItem.path}"`)
+
+    for (const { metadata } of existingLibraryItem.getLibraryFiles())
+      if (await fs.pathExists(metadata.path)) {
+        Logger.debug(`[LibraryScanner] Conflicting library files exist "${metadata.path}"`)
+        return null
+      }
+  }
   return existingLibraryItem
 }
