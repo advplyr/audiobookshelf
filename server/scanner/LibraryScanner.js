@@ -14,6 +14,7 @@ const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
+const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 
 class LibraryScanner {
   constructor() {
@@ -574,7 +575,7 @@ class LibraryScanner {
       let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
-        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
+        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir])) || (await findLibraryItemByItemToMetadata(fullPath, isSingleMedia))
         if (existingLibraryItem) {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
@@ -707,5 +708,16 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
     }
   })
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
+  return existingLibraryItem
+}
+
+async function findLibraryItemByItemToMetadata(fullPath, isSingleMedia) {
+  if (isSingleMedia) return null
+  const metadataText = await fileUtils.readTextFile(Path.join(fullPath, 'metadata.json'))
+  if (!metadataText) return null
+  const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
+  // check if metadata id exists in the database
+  const existingLibraryItem = await Database.libraryItemModel.getExpandedById(abMetadata.absId)
+  if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with metadata id matching one of "${abMetadata.absId}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
 }

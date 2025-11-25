@@ -821,6 +821,7 @@ class BookScanner {
     const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
 
     const jsonObject = {
+      absId: libraryItem.id,
       tags: libraryItem.media.tags || [],
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })) || [],
       title: libraryItem.media.title,
