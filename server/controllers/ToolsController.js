@@ -151,6 +151,27 @@ class ToolsController {
   }
 
   /**
+   * POST: /api/tools/batch/update-metadata-files
+   * Start batch request to update all metadata files
+   *
+   * @this import('../routers/ApiRouter')
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async updateAllItemMetadata(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.warn(`Non-admin user "${req.user.username}" other than admin attempted to batch scan library items`)
+      return res.sendStatus(403)
+    }
+
+    const libraryItems = await Database.libraryItemModel.findAll()
+    for (const libraryItem of libraryItems) await libraryItem.saveMetadataFile()
+
+    res.sendStatus(200)
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
