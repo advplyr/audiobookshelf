@@ -187,7 +187,7 @@ class SearchController {
     try {
       const query = req.query
       const asin = getQueryParamAsString(query, 'asin', '', true)
-      const region = getQueryParamAsString(req.query.region, 'us').toLowerCase()
+      const region = getQueryParamAsString(query, 'region', 'us').toLowerCase()
 
       if (!isValidASIN(asin.toUpperCase())) throw new ValidationError('asin', 'is invalid')
 
