@@ -38,7 +38,12 @@ class MigrationManager {
     if (!(await fs.pathExists(this.configPath))) throw new Error(`Config path does not exist: ${this.configPath}`)
 
     this.migrationsDir = path.join(this.configPath, 'migrations')
-    await fs.ensureDir(this.migrationsDir)
+    try {
+      await fs.ensureDir(this.migrationsDir)
+    } catch (error) {
+      Logger.error(`[MigrationManager] Failed to create migrations directory at "${this.migrationsDir}": ${error.message}`)
+      throw new Error(`[MigrationManager] Failed to create migrations directory at "${this.migrationsDir}"`, { cause: error })
+    }
 
     this.serverVersion = this.extractVersionFromTag(serverVersion)
     if (!this.serverVersion) throw new Error(`Invalid server version: ${serverVersion}. Expected a version tag like v1.2.3.`)
