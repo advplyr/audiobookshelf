@@ -29,14 +29,17 @@
           </div>
         </div>
         <div class="flex flex-wrap">
-          <div class="md:w-1/4 p-2">
+          <div class="w-full md:w-1/4 p-2">
             <ui-dropdown :label="$strings.LabelPodcastType" v-model="podcast.type" :items="podcastTypes" small />
           </div>
-          <div class="md:w-1/4 p-2">
+          <div class="w-full md:w-1/4 p-2">
             <ui-text-input-with-label v-model="podcast.language" :label="$strings.LabelLanguage" />
           </div>
-          <div class="md:w-1/4 px-2 pt-7">
+          <div class="w-full md:w-1/4 px-2 pt-7">
             <ui-checkbox v-model="podcast.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+          </div>
+          <div class="w-full md:w-1/4 px-2 pt-7">
+            <ui-checkbox v-model="podcast.isAuthenticatedFeed" :label="$strings.LabelAuthenticatedFeed" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
         </div>
         <div class="p-2 w-full">
@@ -96,6 +99,7 @@ export default {
         autoDownloadEpisodes: false,
         language: '',
         explicit: false,
+        isAuthenticatedFeed: false,
         type: ''
       }
     }
@@ -194,6 +198,7 @@ export default {
             itunesArtistId: this.podcast.itunesArtistId,
             language: this.podcast.language,
             explicit: this.podcast.explicit,
+            isAuthenticatedFeed: this.podcast.isAuthenticatedFeed,
             type: this.podcast.type
           },
           autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
@@ -234,6 +239,7 @@ export default {
       this.podcast.type = this._podcastData.type || this.feedMetadata.type || 'episodic'
 
       this.podcast.explicit = this._podcastData.explicit || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true'
+      this.podcast.isAuthenticatedFeed = this._podcastData.isAuthenticatedFeed || false
       if (this.folderItems[0]) {
         this.selectedFolderId = this.folderItems[0].value
         this.folderUpdated()

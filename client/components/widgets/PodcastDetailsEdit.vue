@@ -34,8 +34,9 @@
           <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" trim-whitespace @input="handleInputChange" />
         </div>
         <div class="grow px-1 pt-6">
-          <div class="flex justify-center">
+          <div class="flex justify-center space-x-4">
             <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+            <ui-checkbox v-model="details.isAuthenticatedFeed" :label="$strings.LabelAuthenticatedFeed" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
           </div>
         </div>
       </div>
@@ -70,6 +71,7 @@ export default {
         itunesId: null,
         itunesArtistId: null,
         explicit: false,
+        isAuthenticatedFeed: false,
         language: null,
         type: null
       },
@@ -241,6 +243,7 @@ export default {
       this.details.itunesArtistId = this.mediaMetadata.itunesArtistId || ''
       this.details.language = this.mediaMetadata.language || ''
       this.details.explicit = !!this.mediaMetadata.explicit
+      this.details.isAuthenticatedFeed = !!this.mediaMetadata.isAuthenticatedFeed
       this.details.type = this.mediaMetadata.type || 'episodic'
 
       this.newTags = [...(this.media.tags || [])]
