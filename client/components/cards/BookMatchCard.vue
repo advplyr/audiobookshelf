@@ -78,6 +78,9 @@ export default {
     bookCovers() {
       return this.book.covers || []
     },
+    serverSettings() {
+      return this.$store.state.serverSettings
+    },
     bookDuration() {
       return (this.book.duration || 0) * 60
     },

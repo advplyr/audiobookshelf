@@ -45,7 +45,7 @@
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
-              <div v-if="ratingValue > 0 && !isPodcast" class="flex items-center mb-2 mt-1">
+              <div v-if="ratingValue > 0 && !isPodcast && serverSettings.enableBookRatings" class="flex items-center mb-2 mt-1">
                 <span v-for="i in 5" :key="i" class="material-symbols text-sm mr-0.5" :class="ratingValue >= i - 0.5 ? 'text-warning fill' : 'text-gray-500'">{{ ratingValue >= i ? 'star' : ratingValue >= i - 0.5 ? 'star_half' : 'star_border' }}</span>
                 <span class="ml-1 text-gray-300">{{ ratingValue.toFixed(1) }}</span>
               </div>
@@ -202,6 +202,9 @@ export default {
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']

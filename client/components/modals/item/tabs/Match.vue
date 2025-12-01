@@ -336,6 +336,9 @@ export default {
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
+    serverSettings() {
+      return this.$store.state.serverSettings
+    },
     filterData() {
       return this.$store.state.libraries.filterData || {}
     },
