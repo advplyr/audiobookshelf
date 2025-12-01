@@ -108,19 +108,33 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     // See: https://github.com/advplyr/audiobookshelf/issues/4401 (requires no iTMS user agent)
     const userAgents = ['audiobookshelf (+https://audiobookshelf.org; like iTMS)', 'audiobookshelf (+https://audiobookshelf.org)']
 
+    let refererHeader = null
+    const feedURL = podcastEpisodeDownload.libraryItem?.media?.feedURL
+    const isAuthenticatedFeed = podcastEpisodeDownload.libraryItem?.media?.isAuthenticatedFeed || false
+
+    if (feedURL && isAuthenticatedFeed) {
+      refererHeader = feedURL
+    }
+
     let response = null
     let lastError = null
 
     for (const userAgent of userAgents) {
       try {
+        const headers = {
+          Accept: '*/*',
+          'User-Agent': userAgent
+        }
+
+        if (refererHeader) {
+          headers['Referer'] = refererHeader
+        }
+
         response = await axios({
           url: podcastEpisodeDownload.url,
           method: 'GET',
           responseType: 'stream',
-          headers: {
-            Accept: '*/*',
-            'User-Agent': userAgent
-          },
+          headers,
           timeout: global.PodcastDownloadTimeout
         })
 
