@@ -930,7 +930,7 @@
   "MessageTaskScanningFileChanges": "Tarkastetaan tiedoston muutoksia \"{0}\":sta",
   "MessageTaskScanningLibrary": "Tarkastetaan kirjastoa \"{0}\"",
   "MessageTaskTargetDirectoryNotWritable": "Kohdehakemisto ei ole kirjoitettava",
-  "MessageThinking": "Ajattellaan...",
+  "MessageThinking": "Ajatellaan...",
   "MessageUploaderItemFailed": "Lataaminen ulospäin epäonnistui",
   "MessageUploaderItemSuccess": "Onnistuneesti ladattu! ulospäin!",
   "MessageUploading": "Ladataan! ulospäin...",
