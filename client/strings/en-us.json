@@ -80,6 +80,7 @@
   "ButtonRefresh": "Refresh",
   "ButtonRemove": "Remove",
   "ButtonRemoveAll": "Remove All",
+  "ButtonRemoveAllInsufficientPermissions": "User has insufficient permissions to remove items.",
   "ButtonRemoveAllLibraryItems": "Remove All Library Items",
   "ButtonRemoveFromContinueListening": "Remove from Continue Listening",
   "ButtonRemoveFromContinueReading": "Remove from Continue Reading",
