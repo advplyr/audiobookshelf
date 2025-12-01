@@ -48,13 +48,6 @@ class BackupManager {
   }
 
   async init() {
-    // Validate backupPath before attempting to create it
-    if (!this.backupPath || typeof this.backupPath !== 'string' || this.backupPath.length < 2) {
-      Logger.error(`[BackupManager] Invalid backup path configured: "${this.backupPath}". Falling back to default.`)
-      // Reset to default backup path
-      global.ServerSettings.backupPath = Path.join(global.MetadataPath, 'backups')
-    }
-
     try {
       const backupsDirExists = await fs.pathExists(this.backupPath)
       if (!backupsDirExists) {
@@ -62,20 +55,7 @@ class BackupManager {
       }
     } catch (error) {
       Logger.error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}": ${error.message}`)
-      // Attempt to fall back to default path
-      const defaultBackupPath = Path.join(global.MetadataPath, 'backups')
-      if (this.backupPath !== defaultBackupPath) {
-        Logger.info(`[BackupManager] Attempting to use default backup path: "${defaultBackupPath}"`)
-        global.ServerSettings.backupPath = defaultBackupPath
-        try {
-          await fs.ensureDir(defaultBackupPath)
-        } catch (fallbackError) {
-          Logger.error(`[BackupManager] Failed to create default backup directory: ${fallbackError.message}`)
-          throw new Error(`[BackupManager] Failed to create default backup directory at "${defaultBackupPath}"`, { cause: fallbackError })
-        }
-      } else {
-        throw new Error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}"`, { cause: error })
-      }
+      throw new Error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}"`, { cause: error })
     }
 
     await this.loadBackups()
