@@ -16,3 +16,4 @@ Please add a record of every database migration that you create to this file. Th
 | v2.19.1        | v2.19.1-copy-title-to-library-items          | Copies title and titleIgnorePrefix to the libraryItems table, creates update triggers and indices             |
 | v2.19.4        | v2.19.4-improve-podcast-queries              | Adds numEpisodes to podcasts, adds podcastId to mediaProgresses, copies podcast title to libraryItems         |
 | v2.20.0        | v2.20.0-improve-author-sort-queries          | Adds AuthorNames(FirstLast\|LastFirst) to libraryItems to improve author sort queries                         |
+| v2.31.1        | v2.31.1-update-metadata-json-with-id         | Adds ids to the locally stored metadata.json to help file moves keep track of the items                       |
