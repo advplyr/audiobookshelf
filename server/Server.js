@@ -7,6 +7,7 @@ const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const cookieParser = require('cookie-parser')
 const axios = require('axios')
+const { AxiosError } = require('axios')
 const dns = require('dns').promises
 
 const { version } = require('../package.json')
@@ -130,13 +131,29 @@ class Server {
       })
 
       // Manually handle redirects, otherwise axios would bypass custom dns resolution on redirects
+      const maxRedirects = axios.defaults.maxRedirects || 21 // axios default
       axios.defaults.maxRedirects = 0
       axios.interceptors.response.use(
         (response) => response,
         async (error) => {
           if (error.response && [301, 302, 303, 307, 308].includes(error.response.status) && error.response.headers.location) {
             const redirectUrl = error.response.headers.location
-            Logger.debug(`[Server] Following ${error.response.status} redirect to ${redirectUrl}`)
+            if (!error.config._redirectCount) {
+              error.config._redirectCount = 0
+              error.config._redirectUrls = new Set()
+            }
+            if (error.config._redirectUrls.has(redirectUrl)) {
+              const visitedUrls = Array.from(error.config._redirectUrls).join(' -> ')
+              Logger.error(`[Server] Redirect loop detected: ${visitedUrls} -> ${redirectUrl}`)
+              return Promise.reject(new AxiosError(`Redirect loop detected: ${redirectUrl}`, 'ERR_FR_TOO_MANY_REDIRECTS', error.config, error.request))
+            }
+            if (error.config._redirectCount >= maxRedirects) {
+              Logger.error(`[Server] Maximum redirect limit (${maxRedirects}) exceeded`)
+              return Promise.reject(new AxiosError(`Maximum number of redirects exceeded (${maxRedirects})`, 'ERR_FR_TOO_MANY_REDIRECTS', error.config, error.request))
+            }
+            Logger.debug(`[Server] Following ${error.response.status} redirect to ${redirectUrl} (${error.config._redirectCount + 1}/${maxRedirects})`)
+            error.config._redirectUrls.add(redirectUrl)
+            error.config._redirectCount++
             return axios({
               ...error.config,
               url: redirectUrl
