@@ -128,6 +128,23 @@ class Server {
         }
         return config
       })
+
+      // Manually handle redirects, otherwise axios would bypass custom dns resolution on redirects
+      axios.defaults.maxRedirects = 0
+      axios.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+          if (error.response && [301, 302, 303, 307, 308].includes(error.response.status) && error.response.headers.location) {
+            const redirectUrl = error.response.headers.location
+            Logger.debug(`[Server] Following ${error.response.status} redirect to ${redirectUrl}`)
+            return axios({
+              ...error.config,
+              url: redirectUrl
+            })
+          }
+          return Promise.reject(error)
+        }
+      )
     }
 
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
