@@ -7,6 +7,7 @@ const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const cookieParser = require('cookie-parser')
 const axios = require('axios')
+const dns = require('dns').promises
 
 const { version } = require('../package.json')
 
@@ -86,6 +87,49 @@ class Server {
         global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
       }
     }
+
+    if (process.env.EXP_DNS_RESOLUTION === '1') {
+      // https://github.com/advplyr/audiobookshelf/pull/3754
+      Logger.info(`[Server] Experimental DNS Resolution Enabled`)
+
+      // Resolve DNS using dns package before making request
+      axios.interceptors.request.use(async (config) => {
+        try {
+          const urlObj = new URL(config.url)
+          const hostname = urlObj.hostname
+          let resolved = false
+
+          const resolvers = [
+            { protocol: 'IPv4', method: dns.resolve4, format: (ip) => ip },
+            { protocol: 'IPv6', method: dns.resolve6, format: (ip) => `[${ip}]` }
+          ]
+          if (process.env.PREFER_IPV6 === '1') {
+            resolvers.reverse()
+          }
+
+          for (const { protocol, method, format } of resolvers) {
+            const addresses = await method(hostname).catch(() => null)
+            if (addresses?.length > 0) {
+              const ip = format(addresses[0])
+              urlObj.hostname = ip
+              config.url = urlObj.toString()
+              config.headers = { ...config.headers, Host: hostname }
+              Logger.debug(`[Server] Resolved ${hostname} -> ${addresses[0]} (${protocol})`)
+              resolved = true
+              break
+            }
+          }
+
+          if (!resolved) {
+            throw new Error(`Could not resolve hostname ${hostname} to any IP address`)
+          }
+        } catch (err) {
+          Logger.warn(`[Server] DNS pre-resolution error: ${err.message}`)
+        }
+        return config
+      })
+    }
+
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
