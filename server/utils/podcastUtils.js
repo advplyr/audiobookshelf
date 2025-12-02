@@ -33,6 +33,7 @@ const Fuse = require('../libs/fusejs')
  * @property {string} chaptersUrl
  * @property {string} chaptersType
  * @property {RssPodcastChapter[]} chapters
+ * @property {string|null} image - Episode-specific iTunes image URL
  */
 
 /**
@@ -211,6 +212,11 @@ function extractEpisodeData(item) {
     }
   }
 
+  // Extract episode image
+  if (item['itunes:image']?.[0]?.['$']?.href) {
+    episode.image = item['itunes:image'][0]['$'].href
+  }
+
   const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     const cleanKey = key.split(':').pop()
@@ -282,7 +288,8 @@ function cleanEpisodeData(data) {
     guid: data.guid || null,
     chaptersUrl: data.chaptersUrl || null,
     chaptersType: data.chaptersType || null,
-    chapters: data.chapters || []
+    chapters: data.chapters || [],
+    image: data.image || null
   }
 }
 
