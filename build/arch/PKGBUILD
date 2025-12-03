@@ -1,0 +1,30 @@
+# Maintainer: advplyr
+# Based on PKGBUILD From the aur
+
+pkgname=audiobookshelf-bin
+pkgrel=1
+epoch=1
+pkgdesc="Self-hosted audiobook server for managing and playing audiobooks"
+arch=()
+url="https://github.com/advplyr/${pkgname}"
+license=('GPL-3.0-only')
+depends=("ffmpeg" "libnusqlite3")
+backup=("etc/conf.d/${pkgname}")
+options=("!debug")
+
+# The generator script will update the pkgver source and sha256sums dynamically
+# So we'll leave them empty for now and rely on the generator.
+pkgver=PLACEHOLDER
+source=()
+sha256sums=()
+
+
+package() {
+    install -Dm644 "audiobookshelf.conf"     "${pkgdir}/etc/conf.d/audiobookshelf"
+    install -Dm644 "audiobookshelf.hook"     "${pkgdir}/usr/share/libalpm/hooks/audiobookshelf.hook"
+    install -Dm644 "audiobookshelf.service"  "${pkgdir}/usr/lib/systemd/system/audiobookshelf.service"
+    install -Dm644 "audiobookshelf.sysusers" "${pkgdir}/usr/lib/sysusers.d/audiobookshelf.conf"
+    install -Dm644 "audiobookshelf.tmpfiles" "${pkgdir}/usr/lib/tmpfiles.d/audiobookshelf.conf"
+    install -Dm755 "audiobookshelf_${pkgver}" "${pkgdir}/usr/bin/audiobookshelf"
+    install -Dm644 "LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
