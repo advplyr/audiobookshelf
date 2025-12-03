@@ -1,3 +1,4 @@
+ARG BASE_PATH=""
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
@@ -6,6 +7,7 @@ FROM node:20-alpine AS build-client
 
 WORKDIR /client
 COPY /client /client
+ENV ROUTER_BASE_PATH=${BASE_PATH}
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
@@ -38,6 +40,7 @@ RUN case "$TARGETPLATFORM" in \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
   rm /tmp/library.zip
 
+ENV ROUTER_BASE_PATH=${BASE_PATH}
 RUN npm ci --only=production
 
 ### STAGE 2: Create minimal runtime image ###
@@ -61,6 +64,7 @@ COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 
 EXPOSE 80
 
+ENV ROUTER_BASE_PATH=${BASE_PATH}
 ENV PORT=80
 ENV NODE_ENV=production
 ENV CONFIG_PATH="/config"
