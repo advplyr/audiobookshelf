@@ -371,11 +371,13 @@ export default {
     },
     customMetadataProviderAdded(provider) {
       if (!provider?.id) return
-      this.$store.commit('scanners/addCustomMetadataProvider', provider)
+      // Refresh providers cache
+      this.$store.dispatch('scanners/refreshProviders')
     },
     customMetadataProviderRemoved(provider) {
       if (!provider?.id) return
-      this.$store.commit('scanners/removeCustomMetadataProvider', provider)
+      // Refresh providers cache
+      this.$store.dispatch('scanners/refreshProviders')
     },
     initializeSocket() {
       if (this.$root.socket) {

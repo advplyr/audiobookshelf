@@ -189,6 +189,7 @@ export default {
         require('@/plugins/chromecast.js').default(this)
       }
 
+      this.$store.commit('libraries/setLastLoad', 0) // Ensure libraries get loaded again when switching users
       this.$store.commit('libraries/setCurrentLibrary', { id: userDefaultLibraryId })
       this.$store.commit('user/setUser', user)
       // Access token only returned from login, not authorize
@@ -298,8 +299,8 @@ export default {
       }
 
       if (authMethods.includes('openid')) {
-        // Auto redirect unless query string ?autoLaunch=0
-        if (this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') {
+        // Auto redirect unless query string ?autoLaunch=0 OR when explicity requested through ?autoLaunch=1
+        if ((this.authFormData?.authOpenIDAutoLaunch && this.$route.query?.autoLaunch !== '0') || this.$route.query?.autoLaunch == '1') {
           window.location.href = this.openidAuthUri
         }
 

@@ -155,7 +155,7 @@ export default {
     },
     providers() {
       if (this.selectedLibraryIsPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     canFetchMetadata() {
       return !this.selectedLibraryIsPodcast && this.fetchMetadata.enabled
@@ -297,6 +297,15 @@ export default {
         ref.setUploadStatus(status)
       }
     },
+    updateItemCardProgress(index, progress) {
+      var ref = this.$refs[`itemCard-${index}`]
+      if (ref && ref.length) ref = ref[0]
+      if (!ref) {
+        console.error('Book card ref not found', index, this.$refs)
+      } else {
+        ref.setUploadProgress(progress)
+      }
+    },
     async uploadItem(item) {
       var form = new FormData()
       form.set('title', item.title)
@@ -312,8 +321,20 @@ export default {
         form.set(`${index++}`, file)
       })
 
+      const config = {
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.lengthComputable) {
+            const progress = {
+              loaded: progressEvent.loaded,
+              total: progressEvent.total
+            }
+            this.updateItemCardProgress(item.index, progress)
+          }
+        }
+      }
+
       return this.$axios
-        .$post('/api/upload', form)
+        .$post('/api/upload', form, config)
         .then(() => true)
         .catch((error) => {
           console.error('Failed to upload item', error)
@@ -394,6 +415,8 @@ export default {
     this.setMetadataProvider()
 
     this.setDefaultFolder()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
     window.addEventListener('dragenter', this.dragenter)
     window.addEventListener('dragleave', this.dragleave)
     window.addEventListener('dragover', this.dragover)

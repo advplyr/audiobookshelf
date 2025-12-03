@@ -12,9 +12,9 @@ class TokenManager {
 
   constructor() {
     /** @type {number} Refresh token expiry in seconds */
-    this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 7 * 24 * 60 * 60 // 7 days
+    this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 30 * 24 * 60 * 60 // 30 days
     /** @type {number} Access token expiry in seconds */
-    this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 12 * 60 * 60 // 12 hours
+    this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 1 * 60 * 60 // 1 hour
 
     if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)

@@ -37,8 +37,13 @@ class LogManager {
   }
 
   async ensureLogDirs() {
-    await fs.ensureDir(this.DailyLogPath)
-    await fs.ensureDir(this.ScanLogPath)
+    try {
+      await fs.ensureDir(this.DailyLogPath)
+      await fs.ensureDir(this.ScanLogPath)
+    } catch (error) {
+      console.error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}": ${error.message}`)
+      throw new Error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}"`, { cause: error })
+    }
   }
 
   /**
@@ -169,7 +174,7 @@ class LogManager {
   /**
    * Most recent 5000 daily logs
    *
-   * @returns {LogObject[]}
+   * @returns {string}
    */
   getMostRecentCurrentDailyLogs() {
     return this.currentDailyLog?.logs.slice(-5000) || []
