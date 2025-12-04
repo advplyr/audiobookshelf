@@ -62,7 +62,24 @@
     </widgets-alert>
 
     <div v-if="isNonInteractable" class="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center z-20">
-      <ui-loading-indicator :text="nonInteractionLabel" />
+      <ui-loading-indicator>
+        <div class="mb-4">
+          <span class="text-lg font-medium text-white">
+            {{ nonInteractionLabel }}
+          </span>
+        </div>
+
+        <div v-if="isUploading" class="w-64 mx-auto mb-2">
+          <div class="flex items-center justify-center mb-2">
+            <span class="text-sm font-medium text-white/60 text-center w-full">
+              {{ uploadProgressText }}
+            </span>
+          </div>
+          <div class="w-full bg-primary/20 rounded-full h-2.5">
+            <div class="bg-green-500 h-2.5 rounded-full transition-all duration-300 ease-out" :style="{ width: uploadProgressPercent + '%' }"></div>
+          </div>
+        </div>
+      </ui-loading-indicator>
     </div>
   </div>
 </template>
@@ -91,7 +108,11 @@ export default {
       isUploading: false,
       uploadFailed: false,
       uploadSuccess: false,
-      isFetchingMetadata: false
+      isFetchingMetadata: false,
+      uploadProgress: {
+        loaded: 0,
+        total: 0
+      }
     }
   },
   computed: {
@@ -116,6 +137,15 @@ export default {
       } else if (this.isFetchingMetadata) {
         return this.$strings.LabelFetchingMetadata
       }
+    },
+    uploadProgressPercent() {
+      if (this.uploadProgress.total === 0) return 0
+      return Math.min(100, Math.round((this.uploadProgress.loaded / this.uploadProgress.total) * 100))
+    },
+    uploadProgressText() {
+      const loaded = this.$bytesPretty(this.uploadProgress.loaded)
+      const total = this.$bytesPretty(this.uploadProgress.total)
+      return `${this.uploadProgressPercent}% (${loaded} / ${total})`
     }
   },
   methods: {
@@ -123,6 +153,21 @@ export default {
       this.isUploading = status === 'uploading'
       this.uploadFailed = status === 'failed'
       this.uploadSuccess = status === 'success'
+
+      if (status !== 'uploading') {
+        this.uploadProgress = {
+          loaded: 0,
+          total: 0
+        }
+      }
+    },
+    setUploadProgress(progress) {
+      if (this.isUploading && progress) {
+        this.uploadProgress = {
+          loaded: progress.loaded || 0,
+          total: progress.total || 0
+        }
+      }
     },
     titleUpdated() {
       this.error = ''

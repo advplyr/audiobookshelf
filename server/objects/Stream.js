@@ -73,7 +73,7 @@ class Stream extends EventEmitter {
     return [AudioMimeType.FLAC, AudioMimeType.OPUS, AudioMimeType.WMA, AudioMimeType.AIFF, AudioMimeType.WEBM, AudioMimeType.WEBMA, AudioMimeType.AWB, AudioMimeType.CAF]
   }
   get codecsToForceAAC() {
-    return ['alac']
+    return ['alac', 'ac3', 'eac3']
   }
   get userToken() {
     return this.user.token
@@ -273,7 +273,16 @@ class Stream extends EventEmitter {
       audioCodec = 'aac'
     }
 
-    this.ffmpeg.addOption([`-loglevel ${logLevel}`, '-map 0:a', `-c:a ${audioCodec}`])
+    const codecOptions = [`-loglevel ${logLevel}`, '-map 0:a']
+
+    if (['ac3', 'eac3'].includes(this.tracksCodec) && this.tracks.length > 0 && this.tracks[0].bitRate && this.tracks[0].channels) {
+      // In case for ac3/eac3 it needs to be passed the bitrate and channels to avoid ffmpeg errors
+      codecOptions.push(`-c:a ${audioCodec}`, `-b:a ${this.tracks[0].bitRate}`, `-ac ${this.tracks[0].channels}`)
+    } else {
+      codecOptions.push(`-c:a ${audioCodec}`)
+    }
+
+    this.ffmpeg.addOption(codecOptions)
     const hlsOptions = ['-f hls', '-copyts', '-avoid_negative_ts make_non_negative', '-max_delay 5000000', '-max_muxing_queue_size 2048', `-hls_time 6`, `-hls_segment_type ${this.hlsSegmentType}`, `-start_number ${this.segmentStartNumber}`, '-hls_playlist_type vod', '-hls_list_size 0', '-hls_allow_cache 0']
     this.ffmpeg.addOption(hlsOptions)
     if (this.hlsSegmentType === 'fmp4') {

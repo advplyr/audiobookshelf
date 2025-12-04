@@ -117,10 +117,10 @@
                 </button>
               </ui-tooltip>
               <ui-tooltip :text="selectedChapterId === chapter.id && isPlayingChapter ? $strings.MessagePauseChapter : $strings.MessagePlayChapter" direction="bottom">
-                <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
+                <button :disabled="!getAudioTrackForTime(chapter.start)" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150 disabled:opacity-50 disabled:cursor-not-allowed" @click="playChapter(chapter)">
                   <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
                   <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-symbols text-base">pause</span>
-                  <span v-else class="material-symbols text-base">play_arrow</span>
+                  <span v-else class="material-symbols text-xl">play_arrow</span>
                 </button>
               </ui-tooltip>
               <ui-tooltip v-if="selectedChapterId === chapter.id && (isPlayingChapter || isLoadingChapter)" :text="$strings.TooltipAdjustChapterStart" direction="bottom">
@@ -594,6 +594,14 @@ export default {
 
       this.hasChanges = hasChanges
     },
+    getAudioTrackForTime(time) {
+      if (typeof time !== 'number') {
+        return null
+      }
+      return this.tracks.find((at) => {
+        return time >= at.startOffset && time < at.startOffset + at.duration
+      })
+    },
     playChapter(chapter) {
       console.log('Play Chapter', chapter.id)
       if (this.selectedChapterId === chapter.id) {
@@ -608,9 +616,12 @@ export default {
         this.destroyAudioEl()
       }
 
-      const audioTrack = this.tracks.find((at) => {
-        return chapter.start >= at.startOffset && chapter.start < at.startOffset + at.duration
-      })
+      const audioTrack = this.getAudioTrackForTime(chapter.start)
+      if (!audioTrack) {
+        console.error('No audio track found for chapter', chapter)
+        return
+      }
+
       this.selectedChapter = chapter
       this.isLoadingChapter = true
 
