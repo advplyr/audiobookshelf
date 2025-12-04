@@ -5,7 +5,7 @@
 
     <div id="siderail-buttons-container" role="navigation" aria-label="Library Navigation" :class="{ 'player-open': streamLibraryItem }" class="w-full overflow-y-auto overflow-x-hidden">
       <nuxt-link :to="`/library/${currentLibraryId}`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">home</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">home</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonHome }}</p>
 
@@ -13,7 +13,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">&#xe241;</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">&#xe241;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
 
@@ -21,7 +21,7 @@
       </nuxt-link>
 
       <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="showLibrary ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">import_contacts</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">import_contacts</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLibrary }}</p>
 
@@ -29,7 +29,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isSeriesPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">view_column</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">view_column</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonSeries }}</p>
 
@@ -37,7 +37,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">&#xe431;</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">&#xe431;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
 
@@ -45,7 +45,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2.5xl">&#xe03d;</span>
+        <span class="material-symbols text-2.5xl" aria-hidden="true">&#xe03d;</span>
 
         <p class="pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
 
@@ -53,7 +53,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/authors`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isAuthorsPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">groups</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">groups</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonAuthors }}</p>
 
@@ -61,7 +61,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/narrators`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isNarratorsPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">&#xe91f;</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">&#xe91f;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.LabelNarrators }}</p>
 
@@ -69,7 +69,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isBookLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/stats`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isStatsPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">&#xf190;</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">&#xf190;</span>
 
         <p class="pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonStats }}</p>
 
@@ -77,7 +77,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="abs-icons icon-podcast text-xl"></span>
+        <span class="abs-icons icon-podcast text-xl" aria-hidden="true"></span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonAdd }}</p>
 
@@ -85,7 +85,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastDownloadQueuePage ? 'bg-primary/80' : 'bg-bg/60'">
-        <span class="material-symbols text-2xl">&#xf090;</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">&#xf090;</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonDownloadQueue }}</p>
 
@@ -93,7 +93,7 @@
       </nuxt-link>
 
       <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-error/40 cursor-pointer relative" :class="showingIssues ? 'bg-error/40' : 'bg-error/20'">
-        <span class="material-symbols text-2xl">warning</span>
+        <span class="material-symbols text-2xl" aria-hidden="true">warning</span>
 
         <p class="pt-1.5 text-center leading-4" style="font-size: 1rem">{{ $strings.ButtonIssues }}</p>
 
