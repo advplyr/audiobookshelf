@@ -588,7 +588,7 @@
   "LabelSettingsBookshelfViewHelp": "Skeumorphes Design mit Holzeinlegeböden",
   "LabelSettingsChromecastSupport": "Chromecastunterstützung",
   "LabelSettingsDateFormat": "Datumsformat",
-  "LabelSettingsEnableWatcher": "Bibliotheken automatisch nach Änderungen durchsuchen",
+  "LabelSettingsEnableWatcher": "Bibliotheken automatisch nach Änderungen überwachen",
   "LabelSettingsEnableWatcherForLibrary": "Bibliothek automatisch auf Änderungen überwachen",
   "LabelSettingsEnableWatcherHelp": "Aktiviert das automatische Hinzufügen/Aktualisieren von Elementen, wenn Dateiänderungen erkannt werden. *Erfordert einen Server-Neustart",
   "LabelSettingsEpubsAllowScriptedContent": "Skriptinhalte in Epubs zulassen",

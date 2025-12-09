@@ -22,6 +22,7 @@ const languageCodeMap = {
   it: { label: 'Italiano', dateFnsLocale: 'it' },
   lt: { label: 'Lietuvių', dateFnsLocale: 'lt' },
   hu: { label: 'Magyar', dateFnsLocale: 'hu' },
+  ko: { label: '한국어', dateFnsLocale: 'ko' },
   nl: { label: 'Nederlands', dateFnsLocale: 'nl' },
   no: { label: 'Norsk', dateFnsLocale: 'no' },
   pl: { label: 'Polski', dateFnsLocale: 'pl' },
