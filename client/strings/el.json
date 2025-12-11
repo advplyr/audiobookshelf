@@ -1,1 +1,15 @@
-{}
+{
+  "ButtonAdd": "Προσθήκη",
+  "ButtonAuthors": "Συγγραφείς",
+  "ButtonBack": "Πίσω",
+  "ButtonCancel": "Ακύρωση",
+  "ButtonClearFilter": "Διαγραφή Φίλτρου",
+  "ButtonCloseFeed": "Κλείσιμο Τροφοδοσίας",
+  "ButtonCollections": "Συλλογές",
+  "ButtonCreate": "Δημιουργία",
+  "ButtonDelete": "Διαγραφή",
+  "ButtonHome": "Αρχική",
+  "ButtonIssues": "Θέματα",
+  "ButtonLatest": "Τελευταία",
+  "ButtonLibrary": "Βιβλιοθήκη"
+}
