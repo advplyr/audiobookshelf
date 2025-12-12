@@ -126,7 +126,7 @@
               <ui-tooltip v-if="selectedChapterId === chapter.id && (isPlayingChapter || isLoadingChapter)" :text="$strings.TooltipAdjustChapterStart" direction="bottom">
                 <div class="ml-2 text-xs text-gray-300 font-mono min-w-10 cursor-pointer hover:text-white transition-colors duration-150" @click="adjustChapterStartTime(chapter)">{{ elapsedTime }}s</div>
               </ui-tooltip>
-              <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
+              <ui-tooltip v-if="chapter.error" :text="chapter.error" plaintext direction="left">
                 <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
                   <span class="material-symbols text-lg">error_outline</span>
                 </button>
